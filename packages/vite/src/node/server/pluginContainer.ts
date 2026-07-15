@@ -43,6 +43,7 @@ import type {
   ImportKind,
   InputOptions,
   LoadResult,
+  LogLevel,
   ModuleInfo,
   ModuleOptions,
   ModuleType,
@@ -92,7 +93,7 @@ import {
 import { cleanUrl, unwrapId } from '../../shared/utils'
 import type { PluginHookUtils } from '../config'
 import type { Environment } from '../environment'
-import type { Logger } from '../logger'
+import { LogLevels, type Logger } from '../logger'
 import {
   isFutureDeprecationEnabled,
   warnFutureDeprecation,
@@ -177,6 +178,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   private _resolvedRolldownOptions?: InputOptions
   private _processesing = new Set<Promise<any>>()
   private _seenResolves: Record<string, true | undefined> = {}
+  private _defaultLogContext: BasicMinimalPluginContext
 
   // _addedFiles from the `load()` hook gets saved here so it can be reused in the `transform()` hook
   private _moduleNodeToLoadAddedImports = new WeakMap<
@@ -205,9 +207,14 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     autoStart = true,
   ) {
     this._started = !autoStart
+    this._defaultLogContext = new BasicMinimalPluginContext(
+      { ...basePluginContextMeta, watchMode: true },
+      environment.logger,
+    )
     this.minimalContext = new MinimalPluginContext(
       { ...basePluginContextMeta, watchMode: true },
       environment,
+      (level, log) => this._onLog(level, log),
     )
     const utils = createPluginHookUtils(plugins)
     this.getSortedPlugins = utils.getSortedPlugins
@@ -279,14 +286,21 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   async resolveRolldownOptions(): Promise<InputOptions> {
     if (!this._resolvedRolldownOptions) {
       let options = this.environment.config.build.rolldownOptions
-      for (const optionsHook of this.getSortedPluginHooks('options')) {
+      for (const plugin of this.getSortedPlugins('options')) {
         if (this._closed) {
           throwClosedServerError()
         }
+        const optionsHook = getHookHandler(plugin.options)
+        const context = new MinimalPluginContext(
+          this.minimalContext.meta,
+          this.environment,
+          (level, log) => this._onLog(level, log),
+          plugin.name,
+          true,
+        )
         options =
-          (await this.handleHookPromise(
-            optionsHook.call(this.minimalContext, options),
-          )) || options
+          (await this.handleHookPromise(optionsHook.call(context, options))) ||
+          options
       }
       this._resolvedRolldownOptions = options
     }
@@ -298,6 +312,41 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       this._pluginContextMap.set(plugin, new PluginContext(plugin, this))
     }
     return this._pluginContextMap.get(plugin)!
+  }
+
+  _onLog(
+    level: LogLevel,
+    rawLog: RawLog,
+    skipped: Set<Plugin> = new Set(),
+  ): void {
+    if (
+      level === 'debug'
+        ? !debugPluginContainerContext
+        : LogLevels[this.environment.config.logLevel || 'info'] <
+          LogLevels[level]
+    ) {
+      return
+    }
+
+    const log = normalizeRawLog(rawLog)
+
+    for (const plugin of this.getSortedPlugins('onLog')) {
+      if (skipped.has(plugin)) continue
+
+      const hook = plugin.onLog
+      if (!hook) continue
+
+      const context = new MinimalPluginContext(
+        this.minimalContext.meta,
+        this.environment,
+        (nextLevel, nextLog) =>
+          this._onLog(nextLevel, nextLog, new Set(skipped).add(plugin)),
+        plugin.name,
+      )
+      if (getHookHandler(hook).call(context, level, log) === false) return
+    }
+
+    this._defaultLogContext[level](log)
   }
 
   // parallel, ignores returns
@@ -667,10 +716,30 @@ export const basePluginContextMeta: {
   rolldownVersion,
 }
 
+type RawLog = string | RollupLog | (() => string | RollupLog)
+
+function normalizeRawLog(rawLog: RawLog): RollupLog {
+  const logValue = typeof rawLog === 'function' ? rawLog() : rawLog
+  return typeof logValue === 'string' ? new Error(logValue) : logValue
+}
+
+function normalizePluginLog(
+  level: LogLevel,
+  rawLog: RawLog,
+  pluginName: string,
+): RollupLog {
+  const log = normalizeRawLog(rawLog)
+  if (log.code && !log.pluginCode) log.pluginCode = log.code
+  log.code = level === 'warn' ? 'PLUGIN_WARNING' : 'PLUGIN_LOG'
+  log.plugin = pluginName
+  return log
+}
+
 export class BasicMinimalPluginContext<Meta = PluginContextMeta> {
   constructor(
     public meta: Meta,
     private _logger: Logger,
+    private _onLog?: (level: LogLevel, log: RawLog) => void,
   ) {}
 
   // FIXME: properly support this later
@@ -679,20 +748,32 @@ export class BasicMinimalPluginContext<Meta = PluginContextMeta> {
     return ''
   }
 
-  debug(rawLog: string | RollupLog | (() => string | RollupLog)): void {
-    const log = this._normalizeRawLog(rawLog)
+  debug(rawLog: RawLog): void {
+    if (this._onLog) {
+      this._onLog('debug', rawLog)
+      return
+    }
+    const log = normalizeRawLog(rawLog)
     const msg = buildErrorMessage(log, [`debug: ${log.message}`], false)
     debugPluginContainerContext?.(msg)
   }
 
-  info(rawLog: string | RollupLog | (() => string | RollupLog)): void {
-    const log = this._normalizeRawLog(rawLog)
+  info(rawLog: RawLog): void {
+    if (this._onLog) {
+      this._onLog('info', rawLog)
+      return
+    }
+    const log = normalizeRawLog(rawLog)
     const msg = buildErrorMessage(log, [`info: ${log.message}`], false)
     this._logger.info(msg, { clear: true, timestamp: true })
   }
 
-  warn(rawLog: string | RollupLog | (() => string | RollupLog)): void {
-    const log = this._normalizeRawLog(rawLog)
+  warn(rawLog: RawLog): void {
+    if (this._onLog) {
+      this._onLog('warn', rawLog)
+      return
+    }
+    const log = normalizeRawLog(rawLog)
     const msg = buildErrorMessage(
       log,
       [colors.yellow(`warning: ${log.message}`)],
@@ -705,13 +786,6 @@ export class BasicMinimalPluginContext<Meta = PluginContextMeta> {
     const err = (typeof e === 'string' ? new Error(e) : e) as RollupError
     throw err
   }
-
-  private _normalizeRawLog(
-    rawLog: string | RollupLog | (() => string | RollupLog),
-  ): RollupLog {
-    const logValue = typeof rawLog === 'function' ? rawLog() : rawLog
-    return typeof logValue === 'string' ? new Error(logValue) : logValue
-  }
 }
 
 class MinimalPluginContext<T extends Environment = Environment>
@@ -719,9 +793,30 @@ class MinimalPluginContext<T extends Environment = Environment>
   implements RollupMinimalPluginContext
 {
   public environment: T
-  constructor(meta: PluginContextMeta, environment: T) {
-    super(meta, environment.logger)
+  constructor(
+    meta: PluginContextMeta,
+    environment: T,
+    onLog?: (level: LogLevel, log: RawLog) => void,
+    private _pluginName = '',
+    normalizeSourceLog = false,
+  ) {
+    super(
+      meta,
+      environment.logger,
+      onLog &&
+        ((level, rawLog) =>
+          onLog(
+            level,
+            normalizeSourceLog
+              ? () => normalizePluginLog(level, rawLog, _pluginName)
+              : rawLog,
+          )),
+    )
     this.environment = environment
+  }
+
+  override get pluginName(): string {
+    return this._pluginName
   }
 }
 
@@ -753,14 +848,18 @@ class PluginContext
   _resolveSkipCalls?: readonly SkipInformation[]
 
   override get pluginName(): string {
-    return this._plugin.name
+    return this._plugin?.name ?? ''
   }
 
   constructor(
     public _plugin: Plugin,
     public _container: EnvironmentPluginContainer,
   ) {
-    super(_container.minimalContext.meta, _container.environment)
+    super(
+      _container.minimalContext.meta,
+      _container.environment,
+      (level, log) => _container._onLog(level, log),
+    )
   }
 
   fs: RollupFsModule = fsModule
@@ -887,24 +986,18 @@ class PluginContext
   }
 
   override debug(log: string | RollupLog | (() => string | RollupLog)): void {
-    const err = this._formatLog(typeof log === 'function' ? log() : log)
-    super.debug(err)
+    super.debug(() => this._formatPluginLog('debug', log))
   }
 
   override info(log: string | RollupLog | (() => string | RollupLog)): void {
-    const err = this._formatLog(typeof log === 'function' ? log() : log)
-    super.info(err)
+    super.info(() => this._formatPluginLog('info', log))
   }
 
   override warn(
     log: string | RollupLog | (() => string | RollupLog),
     position?: number | { column: number; line: number },
   ): void {
-    const err = this._formatLog(
-      typeof log === 'function' ? log() : log,
-      position,
-    )
-    super.warn(err)
+    super.warn(() => this._formatPluginLog('warn', log, position))
   }
 
   override error(
@@ -914,6 +1007,20 @@ class PluginContext
     // error thrown here is caught by the transform middleware and passed on
     // the error middleware.
     throw this._formatLog(e, position)
+  }
+
+  private _formatPluginLog(
+    level: LogLevel,
+    rawLog: RawLog,
+    position?: number | { column: number; line: number },
+  ): RollupLog {
+    const log = typeof rawLog === 'function' ? rawLog() : rawLog
+    const hasPluginCode = typeof log !== 'string' && log.pluginCode != null
+    const formattedLog = this._formatLog(log, position)
+    if (!hasPluginCode && formattedLog.pluginCode === this._activeCode) {
+      delete formattedLog.pluginCode
+    }
+    return normalizePluginLog(level, formattedLog, this.pluginName)
   }
 
   private _formatLog<E extends RollupLog>(
