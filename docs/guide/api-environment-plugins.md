@@ -19,7 +19,7 @@ Plugins run on a shared pipeline, but their hooks fall into two categories depen
 
 Global hooks are called a single time, independent of the configured environments. They handle app-wide concerns such as resolving the config or setting up the dev and preview servers, so `this.environment` is not relevant to them. config resolution related hooks and server related hooks are global hooks.
 
-Per-environment hooks are called once for each environment, and expose the current environment through `this.environment` in their context. All [universal hooks](/guide/api-plugin#universal-hooks) are per-environment, as other Vite-specific hooks that handles modules.
+Per-environment hooks are called once for each environment, and expose the current environment through `this.environment` in their context. All [universal hooks](/guide/api-plugin#universal-hooks) are per-environment, as other Vite-specific hooks that handles modules. However, note that `buildStart` and `buildEnd` are only called for the client environment without [the `perEnvironmentStartEndDuringDev: true` flag](##per-environment-state-in-plugins).
 
 ## Accessing the Current Environment in Hooks
 
