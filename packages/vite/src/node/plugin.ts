@@ -1,7 +1,6 @@
 import type {
   CustomPluginOptions,
   ImportKind,
-  InternalModuleFormat,
   LoadResult,
   MinimalPluginContext,
   ModuleType,
@@ -174,20 +173,6 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
       }
     }
   >
-  /**
-   * TODO: implement in Rolldown. Add a type for now.
-   */
-  resolveFileUrl?: (
-    this: PluginContext,
-    options: {
-      chunkId: string
-      fileName: string
-      format: InternalModuleFormat
-      moduleId: string
-      referenceId: string
-      relativePath: string
-    },
-  ) => string | null | undefined
   /**
    * Opt-in this plugin into the shared plugins pipeline.
    * For backward-compatibility, plugins are re-recreated for each environment
