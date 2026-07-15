@@ -17,7 +17,7 @@ export const ROLLUP_HOOKS: RollupPluginHooks[] = [
   'augmentChunkHash',
   'outputOptions',
   // 'renderDynamicImport',
-  // 'resolveFileUrl',
+  'resolveFileUrl',
   // 'resolveImportMeta',
   'intro',
   'outro',
