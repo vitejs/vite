@@ -30,6 +30,14 @@
 
 <script type="module" src="./cjs-dynamic.js"></script>
 
+<h2>CommonJS dynamic import from format-ambiguous importer</h2>
+<div class="cjs-dynamic-importer-ambiguous"></div>
+<h2>CommonJS dynamic import from explicit CJS importer (package.json type)</h2>
+<div class="cjs-dynamic-importer-cjs"></div>
+
+<script type="module" src="./cjs-dynamic-importer-ambiguous/index.js"></script>
+<script type="module" src="./cjs-dynamic-importer-cjs/index.js"></script>
+
 <h2>Dedupe (dep in linked & optimized package)</h2>
 <div class="dedupe"></div>
 <script type="module" src="./dedupe.js"></script>

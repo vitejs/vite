@@ -143,9 +143,11 @@ console.log(msg)
 
 In Vite, since `\0` is not a permitted char in import URLs, a `\0{id}` virtual id ends up encoded as `/@id/__x00__{id}` during dev in the browser. The id is decoded back before entering the plugins pipeline, so this is not seen by plugin hooks code.
 
-## Universal Hooks
+## Rolldown Hooks
 
 During dev, the Vite dev server creates a plugin container that invokes [Rolldown Build Hooks](https://rolldown.rs/apis/plugin-api#build-hooks) the same way Rolldown does it.
+
+All rolldown hooks are [per-environment hooks](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks).
 
 The following hooks are called once on server start:
 
@@ -179,6 +181,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 - **Type:** `(config: UserConfig, env: { mode: 'build' | 'serve', command: string, isSsrBuild?: boolean, isPreview?: boolean }) => UserConfig | null | void`
 - **Kind:** `async`, `sequential`
+- **Scope:** [Global](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks)
 
   Modify Vite config before it's resolved. The hook receives the raw user config (CLI options merged with config file) and the current config env which exposes the `mode` and `command` being used. It can return a partial config object that will be deeply merged into existing config, or directly mutate the config (if the default merging cannot achieve the desired result).
 
@@ -216,6 +219,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 - **Type:** `(config: ResolvedConfig) => void | Promise<void>`
 - **Kind:** `async`, `parallel`
+- **Scope:** [Global](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks)
 
   Called after the Vite config is resolved. Use this hook to read and store the final resolved config. It is also useful when the plugin needs to do something different based on the command being run.
 
@@ -252,6 +256,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 - **Type:** `(server: ViteDevServer) => (() => void) | void | Promise<(() => void) | void>`
 - **Kind:** `async`, `sequential`
 - **See also:** [ViteDevServer](./api-javascript#vitedevserver)
+- **Scope:** [Global](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks)
 
   Hook for configuring the dev server. The most common use case is adding custom middlewares to the internal [connect](https://github.com/senchalabs/connect) app:
 
@@ -313,6 +318,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 - **Type:** `(server: PreviewServer) => (() => void) | void | Promise<(() => void) | void>`
 - **Kind:** `async`, `sequential`
 - **See also:** [PreviewServer](./api-javascript#previewserver)
+- **Scope:** [Global](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks)
 
   Same as [`configureServer`](/guide/api-plugin.html#configureserver) but for the preview server. Similarly to `configureServer`, the `configurePreviewServer` hook is called before other middlewares are installed. If you want to inject a middleware **after** other middlewares, you can return a function from `configurePreviewServer`, which will be called after internal middlewares are installed:
 
@@ -335,6 +341,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 - **Type:** `IndexHtmlTransformHook | { order?: 'pre' | 'post', handler: IndexHtmlTransformHook }`
 - **Kind:** `async`, `sequential`
+- **Scope:** [Per-environment](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks)
 
   Dedicated hook for transforming HTML entry point files such as `index.html`. The hook receives the current HTML string and a transform context. The context exposes the [`ViteDevServer`](./api-javascript#vitedevserver) instance during dev, and exposes the Rollup output bundle during build.
 
@@ -375,9 +382,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       originalUrl?: string
     },
   ) =>
-    | IndexHtmlTransformResult
-    | void
-    | Promise<IndexHtmlTransformResult | void>
+    IndexHtmlTransformResult | void | Promise<IndexHtmlTransformResult | void>
 
   type IndexHtmlTransformResult =
     | string
@@ -410,6 +415,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 - **Type:** `(ctx: HmrContext) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>`
 - **Kind:** `async`, `sequential`
 - **See also:** [HMR API](./api-hmr)
+- **Scope:** [Per-environment](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks)
 
   Perform custom HMR update handling. The hook receives a context object with the following signature:
 

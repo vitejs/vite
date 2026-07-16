@@ -163,7 +163,7 @@ export interface BuildEnvironmentOptions {
   /**
    * Override CSS minification specifically instead of defaulting to `build.minify`,
    * so you can configure minification for JS and CSS separately.
-   * @default 'lightningcss'
+   * @default 'lightningcss', but false if build.minify is disabled for client build
    */
   cssMinify?: boolean | 'lightningcss' | 'esbuild'
   /**
@@ -322,7 +322,9 @@ export interface LibraryOptions {
    */
   name?: string
   /**
-   * Output bundle formats
+   * Output bundle formats. Defaults to `['es', 'umd']` for a single entry, or
+   * `['es', 'cjs']` for multiple entries (`umd` and `iife` do not support
+   * multiple entries).
    * @default ['es', 'umd']
    */
   formats?: LibraryFormats[]

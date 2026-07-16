@@ -129,6 +129,13 @@ test('browser field', async () => {
   expect(await page.textContent('.browser')).toMatch('[success]')
 })
 
+// accessing a property of a `browser: false` module must not throw (#22022)
+test('access property of browser:false module', async () => {
+  expect(await page.textContent('.browser-field-false-access')).toMatch(
+    '[success]',
+  )
+})
+
 test('Resolve browser field even if module field exists', async () => {
   expect(await page.textContent('.browser-module1')).toMatch('[success]')
 })

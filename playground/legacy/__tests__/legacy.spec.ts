@@ -107,11 +107,10 @@ describe.runIf(isBuild)('build', () => {
     )
   })
 
-  test('should minify legacy chunks with terser', async () => {
-    // This is a ghetto heuristic, but terser output seems to reliably start
-    // with one of the following, and non-terser output (including unminified or
-    // esbuild-minified) does not!
-    const terserPattern = /^(?:!function|System.register)/
+  test('should minify legacy chunks', async () => {
+    // This is a ghetto heuristic, but Oxc output seems to reliably include
+    // this code
+    const terserPattern = /,function\(e,/
 
     expect(findAssetFile(/chunk-async-legacy/)).toMatch(terserPattern)
     expect(findAssetFile(/chunk-async(?!-legacy)/)).not.toMatch(terserPattern)
@@ -131,8 +130,8 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('includes structuredClone polyfill which is supported after core-js v3', () => {
-    expect(findAssetFile(/polyfills-legacy/)).toMatch('"structuredClone"')
-    expect(findAssetFile(/polyfills-[-\w]{8}\./)).toMatch('"structuredClone"')
+    expect(findAssetFile(/polyfills-legacy/)).toMatch('`structuredClone`')
+    expect(findAssetFile(/polyfills-[-\w]{8}\./)).toMatch('`structuredClone`')
   })
 
   test('should generate legacy sourcemap file', async () => {
