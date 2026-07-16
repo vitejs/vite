@@ -1226,6 +1226,12 @@ function isSingleDefaultExport(exports: readonly string[]) {
 
 const lockfileFormats = [
   {
+    path: 'node_modules/.pnpm/lock.yaml',
+    // Included in lockfile
+    checkPatchesDir: false,
+    manager: 'pnpm',
+  },
+  {
     path: 'node_modules/.package-lock.json',
     checkPatchesDir: 'patches',
     manager: 'npm',
@@ -1236,6 +1242,20 @@ const lockfileFormats = [
     checkPatchesDir: false,
     manager: 'yarn',
   },
+  {
+    path: 'bun.lock',
+    checkPatchesDir: 'patches',
+    manager: 'bun',
+  },
+  {
+    path: '.rush/temp/shrinkwrap-deps.json',
+    // Included in lockfile
+    checkPatchesDir: false,
+    manager: 'pnpm',
+  },
+
+  // discouraged package manager lockfiles
+  // or deprecated lockfiles
   {
     // Yarn v3+ PnP
     path: '.pnp.cjs',
@@ -1253,23 +1273,6 @@ const lockfileFormats = [
     path: 'node_modules/.yarn-integrity',
     checkPatchesDir: 'patches',
     manager: 'yarn',
-  },
-  {
-    path: 'node_modules/.pnpm/lock.yaml',
-    // Included in lockfile
-    checkPatchesDir: false,
-    manager: 'pnpm',
-  },
-  {
-    path: '.rush/temp/shrinkwrap-deps.json',
-    // Included in lockfile
-    checkPatchesDir: false,
-    manager: 'pnpm',
-  },
-  {
-    path: 'bun.lock',
-    checkPatchesDir: 'patches',
-    manager: 'bun',
   },
   {
     path: 'bun.lockb',
