@@ -145,9 +145,9 @@ In Vite, since `\0` is not a permitted char in import URLs, a `\0{id}` virtual i
 
 ## Universal Hooks
 
-All universal hooks are [per-environment hooks](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks).
-
 During dev, the Vite dev server creates a plugin container that invokes [Rolldown Build Hooks](https://rolldown.rs/apis/plugin-api#build-hooks) the same way Rolldown does it.
+
+All universal hooks are [per-environment hooks](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks).
 
 The following hooks are called once on server start:
 
