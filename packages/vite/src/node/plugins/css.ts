@@ -111,6 +111,20 @@ import { IIFE_BEGIN_RE, UMD_BEGIN_RE } from './oxc'
 const decoder = new TextDecoder()
 // const debug = createDebugger('vite:css')
 
+/**
+ * The shape of a PostCSS config file (e.g. `postcss.config.js`), re-exported
+ * from the `postcss-load-config` version that Vite uses to load it. Use it to
+ * write a type-safe PostCSS config:
+ *
+ * ```ts
+ * import type { PostcssUserConfig } from 'vite'
+ *
+ * const config: PostcssUserConfig = { plugins: [] }
+ * export default config
+ * ```
+ */
+export type { Config as PostcssUserConfig } from 'postcss-load-config'
+
 export interface CSSOptions {
   /**
    * Using lightningcss is an experimental option to handle CSS modules,
