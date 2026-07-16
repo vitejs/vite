@@ -1659,9 +1659,17 @@ async function compilePostCSS(
   let modules: Record<string, string> | undefined
 
   if (isModule) {
+    let generateScopedName = modulesOptions?.generateScopedName
+    if (typeof generateScopedName === 'string') {
+      const generate = (await importGenericNames()).default(generateScopedName)
+      generateScopedName = (name, filename) =>
+        generate(name, cleanUrl(filename))
+    }
+
     postcssPlugins.unshift(
       (await importPostcssModules()).default({
         ...modulesOptions,
+        generateScopedName,
         localsConvention: modulesOptions?.localsConvention,
         getJSON(
           cssFileName: string,
@@ -1846,6 +1854,7 @@ function createCachedImport<T>(imp: () => Promise<T>): () => T | Promise<T> {
   }
 }
 const importPostcssImport = createCachedImport(() => import('postcss-import'))
+const importGenericNames = createCachedImport(() => import('generic-names'))
 const importPostcssModules = createCachedImport(() => import('postcss-modules'))
 const importPostcss = createCachedImport(() => import('postcss'))
 

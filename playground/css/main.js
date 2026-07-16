@@ -21,6 +21,9 @@ import mod from './mod.module.css'
 document.querySelector('.modules').classList.add(mod['apply-color'])
 text('.modules-code', JSON.stringify(mod, null, 2))
 
+import inlineModWithQuery from './mod.module.css?inline'
+text('.modules-query-inline', inlineModWithQuery)
+
 import sassMod from './mod.module.scss'
 document.querySelector('.modules-sass').classList.add(sassMod['apply-color'])
 text('.modules-sass-code', JSON.stringify(sassMod, null, 2))
@@ -81,6 +84,8 @@ if (import.meta.hot) {
     list.add(newMod.applyColor)
     text('.modules-code', JSON.stringify(newMod.default, null, 2))
   })
+
+  import.meta.hot.accept('./mod.module.css?inline', () => {})
 
   import.meta.hot.accept('./mod.module.scss', (newMod) => {
     const list = document.querySelector('.modules-sass').classList

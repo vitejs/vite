@@ -341,6 +341,9 @@ importers:
       fresh-import:
         specifier: ^0.2.1
         version: 0.2.1
+      generic-names:
+        specifier: ^4.0.0
+        version: 4.0.0
       host-validation-middleware:
         specifier: ^0.1.4
         version: 0.1.4
