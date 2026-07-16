@@ -27,7 +27,8 @@ type HooksMissingInConstants = Exclude<
 
 export type cases = [
   // Ensure environment plugin hooks are superset of rollup plugin hooks
-  ExpectTrue<ExpectExtends<RolldownPlugin, Plugin>>,
+  // (`hotUpdate` intentionally diverges — see `Plugin` in plugin.ts)
+  ExpectTrue<ExpectExtends<Omit<RolldownPlugin, 'hotUpdate'>, Plugin>>,
 
   // Ensure all Rollup hooks have Vite's plugin context extension
   ExpectTrue<Equal<HooksMissingExtension, never>>,
