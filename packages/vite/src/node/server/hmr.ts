@@ -465,7 +465,9 @@ export async function handleHMRUpdate(
   }
 
   if (config.experimental.bundledDev) {
-    // TODO: support handleHotUpdate / hotUpdate
+    // The hooks run inside the rolldown dev engine instead (see
+    // `bundledDevHmr.ts`). The config, env, and client-dir handling above
+    // still runs from the chokidar watcher.
     return
   }
 
@@ -1143,7 +1145,7 @@ function error(pos: number) {
 // vitejs/vite#610 when hot-reloading Vue files, we read immediately on file
 // change event and sometimes this can be too early and get an empty buffer.
 // Poll until the file's modified time has changed before reading again.
-async function readModifiedFile(file: string): Promise<string> {
+export async function readModifiedFile(file: string): Promise<string> {
   const content = await fsp.readFile(file, 'utf-8')
   if (!content) {
     const mtime = (await fsp.stat(file)).mtimeMs
