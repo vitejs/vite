@@ -1,6 +1,14 @@
 import { setTimeout } from 'node:timers/promises'
 import { expect, test, onTestFinished } from 'vitest'
-import { addFile, editFile, isBuild, page, readFile, serverLogs } from '~utils'
+import {
+  addFile,
+  editFile,
+  isBuild,
+  page,
+  readFile,
+  serverLogs,
+  viteServer,
+} from '~utils'
 
 const assetUrl = /asset-[\w-]+\.png/
 
@@ -13,6 +21,8 @@ if (isBuild) {
 } else {
   // INITIAL -> BUNDLING -> BUNDLED
   test('show bundling in progress', async () => {
+    const resolvePromise =
+      viteServer.environments.client.pluginContainer.resolveId('/main.js')
     const reloadPromise = page.waitForEvent('load')
     await expect
       .poll(() => page.textContent('body'))
@@ -25,6 +35,11 @@ if (isBuild) {
       .poll(() => page.textContent('.worker-query'))
       .toBe('worker-query')
     await expect.poll(() => page.textContent('.worker-url')).toBe('worker-url')
+    await resolvePromise
+    const count = await page.evaluate(() =>
+      fetch('/__build-start-count').then((response) => response.text()),
+    )
+    expect(count).toBe('1')
   })
 
   // BUNDLED -> GENERATE_HMR_PATCH -> BUNDLING -> BUNDLE_ERROR -> BUNDLING -> BUNDLED

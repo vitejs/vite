@@ -207,7 +207,11 @@ export class BundledDev {
         debug?.('INITIAL: run error', e)
       },
     )
-    this.waitForInitialBuildFinish().then(() => {
+    const initialBuildPromise = this.waitForInitialBuildFinish()
+    // Rolldown owns the client plugin lifecycle in bundled dev. Normal Vite
+    // transforms must wait for it instead of starting the same plugins again.
+    this.environment.pluginContainer.setBuildStartPromise(initialBuildPromise)
+    initialBuildPromise.then(() => {
       if (this._closed) return
       debug?.('INITIAL: build done')
       this.environment.hot.send({ type: 'full-reload', path: '*' })

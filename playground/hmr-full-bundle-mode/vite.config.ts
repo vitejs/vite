@@ -8,8 +8,37 @@ export default defineConfig({
     // emit assets as files instead of inlining, for the new-asset HMR test
     assetsInlineLimit: 0,
   },
-  plugins: [waitBundleCompleteUntilAccess(), delayTransformComment()],
+  plugins: [
+    waitBundleCompleteUntilAccess(),
+    delayTransformComment(),
+    countClientBuildStarts(),
+  ],
 })
+
+function countClientBuildStarts(): Plugin {
+  let clientEnvironment: object | undefined
+  let count = 0
+
+  return {
+    name: 'count-client-build-starts',
+    buildStart() {
+      if (this.environment === clientEnvironment) {
+        count++
+      }
+    },
+    configureServer(server) {
+      clientEnvironment = server.environments.client
+      server.middlewares.use((req, res, next) => {
+        if (req.url !== '/__build-start-count') {
+          next()
+          return
+        }
+
+        res.end(String(count))
+      })
+    },
+  }
+}
 
 function waitBundleCompleteUntilAccess(): Plugin {
   let resolvers: PromiseWithResolvers<void>
