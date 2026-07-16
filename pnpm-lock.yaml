@@ -1212,6 +1212,10 @@ importers:
 
   playground/optimize-deps/added-in-entries: {}
 
+  playground/optimize-deps/cjs-dynamic-importer-ambiguous: {}
+
+  playground/optimize-deps/cjs-dynamic-importer-cjs: {}
+
   playground/optimize-deps/dep-alias-using-absolute-path:
     dependencies:
       '@vitejs/test-dep-lodash':
