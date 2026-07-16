@@ -1,3 +1,10 @@
+## <small>[8.2.1](https://github.com/vitejs/vite/compare/plugin-legacy@8.2.0...plugin-legacy@8.2.1) (2026-07-16)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#22921](https://github.com/vitejs/vite/issues/22921)) ([fef682d](https://github.com/vitejs/vite/commit/fef682d3f067d534a559faf6fd9baedda2e9f8f1))
+* **deps:** update rolldown-related dependencies ([#22922](https://github.com/vitejs/vite/issues/22922)) ([3c345e4](https://github.com/vitejs/vite/commit/3c345e475a5546a1cc6374682af89caebfe9c593))
+* **legacy:** don't use newer syntax when minifying polyfill chunks ([#22939](https://github.com/vitejs/vite/issues/22939)) ([c4df6ef](https://github.com/vitejs/vite/commit/c4df6ef9c3c0d796fb5f7968422ed14d528e3388))
+
 ## [8.2.0](https://github.com/vitejs/vite/compare/plugin-legacy@8.1.0...plugin-legacy@8.2.0) (2026-07-09)
 ### Features
 
