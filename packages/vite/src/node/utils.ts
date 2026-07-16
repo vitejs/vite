@@ -441,6 +441,26 @@ export function isFilePathESM(
   }
 }
 
+/**
+ * Whether the file's module format is explicitly determined as ESM or CJS by
+ * its extension or the nearest `package.json` `"type"` field, as opposed to
+ * being ambiguous.
+ */
+export function isFilePathFormatExplicit(
+  filePath: string,
+  packageCache?: PackageCache,
+): boolean {
+  if (/\.[mc][jt]s$/.test(filePath)) {
+    return true
+  }
+  try {
+    const pkg = findNearestPackageData(path.dirname(filePath), packageCache)
+    return pkg?.data.type === 'module' || pkg?.data.type === 'commonjs'
+  } catch {
+    return false
+  }
+}
+
 export const splitRE: RegExp = /\r?\n/g
 
 const range: number = 2
