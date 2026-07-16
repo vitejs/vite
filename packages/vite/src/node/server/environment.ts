@@ -136,9 +136,11 @@ export class DevEnvironment extends BaseEnvironment {
 
     this._pendingRequests = new Map()
 
-    this.moduleGraph = new EnvironmentModuleGraph(name, (url: string) =>
-      this.pluginContainer!.resolveId(url, undefined),
-    )
+    this.moduleGraph = this.bundledDev
+      ? this.bundledDev.moduleGraph
+      : new EnvironmentModuleGraph(name, (url: string) =>
+          this.pluginContainer!.resolveId(url, undefined),
+        )
 
     this._crawlEndFinder = setupOnCrawlEnd()
 
@@ -270,7 +272,10 @@ export class DevEnvironment extends BaseEnvironment {
    */
   async listen(server: ViteDevServer): Promise<void> {
     this.hot.listen()
-    await Promise.all([this.bundledDev?.listen(), this.depsOptimizer?.init()])
+    await Promise.all([
+      this.bundledDev?.listen(server),
+      this.depsOptimizer?.init(),
+    ])
     warmupFiles(server, this)
   }
 
