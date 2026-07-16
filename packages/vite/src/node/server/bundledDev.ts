@@ -10,8 +10,17 @@ import colors from 'picocolors'
 import getEtag from 'etag'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
 import { getHmrImplementation } from '../plugins/clientInjections'
-import { createDebugger, formatAndTruncateFileList } from '../utils'
+import {
+  asyncFlatten,
+  createDebugger,
+  formatAndTruncateFileList,
+} from '../utils'
+import type { ViteDevServer } from '..'
 import type { DevEnvironment } from './environment'
+import {
+  BundledDevHotUpdateAdapter,
+  BundledModuleGraph,
+} from './bundledDevHmr'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
 import { prepareError } from './middlewares/error'
 
@@ -89,12 +98,26 @@ export class BundledDev {
 
   memoryFiles: MemoryFiles = new MemoryFiles()
 
+  readonly moduleGraph: BundledModuleGraph
+
+  private hotUpdateAdapter: BundledDevHotUpdateAdapter
+
   constructor(private environment: DevEnvironment) {
     if (environment.name !== 'client') {
       throw new Error(
         'currently full bundle mode is only available for client environment',
       )
     }
+    this.moduleGraph = new BundledModuleGraph(
+      environment.name,
+      environment.config.root,
+      (url: string) => environment.pluginContainer!.resolveId(url, undefined),
+    )
+    this.hotUpdateAdapter = new BundledDevHotUpdateAdapter(
+      environment,
+      this.moduleGraph,
+      this,
+    )
   }
 
   private get devEngine(): DevEngine {
@@ -114,8 +137,9 @@ export class BundledDev {
     )
   }
 
-  async listen(): Promise<void> {
+  async listen(server: ViteDevServer): Promise<void> {
     this._closed = false
+    this.hotUpdateAdapter.setServer(server)
     debug?.('INITIAL: setup bundle options')
     const rolldownOptions = await this.getRolldownOptions()
     // NOTE: only single outputOptions is supported here
@@ -345,6 +369,11 @@ export class BundledDev {
     return result
   }
 
+  requestFullBuildReload(): void {
+    this.fullReloadPending = true
+    this.devEngine.triggerFullBuild()
+  }
+
   /**
    * Called by the serving middlewares when the response for a payload completed.
    * Only delivered payloads are recorded on the server's per-client ship map, so
@@ -412,6 +441,14 @@ export class BundledDev {
     // https://github.com/vitejs/vite/issues/21843
     rolldownOptions.optimization ??= {}
     rolldownOptions.optimization.inlineConst = false
+
+    // Run Vite's `hotUpdate` / `handleHotUpdate` plugin contracts on
+    // rolldown's dev-only `hotUpdate` hook — per-plugin wrappers, so plugin
+    // order is preserved by rolldown's driver.
+    const plugins = await asyncFlatten([rolldownOptions.plugins])
+    this.hotUpdateAdapter.wrapPlugins(plugins)
+    rolldownOptions.plugins = plugins
+
 
     // set filenames to make output paths predictable so that `renderChunk` hook does not need to be used
     if (Array.isArray(rolldownOptions.output)) {
