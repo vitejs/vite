@@ -1,3 +1,23 @@
+## <small>[8.1.5](https://github.com/vitejs/vite/compare/v8.1.4...v8.1.5) (2026-07-16)</small>
+### Bug Fixes
+
+* **bundled-dev:** avoid duplicated `buildEnd` ([#22931](https://github.com/vitejs/vite/issues/22931)) ([8100320](https://github.com/vitejs/vite/commit/810032097079be1a7da0e2b09ec9d92dd07ec13f))
+* **client:** overlay error message format align rolldown ([#22869](https://github.com/vitejs/vite/issues/22869)) ([5a72b87](https://github.com/vitejs/vite/commit/5a72b8780705b575026617e86b0b92dea63a56a5))
+* **deps:** update all non-major dependencies ([#22921](https://github.com/vitejs/vite/issues/22921)) ([fef682d](https://github.com/vitejs/vite/commit/fef682d3f067d534a559faf6fd9baedda2e9f8f1))
+* **deps:** update rolldown-related dependencies ([#22922](https://github.com/vitejs/vite/issues/22922)) ([3c345e4](https://github.com/vitejs/vite/commit/3c345e475a5546a1cc6374682af89caebfe9c593))
+* **module-runner:** don't crash stack-trace source mapping when globalThis.Buffer is absent ([#22945](https://github.com/vitejs/vite/issues/22945)) ([f8b38e3](https://github.com/vitejs/vite/commit/f8b38e316bcefbf29f762f90ee49c88cd52c43b5))
+* **optimizer:** respect importer module format for dynamic import interop with CJS deps ([#22951](https://github.com/vitejs/vite/issues/22951)) ([6c08c39](https://github.com/vitejs/vite/commit/6c08c39ac4fb5868d080a51ff976a44693fc56ab))
+* **ssr:** scope switch-case declarations to the switch, not the function ([#22893](https://github.com/vitejs/vite/issues/22893)) ([b59a73f](https://github.com/vitejs/vite/commit/b59a73f76f5557492d83d097bb33b3dd02f27d51))
+
+### Documentation
+
+* **build:** fix incorrect `@default` for build.cssMinify ([#22948](https://github.com/vitejs/vite/issues/22948)) ([c88c236](https://github.com/vitejs/vite/commit/c88c236186d8e2384653e382dd0960ca1ff5b24c))
+* **build:** fix incorrect `@default` for build.lib.formats ([#22911](https://github.com/vitejs/vite/issues/22911)) ([369ed60](https://github.com/vitejs/vite/commit/369ed609a4aace3aee4e4194a54990694aa4e7ac))
+
+### Tests
+
+* avoid scanner scanning all files under `__tests__` ([#22912](https://github.com/vitejs/vite/issues/22912)) ([c961cae](https://github.com/vitejs/vite/commit/c961cae2868cc1521457ec60583867f0440e6949))
+
 ## <small>[8.1.4](https://github.com/vitejs/vite/compare/v8.1.3...v8.1.4) (2026-07-09)</small>
 ### Features
 
