@@ -125,6 +125,32 @@ composes: bar from '@/css/bar.module.css';
     expect(result1.code).toBe(result2.code)
   })
 
+  test('custom generateScopedName uses the project root and ignores queries', async () => {
+    const root = path.join(dirname, 'css-modules-root')
+    const filename = path.join(root, 'foo.module.css')
+    const pattern = 'custom__[hash:base64:5]'
+    const { transform } = await createCssPluginTransform({
+      configFile: false,
+      root,
+      css: {
+        modules: {
+          generateScopedName: pattern,
+        },
+      },
+    })
+    const css = `\
+.foo {
+  color: red;
+}`
+    const result = await transform(css, filename)
+    const generate = (await import('generic-names')).default(pattern, {
+      context: root,
+    })
+
+    expect(result.code).toContain(`.${generate('foo', filename)}`)
+    expect((await transform(css, `${filename}?inline`)).code).toBe(result.code)
+  })
+
   test('custom generateScopedName with lightningcss', async () => {
     const { transform } = await createCssPluginTransform({
       configFile: false,

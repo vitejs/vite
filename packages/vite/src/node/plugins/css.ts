@@ -1661,7 +1661,12 @@ async function compilePostCSS(
   if (isModule) {
     let generateScopedName = modulesOptions?.generateScopedName
     if (typeof generateScopedName === 'string') {
-      const generate = (await importGenericNames()).default(generateScopedName)
+      const generate = (await importGenericNames()).default(
+        generateScopedName,
+        {
+          context: config.root,
+        },
+      )
       generateScopedName = (name, filename) =>
         generate(name, cleanUrl(filename))
     }
