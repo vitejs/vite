@@ -1043,11 +1043,13 @@ export function resolveServerUrls(
 
   const isAddressInfo = (x: any): x is AddressInfo => x?.address
   if (!isAddressInfo(address)) {
-    return { local: [], network: [] }
+    return { local: [], network: [], networkInterfaceNames: [] }
   }
 
   const local: string[] = []
   const network: string[] = []
+  // Interface name for each `network` URL, kept in the same order as `network`.
+  const networkInterfaceNames: (string | undefined)[] = []
   const protocol = options.https ? 'https' : 'http'
   const port = address.port
   const base =
@@ -1064,24 +1066,27 @@ export function resolveServerUrls(
       local.push(address)
     } else {
       network.push(address)
+      networkInterfaceNames.push(undefined)
     }
   } else {
-    Object.values(os.networkInterfaces())
-      .flatMap((nInterface) => nInterface ?? [])
-      .filter((detail) => detail.address && detail.family === 'IPv4')
-      .forEach((detail) => {
-        let host = detail.address.replace('127.0.0.1', hostname.name)
-        // ipv6 host
-        if (host.includes(':')) {
-          host = `[${host}]`
-        }
-        const url = `${protocol}://${host}:${port}${base}`
-        if (detail.address.includes('127.0.0.1')) {
-          local.push(url)
-        } else {
-          network.push(url)
-        }
-      })
+    Object.entries(os.networkInterfaces()).forEach(([name, nInterface]) => {
+      ;(nInterface ?? [])
+        .filter((detail) => detail.address && detail.family === 'IPv4')
+        .forEach((detail) => {
+          let host = detail.address.replace('127.0.0.1', hostname.name)
+          // ipv6 host
+          if (host.includes(':')) {
+            host = `[${host}]`
+          }
+          const url = `${protocol}://${host}:${port}${base}`
+          if (detail.address.includes('127.0.0.1')) {
+            local.push(url)
+          } else {
+            network.push(url)
+            networkInterfaceNames.push(name)
+          }
+        })
+    })
   }
 
   const hostnamesFromCert = extractHostnamesFromCerts(httpsOptions?.cert)
@@ -1094,7 +1099,7 @@ export function resolveServerUrls(
     )
   }
 
-  return { local, network }
+  return { local, network, networkInterfaceNames }
 }
 
 export function extractHostnamesFromSubjectAltName(
