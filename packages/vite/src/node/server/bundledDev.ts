@@ -64,6 +64,7 @@ export class MemoryFiles {
 export class BundledDev {
   private _devEngine!: DevEngine
   private initialBuildCompleted = false
+  private _closed = false
   private clients = new Clients()
   private invalidateCalledModules = new Map<
     NormalizedHotChannelClient,
@@ -98,6 +99,7 @@ export class BundledDev {
   }
 
   async listen(): Promise<void> {
+    this._closed = false
     debug?.('INITIAL: setup bundle options')
     const rolldownOptions = await this.getRolldownOptions()
     // NOTE: only single outputOptions is supported here
@@ -206,6 +208,7 @@ export class BundledDev {
       },
     )
     this.waitForInitialBuildFinish().then(() => {
+      if (this._closed) return
       debug?.('INITIAL: build done')
       this.environment.hot.send({ type: 'full-reload', path: '*' })
       this.initialBuildCompleted = true
@@ -213,11 +216,16 @@ export class BundledDev {
   }
 
   private async waitForInitialBuildFinish(): Promise<void> {
+    if (this._closed) return
     await this.devEngine.ensureCurrentBuildFinish()
+    if (this._closed) return
+
     let state = await this.devEngine.getBundleState()
     while (this.memoryFiles.size === 0 && !state.lastBuildErrored) {
       await setTimeout(10)
+      if (this._closed) return
       await this.devEngine.ensureCurrentBuildFinish()
+      if (this._closed) return
       state = await this.devEngine.getBundleState()
     }
   }
@@ -322,6 +330,7 @@ export class BundledDev {
   }
 
   async close(): Promise<void> {
+    this._closed = true
     this.memoryFiles.clear()
     await this._devEngine?.close()
     this.initialBuildCompleted = false

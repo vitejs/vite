@@ -79,6 +79,18 @@ test('dynamic default import from cjs with es-module-flag (cjs-dynamic-dep-cjs-w
     .toBe('ok')
 })
 
+test('dynamic import from format-ambiguous importer respects __esModule flag (cjs-dynamic-importer-ambiguous)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-importer-ambiguous'))
+    .toBe('ok')
+})
+
+test('dynamic import from explicit cjs importer uses node interop (cjs-dynamic-importer-cjs)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-importer-cjs'))
+    .toBe('ok')
+})
+
 test('dedupe', async () => {
   await expect.poll(() => page.textContent('.dedupe button')).toBe('count is 0')
   await page.click('.dedupe button')

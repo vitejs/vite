@@ -94,7 +94,7 @@ import { type DevEnvironment } from '..'
 import type { PackageCache } from '../packages'
 import { findNearestMainPackageData } from '../packages'
 import { nodeResolveWithVite } from '../nodeResolve'
-import { addToHTMLProxyTransformResult } from './html'
+import { addToHTMLProxyTransformResult, getImportMap } from './html'
 import {
   assetUrlRE,
   cssEntriesMap,
@@ -110,6 +110,20 @@ import { IIFE_BEGIN_RE, UMD_BEGIN_RE } from './oxc'
 
 const decoder = new TextDecoder()
 // const debug = createDebugger('vite:css')
+
+/**
+ * The shape of a PostCSS config file (e.g. `postcss.config.js`), re-exported
+ * from the `postcss-load-config` version that Vite uses to load it. Use it to
+ * write a type-safe PostCSS config:
+ *
+ * ```ts
+ * import type { PostcssUserConfig } from 'vite'
+ *
+ * const config: PostcssUserConfig = { plugins: [] }
+ * export default config
+ * ```
+ */
+export type { Config as PostcssUserConfig } from 'postcss-load-config'
 
 export interface CSSOptions {
   /**
@@ -1072,8 +1086,21 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           .map((pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName])
           .filter(Boolean)
 
+        let importMapReverseMapping: Record<string, string> | undefined
+        if (config.build.chunkImportMap) {
+          const importMap = getImportMap(bundle, config)!
+          importMapReverseMapping = Object.fromEntries(
+            Object.entries(importMap.mapping).map(([k, v]) => [v, k]),
+          )
+        }
+        const pureCssChunkNamesInCode = importMapReverseMapping
+          ? pureCssChunkNames.map(
+              (name) => importMapReverseMapping![name] ?? name,
+            )
+          : pureCssChunkNames
+
         const replaceEmptyChunk = getEmptyChunkReplacer(
-          pureCssChunkNames,
+          pureCssChunkNamesInCode,
           opts.format,
         )
 
@@ -1162,11 +1189,14 @@ export function injectInlinedCSS(
   } else if (format === 'es') {
     // legacy build
     if (code.startsWith('#!')) {
-      let secondLinePos = code.indexOf('\n')
-      if (secondLinePos === -1) {
-        secondLinePos = 0
+      // inject after the shebang line instead of into it
+      const newlinePos = code.indexOf('\n')
+      if (newlinePos === -1) {
+        // the shebang has no trailing newline, add one so it stays intact
+        s.append(`\n${injectCode}`)
+        return
       }
-      injectionPoint = secondLinePos
+      injectionPoint = newlinePos + 1
     } else {
       injectionPoint = 0
     }

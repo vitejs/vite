@@ -271,16 +271,16 @@ describe('mergeConfig', () => {
     expect(newTrue.environments.ssr.resolve.noExternal).toEqual(true)
   })
 
-  test('handles server.hmr.server', () => {
+  test('handles server.ws.server', () => {
     const httpServer = http.createServer()
 
-    const baseConfig = { server: { hmr: { server: httpServer } } }
-    const newConfig = { server: { hmr: { server: httpServer } } }
+    const baseConfig = { server: { ws: { server: httpServer } } }
+    const newConfig = { server: { ws: { server: httpServer } } }
 
     const mergedConfig = mergeConfig(baseConfig, newConfig)
 
     // Server instance should not be recreated
-    expect(mergedConfig.server.hmr.server).toBe(httpServer)
+    expect(mergedConfig.server.ws.server).toBe(httpServer)
   })
 
   test('handles server.allowedHosts', () => {

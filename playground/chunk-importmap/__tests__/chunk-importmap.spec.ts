@@ -35,6 +35,15 @@ test('dynamic css', async () => {
   await expect.poll(() => getColor('.dynamic')).toBe('red')
 })
 
+// a CSS-only module shared by multiple chunks becomes a pure CSS chunk that is
+// removed from the output. The import map must not keep referencing its removed
+// JS file, otherwise chunks importing it 404 and fail to execute
+// (https://github.com/vitejs/vite/issues/22740)
+test('shared pure css chunk', async () => {
+  await expect.poll(() => page.textContent('.shared-js')).toBe('shared-js: ok')
+  await expect.poll(() => getColor('.shared')).toBe('green')
+})
+
 test('worker', async () => {
   await expect.poll(() => page.textContent('.worker')).toBe('worker: pong')
 })

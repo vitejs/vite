@@ -1,3 +1,68 @@
+## <small>[8.1.5](https://github.com/vitejs/vite/compare/v8.1.4...v8.1.5) (2026-07-16)</small>
+### Bug Fixes
+
+* **bundled-dev:** avoid duplicated `buildEnd` ([#22931](https://github.com/vitejs/vite/issues/22931)) ([8100320](https://github.com/vitejs/vite/commit/810032097079be1a7da0e2b09ec9d92dd07ec13f))
+* **client:** overlay error message format align rolldown ([#22869](https://github.com/vitejs/vite/issues/22869)) ([5a72b87](https://github.com/vitejs/vite/commit/5a72b8780705b575026617e86b0b92dea63a56a5))
+* **deps:** update all non-major dependencies ([#22921](https://github.com/vitejs/vite/issues/22921)) ([fef682d](https://github.com/vitejs/vite/commit/fef682d3f067d534a559faf6fd9baedda2e9f8f1))
+* **deps:** update rolldown-related dependencies ([#22922](https://github.com/vitejs/vite/issues/22922)) ([3c345e4](https://github.com/vitejs/vite/commit/3c345e475a5546a1cc6374682af89caebfe9c593))
+* **module-runner:** don't crash stack-trace source mapping when globalThis.Buffer is absent ([#22945](https://github.com/vitejs/vite/issues/22945)) ([f8b38e3](https://github.com/vitejs/vite/commit/f8b38e316bcefbf29f762f90ee49c88cd52c43b5))
+* **optimizer:** respect importer module format for dynamic import interop with CJS deps ([#22951](https://github.com/vitejs/vite/issues/22951)) ([6c08c39](https://github.com/vitejs/vite/commit/6c08c39ac4fb5868d080a51ff976a44693fc56ab))
+* **ssr:** scope switch-case declarations to the switch, not the function ([#22893](https://github.com/vitejs/vite/issues/22893)) ([b59a73f](https://github.com/vitejs/vite/commit/b59a73f76f5557492d83d097bb33b3dd02f27d51))
+
+### Documentation
+
+* **build:** fix incorrect `@default` for build.cssMinify ([#22948](https://github.com/vitejs/vite/issues/22948)) ([c88c236](https://github.com/vitejs/vite/commit/c88c236186d8e2384653e382dd0960ca1ff5b24c))
+* **build:** fix incorrect `@default` for build.lib.formats ([#22911](https://github.com/vitejs/vite/issues/22911)) ([369ed60](https://github.com/vitejs/vite/commit/369ed609a4aace3aee4e4194a54990694aa4e7ac))
+
+### Tests
+
+* avoid scanner scanning all files under `__tests__` ([#22912](https://github.com/vitejs/vite/issues/22912)) ([c961cae](https://github.com/vitejs/vite/commit/c961cae2868cc1521457ec60583867f0440e6949))
+
+## <small>[8.1.4](https://github.com/vitejs/vite/compare/v8.1.3...v8.1.4) (2026-07-09)</small>
+### Features
+
+* **legacy:** prefer oxc as minifier (fix [#21973](https://github.com/vitejs/vite/issues/21973)) ([#22468](https://github.com/vitejs/vite/issues/22468)) ([ab5dafa](https://github.com/vitejs/vite/commit/ab5dafa8e66296ef201f615489fb57954bb740ce))
+
+### Bug Fixes
+
+* **build:** add workaround for building on stackblitz ([#22840](https://github.com/vitejs/vite/issues/22840)) ([575c32c](https://github.com/vitejs/vite/commit/575c32c29925c554f4ef4068738ab89c6878f615))
+* **build:** keep `import.meta.url` in preload function as-is ([#22839](https://github.com/vitejs/vite/issues/22839)) ([f1f90ed](https://github.com/vitejs/vite/commit/f1f90ed4742b3cf453428c7e581a6016a4d47321))
+* **deps:** update all non-major dependencies ([#22865](https://github.com/vitejs/vite/issues/22865)) ([d4295a9](https://github.com/vitejs/vite/commit/d4295a9ffce428c0e51892373e00c07fccc0498a))
+* **deps:** update rolldown-related dependencies ([#22866](https://github.com/vitejs/vite/issues/22866)) ([7cf07e4](https://github.com/vitejs/vite/commit/7cf07e4c5f7a6af276012e0c2ec06e08499e951e))
+* **html:** avoid backtracking in import-only check ([#22848](https://github.com/vitejs/vite/issues/22848)) ([b5868c0](https://github.com/vitejs/vite/commit/b5868c01a124d345664450aaebd677bfba964c05))
+* **optimizer:** avoid optimizer run for transform request before init ([#22852](https://github.com/vitejs/vite/issues/22852)) ([72a5e21](https://github.com/vitejs/vite/commit/72a5e2192506f51a5efd09c059815a5c43a9eacb))
+* **ssr:** align named export function call stacktrace column with Node ([#22829](https://github.com/vitejs/vite/issues/22829)) ([173a1b6](https://github.com/vitejs/vite/commit/173a1b648c321e0f836e5a94fc47c4fa9b081bfc))
+* strip pure CSS chunk imports when chunkImportMap is enabled ([#22841](https://github.com/vitejs/vite/issues/22841)) ([648bd04](https://github.com/vitejs/vite/commit/648bd04933093d0aac9565f21a49811437776886))
+
+### Documentation
+
+* fix incorrect `@default` for `server.cors` ([#22859](https://github.com/vitejs/vite/issues/22859)) ([70435b2](https://github.com/vitejs/vite/commit/70435b2551ee4fe3a0d55c8a3bb61b96f44d2763))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency postcss-modules to v9 ([#22867](https://github.com/vitejs/vite/issues/22867)) ([a9539d6](https://github.com/vitejs/vite/commit/a9539d69efc7a4ccf988bbf5da31c2b416ba990e))
+
+### Code Refactoring
+
+* eliminate ineffectiveDynamicImport warn ([#22876](https://github.com/vitejs/vite/issues/22876)) ([ea22fb3](https://github.com/vitejs/vite/commit/ea22fb352aad9a42c0a9d08f39d8a0bae8c111a5))
+
+### Tests
+
+* avoid warnings ([#22851](https://github.com/vitejs/vite/issues/22851)) ([af21ab6](https://github.com/vitejs/vite/commit/af21ab68adac3380dc9a854d2fe3f776654301cd))
+
+### Build System
+
+* remove the custom onLog function ([#22878](https://github.com/vitejs/vite/issues/22878)) ([2c4a217](https://github.com/vitejs/vite/commit/2c4a217a63dc0a7fcb10bc710a988f32b173f481))
+* replace deprecated `onwarn` with `onLog` ([#22741](https://github.com/vitejs/vite/issues/22741)) ([c581b55](https://github.com/vitejs/vite/commit/c581b5588cb8e94603d17bce2ff9fec8e8e0a3bf))
+
+## <small>[8.1.3](https://github.com/vitejs/vite/compare/v8.1.2...v8.1.3) (2026-07-02)</small>
+### Bug Fixes
+
+* **css:** inject inlined CSS after the shebang line ([#22717](https://github.com/vitejs/vite/issues/22717)) ([1534d36](https://github.com/vitejs/vite/commit/1534d362794e856cc718b123cb245e0efcf36b9a))
+* **deps:** bump `es-module-lexer` to 2.3.0 ([#22838](https://github.com/vitejs/vite/issues/22838)) ([7103c3a](https://github.com/vitejs/vite/commit/7103c3af795396e2ad87e1125eb3fc20d60d9430))
+* preload css for nested dynamic imports ([#22759](https://github.com/vitejs/vite/issues/22759)) ([2c53054](https://github.com/vitejs/vite/commit/2c530542da1c50b95b7f0cb17adf82f64ecf97f3))
+* **ssr:** correct stacktrace column position for first line ([#22828](https://github.com/vitejs/vite/issues/22828)) ([c4acd69](https://github.com/vitejs/vite/commit/c4acd6982a051fa10dbd7e3a37e00f0c467793b8))
+
 ## <small>[8.1.2](https://github.com/vitejs/vite/compare/v8.1.1...v8.1.2) (2026-06-30)</small>
 ### Bug Fixes
 

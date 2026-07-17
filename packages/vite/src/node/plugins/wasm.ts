@@ -12,7 +12,30 @@ const wasmHelperId = '\0vite/wasm-helper.js'
 const wasmInitRE = /(?<![?#].*)\.wasm\?init/
 const wasmDirectRE = /(?<![?#].*)\.wasm$/
 
+// Lower "instance" layer of a directly imported `.wasm` module that exports a
+// WebAssembly.Global. It owns the WebAssembly.Instance and exposes exports
+// verbatim (globals stay WebAssembly.Global objects), so that wasm-to-wasm
+// global imports receive the actual Global. The user-facing `.wasm` module is a
+// thin wrapper around this layer that unwraps globals for JS consumers.
+const wasmInstanceSuffix = '?vite-wasm-instance'
+const wasmInstanceRE = /[?&]vite-wasm-instance(?:&|$)/
+
 const wasmInitUrlRE: RegExp = /__VITE_WASM_INIT__([\w$]+)__/g
+
+// Enabled per spec
+const wasmCompileOptions = {
+  builtins: ['js-string'],
+  importedStringConstants: 'wasm:js/string-constants',
+}
+
+// Modules satisfied by the engine when the above proposals are enabled. They
+// must never surface as JS imports in the generated glue. The host Node running
+// `parseWasm` may not support these proposals yet (older versions), in which
+// case `WebAssembly.Module.imports` still reports them, so we filter explicitly.
+const wasmReservedModules = new Set<string>([
+  ...wasmCompileOptions.builtins.map((name) => `wasm:${name}`),
+  wasmCompileOptions.importedStringConstants,
+])
 
 const wasmHelper = async (opts = {}, url: string) => {
   let result
@@ -32,7 +55,7 @@ const wasmHelper = async (opts = {}, url: string) => {
         'Failed to decode base64-encoded data URL, Buffer and atob are not supported',
       )
     }
-    result = await WebAssembly.instantiate(bytes, opts)
+    result = await WebAssembly.instantiate(bytes, opts, wasmCompileOptions)
   } else {
     result = await instantiateFromUrl(url, opts)
   }
@@ -53,10 +76,10 @@ const instantiateFromUrl = async (url: string, opts?: WebAssembly.Imports) => {
     'instantiateStreaming' in WebAssembly &&
     contentType.startsWith('application/wasm')
   ) {
-    return WebAssembly.instantiateStreaming(response, opts)
+    return WebAssembly.instantiateStreaming(response, opts, wasmCompileOptions)
   } else {
     const buffer = await response.arrayBuffer()
-    return WebAssembly.instantiate(buffer, opts)
+    return WebAssembly.instantiate(buffer, opts, wasmCompileOptions)
   }
 }
 
@@ -69,7 +92,7 @@ const instantiateFromFile = async (
   const { readFile } = await import('node:fs/promises')
   const fileUrl = new URL(fileUrlString, /** #__KEEP__ */ import.meta.url)
   const buffer = await readFile(fileUrl)
-  return WebAssembly.instantiate(buffer, opts)
+  return WebAssembly.instantiate(buffer, opts, wasmCompileOptions)
 }
 
 const instantiateFromFileCode = instantiateFromFile.toString()
@@ -87,19 +110,43 @@ export const wasmHelperPlugin = (): Plugin => {
       },
 
       load: {
-        filter: { id: [exactRegex(wasmHelperId), wasmInitRE, wasmDirectRE] },
+        filter: {
+          id: [
+            exactRegex(wasmHelperId),
+            wasmInitRE,
+            wasmDirectRE,
+            wasmInstanceRE,
+          ],
+        },
         async handler(id) {
           const ssr = this.environment.config.consumer === 'server'
 
           if (id === wasmHelperId) {
             return `
+const wasmCompileOptions = ${JSON.stringify(wasmCompileOptions)}
 const instantiateFromUrl = ${ssr ? instantiateFromFileCode : instantiateFromUrlCode}
 export default ${wasmHelperCode}
 `
           }
 
           const isInit = wasmInitRE.test(id)
-          const cleanedId = id.split('?')[0]
+          const isInstance = wasmInstanceRE.test(id)
+          const cleanedId = isInstance ? cleanUrl(id) : id.split('?')[0]
+
+          // Direct .wasm import (WASM ESM Integration)
+          let wasmInfo: WasmInfo | undefined
+          if (!isInit) {
+            wasmInfo = await parseWasm(cleanedId)
+            // The user-facing module of a wasm that exports a global is a thin
+            // wrapper that re-exports the instance layer, unwrapping globals for JS.
+            if (!isInstance && wasmInfo.hasGlobalExport) {
+              return generateWrapperGlue(
+                wasmInfo,
+                cleanedId + wasmInstanceSuffix,
+              )
+            }
+          }
+
           let url = await fileToUrl(this, cleanedId, ssr)
           assetUrlRE.lastIndex = 0
           if (ssr && assetUrlRE.test(url)) {
@@ -113,9 +160,7 @@ export default ${wasmHelperCode}
   `
           }
 
-          // Direct .wasm import (WASM ESM Integration)
-          const wasmInfo = await parseWasm(cleanedId)
-          const glueCode = generateGlueCode(wasmInfo, {
+          const glueCode = generateInstanceGlue(wasmInfo!, {
             initWasm: '__vite__initWasm',
             wasmUrl: '__vite__wasmUrl',
           })
@@ -179,33 +224,41 @@ ${glueCode}
   })
 }
 
+interface WasmName {
+  name: string
+  isGlobal: boolean
+}
+
 interface WasmInfo {
   imports: {
     from: string
-    names: string[]
+    names: WasmName[]
   }[]
-  exports: string[]
+  exports: WasmName[]
+  hasGlobalExport: boolean
 }
 
 async function parseWasm(wasmFilePath: string): Promise<WasmInfo> {
   try {
     const wasmBinary = await fsp.readFile(wasmFilePath)
-    const wasmModule = await WebAssembly.compile(wasmBinary)
-    const importMap: Record<string, string[]> = Object.create(null)
+    const wasmModule = await WebAssembly.compile(wasmBinary, wasmCompileOptions)
+    const importMap = new Map<string, WasmName[]>()
     for (const item of WebAssembly.Module.imports(wasmModule)) {
-      importMap[item.module] ??= []
-      importMap[item.module].push(item.name)
+      if (wasmReservedModules.has(item.module)) continue
+      let names = importMap.get(item.module)
+      if (!names) importMap.set(item.module, (names = []))
+      names.push({ name: item.name, isGlobal: item.kind === 'global' })
     }
-    const imports = Object.entries(importMap).map(([from, names]) => ({
-      from,
-      names,
-    }))
+    const imports = [...importMap].map(([from, names]) => ({ from, names }))
 
-    const exports = WebAssembly.Module.exports(wasmModule).map(
-      (item) => item.name,
-    )
+    let hasGlobalExport = false
+    const exports = WebAssembly.Module.exports(wasmModule).map((item) => {
+      const isGlobal = item.kind === 'global'
+      if (isGlobal) hasGlobalExport = true
+      return { name: item.name, isGlobal }
+    })
 
-    return { imports, exports }
+    return { imports, exports, hasGlobalExport }
   } catch (e) {
     throw new Error(
       `Failed to parse WASM file "${wasmFilePath}": ${(e as Error).message}`,
@@ -214,25 +267,43 @@ async function parseWasm(wasmFilePath: string): Promise<WasmInfo> {
   }
 }
 
-function generateGlueCode(
+// Instantiates the wasm module and re-exports its exports verbatim. Globals stay
+// WebAssembly.Global objects so wasm-to-wasm global imports get the live cell.
+function generateInstanceGlue(
   wasmInfo: WasmInfo,
   names: { initWasm: string; wasmUrl: string },
 ): string {
-  const importStatements = wasmInfo.imports.map(({ from }, i) => {
-    return `import * as __vite__wasmImport_${i} from ${JSON.stringify(from)};`
-  })
-
+  const importStatements: string[] = []
   const importObject: SimpleObject = wasmInfo.imports.map(
     ({ from, names: importNames }, i) => {
-      return {
-        key: JSON.stringify(from),
-        value: importNames.map((name) => {
-          return {
+      const value: SimpleObject = []
+      const globals = importNames.filter((n) => n.isGlobal)
+      const others = importNames.filter((n) => !n.isGlobal)
+      if (others.length > 0) {
+        const ns = `__vite__wasmImport_${i}`
+        importStatements.push(`import * as ${ns} from ${JSON.stringify(from)};`)
+        for (const { name } of others) {
+          value.push({
             key: JSON.stringify(name),
-            value: `__vite__wasmImport_${i}[${JSON.stringify(name)}]`,
-          }
-        }),
+            value: `${ns}[${JSON.stringify(name)}]`,
+          })
+        }
       }
+      if (globals.length > 0) {
+        // Wasm global imports need the WebAssembly.Global object, so import them
+        // from the exporter's instance layer instead of its JS-unwrapped value.
+        const ns = `__vite__wasmImportInstance_${i}`
+        importStatements.push(
+          `import * as ${ns} from ${JSON.stringify(from + wasmInstanceSuffix)};`,
+        )
+        for (const { name } of globals) {
+          value.push({
+            key: JSON.stringify(name),
+            value: `${ns}[${JSON.stringify(name)}]`,
+          })
+        }
+      }
+      return { key: JSON.stringify(from), value }
     },
   )
 
@@ -244,7 +315,7 @@ function generateGlueCode(
 
   const exportStatements: string[] = []
   const nameMap = new Map<string, string>()
-  for (const [index, name] of wasmInfo.exports.entries()) {
+  for (const [index, { name }] of wasmInfo.exports.entries()) {
     if (isValidJsDeclareName(name)) {
       exportStatements.push(`  ${name},`)
     } else {
@@ -258,7 +329,7 @@ function generateGlueCode(
     exportStatements.unshift(`const {`)
     exportStatements.push(`} = __vite__wasmModule;`)
     exportStatements.push(`export {`)
-    for (const name of wasmInfo.exports) {
+    for (const { name } of wasmInfo.exports) {
       const localName = nameMap.get(name)
       if (localName) {
         exportStatements.push(`  ${localName} as ${JSON.stringify(name)},`)
@@ -273,6 +344,52 @@ function generateGlueCode(
   }
 
   return [...importStatements, initCode, ...exportStatements].join('\n')
+}
+
+// User-facing module of a wasm that exports a global. Re-exports the instance
+// layer and overrides each global with its unwrapped JS value.
+function generateWrapperGlue(wasmInfo: WasmInfo, instanceId: string): string {
+  const instanceIdLiteral = JSON.stringify(instanceId)
+  const lines = [`export * from ${instanceIdLiteral};`]
+
+  // `export *` skips `default`, so re-export it explicitly when present.
+  if (wasmInfo.exports.some((e) => e.name === 'default')) {
+    lines.push(`export { default } from ${instanceIdLiteral};`)
+  }
+
+  const imports: string[] = []
+  const bindings: string[] = []
+  const unwraps: string[] = []
+  const reExports: string[] = []
+  for (const [index, { name, isGlobal }] of wasmInfo.exports.entries()) {
+    if (!isGlobal || name === 'default') continue
+    const alias = `__vite__wasmGlobal_${index}`
+    imports.push(`${codegenModuleExportName(name)} as ${alias}`)
+    // Use the export name as the binding directly; only non-identifier names
+    // need a separate aliased local.
+    const binding = isValidJsDeclareName(name)
+      ? name
+      : `__vite__wasmGlobalValue_${index}`
+    bindings.push(binding)
+    // v128 globals throw in GetGlobalValue and have no JS value, so stay undefined.
+    unwraps.push(`try { ${binding} = ${alias}.value; } catch {}`)
+    reExports.push(
+      binding === name ? name : `${binding} as ${JSON.stringify(name)}`,
+    )
+  }
+
+  if (bindings.length > 0) {
+    lines.push(`import { ${imports.join(', ')} } from ${instanceIdLiteral};`)
+    lines.push(`let ${bindings.join(', ')};`)
+    lines.push(...unwraps)
+    lines.push(`export { ${reExports.join(', ')} };`)
+  }
+
+  return lines.join('\n')
+}
+
+function codegenModuleExportName(name: string): string {
+  return isValidJsDeclareName(name) ? name : JSON.stringify(name)
 }
 
 type SimpleObject = SimpleObjectKeyValue[]
