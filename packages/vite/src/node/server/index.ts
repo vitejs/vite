@@ -473,8 +473,6 @@ export interface ResolvedServerUrls {
    * URL is bound to, in the same order as `network`. An entry is `undefined`
    * when the interface name is not known, for example when an explicit `host`
    * is set.
-   *
-   * @experimental
    */
   networkInterfaceNames?: (string | undefined)[]
 }
