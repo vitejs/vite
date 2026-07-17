@@ -1,18 +1,12 @@
 import fsp from 'node:fs/promises'
-import MagicString from 'magic-string'
 import { exactRegex } from 'rolldown/filter'
-import type { RolldownMagicString } from 'rolldown'
-import { createToImportMetaURLBasedRelativeRuntime } from '../build'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
-import { cleanUrl } from '../../shared/utils'
-import { assetUrlRE, fileToUrl } from './asset'
+import { fileToUrl } from './asset'
 
 const wasmHelperId = '\0vite/wasm-helper.js'
 
 const wasmInitRE = /(?<![?#].*)\.wasm\?init/
 const wasmDirectRE = /(?<![?#].*)\.wasm$/
-
-const wasmInitUrlRE: RegExp = /__VITE_WASM_INIT__([\w$]+)__/g
 
 const wasmHelper = async (opts = {}, url: string) => {
   let result
@@ -75,7 +69,7 @@ const instantiateFromFile = async (
 const instantiateFromFileCode = instantiateFromFile.toString()
 
 export const wasmHelperPlugin = (): Plugin => {
-  return perEnvironmentPlugin('vite:wasm-helper', (env) => {
+  return perEnvironmentPlugin('vite:wasm-helper', () => {
     return {
       name: 'vite:wasm-helper',
 
@@ -100,22 +94,7 @@ export default ${wasmHelperCode}
 
           const isInit = wasmInitRE.test(id)
           const cleanedId = id.split('?')[0]
-          let urlExpr: string
-          if (ssr) {
-            // SSR resolves the wasm at runtime relative to `import.meta.url`
-            // as a `file://` URL, so it keeps the string token which is
-            // rewritten to `__VITE_WASM_INIT__` and resolved in `renderChunk`.
-            // TODO: we need a way to pass metadata for each `import.meta.ROLLDOWN_FILE_URL_<id>`
-            //       so that we can differentiate __VITE_ASSET__ and __VITE_WASM_INIT__
-            let url = await fileToUrl(this, cleanedId, 'string', true)
-            assetUrlRE.lastIndex = 0
-            if (assetUrlRE.test(url)) {
-              url = url.replace('__VITE_ASSET__', '__VITE_WASM_INIT__')
-            }
-            urlExpr = JSON.stringify(url)
-          } else {
-            urlExpr = await fileToUrl(this, cleanedId, 'js')
-          }
+          const urlExpr = await fileToUrl(this, cleanedId, 'js', ssr)
 
           if (isInit) {
             return `
@@ -138,54 +117,6 @@ ${glueCode}
 `
         },
       },
-
-      renderChunk:
-        env.config.consumer === 'server'
-          ? {
-              filter: { code: wasmInitUrlRE },
-              handler(code, chunk, opts, meta) {
-                const toRelativeRuntime =
-                  createToImportMetaURLBasedRelativeRuntime(
-                    opts.format,
-                    this.environment.config.isWorker,
-                  )
-
-                let match: RegExpExecArray | null
-                let s: RolldownMagicString | MagicString | undefined
-
-                wasmInitUrlRE.lastIndex = 0
-                while ((match = wasmInitUrlRE.exec(code))) {
-                  const [full, referenceId] = match
-                  const file = this.getFileName(referenceId)
-                  chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
-                  const { runtime } = toRelativeRuntime(file, chunk.fileName)
-
-                  s ??= meta.magicString ?? new MagicString(code)
-
-                  s.update(
-                    match.index,
-                    match.index + full.length,
-                    `"+${runtime}+"`,
-                  )
-                }
-
-                if (!s) return null
-
-                return meta.magicString
-                  ? {
-                      code: s as RolldownMagicString,
-                    }
-                  : {
-                      code: s.toString(),
-                      map: this.environment.config.build.sourcemap
-                        ? (s as MagicString).generateMap({
-                            hires: 'boundary',
-                          })
-                        : null,
-                    }
-              },
-            }
-          : undefined,
     }
   })
 }
