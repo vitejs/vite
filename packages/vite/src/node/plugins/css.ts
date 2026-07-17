@@ -1056,7 +1056,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
+      // With `cssCodeSplit: false`, CSS is emitted as a single stylesheet in the HTML,
+      // so this per-chunk import map handling is irrelevant.
       if (config.build.chunkImportMap && chunkCssReferences.size) {
+        // The import map hash identifies the JS chunk independently of its content.
+        // Since each chunk has at most one extracted CSS sidecar, we can reuse that
+        // stable identity with a `.css` extension while mapping it to the CSS content hash.
         const importMap = getImportMap(bundle, config)!
         const importMapReverseMapping = Object.fromEntries(
           Object.entries(importMap.mapping).map(([k, v]) => [v, k]),

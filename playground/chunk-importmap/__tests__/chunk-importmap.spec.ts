@@ -79,6 +79,10 @@ test.runIf(isBuild)('css uses a stable import map specifier', async () => {
   const redIndex = getIndexChunk(redBuild)
   const blueIndex = getIndexChunk(blueBuild)
 
+  // This is a correctness requirement, not only a cache optimization: hashed
+  // chunk filenames are cached as immutable. If the filename stayed the same
+  // while its code changed to reference a new CSS filename, cached JS could
+  // load stale CSS alongside newly mapped JS, breaking CSS module selectors.
   expect(redIndex.fileName).toBe(blueIndex.fileName)
   expect(redIndex.code).toBe(blueIndex.code)
 
