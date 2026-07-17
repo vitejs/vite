@@ -1659,9 +1659,24 @@ async function compilePostCSS(
   let modules: Record<string, string> | undefined
 
   if (isModule) {
+    let processedModulesOptions = { ...modulesOptions }
+    if (
+      modulesOptions &&
+      typeof modulesOptions.generateScopedName === 'string'
+    ) {
+      const genericNames = (await importGenericNames()).default
+      const generate = genericNames(modulesOptions.generateScopedName, {
+        context: config.root,
+      })
+      processedModulesOptions = {
+        ...modulesOptions,
+        generateScopedName: (name: string, filename: string) =>
+          generate(name, cleanUrl(filename)),
+      }
+    }
     postcssPlugins.unshift(
       (await importPostcssModules()).default({
-        ...modulesOptions,
+        ...processedModulesOptions,
         localsConvention: modulesOptions?.localsConvention,
         getJSON(
           cssFileName: string,
@@ -1848,6 +1863,7 @@ function createCachedImport<T>(imp: () => Promise<T>): () => T | Promise<T> {
 const importPostcssImport = createCachedImport(() => import('postcss-import'))
 const importPostcssModules = createCachedImport(() => import('postcss-modules'))
 const importPostcss = createCachedImport(() => import('postcss'))
+const importGenericNames = createCachedImport(() => import('generic-names'))
 
 const preprocessorWorkerControllerCache = new WeakMap<
   ResolvedConfig,

@@ -48,6 +48,18 @@ text(
 import inlineMod from './inline.module.css?inline'
 text('.modules-inline', inlineMod)
 
+import modInline from './mod.module.css?inline'
+const modInlineClass = modInline.match(
+  /\.(mod-module__apply-color___[\w-]{5})/,
+)?.[1]
+text(
+  '.css-module-hash-consistency',
+  JSON.stringify({
+    normal: mod['apply-color'],
+    inline: modInlineClass,
+  }),
+)
+
 import charset from './charset.css?inline'
 text('.charset-css', charset)
 
