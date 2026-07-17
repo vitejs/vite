@@ -26,7 +26,7 @@ const envConfig = defineConfig({
 })
 
 const clientConfig = defineConfig({
-  input: path.resolve(dirname, 'src/client/client.ts'),
+  input: path.resolve(dirname, 'src/client/clientEntry.ts'),
   platform: 'browser',
   transform: {
     target: 'es2020',
