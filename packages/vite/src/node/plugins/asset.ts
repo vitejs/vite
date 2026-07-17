@@ -1,6 +1,7 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
+import { randomBytes } from 'node:crypto'
 import { pathToFileURL } from 'node:url'
 import * as mrmime from 'mrmime'
 import type {
@@ -45,6 +46,12 @@ import type { PartialEnvironment } from '../baseEnvironment'
 
 // referenceId is base64url but replaces - with $
 export const assetUrlRE: RegExp = /__VITE_ASSET__([\w$]+)__/g
+
+interface FileUrlMetadata {
+  asFileUrl: boolean
+}
+
+const fileUrlMetadata = new WeakMap<Environment, Map<string, FileUrlMetadata>>()
 
 const jsSourceMapRE = /\.[cm]?js\.map$/
 
@@ -287,7 +294,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
     ...(config.command === 'build'
       ? {
-          resolveFileUrl({ fileName, chunkId, format }) {
+          resolveFileUrl({ fileName, chunkId, format, urlId }) {
             const { environment } = this
 
             let importedByChunk = importedAssetsFromFileUrl.get(environment)
@@ -306,6 +313,12 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
               format,
               environment.config.isWorker,
             )
+            const metadata = urlId
+              ? fileUrlMetadata.get(environment)?.get(urlId)
+              : undefined
+            if (metadata?.asFileUrl) {
+              return toRelativeRuntime(fileName, chunkId).runtime
+            }
             const replacement = toOutputFilePathInJS(
               environment,
               fileName,
@@ -411,7 +424,14 @@ export async function fileToUrl(
     const value = await fileToDevUrl(environment, id, asFileUrl)
     return formatBuiltAsset({ type: 'string', value }, format)
   } else {
-    return fileToBuiltUrl(pluginContext, id, format)
+    return fileToBuiltUrl(
+      pluginContext,
+      id,
+      format,
+      false,
+      undefined,
+      asFileUrl,
+    )
   }
 }
 
@@ -513,6 +533,7 @@ async function fileToBuiltUrl(
   format: AssetUrlFormat,
   skipPublicCheck = false,
   forceInline?: boolean,
+  asFileUrl = false,
 ): Promise<string> {
   const resolved = await resolveBuiltAsset(
     pluginContext,
@@ -520,17 +541,42 @@ async function fileToBuiltUrl(
     skipPublicCheck,
     forceInline,
   )
-  return formatBuiltAsset(resolved, format)
+  const urlId =
+    resolved.type === 'reference' && format === 'js' && asFileUrl
+      ? addFileUrlMetadata(pluginContext.environment, { asFileUrl })
+      : undefined
+  return formatBuiltAsset(resolved, format, urlId)
+}
+
+function addFileUrlMetadata(
+  environment: Environment,
+  metadata: FileUrlMetadata,
+): string {
+  let metadataMap = fileUrlMetadata.get(environment)
+  if (!metadataMap) {
+    metadataMap = new Map()
+    fileUrlMetadata.set(environment, metadataMap)
+  }
+
+  let urlId: string
+  do {
+    urlId = randomBytes(12).toString('hex')
+  } while (metadataMap.has(urlId))
+  metadataMap.set(urlId, metadata)
+  return urlId
 }
 
 /** Format a resolved asset as either a JS expression or a plain-text string. */
 function formatBuiltAsset(
   resolved: FileToBuiltUrlResult,
   format: AssetUrlFormat,
+  urlId?: string,
 ): string {
   if (resolved.type === 'reference') {
     if (format === 'js') {
-      const base = `import.meta.ROLLDOWN_FILE_URL_${resolved.referenceId}`
+      const base = urlId
+        ? `import.meta.ROLLDOWN_FILE_URL_${resolved.referenceId}_${urlId}`
+        : `import.meta.ROLLDOWN_FILE_URL_${resolved.referenceId}`
       return resolved.postfix
         ? `${base} + ${JSON.stringify(resolved.postfix)}`
         : base
