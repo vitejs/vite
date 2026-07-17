@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { defineConfig } from 'vite'
-import svgVirtualModulePlugin from './svgVirtualModulePlugin'
+import svgVirtualModulePlugin from './svgVirtualModulePlugin.ts'
 
 export default defineConfig({
   build: {

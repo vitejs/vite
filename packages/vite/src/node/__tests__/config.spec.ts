@@ -2,6 +2,7 @@ import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs'
+import { stripVTControlCharacters } from 'node:util'
 import { afterEach, assert, describe, expect, test, vi } from 'vitest'
 import type { InlineConfig, PluginOption } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
@@ -1370,6 +1371,144 @@ test('preTransformRequests', async () => {
 
 describe('loadConfigFromFile', () => {
   const fixtures = path.resolve(import.meta.dirname, './fixtures/config')
+
+  describe('native-incompatibility warnings', () => {
+    const compatRoot = path.resolve(fixtures, './native-compat')
+
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins
+    const supportsTypeStripping = !!process.features.typescript
+
+    const loadWithWarnings = async (
+      dir: string,
+      configFile = 'vite.config.js',
+    ) => {
+      const logger = createLogger('info')
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+      const root = path.resolve(compatRoot, dir)
+      await loadConfigFromFile(
+        {} as any,
+        path.resolve(root, configFile),
+        root,
+        undefined,
+        logger,
+        'bundle',
+      )
+      const messages = warn.mock.calls.map((c) =>
+        stripVTControlCharacters(c[0]),
+      )
+      warn.mockRestore()
+      return messages
+    }
+
+    test('warns on __dirname / __filename', async () => {
+      const messages = await loadWithWarnings('dirname')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - \`__dirname\` (vite.config.js:3). Use \`import.meta.dirname\` instead
+          - \`__filename\` (vite.config.js:4). Use \`import.meta.filename\` instead
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    // uses a `.ts` config with TypeScript-only syntax; skipped on Node
+    // versions without type stripping support
+    test.skipIf(!supportsTypeStripping)(
+      'warns on __dirname in a config using TypeScript syntax',
+      async () => {
+        const messages = await loadWithWarnings('ts-syntax', 'vite.config.ts')
+        expect(messages).toMatchInlineSnapshot(`
+          [
+            "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+            - \`__dirname\` (vite.config.ts:10). Use \`import.meta.dirname\` instead
+          Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+          ]
+        `)
+      },
+    )
+
+    test('warns on extension-less import', async () => {
+      const messages = await loadWithWarnings('extensionless')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - import "./helper" without a file extension (vite.config.js:1). Add the file extension
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    test('warns on directory-index import', async () => {
+      const messages = await loadWithWarnings('directory-index')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - import "./plugins" resolves to a directory index (vite.config.js:1). Import the index file directly
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    test('warns on JSON import without attributes', async () => {
+      const messages = await loadWithWarnings('json')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - JSON import "./data.json" without import attributes (vite.config.js:1). Add \`with { type: 'json' }\`
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    test('does not warn on JSON import with attributes', async () => {
+      expect(await loadWithWarnings('json-ok')).toHaveLength(0)
+    })
+
+    test('warns on an extension-less import that resolves to JSON', async () => {
+      const messages = await loadWithWarnings('json-extensionless')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - import "./foo" resolves to a JSON file (vite.config.js:1). Import it with a \`.json\` extension and \`with { type: 'json' }\`
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    test('does not warn on a native-compatible config', async () => {
+      expect(await loadWithWarnings('clean')).toHaveLength(0)
+    })
+
+    test('does not warn for a CJS config using __dirname', async () => {
+      expect(await loadWithWarnings('cjs', 'vite.config.cjs')).toHaveLength(0)
+    })
+
+    test('warns for an ESM file imported by a CJS config', async () => {
+      const messages = await loadWithWarnings(
+        'cjs-imports-esm',
+        'vite.config.cjs',
+      )
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - \`__dirname\` (esm-helper.mjs:1). Use \`import.meta.dirname\` instead
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    test('warns on ESM syntax in a config under a `type: commonjs` package', async () => {
+      const messages = await loadWithWarnings('esm-in-commonjs-pkg')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - ESM syntax in a file loaded as CommonJS (vite.config.js:1). Use a \`.mjs\` extension or set \`"type": "module"\` in the closest package.json
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+  })
 
   describe('load default files', () => {
     const root = path.resolve(fixtures, './loadConfigFromFile')
