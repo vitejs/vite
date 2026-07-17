@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
-import os from 'node:os'
-import { describe, expect, test, vi } from 'vitest'
+import os, { type NetworkInterfaceInfoIPv4 } from 'node:os'
+import { describe, expect, test, vi, onTestFinished } from 'vitest'
 import { fileURLToPath } from 'mlly'
 import {
   asyncFlatten,
@@ -1103,10 +1103,22 @@ describe('resolveServerUrls', () => {
     const networkInterfacesSpy = vi
       .spyOn(os, 'networkInterfaces')
       .mockReturnValue({
-        lo: [{ address: '127.0.0.1', family: 'IPv4' } as any],
-        eth0: [{ address: '192.168.1.10', family: 'IPv4' } as any],
-        wlan0: [{ address: '10.0.0.5', family: 'IPv4' } as any],
+        lo: [
+          { address: '127.0.0.1', family: 'IPv4' } as NetworkInterfaceInfoIPv4,
+        ],
+        eth0: [
+          {
+            address: '192.168.1.10',
+            family: 'IPv4',
+          } as NetworkInterfaceInfoIPv4,
+        ],
+        wlan0: [
+          { address: '10.0.0.5', family: 'IPv4' } as NetworkInterfaceInfoIPv4,
+        ],
       })
+    onTestFinished(() => {
+      networkInterfacesSpy.mockRestore()
+    })
 
     const result = resolveServerUrls(
       mockServer,
@@ -1120,12 +1132,10 @@ describe('resolveServerUrls', () => {
       'http://192.168.1.10:3000/',
       'http://10.0.0.5:3000/',
     ])
-    expect(result.networkInterfaceNames).toEqual(['eth0', 'wlan0'])
+    expect(result.networkInterfaceNames).toStrictEqual(['eth0', 'wlan0'])
     expect(result.networkInterfaceNames).toHaveLength(result.network.length)
     // The loopback interface is reported as a local URL, not a network one.
     expect(result.local).toContain('http://localhost:3000/')
-
-    networkInterfacesSpy.mockRestore()
   })
 
   test('uses an undefined interface name for an explicit network host', () => {
@@ -1139,7 +1149,7 @@ describe('resolveServerUrls', () => {
       { rawBase: '/' } as any,
     )
 
-    expect(result.network).toEqual(['http://example.com:3000/'])
-    expect(result.networkInterfaceNames).toEqual([undefined])
+    expect(result.network).toStrictEqual(['http://example.com:3000/'])
+    expect(result.networkInterfaceNames).toStrictEqual([undefined])
   })
 })

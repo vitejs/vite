@@ -3,12 +3,12 @@ import { describe, expect, test } from 'vitest'
 import { printServerUrls } from '../logger'
 import type { ResolvedServerUrls } from '../server'
 
-function collectServerUrls(urls: ResolvedServerUrls): string[] {
+function collectServerUrls(urls: ResolvedServerUrls): string {
   const messages: string[] = []
   printServerUrls(urls, undefined, (msg) =>
-    messages.push(stripVTControlCharacters(String(msg))),
+    messages.push(stripVTControlCharacters(msg)),
   )
-  return messages
+  return '\n' + messages.join('\n') + '\n'
 }
 
 describe('printServerUrls', () => {
@@ -18,10 +18,7 @@ describe('printServerUrls', () => {
       network: ['http://172.18.0.1:5173/', 'http://10.0.0.2:5173/'],
       networkInterfaceNames: ['eth0', 'wlan0'],
     })
-    expect(messages[0]).toContain('Local:')
-    expect(messages[1]).toContain('http://172.18.0.1:5173/')
-    expect(messages[1]).toMatch(/eth0$/)
-    expect(messages[2]).toMatch(/wlan0$/)
+    expect(messages).toMatchSnapshot()
   })
 
   test('aligns interface names into a column', () => {
@@ -30,7 +27,7 @@ describe('printServerUrls', () => {
       network: ['http://172.18.0.1:5173/', 'http://10.0.0.2:5173/'],
       networkInterfaceNames: ['eth0', 'wlan0'],
     })
-    expect(messages[0].indexOf('eth0')).toBe(messages[1].indexOf('wlan0'))
+    expect(messages).toMatchSnapshot()
   })
 
   test('truncates an over-long interface name', () => {
@@ -39,8 +36,7 @@ describe('printServerUrls', () => {
       network: ['http://10.0.0.2:5173/'],
       networkInterfaceNames: ['vEthernet (WSL (Hyper-V firewall))'],
     })
-    expect(messages[0]).toContain('vEthernet (WSL (Hyp…')
-    expect(messages[0]).not.toContain('firewall')
+    expect(messages).toMatchSnapshot()
   })
 
   test('omits the annotation when the interface name is unknown', () => {
@@ -49,9 +45,7 @@ describe('printServerUrls', () => {
       network: ['http://10.0.0.2:5173/'],
       networkInterfaceNames: [undefined],
     })
-    expect(messages[0].trimEnd()).toMatch(
-      /Network: http:\/\/10\.0\.0\.2:5173\/$/,
-    )
+    expect(messages).toMatchSnapshot()
   })
 
   test('works when networkInterfaceNames is absent', () => {
@@ -59,6 +53,6 @@ describe('printServerUrls', () => {
       local: [],
       network: ['http://10.0.0.2:5173/'],
     })
-    expect(messages[0]).toContain('http://10.0.0.2:5173/')
+    expect(messages).toMatchSnapshot()
   })
 })
