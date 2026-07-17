@@ -210,6 +210,12 @@ test('import optimize-excluded package that imports optimized-included package',
     .toBe('nested-include')
 })
 
+test('optimized dep importing non-hoisted excluded dep, from a shared chunk', async () => {
+  await expect
+    .poll(() => page.textContent('.excluded-not-hoisted'))
+    .toBe('*A* *B*')
+})
+
 test('import aliased package with colon', async () => {
   await expect.poll(() => page.textContent('.url')).toBe('vite.dev')
 })

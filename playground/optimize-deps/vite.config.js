@@ -30,6 +30,7 @@ export default defineConfig({
     ],
     exclude: [
       '@vitejs/test-nested-exclude',
+      '@vitejs/test-excluded-not-hoisted',
       '@vitejs/test-dep-non-optimized',
       '@vitejs/test-dep-esm-external',
       'stream',

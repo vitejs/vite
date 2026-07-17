@@ -227,6 +227,20 @@ export function rolldownDepPlugin(
           const kind = options.kind
 
           if (moduleListContains(external, id)) {
+            // resolve the excluded dep from its importer and keep the resolved
+            // path in the bundle, so that the import works even when the dep
+            // is not hoisted to the root node_modules (#21088). A bare id kept
+            // in the bundle would be resolved from node_modules/.vite/deps at
+            // serve time and only works for hoisted layouts.
+            if (importer) {
+              const resolved = await resolve(id, importer, kind)
+              if (resolved && path.isAbsolute(resolved)) {
+                return {
+                  id: resolved,
+                  external: 'absolute',
+                }
+              }
+            }
             return {
               id: id,
               external: 'absolute',
@@ -409,10 +423,8 @@ export function rolldownCjsExternalPlugin(
             id: cjsExternalFacadeNamespace + id,
           }
         }
-        return {
-          id,
-          external: 'absolute',
-        }
+        // fall through to vite:dep-pre-bundle which resolves the excluded
+        // dep from its importer (#21088)
       },
     },
     load: {
