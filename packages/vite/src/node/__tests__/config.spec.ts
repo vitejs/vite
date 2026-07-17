@@ -1566,7 +1566,7 @@ describe('loadConfigFromFile', () => {
       }
     })
 
-    test.skip('uses node_modules/.vite when node_modules exists without package.json', async () => {
+    test('uses node_modules/.vite when node_modules exists without package.json', async () => {
       const tempDir = path.join(tmpBase, 'with-node-modules')
       const nodeModulesDir = path.join(tempDir, 'node_modules')
       fs.mkdirSync(nodeModulesDir, { recursive: true })
@@ -1574,18 +1574,20 @@ describe('loadConfigFromFile', () => {
       const config = await resolveConfig({ root: tempDir }, 'serve')
 
       expect(config.cacheDir).toBe(
-        normalizePath(path.resolve(tempDir, 'node_modules/.vite')),
+        normalizePath(
+          path.resolve(fs.realpathSync(tempDir), 'node_modules/.vite'),
+        ),
       )
     })
 
-    test.skip('uses .vite when neither package.json nor node_modules exist', async () => {
+    test('uses .vite when neither package.json nor node_modules exist', async () => {
       const tempDir = path.join(tmpBase, 'empty')
       fs.mkdirSync(tempDir, { recursive: true })
 
       const config = await resolveConfig({ root: tempDir }, 'serve')
 
       expect(config.cacheDir).toBe(
-        normalizePath(path.resolve(tempDir, '.vite')),
+        normalizePath(path.resolve(fs.realpathSync(tempDir), '.vite')),
       )
     })
   })
