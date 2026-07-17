@@ -38,9 +38,9 @@ export function createHMRHandlerForRunner(
         const { triggeredBy } = payload
         const clearEntrypointUrls = triggeredBy
           ? getModulesEntrypoints(
-            runner,
-            getModulesByFile(runner, slash(triggeredBy)),
-          )
+              runner,
+              getModulesByFile(runner, slash(triggeredBy)),
+            )
           : findAllEntrypoints(runner)
 
         if (!clearEntrypointUrls.size) break
