@@ -103,6 +103,7 @@ import {
   publicAssetUrlRE,
   publicFileToBuiltUrl,
   renderAssetUrlInJS,
+  toOutputFilePathInJSForBundledDev,
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
 import { getChunkOriginalFileName } from './manifest'
@@ -326,6 +327,65 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     })
   }
 
+  // Shared CSS URL resolver for use in load and transform hooks
+  function createCssUrlResolver(pluginContext: {
+    environment: any
+    [key: string]: any
+  }): CssUrlResolver {
+    const { environment } = pluginContext
+    const resolveUrl = (url: string, importer?: string) =>
+      idResolver(environment, url, importer)
+
+    return async (url, importer) => {
+      const decodedUrl = decodeURI(url)
+      if (checkPublicFile(decodedUrl, config)) {
+        if (encodePublicUrlsInCSS(config)) {
+          return [publicFileToBuiltUrl(decodedUrl, config), undefined]
+        } else {
+          const base = joinUrlSegments(config.server.origin ?? '', config.base)
+          return [joinUrlSegments(base, decodedUrl), undefined]
+        }
+      }
+      const [resolvedId, fragment] = decodedUrl.split('#')
+      let resolved = await resolveUrl(resolvedId, importer)
+      if (resolved) {
+        if (fragment) resolved += '#' + fragment
+        let url = await fileToUrl(pluginContext as any, resolved)
+        if (
+          !url.startsWith('data:') &&
+          pluginContext.environment.mode === 'dev'
+        ) {
+          const mod = [
+            ...(pluginContext.environment.moduleGraph.getModulesByFile(
+              resolved,
+            ) ?? []),
+          ].find((mod) => mod.type === 'asset')
+          if (mod?.lastHMRTimestamp) {
+            url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+          }
+        }
+        return [url, cleanUrl(resolved)]
+      }
+      if (config.command === 'build') {
+        const isExternal = config.build.rolldownOptions.external
+          ? resolveUserExternal(
+              config.build.rolldownOptions.external,
+              decodedUrl,
+              resolvedId,
+              false,
+            )
+          : false
+
+        if (!isExternal) {
+          config.logger.warnOnce(
+            `\n${decodedUrl} referenced in ${resolvedId} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
+          )
+        }
+      }
+      return [url, undefined]
+    }
+  }
+
   return {
     name: 'vite:css',
 
@@ -353,7 +413,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       filter: {
         id: CSS_LANGS_RE,
       },
-      handler(id) {
+      async handler(id) {
         if (urlRE.test(id)) {
           if (isModuleCSSRequest(id)) {
             throw new Error(
@@ -364,7 +424,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           }
 
           // *.css?url
-          // in dev, it's handled by assets plugin.
           if (isBuild) {
             id = injectQuery(removeUrlQuery(id), 'transform-only')
             return (
@@ -373,6 +432,39 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
                 'hex',
               )}__"`
             )
+          }
+
+          // In bundledDev mode, CSS ?url needs its url() references transformed
+          // before being emitted as an asset, since there is no follow-up
+          // transform request from the browser (unlike normal dev mode).
+          if (config.experimental.bundledDev) {
+            const cleanId = cleanUrl(removeUrlQuery(id))
+            const raw = await fsp.readFile(cleanId, 'utf-8')
+            const urlResolver = createCssUrlResolver(this)
+            const { code: transformed } = await compileCSS(
+              this.environment,
+              id,
+              raw,
+              preprocessorWorkerController!,
+              urlResolver,
+            )
+            const referenceId = this.emitFile({
+              type: 'asset',
+              name: path.basename(cleanId),
+              originalFileName: normalizePath(
+                path.relative(config.root, cleanId),
+              ),
+              source: transformed,
+            })
+            const filename = this.getFileName(referenceId)
+            const url = toOutputFilePathInJSForBundledDev(
+              this.environment,
+              filename,
+            )
+            return {
+              code: `export default ${JSON.stringify(encodeURIPath(url))}`,
+              moduleType: 'js',
+            }
           }
         }
       },
@@ -386,58 +478,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       },
       async handler(raw, id) {
         const { environment } = this
-        const resolveUrl = (url: string, importer?: string) =>
-          idResolver(environment, url, importer)
-
-        const urlResolver: CssUrlResolver = async (url, importer) => {
-          const decodedUrl = decodeURI(url)
-          if (checkPublicFile(decodedUrl, config)) {
-            if (encodePublicUrlsInCSS(config)) {
-              return [publicFileToBuiltUrl(decodedUrl, config), undefined]
-            } else {
-              const base = joinUrlSegments(
-                config.server.origin ?? '',
-                config.base,
-              )
-              return [joinUrlSegments(base, decodedUrl), undefined]
-            }
-          }
-          const [id, fragment] = decodedUrl.split('#')
-          let resolved = await resolveUrl(id, importer)
-          if (resolved) {
-            if (fragment) resolved += '#' + fragment
-            let url = await fileToUrl(this, resolved)
-            // Inherit HMR timestamp if this asset was invalidated
-            if (!url.startsWith('data:') && this.environment.mode === 'dev') {
-              const mod = [
-                ...(this.environment.moduleGraph.getModulesByFile(resolved) ??
-                  []),
-              ].find((mod) => mod.type === 'asset')
-              if (mod?.lastHMRTimestamp) {
-                url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
-              }
-            }
-            return [url, cleanUrl(resolved)]
-          }
-          if (config.command === 'build') {
-            const isExternal = config.build.rolldownOptions.external
-              ? resolveUserExternal(
-                  config.build.rolldownOptions.external,
-                  decodedUrl, // use URL as id since id could not be resolved
-                  id,
-                  false,
-                )
-              : false
-
-            if (!isExternal) {
-              // #9800 If we cannot resolve the css url, leave a warning.
-              config.logger.warnOnce(
-                `\n${decodedUrl} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
-              )
-            }
-          }
-          return [url, undefined]
-        }
+        const urlResolver = createCssUrlResolver(this)
 
         const {
           code: css,
