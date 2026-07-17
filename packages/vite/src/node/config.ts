@@ -45,6 +45,7 @@ import {
   DEFAULT_SERVER_MAIN_FIELDS,
   ENV_ENTRY,
   FS_PREFIX,
+  OPTIMIZABLE_ENTRY_RE,
 } from './constants'
 import { resolveEnvironmentPlugins } from './plugin'
 import type {
@@ -2546,7 +2547,7 @@ async function bundleConfigFile(
       {
         name: 'inject-file-scope-variables',
         transform: {
-          filter: { id: /\.[cm]?[jt]s$/ },
+          filter: { id: OPTIMIZABLE_ENTRY_RE },
           handler(code, id) {
             let injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(path.dirname(id))};` +

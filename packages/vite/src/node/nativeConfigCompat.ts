@@ -217,7 +217,7 @@ export function createNativeConfigCompatPlugin(
   return {
     name: 'vite:native-config-compat-check',
     transform: {
-      filter: { id: /\.[cm]?[jt]sx?$/ },
+      filter: { id: jsTsExtRE },
       async handler(code, id) {
         const isESM =
           typeof process.versions.deno === 'string' || isFilePathESM(id)
