@@ -392,7 +392,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           let resolved = await resolveUrl(id, importer)
           if (resolved) {
             if (fragment) resolved += '#' + fragment
-            let url = await fileToUrl(this, resolved)
+            let url = await fileToUrl(this, resolved, 'string')
             // Inherit HMR timestamp if this asset was invalidated
             if (!url.startsWith('data:') && this.environment.mode === 'dev') {
               const mod = [

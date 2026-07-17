@@ -100,16 +100,27 @@ export default ${wasmHelperCode}
 
           const isInit = wasmInitRE.test(id)
           const cleanedId = id.split('?')[0]
-          let url = await fileToUrl(this, cleanedId, ssr)
-          assetUrlRE.lastIndex = 0
-          if (ssr && assetUrlRE.test(url)) {
-            url = url.replace('__VITE_ASSET__', '__VITE_WASM_INIT__')
+          let urlExpr: string
+          if (ssr) {
+            // SSR resolves the wasm at runtime relative to `import.meta.url`
+            // as a `file://` URL, so it keeps the string token which is
+            // rewritten to `__VITE_WASM_INIT__` and resolved in `renderChunk`.
+            // TODO: we need a way to pass metadata for each `import.meta.ROLLDOWN_FILE_URL_<id>`
+            //       so that we can differentiate __VITE_ASSET__ and __VITE_WASM_INIT__
+            let url = await fileToUrl(this, cleanedId, 'string', true)
+            assetUrlRE.lastIndex = 0
+            if (assetUrlRE.test(url)) {
+              url = url.replace('__VITE_ASSET__', '__VITE_WASM_INIT__')
+            }
+            urlExpr = JSON.stringify(url)
+          } else {
+            urlExpr = await fileToUrl(this, cleanedId, 'js')
           }
 
           if (isInit) {
             return `
   import initWasm from "${wasmHelperId}"
-  export default opts => initWasm(opts, ${JSON.stringify(url)})
+  export default opts => initWasm(opts, ${urlExpr})
   `
           }
 
@@ -122,7 +133,7 @@ export default ${wasmHelperCode}
 
           return `
 import __vite__initWasm from "${wasmHelperId}"
-const __vite__wasmUrl = ${JSON.stringify(url)}
+const __vite__wasmUrl = ${urlExpr}
 ${glueCode}
 `
         },
