@@ -1983,7 +1983,9 @@ describe('loadConfigFromFile', () => {
       const config = await resolveConfig({ root: tempDir }, 'serve')
 
       expect(config.cacheDir).toBe(
-        normalizePath(path.resolve(tempDir, 'node_modules/.vite')),
+        normalizePath(
+          path.resolve(fs.realpathSync.native(tempDir), 'node_modules/.vite'),
+        ),
       )
     })
 
@@ -1994,7 +1996,7 @@ describe('loadConfigFromFile', () => {
       const config = await resolveConfig({ root: tempDir }, 'serve')
 
       expect(config.cacheDir).toBe(
-        normalizePath(path.resolve(tempDir, '.vite')),
+        normalizePath(path.resolve(fs.realpathSync.native(tempDir), '.vite')),
       )
     })
   })
