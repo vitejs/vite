@@ -288,7 +288,7 @@ You can deploy your Vite app as a Static Site on [Render](https://render.com/).
 
 5. Click **Create Static Site**. Your app should be deployed at `https://<PROJECTNAME>.onrender.com/`.
 
-By default, any new commit pushed to the specified branch will automatically trigger a new deployment. [Auto-Deploy](https://render.com/docs/deploys#toggling-auto-deploy-for-a-service) can be configured in the project settings.
+By default, any new commit pushed to the specified branch will automatically trigger a new deployment. [Auto-Deploy](https://render.com/docs/deploys#configuring-auto-deploys) can be configured in the project settings.
 
 You can also add a [custom domain](https://render.com/docs/custom-domains) to your project.
 
