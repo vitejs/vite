@@ -15,12 +15,14 @@ import colors from 'picocolors'
 import picomatch from 'picomatch'
 import { freshImport } from 'fresh-import'
 import {
+  type InputOption,
   type NormalizedOutputOptions,
   type OutputChunk,
   type PluginContextMeta,
   type RolldownOptions,
   rolldown,
 } from 'rolldown'
+import { isDynamicPattern } from 'tinyglobby'
 import type {
   DevToolsConfig,
   ResolvedDevToolsConfig,
@@ -285,6 +287,12 @@ type ResolvedAllResolveOptions = Required<ResolveOptions> & { alias: Alias[] }
 
 export interface SharedEnvironmentOptions {
   /**
+   * Entry points of the application.
+   *
+   * Paths are resolved relative to the project root.
+   */
+  input?: InputOption
+  /**
    * Define global variable replacements.
    * Entries will be defined on `window` during dev and replaced during build.
    */
@@ -334,6 +342,7 @@ export interface EnvironmentOptions extends SharedEnvironmentOptions {
 export type ResolvedResolveOptions = Required<ResolveOptions>
 
 export type ResolvedEnvironmentOptions = {
+  input?: InputOption
   define?: Record<string, any>
   resolve: ResolvedResolveOptions
   consumer: 'client' | 'server'
@@ -905,6 +914,45 @@ const configDefaults = Object.freeze({
   appType: 'spa',
 } satisfies UserConfig)
 
+function resolveInput(
+  input: InputOption | undefined,
+  root: string,
+): InputOption | undefined {
+  if (input === undefined) {
+    return undefined
+  }
+  if (typeof input === 'string') {
+    const unescapedInput = unescapeGlobCharacters(input)
+    return normalizePath(path.resolve(root, unescapedInput))
+  }
+  if (Array.isArray(input)) {
+    return input.map((inp) => {
+      const unescapedInput = unescapeGlobCharacters(inp)
+      return normalizePath(path.resolve(root, unescapedInput))
+    })
+  }
+  const resolved: Record<string, string> = {}
+  for (const key in input) {
+    const unescapedInput = unescapeGlobCharacters(input[key])
+    resolved[key] = normalizePath(path.resolve(root, unescapedInput))
+  }
+  return resolved
+}
+
+const escapedGlobCharactersRE = /\\([*?[\]{}()!+@|])/g
+
+function unescapeGlobCharacters(value: string): string {
+  if (isDynamicPattern(value)) {
+    // so that it could later be changed to accept globs without a breaking change
+    throw new Error(
+      `\`input\` cannot contain glob characters. They are reserved, ` +
+        `so the ${JSON.stringify(value)} is not allowed. Please escape them with a backslash (\\)`,
+    )
+  }
+  // unescape glob characters
+  return value.replace(escapedGlobCharactersRE, '$1')
+}
+
 export function resolveDevEnvironmentOptions(
   dev: DevEnvironmentOptions | undefined,
   environmentName: string | undefined,
@@ -939,6 +987,7 @@ function resolveEnvironmentOptions(
   options: EnvironmentOptions,
   alias: Alias[],
   preserveSymlinks: boolean,
+  root: string,
   forceOptimizeDeps: boolean | undefined,
   logger: Logger,
   environmentName: string,
@@ -986,6 +1035,7 @@ function resolveEnvironmentOptions(
     isSsrTargetWebworkerEnvironment,
   )
   return {
+    input: resolveInput(options.input, root),
     define: options.define,
     resolve,
     keepProcessEnv:
@@ -1010,6 +1060,7 @@ function resolveEnvironmentOptions(
       logger,
       consumer,
       isBundled && !isBuild,
+      options.input,
       isSsrTargetWebworkerEnvironment,
     ),
     isBundled,
@@ -1612,6 +1663,7 @@ export async function resolveConfig(
   // Some top level options only apply to the client environment
   const defaultClientEnvironmentOptions: UserConfig = {
     ...defaultEnvironmentOptions,
+    input: config.input,
     resolve: config.resolve, // inherit everything including mainFields and conditions
     optimizeDeps: config.optimizeDeps,
   }
@@ -1662,6 +1714,7 @@ export async function resolveConfig(
       config.environments[environmentName],
       resolvedDefaultResolve.alias,
       resolvedDefaultResolve.preserveSymlinks,
+      resolvedRoot,
       inlineConfig.forceOptimizeDeps,
       logger,
       environmentName,
@@ -1691,6 +1744,7 @@ export async function resolveConfig(
     logger,
     undefined,
     isBundledDev,
+    config.input,
   )
 
   // Backward compatibility: merge config.environments.ssr back into config.ssr
@@ -2042,6 +2096,7 @@ export async function resolveConfig(
 
     ssr,
 
+    input: resolveInput(config.input, resolvedRoot),
     optimizeDeps: backwardCompatibleOptimizeDeps,
     resolve: resolvedDefaultResolve,
     dev: resolvedDevEnvironmentOptions,
