@@ -277,8 +277,9 @@ if (isBuild) {
   test('editing a worker-only module without accept reloads the page', async () => {
     const original = readFile('worker-plain-dep.js')
     onTestFinished(async () => {
+      // the restore edit itself makes the page client reload; a manual
+      // `page.reload()` here would race the rebuild and lose the update
       addFile('worker-plain-dep.js', original)
-      await page.reload()
       await expect
         .poll(() => page.textContent('.worker-plain'))
         .toBe('worker-plain')
