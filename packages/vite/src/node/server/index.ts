@@ -556,8 +556,12 @@ export async function _createServer(
           ...config.configFileDependencies,
           ...getEnvFilesForMode(config.mode, config.envDir),
           // Watch the public directory explicitly because it might be outside
-          // of the root directory.
-          ...(publicDir && publicFiles ? [publicDir] : []),
+          // of the root directory. Skip it if it doesn't exist: chokidar
+          // stops watching the subtree containing a watched path that does
+          // not exist (https://github.com/paulmillr/chokidar/issues/1470)
+          ...(publicDir && publicFiles && fs.existsSync(publicDir)
+            ? [publicDir]
+            : []),
         ],
 
         resolvedWatchOptions,
