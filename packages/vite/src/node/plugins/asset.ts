@@ -56,7 +56,7 @@ export const inlineRE: RegExp = /[?&]inline\b/
  * - `string`: a URL usable as-is (an inlined `data:` URL, a
  *   `__VITE_PUBLIC_ASSET__` token, or a bundled-dev output URL).
  * - `reference`: an emitted file referenced by its `referenceId`, to be turned
- *   into `import.meta.ROLLUP_FILE_URL_<referenceId>` (JS) or a `__VITE_ASSET__`
+ *   into `import.meta.ROLLDOWN_FILE_URL_<referenceId>` (JS) or a `__VITE_ASSET__`
  *   token (CSS/HTML). The `postfix` is the query/hash appended after the URL.
  */
 type FileToBuiltUrlResult =
@@ -74,7 +74,7 @@ const assetCache = new WeakMap<Environment, Map<string, FileToBuiltUrlResult>>()
 
 /**
  * Emitted asset file names referenced from each chunk (keyed by preliminary
- * chunk name) via `import.meta.ROLLUP_FILE_URL_<referenceId>`.
+ * chunk name) via `import.meta.ROLLDOWN_FILE_URL_<referenceId>`.
  */
 const importedAssetsFromFileUrl = new WeakMap<
   Environment,
@@ -528,7 +528,7 @@ function formatBuiltAsset(
 ): string {
   if (resolved.type === 'reference') {
     if (format === 'js') {
-      const base = `import.meta.ROLLUP_FILE_URL_${resolved.referenceId}`
+      const base = `import.meta.ROLLDOWN_FILE_URL_${resolved.referenceId}`
       return resolved.postfix
         ? `${base} + ${JSON.stringify(resolved.postfix)}`
         : base
