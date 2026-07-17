@@ -69,6 +69,7 @@ describe('the dev server', () => {
     expect(urls).toStrictEqual({
       local: ['http://localhost:5013/'],
       network: [],
+      networkInterfaceNames: [],
     })
   })
 })
