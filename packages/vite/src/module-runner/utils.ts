@@ -4,8 +4,13 @@ import { isWindows } from '../shared/utils'
 const textDecoder = new TextDecoder()
 
 export const decodeBase64: (base64: string) => string = (() => {
-  if (typeof Buffer === 'function' && typeof Buffer.from === 'function') {
-    return (base64: string) => Buffer.from(base64, 'base64').toString('utf-8')
+  // Capture the binding at module load: realms may legitimately delete
+  // `globalThis.Buffer` afterwards (e.g. browser-parity tests), and this
+  // decoder runs lazily while preparing stack traces
+  const capturedBuffer = typeof Buffer === 'function' ? Buffer : undefined
+  if (capturedBuffer && typeof capturedBuffer.from === 'function') {
+    return (base64: string) =>
+      capturedBuffer.from(base64, 'base64').toString('utf-8')
   }
 
   return (base64: string) =>
