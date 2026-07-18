@@ -16,3 +16,8 @@
 :root[data-theme='light'][data-variant='vite'] {
   --color-brand: #6b1eb9;
 }
+
+/* Balance KH Teka Mono's x-height with the surrounding body text. */
+.vp-doc :not(pre, h1, h2, h3, h4, h5, h6) > code {
+  font-size-adjust: 0.52;
+}
