@@ -169,6 +169,36 @@ kbd {
   border-color: rgb(54, 57, 64);
   border-image: initial;
 }
+
+.copy-button {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--dim);
+  border-radius: 4px;
+  color: var(--dim);
+  font-family: var(--monospace);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.copy-button:hover {
+  color: var(--window-color);
+  border-color: var(--window-color);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.copy-button:active {
+  transform: translateY(1px);
+}
+
+.copy-button.copied {
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
 `
 
 // Error Template
@@ -188,6 +218,7 @@ const createTemplate = () =>
       h('pre', { class: 'file', part: 'file' }),
       h('pre', { class: 'frame', part: 'frame' }),
       h('pre', { class: 'stack', part: 'stack' }),
+      h('button', { class: 'copy-button', part: 'copy-button' }, 'Copy Error'),
       h(
         'div',
         { class: 'tip', part: 'tip' },
@@ -246,6 +277,32 @@ export class ErrorOverlay extends HTMLElement {
 
     this.root.querySelector('.window')!.addEventListener('click', (e) => {
       e.stopPropagation()
+    })
+
+    const copyBtn = this.root.querySelector('.copy-button')!
+    copyBtn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      const copyText = [
+        err.plugin ? `[plugin:${err.plugin}]` : '',
+        message.trim(),
+        err.loc
+          ? `${file}:${err.loc.line}:${err.loc.column}`
+          : err.id
+            ? file
+            : '',
+        hasFrame ? err.frame!.trim() : '',
+        err.stack || '',
+      ]
+        .filter(Boolean)
+        .join('\n\n')
+      navigator.clipboard.writeText(copyText)
+
+      copyBtn.textContent = 'Copied!'
+      copyBtn.classList.add('copied')
+      setTimeout(() => {
+        copyBtn.textContent = 'Copy Error'
+        copyBtn.classList.remove('copied')
+      }, 2000)
     })
 
     this.addEventListener('click', () => {
