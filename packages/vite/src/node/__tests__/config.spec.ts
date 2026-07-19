@@ -1778,6 +1778,12 @@ describe('loadConfigFromFile', () => {
         ]
       `)
     })
+
+    test('does not warn for a .mts config under a type: commonjs package', async () => {
+      expect(
+        await loadWithWarnings('mts-config', 'vite.config.mts'),
+      ).toHaveLength(0)
+    })
   })
 
   describe('load default files', () => {
