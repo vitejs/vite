@@ -2095,7 +2095,7 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
 
   return {
     postcssPlugin: 'vite-url-rewrite',
-    Once(root) {
+    OnceExit(root) {
       const promises: Promise<void>[] = []
       root.walkDecls((declaration) => {
         const importer = declaration.source?.input.file
