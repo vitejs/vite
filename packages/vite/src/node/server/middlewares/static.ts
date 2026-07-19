@@ -82,12 +82,14 @@ export function servePublicMiddleware(
   publicFiles?: Set<string>,
 ): Connect.NextHandleFunction {
   const dir = server.config.publicDir
-  const serve = sirv(dir, {
-    ...sirvOptions({
-      config: server.config,
-      getHeaders: () => server.config.server.headers,
-      disableFsServeCheck: true,
-    }),
+  const options = sirvOptions({
+    config: server.config,
+    getHeaders: () => server.config.server.headers,
+    disableFsServeCheck: true,
+  })
+  const serve = sirv(dir, options)
+  const serveIndex = sirv(dir, {
+    ...options,
     extensions: ['html'],
   })
 
@@ -124,7 +126,8 @@ export function servePublicMiddleware(
     ) {
       return next()
     }
-    serve(req, res, next)
+    const serveFile = filePath.endsWith('/') ? serveIndex : serve
+    serveFile(req, res, next)
   }
 }
 
