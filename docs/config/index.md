@@ -127,3 +127,48 @@ export default defineConfig(({ mode }) => {
   }
 })
 ```
+
+## Debugging the Config File in VS Code
+
+For the most reliable debugging experience, use the native config loader when starting Vite:
+
+```bash
+vite --configLoader native
+```
+
+The native loader executes the original config file directly, so breakpoints in the config file and in plugin hooks such as `transform` map to the original source. It requires a runtime that supports the syntax used by your config file, such as Node.js 22.18+ for TypeScript files.
+
+When using the default `--configLoader bundle`, Vite generates an inline source map and writes the bundled config to `node_modules/.vite-temp` before loading it. If you need to use the bundled loader, add the temporary directory to the source map locations used by the VS Code JavaScript Debug Terminal:
+
+```json
+{
+  "debug.javascript.terminalOptions": {
+    "resolveSourceMapLocations": [
+      "${workspaceFolder}/**",
+      "!**/node_modules/**",
+      "**/node_modules/.vite-temp/**"
+    ]
+  }
+}
+```
+
+This setting only allows the debugger to look for source maps in `.vite-temp`; it does not replace the native loader and may not make breakpoints resolve in every VS Code launch configuration.
+
+If you start Vite from the Run and Debug view instead of a JavaScript Debug Terminal, put `resolveSourceMapLocations` in the launch configuration:
+
+```json
+{
+  "type": "node",
+  "request": "launch",
+  "name": "Vite",
+  "runtimeExecutable": "pnpm",
+  "runtimeArgs": ["exec", "vite", "--configLoader", "bundle"],
+  "console": "integratedTerminal",
+  "sourceMaps": true,
+  "resolveSourceMapLocations": [
+    "${workspaceFolder}/**",
+    "!**/node_modules/**",
+    "**/node_modules/.vite-temp/**"
+  ]
+}
+```
