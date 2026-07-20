@@ -138,7 +138,7 @@ vite --configLoader native
 
 The native loader executes the original config file directly, so breakpoints in the config file and in plugin hooks such as `transform` map to the original source. It requires a runtime that supports the syntax used by your config file, such as Node.js 22.18+ for TypeScript files.
 
-When using the default `--configLoader bundle`, Vite generates an inline source map and writes the bundled config to `node_modules/.vite-temp` before loading it. If you need to use the bundled loader, add the temporary directory to the source map locations used by the VS Code JavaScript Debug Terminal:
+When using `--configLoader bundle` (the current default, though `native` is planned to become the default in a future major version), Vite generates an inline source map and writes the bundled config to `node_modules/.vite-temp` before loading it. If you need to use the bundled loader, add the temporary directory to the source map locations used by the VS Code JavaScript Debug Terminal:
 
 ```json
 {
@@ -152,23 +152,28 @@ When using the default `--configLoader bundle`, Vite generates an inline source 
 }
 ```
 
-This setting only allows the debugger to look for source maps in `.vite-temp`; it does not replace the native loader and may not make breakpoints resolve in every VS Code launch configuration.
+This setting only applies to the JavaScript Debug Terminal; it does not affect launch configurations started from the Run and Debug view.
 
 If you start Vite from the Run and Debug view instead of a JavaScript Debug Terminal, put `resolveSourceMapLocations` in the launch configuration:
 
 ```json
 {
-  "type": "node",
-  "request": "launch",
-  "name": "Vite",
-  "runtimeExecutable": "pnpm",
-  "runtimeArgs": ["exec", "vite", "--configLoader", "bundle"],
-  "console": "integratedTerminal",
-  "sourceMaps": true,
-  "resolveSourceMapLocations": [
-    "${workspaceFolder}/**",
-    "!**/node_modules/**",
-    "**/node_modules/.vite-temp/**"
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Vite",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["exec", "vite", "--configLoader", "bundle"],
+      "console": "integratedTerminal",
+      "sourceMaps": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**",
+        "**/node_modules/.vite-temp/**"
+      ]
+    }
   ]
 }
 ```
