@@ -5,6 +5,7 @@ import { performance } from 'node:perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
 import { VERSION } from './constants'
+import { createBuilder } from './build'
 import type { BuildEnvironmentOptions } from './build'
 import type { ServerOptions } from './server'
 import type { CLIShortcut } from './shortcuts'
@@ -346,7 +347,6 @@ cli
       options: BuildEnvironmentOptions & BuilderCLIOptions & GlobalCLIOptions,
     ) => {
       filterDuplicateOptions(options)
-      const { createBuilder } = await import('./build')
 
       const buildOptions: BuildEnvironmentOptions = cleanGlobalCLIOptions(
         cleanBuilderCLIOptions(options),

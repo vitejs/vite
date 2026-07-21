@@ -27,11 +27,11 @@ export default {
 }
 ```
 
-Terser must be installed because plugin-legacy uses Terser for minification.
-
-```sh
-npm add -D terser
-```
+> Terser must be installed for minification when using Vite versions older than 8.1.4 or when [`build.minify`](https://vite.dev/config/build-options#build-minify) is explicitly set to `terser`.
+>
+> ```sh
+> npm add -D terser
+> ```
 
 ## Options
 
@@ -108,9 +108,7 @@ npm add -D terser
   export default {
     plugins: [
       legacy({
-        modernPolyfills: [
-          /* ... */
-        ],
+        modernPolyfills: [/* ... */],
         renderLegacyChunks: false,
       }),
     ],

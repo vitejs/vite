@@ -34,6 +34,22 @@ Specifying this in config will override the default mode for **both serve and bu
 
 See [Env Variables and Modes](/guide/env-and-mode) for more details.
 
+## input <NonInheritBadge />
+
+- **Type:** `string | string[] | { [entryAlias: string]: string }`
+
+Entry points of your application, resolved relative to the project root. This works as the default value for [`build.rolldownOptions.input`](/config/build-options#build-rolldownoptions), [`build.lib.entry`](/config/build-options#build-lib), [`build.ssr`](/config/build-options#build-ssr) (if `true`), and [`optimizeDeps.entries`](/config/dep-optimization-options#optimizedeps-entries) when those are not set explicitly.
+
+This is useful when your application does not use an `index.html` entry, so you only need to declare the entry once instead of repeating it across the options above.
+
+```js twoslash [vite.config.js]
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  input: 'src/main.ts',
+})
+```
+
 ## define
 
 - **Type:** `Record<string, any>`
@@ -282,8 +298,7 @@ export default defineConfig({
     globalModulePaths?: RegExp[]
     exportGlobals?: boolean
     generateScopedName?:
-      | string
-      | ((name: string, filename: string, css: string) => string)
+      string | ((name: string, filename: string, css: string) => string)
     hashPrefix?: string
     /**
      * default: undefined

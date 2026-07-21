@@ -36,7 +36,7 @@ If your plugin is only going to work for a particular framework, its name should
 - `vite-plugin-react-` prefix for React Plugins
 - `vite-plugin-svelte-` prefix for Svelte Plugins
 
-See also [Virtual Modules Convention](#virtual-modules-convention).
+See also [Virtual Modules Convention](https://rolldown.rs/apis/plugin-api#virtual-modules).
 
 ## Plugins Config
 
@@ -106,11 +106,7 @@ export default function myPlugin() {
 
 ### Importing a Virtual File
 
-See the example in the [next section](#virtual-modules-convention).
-
-## Virtual Modules Convention
-
-Virtual modules are a useful scheme that allows you to pass build time information to the source files using normal ESM import syntax.
+Virtual modules allow you to pass build time information to the source files using normal ESM import syntax. See [Virtual Modules Convention](https://rolldown.rs/apis/plugin-api#virtual-modules) for the full convention.
 
 ```js
 import { exactRegex } from '@rolldown/pluginutils'
@@ -145,13 +141,13 @@ import { msg } from 'virtual:my-module'
 console.log(msg)
 ```
 
-Virtual modules in Vite (and Rolldown / Rollup) are prefixed with `virtual:` for the user-facing path by convention. If possible the plugin name should be used as a namespace to avoid collisions with other plugins in the ecosystem. For example, a `vite-plugin-posts` could ask users to import a `virtual:posts` or `virtual:posts/helpers` virtual modules to get build time information. Internally, plugins that use virtual modules should prefix the module ID with `\0` while resolving the id, a convention from the rollup ecosystem. This prevents other plugins from trying to process the id (like node resolution), and core features like sourcemaps can use this info to differentiate between virtual modules and regular files. `\0` is not a permitted char in import URLs so we have to replace them during import analysis. A `\0{id}` virtual id ends up encoded as `/@id/__x00__{id}` during dev in the browser. The id will be decoded back before entering the plugins pipeline, so this is not seen by plugins hooks code.
+In Vite, since `\0` is not a permitted char in import URLs, a `\0{id}` virtual id ends up encoded as `/@id/__x00__{id}` during dev in the browser. The id is decoded back before entering the plugins pipeline, so this is not seen by plugin hooks code.
 
-Note that modules directly derived from a real file, as in the case of a script module in a Single File Component (like a .vue or .svelte SFC) don't need to follow this convention. SFCs generally generate a set of submodules when processed but the code in these can be mapped back to the filesystem. Using `\0` for these submodules would prevent sourcemaps from working correctly.
-
-## Universal Hooks
+## Rolldown Hooks
 
 During dev, the Vite dev server creates a plugin container that invokes [Rolldown Build Hooks](https://rolldown.rs/apis/plugin-api#build-hooks) the same way Rolldown does it.
+
+All rolldown hooks are [per-environment hooks](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks).
 
 The following hooks are called once on server start:
 
@@ -185,6 +181,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 - **Type:** `(config: UserConfig, env: { mode: 'build' | 'serve', command: string, isSsrBuild?: boolean, isPreview?: boolean }) => UserConfig | null | void`
 - **Kind:** `async`, `sequential`
+- **Scope:** [Global](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks)
 
   Modify Vite config before it's resolved. The hook receives the raw user config (CLI options merged with config file) and the current config env which exposes the `mode` and `command` being used. It can return a partial config object that will be deeply merged into existing config, or directly mutate the config (if the default merging cannot achieve the desired result).
 
@@ -222,6 +219,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 - **Type:** `(config: ResolvedConfig) => void | Promise<void>`
 - **Kind:** `async`, `parallel`
+- **Scope:** [Global](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks)
 
   Called after the Vite config is resolved. Use this hook to read and store the final resolved config. It is also useful when the plugin needs to do something different based on the command being run.
 
@@ -258,6 +256,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 - **Type:** `(server: ViteDevServer) => (() => void) | void | Promise<(() => void) | void>`
 - **Kind:** `async`, `sequential`
 - **See also:** [ViteDevServer](./api-javascript#vitedevserver)
+- **Scope:** [Global](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks)
 
   Hook for configuring the dev server. The most common use case is adding custom middlewares to the internal [connect](https://github.com/senchalabs/connect) app:
 
@@ -319,6 +318,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 - **Type:** `(server: PreviewServer) => (() => void) | void | Promise<(() => void) | void>`
 - **Kind:** `async`, `sequential`
 - **See also:** [PreviewServer](./api-javascript#previewserver)
+- **Scope:** [Global](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks)
 
   Same as [`configureServer`](/guide/api-plugin.html#configureserver) but for the preview server. Similarly to `configureServer`, the `configurePreviewServer` hook is called before other middlewares are installed. If you want to inject a middleware **after** other middlewares, you can return a function from `configurePreviewServer`, which will be called after internal middlewares are installed:
 
@@ -341,6 +341,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 - **Type:** `IndexHtmlTransformHook | { order?: 'pre' | 'post', handler: IndexHtmlTransformHook }`
 - **Kind:** `async`, `sequential`
+- **Scope:** [Per-environment](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks)
 
   Dedicated hook for transforming HTML entry point files such as `index.html`. The hook receives the current HTML string and a transform context. The context exposes the [`ViteDevServer`](./api-javascript#vitedevserver) instance during dev, and exposes the Rollup output bundle during build.
 
@@ -381,9 +382,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       originalUrl?: string
     },
   ) =>
-    | IndexHtmlTransformResult
-    | void
-    | Promise<IndexHtmlTransformResult | void>
+    IndexHtmlTransformResult | void | Promise<IndexHtmlTransformResult | void>
 
   type IndexHtmlTransformResult =
     | string
@@ -416,6 +415,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 - **Type:** `(ctx: HmrContext) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>`
 - **Kind:** `async`, `sequential`
 - **See also:** [HMR API](./api-hmr)
+- **Scope:** [Per-environment](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks)
 
   Perform custom HMR update handling. The hook receives a context object with the following signature:
 
