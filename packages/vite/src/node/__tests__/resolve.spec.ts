@@ -212,9 +212,7 @@ describe('file url', () => {
 
     test('non declared builtin', async () => {
       const resolved = await run({
-        builtins: [
-          /* empty */
-        ],
+        builtins: [/* empty */],
         idToResolve: 'my-env:custom-builtin',
       })
       expect(resolved).toBeNull()
@@ -223,9 +221,7 @@ describe('file url', () => {
     test('non declared node builtin', async () => {
       await expect(
         run({
-          builtins: [
-            /* empty */
-          ],
+          builtins: [/* empty */],
           idToResolve: 'node:fs',
         }),
       ).rejects.toThrowError(
