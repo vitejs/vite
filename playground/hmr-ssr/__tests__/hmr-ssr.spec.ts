@@ -115,6 +115,38 @@ describe.skipIf(isBuild)('hmr works correctly', () => {
     await expect.poll(() => el()).toMatch('3')
   })
 
+  test('hot data persists across module instances', async () => {
+    await untilConsoleLogAfter(
+      () =>
+        editFile('hotData.js', (code) =>
+          code.replace('const value = 1', 'const value = 2 '),
+        ),
+      [
+        '>>> vite:beforeUpdate -- update',
+        '(hot data) value from execution: 1',
+        '(hot data) value from dispose: 1',
+        updated('/hotData.js'),
+        '>>> vite:afterUpdate -- update',
+      ],
+      true,
+    )
+
+    await untilConsoleLogAfter(
+      () =>
+        editFile('hotData.js', (code) =>
+          code.replace('const value = 2', 'const value = 3  '),
+        ),
+      [
+        '>>> vite:beforeUpdate -- update',
+        '(hot data) value from execution: 2',
+        '(hot data) value from dispose: 2',
+        updated('/hotData.js'),
+        '>>> vite:afterUpdate -- update',
+      ],
+      true,
+    )
+  })
+
   test('accept dep', async () => {
     const el = () => hmr('.dep')
     await untilConsoleLogAfter(
@@ -789,13 +821,15 @@ test('should hmr when file is deleted and restored', async () => {
     .toMatch('parent:not-child')
 
   // restore the file
-  addFile(childFile, originalChildFileCode)
-  editFile(parentFile, (code) =>
-    code.replace(
-      "export const childValue = 'not-child'",
-      "export { value as childValue } from './child'",
-    ),
-  )
+  await untilConsoleLogAfter(() => {
+    addFile(childFile, originalChildFileCode)
+    editFile(parentFile, (code) =>
+      code.replace(
+        "export const childValue = 'not-child'",
+        "export { value as childValue } from './child'",
+      ),
+    )
+  }, 'file-delete-restore/child.js hot data after prune: undefined')
   await expect.poll(() => hmr('.file-delete-restore')).toMatch('parent:child')
 })
 
