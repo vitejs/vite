@@ -218,7 +218,7 @@ export function createNativeConfigCompatPlugin(
     name: 'vite:native-config-compat-check',
     transform: {
       filter: {
-        id: /\.[cm]?[jt]sx?$/,
+        id: { include: /\.[cm]?[jt]sx?$/, exclude: /^\0/ },
       },
       async handler(code, id) {
         const isESM =
