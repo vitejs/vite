@@ -1,11 +1,14 @@
 import { nanoid } from 'nanoid/non-secure'
 import type { DevRuntime as DevRuntimeType } from 'rolldown/experimental/runtime-types'
-import { FbmHMRClient, FbmHMRContext } from './fbmHmrClient'
+import {
+  BundledDevHMRClient,
+  BundledDevHMRContext,
+} from './bundledDevHmrClient'
 import {
   base,
   clearOverlayOrReloadOnFirstUpdate,
   pageReload,
-  registerFbmClient,
+  registerBundledDevClient,
   removeStyle,
   transport,
   updateStyle,
@@ -26,7 +29,7 @@ declare const DevRuntime: typeof DevRuntimeType
 if (typeof DevRuntime !== 'undefined') {
   class ViteDevRuntime extends DevRuntime {
     override createModuleHotContext(moduleId: string) {
-      const ctx = new FbmHMRContext(fbmHmrClient, moduleId)
+      const ctx = new BundledDevHMRContext(bundledDevHmrClient, moduleId)
       // @ts-expect-error TODO: support CSS properly
       ctx._internal = { updateStyle, removeStyle }
       return ctx
@@ -44,7 +47,7 @@ if (typeof DevRuntime !== 'undefined') {
   const runtime = ((globalThis as any).__rolldown_runtime__ ??=
     new ViteDevRuntime(clientId))
 
-  const fbmHmrClient = new FbmHMRClient(
+  const bundledDevHmrClient = new BundledDevHMRClient(
     {
       error: (err) => console.error('[vite]', err),
       debug: (...msg) => console.debug('[vite]', ...msg),
@@ -57,11 +60,11 @@ if (typeof DevRuntime !== 'undefined') {
       pageReload,
     },
   )
-  registerFbmClient(fbmHmrClient)
+  registerBundledDevClient(bundledDevHmrClient)
 
   runtime.hooks = {
     createModuleHotContext: (id: string) => runtime.createModuleHotContext(id),
     onModuleCacheRemoval: (id: string) =>
-      fbmHmrClient.handleModuleCacheRemoval(id),
+      bundledDevHmrClient.handleModuleCacheRemoval(id),
   }
 }

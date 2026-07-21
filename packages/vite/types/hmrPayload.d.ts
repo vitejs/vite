@@ -4,7 +4,7 @@ export type HotPayload =
   | ConnectedPayload
   | PingPayload
   | UpdatePayload
-  | FbmUpdatePayload
+  | BundledDevUpdatePayload
   | FullReloadPayload
   | CustomPayload
   | ErrorPayload
@@ -27,8 +27,8 @@ export interface UpdatePayload {
  * Full-bundle-mode update notification. The client computes the HMR boundaries
  * itself from `changedIds`.
  */
-export interface FbmUpdatePayload {
-  type: 'fbm-update'
+export interface BundledDevUpdatePayload {
+  type: 'bundled-dev-update'
   changedIds: string[]
   /** URL of the per-client HMR patch chunk */
   url: string

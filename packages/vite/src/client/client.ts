@@ -7,7 +7,7 @@ import {
 } from '../shared/moduleRunnerTransport'
 import { createHMRHandler } from '../shared/hmrHandler'
 import { setupForwardConsoleHandler } from '../shared/forwardConsole'
-import type { FbmHMRClient } from './fbmHmrClient'
+import type { BundledDevHMRClient } from './bundledDevHmrClient'
 import { ErrorOverlay, cspNonce, overlayId } from './overlay'
 // @ts-expect-error internal virtual module
 import '@vite/env'
@@ -172,11 +172,11 @@ const hmrClient = new HMRClient(
     return await importPromise
   },
 )
-// set by the full-bundle-mode entry (`fbmClient.ts`); the `import type` above keeps
-// `FbmHMRClient` compile-time only, so `client.mjs` bundles no FBM code
-let fbmClient: FbmHMRClient | undefined
-export function registerFbmClient(client: FbmHMRClient): void {
-  fbmClient = client
+// set by the full-bundle-mode entry (`bundledDevClient.ts`); the `import type` above keeps
+// `BundledDevHMRClient` compile-time only, so `client.mjs` bundles no bundled-dev code
+let bundledDevClient: BundledDevHMRClient | undefined
+export function registerBundledDevClient(client: BundledDevHMRClient): void {
+  bundledDevClient = client
 }
 transport.connect!(createHMRHandler(handleMessage))
 
@@ -201,13 +201,13 @@ export function clearOverlayOrReloadOnFirstUpdate(): 'reload' | 'continue' {
 }
 
 async function handleMessage(payload: HotPayload) {
-  const activeHmrClient = fbmClient ?? hmrClient
+  const activeHmrClient = bundledDevClient ?? hmrClient
   switch (payload.type) {
     case 'connected':
       console.debug(`[vite] connected.`)
       break
-    case 'fbm-update':
-      fbmClient!.handlePush(payload)
+    case 'bundled-dev-update':
+      bundledDevClient!.handlePush(payload)
       break
     case 'update':
       await activeHmrClient.notifyListeners('vite:beforeUpdate', payload)

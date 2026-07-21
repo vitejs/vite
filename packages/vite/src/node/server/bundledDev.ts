@@ -427,7 +427,7 @@ export class BundledDev {
       })
     }
     client.send({
-      type: 'fbm-update',
+      type: 'bundled-dev-update',
       changedIds: hmrOutput.changedIds,
       url: hmrOutput.filename,
       seq: hmrOutput.seq,

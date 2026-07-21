@@ -2,7 +2,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { CLIENT_ENTRY, ENV_ENTRY, FBM_CLIENT_ENTRY } from '../constants'
+import { CLIENT_ENTRY, ENV_ENTRY, BUNDLED_DEV_CLIENT_ENTRY } from '../constants'
 import { isObject, normalizePath, resolveHostname } from '../utils'
 import { cleanUrl } from '../../shared/utils'
 import { perEnvironmentState } from '../environment'
@@ -10,7 +10,7 @@ import { replaceDefine, serializeDefine } from './define'
 
 // ids in transform are normalized to unix style
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
-const normalizedFbmClientEntry = normalizePath(FBM_CLIENT_ENTRY)
+const normalizedBundledDevClientEntry = normalizePath(BUNDLED_DEV_CLIENT_ENTRY)
 const normalizedEnvEntry = normalizePath(ENV_ENTRY)
 
 /**
@@ -141,7 +141,7 @@ async function createClientConfigValueReplacer(
 export async function getHmrImplementation(
   config: ResolvedConfig,
 ): Promise<string> {
-  const content = fs.readFileSync(normalizedFbmClientEntry, 'utf-8')
+  const content = fs.readFileSync(normalizedBundledDevClientEntry, 'utf-8')
   const replacer = await createClientConfigValueReplacer(config)
   return (
     replacer(content)

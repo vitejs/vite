@@ -39,8 +39,8 @@ const clientConfig = defineConfig({
 })
 
 // separate entry so the full-bundle-mode HMR code is never bundled into `client.mjs`
-const fbmClientConfig = defineConfig({
-  input: path.resolve(dirname, 'src/client/fbmClient.ts'),
+const bundledDevClientConfig = defineConfig({
+  input: path.resolve(dirname, 'src/client/bundledDevClient.ts'),
   platform: 'browser',
   transform: {
     target: 'es2020',
@@ -48,7 +48,7 @@ const fbmClientConfig = defineConfig({
   external: ['@vite/env'],
   output: {
     dir: path.resolve(dirname, 'dist'),
-    entryFileNames: 'client/fbmClient.mjs',
+    entryFileNames: 'client/bundledDevClient.mjs',
   },
 })
 
@@ -169,7 +169,7 @@ const moduleRunnerConfig = defineConfig({
 export default defineConfig([
   envConfig,
   clientConfig,
-  fbmClientConfig,
+  bundledDevClientConfig,
   nodeConfig,
   moduleRunnerConfig,
 ])

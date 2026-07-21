@@ -1,4 +1,8 @@
-import type { FbmUpdatePayload, Update, UpdatePayload } from '#types/hmrPayload'
+import type {
+  BundledDevUpdatePayload,
+  Update,
+  UpdatePayload,
+} from '#types/hmrPayload'
 import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
 import type { NormalizedModuleRunnerTransport } from '../shared/moduleRunnerTransport'
 
@@ -22,14 +26,14 @@ type HmrUpdate =
       updateSet: string[]
     }
 
-export interface FbmHMRClientOptions {
+export interface BundledDevHMRClientOptions {
   base: string
   /** returning `'reload'` aborts the apply — the hook reloads the page itself */
   beforeApply: () => 'reload' | 'continue'
   pageReload: () => void
 }
 
-export class FbmHMRClient extends HMRClient {
+export class BundledDevHMRClient extends HMRClient {
   private applyQueue = Promise.resolve()
   private lastSeq = 0
 
@@ -37,7 +41,7 @@ export class FbmHMRClient extends HMRClient {
     logger: HMRLogger,
     transport: NormalizedModuleRunnerTransport,
     private runtime: RolldownRuntimeLike,
-    private options: FbmHMRClientOptions,
+    private options: BundledDevHMRClientOptions,
   ) {
     super(logger, transport, async () => {
       throw new Error(
@@ -140,7 +144,7 @@ export class FbmHMRClient extends HMRClient {
     }
   }
 
-  handlePush(payload: FbmUpdatePayload): void {
+  handlePush(payload: BundledDevUpdatePayload): void {
     this.applyQueue = this.applyQueue
       .then(() => this.applyPush(payload))
       .catch((err) => {
@@ -170,7 +174,7 @@ export class FbmHMRClient extends HMRClient {
     changedIds,
     url,
     seq,
-  }: FbmUpdatePayload): Promise<void> {
+  }: BundledDevUpdatePayload): Promise<void> {
     if (seq !== this.lastSeq + 1) {
       this.requestFullReload(
         `hmr update sequence gap (expected ${this.lastSeq + 1}, got ${seq})`,
@@ -299,21 +303,21 @@ export class FbmHMRClient extends HMRClient {
   }
 }
 
-export class FbmHMRContext extends HMRContext {
+export class BundledDevHMRContext extends HMRContext {
   constructor(
-    private fbmClient: FbmHMRClient,
+    private bundledDevClient: BundledDevHMRClient,
     private owner: string,
   ) {
-    super(fbmClient, owner)
+    super(bundledDevClient, owner)
   }
 
   override invalidate(message: string): void {
-    this.fbmClient.notifyListeners('vite:invalidate', {
+    this.bundledDevClient.notifyListeners('vite:invalidate', {
       path: this.owner,
       message,
       firstInvalidatedBy:
-        this.fbmClient.currentFirstInvalidatedBy ?? this.owner,
+        this.bundledDevClient.currentFirstInvalidatedBy ?? this.owner,
     })
-    this.fbmClient.invalidateLocally(this.owner, message)
+    this.bundledDevClient.invalidateLocally(this.owner, message)
   }
 }

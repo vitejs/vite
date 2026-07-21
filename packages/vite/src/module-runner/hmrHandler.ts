@@ -78,7 +78,7 @@ export function createHMRHandlerForRunner(
       }
       case 'ping': // noop
         break
-      case 'fbm-update': // todo
+      case 'bundled-dev-update': // todo
         break
       default: {
         const check: never = payload
