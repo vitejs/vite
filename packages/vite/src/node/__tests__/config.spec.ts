@@ -1780,9 +1780,21 @@ describe('loadConfigFromFile', () => {
     })
 
     test('does not warn for a .mts config under a type: commonjs package', async () => {
-      expect(
-        await loadWithWarnings('mts-config', 'vite.config.mts'),
-      ).toHaveLength(0)
+      // The native config compat check resolves the format of rolldown's
+      // internal virtual module (`\0rolldown/runtime.js`) against the nearest
+      // package.json, which falls back to the process cwd. Run from the
+      // commonjs fixture root so the test does not depend on where the test
+      // runner was started.
+      const root = path.resolve(compatRoot, 'mts-config')
+      const originalCwd = process.cwd()
+      process.chdir(root)
+      try {
+        expect(
+          await loadWithWarnings('mts-config', 'vite.config.mts'),
+        ).toHaveLength(0)
+      } finally {
+        process.chdir(originalCwd)
+      }
     })
   })
 
