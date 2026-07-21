@@ -78,8 +78,6 @@ export class BundledDev {
 
   memoryFiles: MemoryFiles = new MemoryFiles()
 
-  servedFallbackDuringInitialBuild = false
-
   constructor(private environment: DevEnvironment) {
     if (environment.name !== 'client') {
       throw new Error(
@@ -130,6 +128,13 @@ export class BundledDev {
           type: 'error',
           err: prepareError(this.lastBuildError),
         })
+      } else if (this.initialBuildCompleted) {
+        // A fallback page whose socket connects after the initial-build
+        // completion broadcast would otherwise stay on the spinner. Over-sending
+        // is safe: only the fallback page acts on `ifFallback` reloads. Not sent
+        // while the initial build is still running (or failed — no output to
+        // serve yet), as reloading would only lead back to the fallback page.
+        client.send({ type: 'full-reload', path: '*', ifFallback: true })
       }
     })
     this.environment.hot.on('vite:client:disconnect', (_payload, client) => {
@@ -211,10 +216,16 @@ export class BundledDev {
     this.waitForInitialBuildFinish().then(() => {
       if (this._closed) return
       debug?.('INITIAL: build done')
-      if (this.servedFallbackDuringInitialBuild) {
-        this.environment.hot.send({ type: 'full-reload', path: '*' })
-      }
+      // Set the flag before broadcasting so a client that connects in between
+      // is caught by the `vite:client:connect` replay above.
       this.initialBuildCompleted = true
+      if (!this.lastBuildError) {
+        this.environment.hot.send({
+          type: 'full-reload',
+          path: '*',
+          ifFallback: true,
+        })
+      }
     })
   }
 

@@ -61,6 +61,12 @@ export interface FullReloadPayload {
   path?: string
   /** @internal */
   triggeredBy?: string
+  /**
+   * When set, only the bundling-fallback page acts on the reload;
+   * other pages ignore the message.
+   * @internal
+   */
+  ifFallback?: boolean
 }
 
 export interface CustomPayload {

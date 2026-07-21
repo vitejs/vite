@@ -487,9 +487,6 @@ export function indexHtmlMiddleware(
           '',
           undefined,
         ].includes(secFetchDest)
-        if (isDocumentRequest && file === undefined) {
-          fullBundle.servedFallbackDuringInitialBuild = true
-        }
         if (
           isDocumentRequest &&
           ((await fullBundle.triggerBundleRegenerationIfStale()) ||
@@ -575,6 +572,7 @@ async function generateFallbackHtml(server: ViteDevServer) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>globalThis.__vite_is_fallback_page__ = true</script>
   <script type="module">
     ${hmrRuntime.replaceAll('</script>', '<\\/script>')}
   </script>

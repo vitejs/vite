@@ -279,6 +279,14 @@ async function handleMessage(payload: HotPayload) {
       break
     }
     case 'full-reload':
+      // `ifFallback` reloads are addressed only to the bundling-fallback page,
+      // which marks itself with this global (see `generateFallbackHtml`)
+      if (
+        payload.ifFallback &&
+        !(globalThis as any).__vite_is_fallback_page__
+      ) {
+        break
+      }
       await activeHmrClient.notifyListeners('vite:beforeFullReload', payload)
       if (hasDocument) {
         if (payload.path && payload.path.endsWith('.html')) {
