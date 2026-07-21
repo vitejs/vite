@@ -195,6 +195,20 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   private _buildStartPromise: Promise<void> | undefined
   private _closed = false
 
+  /** @internal Used when another plugin container owns `buildStart`. */
+  setBuildStartPromise(buildStartPromise: Promise<void>): void {
+    this._started = true
+    this._buildStartPromise = buildStartPromise
+    buildStartPromise.then(
+      () => {
+        if (this._buildStartPromise === buildStartPromise) {
+          this._buildStartPromise = undefined
+        }
+      },
+      () => {},
+    )
+  }
+
   /**
    * @internal use `createEnvironmentPluginContainer` instead
    */
@@ -371,6 +385,8 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   ): Promise<PartialResolvedId | null> {
     if (!this._started) {
       this.buildStart()
+    }
+    if (this._buildStartPromise) {
       await this._buildStartPromise
     }
     const skip = options?.skip
