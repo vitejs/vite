@@ -1,10 +1,9 @@
 import path from 'node:path'
 import { expect, onTestFinished, test } from 'vitest'
-import type { DevEnvironment } from '../environment'
 import { handleHMRUpdate } from '../hmr'
-import { createServer } from '../index'
+import { type ServerOptions, createServer } from '../index'
 
-test('uses the environment snapshot when the server restarts during HMR', async () => {
+async function testRestartDuringHotUpdate(serverOptions: ServerOptions = {}) {
   let hookCalls = 0
   const server = await createServer({
     configFile: false,
@@ -13,22 +12,21 @@ test('uses the environment snapshot when the server restarts during HMR', async 
     server: {
       middlewareMode: true,
       ws: false,
+      ...serverOptions,
     },
     plugins: [
       {
         name: 'restart-during-hot-update',
         async hotUpdate() {
           if (hookCalls++ === 0) {
-            server.environments.client = {} as DevEnvironment
+            await server.restart()
             throw new Error('hot update interrupted by restart')
           }
         },
       },
     ],
   })
-  const clientEnvironment = server.environments.client
   onTestFinished(async () => {
-    server.environments.client = clientEnvironment
     await server.close()
   })
 
@@ -39,4 +37,19 @@ test('uses the environment snapshot when the server restarts during HMR', async 
       server,
     ),
   ).resolves.toBeUndefined()
+}
+
+test('cancels HMR when the server restarts during a hot update', async () => {
+  await testRestartDuringHotUpdate()
+})
+
+test('does not schedule stale HMR with a custom environment handler', async () => {
+  let hotUpdateEnvironmentsCalls = 0
+  await testRestartDuringHotUpdate({
+    async hotUpdateEnvironments(server, hmr) {
+      hotUpdateEnvironmentsCalls++
+      await Promise.all(Object.values(server.environments).map(hmr))
+    },
+  })
+  expect(hotUpdateEnvironmentsCalls).toBe(0)
 })
