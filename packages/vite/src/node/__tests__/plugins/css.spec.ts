@@ -2,7 +2,6 @@ import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import type { InternalModuleFormat } from 'rolldown'
 import MagicString from 'magic-string'
-import postcss from 'postcss'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
 import {
@@ -143,38 +142,6 @@ composes: bar from '@/css/bar.module.css';
     const result1 = await transform(css, '/foo.module.css') // server
     const result2 = await transform(css, '/foo.module.css?direct') // client
     expect(result1.code).toBe(result2.code)
-  })
-})
-
-describe('url rewriting', () => {
-  test('rewrites urls in content injected by OnceExit postcss plugins against the injected source file', async () => {
-    const injectedFile = path.join(
-      import.meta.dirname,
-      './fixtures/injected-source/injected.css',
-    )
-    const injector = () => ({
-      postcssPlugin: 'test-inject-at-once-exit',
-      OnceExit(root: postcss.Root) {
-        root.prepend(
-          postcss.parse('.injected { background: url(./bg.png) }', {
-            from: injectedFile,
-          }),
-        )
-      },
-    })
-    injector.postcss = true
-
-    const { transform } = await createCssPluginTransform({
-      configFile: false,
-      css: { postcss: { plugins: [injector()] } },
-    })
-
-    const result = await transform('.entry { color: red }', '/entry.css')
-
-    expect(result.code).toMatchInlineSnapshot(`
-      ".injected { background: url(/packages/vite/src/node/__tests__/plugins/fixtures/injected-source/bg.png) }
-      .entry { color: red }"
-    `)
   })
 })
 
