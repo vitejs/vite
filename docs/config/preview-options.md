@@ -78,7 +78,9 @@ Automatically open the app in the browser on server start. When the value is a s
 - **Type:** `boolean | WatchOptions`
 - **Default:** `false`
 
-Watch the build output directory and reload open browser pages when output files change. This is useful when running `vite build --watch` and `vite preview --watch` together.
+Watch the build output directory and reload open browser pages shortly after output files change. This is useful when running `vite build --watch` and `vite preview --watch` together.
+
+Reloads are triggered by polling the preview server, so pages stay eligible for the browser's back/forward cache.
 
 This can be set via the CLI using `--watch`.
 

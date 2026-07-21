@@ -30,6 +30,7 @@ import { notFoundMiddleware } from './server/middlewares/notFound'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import {
   getServerUrlByHost,
+  joinUrlSegments,
   normalizePath,
   resolveHostname,
   resolveServerUrls,
@@ -37,8 +38,6 @@ import {
   shouldServeFile,
   teardownSIGTERMListener,
 } from './utils'
-import type { WebSocketServer } from './server/ws'
-import { createWebSocketServer } from './server/ws'
 import { printServerUrls } from './logger'
 import { bindCLIShortcuts } from './shortcuts'
 import type { BindCLIShortcutsOptions, ShortcutsState } from './shortcuts'
@@ -52,6 +51,12 @@ import {
   basePluginContextMeta,
 } from './server/pluginContainer'
 import type { MinimalPluginContextWithoutEnvironment } from './plugin'
+
+/**
+ * Internal path served by preview watch mode. The injected client polls it and
+ * reloads the page when the returned token changes.
+ */
+const previewReloadPath = '/@vite/preview-reload'
 
 export interface PreviewOptions extends CommonServerOptions {
   /**
@@ -122,11 +127,6 @@ export interface PreviewServer {
    */
   bindCLIShortcuts(options?: BindCLIShortcutsOptions<PreviewServer>): void
   /**
-   * Websocket server used by preview watch mode.
-   * @internal
-   */
-  ws?: WebSocketServer
-  /**
    * File watcher used by preview watch mode.
    * @internal
    */
@@ -196,9 +196,6 @@ export async function preview(
   const watchEnabled = options.watch !== false
 
   const closeHttpServer = createServerCloseFn(httpServer)
-  const ws = watchEnabled
-    ? createWebSocketServer(httpServer, config, httpsOptions)
-    : undefined
   const watcher = watchEnabled
     ? chokidar.watch(
         distDir,
@@ -212,6 +209,9 @@ export async function preview(
   // Promise used by `server.close()` to ensure `closeServer()` is only called once
   let closeServerPromise: Promise<void> | undefined
   let reloadTimer: ReturnType<typeof setTimeout> | undefined
+  // Token bumped on every output change. The injected client polls the
+  // `previewReloadPath` endpoint and reloads the page when this changes.
+  let reloadToken = 0
   const closeServer = async () => {
     teardownSIGTERMListener(closeServerAndExit)
     if (reloadTimer) {
@@ -219,19 +219,17 @@ export async function preview(
       reloadTimer = undefined
     }
     await watcher?.close()
-    await ws?.close()
     await closeHttpServer()
     server.resolvedUrls = null
   }
 
   const scheduleReload = (file: string) => {
-    if (!ws) return
     if (reloadTimer) {
       clearTimeout(reloadTimer)
     }
     reloadTimer = setTimeout(() => {
       reloadTimer = undefined
-      ws.send({ type: 'full-reload', path: '*' })
+      reloadToken++
       logger.info(
         colors.green(`page reload `) +
           colors.dim(normalizePath(path.relative(config.root, file))),
@@ -248,7 +246,6 @@ export async function preview(
     config,
     middlewares: app,
     httpServer,
-    ws,
     watcher,
     _reloadClientCode: watchEnabled
       ? getPreviewReloadClientCode(config)
@@ -318,6 +315,19 @@ export async function preview(
   // base
   if (config.base !== '/') {
     app.use(baseMiddleware(config.rawBase, false))
+  }
+
+  // preview watch mode: serve the current reload token so that the injected
+  // client can poll it and reload the page when the output directory changes
+  if (watchEnabled) {
+    app.use(function previewReloadMiddleware(req, res, next) {
+      if (req.url !== previewReloadPath) {
+        return next()
+      }
+      res.setHeader('Content-Type', 'text/plain')
+      res.setHeader('Cache-Control', 'no-cache')
+      res.end(String(reloadToken))
+    })
   }
 
   // static assets
@@ -408,32 +418,27 @@ function resolvePreviewWatchOptions(
 }
 
 function getPreviewReloadClientCode(config: ResolvedConfig): string {
-  const wsConfig =
-    typeof config.server.ws === 'object' ? config.server.ws : undefined
-  const wsPath = path.posix.join(
-    getPreviewWebSocketBase(config),
-    wsConfig?.path ?? '',
-  )
+  const endpoint = joinUrlSegments(config.base, previewReloadPath)
 
+  // Poll a token endpoint instead of opening a WebSocket so that pages stay
+  // eligible for the browser's back/forward cache.
   return /* js */ `
-const protocol = ${JSON.stringify(wsConfig?.protocol ?? null)} || (location.protocol === 'https:' ? 'wss' : 'ws');
-const host = ${JSON.stringify(wsConfig?.host ?? null)} || location.hostname;
-const port = ${JSON.stringify(wsConfig?.clientPort ?? wsConfig?.port ?? null)} || location.port;
-const socket = new WebSocket(
-  protocol + '://' + host + (port ? ':' + port : '') + ${JSON.stringify(wsPath)} + ${JSON.stringify(`?token=${config.webSocketToken}`)},
-  'vite-hmr',
-);
-socket.addEventListener('message', ({ data }) => {
-  const payload = JSON.parse(data);
-  if (payload.type === 'full-reload') {
-    location.reload();
-  }
-});
-`
+const endpoint = ${JSON.stringify(endpoint)};
+const interval = 1000;
+let currentToken;
+async function ping() {
+  try {
+    const response = await fetch(endpoint, { cache: 'no-store' });
+    if (!response.ok) return;
+    const token = await response.text();
+    if (currentToken === undefined) {
+      currentToken = token;
+    } else if (token !== currentToken) {
+      location.reload();
+    }
+  } catch {}
 }
-
-function getPreviewWebSocketBase(config: ResolvedConfig): string {
-  return config.rawBase === './' || config.rawBase === ''
-    ? '/'
-    : new URL(config.base, 'http://vite.invalid').pathname
+ping();
+setInterval(ping, interval);
+`
 }
