@@ -38,6 +38,32 @@ const clientConfig = defineConfig({
   },
 })
 
+const rolldownRuntimeConfig = defineConfig({
+  input: path.resolve(dirname, 'src/client/viteRuntime.ts'),
+  platform: 'browser',
+  external: ['@vite/env'],
+  plugins: [
+    {
+      name: 'link-rolldown-dev-runtime',
+      transform(code, id) {
+        if (id === path.resolve(dirname, 'src/client/client.ts')) {
+          return code.replace(
+            'declare const DevRuntime: typeof DevRuntimeType',
+            "import { DevRuntime } from './rolldownRuntime.js'",
+          )
+        }
+      },
+    },
+  ],
+  transform: {
+    target: 'es2020',
+  },
+  output: {
+    dir: path.resolve(dirname, 'dist'),
+    entryFileNames: 'client/vite-runtime.mjs',
+  },
+})
+
 const sharedNodeOptions = defineConfig({
   platform: 'node',
   treeshake: {
@@ -155,6 +181,7 @@ const moduleRunnerConfig = defineConfig({
 export default defineConfig([
   envConfig,
   clientConfig,
+  rolldownRuntimeConfig,
   nodeConfig,
   moduleRunnerConfig,
 ])

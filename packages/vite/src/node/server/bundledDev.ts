@@ -1,3 +1,4 @@
+import path from 'node:path'
 import { setTimeout } from 'node:timers/promises'
 import {
   type BindingClientHmrUpdate,
@@ -20,6 +21,7 @@ import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
 import { prepareError } from './middlewares/error'
 
 const debug = createDebugger('vite:full-bundle-mode')
+const VITE_RUNTIME_FILENAME = 'vite-runtime.js'
 
 type HmrOutput = BindingClientHmrUpdate['update']
 
@@ -63,6 +65,7 @@ export class MemoryFiles {
 
 export class BundledDev {
   private _devEngine!: DevEngine
+  private viteRuntime?: string
   private initialBuildCompleted = false
   private _closed = false
   private clients = new Clients()
@@ -96,6 +99,14 @@ export class BundledDev {
       throw new Error(`dev engine was not yet initialized`)
     }
     return this._devEngine
+  }
+
+  get hasBuildOutput(): boolean {
+    return (
+      this.memoryFiles.size > 0 &&
+      (this.memoryFiles.size > 1 ||
+        !this.memoryFiles.has(VITE_RUNTIME_FILENAME))
+    )
   }
 
   async listen(): Promise<void> {
@@ -207,6 +218,10 @@ export class BundledDev {
         debug?.('INITIAL: run error', e)
       },
     )
+    this.viteRuntime = await getHmrImplementation(
+      this.environment.getTopLevelConfig(),
+    )
+    this.storeOutputFiles([])
     this.waitForInitialBuildFinish().then(() => {
       if (this._closed) return
       debug?.('INITIAL: build done')
@@ -221,7 +236,7 @@ export class BundledDev {
     if (this._closed) return
 
     let state = await this.devEngine.getBundleState()
-    while (this.memoryFiles.size === 0 && !state.lastBuildErrored) {
+    while (!this.hasBuildOutput && !state.lastBuildErrored) {
       await setTimeout(10)
       if (this._closed) return
       await this.devEngine.ensureCurrentBuildFinish()
@@ -338,10 +353,23 @@ export class BundledDev {
 
   private storeOutputFiles(output: RolldownOutput['output']): void {
     // NOTE: don't clear memoryFiles here as incremental build reuses the files
+    if (this.viteRuntime) {
+      this.memoryFiles.set(VITE_RUNTIME_FILENAME, {
+        source: this.viteRuntime,
+        etag: getEtag(Buffer.from(this.viteRuntime), { weak: true }),
+      })
+    }
     for (const outputFile of output) {
       this.memoryFiles.set(outputFile.fileName, () => {
-        const source =
+        let source =
           outputFile.type === 'chunk' ? outputFile.code : outputFile.source
+        if (outputFile.type === 'chunk' && outputFile.isEntry) {
+          const runtimePath = path.posix.join(
+            this.environment.config.base,
+            VITE_RUNTIME_FILENAME,
+          )
+          source = `import ${JSON.stringify(runtimePath)}\n${source}`
+        }
         return {
           source,
           etag: getEtag(Buffer.from(source), { weak: true }),
@@ -362,9 +390,7 @@ export class BundledDev {
       ...(typeof rolldownOptions.experimental.devMode === 'object'
         ? rolldownOptions.experimental.devMode
         : {}),
-      implement: await getHmrImplementation(
-        this.environment.getTopLevelConfig(),
-      ),
+      implement: '',
     }
 
     // disable inlineConst optimization due to a bug in Rolldown

@@ -2,7 +2,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
+import { CLIENT_ENTRY, ENV_ENTRY, VITE_RUNTIME_ENTRY } from '../constants'
 import { isObject, normalizePath, resolveHostname } from '../utils'
 import { cleanUrl } from '../../shared/utils'
 import { perEnvironmentState } from '../environment'
@@ -11,6 +11,7 @@ import { replaceDefine, serializeDefine } from './define'
 // ids in transform are normalized to unix style
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
 const normalizedEnvEntry = normalizePath(ENV_ENTRY)
+const normalizedViteRuntimeEntry = normalizePath(VITE_RUNTIME_ENTRY)
 
 /**
  * some values used by the client needs to be dynamically injected by the server
@@ -144,7 +145,7 @@ async function createClientConfigValueReplacer(
 export async function getHmrImplementation(
   config: ResolvedConfig,
 ): Promise<string> {
-  const content = fs.readFileSync(normalizedClientEntry, 'utf-8')
+  const content = fs.readFileSync(normalizedViteRuntimeEntry, 'utf-8')
   const replacer = await createClientConfigValueReplacer(config)
   return (
     replacer(content)

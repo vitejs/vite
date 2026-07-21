@@ -129,6 +129,10 @@ export const CLIENT_ENTRY: string = resolve(
   VITE_PACKAGE_DIR,
   'dist/client/client.mjs',
 )
+export const VITE_RUNTIME_ENTRY: string = resolve(
+  VITE_PACKAGE_DIR,
+  'dist/client/vite-runtime.mjs',
+)
 export const ENV_ENTRY: string = resolve(
   VITE_PACKAGE_DIR,
   'dist/client/env.mjs',
