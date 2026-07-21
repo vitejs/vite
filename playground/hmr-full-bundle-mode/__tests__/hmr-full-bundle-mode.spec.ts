@@ -296,6 +296,7 @@ if (isBuild) {
       .toBe('worker-plain-updated')
   })
 
+  // Blocked by https://github.com/rolldown/rolldown/issues/10340
   test.skip('chained invalidate in an import cycle settles', async () => {
     const original = readFile('cycle-a.js')
     onTestFinished(async () => {
