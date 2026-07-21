@@ -286,10 +286,12 @@ export class BundledDev {
    * Called by the serving middlewares when the response for a payload completed.
    * Only delivered payloads are recorded on the server's per-client ship map, so
    * later chunks may omit a module only if the payload carrying it was delivered.
+   *
+   * Note: the payload filename is unique across all clients.
    */
   markPayloadDelivered(filename: string): void {
     if (this.pendingPayloadFilenames.delete(filename)) {
-      void this.devEngine.notifyPayloadDelivered(filename)
+      this.devEngine.notifyPayloadDelivered(filename)
     }
   }
 
