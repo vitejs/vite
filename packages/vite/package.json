@@ -107,7 +107,7 @@
     "host-validation-middleware": "^0.1.4",
     "http-proxy-3": "^1.23.3",
     "launch-editor-middleware": "^2.14.1",
-    "magic-string": "^0.30.21",
+    "magic-string": "^1.0.0",
     "mlly": "^1.8.2",
     "mrmime": "^2.0.1",
     "nanoid": "^5.1.16",
