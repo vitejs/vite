@@ -3345,8 +3345,7 @@ async function compileLightningCSS(
 
               // contrary to lightningcss, postcss-import does this internally
               if (absoluteOrProtocolRelativeUrlRE.test(id)) {
-                // @ts-expect-error -- https://github.com/parcel-bundler/lightningcss/pull/1261
-                return { external: id } as string
+                return { external: id }
               }
 
               // NOTE: with `transformer: 'postcss'`, CSS modules `composes` tried to resolve with
