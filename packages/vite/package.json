@@ -69,9 +69,9 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "lightningcss": "^1.32.0",
+    "lightningcss": "^1.33.0",
     "picomatch": "^4.0.5",
-    "postcss": "^8.5.17",
+    "postcss": "^8.5.20",
     "rolldown": "~1.1.5",
     "tinyglobby": "^0.2.17"
   },
@@ -86,7 +86,7 @@
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
     "@vercel/detect-agent": "^1.2.3",
-    "@vitejs/devtools": "^0.3.4",
+    "@vitejs/devtools": "^0.4.1",
     "@vitest/utils": "4.1.10",
     "@voidzero-dev/vite-task-client": "^0.2.0",
     "artichokie": "^0.4.4",
@@ -131,11 +131,11 @@
     "strip-literal": "^3.1.0",
     "terser": "^5.49.0",
     "ufo": "^1.6.4",
-    "ws": "^8.21.0"
+    "ws": "^8.21.1"
   },
   "peerDependencies": {
     "@types/node": "^20.19.0 || >=22.12.0",
-    "@vitejs/devtools": "^0.3.0",
+    "@vitejs/devtools": "^0.4.0",
     "esbuild": "^0.27.0 || ^0.28.0",
     "jiti": ">=1.21.0",
     "less": "^4.0.0",

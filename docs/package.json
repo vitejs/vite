@@ -18,8 +18,8 @@
     "vitepress": "^2.0.0-alpha.18",
     "vitepress-plugin-graphviz": "^0.1.0",
     "vitepress-plugin-group-icons": "^1.7.5",
-    "vitepress-plugin-llms": "^1.13.2",
-    "vue": "^3.5.39",
+    "vitepress-plugin-llms": "^1.13.3",
+    "vue": "^3.5.40",
     "vue-tsc": "^3.3.7"
   }
 }
