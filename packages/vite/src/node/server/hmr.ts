@@ -590,7 +590,7 @@ export async function handleHMRUpdate(
       }
     }
   } catch (error) {
-    hotMap.get(server.environments.client)!.error = error
+    hotMap.get(clientEnvironment)!.error = error
   }
 
   for (const environment of environments) {
@@ -656,13 +656,9 @@ export async function handleHMRUpdate(
 
   const hotUpdateEnvironments =
     server.config.server.hotUpdateEnvironments ??
-    ((server, hmr) => {
+    ((_server, hmr) => {
       // Run HMR in parallel for all environments by default
-      return Promise.all(
-        Object.values(server.environments).map((environment) =>
-          hmr(environment),
-        ),
-      )
+      return Promise.all(environments.map((environment) => hmr(environment)))
     })
 
   await hotUpdateEnvironments(server, hmr)
