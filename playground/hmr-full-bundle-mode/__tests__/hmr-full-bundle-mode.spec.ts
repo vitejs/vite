@@ -1,6 +1,6 @@
 import { setTimeout } from 'node:timers/promises'
 import { expect, test, onTestFinished } from 'vitest'
-import { addFile, editFile, isBuild, page, readFile, serverLogs } from '~utils'
+import { addFile, editFile, isBuild, page, readFile } from '~utils'
 
 const assetUrl = /asset-[\w-]+\.png/
 
@@ -231,12 +231,14 @@ if (isBuild) {
     await expect
       .poll(() => page.textContent('.invalidation-parent'))
       .toBe('child')
-    const logIndex = serverLogs.length
     editFile('invalidation-child.js', (code) =>
       code.replace("'child'", "'child updated'"),
     )
+    // With client-side HMR, `import.meta.hot.invalidate()` is handled inside
+    // the client and never reaches the server, so there is no "hmr invalidate"
+    // server log. Assert the user-visible result instead.
     await expect
-      .poll(() => serverLogs.slice(logIndex).join('\n'))
-      .toContain('hmr invalidate')
+      .poll(() => page.textContent('.invalidation-parent'))
+      .toBe('child updated')
   })
 }
