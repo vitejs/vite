@@ -946,8 +946,7 @@ export default defineConfig([
       console.warn('Could not update Oxlint section in README.md')
       return content
     }
-    const eslintTypeAwareConfig =
-      /* js */ `export default defineConfig([
+    const eslintTypeAwareConfig = /* js */ `export default defineConfig([
   globalIgnores(['dist']),
   {
     files: ['**/*.{ts,tsx}'],
@@ -973,8 +972,7 @@ export default defineConfig([
   },
 ])
 `
-    const eslintReactConfig =
-      /* js */ `// eslint.config.js
+    const eslintReactConfig = /* js */ `// eslint.config.js
 import reactX from 'eslint-plugin-react-x'
 import reactDom from 'eslint-plugin-react-dom'
 
