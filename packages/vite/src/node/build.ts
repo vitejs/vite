@@ -1063,10 +1063,11 @@ export function resolveBuildOutputs(
             'Multiple entry points are not supported when output formats include "umd" or "iife".',
           )
         }
-
+      }
+      if (libFormats.includes('umd')) {
         if (!libOptions.name) {
           throw new Error(
-            'Option "build.lib.name" is required when output formats include "umd" or "iife".',
+            'Option "build.lib.name" is required when output formats include "umd".',
           )
         }
       }

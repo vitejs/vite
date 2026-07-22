@@ -369,15 +369,13 @@ describe('resolveBuildOutputs', () => {
     )
   })
 
-  test('throws an error when lib.name is missing on iife format', () => {
+  test('does not throw an error when lib.name is missing on iife format', () => {
     const logger = createLogger()
     const libOptions: LibraryOptions = {
       ...baseLibOptions,
       formats: ['iife'],
     }
-    const resolveBuild = () => resolveBuildOutputs(void 0, libOptions, logger)
-
-    expect(resolveBuild).toThrowError(/Option "build\.lib\.name" is required/)
+    resolveBuildOutputs(void 0, libOptions, logger)
   })
 
   test('throws an error when lib.name is missing on umd format', () => {
@@ -770,8 +768,8 @@ describe('resolveBuildOutputs', () => {
     })
   })
 
-  test('umd or iife: should define build.lib.name', () => {
-    ;['umd', 'iife'].forEach((format) => {
+  test('umd: should define build.lib.name', () => {
+    ;['umd'].forEach((format) => {
       expect(() =>
         resolveBuildOutputs(
           undefined,
@@ -782,7 +780,20 @@ describe('resolveBuildOutputs', () => {
           {} as Logger,
         ),
       ).toThrow(
-        `Option "build.lib.name" is required when output formats include "umd" or "iife".`,
+        `Option "build.lib.name" is required when output formats include "umd".`,
+      )
+    })
+  })
+
+  test('iife: does not need to define build.lib.name', () => {
+    ;['iife'].forEach((format) => {
+      resolveBuildOutputs(
+        undefined,
+        {
+          entry: 'entryA.js',
+          formats: [format as LibraryFormats],
+        },
+        {} as Logger,
       )
     })
   })
