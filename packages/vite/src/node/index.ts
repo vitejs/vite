@@ -108,6 +108,8 @@ export { loadEnv, resolveEnvPrefix } from './env'
 // additional types
 export type {
   AppType,
+  BundledDevLoadingHtmlContext,
+  BundledDevOptions,
   ConfigEnv,
   ExperimentalOptions,
   HTMLOptions,

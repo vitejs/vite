@@ -226,7 +226,7 @@ cli
           server: cleanGlobalCLIOptions(options),
           forceOptimizeDeps: options.force,
           experimental: {
-            bundledDev: options.experimentalBundle,
+            bundledDev: options.experimentalBundle ? true : undefined,
           },
         })
 
