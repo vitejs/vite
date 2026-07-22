@@ -70,6 +70,12 @@ test('should load dynamic import with vars', async () => {
     .toMatch('hello')
 })
 
+test('should load dynamic import with vars and a constant prefix', async () => {
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-vars-const-prefix'))
+    .toMatch('Foo view')
+})
+
 test('should load dynamic import with vars ignored', async () => {
   await expect
     .poll(() => page.textContent('.dynamic-import-with-vars-ignored'))
