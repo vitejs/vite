@@ -1917,6 +1917,17 @@ describe('loadConfigFromFile', () => {
       `)
   })
 
+  test('cjs module vars are supported in esm', async () => {
+    const { config } = (await loadConfigFromFile(
+      {} as any,
+      path.resolve(fixtures, './cjs-module-vars-in-esm/vite.config.ts'),
+      path.resolve(fixtures, './cjs-module-vars-in-esm'),
+    ))!
+    const c = config as any
+    expect(c.dirname).toContain('cjs-module-vars-in-esm')
+    expect(c.filename).toContain('vite.config.ts')
+  })
+
   test('import.meta properties are supported', async () => {
     const { config } = (await loadConfigFromFile(
       {} as any,

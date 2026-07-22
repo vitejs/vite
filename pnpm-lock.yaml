@@ -447,6 +447,8 @@ importers:
 
   packages/vite/src/node/__tests__/fixtures/cjs-ssr-dep: {}
 
+  packages/vite/src/node/__tests__/fixtures/config/cjs-module-vars-in-esm: {}
+
   packages/vite/src/node/__tests__/fixtures/config/entry:
     dependencies:
       '@vite/test-config-plugin-module-condition':
