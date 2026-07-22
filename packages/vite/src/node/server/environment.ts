@@ -295,7 +295,7 @@ export class DevEnvironment extends BaseEnvironment {
     _client: NormalizedHotChannelClient,
   ): void {
     if (this.bundledDev) {
-      this.bundledDev.invalidateModule(m, _client)
+      // full-bundle mode handles `import.meta.hot.invalidate()` fully client-side
       return
     }
 
@@ -329,8 +329,7 @@ export class DevEnvironment extends BaseEnvironment {
 
     this._crawlEndFinder.cancel()
     await Promise.allSettled([
-      this.pluginContainer.close(),
-      this.bundledDev?.close(),
+      this.bundledDev ? this.bundledDev.close() : this.pluginContainer.close(),
       this.depsOptimizer?.close(),
       // WebSocketServer is independent of HotChannel and should not be closed on environment close
       isWebSocketServer in this.hot ? Promise.resolve() : this.hot.close(),

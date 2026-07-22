@@ -54,7 +54,7 @@ describe.runIf(isServe)('client-reload', () => {
   test('custom hmr port', async () => {
     await testClientReload({
       port: ports['client-reload/hmr-port'],
-      hmr: {
+      ws: {
         port: hmrPorts['client-reload/hmr-port'],
       },
     })
@@ -63,7 +63,7 @@ describe.runIf(isServe)('client-reload', () => {
   test('custom hmr port and cross origin isolation', async () => {
     await testClientReload({
       port: ports['client-reload/cross-origin'],
-      hmr: {
+      ws: {
         port: hmrPorts['client-reload/cross-origin'],
       },
       headers: {

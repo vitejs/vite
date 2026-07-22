@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
-import workerPluginTestPlugin from './worker-plugin-test-plugin'
+import workerPluginTestPlugin from './worker-plugin-test-plugin.js'
 
 export default defineConfig({
   base: '/es/',

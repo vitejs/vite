@@ -13,11 +13,13 @@ import type {
 } from 'rolldown'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import {
+  ChunkMetadataMap,
   build,
   createBuilder,
   onRollupLog,
   resolveBuildOutputs,
   resolveLibFilename,
+  resolveRolldownOptions,
 } from '../build'
 import type { Logger } from '../logger'
 import { createLogger } from '../logger'
@@ -79,6 +81,35 @@ describe('build', () => {
       }
     `)
     assertOutputHashContentChange(result[0], result[1])
+  })
+
+  test('top-level input is used as the default build entry', async () => {
+    const result = (await build({
+      root: resolve(dirname, 'packages/build-project'),
+      logLevel: 'silent',
+      input: 'top-level-entry.js',
+      build: {
+        write: false,
+      },
+      plugins: [
+        {
+          name: 'test',
+          resolveId(id) {
+            if (id.replace(/\\/g, '/').endsWith('top-level-entry.js')) {
+              return '\0top-level-entry.js'
+            }
+          },
+          load(id) {
+            if (id === '\0top-level-entry.js') {
+              return `console.log('from-top-level-input')`
+            }
+          },
+        },
+      ],
+    })) as RolldownOutput
+    const chunk = result.output.find((o) => o.type === 'chunk')
+    expect(chunk?.fileName).toContain('top-level-entry')
+    expect(chunk?.code).toContain('from-top-level-input')
   })
 
   test('file hash should change when pure css chunk changes', async () => {
@@ -377,6 +408,74 @@ describe('resolveBuildOutputs', () => {
     expect(resolveBuild).toThrowError(
       /Entries in "build\.rolldownOptions\.output" must specify "name"/,
     )
+  })
+
+  describe('input resolution in resolveRolldownOptions', () => {
+    const buildProjectRoot = resolve(dirname, 'packages/build-project')
+
+    test('build.rolldownOptions.input takes precedence over top-level input', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+        input: 'top-level-entry.js',
+        build: {
+          rolldownOptions: { input: 'explicit-entry.js' },
+        },
+      })
+      const options = resolveRolldownOptions(
+        builder.environments.client,
+        new ChunkMetadataMap(),
+      )
+      expect(options.input).toBe('explicit-entry.js')
+    })
+
+    test('falls back to index.html when no input is set', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+      })
+      const options = resolveRolldownOptions(
+        builder.environments.client,
+        new ChunkMetadataMap(),
+      )
+      expect(options.input).toBe(resolve(buildProjectRoot, 'index.html'))
+    })
+
+    test('build.ssr string entry takes precedence over input', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+        environments: {
+          ssr: {
+            input: 'env-input.js',
+            build: { ssr: 'ssr-entry.js' },
+          },
+        },
+      })
+      const options = resolveRolldownOptions(
+        builder.environments.ssr,
+        new ChunkMetadataMap(),
+      )
+      expect(options.input).toBe(resolve(buildProjectRoot, 'ssr-entry.js'))
+    })
+
+    test('throws when build.lib is set without entry or top-level input', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+        build: {
+          lib: { name: 'MyLib', formats: ['es'] },
+        },
+      })
+      expect(() =>
+        resolveRolldownOptions(
+          builder.environments.client,
+          new ChunkMetadataMap(),
+        ),
+      ).toThrow(
+        /Either "build\.lib\.entry" or the top-level "input" option is required/,
+      )
+    })
   })
 })
 

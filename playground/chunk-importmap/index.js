@@ -1,5 +1,6 @@
 import './static.js'
 import('./dynamic.js')
+import('./direct-dynamic.css')
 import('./dynamic2.js')
 
 import myWorker from './worker.js?worker'

@@ -852,7 +852,7 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@eslint/js
   const eslintJsVersion = '10.0.1'
   // renovate: datasource=npm depName=eslint
-  const eslintVersion = '10.6.0'
+  const eslintVersion = '10.7.0'
   // renovate: datasource=npm depName=eslint-plugin-react-hooks
   const eslintPluginReactHooksVersion = '7.1.1'
   // renovate: datasource=npm depName=eslint-plugin-react-refresh
@@ -860,7 +860,7 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=globals
   const globalsVersion = '17.7.0'
   // renovate: datasource=npm depName=typescript-eslint
-  const typescriptEslintVersion = '8.62.0'
+  const typescriptEslintVersion = '8.64.0'
 
   const eslintConfigForTS = /* js */ `import js from '@eslint/js'
 import globals from 'globals'
@@ -946,8 +946,7 @@ export default defineConfig([
       console.warn('Could not update Oxlint section in README.md')
       return content
     }
-    const eslintTypeAwareConfig =
-      /* js */ `export default defineConfig([
+    const eslintTypeAwareConfig = /* js */ `export default defineConfig([
   globalIgnores(['dist']),
   {
     files: ['**/*.{ts,tsx}'],
@@ -973,8 +972,7 @@ export default defineConfig([
   },
 ])
 `
-    const eslintReactConfig =
-      /* js */ `// eslint.config.js
+    const eslintReactConfig = /* js */ `// eslint.config.js
 import reactX from 'eslint-plugin-react-x'
 import reactDom from 'eslint-plugin-react-dom'
 
