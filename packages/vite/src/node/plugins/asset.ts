@@ -204,11 +204,13 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         if (rawRE.test(id)) {
           const file = checkPublicFile(id, config) || cleanUrl(id)
           this.addWatchFile(file)
-          // raw query, read file and return as string
+          // Read as Buffer and JSON-encode the bytes directly to avoid
+          // holding both the decoded UTF-8 string and the JSON-stringified
+          // copy in memory at the same time. This roughly halves peak heap
+          // usage for large `?raw` imports (see #22132).
+          const buffer = await fsp.readFile(file)
           return {
-            code: `export default ${JSON.stringify(
-              await fsp.readFile(file, 'utf-8'),
-            )}`,
+            code: 'export default ' + jsonStringifyBuffer(buffer),
             map: { mappings: '' },
             moduleType: 'js', // NOTE: needs to be set to avoid double `export default` in `?raw&.txt`s
           }
@@ -416,6 +418,74 @@ function isGitLfsPlaceholder(content: Buffer): boolean {
   if (content.length < GIT_LFS_PREFIX.length) return false
   // Check whether the content begins with the characteristic string of Git LFS placeholders
   return GIT_LFS_PREFIX.compare(content, 0, GIT_LFS_PREFIX.length) === 0
+}
+
+// Per-byte JSON escape sequences (as Buffers) for the bytes that must be
+// escaped inside a JSON string. Indexed lookup keeps the encode hot loop
+// branch-light and entirely off-heap until the final UTF-8 decode.
+const jsonEscapeBytes: (Buffer | undefined)[] = (() => {
+  const table = new Array<Buffer | undefined>(0x80)
+  for (let i = 0; i < 0x20; i++) {
+    table[i] = Buffer.from('\\u' + i.toString(16).padStart(4, '0'))
+  }
+  table[0x08] = Buffer.from('\\b')
+  table[0x09] = Buffer.from('\\t')
+  table[0x0a] = Buffer.from('\\n')
+  table[0x0c] = Buffer.from('\\f')
+  table[0x0d] = Buffer.from('\\r')
+  table[0x22] = Buffer.from('\\"') // "
+  table[0x5c] = Buffer.from('\\\\') // backslash
+  return table
+})()
+
+/**
+ * JSON-encode the contents of a Buffer (interpreted as UTF-8) into a JSON
+ * string literal. Functionally equivalent to
+ * `JSON.stringify(buffer.toString('utf-8'))` but avoids materializing the
+ * decoded UTF-8 source string in addition to the JSON-encoded result, which
+ * meaningfully reduces peak heap usage when embedding large `?raw` files.
+ *
+ * Splits only happen on single-byte ASCII characters (control bytes, `"` or
+ * `\\`), so UTF-8 multi-byte sequences are never split across copy ranges.
+ */
+export function jsonStringifyBuffer(buffer: Buffer): string {
+  const len = buffer.length
+  // First pass: compute the encoded length so we can write into a single
+  // pre-sized Buffer without intermediate JS-string allocations.
+  let encodedLen = 2 // surrounding quotes
+  for (let i = 0; i < len; i++) {
+    const byte = buffer[i]
+    if (byte >= 0x20 && byte !== 0x22 && byte !== 0x5c) {
+      encodedLen++
+      continue
+    }
+    const escape = jsonEscapeBytes[byte]
+    encodedLen += escape !== undefined ? escape.length : 1
+  }
+  if (encodedLen === len + 2) {
+    // Fast path: nothing requires escaping.
+    return '"' + buffer.toString('utf-8') + '"'
+  }
+  const out = Buffer.allocUnsafe(encodedLen)
+  let outPos = 0
+  out[outPos++] = 0x22 // "
+  let safeStart = 0
+  for (let i = 0; i < len; i++) {
+    const byte = buffer[i]
+    if (byte >= 0x20 && byte !== 0x22 && byte !== 0x5c) continue
+    const escape = jsonEscapeBytes[byte]
+    if (escape === undefined) continue
+    if (i > safeStart) {
+      outPos += buffer.copy(out, outPos, safeStart, i)
+    }
+    outPos += escape.copy(out, outPos)
+    safeStart = i + 1
+  }
+  if (safeStart < len) {
+    outPos += buffer.copy(out, outPos, safeStart, len)
+  }
+  out[outPos++] = 0x22 // "
+  return out.toString('utf-8')
 }
 
 /**
