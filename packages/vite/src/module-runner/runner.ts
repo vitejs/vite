@@ -144,17 +144,17 @@ export class ModuleRunner {
     visited.add(mod.id)
 
     for (const importedModuleId of mod.imports) {
+      const importedModule =
+        this.evaluatedModules.getModuleById(importedModuleId)
+      if (!importedModule?.promise || importedModule.evaluated) {
+        continue
+      }
+
       if (callstack.includes(importedModuleId)) {
         return true
       }
 
-      const importedModule =
-        this.evaluatedModules.getModuleById(importedModuleId)
-      if (
-        importedModule?.promise &&
-        !importedModule.evaluated &&
-        this.isCircularRequest(importedModule, callstack, visited)
-      ) {
+      if (this.isCircularRequest(importedModule, callstack, visited)) {
         return true
       }
     }
