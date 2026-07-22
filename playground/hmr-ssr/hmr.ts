@@ -1,5 +1,6 @@
 import { virtual } from 'virtual:file'
 import { foo as depFoo, nestedFoo } from './hmrDep'
+import './hotData'
 import './importing-updated'
 import './invalidation-circular-deps'
 import './invalidation/parent'
