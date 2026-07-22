@@ -26,12 +26,13 @@ export function triggerLazyBundlingMiddleware(
 
     const moduleId = params.get('id')
     const clientId = params.get('clientId')
-    const code = await bundledDev.triggerLazyBundling(moduleId, clientId)
-    if (code == null) {
+    const result = await bundledDev.triggerLazyBundling(moduleId, clientId)
+    if (result == null) {
       return next()
     }
 
     res!.setHeader('Content-Type', 'application/javascript')
-    return res!.end(code)
+    res!.on('finish', () => bundledDev.markPayloadDelivered(result.filename))
+    return res!.end(result.code)
   }
 }

@@ -72,7 +72,7 @@
     "lightningcss": "^1.33.0",
     "picomatch": "^4.0.5",
     "postcss": "^8.5.20",
-    "rolldown": "~1.1.5",
+    "rolldown": "~1.2.0",
     "tinyglobby": "^0.2.17"
   },
   "devDependencies": {
@@ -122,7 +122,7 @@
     "postcss-modules": "^9.0.1",
     "premove": "^4.0.0",
     "resolve.exports": "^2.0.3",
-    "rolldown-plugin-dts": "^0.27.6",
+    "rolldown-plugin-dts": "^0.27.9",
     "rollup": "^4.59.0",
     "rollup-plugin-license": "^3.7.1",
     "sass": "^1.101.0",

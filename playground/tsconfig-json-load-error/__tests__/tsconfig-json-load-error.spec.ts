@@ -2,13 +2,13 @@ import { describe, expect, test } from 'vitest'
 import { clearServeError, serveError } from './serve'
 import { browserLogs, editFile, isBuild, isServe, page, readFile } from '~utils'
 
-const unexpectedTokenSyntaxErrorRE =
-  /(\[TSCONFIG_ERROR\] )*Failed to load tsconfig .*: JSON parse error|JSONError/
+const tsconfigLoadErrorRE =
+  /(\[TSCONFIG_ERROR\] )*Failed to load tsconfig|JSONError/
 
 describe.runIf(isBuild)('build', () => {
   test('should throw an error on build', () => {
     expect(serveError).toBeTruthy()
-    expect(serveError.message).toMatch(unexpectedTokenSyntaxErrorRE)
+    expect(serveError.message).toMatch(tsconfigLoadErrorRE)
     clearServeError() // got expected error, null it here so testsuite does not fail from rethrow in afterAll
   })
 
@@ -38,7 +38,7 @@ describe.runIf(isServe)('server', () => {
       return m[0].innerHTML
     })
     // use regex with variable filename and position values because they are different on win
-    expect(message).toMatch(unexpectedTokenSyntaxErrorRE)
+    expect(message).toMatch(tsconfigLoadErrorRE)
   })
 
   test('should reload when tsconfig is changed', async () => {
