@@ -162,12 +162,10 @@ export class BundledDevHMRClient extends HMRClient {
   }
 
   handleModuleCacheRemoval(id: string): void {
-    const data = {}
     const disposer = this.disposeMap.get(id)
     if (disposer) {
-      disposer(data)
+      disposer(this.dataMap.get(id))
     }
-    this.dataMap.set(id, data)
   }
 
   private async applyPush({
