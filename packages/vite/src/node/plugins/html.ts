@@ -851,24 +851,39 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         chunkOrUrl: OutputChunk | string,
         toOutputPath: (filename: string) => string,
         isAsync: boolean,
-      ): HtmlTagDescriptor => ({
-        tag: 'script',
-        attrs: {
-          ...(isAsync ? { async: true } : {}),
-          type: 'module',
-          // crossorigin must be set not only for serving assets in a different origin
-          // but also to make it possible to preload the script using `<link rel="preload">`.
-          // `<script type="module">` used to fetch the script with credential mode `omit`,
-          // however `crossorigin` attribute cannot specify that value.
-          // https://developer.chrome.com/blog/modulepreload/#ok-so-why-doesnt-link-relpreload-work-for-modules:~:text=For%20%3Cscript%3E,of%20other%20modules.
-          // Now `<script type="module">` uses `same origin`: https://github.com/whatwg/html/pull/3656#:~:text=Module%20scripts%20are%20always%20fetched%20with%20credentials%20mode%20%22same%2Dorigin%22%20by%20default%20and%20can%20no%20longer%0Ause%20%22omit%22
-          crossorigin: true,
-          src:
-            typeof chunkOrUrl === 'string'
-              ? chunkOrUrl
-              : toOutputPath(chunkOrUrl.fileName),
-        },
-      })
+      ): HtmlTagDescriptor => {
+        // External imports surfaced from `getImportedChunks` may be bare
+        // specifiers (e.g. resolved by an importmap). Bare specifiers are not
+        // valid as a script `src`, so emit an inline `import` statement
+        // instead so the browser/importmap resolves them. URL-like externals
+        // are also routed through an inline import for consistency.
+        if (typeof chunkOrUrl === 'string') {
+          return {
+            tag: 'script',
+            attrs: {
+              ...(isAsync ? { async: true } : {}),
+              type: 'module',
+              crossorigin: true,
+            },
+            children: `import ${JSON.stringify(chunkOrUrl)}`,
+          }
+        }
+        return {
+          tag: 'script',
+          attrs: {
+            ...(isAsync ? { async: true } : {}),
+            type: 'module',
+            // crossorigin must be set not only for serving assets in a different origin
+            // but also to make it possible to preload the script using `<link rel="preload">`.
+            // `<script type="module">` used to fetch the script with credential mode `omit`,
+            // however `crossorigin` attribute cannot specify that value.
+            // https://developer.chrome.com/blog/modulepreload/#ok-so-why-doesnt-link-relpreload-work-for-modules:~:text=For%20%3Cscript%3E,of%20other%20modules.
+            // Now `<script type="module">` uses `same origin`: https://github.com/whatwg/html/pull/3656#:~:text=Module%20scripts%20are%20always%20fetched%20with%20credentials%20mode%20%22same%2Dorigin%22%20by%20default%20and%20can%20no%20longer%0Ause%20%22omit%22
+            crossorigin: true,
+            src: toOutputPath(chunkOrUrl.fileName),
+          },
+        }
+      }
 
       const toPreloadTag = (
         filename: string,
