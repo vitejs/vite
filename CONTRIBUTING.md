@@ -183,14 +183,14 @@ Note: The test build environment uses a [different default set of Vite config](h
 
 ### Extending the Test Suite
 
-To add new tests, you should find a related playground to the fix or feature (or create a new one). As an example, static assets loading is tested in the [assets playground](https://github.com/vitejs/vite/tree/main/playground/assets). In this Vite app, there is a test for `?raw` imports with [a section defined in the `index.html` for it](https://github.com/vitejs/vite/blob/v6.3.1/playground/assets/index.html#L266-L267):
+To add new tests, you should find a related playground to the fix or feature (or create a new one). As an example, static assets loading is tested in the [assets playground](https://github.com/vitejs/vite/tree/main/playground/assets). In this Vite app, there is a test for `?raw` imports with [a section defined in the `index.html` for it](https://github.com/vitejs/vite/blob/main/playground/assets/index.html#L270-L271):
 
 ```html
 <h2>?raw import</h2>
 <code class="raw"></code>
 ```
 
-This will be modified [with the result of a file import](https://github.com/vitejs/vite/blob/v6.3.1/playground/assets/index.html#L543-L544):
+This will be modified [with the result of a file import](https://github.com/vitejs/vite/blob/main/playground/assets/index.html#L557-L558):
 
 ```js
 import rawSvg from './nested/fragment.svg?raw'
@@ -205,7 +205,7 @@ function text(el, text) {
 }
 ```
 
-In the [spec tests](https://github.com/vitejs/vite/blob/v6.3.1/playground/assets/__tests__/assets.spec.ts#L469-L471), the modifications to the DOM listed above are used to test this feature:
+In the [spec tests](https://github.com/vitejs/vite/blob/main/playground/assets/__tests__/assets.spec.ts#L483-L485), the modifications to the DOM listed above are used to test this feature:
 
 ```js
 test('?raw import', async () => {
