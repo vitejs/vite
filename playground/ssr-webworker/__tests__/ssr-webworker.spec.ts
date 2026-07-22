@@ -30,11 +30,30 @@ test('supports nodejs_compat', async () => {
   )
 })
 
+test('converts require() of node builtins in bundled CJS deps', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.cjs-node-builtin')).toMatch(
+    '[success] cjs node builtin require',
+  )
+})
+
 test.runIf(isBuild)('build output does not contain createRequire', async () => {
   const workerContent = findAssetFile(/entry-worker/, 'worker', '')
   expect(workerContent).toBeDefined()
   expect(workerContent).not.toContain('createRequire')
 })
+
+test.runIf(isBuild)(
+  'converts bundled CJS require() of node builtins to ESM imports',
+  async () => {
+    const workerContent = findAssetFile(/entry-worker/, 'worker', '')
+    expect(workerContent).toBeDefined()
+    // `require("node:util")` nested in a bundled CJS module must become an ESM
+    // import, not Rolldown's throwing `__require` stub (fix for empty `external`)
+    expect(workerContent).not.toContain('__require("node:util")')
+    expect(workerContent).toContain('node:util')
+  },
+)
 
 test.runIf(isBuild)('codeSplitting: false', () => {
   const dynamicJsContent = findAssetFile(/dynamic-[-\w]+\.js/, 'worker')
