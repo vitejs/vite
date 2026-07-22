@@ -224,6 +224,25 @@ if (isBuild) {
     await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')
   })
 
+  // placed before `invalidate` on purpose: that test's cleanup restores
+  // invalidation-child.js, whose `hot.invalidate()` propagates to a parent
+  // without a shipped factory and forces a full page reload — which would
+  // wipe the `hot.data` this test relies on.
+  test('preserves import.meta.hot.data across updates', async () => {
+    await expect.poll(() => page.textContent('.data-count')).toBe('1')
+    await expect.poll(() => page.textContent('.data-disposed')).toBe('0')
+
+    editFile('data.js', (code) => code.replace('// @hmr-bump', '// @hmr-bump1'))
+    await expect.poll(() => page.textContent('.data-count')).toBe('2')
+    await expect.poll(() => page.textContent('.data-disposed')).toBe('1')
+
+    editFile('data.js', (code) =>
+      code.replace('// @hmr-bump1', '// @hmr-bump12'),
+    )
+    await expect.poll(() => page.textContent('.data-count')).toBe('3')
+    await expect.poll(() => page.textContent('.data-disposed')).toBe('2')
+  })
+
   test('invalidate', async () => {
     const original = readFile('invalidation-child.js')
     onTestFinished(() => addFile('invalidation-child.js', original))
