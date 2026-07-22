@@ -86,6 +86,38 @@ if (!isBuild) {
     await expect.poll(() => el.textContent()).toMatch('3')
   })
 
+  test('hot data persists across module instances', async () => {
+    await untilBrowserLogAfter(
+      () =>
+        editFile('hotData.js', (code) =>
+          code.replace('const value = 1', 'const value = 2 '),
+        ),
+      [
+        '>>> vite:beforeUpdate -- update',
+        '(hot data) value from execution: 1',
+        '(hot data) value from dispose: 1',
+        '[vite] hot updated: /hotData.js',
+        '>>> vite:afterUpdate -- update',
+      ],
+      true,
+    )
+
+    await untilBrowserLogAfter(
+      () =>
+        editFile('hotData.js', (code) =>
+          code.replace('const value = 2', 'const value = 3  '),
+        ),
+      [
+        '>>> vite:beforeUpdate -- update',
+        '(hot data) value from execution: 2',
+        '(hot data) value from dispose: 2',
+        '[vite] hot updated: /hotData.js',
+        '>>> vite:afterUpdate -- update',
+      ],
+      true,
+    )
+  })
+
   test('accept dep', async () => {
     const el = await page.$('.dep')
     await untilBrowserLogAfter(
@@ -1022,13 +1054,15 @@ if (!isBuild) {
       .toMatch('parent:not-child')
 
     // restore the file
-    addFile(childFile, originalChildFileCode)
-    editFile(parentFile, (code) =>
-      code.replace(
-        "export const childValue = 'not-child'",
-        "export { value as childValue } from './child'",
-      ),
-    )
+    await untilBrowserLogAfter(() => {
+      addFile(childFile, originalChildFileCode)
+      editFile(parentFile, (code) =>
+        code.replace(
+          "export const childValue = 'not-child'",
+          "export { value as childValue } from './child'",
+        ),
+      )
+    }, 'file-delete-restore/child.js hot data after prune: undefined')
     await expect
       .poll(() => page.textContent('.file-delete-restore'))
       .toMatch('parent:child')

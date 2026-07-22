@@ -336,7 +336,9 @@ foo()
       expect('\n' + value + '\n').toMatchSnapshot()
     } catch (e) {
       // don't include this function in stacktrace
-      Error.captureStackTrace(e, expectSnapshot)
+      if (e instanceof Error) {
+        Error.captureStackTrace(e, expectSnapshot)
+      }
       throw e
     }
   }

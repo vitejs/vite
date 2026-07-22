@@ -5,7 +5,13 @@ import { normalizePath } from 'vite'
 import postcssNested from 'postcss-nested'
 
 export default {
-  plugins: [postcssNested, testDirDep, testSourceInput, testInjectUrl],
+  plugins: [
+    postcssNested,
+    testDirDep,
+    testSourceInput,
+    testInjectUrl,
+    testInjectUrlOnceExit,
+  ],
 }
 
 /**
@@ -83,3 +89,30 @@ function testInjectUrl() {
   }
 }
 testInjectUrl.postcss = true
+
+/**
+ * A plugin for testing url() rewriting in content injected at OnceExit with
+ * its own source file (like postcss-modules inlining composed files)
+ */
+function testInjectUrlOnceExit() {
+  return {
+    postcssPlugin: 'inject-url-once-exit',
+    OnceExit(root, { postcss }) {
+      root.walkAtRules('inject-url-once-exit', (atRule) => {
+        atRule.remove()
+        root.prepend(
+          postcss.parse(
+            '.inject-url-once-exit { background: url(./injected-bg.png) }',
+            {
+              from: path.join(
+                import.meta.dirname,
+                'injected-source/injected.css',
+              ),
+            },
+          ),
+        )
+      })
+    },
+  }
+}
+testInjectUrlOnceExit.postcss = true

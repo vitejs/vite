@@ -16,6 +16,7 @@ import {
 } from '../utils'
 import { createLogger } from '../logger'
 import type { Logger } from '../logger'
+import { isWindows } from '../../shared/utils'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -120,6 +121,105 @@ describe('mergeConfig', () => {
 
     const mergedConfig: UserConfigExport = {
       assetsInclude: ['some-string', 'some-other-string', /regexp?/],
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+  })
+
+  test('handles input', () => {
+    const cases: {
+      name: string
+      a: UserConfig['input']
+      b: UserConfig['input']
+      expected: UserConfig['input']
+    }[] = [
+      {
+        name: 'string + string',
+        a: 'src/a.ts',
+        b: 'src/b.ts',
+        expected: ['src/a.ts', 'src/b.ts'],
+      },
+      {
+        name: 'array + string',
+        a: ['src/a.ts'],
+        b: 'src/b.ts',
+        expected: ['src/a.ts', 'src/b.ts'],
+      },
+      {
+        name: 'string + array',
+        a: 'src/a.ts',
+        b: ['src/b.ts'],
+        expected: ['src/a.ts', 'src/b.ts'],
+      },
+      {
+        name: 'array + array',
+        a: ['src/a.ts'],
+        b: ['src/b.ts'],
+        expected: ['src/a.ts', 'src/b.ts'],
+      },
+      {
+        name: 'object + object',
+        a: { a: 'src/a.ts', shared: 'src/old.ts' },
+        b: { b: 'src/b.ts', shared: 'src/new.ts' },
+        expected: { a: 'src/a.ts', b: 'src/b.ts', shared: 'src/new.ts' },
+      },
+      {
+        name: 'string + object',
+        a: 'src/a.ts',
+        b: { b: 'src/b.ts' },
+        expected: { a: 'src/a.ts', b: 'src/b.ts' },
+      },
+      {
+        name: 'object + string',
+        a: { a: 'src/a.ts' },
+        b: 'src/b.ts',
+        expected: { a: 'src/a.ts', b: 'src/b.ts' },
+      },
+      {
+        name: 'array + object',
+        a: ['src/a.ts'],
+        b: { b: 'src/b.ts' },
+        expected: { a: 'src/a.ts', b: 'src/b.ts' },
+      },
+      {
+        name: 'only a',
+        a: 'src/a.ts',
+        b: undefined,
+        expected: 'src/a.ts',
+      },
+      {
+        name: 'only b',
+        a: undefined,
+        b: 'src/b.ts',
+        expected: 'src/b.ts',
+      },
+    ]
+
+    for (const { name, a, b, expected } of cases) {
+      expect(mergeConfig({ input: a }, { input: b }), name).toStrictEqual({
+        input: expected,
+      })
+    }
+  })
+
+  test('not handles input not at top level', () => {
+    const baseConfig = {
+      build: {
+        input: 'src/a.ts',
+      },
+    }
+
+    const newConfig = {
+      build: {
+        input: 'src/b.ts',
+      },
+    }
+
+    // nested `input` is overwritten, not merged
+    const mergedConfig = {
+      build: {
+        input: 'src/b.ts',
+      },
     }
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
@@ -1074,6 +1174,176 @@ describe('resolveConfig', () => {
       resolved.optimizeDeps!.rolldownOptions,
     )
   })
+
+  const resolveInputFromRoot = (p: string) =>
+    normalizePath(path.resolve(process.cwd(), p))
+
+  test('top-level input applies to the client environment only (non-inherit)', async () => {
+    const config = await resolveConfig({ input: 'src/main.ts' }, 'serve')
+
+    expect(config.input).toBe(resolveInputFromRoot('src/main.ts'))
+    expect(config.environments.client.input).toBe(
+      resolveInputFromRoot('src/main.ts'),
+    )
+    expect(
+      config.environments.client.build.rolldownOptions.input,
+    ).toBeUndefined()
+    expect(config.environments.ssr.input).toBeUndefined()
+    expect(config.environments.ssr.build.rolldownOptions.input).toBeUndefined()
+  })
+
+  test('per-environment input overrides the top-level value', async () => {
+    const config = await resolveConfig(
+      {
+        input: 'src/main.ts',
+        environments: {
+          ssr: { input: 'src/entry-server.ts' },
+        },
+      },
+      'serve',
+    )
+
+    expect(config.environments.client.input).toBe(
+      resolveInputFromRoot('src/main.ts'),
+    )
+    expect(config.environments.ssr.input).toBe(
+      resolveInputFromRoot('src/entry-server.ts'),
+    )
+  })
+
+  test('resolves array input to absolute paths', async () => {
+    const config = await resolveConfig(
+      { input: ['src/a.ts', 'src/b.ts'] },
+      'serve',
+    )
+
+    expect(config.environments.client.input).toEqual([
+      resolveInputFromRoot('src/a.ts'),
+      resolveInputFromRoot('src/b.ts'),
+    ])
+  })
+
+  test('resolves record input to absolute paths', async () => {
+    const config = await resolveConfig(
+      { input: { main: 'src/a.ts', admin: 'src/b.ts' } },
+      'serve',
+    )
+
+    expect(config.environments.client.input).toEqual({
+      main: resolveInputFromRoot('src/a.ts'),
+      admin: resolveInputFromRoot('src/b.ts'),
+    })
+  })
+
+  test('reserves glob characters in input', async () => {
+    const cases: { name: string; input: UserConfig['input'] }[] = [
+      { name: 'wildcard', input: 'src/*.ts' },
+      { name: 'single char', input: 'src/page?.ts' },
+      { name: 'character class', input: 'src/[id].ts' },
+      { name: 'brace expansion', input: 'src/{a,b}.ts' },
+      { name: 'extglob group', input: 'src/?(group).ts' },
+      { name: 'negation', input: 'src/!(main).ts' },
+      { name: 'extglob prefix +', input: 'src/+(page).ts' },
+      { name: 'extglob prefix @', input: 'src/@(page).ts' },
+      { name: 'array element', input: ['src/main.ts', 'src/*.ts'] },
+      { name: 'record', input: { main: 'src/*.ts' } },
+    ]
+
+    for (const { name, input } of cases) {
+      await expect(resolveConfig({ input }, 'serve'), name).rejects.toThrow(
+        /`input` cannot contain glob characters/,
+      )
+    }
+  })
+
+  test('support escaped input', async () => {
+    const cases: {
+      name: string
+      input: UserConfig['input']
+      expected: UserConfig['input']
+    }[] = [
+      {
+        name: 'glob',
+        input: 'src/\\*.ts',
+        expected: resolveInputFromRoot('src/*.ts'),
+      },
+      {
+        name: 'array element',
+        input: ['src/\\*.ts'],
+        expected: [resolveInputFromRoot('src/*.ts')],
+      },
+      {
+        name: 'record',
+        input: { main: 'src/\\*.ts' },
+        expected: { main: resolveInputFromRoot('src/*.ts') },
+      },
+    ]
+
+    for (const { name, input, expected } of cases) {
+      await expect(
+        resolveConfig({ input }, 'serve'),
+        name,
+      ).resolves.toMatchObject({
+        input: expected,
+      })
+    }
+  })
+
+  test('allows non-glob special characters in input', async () => {
+    const cases: {
+      name: string
+      input: UserConfig['input']
+      expected: UserConfig['input']
+    }[] = [
+      {
+        name: 'special characters',
+        input: 'src/a-b_c$.ts',
+        expected: resolveInputFromRoot('src/a-b_c$.ts'),
+      },
+      ...(isWindows
+        ? [
+            {
+              name: 'windows path',
+              input: 'src\\foo.ts',
+              expected: resolveInputFromRoot('src/foo.ts'),
+            },
+          ]
+        : []),
+    ]
+
+    for (const { name, input, expected } of cases) {
+      await expect(
+        resolveConfig({ input }, 'serve'),
+        name,
+      ).resolves.toMatchObject({
+        input: expected,
+      })
+    }
+  })
+
+  test('is used as the default for build.lib.entry when entry is omitted', async () => {
+    const config = await resolveConfig(
+      {
+        input: 'src/lib.ts',
+        build: { lib: { name: 'MyLib' } },
+      },
+      'build',
+    )
+
+    expect(config.build.lib && config.build.lib.entry).toBe('src/lib.ts')
+  })
+
+  test('explicit build.lib.entry overrides the top-level input', async () => {
+    const config = await resolveConfig(
+      {
+        input: 'src/lib.ts',
+        build: { lib: { entry: 'src/explicit.ts', name: 'MyLib' } },
+      },
+      'build',
+    )
+
+    expect(config.build.lib && config.build.lib.entry).toBe('src/explicit.ts')
+  })
 })
 
 test('config compat 1', async () => {
@@ -1647,6 +1917,17 @@ describe('loadConfigFromFile', () => {
       `)
   })
 
+  test('cjs module vars are supported in esm', async () => {
+    const { config } = (await loadConfigFromFile(
+      {} as any,
+      path.resolve(fixtures, './cjs-module-vars-in-esm/vite.config.ts'),
+      path.resolve(fixtures, './cjs-module-vars-in-esm'),
+    ))!
+    const c = config as any
+    expect(c.dirname).toContain('cjs-module-vars-in-esm')
+    expect(c.filename).toContain('vite.config.ts')
+  })
+
   test('import.meta properties are supported', async () => {
     const { config } = (await loadConfigFromFile(
       {} as any,
@@ -1713,7 +1994,9 @@ describe('loadConfigFromFile', () => {
       const config = await resolveConfig({ root: tempDir }, 'serve')
 
       expect(config.cacheDir).toBe(
-        normalizePath(path.resolve(tempDir, 'node_modules/.vite')),
+        normalizePath(
+          path.resolve(fs.realpathSync.native(tempDir), 'node_modules/.vite'),
+        ),
       )
     })
 
@@ -1724,7 +2007,7 @@ describe('loadConfigFromFile', () => {
       const config = await resolveConfig({ root: tempDir }, 'serve')
 
       expect(config.cacheDir).toBe(
-        normalizePath(path.resolve(tempDir, '.vite')),
+        normalizePath(path.resolve(fs.realpathSync.native(tempDir), '.vite')),
       )
     })
   })

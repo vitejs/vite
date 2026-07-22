@@ -35,6 +35,11 @@ test('does not crash when a dep is discovered before the server starts listening
       import.meta.dirname,
       '../fixtures/optimizer-discover-before-listen',
     ),
+    // the fixture has no package.json, so the default cacheDir would land in
+    // the shared __tests__/node_modules/.vite and this test's optimizer
+    // (force: true) would delete the deps of other specs running in parallel
+    // (e.g. scan.spec.ts reading deps_ssr while its module runner is active)
+    cacheDir: 'node_modules/.vite',
     environments: {
       ssr: {
         resolve: {
