@@ -16,7 +16,11 @@ if (import.meta.hot) {
   import.meta.hot.accept()
 }
 
-// @hmr-bump
+// Re-run trigger — must be executable code, not a comment: rolldown skips an
+// HMR update when a module's re-printed output is unchanged, and comments never
+// reach that output (rolldown#10333). Bumping this literal changes the render,
+// so a patch ships and the module re-executes.
+data.rev = 'bump0'
 
 function text(el, value) {
   document.querySelector(el).textContent = String(value)
