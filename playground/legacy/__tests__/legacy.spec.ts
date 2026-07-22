@@ -123,6 +123,17 @@ describe.runIf(isBuild)('build', () => {
     expect(findAssetFile(/polyfills-legacy/)).toMatch(terserPattern)
   })
 
+  test('should not use newer syntax when minifying legacy chunks', () => {
+    // The playground targets IE 11, so babel lowers the legacy chunks to ES5.
+    // The minifier must not reintroduce syntax newer than its `es2015` compress
+    // target: `try {} catch (e) {}` must not be collapsed to `try {} catch {}`
+    // (ES2019) and optional chaining (ES2020) must not appear.
+    const mainLegacyChunk = findAssetFile(/chunk-main-legacy/)
+    expect(mainLegacyChunk).toMatch(/catch\s*\(/)
+    expect(mainLegacyChunk).not.toMatch(/catch\s*\{/)
+    expect(mainLegacyChunk).not.toMatch(/\w\?\.\w/)
+  })
+
   test('should emit css file', async () => {
     expect(
       listAssets().some((filename) => filename.endsWith('.css')),
