@@ -65,6 +65,14 @@ export function htmlFallbackMiddleware(
         debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
         req.url = newUrl
         return next()
+      } else if (memoryFiles && !memoryFiles.has('index.html')) {
+        const htmlFiles = Array.from(memoryFiles.keys()).filter((f) => f.endsWith('.html'))
+        if (htmlFiles.length === 1) {
+          const newUrl = url + htmlFiles[0]
+          debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
+          req.url = newUrl
+          return next()
+        }
       }
     }
     // non-trailing slash should check for fallback .html
@@ -78,8 +86,15 @@ export function htmlFallbackMiddleware(
     }
 
     if (spaFallback) {
-      debug?.(`Rewriting ${req.method} ${req.url} to /index.html`)
-      req.url = '/index.html'
+      let fallbackUrl = '/index.html'
+      if (memoryFiles && !memoryFiles.has('index.html')) {
+        const htmlFiles = Array.from(memoryFiles.keys()).filter((f) => f.endsWith('.html'))
+        if (htmlFiles.length === 1) {
+          fallbackUrl = '/' + htmlFiles[0]
+        }
+      }
+      debug?.(`Rewriting ${req.method} ${req.url} to ${fallbackUrl}`)
+      req.url = fallbackUrl
     }
 
     next()

@@ -58,6 +58,10 @@ export class MemoryFiles {
   clear(): void {
     this.files.clear()
   }
+
+  keys(): IterableIterator<string> {
+    return this.files.keys()
+  }
 }
 
 export class BundledDev {
