@@ -428,7 +428,8 @@ function optimizerResolvePlugin(
           ...resolveOptions,
           scan: resolveOpts.scan ?? resolveOptions.scan,
         }
-        options.preferRelative ||= importer?.endsWith('.html')
+        options.preferRelative ||=
+          importer?.endsWith('.html') || importer?.endsWith('.htm')
 
         // resolve pre-bundled deps requests, these could be resolved by
         // tryFileResolve or /fs/ resolution but these files may not yet

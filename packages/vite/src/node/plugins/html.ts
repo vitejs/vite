@@ -435,7 +435,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     },
 
     transform: {
-      filter: { id: /\.html$/ },
+      filter: { id: /\.(?:html|htm)$/ },
       async handler(html, id) {
         id = normalizePath(id)
         const relativeUrlPath = normalizePath(path.relative(config.root, id))

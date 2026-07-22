@@ -143,6 +143,7 @@ export function serveStaticMiddleware(
     if (
       cleanedUrl.endsWith('/') ||
       path.extname(cleanedUrl) === '.html' ||
+      path.extname(cleanedUrl) === '.htm' ||
       isInternalRequest(req.url!) ||
       // skip url starting with // as these will be interpreted as
       // scheme relative URLs by new URL() and will not be a valid file path
