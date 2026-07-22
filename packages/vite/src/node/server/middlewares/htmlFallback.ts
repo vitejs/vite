@@ -66,7 +66,9 @@ export function htmlFallbackMiddleware(
         req.url = newUrl
         return next()
       } else if (memoryFiles && !memoryFiles.has('index.html')) {
-        const htmlFiles = Array.from(memoryFiles.keys()).filter((f) => f.endsWith('.html'))
+        const htmlFiles = Array.from(memoryFiles.keys()).filter((f) =>
+          f.endsWith('.html'),
+        )
         if (htmlFiles.length === 1) {
           const newUrl = url + htmlFiles[0]
           debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
@@ -88,7 +90,9 @@ export function htmlFallbackMiddleware(
     if (spaFallback) {
       let fallbackUrl = '/index.html'
       if (memoryFiles && !memoryFiles.has('index.html')) {
-        const htmlFiles = Array.from(memoryFiles.keys()).filter((f) => f.endsWith('.html'))
+        const htmlFiles = Array.from(memoryFiles.keys()).filter((f) =>
+          f.endsWith('.html'),
+        )
         if (htmlFiles.length === 1) {
           fallbackUrl = '/' + htmlFiles[0]
         }
