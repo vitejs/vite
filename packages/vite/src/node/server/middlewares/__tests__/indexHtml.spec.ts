@@ -86,3 +86,45 @@ describe('indexHtml middleware — /@fs/ inline script proxy cache', () => {
     expect(result!.code).toContain('module loaded')
   })
 })
+
+describe('indexHtml middleware — HMR timestamp injection with non-root base', () => {
+  test('entry script URL gets the lastHMRTimestamp query when base is not root', async () => {
+    const root = path.resolve(import.meta.dirname, 'fixtures/base-root')
+    const server = await createServer({
+      configFile: false,
+      root,
+      base: '/ui/',
+      logLevel: 'error',
+      server: {
+        middlewareMode: true,
+        ws: false,
+      },
+      optimizeDeps: {
+        noDiscovery: true,
+        include: [],
+      },
+    })
+    onTestFinished(() => server.close())
+
+    // Register the entry in the module graph under the base-stripped URL
+    // (as the transform middleware records it) and mark it HMR-updated.
+    await server.environments.client.transformRequest('/src/main.ts')
+    const mod =
+      server.environments.client.moduleGraph.urlToModuleMap.get('/src/main.ts')
+    expect(
+      mod,
+      'entry module should be registered under the base-stripped URL',
+    ).toBeTruthy()
+    const timestamp = 1234567890
+    mod!.lastHMRTimestamp = timestamp
+
+    const html = `<!doctype html><html><body><script type="module" src="/src/main.ts"></script></body></html>`
+    const transformed = await server.transformIndexHtml('/index.html', html)
+
+    // Without stripping the base before the module graph lookup, the entry
+    // stays a bare `/ui/src/main.ts` while the module's own references get
+    // the timestamp — two different URLs for the same module, executing the
+    // entry twice.
+    expect(transformed).toContain(`src="/ui/src/main.ts?t=${timestamp}"`)
+  })
+})
