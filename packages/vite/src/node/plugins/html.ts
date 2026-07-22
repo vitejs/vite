@@ -167,6 +167,8 @@ const noInlineLinkRels = new Set([
   'apple-touch-icon',
   'apple-touch-startup-image',
   'manifest',
+  // relative urls inside the stylesheet cannot be resolved against a data URL (#16372)
+  'stylesheet',
 ])
 
 export const isAsyncScriptMap: WeakMap<
