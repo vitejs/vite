@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import type { ServerResponse } from 'node:http'
 import sirv from 'sirv'
 import compression from '@polka/compression'
 import chokidar from 'chokidar'
@@ -53,10 +54,12 @@ import {
 import type { MinimalPluginContextWithoutEnvironment } from './plugin'
 
 /**
- * Internal path served by preview watch mode. The injected client polls it and
- * reloads the page when the returned token changes.
+ * Internal path served by preview watch mode. The injected client long-polls it
+ * and reloads the page when the returned token changes.
  */
 const previewReloadPath = '/@vite/preview-reload'
+// Keep-alive timeout for a held long-poll request; the client re-polls after it.
+const reloadPollTimeout = 30_000
 
 export interface PreviewOptions extends CommonServerOptions {
   /**
@@ -209,14 +212,33 @@ export async function preview(
   // Promise used by `server.close()` to ensure `closeServer()` is only called once
   let closeServerPromise: Promise<void> | undefined
   let reloadTimer: ReturnType<typeof setTimeout> | undefined
-  // Token bumped on every output change. The injected client polls the
-  // `previewReloadPath` endpoint and reloads the page when this changes.
+  // Token bumped on every output change. The injected client long-polls the
+  // `previewReloadPath` endpoint; the server holds each request until this token
+  // moves (or a keep-alive timeout), so an edit is reflected immediately.
   let reloadToken = 0
+  type ReloadWaiter = {
+    res: ServerResponse
+    timer: ReturnType<typeof setTimeout>
+  }
+  const reloadWaiters = new Set<ReloadWaiter>()
+  const sendReloadToken = (res: ServerResponse) => {
+    res.setHeader('Content-Type', 'text/plain')
+    res.setHeader('Cache-Control', 'no-cache')
+    res.end(String(reloadToken))
+  }
+  const settleReloadWaiter = (waiter: ReloadWaiter) => {
+    if (!reloadWaiters.delete(waiter)) return
+    clearTimeout(waiter.timer)
+    sendReloadToken(waiter.res)
+  }
   const closeServer = async () => {
     teardownSIGTERMListener(closeServerAndExit)
     if (reloadTimer) {
       clearTimeout(reloadTimer)
       reloadTimer = undefined
+    }
+    for (const waiter of [...reloadWaiters]) {
+      settleReloadWaiter(waiter)
     }
     await watcher?.close()
     await closeHttpServer()
@@ -230,6 +252,9 @@ export async function preview(
     reloadTimer = setTimeout(() => {
       reloadTimer = undefined
       reloadToken++
+      for (const waiter of [...reloadWaiters]) {
+        settleReloadWaiter(waiter)
+      }
       logger.info(
         colors.green(`page reload `) +
           colors.dim(normalizePath(path.relative(config.root, file))),
@@ -317,16 +342,35 @@ export async function preview(
     app.use(baseMiddleware(config.rawBase, false))
   }
 
-  // preview watch mode: serve the current reload token so that the injected
-  // client can poll it and reload the page when the output directory changes
+  // preview watch mode: long-poll endpoint for the injected client. The request
+  // is held open until the reload token moves (an output file changed) or a
+  // keep-alive timeout elapses, so changes reload the page without a delay.
   if (watchEnabled) {
     app.use(function previewReloadMiddleware(req, res, next) {
-      if (req.url !== previewReloadPath) {
+      const url = req.url ?? ''
+      const queryIndex = url.indexOf('?')
+      const pathname = queryIndex === -1 ? url : url.slice(0, queryIndex)
+      if (pathname !== previewReloadPath) {
         return next()
       }
-      res.setHeader('Content-Type', 'text/plain')
-      res.setHeader('Cache-Control', 'no-cache')
-      res.end(String(reloadToken))
+      const search = queryIndex === -1 ? '' : url.slice(queryIndex + 1)
+      const knownToken = new URLSearchParams(search).get('token')
+      // Answer immediately when the client is behind or on its first request;
+      // otherwise hold the request until the token moves or the timeout fires.
+      if (knownToken == null || knownToken !== String(reloadToken)) {
+        sendReloadToken(res)
+        return
+      }
+      const waiter: ReloadWaiter = {
+        res,
+        timer: setTimeout(() => settleReloadWaiter(waiter), reloadPollTimeout),
+      }
+      reloadWaiters.add(waiter)
+      res.on('close', () => {
+        if (reloadWaiters.delete(waiter)) {
+          clearTimeout(waiter.timer)
+        }
+      })
     })
   }
 
@@ -420,25 +464,35 @@ function resolvePreviewWatchOptions(
 function getPreviewReloadClientCode(config: ResolvedConfig): string {
   const endpoint = joinUrlSegments(config.base, previewReloadPath)
 
-  // Poll a token endpoint instead of opening a WebSocket so that pages stay
-  // eligible for the browser's back/forward cache.
+  // Long-poll a token endpoint instead of opening a WebSocket: the server holds
+  // each request until the output changes, so edits reload the page right away
+  // while pages stay eligible for the browser's back/forward cache.
   return /* js */ `
 const endpoint = ${JSON.stringify(endpoint)};
-const interval = 1000;
+const retryDelay = 1000;
 let currentToken;
-async function ping() {
+async function poll() {
   try {
-    const response = await fetch(endpoint, { cache: 'no-store' });
-    if (!response.ok) return;
-    const token = await response.text();
-    if (currentToken === undefined) {
-      currentToken = token;
-    } else if (token !== currentToken) {
-      location.reload();
+    const url =
+      currentToken === undefined
+        ? endpoint
+        : endpoint + '?token=' + encodeURIComponent(currentToken);
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) {
+      setTimeout(poll, retryDelay);
+      return;
     }
-  } catch {}
+    const token = await response.text();
+    if (currentToken !== undefined && token !== currentToken) {
+      location.reload();
+      return;
+    }
+    currentToken = token;
+    poll();
+  } catch {
+    setTimeout(poll, retryDelay);
+  }
 }
-ping();
-setInterval(ping, interval);
+poll();
 `
 }

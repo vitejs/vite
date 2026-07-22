@@ -45,6 +45,33 @@ describe('preview', () => {
     )
     expect(token).not.toBe(initialToken)
   })
+
+  test('holds a long-poll request until an output file changes', async () => {
+    const { root, server } = await startPreview({ watch: true })
+    await server._watcherReady
+
+    const initialToken = await fetchReloadToken(server)
+
+    // A poll that already knows the current token is held open by the server.
+    const url = new URL(previewReloadPath, server.resolvedUrls!.local[0])
+    url.searchParams.set('token', initialToken)
+    const pending = fetch(url, { cache: 'no-store' }).then((res) => res.text())
+
+    let settled = false
+    void pending.then(() => {
+      settled = true
+    })
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    expect(settled).toBe(false)
+
+    await fsp.writeFile(
+      path.join(root, 'dist/index.html'),
+      '<html><head></head><body><h1>updated</h1></body></html>',
+    )
+
+    const token = await pending
+    expect(token).not.toBe(initialToken)
+  })
 })
 
 async function startPreview({
