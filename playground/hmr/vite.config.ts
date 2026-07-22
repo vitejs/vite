@@ -2,14 +2,14 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
-import { TestCssLinkPlugin } from './css-link/plugin'
+import { TestCssLinkPlugin } from './css-link/plugin.ts'
 
 export default defineConfig(({ command }) => ({
   experimental: {
     hmrPartialAccept: true,
   },
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       input: [
         path.resolve(import.meta.dirname, './index.html'),
         ...(command === 'build'

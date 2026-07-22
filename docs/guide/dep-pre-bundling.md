@@ -17,7 +17,7 @@ This is Vite performing what we call "dependency pre-bundling". This process ser
 
 2. **Performance:** Vite converts ESM dependencies with many internal modules into a single module to improve subsequent page load performance.
 
-   Some packages ship their ES modules builds as many separate files importing one another. For example, [`lodash-es` has over 600 internal modules](https://unpkg.com/browse/lodash-es/)! When we do `import { debounce } from 'lodash-es'`, the browser fires off 600+ HTTP requests at the same time! Even though the server has no problem handling them, the large amount of requests create a network congestion on the browser side, causing the page to load noticeably slower.
+   Some packages ship their ES modules builds as many separate files importing one another. For example, [`lodash-es` has over 600 internal modules](https://unpkg.com/browse/lodash-es/)! When we do `import { debounce } from 'lodash-es'`, the browser fires off 600+ HTTP requests at the same time! Even though the server has no problem handling them, the large number of requests creates network congestion on the browser side, causing the page to load noticeably slower.
 
    By pre-bundling `lodash-es` into a single module, we now only need one HTTP request instead!
 
@@ -27,7 +27,7 @@ Dependency pre-bundling only applies in development mode.
 
 ## Automatic Dependency Discovery
 
-If an existing cache is not found, Vite will crawl your source code and automatically discover dependency imports (i.e. "bare imports" that expect to be resolved from `node_modules`) and use these found imports as entry points for the pre-bundle. The pre-bundling is performed with [Rolldown](https://rolldown.rs/) so it's typically very fast.
+If an existing cache is not found, Vite will crawl your source code and automatically discover dependency imports (i.e. "bare imports" that expect to be resolved from `node_modules`) and use these found imports as entry points for the pre-bundle. The pre-bundling is performed with [Rolldown](https://rolldown.rs/), so it's typically very fast.
 
 After the server has already started, if a new dependency import is encountered that isn't already in the cache, Vite will re-run the dep bundling process and reload the page if needed.
 
@@ -65,7 +65,7 @@ You can further customize Rolldown too with the [`optimizeDeps.rolldownOptions` 
 
 Vite caches the pre-bundled dependencies in `node_modules/.vite`. It determines whether it needs to re-run the pre-bundling step based on a few sources:
 
-- Package manager lockfile content, e.g. `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml` or `bun.lock`.
+- Package manager lockfile content, e.g. `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `bun.lock`, `aube-lock.yaml` or `nub.lock`.
 - Patches folder modification time.
 - Relevant fields in your `vite.config.js`, if present.
 - `NODE_ENV` value.

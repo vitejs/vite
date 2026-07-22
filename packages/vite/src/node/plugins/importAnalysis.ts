@@ -42,6 +42,7 @@ import {
   isDefined,
   isExternalUrl,
   isFilePathESM,
+  isFilePathFormatExplicit,
   isInNodeModules,
   isJSRequest,
   joinUrlSegments,
@@ -459,6 +460,17 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         _isNodeModeResult ??= isFilePathESM(importer, config.packageCache)
         return _isNodeModeResult
       }
+      let _isNodeModeForDynamicImportResult = config.legacy
+        ?.inconsistentCjsInterop
+        ? false
+        : undefined
+      const isNodeModeForDynamicImport = () => {
+        _isNodeModeForDynamicImportResult ??= isFilePathFormatExplicit(
+          importer,
+          config.packageCache,
+        )
+        return _isNodeModeForDynamicImportResult
+      }
 
       await Promise.all(
         imports.map(async (importSpecifier, index) => {
@@ -626,7 +638,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                     url,
                     index,
                     importer,
-                    isNodeMode(),
+                    isDynamicImport
+                      ? isNodeModeForDynamicImport()
+                      : isNodeMode(),
                     config,
                   )
                   rewriteDone = true
@@ -704,7 +718,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                     colors.yellow(
                       `\nThe above dynamic import cannot be analyzed by Vite.\n` +
                         `See ${colors.blue(
-                          `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`,
+                          `https://vite.dev/guide/features#dynamic-import`,
                         )} ` +
                         `for supported dynamic import formats. ` +
                         `If this is intended to be left as-is, you can use the ` +
@@ -948,12 +962,11 @@ export function interopNamedImports(
   } = importSpecifier
   const exp = source.slice(expStart, expEnd)
   if (dynamicIndex > -1) {
-    const inconsistentCjsInterop = !!config.legacy?.inconsistentCjsInterop
     // rewrite `import('package')` to expose the default directly
     str.overwrite(
       expStart,
       expEnd,
-      `import('${rewrittenUrl}').then(m => (${interopHelperStr})(m.default, ${inconsistentCjsInterop ? 0 : 1}))` +
+      `import('${rewrittenUrl}').then(m => (${interopHelperStr})(m.default, ${+isNodeMode}))` +
         getLineBreaks(exp),
       { contentOnly: true },
     )

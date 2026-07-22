@@ -191,6 +191,16 @@ export function editFile(
   const modified = (replacer as (content: string | Buffer) => string | Buffer)(
     content,
   )
+  if (Buffer.byteLength(modified) === Buffer.byteLength(content)) {
+    const e = new Error(
+      `editFile("${filename}") did not change the file size. The polling ` +
+        `watcher used in tests may miss same-length edits and cause flaky ` +
+        `failures; change the edit so the file's byte length changes. See ` +
+        `https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md#test-env-and-helpers`,
+    )
+    Error.captureStackTrace(e, editFile)
+    throw e
+  }
   fs.writeFileSync(filename, modified)
 }
 

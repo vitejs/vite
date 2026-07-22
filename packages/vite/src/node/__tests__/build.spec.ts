@@ -13,11 +13,13 @@ import type {
 } from 'rolldown'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import {
+  ChunkMetadataMap,
   build,
   createBuilder,
   onRollupLog,
   resolveBuildOutputs,
   resolveLibFilename,
+  resolveRolldownOptions,
 } from '../build'
 import type { Logger } from '../logger'
 import { createLogger } from '../logger'
@@ -79,6 +81,35 @@ describe('build', () => {
       }
     `)
     assertOutputHashContentChange(result[0], result[1])
+  })
+
+  test('top-level input is used as the default build entry', async () => {
+    const result = (await build({
+      root: resolve(dirname, 'packages/build-project'),
+      logLevel: 'silent',
+      input: 'top-level-entry.js',
+      build: {
+        write: false,
+      },
+      plugins: [
+        {
+          name: 'test',
+          resolveId(id) {
+            if (id.replace(/\\/g, '/').endsWith('top-level-entry.js')) {
+              return '\0top-level-entry.js'
+            }
+          },
+          load(id) {
+            if (id === '\0top-level-entry.js') {
+              return `console.log('from-top-level-input')`
+            }
+          },
+        },
+      ],
+    })) as RolldownOutput
+    const chunk = result.output.find((o) => o.type === 'chunk')
+    expect(chunk?.fileName).toContain('top-level-entry')
+    expect(chunk?.code).toContain('from-top-level-input')
   })
 
   test('file hash should change when pure css chunk changes', async () => {
@@ -153,7 +184,7 @@ describe('build', () => {
         write: false,
         manifest: true,
         assetsInlineLimit: 0,
-        rollupOptions: {
+        rolldownOptions: {
           input: [resolve(root, 'a/index.css'), resolve(root, 'b/index.css')],
         },
       },
@@ -242,7 +273,7 @@ describe('build', () => {
           entry: ['foo.js', 'bar.js'],
           formats: ['es'],
         },
-        rollupOptions: {
+        rolldownOptions: {
           external: 'external',
         },
         write: false,
@@ -377,6 +408,74 @@ describe('resolveBuildOutputs', () => {
     expect(resolveBuild).toThrowError(
       /Entries in "build\.rolldownOptions\.output" must specify "name"/,
     )
+  })
+
+  describe('input resolution in resolveRolldownOptions', () => {
+    const buildProjectRoot = resolve(dirname, 'packages/build-project')
+
+    test('build.rolldownOptions.input takes precedence over top-level input', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+        input: 'top-level-entry.js',
+        build: {
+          rolldownOptions: { input: 'explicit-entry.js' },
+        },
+      })
+      const options = resolveRolldownOptions(
+        builder.environments.client,
+        new ChunkMetadataMap(),
+      )
+      expect(options.input).toBe('explicit-entry.js')
+    })
+
+    test('falls back to index.html when no input is set', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+      })
+      const options = resolveRolldownOptions(
+        builder.environments.client,
+        new ChunkMetadataMap(),
+      )
+      expect(options.input).toBe(resolve(buildProjectRoot, 'index.html'))
+    })
+
+    test('build.ssr string entry takes precedence over input', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+        environments: {
+          ssr: {
+            input: 'env-input.js',
+            build: { ssr: 'ssr-entry.js' },
+          },
+        },
+      })
+      const options = resolveRolldownOptions(
+        builder.environments.ssr,
+        new ChunkMetadataMap(),
+      )
+      expect(options.input).toBe(resolve(buildProjectRoot, 'ssr-entry.js'))
+    })
+
+    test('throws when build.lib is set without entry or top-level input', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+        build: {
+          lib: { name: 'MyLib', formats: ['es'] },
+        },
+      })
+      expect(() =>
+        resolveRolldownOptions(
+          builder.environments.client,
+          new ChunkMetadataMap(),
+        ),
+      ).toThrow(
+        /Either "build\.lib\.entry" or the top-level "input" option is required/,
+      )
+    })
   })
 })
 
@@ -714,7 +813,7 @@ describe('resolveBuildOutputs', () => {
       build: {
         ssr: true,
         ssrEmitAssets: true,
-        rollupOptions: {
+        rolldownOptions: {
           input: {
             index: '/entry',
           },
@@ -742,7 +841,7 @@ describe('resolveBuildOutputs', () => {
           build: {
             ssr: true,
             emitAssets: true,
-            rollupOptions: {
+            rolldownOptions: {
               input: {
                 index: '/entry',
               },
@@ -772,7 +871,7 @@ describe('resolveBuildOutputs', () => {
         ssr: {
           build: {
             ssr: true,
-            rollupOptions: {
+            rolldownOptions: {
               input: {
                 index: '/entry',
               },
@@ -793,7 +892,7 @@ describe('resolveBuildOutputs', () => {
         custom: {
           build: {
             ssr: true,
-            rollupOptions: {
+            rolldownOptions: {
               input: {
                 index: '/entry',
               },
@@ -814,7 +913,7 @@ test('default sharedConfigBuild true on build api', async () => {
     logLevel: 'warn',
     build: {
       ssr: true,
-      rollupOptions: {
+      rolldownOptions: {
         input: {
           index: '/entry',
         },
@@ -843,7 +942,7 @@ test.for([true, false])(
         client: {
           build: {
             outDir: './dist/client',
-            rollupOptions: {
+            rolldownOptions: {
               input: '/entry.js',
             },
           },
@@ -851,7 +950,7 @@ test.for([true, false])(
         ssr: {
           build: {
             outDir: './dist/server',
-            rollupOptions: {
+            rolldownOptions: {
               input: '/entry.js',
             },
           },
@@ -860,7 +959,7 @@ test.for([true, false])(
           build: {
             minify: true,
             outDir: './dist/custom1',
-            rollupOptions: {
+            rolldownOptions: {
               input: '/entry.js',
             },
           },
@@ -869,7 +968,7 @@ test.for([true, false])(
           build: {
             minify: false,
             outDir: './dist/custom2',
-            rollupOptions: {
+            rolldownOptions: {
               input: '/entry.js',
             },
           },
@@ -902,7 +1001,7 @@ test('sharedConfigBuild and emitAssets', async () => {
         build: {
           outDir: './dist/client',
           emitAssets: true,
-          rollupOptions: {
+          rolldownOptions: {
             input: '/entry.js',
           },
         },
@@ -911,7 +1010,7 @@ test('sharedConfigBuild and emitAssets', async () => {
         build: {
           outDir: './dist/ssr',
           emitAssets: true,
-          rollupOptions: {
+          rolldownOptions: {
             input: '/entry.js',
           },
         },
@@ -920,7 +1019,7 @@ test('sharedConfigBuild and emitAssets', async () => {
         build: {
           outDir: './dist/custom',
           emitAssets: true,
-          rollupOptions: {
+          rolldownOptions: {
             input: '/entry.js',
           },
         },
@@ -958,27 +1057,6 @@ test('sharedConfigBuild and emitAssets', async () => {
   ])
 })
 
-test.skip('adjust worker build error for worker.format', async () => {
-  try {
-    await build({
-      root: resolve(dirname, 'fixtures/worker-dynamic'),
-      build: {
-        rollupOptions: {
-          input: {
-            index: '/main.js',
-          },
-        },
-      },
-      logLevel: 'silent',
-    })
-  } catch (e) {
-    expect(e.message).toContain('worker.format')
-    expect(e.message).not.toContain('output.format')
-    return
-  }
-  expect.unreachable()
-})
-
 describe('onRollupLog', () => {
   const pluginName = 'rollup-plugin-test'
   const msgInfo = 'This is the INFO message.'
@@ -994,7 +1072,7 @@ describe('onRollupLog', () => {
       logLevel: 'info',
       build: {
         write: false,
-        rollupOptions: {
+        rolldownOptions: {
           ...options,
           logLevel: 'debug',
         },
@@ -1141,7 +1219,7 @@ test('watch rebuild manifest', async (ctx) => {
     environments: {
       client: {
         build: {
-          rollupOptions: {
+          rolldownOptions: {
             input: '/entry.js',
           },
         },
@@ -1185,6 +1263,29 @@ test('watch rebuild manifest', async (ctx) => {
       "entry.js",
     ]
   `)
+})
+
+test('copies public directory after building same environment with write false first', async (ctx) => {
+  const root = resolve(dirname, 'fixtures/public-dir-write-false')
+  ctx.onTestFinished(() =>
+    fsp.rm(resolve(root, 'dist'), { recursive: true, force: true }),
+  )
+
+  const builder = await createBuilder({
+    root,
+    configFile: false,
+    logLevel: 'silent',
+  })
+
+  builder.environments.client.config.build.write = false
+  await builder.build(builder.environments.client)
+
+  builder.environments.client.config.build.write = true
+  await builder.build(builder.environments.client)
+
+  await expect(
+    fsp.readFile(resolve(root, 'dist/favicon.svg'), 'utf-8'),
+  ).resolves.toBe('<svg></svg>')
 })
 
 /**

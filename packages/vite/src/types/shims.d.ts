@@ -8,11 +8,6 @@ declare module 'cors' {
   export = cors
 }
 
-declare module 'launch-editor-middleware' {
-  const plugin: any
-  export = plugin
-}
-
 declare module 'postcss-import' {
   import type { Plugin } from 'postcss'
   const plugin: (options: {
@@ -20,6 +15,7 @@ declare module 'postcss-import' {
       id: string,
       basedir: string,
       importOptions: any,
+      atRule: import('postcss').AtRule,
     ) => string | string[] | Promise<string | string[]>
     load: (id: string) => Promise<string>
     nameLayer: (index: number, rootFilename: string) => string

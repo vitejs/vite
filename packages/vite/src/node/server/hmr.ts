@@ -45,14 +45,45 @@ const whitespaceRE = /\s/
 
 const normalizedClientDir = normalizePath(CLIENT_DIR)
 
-export interface HmrOptions {
+export interface WsOptions {
   protocol?: string
   host?: string
   port?: number
   clientPort?: number
   path?: string
   timeout?: number
+  server?: HttpServer
+}
+
+export interface HmrOptions {
+  /**
+   * @deprecated Use `server.ws.protocol` instead.
+   */
+  protocol?: string
+  /**
+   * @deprecated Use `server.ws.host` instead.
+   */
+  host?: string
+  /**
+   * @deprecated Use `server.ws.port` instead.
+   */
+  port?: number
+  /**
+   * @deprecated Use `server.ws.clientPort` instead.
+   */
+  clientPort?: number
+  /**
+   * @deprecated Use `server.ws.path` instead.
+   */
+  path?: string
+  /**
+   * @deprecated Use `server.ws.timeout` instead.
+   */
+  timeout?: number
   overlay?: boolean
+  /**
+   * @deprecated Use `server.ws.server` instead.
+   */
   server?: HttpServer
 }
 
@@ -447,7 +478,7 @@ export async function handleHMRUpdate(
     { options: HotUpdateOptions; error?: Error }
   >()
 
-  for (const environment of Object.values(server.environments)) {
+  for (const environment of environments) {
     const mods = new Set(environment.moduleGraph.getModulesByFile(file))
     if (type === 'create') {
       for (const mod of environment.moduleGraph._hasResolveFailedErrorModules) {
@@ -562,7 +593,7 @@ export async function handleHMRUpdate(
     hotMap.get(server.environments.client)!.error = error
   }
 
-  for (const environment of Object.values(server.environments)) {
+  for (const environment of environments) {
     if (environment.name === 'client') continue
     const hot = hotMap.get(environment)!
     const context = environment.pluginContainer.minimalContext

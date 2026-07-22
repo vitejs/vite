@@ -18,7 +18,7 @@ export default defineConfig({
     sourcemap: true,
     assetsInlineLimit: 100, // keep SVG as assets URL
     emptyOutDir: false, // the dist directory is shared with other configs
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         index: path.resolve(import.meta.dirname, 'index.html'),
         nested: path.resolve(import.meta.dirname, 'nested/index.html'),

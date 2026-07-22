@@ -4,7 +4,6 @@ import type { ObjectHook } from 'rolldown'
 import {
   viteAliasPlugin as nativeAliasPlugin,
   viteJsonPlugin as nativeJsonPlugin,
-  viteWasmFallbackPlugin as nativeWasmFallbackPlugin,
   oxcRuntimePlugin,
 } from 'rolldown/experimental'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
@@ -14,6 +13,7 @@ import {
   type PluginWithRequiredHook,
 } from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
+import { resolveBuildPlugins } from '../build'
 import { oxcResolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
 import { importAnalysisPlugin } from './importAnalysis'
@@ -51,7 +51,7 @@ export async function resolvePlugins(
   const anyEnvBundled =
     isBuild || Object.values(config.environments).some((env) => env.isBundled)
   const buildPlugins = anyEnvBundled
-    ? (await import('../build')).resolveBuildPlugins(config)
+    ? resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const devtoolsIntegrationPlugin =
     config.devtools.enabled && !isWorker
@@ -135,7 +135,6 @@ export async function resolvePlugins(
 
     ...normalPlugins,
 
-    nativeWasmFallbackPlugin(),
     definePlugin(config),
     cssPostPlugin(config),
     buildHtmlPlugin(config),

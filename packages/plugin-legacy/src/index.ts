@@ -34,6 +34,25 @@ async function loadBabel() {
   return (babel ??= import('@babel/core'))
 }
 
+async function loadPolyfillPlugins(): Promise<BabelPlugin[]> {
+  return [
+    [
+      (await import('babel-plugin-polyfill-corejs3')).default,
+      {
+        method: 'usage-global',
+        version: _require('core-js/package.json').version,
+        shippedProposals: true,
+      },
+    ],
+    [
+      (await import('babel-plugin-polyfill-regenerator')).default,
+      {
+        method: 'usage-global',
+      },
+    ],
+  ]
+}
+
 // The requested module 'browserslist' is a CommonJS module
 // which may not support all module.exports as named exports
 const { loadConfig: browserslistLoadConfig } = browserslist
@@ -121,10 +140,34 @@ function toAssetPathFromHtml(
 const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 const modernEnvVarMarker = `__VITE_IS_MODERN__`
 
+// Legacy Oxc minification requires coordinated support
+// between plugin-legacy and Vite core.
+const legacyOxcMinificationSupportedVersion = '8.1.4'
+
+function parseVersionCore(v: string): number[] {
+  return v
+    .split('-', 1)[0]
+    .split('.')
+    .map((part) => Number.parseInt(part, 10) || 0)
+}
+
+/** Minimal `>=` comparison for `major.minor.patch(-prerelease)?` version strings */
+function isVersionGte(version: string, minVersion: string): boolean {
+  const core = parseVersionCore(version)
+  const minCore = parseVersionCore(minVersion)
+  for (let i = 0; i < 3; i++) {
+    if (core[i] !== minCore[i]) return core[i] > minCore[i]
+  }
+  // a prerelease (e.g. `8.1.2-beta.0`) ranks lower than the corresponding release (`8.1.2`)
+  return !version.includes('-') || minVersion.includes('-')
+}
+
 const _require = createRequire(import.meta.url)
 
 const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
 const prefixedHashInFileNameRE = /\W?\[hash(?::\d+)?\]/
+export const modulePreloadLinkRE: RegExp =
+  /<link(?![\w-])[^>]*?\srel=(['"])modulepreload\1[^>]*>/g
 
 // browsers supporting dynamic import + import.meta.resolve + async generator
 const modernTargetsEsbuild = [
@@ -143,6 +186,25 @@ const modernTargetsBabel =
 
 const outputOptionsForLegacyChunks =
   new WeakSet<Rollup.NormalizedOutputOptions>()
+
+function resolveLegacyOutputMinify(
+  minify: BuildOptions['minify'],
+  supportsOxc: boolean | undefined,
+  target?: BuildOptions['target'],
+): Rollup.OutputOptions['minify'] {
+  const usesOxc = supportsOxc && (minify === 'oxc' || minify === true)
+  if (!usesOxc) return false
+  if (target === undefined || target === false) return true
+  return { compress: { target } }
+}
+
+function resolveLegacyBuildMinify(
+  minify: BuildOptions['minify'],
+  supportsOxc: boolean | undefined,
+): BuildOptions['minify'] {
+  const usesOxc = supportsOxc && (minify === 'oxc' || minify === true)
+  return usesOxc ? 'oxc' : minify ? 'terser' : false
+}
 
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
@@ -165,6 +227,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const assumptions = options.assumptions || {}
 
   const facadeToLegacyChunkMap = new Map()
+  const facadeToLegacyImportMap = new Map<string | null, Rollup.OutputAsset>()
   const facadeToLegacyPolyfillMap = new Map()
   const facadeToModernPolyfillMap = new Map()
   const modernPolyfills = new Set<string>()
@@ -286,6 +349,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     },
   }
 
+  let supportsLegacyOxcMinification: boolean | undefined
   const legacyGenerateBundlePlugin: Plugin = {
     name: 'vite:legacy-generate-polyfill-chunk',
     apply: 'build',
@@ -328,6 +392,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           opts,
           true,
           genLegacy,
+          supportsLegacyOxcMinification,
         )
         return
       }
@@ -367,12 +432,16 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           legacyPolyfills,
           bundle,
           facadeToLegacyPolyfillMap,
-          // force using terser for legacy polyfill minification, since esbuild
-          // isn't legacy-safe
+          // Legacy polyfill chunks may fallback to terser depending on
+          // configured minifier support.
           config.build,
           'iife',
           opts,
           options.externalSystemJS,
+          false,
+          supportsLegacyOxcMinification,
+          // Don't use newer syntax for legacy polyfill chunks
+          'es2015',
         )
       }
     },
@@ -393,6 +462,20 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         throw new Error('@vitejs/plugin-legacy does not support library mode.')
       }
       config = _config
+
+      const viteVersion = this.meta.viteVersion
+      supportsLegacyOxcMinification =
+        !!viteVersion &&
+        isVersionGte(viteVersion, legacyOxcMinificationSupportedVersion)
+
+      if (!supportsLegacyOxcMinification && config.build.minify === 'oxc') {
+        config.logger.warn(
+          colors.yellow(
+            `'oxc' minifier is not supported for legacy chunks by Vite version ${viteVersion}. ` +
+              `Please upgrade to Vite version ${legacyOxcMinificationSupportedVersion} or later.`,
+          ),
+        )
+      }
 
       if (isDebug) {
         console.log(`[@vitejs/plugin-legacy] modernTargets:`, modernTargets)
@@ -452,19 +535,22 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           format: 'esm',
           entryFileNames: getLegacyOutputFileName(options.entryFileNames),
           chunkFileNames: getLegacyOutputFileName(options.chunkFileNames),
-          minify: false, // minify with terser instead
+          minify: resolveLegacyOutputMinify(
+            config.build.minify,
+            supportsLegacyOxcMinification,
+          ),
         }
       }
 
-      const { rollupOptions } = config.build
-      const { output } = rollupOptions
+      const { rolldownOptions } = config.build
+      const { output } = rolldownOptions
       if (Array.isArray(output)) {
-        rollupOptions.output = [
+        rolldownOptions.output = [
           ...output.map(createLegacyOutput),
           ...(genModern ? output : []),
         ]
       } else {
-        rollupOptions.output = [
+        rolldownOptions.output = [
           createLegacyOutput(output),
           ...(genModern ? [output || {}] : []),
         ]
@@ -575,6 +661,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         ],
       })
 
+      const polyfillPlugins = needPolyfills ? await loadPolyfillPlugins() : []
       const babelTransformOptions: babel.TransformOptions = {
         babelrc: false,
         configFile: false,
@@ -585,9 +672,13 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         targets,
         assumptions,
         browserslistConfigFile: false,
+        // presets are applied in reverse order, so the effective order is:
+        // 1. the polyfill plugins (last preset) inject core-js/regenerator
+        //    imports based on usage, before preset-env lowers the syntax
+        // 2. preset-env transforms the syntax
+        // 3. `recordAndRemovePolyfillBabelPlugin` catches and removes the
+        //    injected imports before `wrapIIFEBabelPlugin` wraps the body
         presets: [
-          // forcing our plugin to run before preset-env by wrapping it in a
-          // preset so we can catch the injected import statements...
           [
             () => ({
               plugins: [
@@ -603,16 +694,10 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             {
               bugfixes: true,
               modules: false,
-              useBuiltIns: needPolyfills ? 'usage' : false,
-              corejs: needPolyfills
-                ? {
-                    version: _require('core-js/package.json').version,
-                    proposals: false,
-                  }
-                : undefined,
               shippedProposals: true,
             },
           ],
+          [() => ({ plugins: polyfillPlugins })],
         ],
       }
       let result: babel.BabelFileResult | null
@@ -629,19 +714,27 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       return null
     },
 
-    transformIndexHtml(html, { chunk }) {
+    transformIndexHtml(html, { chunk, bundle }) {
       if (config.build.ssr) return
       if (!chunk) return
       if (chunk.fileName.includes('-legacy')) {
         // The legacy bundle is built first, and its index.html isn't actually emitted if
         // modern bundle will be generated. Here we simply record its corresponding legacy chunk.
         facadeToLegacyChunkMap.set(chunk.facadeModuleId, chunk.fileName)
+        if (config.build.chunkImportMap) {
+          facadeToLegacyImportMap.set(
+            chunk.facadeModuleId,
+            bundle![getImportMapFilename(config)]! as Rollup.OutputAsset,
+          )
+        }
         if (genModern) {
           return
         }
       }
       if (!genModern) {
-        html = html.replace(/<script type="module".*?<\/script>/g, '')
+        html = html
+          .replace(/<script type="module".*?<\/script>/g, '')
+          .replace(modulePreloadLinkRE, '')
       }
 
       const tags: HtmlTagDescriptor[] = []
@@ -677,7 +770,22 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         return { html, tags }
       }
 
-      // 2. inject Safari 10 nomodule fix
+      // 2. inject importmaps
+      if (config.build.chunkImportMap) {
+        const importMap = facadeToLegacyImportMap.get(chunk.facadeModuleId)!
+        const decoder = new TextDecoder()
+        tags.push({
+          tag: 'script',
+          attrs: { type: 'systemjs-importmap' },
+          children:
+            typeof importMap.source === 'string'
+              ? importMap.source
+              : decoder.decode(importMap.source),
+          injectTo: 'head',
+        })
+      }
+
+      // 3. inject Safari 10 nomodule fix
       if (genModern) {
         tags.push({
           tag: 'script',
@@ -687,7 +795,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         })
       }
 
-      // 3. inject legacy polyfills
+      // 4. inject legacy polyfills
       const legacyPolyfillFilename = facadeToLegacyPolyfillMap.get(
         chunk.facadeModuleId,
       )
@@ -712,7 +820,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         )
       }
 
-      // 4. inject legacy entry
+      // 5. inject legacy entry
       const legacyEntryFilename = facadeToLegacyChunkMap.get(
         chunk.facadeModuleId,
       )
@@ -742,7 +850,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         )
       }
 
-      // 5. inject dynamic import fallback entry
+      // 6. inject dynamic import fallback entry
       if (legacyPolyfillFilename && legacyEntryFilename && genModern) {
         tags.push({
           tag: 'script',
@@ -770,12 +878,14 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       if (isLegacyBundle(bundle) && genModern) {
+        const importMapFilename = getImportMapFilename(config)
         // avoid emitting duplicate assets
         for (const name in bundle) {
           if (
             bundle[name].type === 'asset' &&
             !name.endsWith('.map') &&
-            !name.includes('-legacy') // legacy chunks
+            !name.includes('-legacy') && // legacy chunks
+            name !== importMapFilename // handled by import analysis build plugin
           ) {
             delete bundle[name]
           }
@@ -785,6 +895,15 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   }
 
   return [legacyConfigPlugin, legacyGenerateBundlePlugin, legacyPostPlugin]
+}
+
+function getImportMapFilename(config: ResolvedConfig): string {
+  const chunkImportMap =
+    config.build.rolldownOptions.experimental?.chunkImportMap
+  if (typeof chunkImportMap === 'object' && chunkImportMap.fileName) {
+    return chunkImportMap.fileName
+  }
+  return 'importmap.json'
 }
 
 export async function detectPolyfills(
@@ -803,22 +922,7 @@ export async function detectPolyfills(
     targets,
     assumptions,
     browserslistConfigFile: false,
-    plugins: [
-      [
-        (await import('babel-plugin-polyfill-corejs3')).default,
-        {
-          method: 'usage-global',
-          version: _require('core-js/package.json').version,
-          shippedProposals: true,
-        },
-      ],
-      [
-        (await import('babel-plugin-polyfill-regenerator')).default,
-        {
-          method: 'usage-global',
-        },
-      ],
-    ],
+    plugins: await loadPolyfillPlugins(),
   })
   for (const node of result!.ast!.program.body) {
     if (node.type === 'ImportDeclaration') {
@@ -844,9 +948,15 @@ async function buildPolyfillChunk(
   rollupOutputOptions: Rollup.NormalizedOutputOptions,
   excludeSystemJS?: boolean,
   prependModenChunkLegacyGuard?: boolean,
+  supportsLegacyOxcMinification?: boolean,
+  overrideMinifyCompressTarget?: BuildOptions['target'],
 ) {
-  let { minify, assetsDir, sourcemap } = buildOptions
-  minify = minify ? 'terser' : false
+  const { assetsDir, sourcemap, target } = buildOptions
+  const minifyCompressTarget = overrideMinifyCompressTarget ?? target
+  const minify = resolveLegacyBuildMinify(
+    buildOptions.minify,
+    supportsLegacyOxcMinification,
+  )
   const res = await build({
     mode,
     // so that everything is resolved from here
@@ -862,7 +972,7 @@ async function buildPolyfillChunk(
       minify,
       assetsDir,
       sourcemap,
-      rollupOptions: {
+      rolldownOptions: {
         input: {
           polyfills: polyfillId,
         },
@@ -871,6 +981,11 @@ async function buildPolyfillChunk(
           hashCharacters: rollupOutputOptions.hashCharacters,
           entryFileNames: rollupOutputOptions.entryFileNames,
           sourcemapBaseUrl: rollupOutputOptions.sourcemapBaseUrl,
+          minify: resolveLegacyOutputMinify(
+            buildOptions.minify,
+            supportsLegacyOxcMinification,
+            minifyCompressTarget,
+          ),
         },
       },
     },

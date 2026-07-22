@@ -112,7 +112,6 @@ export interface ResolveOptions extends EnvironmentResolveOptions {
    * Enable tsconfig paths resolution
    *
    * @default false
-   * @experimental
    */
   tsconfigPaths?: boolean
 }
@@ -223,6 +222,7 @@ const perEnvironmentOrWorkerPlugin = (
 export function oxcResolvePlugin(
   resolveOptions: ResolvePluginOptionsWithOverrides,
   overrideEnvConfig: (ResolvedConfig & ResolvedEnvironmentOptions) | undefined,
+  isJsPluginContainer = false,
 ): Plugin[] {
   return [
     ...(resolveOptions.optimizeDeps && !resolveOptions.isBuild
@@ -358,10 +358,12 @@ export function oxcResolvePlugin(
             })
           },
 
-          ...(partialEnv.config.command === 'serve'
+          ...(partialEnv.config.command === 'serve' || isJsPluginContainer
             ? {
                 async onWarn(msg) {
-                  getEnv().logger.warn(`warning: ${msg}`, {
+                  // use `partialEnv` instead of `getEnv()` because `buildStart` is
+                  // not called for plugin container used by `createIdResolver`
+                  partialEnv.config.logger.warn(`warning: ${msg}`, {
                     clear: true,
                     timestamp: true,
                   })
