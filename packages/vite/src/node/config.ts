@@ -2493,10 +2493,7 @@ async function bundleAndLoadConfigFile(
     isESM,
   )
 
-  if (
-    bundled.nativeIncompatibilities.length > 0 &&
-    !process.env.VITE_CONFIG_NATIVE_IGNORE_WARNING
-  ) {
+  if (bundled.nativeIncompatibilities.length > 0) {
     const logger = createLogger(logLevel, { customLogger })
     logger.warn(
       formatNativeConfigIncompatWarning(
@@ -2556,7 +2553,8 @@ async function bundleConfigFile(
     // this also aligns with other config loader behaviors
     tsconfig: false,
     plugins: [
-      createNativeConfigCompatPlugin(nativeIncompatibilities),
+      !process.env.VITE_CONFIG_NATIVE_IGNORE_WARNING &&
+        createNativeConfigCompatPlugin(nativeIncompatibilities),
       {
         name: 'externalize-deps',
         resolveId: {
