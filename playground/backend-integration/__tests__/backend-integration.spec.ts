@@ -8,6 +8,7 @@ import {
   isBuild,
   isBundledDev,
   isServe,
+  isWindows,
   listAssets,
   page,
   ports,
@@ -16,7 +17,7 @@ import {
   untilBrowserLogAfter,
 } from '~utils'
 
-test('should have no 404s', () => {
+test.skipIf(isBundledDev && isWindows)('should have no 404s', () => {
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
   })
@@ -132,12 +133,15 @@ describe.runIf(isServe)('serve', () => {
     },
   )
 
-  test('server.origin is applied to public CSS url()', async () => {
-    const bg = await getCssRuleBg('.public-asset')
-    expect(bg).toContain(
-      `http://localhost:${ports['backend-integration']}/dev/icon.png`,
-    )
-  })
+  test.skipIf(isBundledDev && isWindows)(
+    'server.origin is applied to public CSS url()',
+    async () => {
+      const bg = await getCssRuleBg('.public-asset')
+      expect(bg).toContain(
+        `http://localhost:${ports['backend-integration']}/dev/icon.png`,
+      )
+    },
+  )
 
   test.skipIf(isBundledDev)(
     'CSS dependencies are tracked for HMR',

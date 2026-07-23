@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { isBuild, isBundledDev, page, viteTestUrl } from '~utils'
+import { isBuild, page, viteTestUrl } from '~utils'
 
 test('should load and execute the JS file', async () => {
   await page.goto(viteTestUrl + '/no-polyfills.html')
