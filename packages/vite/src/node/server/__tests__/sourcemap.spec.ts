@@ -107,15 +107,22 @@ describe.skipIf(isWindows)('rewriteModuleSourceMapSources', () => {
     expect(map.sources).toEqual(['../my%20dir/a.ts'])
   })
 
-  test('escapes `#` and `?`, which encodeURI leaves as-is', () => {
+  test('escapes `#`, which encodeURI leaves as-is', () => {
     const map = {
-      sources: ['../my#dir/a.ts', './what?/b.ts', '/project/c#1/d.ts'],
+      sources: ['../my#dir/a.ts', '/project/c#1/d.ts'],
+    }
+    rewriteModuleSourceMapSources(map, '/project/src/entry.ts')
+    expect(map.sources).toEqual(['../my%23dir/a.ts', '../c%231/d.ts'])
+  })
+
+  test('preserves query strings', () => {
+    const map = {
+      sources: ['my-worker.ts?worker_file&type=module', './a.ts?v=123'],
     }
     rewriteModuleSourceMapSources(map, '/project/src/entry.ts')
     expect(map.sources).toEqual([
-      '../my%23dir/a.ts',
-      './what%3F/b.ts',
-      '../c%231/d.ts',
+      'my-worker.ts?worker_file&type=module',
+      './a.ts?v=123',
     ])
   })
 

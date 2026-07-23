@@ -65,8 +65,9 @@ interface SourceMapLike {
  *   whitespace do not break resolution. The sourcemap spec requires `sources`
  *   entries to be URIs; a raw path containing a space (e.g. `../My Docs/x.ts`)
  *   yields an invalid URI reference. See https://github.com/vitejs/vite/issues/17977.
- *   `#` and `?` are escaped as well: encodeURI preserves them as URI-reserved
- *   characters, but in a path they would be parsed as fragment/query delimiters.
+ *   `#` is escaped as well: encodeURI preserves it as a URI-reserved character,
+ *   but in a path it would be parsed as a fragment delimiter. `?` is left
+ *   untouched since sources may carry legitimate query strings.
  */
 export function rewriteModuleSourceMapSources(
   map: SourceMapLike,
@@ -91,11 +92,11 @@ export function rewriteModuleSourceMapSources(
     // Skip virtual modules (e.g. `\0foo`, `virtual:foo`) — encoding them
     // would corrupt the identifier the debugger uses to fetch content.
     if (!virtualSourceRE.test(rewritten)) {
-      // encodeURI leaves `#` and `?` untouched (reserved chars), but here they
-      // are path characters, not fragment/query delimiters.
-      rewritten = encodeURI(rewritten)
-        .replace(/#/g, '%23')
-        .replace(/\?/g, '%3F')
+      // encodeURI leaves `#` untouched (reserved char), but here it is a path
+      // character, not a fragment delimiter — Vite never appends fragments to
+      // module URLs. `?` must stay as-is: sources can carry real query strings
+      // (e.g. `my-worker.ts?worker_file&type=module`).
+      rewritten = encodeURI(rewritten).replace(/#/g, '%23')
     }
 
     map.sources[index] = rewritten
