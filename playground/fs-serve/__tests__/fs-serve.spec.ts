@@ -1,10 +1,10 @@
 import net from 'node:net'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { isServe, isWindows, viteTestUrl } from '~utils'
+import { isBundledDev, isServe, isWindows, viteTestUrl } from '~utils'
 import './commonTests'
 
-describe.runIf(isServe)('invalid request', () => {
+describe.runIf(isServe && !isBundledDev)('invalid request', () => {
   const sendRawRequest = async (baseUrl: string, requestTarget: string) => {
     return new Promise<string>((resolve, reject) => {
       const parsedUrl = new URL(baseUrl)

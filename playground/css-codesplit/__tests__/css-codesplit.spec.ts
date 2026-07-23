@@ -3,12 +3,13 @@ import {
   findAssetFile,
   getColor,
   isBuild,
+  isBundledDev,
   listAssets,
   page,
   readManifest,
 } from '~utils'
 
-test('should load all stylesheets', async () => {
+test.skipIf(isBundledDev)('should load all stylesheets', async () => {
   expect(await getColor('h1')).toBe('red')
   expect(await getColor('h2')).toBe('blue')
   expect(await getColor('.dynamic')).toBe('green')
@@ -16,19 +17,25 @@ test('should load all stylesheets', async () => {
   expect(await getColor('.chunk')).toBe('magenta')
 })
 
-test('should load dynamic import with inline', async () => {
-  const css = await page.textContent('.dynamic-inline')
-  expect(css).toMatch('.inline')
+test.skipIf(isBundledDev)(
+  'should load dynamic import with inline',
+  async () => {
+    const css = await page.textContent('.dynamic-inline')
+    expect(css).toMatch('.inline')
 
-  expect(await getColor('.inline')).not.toBe('yellow')
-})
+    expect(await getColor('.inline')).not.toBe('yellow')
+  },
+)
 
-test('should load dynamic import with module', async () => {
-  const css = await page.textContent('.dynamic-module')
-  expect(css).toMatch('_mod_')
+test.skipIf(isBundledDev)(
+  'should load dynamic import with module',
+  async () => {
+    const css = await page.textContent('.dynamic-module')
+    expect(css).toMatch('_mod_')
 
-  expect(await getColor('.mod')).toBe('yellow')
-})
+    expect(await getColor('.mod')).toBe('yellow')
+  },
+)
 
 test('style order should be consistent when style tag is inserted by JS', async () => {
   expect(await getColor('.order-bulk')).toBe('orange')

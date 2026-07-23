@@ -7,6 +7,7 @@ import {
   getBg,
   getColor,
   isBuild,
+  isBundledDev,
   isServe,
   listAssets,
   notifyRebuildComplete,
@@ -34,7 +35,7 @@ const fetchPath = (p: string) => {
   })
 }
 
-test('should have no 404s', () => {
+test.skipIf(isBundledDev)('should have no 404s', () => {
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
   })
@@ -88,7 +89,7 @@ describe.runIf(isServe)('outside base', () => {
 })
 
 describe('injected scripts', () => {
-  test('@vite/client', async () => {
+  test.skipIf(isBundledDev)('@vite/client', async () => {
     const hasClient = await page.$(
       'script[type="module"][src="/foo/bar/@vite/client"]',
     )
@@ -99,7 +100,7 @@ describe('injected scripts', () => {
     }
   })
 
-  test('html-proxy', async () => {
+  test.skipIf(isBundledDev)('html-proxy', async () => {
     const hasHtmlProxy = await page.$(
       'script[type="module"][src^="/foo/bar/index.html?html-proxy"]',
     )
@@ -128,11 +129,11 @@ test('import-expression from simple script', async () => {
 })
 
 describe('asset imports from js', () => {
-  test('relative', async () => {
+  test.skipIf(isBundledDev)('relative', async () => {
     expect(await page.textContent('.asset-import-relative')).toMatch(assetMatch)
   })
 
-  test('absolute', async () => {
+  test.skipIf(isBundledDev)('absolute', async () => {
     expect(await page.textContent('.asset-import-absolute')).toMatch(assetMatch)
   })
 
@@ -216,36 +217,36 @@ describe('css url() references', () => {
     ).toBe(true)
   })
 
-  test('relative', async () => {
+  test.skipIf(isBundledDev)('relative', async () => {
     expect(await getBg('.css-url-relative')).toMatch(assetMatch)
   })
 
-  test('encoded', async () => {
+  test.skipIf(isBundledDev)('encoded', async () => {
     expect(await getBg('.css-url-encoded')).toMatch(encodedAssetMatch)
   })
 
-  test('image-set relative', async () => {
+  test.skipIf(isBundledDev)('image-set relative', async () => {
     const imageSet = await getBg('.css-image-set-relative')
     imageSet.split(', ').forEach((s) => {
       expect(s).toMatch(assetMatch)
     })
   })
 
-  test('image-set without the url() call', async () => {
+  test.skipIf(isBundledDev)('image-set without the url() call', async () => {
     const imageSet = await getBg('.css-image-set-without-url-call')
     imageSet.split(', ').forEach((s) => {
       expect(s).toMatch(assetMatch)
     })
   })
 
-  test('image-set with var', async () => {
+  test.skipIf(isBundledDev)('image-set with var', async () => {
     const imageSet = await getBg('.css-image-set-with-var')
     imageSet.split(', ').forEach((s) => {
       expect(s).toMatch(assetMatch)
     })
   })
 
-  test('image-set with mix', async () => {
+  test.skipIf(isBundledDev)('image-set with mix', async () => {
     const imageSet = await getBg('.css-image-set-mix-url-var')
     imageSet.split(', ').forEach((s) => {
       expect(s).toMatch(assetMatch)
@@ -262,32 +263,38 @@ describe('css url() references', () => {
     expect(imageSet).toContain('image-set(url("data:image/png;base64,')
   })
 
-  test('image-set with multiple descriptor', async () => {
+  test.skipIf(isBundledDev)('image-set with multiple descriptor', async () => {
     const imageSet = await getBg('.css-image-set-multiple-descriptor')
     imageSet.split(', ').forEach((s) => {
       expect(s).toMatch(assetMatch)
     })
   })
 
-  test('image-set with multiple descriptor as inline style', async () => {
-    const imageSet = await getBg(
-      '.css-image-set-multiple-descriptor-inline-style',
-    )
-    imageSet.split(', ').forEach((s) => {
-      expect(s).toMatch(assetMatch)
-    })
-  })
+  test.skipIf(isBundledDev)(
+    'image-set with multiple descriptor as inline style',
+    async () => {
+      const imageSet = await getBg(
+        '.css-image-set-multiple-descriptor-inline-style',
+      )
+      imageSet.split(', ').forEach((s) => {
+        expect(s).toMatch(assetMatch)
+      })
+    },
+  )
 
-  test('image-set and url exist at the same time.', async () => {
-    const imageSet = await getBg('.image-set-and-url-exsiting-at-same-time')
-    expect(imageSet).toMatch(assetMatch)
-  })
+  test.skipIf(isBundledDev)(
+    'image-set and url exist at the same time.',
+    async () => {
+      const imageSet = await getBg('.image-set-and-url-exsiting-at-same-time')
+      expect(imageSet).toMatch(assetMatch)
+    },
+  )
 
-  test('relative in @import', async () => {
+  test.skipIf(isBundledDev)('relative in @import', async () => {
     expect(await getBg('.css-url-relative-at-imported')).toMatch(assetMatch)
   })
 
-  test('absolute', async () => {
+  test.skipIf(isBundledDev)('absolute', async () => {
     expect(await getBg('.css-url-absolute')).toMatch(assetMatch)
   })
 
@@ -295,33 +302,38 @@ describe('css url() references', () => {
     expect(await getBg('.css-url-public')).toMatch(iconMatch)
   })
 
-  test('base64 inline', async () => {
+  test.skipIf(isBundledDev)('base64 inline', async () => {
     const match = isBuild ? `data:image/png;base64` : `/foo/bar/nested/icon.png`
     expect(await getBg('.css-url-base64-inline')).toMatch(match)
     expect(await getBg('.css-url-quotes-base64-inline')).toMatch(match)
   })
 
-  test('no base64 inline for icon and manifest links', async () => {
-    const iconEl = await page.$(`link.ico`)
-    const href = await iconEl.getAttribute('href')
-    expect(href).toMatch(
-      isBuild ? /\/foo\/bar\/assets\/favicon-[-\w]{8}\.ico/ : 'favicon.ico',
-    )
+  test.skipIf(isBundledDev)(
+    'no base64 inline for icon and manifest links',
+    async () => {
+      const iconEl = await page.$(`link.ico`)
+      const href = await iconEl.getAttribute('href')
+      expect(href).toMatch(
+        isBuild ? /\/foo\/bar\/assets\/favicon-[-\w]{8}\.ico/ : 'favicon.ico',
+      )
 
-    const manifestEl = await page.$(`link[rel="manifest"]`)
-    const manifestHref = await manifestEl.getAttribute('href')
-    expect(manifestHref).toMatch(
-      isBuild ? /\/foo\/bar\/assets\/manifest-[-\w]{8}\.json/ : 'manifest.json',
-    )
-  })
+      const manifestEl = await page.$(`link[rel="manifest"]`)
+      const manifestHref = await manifestEl.getAttribute('href')
+      expect(manifestHref).toMatch(
+        isBuild
+          ? /\/foo\/bar\/assets\/manifest-[-\w]{8}\.json/
+          : 'manifest.json',
+      )
+    },
+  )
 
-  test('multiple urls on the same line', async () => {
+  test.skipIf(isBundledDev)('multiple urls on the same line', async () => {
     const bg = await getBg('.css-url-same-line')
     expect(bg).toMatch(assetMatch)
     expect(bg).toMatch(iconMatch)
   })
 
-  test('aliased', async () => {
+  test.skipIf(isBundledDev)('aliased', async () => {
     const bg = await getBg('.css-url-aliased')
     expect(bg).toMatch(assetMatch)
   })
@@ -360,7 +372,7 @@ describe('css url() references', () => {
     expect(await getBg('.css-image-set-svg')).toMatch(/data:image\/svg\+xml,.+/)
   })
 
-  test('url() with svg in .css?url', async () => {
+  test.skipIf(isBundledDev)('url() with svg in .css?url', async () => {
     const bg = await getBg('.css-url-svg-in-url')
     expect(bg).toMatch(/data:image\/svg\+xml,.+/)
     expect(bg).toContain('blue')
@@ -384,7 +396,7 @@ describe('css url() references', () => {
 })
 
 describe('image', () => {
-  test('src', async () => {
+  test.skipIf(isBundledDev)('src', async () => {
     const img = await page.$('.img-src')
     const src = await img.getAttribute('src')
     expect(src).toMatch(
@@ -394,7 +406,7 @@ describe('image', () => {
     )
   })
 
-  test('src inline', async () => {
+  test.skipIf(isBundledDev)('src inline', async () => {
     const img = await page.$('.img-src-inline')
     const src = await img.getAttribute('src')
     expect(src).toMatch(
@@ -404,7 +416,7 @@ describe('image', () => {
     )
   })
 
-  test('srcset', async () => {
+  test.skipIf(isBundledDev)('srcset', async () => {
     const img = await page.$('.img-src-set')
     const srcset = await img.getAttribute('srcset')
     srcset.split(', ').forEach((s) => {
@@ -424,7 +436,7 @@ describe('image', () => {
     })
   })
 
-  test('srcset (mixed)', async () => {
+  test.skipIf(isBundledDev)('srcset (mixed)', async () => {
     const img = await page.$('.img-src-set-mixed')
     const srcset = await img.getAttribute('srcset')
     const srcs = srcset.split(', ')
@@ -437,7 +449,7 @@ describe('image', () => {
 })
 
 describe('meta', () => {
-  test('og image', async () => {
+  test.skipIf(isBundledDev)('og image', async () => {
     const meta = await page.$('.meta-og-image')
     const content = await meta.getAttribute('content')
     expect(content).toMatch(
@@ -450,12 +462,12 @@ describe('meta', () => {
 
 describe('svg fragments', () => {
   // 404 is checked already, so here we just ensure the urls end with #fragment
-  test('img url', async () => {
+  test.skipIf(isBundledDev)('img url', async () => {
     const img = await page.$('.svg-frag-img')
     expect(await img.getAttribute('src')).toMatch(/svg#icon-clock-view$/)
   })
 
-  test('via css url()', async () => {
+  test.skipIf(isBundledDev)('via css url()', async () => {
     expect(await getBg('.icon')).toMatch(/svg#icon-clock-view"\)$/)
   })
 
@@ -467,20 +479,20 @@ describe('svg fragments', () => {
     )
   })
 
-  test('url with an alias', async () => {
+  test.skipIf(isBundledDev)('url with an alias', async () => {
     expect(await getBg('.icon-clock-alias')).toMatch(
       /\.svg#icon-clock-view"\)$/,
     )
   })
 })
 
-test('Unknown extension assets import', async () => {
+test.skipIf(isBundledDev)('Unknown extension assets import', async () => {
   expect(await page.textContent('.unknown-ext')).toMatch(
     isBuild ? 'data:application/octet-stream;' : '/nested/foo.unknown',
   )
 })
 
-test('?raw import', async () => {
+test.skipIf(isBundledDev)('?raw import', async () => {
   expect(await page.textContent('.raw')).toMatch('SVG')
   expect(await page.textContent('.raw-html')).toBe('<div>partial</div>\n')
 
@@ -498,7 +510,7 @@ test('?raw import', async () => {
   )
 })
 
-test('?no-inline svg import', async () => {
+test.skipIf(isBundledDev)('?no-inline svg import', async () => {
   expect(await page.textContent('.no-inline-svg')).toMatch(
     isBuild
       ? /\/foo\/bar\/assets\/fragment-[-\w]{8}\.svg/
@@ -506,13 +518,16 @@ test('?no-inline svg import', async () => {
   )
 })
 
-test('?no-inline svg import -- multiple postfix', async () => {
-  expect(await page.textContent('.no-inline-svg-mp')).toMatch(
-    isBuild
-      ? /\/foo\/bar\/assets\/fragment-[-\w]{8}\.svg\?foo=bar/
-      : '/foo/bar/nested/fragment.svg?no-inline&foo=bar',
-  )
-})
+test.skipIf(isBundledDev)(
+  '?no-inline svg import -- multiple postfix',
+  async () => {
+    expect(await page.textContent('.no-inline-svg-mp')).toMatch(
+      isBuild
+        ? /\/foo\/bar\/assets\/fragment-[-\w]{8}\.svg\?foo=bar/
+        : '/foo/bar/nested/fragment.svg?no-inline&foo=bar',
+    )
+  },
+)
 
 test('?inline png import', async () => {
   expect(await page.textContent('.inline-png')).toMatch(
@@ -532,7 +547,7 @@ test('?inline public json import', async () => {
   )
 })
 
-test('?url import', async () => {
+test.skipIf(isBundledDev)('?url import', async () => {
   const src = readFile('foo.js')
   expect(await page.textContent('.url')).toMatch(
     isBuild
@@ -541,7 +556,7 @@ test('?url import', async () => {
   )
 })
 
-test('?url import on css', async () => {
+test.skipIf(isBundledDev)('?url import on css', async () => {
   const txt = await page.textContent('.url-css')
   expect(txt).toMatch(
     isBuild
@@ -551,7 +566,7 @@ test('?url import on css', async () => {
 })
 
 describe('unicode url', () => {
-  test('from js import', async () => {
+  test.skipIf(isBundledDev)('from js import', async () => {
     const src = readFile('テスト-測試-white space.js')
     expect(await page.textContent('.unicode-url')).toMatch(
       isBuild
@@ -568,7 +583,7 @@ describe.runIf(isBuild)('encodeURI', () => {
   })
 })
 
-test('new URL(..., import.meta.url)', async () => {
+test.skipIf(isBundledDev)('new URL(..., import.meta.url)', async () => {
   const imgMatch = isBuild
     ? /\/foo\/bar\/assets\/img-[-\w]{8}\.png/
     : '/foo/bar/import-meta-url/img.png'
@@ -596,7 +611,7 @@ test('new URL(..., import.meta.url)', async () => {
   }
 })
 
-test('new URL("@/...", import.meta.url)', async () => {
+test.skipIf(isBundledDev)('new URL("@/...", import.meta.url)', async () => {
   expect(await page.textContent('.import-meta-url-dep')).toMatch(assetMatch)
 })
 
@@ -614,72 +629,94 @@ test('new URL("data:...", import.meta.url)', async () => {
   )
 })
 
-test('new URL(..., import.meta.url) without extension', async () => {
-  expect(await page.textContent('.import-meta-url-without-extension')).toMatch(
-    isBuild ? 'data:text/javascript' : 'nested/test.js',
-  )
-  expect(
-    await page.textContent('.import-meta-url-content-without-extension'),
-  ).toContain('export default class')
-})
+test.skipIf(isBundledDev)(
+  'new URL(..., import.meta.url) without extension',
+  async () => {
+    expect(
+      await page.textContent('.import-meta-url-without-extension'),
+    ).toMatch(isBuild ? 'data:text/javascript' : 'nested/test.js')
+    expect(
+      await page.textContent('.import-meta-url-content-without-extension'),
+    ).toContain('export default class')
+  },
+)
 
-test('new URL(`${dynamic}`, import.meta.url)', async () => {
-  expect(await page.textContent('.dynamic-import-meta-url-1')).toMatch(
-    isBuild ? 'data:image/png;base64' : '/foo/bar/nested/icon.png',
-  )
-  expect(await page.textContent('.dynamic-import-meta-url-2')).toMatch(
-    assetMatch,
-  )
-  expect(await page.textContent('.dynamic-import-meta-url-js')).toMatch(
-    isBuild ? 'data:text/javascript;base64' : '/foo/bar/nested/test.js',
-  )
-})
+test.skipIf(isBundledDev)(
+  'new URL(`${dynamic}`, import.meta.url)',
+  async () => {
+    expect(await page.textContent('.dynamic-import-meta-url-1')).toMatch(
+      isBuild ? 'data:image/png;base64' : '/foo/bar/nested/icon.png',
+    )
+    expect(await page.textContent('.dynamic-import-meta-url-2')).toMatch(
+      assetMatch,
+    )
+    expect(await page.textContent('.dynamic-import-meta-url-js')).toMatch(
+      isBuild ? 'data:text/javascript;base64' : '/foo/bar/nested/test.js',
+    )
+  },
+)
 
-test('new URL(`./${dynamic}?abc`, import.meta.url)', async () => {
-  expect(await page.textContent('.dynamic-import-meta-url-1-query')).toMatch(
-    isBuild ? 'data:image/png;base64' : '/foo/bar/nested/icon.png?abc',
-  )
-  expect(await page.textContent('.dynamic-import-meta-url-2-query')).toMatch(
-    isBuild
-      ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png\?abc/
-      : '/foo/bar/nested/asset.png?abc',
-  )
-})
+test.skipIf(isBundledDev)(
+  'new URL(`./${dynamic}?abc`, import.meta.url)',
+  async () => {
+    expect(await page.textContent('.dynamic-import-meta-url-1-query')).toMatch(
+      isBuild ? 'data:image/png;base64' : '/foo/bar/nested/icon.png?abc',
+    )
+    expect(await page.textContent('.dynamic-import-meta-url-2-query')).toMatch(
+      isBuild
+        ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png\?abc/
+        : '/foo/bar/nested/asset.png?abc',
+    )
+  },
+)
 
-test('new URL(`./${1 === 0 ? static : dynamic}?abc`, import.meta.url)', async () => {
-  expect(await page.textContent('.dynamic-import-meta-url-1-ternary')).toMatch(
-    isBuild ? 'data:image/png;base64' : '/foo/bar/nested/icon.png?abc',
-  )
-  expect(await page.textContent('.dynamic-import-meta-url-2-ternary')).toMatch(
-    isBuild
-      ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png\?abc/
-      : '/foo/bar/nested/asset.png?abc',
-  )
-})
+test.skipIf(isBundledDev)(
+  'new URL(`./${1 === 0 ? static : dynamic}?abc`, import.meta.url)',
+  async () => {
+    expect(
+      await page.textContent('.dynamic-import-meta-url-1-ternary'),
+    ).toMatch(
+      isBuild ? 'data:image/png;base64' : '/foo/bar/nested/icon.png?abc',
+    )
+    expect(
+      await page.textContent('.dynamic-import-meta-url-2-ternary'),
+    ).toMatch(
+      isBuild
+        ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png\?abc/
+        : '/foo/bar/nested/asset.png?abc',
+    )
+  },
+)
 
-test("new URL(/* @vite-ignore */ 'non-existent', import.meta.url)", async () => {
-  // the inlined script tag is extracted in a separate file
-  const importMetaUrl = new URL(
-    isBuild ? '/foo/bar/assets/index.js' : '/foo/bar/index.html',
-    page.url(),
-  )
-  expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
-    new URL('non-existent', importMetaUrl).pathname,
-  )
-  expect(serverLogs).not.toContainEqual(
-    expect.stringContaining("doesn't exist at build time"),
-  )
-})
+test.skipIf(isBundledDev)(
+  "new URL(/* @vite-ignore */ 'non-existent', import.meta.url)",
+  async () => {
+    // the inlined script tag is extracted in a separate file
+    const importMetaUrl = new URL(
+      isBuild ? '/foo/bar/assets/index.js' : '/foo/bar/index.html',
+      page.url(),
+    )
+    expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
+      new URL('non-existent', importMetaUrl).pathname,
+    )
+    expect(serverLogs).not.toContainEqual(
+      expect.stringContaining("doesn't exist at build time"),
+    )
+  },
+)
 
-test('new URL(..., import.meta.url) (multiline)', async () => {
-  const assetMatch = isBuild
-    ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png/
-    : '/foo/bar/nested/asset.png'
+test.skipIf(isBundledDev)(
+  'new URL(..., import.meta.url) (multiline)',
+  async () => {
+    const assetMatch = isBuild
+      ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png/
+      : '/foo/bar/nested/asset.png'
 
-  expect(await page.textContent('.import-meta-url-multiline')).toMatch(
-    assetMatch,
-  )
-})
+    expect(await page.textContent('.import-meta-url-multiline')).toMatch(
+      assetMatch,
+    )
+  },
+)
 
 test.runIf(isBuild)('manifest', async () => {
   const manifest = readManifest('foo')
@@ -743,13 +780,13 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
   })
 })
 
-test('inline style test', async () => {
+test.skipIf(isBundledDev)('inline style test', async () => {
   expect(await getBg('.inline-style')).toMatch(assetMatch)
   expect(await getBg('.style-url-assets')).toMatch(assetMatch)
 })
 
 if (!isBuild) {
-  test('@import in html style tag hmr', async () => {
+  test.skipIf(isBundledDev)('@import in html style tag hmr', async () => {
     await expect.poll(() => getColor('.import-css')).toBe('rgb(0, 136, 255)')
     const loadPromise = page.waitForEvent('load')
     editFile('./css/import.css', (code) => code.replace('#0088ff', '#00ff88 '))

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import { getColor, isBuild, listAssets } from '~utils'
+import { getColor, isBuild, isBundledDev, listAssets } from '~utils'
 
-test('should load all stylesheets', async () => {
+test.skipIf(isBundledDev)('should load all stylesheets', async () => {
   expect(await getColor('.shared-linked')).toBe('blue')
   await expect.poll(() => getColor('.async-js')).toBe('blue')
 })

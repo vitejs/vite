@@ -4,6 +4,7 @@ import {
   editFile,
   getColor,
   isBuild,
+  isBundledDev,
   isServe,
   page,
   serverLogs,
@@ -19,17 +20,17 @@ function fetchHtml(p: string) {
 }
 
 function testPage(isNested: boolean) {
-  test('pre transform', async () => {
+  test.skipIf(isBundledDev && !isNested)('pre transform', async () => {
     expect(await page.$('head meta[name=viewport]')).toBeTruthy()
   })
 
-  test('string transform', async () => {
+  test.skipIf(isBundledDev && !isNested)('string transform', async () => {
     expect(await page.textContent('h1')).toBe(
       isNested ? 'Nested' : 'Transformed',
     )
   })
 
-  test('tags transform', async () => {
+  test.skipIf(isBundledDev && !isNested)('tags transform', async () => {
     const el = await page.$('head meta[name=description]')
     expect(await el.getAttribute('content')).toBe('a vite app')
 
@@ -37,13 +38,13 @@ function testPage(isNested: boolean) {
     expect(await kw.getAttribute('content')).toBe('es modules')
   })
 
-  test('combined transform', async () => {
+  test.skipIf(isBundledDev && !isNested)('combined transform', async () => {
     expect(await page.title()).toBe('Test HTML transforms')
     // the p should be injected to body
     expect(await page.textContent('body p.inject')).toBe('This is injected')
   })
 
-  test('server only transform', async () => {
+  test.skipIf(isBundledDev)('server only transform', async () => {
     if (!isBuild) {
       expect(await page.textContent('body p.server')).toMatch(
         'injected only during dev',
@@ -53,7 +54,7 @@ function testPage(isNested: boolean) {
     }
   })
 
-  test('build only transform', async () => {
+  test.skipIf(isBundledDev)('build only transform', async () => {
     if (isBuild) {
       expect(await page.textContent('body p.build')).toMatch(
         'injected only during build',
@@ -283,7 +284,7 @@ describe.runIf(isServe)('SPA fallback', () => {
   })
 })
 
-describe.runIf(isServe)('invalid', () => {
+describe.runIf(isServe && !isBundledDev)('invalid', () => {
   test('should be 500 with overlay', async () => {
     const response = await page.goto(viteTestUrl + '/invalid.html')
     expect(response.status()).toBe(500)
@@ -432,7 +433,7 @@ describe('relative input', () => {
 })
 
 describe.runIf(isServe)('warmup', () => {
-  test('should warmup /warmup/warm.js', async () => {
+  test.skipIf(isBundledDev)('should warmup /warmup/warm.js', async () => {
     // warmup transform files async during server startup, so the module check
     // here might take a while to load
     await expect

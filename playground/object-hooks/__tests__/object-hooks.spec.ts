@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
-import { page } from '~utils'
+import { isBundledDev, page } from '~utils'
 
-test('object hooks', async () => {
+test.skipIf(isBundledDev)('object hooks', async () => {
   expect(await page.textContent('#transform')).toMatch('ok')
 })

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import { isServe, page, viteTestUrl } from '~utils'
+import { isBundledDev, isServe, page, viteTestUrl } from '~utils'
 
-describe.runIf(isServe)('main', () => {
+describe.runIf(isServe && !isBundledDev)('main', () => {
   for (const { name, urlPath } of [
     { name: 'src/deny/deny.txt', urlPath: '/src/deny/deny.txt' },
     { name: 'src/deny/.deny', urlPath: '/src/deny/.deny' },

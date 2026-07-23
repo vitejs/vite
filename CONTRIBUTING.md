@@ -152,6 +152,8 @@ Each integration test can be run under either dev server mode or build mode.
 
 - `pnpm run test-build` runs tests only under build mode.
 
+- `pnpm run test-serve-bundled` runs tests under serve mode with `experimental.bundledDev` force-enabled for every playground (no separate configs needed). If a test case does not pass under bundled dev yet, mark it with `test.skipIf(isBundledDev)` (or `describe.skipIf(isBundledDev)`) using the `isBundledDev` flag from `~utils` — it still runs in the normal serve and build modes.
+
 `pnpm run test-serve [match]` or `pnpm run test-build [match]` runs tests in specific packages that match the given filter. e.g. `pnpm run test-serve assets` runs tests for both `playground/assets` and `playground/assets-sanitize` under serve mode. Note package matching is not available for the `pnpm test` script, which always runs all tests.
 
 ### Unit Tests

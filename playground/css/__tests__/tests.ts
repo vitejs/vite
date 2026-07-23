@@ -8,6 +8,7 @@ import {
   getBgColor,
   getColor,
   isBuild,
+  isBundledDev,
   page,
   removeFile,
   serverLogs,
@@ -23,7 +24,7 @@ test('imported css', async () => {
   expect(globEager).toContain('.dir-import')
 })
 
-test('linked css', async () => {
+test.skipIf(isBundledDev)('linked css', async () => {
   const linked = await page.$('.linked')
   const atImport = await page.$('.linked-at-import')
 
@@ -41,7 +42,7 @@ test('linked css', async () => {
   await expect.poll(() => getColor(atImport)).toBe('blue')
 })
 
-test('css import from js', async () => {
+test.skipIf(isBundledDev)('css import from js', async () => {
   const imported = await page.$('.imported')
   const atImport = await page.$('.imported-at-import')
 
@@ -85,7 +86,7 @@ test('postcss plugin that injects url()', async () => {
 
 sassTest()
 
-test('less', async () => {
+test.skipIf(isBundledDev)('less', async () => {
   const imported = await page.$('.less')
   const atImport = await page.$('.less-at-import')
   const atImportAlias = await page.$('.less-at-import-alias')
@@ -128,7 +129,7 @@ test('less-plugin', async () => {
   )
 })
 
-test('stylus', async () => {
+test.skipIf(isBundledDev)('stylus', async () => {
   const imported = await page.$('.stylus')
   const additionalData = await page.$('.stylus-additional-data')
   const relativeImport = await page.$('.stylus-import')
@@ -401,11 +402,11 @@ test('minify css', async () => {
   expect(cssFile).not.toMatch('#ffff00b3')
 })
 
-test('?url', async () => {
+test.skipIf(isBundledDev)('?url', async () => {
   expect(await getColor('.url-imported-css')).toBe('yellow')
 })
 
-test('?raw', async () => {
+test.skipIf(isBundledDev)('?raw', async () => {
   const rawImportCss = await page.$('.raw-imported-css')
 
   expect(await rawImportCss.textContent()).toBe(
@@ -459,7 +460,7 @@ test.runIf(isBuild)('warning can be suppressed by esbuild.logOverride', () => {
   })
 })
 
-test('sugarss', async () => {
+test.skipIf(isBundledDev)('sugarss', async () => {
   const imported = await page.$('.sugarss')
   const atImport = await page.$('.sugarss-at-import')
   const atImportAlias = await page.$('.sugarss-at-import-alias')
@@ -515,11 +516,14 @@ test.runIf(isBuild)('Scoped CSS via cssScopeTo should be treeshaken', () => {
   expect(css).not.toMatch(/\btreeshake-scoped-c\b/)
 })
 
-test('Scoped CSS should have a correct order', async () => {
-  await page.goto(viteTestUrl + '/treeshake-scoped/')
-  expect(await getColor('.treeshake-scoped-order')).toBe('red')
-  expect(await getBgColor('.treeshake-scoped-order')).toBe('blue')
-})
+test.skipIf(isBundledDev)(
+  'Scoped CSS should have a correct order',
+  async () => {
+    await page.goto(viteTestUrl + '/treeshake-scoped/')
+    expect(await getColor('.treeshake-scoped-order')).toBe('red')
+    expect(await getBgColor('.treeshake-scoped-order')).toBe('blue')
+  },
+)
 
 test.runIf(isBuild)(
   'empty CSS files should generate .css assets, not .js assets',

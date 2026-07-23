@@ -15,7 +15,14 @@ import type { Page } from 'playwright-chromium'
 import WebSocket from 'ws'
 import testJSON from '../safe.json'
 import { getWindows83ShortNameForDotEnv as getWindows83ShortNameForDotEnv } from '../root/windows83Filename'
-import { browser, isServe, page, viteServer, viteTestUrl } from '~utils'
+import {
+  browser,
+  isBundledDev,
+  isServe,
+  page,
+  viteServer,
+  viteTestUrl,
+} from '~utils'
 
 const getViteTestIndexHtmlUrl = () => {
   const srcPrefix = viteTestUrl.endsWith('/') ? '' : '/'
@@ -51,7 +58,7 @@ describe.runIf(isServe)('normal', () => {
   })
 })
 
-describe.runIf(isServe)('matrix', () => {
+describe.runIf(isServe && !isBundledDev)('matrix', () => {
   const dotEnvWindows83ShortName = getWindows83ShortNameForDotEnv()
 
   const variants = [
@@ -331,7 +338,7 @@ describe.runIf(isServe)('matrix', () => {
 })
 
 describe('fetch', () => {
-  test('serve with configured headers', async () => {
+  test.skipIf(isBundledDev)('serve with configured headers', async () => {
     const res = await fetch(viteTestUrl + '/src/')
     expect(res.headers.get('x-served-by')).toBe('vite')
   })
@@ -401,12 +408,12 @@ describe('cross origin', () => {
       await page.goto(getViteTestIndexHtmlUrl())
     })
 
-    test('fetch HTML file', async () => {
+    test.skipIf(isBundledDev)('fetch HTML file', async () => {
       const status = await fetchStatusFromPage(page, viteTestUrl + '/src/')
       expect(status).toBe(200)
     })
 
-    test.runIf(isServe)('fetch JS file', async () => {
+    test.runIf(isServe && !isBundledDev)('fetch JS file', async () => {
       const status = await fetchStatusFromPage(
         page,
         viteTestUrl + '/src/code.js',
@@ -423,7 +430,7 @@ describe('cross origin', () => {
       expect(result).toBe(true)
     })
 
-    test('fetch with allowed hosts', async () => {
+    test.skipIf(isBundledDev)('fetch with allowed hosts', async () => {
       const viteTestUrlUrl = new URL(viteTestUrl)
       const res = await fetch(viteTestUrl + '/src/index.html', {
         headers: { Host: viteTestUrlUrl.host },

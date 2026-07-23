@@ -11,6 +11,7 @@ import {
   findAssetFile,
   formatSourcemapForSnapshot,
   isBuild,
+  isBundledDev,
   listAssets,
   page,
   readFile,
@@ -69,7 +70,7 @@ function expectConsoleLogArgumentMapsToOriginalX(
 }
 
 if (!isBuild) {
-  test('js', async () => {
+  test.skipIf(isBundledDev)('js', async () => {
     const res = await page.request.get(new URL('./foo.js', page.url()).href)
     const js = await res.text()
     const map = extractSourcemap(js)
@@ -91,13 +92,15 @@ if (!isBuild) {
     `)
   })
 
-  test('plugin return sourcemap with `sources: [""]`', async () => {
-    const res = await page.request.get(new URL('./zoo.js', page.url()).href)
-    const js = await res.text()
-    expect(js).toContain('// add comment')
+  test.skipIf(isBundledDev)(
+    'plugin return sourcemap with `sources: [""]`',
+    async () => {
+      const res = await page.request.get(new URL('./zoo.js', page.url()).href)
+      const js = await res.text()
+      expect(js).toContain('// add comment')
 
-    const map = extractSourcemap(js)
-    expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
+      const map = extractSourcemap(js)
+      expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
           "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;",
@@ -113,20 +116,23 @@ if (!isBuild) {
         visualization: "https://evanw.github.io/source-map-visualization/#NDAAZXhwb3J0IGNvbnN0IHpvbyA9ICd6b28nCi8vIGFkZCBjb21tZW50CjIxNgB7InZlcnNpb24iOjMsInNvdXJjZXMiOlsiem9vLmpzIl0sInNvdXJjZXNDb250ZW50IjpbImV4cG9ydCBjb25zdCB6b28gPSAnem9vJ1xuIl0sIm1hcHBpbmdzIjoiQUFBQSxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUM7In0="
       }
     `)
-  })
+    },
+  )
 
-  test('js with inline sourcemap injected by a plugin', async () => {
-    const res = await page.request.get(
-      new URL('./foo-with-sourcemap.js', page.url()).href,
-    )
-    const js = await res.text()
+  test.skipIf(isBundledDev)(
+    'js with inline sourcemap injected by a plugin',
+    async () => {
+      const res = await page.request.get(
+        new URL('./foo-with-sourcemap.js', page.url()).href,
+      )
+      const js = await res.text()
 
-    expect(js).toContain(commentSourceMap)
-    const sourcemapComments = js.match(mapFileCommentRegex).length
-    expect(sourcemapComments).toBe(1)
+      expect(js).toContain(commentSourceMap)
+      const sourcemapComments = js.match(mapFileCommentRegex).length
+      expect(sourcemapComments).toBe(1)
 
-    const map = extractSourcemap(js)
-    expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
+      const map = extractSourcemap(js)
+      expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
           "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG",
@@ -138,9 +144,10 @@ if (!isBuild) {
         visualization: "https://evanw.github.io/source-map-visualization/#NzMAZXhwb3J0IGNvbnN0IGZvbyA9ICdmb28nCi8vIGRlZmF1bHQgYm91bmRhcnkgc291cmNlbWFwIHdpdGggbWFnaWMtc3RyaW5nCjk2AHsidmVyc2lvbiI6Mywic291cmNlcyI6WyIiXSwibWFwcGluZ3MiOiJBQUFBLE1BQU0sQ0FBQyxLQUFLLENBQUMsR0FBRyxDQUFDLENBQUMsQ0FBQyxDQUFDLEdBQUcifQ=="
       }
     `)
-  })
+    },
+  )
 
-  test('ts', async () => {
+  test.skipIf(isBundledDev)('ts', async () => {
     const res = await page.request.get(new URL('./bar.ts', page.url()).href)
     const js = await res.text()
     const map = extractSourcemap(js)
@@ -162,7 +169,7 @@ if (!isBuild) {
     `)
   })
 
-  test('multiline import', async () => {
+  test.skipIf(isBundledDev)('multiline import', async () => {
     const res = await page.request.get(
       new URL('./with-multiline-import.ts', page.url()).href,
     )
@@ -197,70 +204,82 @@ if (!isBuild) {
     })
   })
 
-  test('should not leak file contents via sourcemap path traversal in node_modules', async () => {
-    const res = await page.request.get(
-      new URL('./malicious-import.js', page.url()).href,
-    )
-    const js = await res.text()
-    // Find the rewritten import URL for the malicious dep
-    const depUrlMatch = js.match(/from\s+"([^"]*malicious-sourcemap[^"]*)"/)
-    expect(depUrlMatch).toBeTruthy()
-    const depUrl = depUrlMatch![1]
-    const depRes = await page.request.get(new URL(depUrl, page.url()).href)
-    const depJs = await depRes.text()
-    const map = extractSourcemap(depJs)
-    expect(map.sourcesContent).toBeDefined()
-    expect(map.sourcesContent).not.toContainEqual(
-      expect.stringContaining('defineConfig'),
-    )
-  })
+  test.skipIf(isBundledDev)(
+    'should not leak file contents via sourcemap path traversal in node_modules',
+    async () => {
+      const res = await page.request.get(
+        new URL('./malicious-import.js', page.url()).href,
+      )
+      const js = await res.text()
+      // Find the rewritten import URL for the malicious dep
+      const depUrlMatch = js.match(/from\s+"([^"]*malicious-sourcemap[^"]*)"/)
+      expect(depUrlMatch).toBeTruthy()
+      const depUrl = depUrlMatch![1]
+      const depRes = await page.request.get(new URL(depUrl, page.url()).href)
+      const depJs = await depRes.text()
+      const map = extractSourcemap(depJs)
+      expect(map.sourcesContent).toBeDefined()
+      expect(map.sourcesContent).not.toContainEqual(
+        expect.stringContaining('defineConfig'),
+      )
+    },
+  )
 
-  test('should not leak file contents via sourcemap path traversal in optimized deps', async () => {
-    const res = await page.request.get(
-      new URL('./optimized-malicious-import.js', page.url()).href,
-    )
-    const js = await res.text()
-    // Find the rewritten import URL for the optimized malicious dep
-    const depUrlMatch = js.match(/from\s+"([^"]*optimized-malicious[^"]*)"/)
-    expect(depUrlMatch).toBeTruthy()
-    const depUrl = depUrlMatch![1]
-    // Ensure the dep was actually optimized (served from .vite/deps)
-    expect(depUrl).toContain('.vite/deps')
-    const depRes = await page.request.get(new URL(depUrl, page.url()).href)
-    const depJs = await depRes.text()
-    expect(depJs).toMatch(
-      /^\/\/# sourceMappingURL=data:application\/json;base64,/m,
-    )
-    const map = extractSourcemap(depJs)
-    expect(map.sourcesContent).toBeDefined()
-    expect(map.sourcesContent).not.toContainEqual(
-      expect.stringContaining('defineConfig'),
-    )
-  })
+  test.skipIf(isBundledDev)(
+    'should not leak file contents via sourcemap path traversal in optimized deps',
+    async () => {
+      const res = await page.request.get(
+        new URL('./optimized-malicious-import.js', page.url()).href,
+      )
+      const js = await res.text()
+      // Find the rewritten import URL for the optimized malicious dep
+      const depUrlMatch = js.match(/from\s+"([^"]*optimized-malicious[^"]*)"/)
+      expect(depUrlMatch).toBeTruthy()
+      const depUrl = depUrlMatch![1]
+      // Ensure the dep was actually optimized (served from .vite/deps)
+      expect(depUrl).toContain('.vite/deps')
+      const depRes = await page.request.get(new URL(depUrl, page.url()).href)
+      const depJs = await depRes.text()
+      expect(depJs).toMatch(
+        /^\/\/# sourceMappingURL=data:application\/json;base64,/m,
+      )
+      const map = extractSourcemap(depJs)
+      expect(map.sourcesContent).toBeDefined()
+      expect(map.sourcesContent).not.toContainEqual(
+        expect.stringContaining('defineConfig'),
+      )
+    },
+  )
 
-  test('babel-transformed downleveled optimized dep maps to the correct original name', async () => {
-    const depJs = await getDepJs(
-      './optimized-class-field-import-babel.js',
-      'test-dep-class-field-sourcemap-babel',
-    )
+  test.skipIf(isBundledDev)(
+    'babel-transformed downleveled optimized dep maps to the correct original name',
+    async () => {
+      const depJs = await getDepJs(
+        './optimized-class-field-import-babel.js',
+        'test-dep-class-field-sourcemap-babel',
+      )
 
-    expect(depJs).toContain('x = () => 1')
-    expect(depJs).toContain('constructor(_x)')
-    expect(depJs).toContain('console.log(_x)')
-    expectConsoleLogArgumentMapsToOriginalX(depJs, '_x')
-  })
+      expect(depJs).toContain('x = () => 1')
+      expect(depJs).toContain('constructor(_x)')
+      expect(depJs).toContain('console.log(_x)')
+      expectConsoleLogArgumentMapsToOriginalX(depJs, '_x')
+    },
+  )
 
-  test('oxc-transformed downleveled optimized dep maps to the correct original name', async () => {
-    const depJs = await getDepJs(
-      './optimized-class-field-import-oxc.js',
-      'test-dep-class-field-sourcemap-oxc',
-    )
+  test.skipIf(isBundledDev)(
+    'oxc-transformed downleveled optimized dep maps to the correct original name',
+    async () => {
+      const depJs = await getDepJs(
+        './optimized-class-field-import-oxc.js',
+        'test-dep-class-field-sourcemap-oxc',
+      )
 
-    expect(depJs).toContain('x$$$ = () => 1')
-    expect(depJs).toContain('constructor$$$(_x$$$)')
-    expect(depJs).toContain('console$$$.log$$$(_x$$$)')
-    expectConsoleLogArgumentMapsToOriginalX(depJs, '_x$$$')
-  })
+      expect(depJs).toContain('x$$$ = () => 1')
+      expect(depJs).toContain('constructor$$$(_x$$$)')
+      expect(depJs).toContain('console$$$.log$$$(_x$$$)')
+      expectConsoleLogArgumentMapsToOriginalX(depJs, '_x$$$')
+    },
+  )
 }
 
 describe.runIf(isBuild)('build tests', () => {

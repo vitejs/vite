@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { browserLogs, page } from '~utils'
+import { browserLogs, isBundledDev, page } from '~utils'
 
 test('should have no 404s', () => {
   browserLogs.forEach((msg) => {
@@ -7,7 +7,7 @@ test('should have no 404s', () => {
   })
 })
 
-test('not contain `.mjs`', async () => {
+test.skipIf(isBundledDev)('not contain `.mjs`', async () => {
   const appHtml = await page.content()
   expect(appHtml).toMatch('Hello Vite!')
 })

@@ -1,43 +1,50 @@
 import { expect, test } from 'vitest'
 import type { OutputAsset, OutputChunk, RolldownOutput } from 'rolldown'
 import { build } from 'vite'
-import { browserLogs, getColor, isBuild, page, testDir } from '~utils'
+import {
+  browserLogs,
+  getColor,
+  isBuild,
+  isBundledDev,
+  page,
+  testDir,
+} from '~utils'
 
-test('should have no 404s', () => {
+test.skipIf(isBundledDev)('should have no 404s', () => {
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
   })
 })
 
-test('index js', async () => {
+test.skipIf(isBundledDev)('index js', async () => {
   await expect.poll(() => page.textContent('.js')).toBe('js: ok')
 })
 
-test('importmap', async () => {
+test.skipIf(isBundledDev)('importmap', async () => {
   await expect
     .poll(() => page.textContent('.importmap'))
     .toContain('"/foo": "/bar"')
 })
 
-test('static js', async () => {
+test.skipIf(isBundledDev)('static js', async () => {
   await expect.poll(() => page.textContent('.static-js')).toBe('static-js: ok')
 })
 
-test('dynamic js', async () => {
+test.skipIf(isBundledDev)('dynamic js', async () => {
   await expect
     .poll(() => page.textContent('.dynamic-js'))
     .toBe('dynamic-js: ok')
 })
 
-test('static css', async () => {
+test.skipIf(isBundledDev)('static css', async () => {
   await expect.poll(() => getColor('.static')).toBe('red')
 })
 
-test('dynamic css', async () => {
+test.skipIf(isBundledDev)('dynamic css', async () => {
   await expect.poll(() => getColor('.dynamic')).toBe('red')
 })
 
-test('direct dynamic css', async () => {
+test.skipIf(isBundledDev)('direct dynamic css', async () => {
   await expect.poll(() => getColor('.direct-dynamic')).toBe('red')
 })
 
@@ -45,12 +52,12 @@ test('direct dynamic css', async () => {
 // removed from the output. The import map must not keep referencing its removed
 // JS file, otherwise chunks importing it 404 and fail to execute
 // (https://github.com/vitejs/vite/issues/22740)
-test('shared pure css chunk', async () => {
+test.skipIf(isBundledDev)('shared pure css chunk', async () => {
   await expect.poll(() => page.textContent('.shared-js')).toBe('shared-js: ok')
   await expect.poll(() => getColor('.shared')).toBe('green')
 })
 
-test('worker', async () => {
+test.skipIf(isBundledDev)('worker', async () => {
   await expect.poll(() => page.textContent('.worker')).toBe('worker: pong')
 })
 
