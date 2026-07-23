@@ -234,7 +234,7 @@ If it matches one of the following conditions, the `default` import is the `modu
 
 - The importer is `.mjs` or `.mts`.
 - The closest `package.json` for the importer has a `type` field set to `module`.
-- The `module.exports.__esModule` value of the importee CJS module is not set to true.
+- The `module.exports.__esModule` value of the importee CJS module is not set to `true`.
 
 ::: details The previous behavior
 
@@ -242,11 +242,11 @@ In development, if it matches one of the following conditions, the `default` imp
 
 - _The importer is included in the dependency optimization_ and `.mjs` or `.mts`.
 - _The importer is included in the dependency optimization_ and the closest `package.json` for the importer has a `type` field set to `module`.
-- The `module.exports.__esModule` value of the importee CJS module is not set to true.
+- The `module.exports.__esModule` value of the importee CJS module is not set to `true`.
 
 In build, the conditions were:
 
-- The `module.exports.__esModule` value of the importee CJS module is not set to true.
+- The `module.exports.__esModule` value of the importee CJS module is not set to `true`.
 - _`default` property of `module.exports` does not exist_.
 
 (assuming [`build.commonjsOptions.defaultIsModuleExports`](https://github.com/rollup/plugins/tree/master/packages/commonjs#defaultismoduleexports) is not changed from the default `'auto'`)
@@ -362,7 +362,7 @@ These breaking changes are expected to only affect a minority of use cases:
 - Passing the same browser with multiple versions of it to `build.target` option now errors: esbuild selects the latest version of it, which was probably not what you intended.
 - Missing support by Rolldown: The following features are not supported by Rolldown and are no longer supported by Vite.
   - `build.rollupOptions.output.format: 'system'` ([rolldown#2387](https://github.com/rolldown/rolldown/issues/2387))
-  - `build.rollupOptions.output.format: 'amd'` ([rolldown#2387](https://github.com/rolldown/rolldown/issues/2528))
+  - `build.rollupOptions.output.format: 'amd'` ([rolldown#2528](https://github.com/rolldown/rolldown/issues/2528))
   - `shouldTransformCachedModule` hook ([rolldown#4389](https://github.com/rolldown/rolldown/issues/4389))
   - `resolveImportMeta` hook ([rolldown#1010](https://github.com/rolldown/rolldown/issues/1010))
   - `renderDynamicImport` hook ([rolldown#4532](https://github.com/rolldown/rolldown/issues/4532))
