@@ -762,7 +762,7 @@ function loadTsconfigPaths(importer: string): { dir: string, paths: Record<strin
           return { dir, paths: parsed.compilerOptions.paths }
         }
         return null
-      } catch (e) {
+      } catch {
         return null
       }
     }
