@@ -85,6 +85,8 @@ async function ssrTransformScript(
     throw err
   }
 
+  validateModuleScopeBindings(ast, code, url)
+
   let uid = 0
   const deps = new Set<string>()
   const dynamicDeps = new Set<string>()
@@ -443,6 +445,125 @@ async function ssrTransformScript(
 
 function getIdentifierNameOrLiteralValue(node: ESTree.ModuleExportName) {
   return node.type === 'Identifier' ? node.name : node.value
+}
+
+function validateModuleScopeBindings(
+  ast: ESTree.Program,
+  code: string,
+  url: string,
+) {
+  const lexicalBindings = new Set<string>()
+  const varBindings = new Set<string>()
+
+  const declareLexical = (
+    name: string,
+    node: ESTree.Node & { start: number },
+  ) => {
+    if (lexicalBindings.has(name) || varBindings.has(name)) {
+      throw createDuplicateBindingError(name, node, code, url)
+    }
+    lexicalBindings.add(name)
+  }
+
+  const declareVar = (name: string, node: ESTree.Node & { start: number }) => {
+    if (lexicalBindings.has(name)) {
+      throw createDuplicateBindingError(name, node, code, url)
+    }
+    varBindings.add(name)
+  }
+
+  const declareVariable = (declaration: ESTree.VariableDeclaration) => {
+    const declare = declaration.kind === 'var' ? declareVar : declareLexical
+
+    for (const decl of declaration.declarations) {
+      for (const name of extractNames(decl.id as any)) {
+        declare(name, decl.id as ESTree.Node & { start: number })
+      }
+    }
+  }
+
+  for (const node of ast.body) {
+    if (node.type === 'ImportDeclaration') {
+      for (const spec of node.specifiers) {
+        declareLexical(spec.local.name, spec.local)
+      }
+    } else if (node.type === 'VariableDeclaration') {
+      declareVariable(node)
+    } else if (node.type === 'FunctionDeclaration' && node.id) {
+      declareLexical(node.id.name, node.id)
+    } else if (node.type === 'ClassDeclaration' && node.id) {
+      declareLexical(node.id.name, node.id)
+    } else if (node.type === 'ExportNamedDeclaration' && node.declaration) {
+      const declaration = node.declaration
+      if (declaration.type === 'VariableDeclaration') {
+        declareVariable(declaration)
+      } else if (
+        (declaration.type === 'FunctionDeclaration' ||
+          declaration.type === 'ClassDeclaration') &&
+        declaration.id
+      ) {
+        declareLexical(declaration.id.name, declaration.id)
+      }
+    } else if (node.type === 'ExportDefaultDeclaration') {
+      const declaration = node.declaration
+      if (
+        (declaration.type === 'FunctionDeclaration' ||
+          declaration.type === 'ClassDeclaration') &&
+        declaration.id
+      ) {
+        declareLexical(declaration.id.name, declaration.id)
+      }
+    }
+
+    collectModuleScopedVarDeclarations(node, declareVar)
+  }
+}
+
+function createDuplicateBindingError(
+  name: string,
+  node: ESTree.Node & { start: number },
+  code: string,
+  url: string,
+) {
+  const err = new SyntaxError(
+    `Identifier '${name}' has already been declared`,
+  ) as SyntaxError & {
+    id?: string
+    loc?: ReturnType<typeof numberToPos> & { file?: string }
+    frame?: string
+  }
+
+  err.id = url
+  err.loc = numberToPos(code, node.start)
+  err.loc.file = url
+  err.frame = generateCodeFrame(code, node.start)
+
+  return err
+}
+
+function collectModuleScopedVarDeclarations(
+  root: ESTree.Node,
+  declareVar: (name: string, node: ESTree.Node & { start: number }) => void,
+) {
+  ;(eswalk as any)(root, {
+    enter(node: ESTree.Node, _parent: ESTree.Node | null) {
+      if (
+        isFunction(node) ||
+        node.type === 'ClassDeclaration' ||
+        node.type === 'ClassExpression'
+      ) {
+        return this.skip()
+      }
+
+      if (node.type === 'VariableDeclaration' && node.kind === 'var') {
+        for (const decl of node.declarations) {
+          for (const name of extractNames(decl.id as any)) {
+            declareVar(name, decl.id as ESTree.Node & { start: number })
+          }
+        }
+      }
+    },
+  })
 }
 
 interface Visitors {
