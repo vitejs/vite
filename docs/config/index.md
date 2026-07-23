@@ -162,7 +162,7 @@ This setting only applies to the JavaScript Debug Terminal, it does not affect l
       "type": "node",
       "request": "launch",
       "name": "Vite",
-      "runtimeExecutable": "pnpm",
+      "runtimeExecutable": "npm",
       "runtimeArgs": ["exec", "vite", "--configLoader", "bundle"],
       "console": "integratedTerminal",
       "sourceMaps": true,
