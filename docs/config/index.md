@@ -152,9 +152,7 @@ When using `--configLoader bundle` (the current default, though `native` is plan
 }
 ```
 
-This setting only applies to the JavaScript Debug Terminal; it does not affect launch configurations started from the Run and Debug view.
-
-If you start Vite from the Run and Debug view instead of a JavaScript Debug Terminal, put `resolveSourceMapLocations` in the launch configuration:
+This setting only applies to the JavaScript Debug Terminal, it does not affect launch configurations started from the Run and Debug view. To support this for the Run and Debug view, add the temporary directory in `.vscode/launch.json`:
 
 ```json
 {
