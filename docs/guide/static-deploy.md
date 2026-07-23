@@ -127,6 +127,18 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
        - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
    ```
 
+3. In order to run SPA on subpaths eg. `/<REPO>/some/path`, add custom not found (HTTP 404) error handler. Copy `index.html` file into `404.html` and to `vite.config.[js|ts]` add section:
+```js
+  build: {
+    rolldownOptions: {
+      input: {
+        main: "./index.html",
+        errorhandler: "./404.html",
+      },
+    },
+  },
+```
+
 ## Netlify
 
 ### Netlify CLI
