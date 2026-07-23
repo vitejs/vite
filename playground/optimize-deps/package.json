@@ -17,6 +17,8 @@
     "@vitejs/test-dep-cjs-browser-field-bare": "file:./dep-cjs-browser-field-bare",
     "@vitejs/test-dep-cjs-compiled-from-cjs": "file:./dep-cjs-compiled-from-cjs",
     "@vitejs/test-dep-cjs-compiled-from-esm": "file:./dep-cjs-compiled-from-esm",
+    "@vitejs/test-dep-cjs-for-injected-import": "file:./dep-cjs-for-injected-import",
+    "@vitejs/test-dep-with-injected-import": "file:./dep-with-injected-import",
     "@vitejs/test-dep-cjs-with-assets": "file:./dep-cjs-with-assets",
     "@vitejs/test-dep-cjs-with-es-module-flag": "file:./dep-cjs-with-es-module-flag",
     "@vitejs/test-dep-cjs-with-external-deps": "file:./dep-cjs-with-external-deps",
