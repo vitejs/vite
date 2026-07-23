@@ -107,6 +107,18 @@ describe.skipIf(isWindows)('rewriteModuleSourceMapSources', () => {
     expect(map.sources).toEqual(['../my%20dir/a.ts'])
   })
 
+  test('escapes `#` and `?`, which encodeURI leaves as-is', () => {
+    const map = {
+      sources: ['../my#dir/a.ts', './what?/b.ts', '/project/c#1/d.ts'],
+    }
+    rewriteModuleSourceMapSources(map, '/project/src/entry.ts')
+    expect(map.sources).toEqual([
+      '../my%23dir/a.ts',
+      './what%3F/b.ts',
+      '../c%231/d.ts',
+    ])
+  })
+
   test('leaves virtual sources untouched', () => {
     const map = {
       sources: [
