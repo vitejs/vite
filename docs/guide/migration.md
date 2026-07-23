@@ -4,7 +4,7 @@ If you are migrating from `rolldown-vite`, the technical preview release for Rol
 
 ## Default Browser Target Change [<Badge text="NRV" type="warning" />](#migration-from-v7)
 
-The default browser value of `build.target` and `'baseline-widely-available'`, is updated to newer browser version:
+The default browser values of `build.target` and `'baseline-widely-available'` are updated to newer browser versions:
 
 - Chrome 107 → 111
 - Edge 107 → 111
