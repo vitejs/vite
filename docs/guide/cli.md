@@ -123,6 +123,7 @@ vite preview [root]
 | `--strictPort`            | Exit if specified port is already in use (`boolean`)                                                                                                                                  |
 | `--open [path]`           | Open browser on startup (`boolean \| string`)                                                                                                                                         |
 | `--outDir <dir>`          | Output directory (default: `dist`)(`string`)                                                                                                                                          |
+| `--watch`                 | Reload browser when output files change (`boolean`)                                                                                                                                   |
 | `-c, --config <file>`     | Use specified config file (`string`)                                                                                                                                                  |
 | `--base <path>`           | Public base path (default: `/`) (`string`)                                                                                                                                            |
 | `-l, --logLevel <level>`  | Info \| warn \| error \| silent (`string`)                                                                                                                                            |

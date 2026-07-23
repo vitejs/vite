@@ -453,6 +453,23 @@ export function indexHtmlMiddleware(
   server: ViteDevServer | PreviewServer,
 ): Connect.NextHandleFunction {
   const isDev = isDevServer(server)
+  const previewServer = isDev ? undefined : server
+  const previewReloadHtmlHook: IndexHtmlTransformHook = () => {
+    if (!previewServer?._reloadClientCode) return
+
+    return [
+      {
+        tag: 'script',
+        attrs: { type: 'module' },
+        children: previewServer._reloadClientCode,
+        injectTo: 'head-prepend',
+      },
+    ]
+  }
+  const previewPluginContext = new BasicMinimalPluginContext(
+    { ...basePluginContextMeta, watchMode: false },
+    server.config.logger,
+  )
   const fullBundle = isDev && server.environments.client.bundledDev
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
@@ -541,6 +558,17 @@ export function indexHtmlMiddleware(
           let html = await fsp.readFile(filePath, 'utf-8')
           if (isDev) {
             html = await server.transformIndexHtml(url, html, req.originalUrl)
+          } else if (previewServer?._reloadClientCode) {
+            html = await applyHtmlTransforms(
+              html,
+              [previewReloadHtmlHook],
+              previewPluginContext,
+              {
+                path: url,
+                filename: filePath,
+                originalUrl: req.originalUrl,
+              },
+            )
           }
           return send(req, res, html, 'html', { headers })
         } catch (e) {

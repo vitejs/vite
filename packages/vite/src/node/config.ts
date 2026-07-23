@@ -869,6 +869,7 @@ const configDefaults = Object.freeze({
     // proxy
     // cors
     // headers
+    watch: false,
   },
   /** @experimental */
   experimental: {
