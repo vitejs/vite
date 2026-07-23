@@ -1,3 +1,13 @@
+## <small>[8.2.2](https://github.com/vitejs/vite/compare/plugin-legacy%408.2.1...plugin-legacy%408.2.2) (2026-07-23)</small>
+### Features
+
+* update rolldown-related dependencies and use client-side HMR in bundled-dev ([#22961](https://github.com/vitejs/vite/issues/22961)) ([960e9ef](https://github.com/vitejs/vite/commit/960e9efbc1372000caac46cc2f123cef4824e2bb))
+
+### Bug Fixes
+
+* **deps:** update dependency magic-string to v1 ([#22998](https://github.com/vitejs/vite/issues/22998)) ([c60b4d7](https://github.com/vitejs/vite/commit/c60b4d7cdb85b7d4f78671cdcfb863e5f8b66bb7))
+* **legacy:** don't use newer syntax when minifying legacy chunks ([#23013](https://github.com/vitejs/vite/issues/23013)) ([989a42e](https://github.com/vitejs/vite/commit/989a42ec52b527846bf43a8281fefd0a3aab7358))
+
 ## <small>[8.2.1](https://github.com/vitejs/vite/compare/plugin-legacy@8.2.0...plugin-legacy@8.2.1) (2026-07-16)</small>
 ### Bug Fixes
 
