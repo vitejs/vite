@@ -2,6 +2,10 @@ import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
 import colors from 'picocolors'
 import type { ObjectHook } from 'rolldown'
 import {
+  interpreter as interpretFilter,
+  type TopLevelFilterExpression,
+} from 'rolldown/filter'
+import {
   viteAliasPlugin as nativeAliasPlugin,
   viteJsonPlugin as nativeJsonPlugin,
   oxcRuntimePlugin,
@@ -237,10 +241,11 @@ export function getHookHandler<T extends ObjectHook<Function>>(
 }
 
 type FilterForPluginValue = {
-  resolveId?: PluginFilter | undefined
+  resolveId?: ResolveIdHookFilter | undefined
   load?: PluginFilter | undefined
   transform?: TransformHookFilter | undefined
 }
+type ResolveIdHookFilter = (id: string, importer: string | undefined) => boolean
 const filterForPlugin = new WeakMap<Plugin, FilterForPluginValue>()
 
 export function getCachedFilterForPlugin<
@@ -259,24 +264,32 @@ export function getCachedFilterForPlugin<
   let filter: PluginFilter | TransformHookFilter | undefined
   switch (hookName) {
     case 'resolveId': {
-      const rawFilter = extractFilter(plugin.resolveId)?.id
-      filters.resolveId = createIdFilter(rawFilter)
+      const rawFilter = extractFilter(plugin.resolveId)
+      filters.resolveId = isComposableFilter(rawFilter)
+        ? (id, importer) =>
+            interpretFilter(rawFilter, undefined, id, undefined, importer)
+        : createIdFilter(rawFilter?.id)
       filter = filters.resolveId
       break
     }
     case 'load': {
-      const rawFilter = extractFilter(plugin.load)?.id
-      filters.load = createIdFilter(rawFilter)
+      const rawFilter = extractFilter(plugin.load)
+      filters.load = isComposableFilter(rawFilter)
+        ? (id) => interpretFilter(rawFilter, undefined, id)
+        : createIdFilter(rawFilter?.id)
       filter = filters.load
       break
     }
     case 'transform': {
       const rawFilters = extractFilter(plugin.transform)
-      filters.transform = createFilterForTransform(
-        rawFilters?.id,
-        rawFilters?.code,
-        rawFilters?.moduleType,
-      )
+      filters.transform = isComposableFilter(rawFilters)
+        ? (id, code, moduleType) =>
+            interpretFilter(rawFilters, code, id, moduleType)
+        : createFilterForTransform(
+            rawFilters?.id,
+            rawFilters?.code,
+            rawFilters?.moduleType,
+          )
       filter = filters.transform
       break
     }
@@ -288,6 +301,12 @@ function extractFilter<T extends Function, F>(
   hook: ObjectHook<T, { filter?: F }> | undefined,
 ) {
   return hook && 'filter' in hook && hook.filter ? hook.filter : undefined
+}
+
+function isComposableFilter(
+  filter: unknown,
+): filter is TopLevelFilterExpression[] {
+  return Array.isArray(filter)
 }
 
 // Same as `@rollup/plugin-alias` default resolver, but we attach additional meta

@@ -661,6 +661,22 @@ export default function myPlugin() {
 [`@rolldown/pluginutils`](https://www.npmjs.com/package/@rolldown/pluginutils) exports some utilities for hook filters like `exactRegex` and `prefixRegex`. These are also re-exported from `rolldown/filter` for convenience.
 :::
 
+Vite also supports Rolldown's composable filter API in both dev and build:
+
+```js
+import { exclude, importerId, include } from 'rolldown/filter'
+
+export default {
+  name: 'composable-filter',
+  resolveId: {
+    filter: [exclude(importerId(/index\.html$/)), include(importerId(/.+/))],
+    handler(source) {
+      // Runs for imports whose importer matches the composed filter.
+    },
+  },
+}
+```
+
 ## Chunk Import Map Information
 
 :::info Experimental
