@@ -8,6 +8,7 @@ test('importmap', () => {
 })
 
 test('should have default exports', async () => {
+  expect(await page.textContent('#direct-vue-version')).toBe('3.4.38')
   expect(await page.textContent('#imported-slash5-exists')).toBe('true')
   expect(await page.textContent('#imported-slash3-exists')).toBe('true')
   expect(await page.textContent('#required-slash3-exists')).toBe('true')

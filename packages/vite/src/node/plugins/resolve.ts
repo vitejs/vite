@@ -93,7 +93,8 @@ export interface EnvironmentResolveOptions {
   noExternal?: string | RegExp | (string | RegExp)[] | true
   /**
    * Externalize the given dependencies and their transitive dependencies.
-   * Only works in server environments for now. Previously this was `ssr.external`.
+   * Also skips import analysis for externalized client imports during dev.
+   * Previously this was `ssr.external`.
    * @experimental
    */
   external?: string[] | true
