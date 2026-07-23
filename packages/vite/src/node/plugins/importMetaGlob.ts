@@ -346,11 +346,13 @@ export async function parseImportGlob(
       )
     }
 
-    const globsResolved = (await Promise.all(
-      globs.map((glob) =>
-        toAbsoluteGlob(glob, root, importer, resolveId, options.base),
-      ),
-    )).flat()
+    const globsResolved = (
+      await Promise.all(
+        globs.map((glob) =>
+          toAbsoluteGlob(glob, root, importer, resolveId, options.base),
+        ),
+      )
+    ).flat()
     const isRelative = globs.every((i) => '.!'.includes(i[0]))
     const sliceCode = cleanCode.slice(0, start)
     const onlyKeys = objectKeysRE.test(sliceCode)
@@ -685,13 +687,17 @@ export async function toAbsoluteGlob(
         for (const exp of expanded) {
           let absoluteExp = exp
           if (exp.startsWith('.')) {
-             absoluteExp = posix.join(tsconfigResult.dir, exp)
+            absoluteExp = posix.join(tsconfigResult.dir, exp)
           }
           const resolved = normalizePath(
-            (await resolveId(absoluteExp, importer, { custom: { 'vite:import-glob': { isSubImportsPattern } } })) || absoluteExp
+            (await resolveId(absoluteExp, importer, {
+              custom: { 'vite:import-glob': { isSubImportsPattern } },
+            })) || absoluteExp,
           )
           if (isAbsolute(resolved)) {
-            resolvedGlobs.push(pre + globSafeResolvedPath(resolved, absoluteExp))
+            resolvedGlobs.push(
+              pre + globSafeResolvedPath(resolved, absoluteExp),
+            )
           }
         }
         if (resolvedGlobs.length > 0) return resolvedGlobs
@@ -748,7 +754,9 @@ export function isVirtualModule(id: string): boolean {
   return id.startsWith('virtual:') || id[0] === '\0' || !id.includes('/')
 }
 
-function loadTsconfigPaths(importer: string): { dir: string, paths: Record<string, string[]> } | null {
+function loadTsconfigPaths(
+  importer: string,
+): { dir: string; paths: Record<string, string[]> } | null {
   let dir = posix.dirname(importer)
   const root = posix.parse(dir).root
   while (dir !== root) {
@@ -771,13 +779,16 @@ function loadTsconfigPaths(importer: string): { dir: string, paths: Record<strin
   return null
 }
 
-function expandTsconfigPaths(glob: string, paths: Record<string, string[]>): string[] {
+function expandTsconfigPaths(
+  glob: string,
+  paths: Record<string, string[]>,
+): string[] {
   for (const [key, values] of Object.entries(paths)) {
     if (key.endsWith('/*')) {
       const prefix = key.slice(0, -2)
       if (glob.startsWith(prefix + '/')) {
         const suffix = glob.slice(prefix.length + 1)
-        return values.map(val => {
+        return values.map((val) => {
           if (val.endsWith('/*')) {
             return val.slice(0, -2) + '/' + suffix
           }
