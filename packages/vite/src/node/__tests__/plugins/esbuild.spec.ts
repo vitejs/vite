@@ -1,8 +1,11 @@
 import path from 'node:path'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import type { ResolvedConfig, UserConfig } from '../../config'
+import type { ViteDevServer } from '../../server'
 import {
   injectEsbuildHelpers,
+  registerTsconfigDependency,
+  reloadOnTsconfigChange,
   resolveEsbuildTranspileOptions,
   transformWithEsbuild,
 } from '../../plugins/esbuild'
@@ -424,6 +427,108 @@ describe('injectEsbuildHelpers', () => {
       'var $$=function(){};var MyLib=(function(){"use strict";return 42;})()'
     const result = injectEsbuildHelpers(esbuildCode, 'iife')
     expect(result).toContain('"use strict";var $$=function(){};')
+  })
+})
+
+describe('reloadOnTsconfigChange', () => {
+  function createMockConfig(): ResolvedConfig {
+    return {
+      logger: { info: vi.fn() },
+      clearScreen: false,
+    } as unknown as ResolvedConfig
+  }
+
+  function createMockServer(config: ResolvedConfig) {
+    const invalidateAll = vi.fn()
+    const invalidateModule = vi.fn()
+    const getModulesByFile = vi.fn().mockReturnValue(undefined)
+    const hotSend = vi.fn()
+
+    const server = {
+      config,
+      environments: {
+        client: {
+          moduleGraph: { invalidateAll, invalidateModule, getModulesByFile },
+          hot: { send: hotSend },
+        },
+      },
+    } as unknown as ViteDevServer
+
+    return {
+      server,
+      invalidateAll,
+      invalidateModule,
+      getModulesByFile,
+      hotSend,
+    }
+  }
+
+  test('create event: invalidates all modules', () => {
+    const config = createMockConfig()
+    const { server, invalidateAll, invalidateModule } = createMockServer(config)
+
+    reloadOnTsconfigChange(server, '/project/src/tsconfig.json', 'create')
+
+    expect(invalidateAll).toHaveBeenCalledOnce()
+    expect(invalidateModule).not.toHaveBeenCalled()
+  })
+
+  test('delete event: invalidates all modules', () => {
+    const config = createMockConfig()
+    const { server, invalidateAll, invalidateModule } = createMockServer(config)
+
+    reloadOnTsconfigChange(server, '/project/src/tsconfig.json', 'delete')
+
+    expect(invalidateAll).toHaveBeenCalledOnce()
+    expect(invalidateModule).not.toHaveBeenCalled()
+  })
+
+  test('update event with no registered dependents: invalidates all modules', () => {
+    const config = createMockConfig()
+    const { server, invalidateAll, invalidateModule } = createMockServer(config)
+
+    reloadOnTsconfigChange(server, '/project/src/tsconfig.json', 'update')
+
+    expect(invalidateAll).toHaveBeenCalledOnce()
+    expect(invalidateModule).not.toHaveBeenCalled()
+  })
+
+  test('update event with registered dependents: invalidates only affected modules', () => {
+    const config = createMockConfig()
+    const { server, invalidateAll, invalidateModule, getModulesByFile } =
+      createMockServer(config)
+
+    const tsconfigFile = '/project/src/tsconfig.json'
+    const sourceFile = '/project/src/foo.ts'
+    const mockMod = { id: sourceFile }
+
+    registerTsconfigDependency(config, tsconfigFile, sourceFile)
+    getModulesByFile.mockReturnValue(new Set([mockMod]))
+
+    reloadOnTsconfigChange(server, tsconfigFile, 'update')
+
+    expect(invalidateAll).not.toHaveBeenCalled()
+    expect(getModulesByFile).toHaveBeenCalledWith(sourceFile)
+    expect(invalidateModule).toHaveBeenCalledWith(mockMod, expect.any(Set))
+  })
+
+  test('full-reload is always sent regardless of event type', () => {
+    const config = createMockConfig()
+    const { server, hotSend } = createMockServer(config)
+
+    reloadOnTsconfigChange(server, '/project/src/tsconfig.json', 'update')
+
+    expect(hotSend).toHaveBeenCalledWith({ type: 'full-reload', path: '*' })
+  })
+
+  test('non-tsconfig json file: no invalidation or reload', () => {
+    const config = createMockConfig()
+    const { server, invalidateAll, hotSend } = createMockServer(config)
+
+    reloadOnTsconfigChange(server, '/project/src/package.json', 'update')
+
+    expect(invalidateAll).not.toHaveBeenCalled()
+    expect(hotSend).not.toHaveBeenCalled()
   })
 })
 
