@@ -64,10 +64,6 @@ function start() {
 
 if (profileIndex > 0) {
   process.argv.splice(profileIndex, 1)
-  const next = process.argv[profileIndex]
-  if (next && next[0] !== '-') {
-    process.argv.splice(profileIndex, 1)
-  }
   const inspector = await import('node:inspector').then((r) => r.default)
   const session = (global.__vite_profile_session = new inspector.Session())
   session.connect()
