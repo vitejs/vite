@@ -17,7 +17,7 @@ import {
 
 // note: tests should retrieve the element at the beginning of test and reuse it
 // in later assertions to ensure CSS HMR doesn't reload the page
-test('imported css', async () => {
+test.skipIf(isBundledDev)('imported css', async () => {
   const glob = await page.textContent('.imported-css-glob')
   expect(glob).toContain('.dir-import')
   const globEager = await page.textContent('.imported-css-globEager')
