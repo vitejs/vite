@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import { isAbsolute, posix } from 'node:path'
 import picomatch from 'picomatch'
 import { stripLiteral } from 'strip-literal'
@@ -345,11 +346,11 @@ export async function parseImportGlob(
       )
     }
 
-    const globsResolved = await Promise.all(
+    const globsResolved = (await Promise.all(
       globs.map((glob) =>
         toAbsoluteGlob(glob, root, importer, resolveId, options.base),
       ),
-    )
+    )).flat()
     const isRelative = globs.every((i) => '.!'.includes(i[0]))
     const sliceCode = cleanCode.slice(0, start)
     const onlyKeys = objectKeysRE.test(sliceCode)
@@ -647,7 +648,7 @@ export async function toAbsoluteGlob(
   importer: string | undefined,
   resolveId: IdResolver,
   base?: string,
-): Promise<string> {
+): Promise<string[]> {
   let pre = ''
   if (glob[0] === '!') {
     pre = '!'
@@ -668,12 +669,35 @@ export async function toAbsoluteGlob(
     dir = importer ? globSafePath(dirname(importer)) : root
   }
 
-  if (glob[0] === '/') return pre + posix.join(root, glob.slice(1))
-  if (glob.startsWith('./')) return pre + posix.join(dir, glob.slice(2))
-  if (glob.startsWith('../')) return pre + posix.join(dir, glob)
-  if (glob.startsWith('**')) return pre + glob
+  if (glob[0] === '/') return [pre + posix.join(root, glob.slice(1))]
+  if (glob.startsWith('./')) return [pre + posix.join(dir, glob.slice(2))]
+  if (glob.startsWith('../')) return [pre + posix.join(dir, glob)]
+  if (glob.startsWith('**')) return [pre + glob]
 
   const isSubImportsPattern = glob[0] === '#' && glob.includes('*')
+
+  const resolvedGlobs: string[] = []
+  if (!isSubImportsPattern && importer) {
+    const tsconfigResult = loadTsconfigPaths(importer)
+    if (tsconfigResult) {
+      const expanded = expandTsconfigPaths(glob, tsconfigResult.paths)
+      if (expanded.length > 1) {
+        for (const exp of expanded) {
+          let absoluteExp = exp
+          if (exp.startsWith('.')) {
+             absoluteExp = posix.join(tsconfigResult.dir, exp)
+          }
+          const resolved = normalizePath(
+            (await resolveId(absoluteExp, importer, { custom: { 'vite:import-glob': { isSubImportsPattern } } })) || absoluteExp
+          )
+          if (isAbsolute(resolved)) {
+            resolvedGlobs.push(pre + globSafeResolvedPath(resolved, absoluteExp))
+          }
+        }
+        if (resolvedGlobs.length > 0) return resolvedGlobs
+      }
+    }
+  }
 
   const resolved = normalizePath(
     (await resolveId(glob, importer, {
@@ -681,7 +705,7 @@ export async function toAbsoluteGlob(
     })) || glob,
   )
   if (isAbsolute(resolved)) {
-    return pre + globSafeResolvedPath(resolved, glob)
+    return [pre + globSafeResolvedPath(resolved, glob)]
   }
 
   throw new Error(
@@ -722,4 +746,47 @@ export function getCommonBase(globsResolved: string[]): null | string {
 export function isVirtualModule(id: string): boolean {
   // https://vite.dev/guide/api-plugin.html#virtual-modules-convention
   return id.startsWith('virtual:') || id[0] === '\0' || !id.includes('/')
+}
+
+function loadTsconfigPaths(importer: string): { dir: string, paths: Record<string, string[]> } | null {
+  let dir = posix.dirname(importer)
+  const root = posix.parse(dir).root
+  while (dir !== root) {
+    const tsconfigPath = posix.join(dir, 'tsconfig.json')
+    if (fs.existsSync(tsconfigPath)) {
+      try {
+        const content = fs.readFileSync(tsconfigPath, 'utf-8')
+        const stripped = content.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '')
+        const parsed = JSON.parse(stripped)
+        if (parsed.compilerOptions?.paths) {
+          return { dir, paths: parsed.compilerOptions.paths }
+        }
+        return null
+      } catch (e) {
+        return null
+      }
+    }
+    dir = posix.dirname(dir)
+  }
+  return null
+}
+
+function expandTsconfigPaths(glob: string, paths: Record<string, string[]>): string[] {
+  for (const [key, values] of Object.entries(paths)) {
+    if (key.endsWith('/*')) {
+      const prefix = key.slice(0, -2)
+      if (glob.startsWith(prefix + '/')) {
+        const suffix = glob.slice(prefix.length + 1)
+        return values.map(val => {
+          if (val.endsWith('/*')) {
+            return val.slice(0, -2) + '/' + suffix
+          }
+          return val
+        })
+      }
+    } else if (key === glob) {
+      return values
+    }
+  }
+  return [glob]
 }
