@@ -234,7 +234,7 @@ If it matches one of the following conditions, the `default` import is the `modu
 
 - The importer is `.mjs` or `.mts`.
 - The closest `package.json` for the importer has a `type` field set to `module`.
-- The `module.exports.__esModule` value of the importee CJS module is not set to true.
+- The `module.exports.__esModule` value of the importee CJS module is not set to `true`.
 
 ::: details The previous behavior
 
@@ -242,11 +242,11 @@ In development, if it matches one of the following conditions, the `default` imp
 
 - _The importer is included in the dependency optimization_ and `.mjs` or `.mts`.
 - _The importer is included in the dependency optimization_ and the closest `package.json` for the importer has a `type` field set to `module`.
-- The `module.exports.__esModule` value of the importee CJS module is not set to true.
+- The `module.exports.__esModule` value of the importee CJS module is not set to `true`.
 
 In build, the conditions were:
 
-- The `module.exports.__esModule` value of the importee CJS module is not set to true.
+- The `module.exports.__esModule` value of the importee CJS module is not set to `true`.
 - _`default` property of `module.exports` does not exist_.
 
 (assuming [`build.commonjsOptions.defaultIsModuleExports`](https://github.com/rollup/plugins/tree/master/packages/commonjs#defaultismoduleexports) is not changed from the default `'auto'`)
