@@ -149,6 +149,8 @@ export type {
 export type {
   ViteBuilder,
   BuildAppHook,
+  BuildOutput,
+  BuildResult,
   BuilderOptions,
   BuildOptions,
   BuildEnvironmentOptions,
