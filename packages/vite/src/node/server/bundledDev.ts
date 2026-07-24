@@ -75,6 +75,7 @@ export class BundledDev {
   private fullReloadPending = false
 
   private lastBuildError: Error | null = null
+  private initialBuildHadError = false
 
   memoryFiles: MemoryFiles = new MemoryFiles()
 
@@ -178,6 +179,9 @@ export class BundledDev {
               error: result,
             },
           )
+          if (!this.initialBuildCompleted) {
+            this.initialBuildHadError = true
+          }
           this.lastBuildError = result
           this.fullReloadPending = false
           this.environment.hot.send({
@@ -215,6 +219,12 @@ export class BundledDev {
     this.waitForInitialBuildFinish().then(() => {
       if (this._closed) return
       debug?.('INITIAL: build done')
+      if (this.initialBuildHadError) {
+        this.environment.logger.info(colors.green(`page reload`), {
+          timestamp: true,
+        })
+        this.initialBuildHadError = false
+      }
       this.initialBuildCompleted = true
       if (!this.lastBuildError) {
         this.environment.hot.send({
@@ -231,13 +241,11 @@ export class BundledDev {
     await this.devEngine.ensureCurrentBuildFinish()
     if (this._closed) return
 
-    let state = await this.devEngine.getBundleState()
-    while (this.memoryFiles.size === 0 && !state.lastBuildErrored) {
+    while (this.memoryFiles.size === 0) {
       await setTimeout(10)
       if (this._closed) return
       await this.devEngine.ensureCurrentBuildFinish()
       if (this._closed) return
-      state = await this.devEngine.getBundleState()
     }
   }
 
