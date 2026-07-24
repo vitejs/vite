@@ -1,6 +1,11 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { RolldownOutput, RollupError } from 'rolldown'
+import type {
+  OutputAsset,
+  OutputChunk,
+  RolldownOutput,
+  RollupError,
+} from 'rolldown'
 import colors from 'picocolors'
 import { type ImportSpecifier, init, parse } from 'es-module-lexer'
 import { viteWebWorkerPostPlugin as nativeWebWorkerPostPlugin } from 'rolldown/experimental'
@@ -44,8 +49,11 @@ type WorkerBundleAsset = {
   source: string | Uint8Array
 }
 
+/** The input ID of a worker entry, which identifies its bundle. */
+type WorkerBundleId = string
+
 /** `undefined` identifies the main bundle. */
-type BundleId = string | undefined
+type BundleId = WorkerBundleId | undefined
 
 class WorkerOutputCache {
   /**
@@ -60,9 +68,20 @@ class WorkerOutputCache {
     /* entryFilename */ string
   >()
   private invalidatedBundles = new Set</* inputId */ string>()
+  /**
+   * Worker references grouped by their containing bundle and module.
+   * `referencingModuleId` is the module whose inclusion keeps the reference
+   * live: the worker wrapper module for a `?worker` import, or the importing
+   * module for a `new URL(..., import.meta.url)` worker reference.
+   * `childBundleId` identifies the referenced worker bundle and is used as its
+   * `BundleId` when traversing that bundle's references.
+   */
   private bundleReferences = new Map<
     BundleId,
-    Map</* referencingModuleId */ string, Set</* childInputId */ string>>
+    Map<
+      /* referencingModuleId */ string,
+      Set</* childBundleId */ WorkerBundleId>
+    >
   >()
 
   saveWorkerBundle(
@@ -142,7 +161,7 @@ class WorkerOutputCache {
 
   recordReference(
     parentInputId: BundleId,
-    childInputId: string,
+    childBundleId: WorkerBundleId,
     referencingModuleId: string,
   ) {
     let referencesByModule = this.bundleReferences.get(parentInputId)
@@ -150,12 +169,12 @@ class WorkerOutputCache {
       referencesByModule = new Map()
       this.bundleReferences.set(parentInputId, referencesByModule)
     }
-    let childInputIds = referencesByModule.get(referencingModuleId)
-    if (!childInputIds) {
-      childInputIds = new Set()
-      referencesByModule.set(referencingModuleId, childInputIds)
+    let childBundleIds = referencesByModule.get(referencingModuleId)
+    if (!childBundleIds) {
+      childBundleIds = new Set()
+      referencesByModule.set(referencingModuleId, childBundleIds)
     }
-    childInputIds.add(childInputId)
+    childBundleIds.add(childBundleId)
   }
 
   clearMainBundleReferences() {
@@ -170,14 +189,14 @@ class WorkerOutputCache {
       const referencesByModule = this.bundleReferences.get(bundleId)
       if (!referencesByModule) continue
       for (const moduleId of moduleIds) {
-        const childInputIds = referencesByModule.get(moduleId)
-        if (!childInputIds) continue
-        for (const childInputId of childInputIds) {
-          if (liveBundles.has(childInputId)) continue
-          liveBundles.add(childInputId)
-          const childBundle = this.bundles.get(childInputId)
+        const childBundleIds = referencesByModule.get(moduleId)
+        if (!childBundleIds) continue
+        for (const childBundleId of childBundleIds) {
+          if (liveBundles.has(childBundleId)) continue
+          liveBundles.add(childBundleId)
+          const childBundle = this.bundles.get(childBundleId)
           if (childBundle) {
-            queue.push([childInputId, childBundle.moduleIds])
+            queue.push([childBundleId, childBundle.moduleIds])
           }
         }
       }
@@ -229,12 +248,12 @@ const workerOutputCaches = new WeakMap<ResolvedConfig, WorkerOutputCache>()
 export function recordWorkerReference(
   config: ResolvedConfig,
   parentInputId: string | undefined,
-  childInputId: string,
+  childBundleId: WorkerBundleId,
   referencingModuleId: string,
 ): void {
   workerOutputCaches
     .get(config.mainConfig || config)!
-    .recordReference(parentInputId, childInputId, referencingModuleId)
+    .recordReference(parentInputId, childBundleId, referencingModuleId)
 }
 
 async function bundleWorkerEntry(
@@ -345,14 +364,7 @@ async function bundleWorkerEntry(
     await bundle.close()
   }
 
-  const moduleIds = new Set<string>()
-  for (const output of result.output) {
-    if (output.type === 'chunk') {
-      for (const moduleId of output.moduleIds) {
-        moduleIds.add(moduleId)
-      }
-    }
-  }
+  const moduleIds = collectIncludedModuleIds(result.output)
 
   const {
     output: [outputChunk, ...outputChunks],
@@ -739,15 +751,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         return
       }
       const cache = workerOutputCaches.get(config)!
-      const liveModuleIds = new Set<string>()
-      for (const fileName in bundle) {
-        const chunk = bundle[fileName]
-        if (chunk.type === 'chunk') {
-          for (const moduleId of chunk.moduleIds) {
-            liveModuleIds.add(moduleId)
-          }
-        }
-      }
+      const liveModuleIds = collectIncludedModuleIds(Object.values(bundle))
       // Reference tracking relies on hooks running for every module, which is
       // not guaranteed when an incremental build reuses cached modules.
       const liveFileNames =
@@ -788,6 +792,20 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         .invalidateAffectedBundles(normalizePath(file))
     },
   }
+}
+
+function collectIncludedModuleIds(
+  outputs: (OutputChunk | OutputAsset)[],
+): Set<string> {
+  const moduleIds = new Set<string>()
+  for (const output of outputs) {
+    if (output.type === 'chunk') {
+      for (const moduleId of output.moduleIds) {
+        moduleIds.add(moduleId)
+      }
+    }
+  }
+  return moduleIds
 }
 
 function isSameContent(a: string | Uint8Array, b: string | Uint8Array) {
