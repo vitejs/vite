@@ -480,6 +480,24 @@ test('Unknown extension assets import', async () => {
   )
 })
 
+test('Unknown extension assets import with ?inline', async () => {
+  expect(await page.textContent('.unknown-ext-inline')).toMatch(
+    'data:application/octet-stream;',
+  )
+})
+
+test('Asset matched by a relative path in assetsInclude import', async () => {
+  expect(await page.textContent('.relative-path-assets-include')).toMatch(
+    isBuild ? 'data:application/octet-stream;' : '/nested/relative-path.custom',
+  )
+})
+
+test('Asset matched by a relative path in assetsInclude import with ?inline', async () => {
+  expect(
+    await page.textContent('.relative-path-assets-include-inline'),
+  ).toMatch('data:application/octet-stream;')
+})
+
 test('?raw import', async () => {
   expect(await page.textContent('.raw')).toMatch('SVG')
   expect(await page.textContent('.raw-html')).toBe('<div>partial</div>\n')
