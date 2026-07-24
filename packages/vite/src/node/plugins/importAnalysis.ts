@@ -597,13 +597,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
             if (url !== specifier) {
               let rewriteDone = false
-              // imports emitted by the optimizer are always relative and
-              // already have the correct shape. bare imports inside an
-              // optimized dep file come from plugins transforming the served
-              // file (e.g. @rollup/plugin-inject) and still need interop.
+              // optimizer-emitted imports resolve to the sibling file they
+              // name; imports injected by plugins (e.g. @rollup/plugin-inject)
+              // still need interop
               const isOptimizerEmittedImport =
                 depsOptimizer?.isOptimizedDepFile(importer) &&
-                specifier[0] === '.'
+                specifier[0] === '.' &&
+                path.posix.resolve(
+                  path.posix.dirname(cleanUrl(importer)),
+                  specifier,
+                ) === cleanUrl(resolvedId)
               if (
                 !isOptimizerEmittedImport &&
                 depsOptimizer?.isOptimizedDepFile(resolvedId) &&
