@@ -271,6 +271,20 @@ describe('link with props', () => {
     await page.goto(viteTestUrl + '/link-props/index.html')
     expect(await getColor('h1')).toBe('red')
   })
+
+  test.runIf(isBuild)(
+    'stylesheet links are not inlined as data urls',
+    async () => {
+      await page.goto(viteTestUrl + '/link-props/index.html')
+      const hrefs = await page.$$eval('link[rel=stylesheet]', (els) =>
+        els.map((el) => el.getAttribute('href')),
+      )
+      expect(hrefs.length).toBe(2)
+      for (const href of hrefs) {
+        expect(href).not.toMatch(/^data:/)
+      }
+    },
+  )
 })
 
 describe.runIf(isServe)('SPA fallback', () => {
