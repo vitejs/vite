@@ -47,7 +47,6 @@ import {
   DEFAULT_SERVER_MAIN_FIELDS,
   ENV_ENTRY,
   FS_PREFIX,
-  OPTIMIZABLE_ENTRY_RE,
 } from './constants'
 import { resolveEnvironmentPlugins } from './plugin'
 import type {
@@ -2522,6 +2521,7 @@ async function bundleConfigFile(
   const importMetaResolveVarName =
     '__vite_injected_original_import_meta_resolve'
   const importMetaResolveRegex = /import\.meta\s*\.\s*resolve/
+  const configFileRegex = /\.[cm]?[jt]s$/
 
   const nativeIncompatibilities: NativeConfigIncompatibility[] = []
 
@@ -2607,7 +2607,7 @@ async function bundleConfigFile(
       {
         name: 'inject-file-scope-variables',
         transform: {
-          filter: { id: OPTIMIZABLE_ENTRY_RE },
+          filter: { id: configFileRegex },
           handler(code, id) {
             let injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(path.dirname(id))};` +
