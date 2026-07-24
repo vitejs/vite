@@ -154,6 +154,13 @@ describe.runIf(isBuild)('build', () => {
     // so it must not be emitted either.
     expect(files.some((f) => f.includes('dce-test-nested-worker'))).toBe(false)
 
+    // This parent worker is live, but the module that references its nested
+    // worker is tree-shaken from the parent worker bundle.
+    expect(files.some((f) => f.includes('dce-test-live-worker'))).toBe(true)
+    expect(files.some((f) => f.includes('dce-test-live-nested-worker'))).toBe(
+      false,
+    )
+
     // sanity: the worker we DO use is still emitted (`my-worker`).
     expect(files.some((f) => f.includes('my-worker'))).toBe(true)
   })

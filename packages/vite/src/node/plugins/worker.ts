@@ -32,6 +32,7 @@ type WorkerBundle = {
   entryCode: string
   entryUrlPlaceholder: string
   referencedAssets: Set<string>
+  moduleIds: Set<string>
   watchedFiles: string[]
 }
 
@@ -42,6 +43,9 @@ type WorkerBundleAsset = {
   originalFileNames: string[]
   source: string | Uint8Array
 }
+
+/** `undefined` identifies the main bundle. */
+type BundleId = string | undefined
 
 class WorkerOutputCache {
   /**
@@ -56,21 +60,9 @@ class WorkerOutputCache {
     /* entryFilename */ string
   >()
   private invalidatedBundles = new Set</* inputId */ string>()
-  /**
-   * Module IDs in the main bundle that reference each worker bundle.
-   * Cleared at the start of each non-worker build and re-populated by load/transform hooks.
-   */
-  private bundleReferencingIds = new Map<
-    /* childInputId */ string,
-    Set</* referencingModuleId */ string>
-  >()
-  /**
-   * For each worker bundle, the set of other worker bundles it references
-   * (nested workers). Persists across rebuilds; cleared in removeBundle.
-   */
-  private bundleNestedReferences = new Map<
-    /* parentInputId */ string,
-    Set</* childInputId */ string>
+  private bundleReferences = new Map<
+    BundleId,
+    Map</* referencingModuleId */ string, Set</* childInputId */ string>>
   >()
 
   saveWorkerBundle(
@@ -79,6 +71,7 @@ class WorkerOutputCache {
     outputEntryFilename: string,
     outputEntryCode: string,
     outputAssets: WorkerBundleAsset[],
+    moduleIds: Set<string>,
     logger: Logger,
   ): WorkerBundle {
     for (const asset of outputAssets) {
@@ -90,6 +83,7 @@ class WorkerOutputCache {
       entryUrlPlaceholder:
         this.generateEntryUrlPlaceholder(outputEntryFilename),
       referencedAssets: new Set(outputAssets.map((asset) => asset.fileName)),
+      moduleIds,
       watchedFiles,
     }
     this.bundles.set(file, bundle)
@@ -143,56 +137,48 @@ class WorkerOutputCache {
       }
     }
 
-    this.bundleReferencingIds.delete(file)
-    this.bundleNestedReferences.delete(file)
+    this.bundleReferences.delete(file)
   }
 
   recordReference(
-    parentInputId: string | undefined,
+    parentInputId: BundleId,
     childInputId: string,
     referencingModuleId: string,
   ) {
-    if (parentInputId !== undefined) {
-      let set = this.bundleNestedReferences.get(parentInputId)
-      if (!set) {
-        set = new Set()
-        this.bundleNestedReferences.set(parentInputId, set)
-      }
-      set.add(childInputId)
-    } else {
-      let set = this.bundleReferencingIds.get(childInputId)
-      if (!set) {
-        set = new Set()
-        this.bundleReferencingIds.set(childInputId, set)
-      }
-      set.add(referencingModuleId)
+    let referencesByModule = this.bundleReferences.get(parentInputId)
+    if (!referencesByModule) {
+      referencesByModule = new Map()
+      this.bundleReferences.set(parentInputId, referencesByModule)
     }
+    let childInputIds = referencesByModule.get(referencingModuleId)
+    if (!childInputIds) {
+      childInputIds = new Set()
+      referencesByModule.set(referencingModuleId, childInputIds)
+    }
+    childInputIds.add(childInputId)
   }
 
-  clearDirectReferences() {
-    this.bundleReferencingIds.clear()
+  clearMainBundleReferences() {
+    this.bundleReferences.delete(undefined)
   }
 
-  getLiveAssetFileNames(liveModuleIds: Set<string>): Set<string> {
+  getLiveAssetFileNames(mainLiveModuleIds: Set<string>): Set<string> {
     const liveBundles = new Set<string>()
-    const queue: string[] = []
-    for (const [inputId, refIds] of this.bundleReferencingIds) {
-      for (const refId of refIds) {
-        if (liveModuleIds.has(refId)) {
-          liveBundles.add(inputId)
-          queue.push(inputId)
-          break
-        }
-      }
-    }
+    const queue: [BundleId, Set<string>][] = [[undefined, mainLiveModuleIds]]
     while (queue.length > 0) {
-      const parent = queue.shift()!
-      const nested = this.bundleNestedReferences.get(parent)
-      if (!nested) continue
-      for (const child of nested) {
-        if (!liveBundles.has(child)) {
-          liveBundles.add(child)
-          queue.push(child)
+      const [bundleId, moduleIds] = queue.shift()!
+      const referencesByModule = this.bundleReferences.get(bundleId)
+      if (!referencesByModule) continue
+      for (const moduleId of moduleIds) {
+        const childInputIds = referencesByModule.get(moduleId)
+        if (!childInputIds) continue
+        for (const childInputId of childInputIds) {
+          if (liveBundles.has(childInputId)) continue
+          liveBundles.add(childInputId)
+          const childBundle = this.bundles.get(childInputId)
+          if (childBundle) {
+            queue.push([childInputId, childBundle.moduleIds])
+          }
         }
       }
     }
@@ -359,6 +345,15 @@ async function bundleWorkerEntry(
     await bundle.close()
   }
 
+  const moduleIds = new Set<string>()
+  for (const output of result.output) {
+    if (output.type === 'chunk') {
+      for (const moduleId of output.moduleIds) {
+        moduleIds.add(moduleId)
+      }
+    }
+  }
+
   const {
     output: [outputChunk, ...outputChunks],
   } = result
@@ -392,6 +387,7 @@ async function bundleWorkerEntry(
       outputChunk.fileName,
       outputChunk.code,
       assets,
+      moduleIds,
       config.logger,
     )
   return newBundleInfo
@@ -494,7 +490,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     buildStart() {
       if (isWorker) return
       emittedAssets.clear()
-      workerOutputCaches.get(config)!.clearDirectReferences()
+      workerOutputCaches.get(config)!.clearMainBundleReferences()
     },
 
     load: {
