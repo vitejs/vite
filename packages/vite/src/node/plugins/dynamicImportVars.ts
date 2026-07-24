@@ -6,6 +6,7 @@ import MagicString from 'magic-string'
 import { viteDynamicImportVarsPlugin as nativeDynamicImportVarsPlugin } from 'rolldown/experimental'
 import { exactRegex } from 'rolldown/filter'
 import { parseAst } from 'rolldown/parseAst'
+import { isDynamicPattern } from 'tinyglobby'
 import type { PartialEnvironment } from '../baseEnvironment'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
@@ -93,7 +94,7 @@ function parseDynamicImportPattern(
   // through `import.meta.glob` would generate glob keys without the query,
   // so the runtime lookup would always fail with "Unknown variable dynamic
   // import". Leave the dynamic import untouched in that case.
-  if (!userPattern.includes('*')) {
+  if (!isDynamicPattern(userPattern)) {
     return null
   }
 
