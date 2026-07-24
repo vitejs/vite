@@ -4,7 +4,7 @@ Hi! We're really excited that you're interested in contributing to Vite! Before 
 
 ## Repo Setup
 
-To develop locally, fork the Vite repository and clone it in your local machine. The Vite repo is a monorepo using pnpm workspaces. The package manager used to install and link dependencies must be [pnpm](https://pnpm.io/). You can find the required pnpm version in `package.json` under the `packageManager` key.
+To develop locally, fork the Vite repository and clone it to your local machine. The Vite repo is a monorepo using pnpm workspaces. The package manager used to install and link dependencies must be [pnpm](https://pnpm.io/). You can find the required pnpm version in `package.json` under the `packageManager` key.
 
 To develop and test the core `vite` package:
 
@@ -33,7 +33,7 @@ git config --local blame.ignoreRevsFile .git-blame-ignore-revs
 
 To develop the `docs/` site:
 
-1. Run `pnpm run build` in Vite's root folder. This will generate the types for `twoslash` to work in the code examples. If the types are not available, errors will be logged in step 2 but does not prevent the site from working.
+1. Run `pnpm run build` in Vite's root folder. This will generate the types for `twoslash` to work in the code examples. If the types are not available, errors will be logged in step 2 but will not prevent the site from working.
 
 2. Run `pnpm run docs` in Vite's root folder.
 
@@ -79,7 +79,7 @@ We already have many config options, and we should avoid fixing an issue by addi
 
 - is really worth addressing
 - can be fixed with a smarter default
-- has workaround using existing options
+- has a workaround using existing options
 - can be addressed with a plugin instead
 
 ## Debugging
