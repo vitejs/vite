@@ -498,6 +498,28 @@ test('html serve behavior', async () => {
   expect(await bothSlashIndexHtml.text()).toContain('both/index.html')
 })
 
+test('should serve index.html from public subdirectories', async () => {
+  // /subdir/ should serve public/subdir/index.html
+  const res = await fetchHtml('/subdir/')
+  expect(res.status).toBe(200)
+  expect(await res.text()).toContain('public/subdir/index.html')
+
+  // /subdir/index.html should also work
+  const resExplicit = await fetchHtml('/subdir/index.html')
+  expect(resExplicit.status).toBe(200)
+  expect(await resExplicit.text()).toContain('public/subdir/index.html')
+
+  if (isServe) {
+    // Public files should not gain extensionless aliases.
+    const resWithoutExtension = await fetchHtml('/public-file')
+    expect(await resWithoutExtension.text()).not.toContain('public-file.html')
+
+    const resWithExtension = await fetchHtml('/public-file.html')
+    expect(resWithExtension.status).toBe(200)
+    expect(await resWithExtension.text()).toContain('public-file.html')
+  }
+})
+
 test('html fallback works non browser accept header', async () => {
   expect((await fetch(viteTestUrl, { headers: { Accept: '' } })).status).toBe(
     200,
