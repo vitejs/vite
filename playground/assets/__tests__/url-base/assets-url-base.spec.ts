@@ -5,7 +5,6 @@ import {
   getBg,
   getColor,
   isBuild,
-  isBundledDev,
   page,
 } from '~utils'
 
@@ -46,13 +45,13 @@ test('import-expression from simple script', async () => {
 })
 
 describe('asset imports from js', () => {
-  test.skipIf(isBundledDev)('relative', async () => {
+  test('relative', async () => {
     expect(await page.textContent('.asset-import-relative')).toMatch(
       urlAssetMatch,
     )
   })
 
-  test.skipIf(isBundledDev)('absolute', async () => {
+  test('absolute', async () => {
     expect(await page.textContent('.asset-import-absolute')).toMatch(
       urlAssetMatch,
     )
@@ -72,44 +71,44 @@ describe('css url() references', () => {
     ).toBe(true)
   })
 
-  test.skipIf(isBundledDev)('relative', async () => {
+  test('relative', async () => {
     const bg = await getBg('.css-url-relative')
     expect(bg).toMatch(urlAssetMatch)
   })
 
-  test.skipIf(isBundledDev)('image-set relative', async () => {
+  test('image-set relative', async () => {
     const imageSet = await getBg('.css-image-set-relative')
     imageSet.split(', ').forEach((s) => {
       expect(s).toMatch(urlAssetMatch)
     })
   })
 
-  test.skipIf(isBundledDev)('image-set without the url() call', async () => {
+  test('image-set without the url() call', async () => {
     const imageSet = await getBg('.css-image-set-without-url-call')
     imageSet.split(', ').forEach((s) => {
       expect(s).toMatch(urlAssetMatch)
     })
   })
 
-  test.skipIf(isBundledDev)('image-set with var', async () => {
+  test('image-set with var', async () => {
     const imageSet = await getBg('.css-image-set-with-var')
     imageSet.split(', ').forEach((s) => {
       expect(s).toMatch(urlAssetMatch)
     })
   })
 
-  test.skipIf(isBundledDev)('image-set with mix', async () => {
+  test('image-set with mix', async () => {
     const imageSet = await getBg('.css-image-set-mix-url-var')
     imageSet.split(', ').forEach((s) => {
       expect(s).toMatch(urlAssetMatch)
     })
   })
 
-  test.skipIf(isBundledDev)('relative in @import', async () => {
+  test('relative in @import', async () => {
     expect(await getBg('.css-url-relative-at-imported')).toMatch(urlAssetMatch)
   })
 
-  test.skipIf(isBundledDev)('absolute', async () => {
+  test('absolute', async () => {
     expect(await getBg('.css-url-absolute')).toMatch(urlAssetMatch)
   })
 
@@ -117,13 +116,13 @@ describe('css url() references', () => {
     expect(await getBg('.css-url-public')).toMatch(iconMatch)
   })
 
-  test.skipIf(isBundledDev)('multiple urls on the same line', async () => {
+  test('multiple urls on the same line', async () => {
     const bg = await getBg('.css-url-same-line')
     expect(bg).toMatch(urlAssetMatch)
     expect(bg).toMatch(iconMatch)
   })
 
-  test.skipIf(isBundledDev)('aliased', async () => {
+  test('aliased', async () => {
     const bg = await getBg('.css-url-aliased')
     expect(bg).toMatch(urlAssetMatch)
   })
@@ -145,7 +144,7 @@ describe.runIf(isBuild)('index.css URLs', () => {
 })
 
 describe('image', () => {
-  test.skipIf(isBundledDev)('srcset', async () => {
+  test('srcset', async () => {
     const img = await page.$('.img-src-set')
     const srcset = await img.getAttribute('srcset')
     srcset.split(', ').forEach((s) => {
@@ -160,12 +159,12 @@ describe('image', () => {
 
 describe('svg fragments', () => {
   // 404 is checked already, so here we just ensure the urls end with #fragment
-  test.skipIf(isBundledDev)('img url', async () => {
+  test('img url', async () => {
     const img = await page.$('.svg-frag-img')
     expect(await img.getAttribute('src')).toMatch(/svg#icon-clock-view$/)
   })
 
-  test.skipIf(isBundledDev)('via css url()', async () => {
+  test('via css url()', async () => {
     expect(await getBg('.icon')).toMatch(/svg#icon-clock-view"\)$/)
   })
 
@@ -179,7 +178,7 @@ test('?raw import', async () => {
   expect(await page.textContent('.raw')).toMatch('SVG')
 })
 
-test.skipIf(isBundledDev)('?url import', async () => {
+test('?url import', async () => {
   expect(await page.textContent('.url')).toMatch(
     isBuild
       ? /http:\/\/localhost:\d+\/other-assets\/foo-[-\w]{8}\.js/
@@ -187,7 +186,7 @@ test.skipIf(isBundledDev)('?url import', async () => {
   )
 })
 
-test.skipIf(isBundledDev)('?url import on css', async () => {
+test('?url import on css', async () => {
   const txt = await page.textContent('.url-css')
   expect(txt).toMatch(
     isBuild
@@ -196,22 +195,19 @@ test.skipIf(isBundledDev)('?url import on css', async () => {
   )
 })
 
-test.skipIf(isBundledDev)('new URL(..., import.meta.url)', async () => {
+test('new URL(..., import.meta.url)', async () => {
   const urlImgMatch = isBuild
     ? /http:\/\/localhost:\d+\/other-assets\/img-[-\w]{8}\.png/
     : '/import-meta-url/img.png'
   expect(await page.textContent('.import-meta-url')).toMatch(urlImgMatch)
 })
 
-test.skipIf(isBundledDev)(
-  'new URL(`${dynamic}`, import.meta.url)',
-  async () => {
-    const dynamic1 = await page.textContent('.dynamic-import-meta-url-1')
-    expect(dynamic1).toMatch(absoluteIconMatch)
-    const dynamic2 = await page.textContent('.dynamic-import-meta-url-2')
-    expect(dynamic2).toMatch(urlAssetMatch)
-  },
-)
+test('new URL(`${dynamic}`, import.meta.url)', async () => {
+  const dynamic1 = await page.textContent('.dynamic-import-meta-url-1')
+  expect(dynamic1).toMatch(absoluteIconMatch)
+  const dynamic2 = await page.textContent('.dynamic-import-meta-url-2')
+  expect(dynamic2).toMatch(urlAssetMatch)
+})
 
 test('new URL(`non-existent`, import.meta.url)', async () => {
   expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
@@ -219,7 +215,7 @@ test('new URL(`non-existent`, import.meta.url)', async () => {
   )
 })
 
-test.skipIf(isBundledDev)('inline style test', async () => {
+test('inline style test', async () => {
   expect(await getBg('.inline-style')).toMatch(urlAssetMatch)
   expect(await getBg('.style-url-assets')).toMatch(urlAssetMatch)
 })

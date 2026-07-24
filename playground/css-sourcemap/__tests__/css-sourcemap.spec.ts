@@ -4,7 +4,6 @@ import {
   extractSourcemap,
   formatSourcemapForSnapshot,
   isBuild,
-  isBundledDev,
   isServe,
   page,
   serverLogs,
@@ -41,7 +40,7 @@ describe.runIf(isServe)('serve', () => {
     expect(css).not.toContain('sourceMappingURL')
   })
 
-  test.skipIf(isBundledDev)('linked css with import', async () => {
+  test('linked css with import', async () => {
     const res = await page.request.get(
       new URL('./linked-with-import.css', page.url()).href,
       {
@@ -90,7 +89,7 @@ describe.runIf(isServe)('serve', () => {
     },
   )
 
-  test.skipIf(isBundledDev)('imported css', async () => {
+  test('imported css', async () => {
     const css = await getStyleTagContentIncluding('.imported ')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
@@ -113,7 +112,7 @@ describe.runIf(isServe)('serve', () => {
     `)
   })
 
-  test.skipIf(isBundledDev)('imported css with import', async () => {
+  test('imported css with import', async () => {
     const css = await getStyleTagContentIncluding('.imported-with-import ')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
@@ -143,7 +142,7 @@ describe.runIf(isServe)('serve', () => {
     `)
   })
 
-  test.skipIf(isBundledDev)('imported sass', async () => {
+  test('imported sass', async () => {
     const css = await getStyleTagContentIncluding('.imported-sass ')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
@@ -172,7 +171,7 @@ describe.runIf(isServe)('serve', () => {
     `)
   })
 
-  test.skipIf(isBundledDev)('imported sass module', async () => {
+  test('imported sass module', async () => {
     const css = await getStyleTagContentIncluding('._imported-sass-module_')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
@@ -196,7 +195,7 @@ describe.runIf(isServe)('serve', () => {
     `)
   })
 
-  test.skipIf(isBundledDev)('imported less', async () => {
+  test('imported less', async () => {
     const css = await getStyleTagContentIncluding('.imported-less ')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
@@ -222,7 +221,7 @@ describe.runIf(isServe)('serve', () => {
     `)
   })
 
-  test.skipIf(isBundledDev)('imported stylus', async () => {
+  test('imported stylus', async () => {
     const css = await getStyleTagContentIncluding('.imported-stylus ')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
@@ -246,7 +245,7 @@ describe.runIf(isServe)('serve', () => {
     `)
   })
 
-  test.skipIf(isBundledDev)('imported sugarss', async () => {
+  test('imported sugarss', async () => {
     const css = await getStyleTagContentIncluding('.imported-sugarss ')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`

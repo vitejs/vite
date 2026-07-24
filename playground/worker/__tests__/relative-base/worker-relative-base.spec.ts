@@ -1,9 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { isBuild, isBundledDev, page, testDir } from '~utils'
+import { isBuild, page, testDir } from '~utils'
 
-test.skipIf(isBundledDev)('normal', async () => {
+test('normal', async () => {
   await expect.poll(() => page.textContent('.pong')).toMatch('pong')
   await expect
     .poll(() => page.textContent('.mode'))
@@ -16,13 +16,13 @@ test.skipIf(isBundledDev)('normal', async () => {
     .toMatch(isBuild ? '/worker-assets/worker_asset-vite' : '/vite.svg')
 })
 
-test.skipIf(isBundledDev)('named', async () => {
+test('named', async () => {
   await expect
     .poll(() => page.textContent('.pong-named'))
     .toMatch('namedWorker')
 })
 
-test.skipIf(isBundledDev)('TS output', async () => {
+test('TS output', async () => {
   await expect.poll(() => page.textContent('.pong-ts-output')).toMatch('pong')
 })
 
@@ -31,11 +31,11 @@ test.skip('inlined', async () => {
   await expect.poll(() => page.textContent('.pong-inline')).toMatch('pong')
 })
 
-test.skipIf(isBundledDev)('shared worker', async () => {
+test('shared worker', async () => {
   await expect.poll(() => page.textContent('.tick-count')).toMatch('pong')
 })
 
-test.skipIf(isBundledDev)('named shared worker', async () => {
+test('named shared worker', async () => {
   await expect.poll(() => page.textContent('.tick-count-named')).toMatch('pong')
 })
 
@@ -45,20 +45,17 @@ test('inline shared worker', async () => {
     .toMatch('pong')
 })
 
-test.skipIf(isBundledDev)(
-  'worker emitted and import.meta.url in nested worker (serve)',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.nested-worker'))
-      .toMatch('worker-nested-worker')
-    await expect
-      .poll(() => page.textContent('.nested-worker-module'))
-      .toMatch('sub-worker')
-    await expect
-      .poll(() => page.textContent('.nested-worker-constructor'))
-      .toMatch('"type":"constructor"')
-  },
-)
+test('worker emitted and import.meta.url in nested worker (serve)', async () => {
+  await expect
+    .poll(() => page.textContent('.nested-worker'))
+    .toMatch('worker-nested-worker')
+  await expect
+    .poll(() => page.textContent('.nested-worker-module'))
+    .toMatch('sub-worker')
+  await expect
+    .poll(() => page.textContent('.nested-worker-constructor'))
+    .toMatch('"type":"constructor"')
+})
 
 describe.runIf(isBuild)('build', () => {
   // assert correct files
@@ -99,13 +96,13 @@ describe.runIf(isBuild)('build', () => {
   })
 })
 
-test.skipIf(isBundledDev)('module worker', async () => {
+test('module worker', async () => {
   await expect
     .poll(() => page.textContent('.shared-worker-import-meta-url'))
     .toMatch('A string')
 })
 
-test.skipIf(isBundledDev)('classic worker', async () => {
+test('classic worker', async () => {
   await expect
     .poll(() => page.textContent('.classic-worker'))
     .toMatch('A classic')
@@ -130,25 +127,25 @@ test.runIf(isBuild)('emit chunk', async () => {
     .toMatch('"A stringmodule1./"')
 })
 
-test.skipIf(isBundledDev)('import.meta.glob in worker', async () => {
+test('import.meta.glob in worker', async () => {
   await expect
     .poll(() => page.textContent('.importMetaGlob-worker'))
     .toMatch('["')
 })
 
-test.skipIf(isBundledDev)('import.meta.glob with eager in worker', async () => {
+test('import.meta.glob with eager in worker', async () => {
   await expect
     .poll(() => page.textContent('.importMetaGlobEager-worker'))
     .toMatch('["')
 })
 
-test.skipIf(isBundledDev)('self reference worker', async () => {
+test('self reference worker', async () => {
   await expect
     .poll(() => page.textContent('.self-reference-worker'))
     .toBe('pong: main\npong: nested\n')
 })
 
-test.skipIf(isBundledDev)('self reference url worker', async () => {
+test('self reference url worker', async () => {
   await expect
     .poll(() => page.textContent('.self-reference-url-worker'))
     .toBe('pong: main\npong: nested\n')

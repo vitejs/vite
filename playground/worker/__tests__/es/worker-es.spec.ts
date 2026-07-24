@@ -1,9 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { isBuild, isBundledDev, page, testDir } from '~utils'
+import { isBuild, page, testDir } from '~utils'
 
-test.skipIf(isBundledDev)('normal', async () => {
+test('normal', async () => {
   await expect.poll(() => page.textContent('.pong')).toMatch('pong')
   await expect
     .poll(() => page.textContent('.mode'))
@@ -21,68 +21,65 @@ test.skipIf(isBundledDev)('normal', async () => {
   await expect.poll(() => page.textContent('.dep-cjs')).toMatch('[cjs ok]')
 })
 
-test.skipIf(isBundledDev)('named', async () => {
+test('named', async () => {
   await expect
     .poll(() => page.textContent('.pong-named'))
     .toMatch('namedWorker')
 })
 
-test.skipIf(isBundledDev)('TS output', async () => {
+test('TS output', async () => {
   await expect.poll(() => page.textContent('.pong-ts-output')).toMatch('pong')
 })
 
-test.skipIf(isBundledDev)('inlined', async () => {
+test('inlined', async () => {
   await expect.poll(() => page.textContent('.pong-inline')).toMatch('pong')
 })
 
-test.skipIf(isBundledDev)('named inlined', async () => {
+test('named inlined', async () => {
   await expect
     .poll(() => page.textContent('.pong-inline-named'))
     .toMatch('namedInlineWorker')
 })
 
-test.skipIf(isBundledDev)('import meta url', async () => {
+test('import meta url', async () => {
   await expect
     .poll(() => page.textContent('.pong-inline-url'))
     .toMatch(/^(blob|http):/)
 })
 
-test.skipIf(isBundledDev)('unicode inlined', async () => {
+test('unicode inlined', async () => {
   await expect
     .poll(() => page.textContent('.pong-inline-unicode'))
     .toMatch('•pong•')
 })
 
-test.skipIf(isBundledDev)('shared worker', async () => {
+test('shared worker', async () => {
   await expect.poll(() => page.textContent('.tick-count')).toMatch('pong')
 })
 
-test.skipIf(isBundledDev)('named shared worker', async () => {
+test('named shared worker', async () => {
   await expect.poll(() => page.textContent('.tick-count-named')).toMatch('pong')
 })
 
-test.skipIf(isBundledDev)('inline shared worker', async () => {
+test('inline shared worker', async () => {
   await expect
     .poll(() => page.textContent('.pong-shared-inline'))
     .toMatch('pong')
 })
 
-test.skipIf(isBundledDev)(
-  'worker emitted and import.meta.url in nested worker (serve)',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.nested-worker'))
-      .toMatch('worker-nested-worker')
-    await expect
-      .poll(() => page.textContent('.nested-worker-module'))
-      .toMatch('sub-worker')
-    await expect
-      .poll(() => page.textContent('.nested-worker-constructor'))
-      .toMatch('"type":"constructor"')
-  },
-)
+test('worker emitted and import.meta.url in nested worker (serve)', async () => {
+  await expect
+    .poll(() => page.textContent('.nested-worker'))
+    .toMatch('worker-nested-worker')
+  await expect
+    .poll(() => page.textContent('.nested-worker-module'))
+    .toMatch('sub-worker')
+  await expect
+    .poll(() => page.textContent('.nested-worker-constructor'))
+    .toMatch('"type":"constructor"')
+})
 
-test.skipIf(isBundledDev)('deeply nested workers', async () => {
+test('deeply nested workers', async () => {
   await expect
     .poll(() => page.textContent('.deeply-nested-worker'))
     .toMatch(/Hello\sfrom\sroot.*\/es\/.+deeply-nested-worker\.js/)
@@ -146,7 +143,7 @@ describe.runIf(isBuild)('build', () => {
   })
 })
 
-test.skipIf(isBundledDev)('module worker', async () => {
+test('module worker', async () => {
   await expect
     .poll(() => page.textContent('.worker-import-meta-url'))
     .toMatch('A string')
@@ -161,7 +158,7 @@ test.skipIf(isBundledDev)('module worker', async () => {
     .toMatch('A string')
 })
 
-test.skipIf(isBundledDev)('classic worker', async () => {
+test('classic worker', async () => {
   await expect
     .poll(() => page.textContent('.classic-worker'))
     .toMatch('A classic')
@@ -175,7 +172,7 @@ test.skipIf(isBundledDev)('classic worker', async () => {
     .toMatch('A classic')
 })
 
-test.skipIf(isBundledDev)('emit chunk', async () => {
+test('emit chunk', async () => {
   await expect
     .poll(() => page.textContent('.emit-chunk-worker'))
     .toMatch(
@@ -186,19 +183,19 @@ test.skipIf(isBundledDev)('emit chunk', async () => {
     .toMatch('"A stringmodule1/es/"')
 })
 
-test.skipIf(isBundledDev)('url query worker', async () => {
+test('url query worker', async () => {
   await expect
     .poll(() => page.textContent('.simple-worker-url'))
     .toMatch('Hello from simple worker!')
 })
 
-test.skipIf(isBundledDev)('import.meta.glob in worker', async () => {
+test('import.meta.glob in worker', async () => {
   await expect
     .poll(() => page.textContent('.importMetaGlob-worker'))
     .toMatch('["')
 })
 
-test.skipIf(isBundledDev)('import.meta.glob with eager in worker', async () => {
+test('import.meta.glob with eager in worker', async () => {
   await expect
     .poll(() => page.textContent('.importMetaGlobEager-worker'))
     .toMatch('["')
@@ -210,13 +207,13 @@ test.runIf(isBuild)('require json in worker', async () => {
     .toMatch('[{"name":"a"},{"name":"b"}]')
 })
 
-test.skipIf(isBundledDev)('self reference worker', async () => {
+test('self reference worker', async () => {
   await expect
     .poll(() => page.textContent('.self-reference-worker'))
     .toMatch('pong: main\npong: nested\n')
 })
 
-test.skipIf(isBundledDev)('self reference url worker', async () => {
+test('self reference url worker', async () => {
   await expect
     .poll(() => page.textContent('.self-reference-url-worker'))
     .toMatch('pong: main\npong: nested\n')

@@ -1,16 +1,8 @@
 import { expect, test } from 'vitest'
-import {
-  editFile,
-  getBg,
-  getColor,
-  isBuild,
-  isBundledDev,
-  page,
-  viteTestUrl,
-} from '~utils'
+import { editFile, getBg, getColor, isBuild, page, viteTestUrl } from '~utils'
 
 export const sassTest = () => {
-  test.skipIf(isBundledDev)('sass', async () => {
+  test('sass', async () => {
     const imported = await page.$('.sass')
     const atImport = await page.$('.sass-at-import')
     const atImportAlias = await page.$('.sass-at-import-alias')

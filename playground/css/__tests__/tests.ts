@@ -8,7 +8,6 @@ import {
   getBgColor,
   getColor,
   isBuild,
-  isBundledDev,
   page,
   removeFile,
   serverLogs,
@@ -17,14 +16,14 @@ import {
 
 // note: tests should retrieve the element at the beginning of test and reuse it
 // in later assertions to ensure CSS HMR doesn't reload the page
-test.skipIf(isBundledDev)('imported css', async () => {
+test('imported css', async () => {
   const glob = await page.textContent('.imported-css-glob')
   expect(glob).toContain('.dir-import')
   const globEager = await page.textContent('.imported-css-globEager')
   expect(globEager).toContain('.dir-import')
 })
 
-test.skipIf(isBundledDev)('linked css', async () => {
+test('linked css', async () => {
   const linked = await page.$('.linked')
   const atImport = await page.$('.linked-at-import')
 
@@ -42,7 +41,7 @@ test.skipIf(isBundledDev)('linked css', async () => {
   await expect.poll(() => getColor(atImport)).toBe('blue')
 })
 
-test.skipIf(isBundledDev)('css import from js', async () => {
+test('css import from js', async () => {
   const imported = await page.$('.imported')
   const atImport = await page.$('.imported-at-import')
 
@@ -86,7 +85,7 @@ test('postcss plugin that injects url()', async () => {
 
 sassTest()
 
-test.skipIf(isBundledDev)('less', async () => {
+test('less', async () => {
   const imported = await page.$('.less')
   const atImport = await page.$('.less-at-import')
   const atImportAlias = await page.$('.less-at-import-alias')
@@ -129,7 +128,7 @@ test('less-plugin', async () => {
   )
 })
 
-test.skipIf(isBundledDev)('stylus', async () => {
+test('stylus', async () => {
   const imported = await page.$('.stylus')
   const additionalData = await page.$('.stylus-additional-data')
   const relativeImport = await page.$('.stylus-import')
@@ -402,11 +401,11 @@ test('minify css', async () => {
   expect(cssFile).not.toMatch('#ffff00b3')
 })
 
-test.skipIf(isBundledDev)('?url', async () => {
+test('?url', async () => {
   expect(await getColor('.url-imported-css')).toBe('yellow')
 })
 
-test.skipIf(isBundledDev)('?raw', async () => {
+test('?raw', async () => {
   const rawImportCss = await page.$('.raw-imported-css')
 
   expect(await rawImportCss.textContent()).toBe(
@@ -460,7 +459,7 @@ test.runIf(isBuild)('warning can be suppressed by esbuild.logOverride', () => {
   })
 })
 
-test.skipIf(isBundledDev)('sugarss', async () => {
+test('sugarss', async () => {
   const imported = await page.$('.sugarss')
   const atImport = await page.$('.sugarss-at-import')
   const atImportAlias = await page.$('.sugarss-at-import-alias')
@@ -516,14 +515,11 @@ test.runIf(isBuild)('Scoped CSS via cssScopeTo should be treeshaken', () => {
   expect(css).not.toMatch(/\btreeshake-scoped-c\b/)
 })
 
-test.skipIf(isBundledDev)(
-  'Scoped CSS should have a correct order',
-  async () => {
-    await page.goto(viteTestUrl + '/treeshake-scoped/')
-    expect(await getColor('.treeshake-scoped-order')).toBe('red')
-    expect(await getBgColor('.treeshake-scoped-order')).toBe('blue')
-  },
-)
+test('Scoped CSS should have a correct order', async () => {
+  await page.goto(viteTestUrl + '/treeshake-scoped/')
+  expect(await getColor('.treeshake-scoped-order')).toBe('red')
+  expect(await getBgColor('.treeshake-scoped-order')).toBe('blue')
+})
 
 test.runIf(isBuild)(
   'empty CSS files should generate .css assets, not .js assets',

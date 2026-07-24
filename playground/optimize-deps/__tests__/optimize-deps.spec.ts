@@ -4,7 +4,6 @@ import {
   browserLogs,
   getColor,
   isBuild,
-  isBundledDev,
   isServe,
   page,
   readDepOptimizationMetadata,
@@ -12,57 +11,39 @@ import {
   viteTestUrl,
 } from '~utils'
 
-test.skipIf(isBundledDev)(
-  'default + named imports from cjs dep (react)',
-  async () => {
-    await expect.poll(() => page.textContent('.cjs button')).toBe('count is 0')
-    await page.click('.cjs button')
-    await expect.poll(() => page.textContent('.cjs button')).toBe('count is 1')
-  },
-)
+test('default + named imports from cjs dep (react)', async () => {
+  await expect.poll(() => page.textContent('.cjs button')).toBe('count is 0')
+  await page.click('.cjs button')
+  await expect.poll(() => page.textContent('.cjs button')).toBe('count is 1')
+})
 
-test.skipIf(isBundledDev)(
-  'named imports from webpacked cjs (phoenix)',
-  async () => {
-    await expect.poll(() => page.textContent('.cjs-phoenix')).toBe('ok')
-  },
-)
+test('named imports from webpacked cjs (phoenix)', async () => {
+  await expect.poll(() => page.textContent('.cjs-phoenix')).toBe('ok')
+})
 
-test.skipIf(isBundledDev)(
-  'default import from webpacked cjs (clipboard)',
-  async () => {
-    await expect.poll(() => page.textContent('.cjs-clipboard')).toBe('ok')
-  },
-)
+test('default import from webpacked cjs (clipboard)', async () => {
+  await expect.poll(() => page.textContent('.cjs-clipboard')).toBe('ok')
+})
 
-test.skipIf(isBundledDev)(
-  'default import from cjs with es-module-flag (dep-cjs-with-es-module-flag)',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.cjs-with-es-module-flag'))
-      .toBe('ok')
-  },
-)
+test('default import from cjs with es-module-flag (dep-cjs-with-es-module-flag)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-with-es-module-flag'))
+    .toBe('ok')
+})
 
-test.skipIf(isBundledDev)(
-  'default import from cjs (cjs-dep-cjs-compiled-from-esm)',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.cjs-dep-cjs-compiled-from-esm'))
-      .toBe('ok')
-  },
-)
+test('default import from cjs (cjs-dep-cjs-compiled-from-esm)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dep-cjs-compiled-from-esm'))
+    .toBe('ok')
+})
 
-test.skipIf(isBundledDev)(
-  'default import from cjs (cjs-dep-cjs-compiled-from-cjs)',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.cjs-dep-cjs-compiled-from-cjs'))
-      .toBe('ok')
-  },
-)
+test('default import from cjs (cjs-dep-cjs-compiled-from-cjs)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dep-cjs-compiled-from-cjs'))
+    .toBe('ok')
+})
 
-test.skipIf(isBundledDev)('dynamic imports from cjs dep (react)', async () => {
+test('dynamic imports from cjs dep (react)', async () => {
   await expect
     .poll(() => page.textContent('.cjs-dynamic button'))
     .toBe('count is 0')
@@ -72,126 +53,97 @@ test.skipIf(isBundledDev)('dynamic imports from cjs dep (react)', async () => {
     .toBe('count is 1')
 })
 
-test.skipIf(isBundledDev)(
-  'dynamic named imports from webpacked cjs (phoenix)',
-  async () => {
-    await expect.poll(() => page.textContent('.cjs-dynamic-phoenix')).toBe('ok')
-  },
-)
+test('dynamic named imports from webpacked cjs (phoenix)', async () => {
+  await expect.poll(() => page.textContent('.cjs-dynamic-phoenix')).toBe('ok')
+})
 
-test.skipIf(isBundledDev)(
-  'dynamic default import from webpacked cjs (clipboard)',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.cjs-dynamic-clipboard'))
-      .toBe('ok')
-  },
-)
+test('dynamic default import from webpacked cjs (clipboard)', async () => {
+  await expect.poll(() => page.textContent('.cjs-dynamic-clipboard')).toBe('ok')
+})
 
-test.skipIf(isBundledDev)(
-  'dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-esm)',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.cjs-dynamic-dep-cjs-compiled-from-esm'))
-      .toBe('ok')
-  },
-)
+test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-esm)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-dep-cjs-compiled-from-esm'))
+    .toBe('ok')
+})
 
-test.skipIf(isBundledDev)(
-  'dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-cjs)',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.cjs-dynamic-dep-cjs-compiled-from-cjs'))
-      .toBe('ok')
-  },
-)
+test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-cjs)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-dep-cjs-compiled-from-cjs'))
+    .toBe('ok')
+})
 
-test.skipIf(isBundledDev)(
-  'dynamic default import from cjs with es-module-flag (cjs-dynamic-dep-cjs-with-es-module-flag)',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.cjs-dynamic-dep-cjs-with-es-module-flag'))
-      .toBe('ok')
-  },
-)
+test('dynamic default import from cjs with es-module-flag (cjs-dynamic-dep-cjs-with-es-module-flag)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-dep-cjs-with-es-module-flag'))
+    .toBe('ok')
+})
 
-test.skipIf(isBundledDev)(
-  'dynamic import from format-ambiguous importer respects __esModule flag (cjs-dynamic-importer-ambiguous)',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.cjs-dynamic-importer-ambiguous'))
-      .toBe('ok')
-  },
-)
+test('dynamic import from format-ambiguous importer respects __esModule flag (cjs-dynamic-importer-ambiguous)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-importer-ambiguous'))
+    .toBe('ok')
+})
 
-test.skipIf(isBundledDev)(
-  'dynamic import from explicit cjs importer uses node interop (cjs-dynamic-importer-cjs)',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.cjs-dynamic-importer-cjs'))
-      .toBe('ok')
-  },
-)
+test('dynamic import from explicit cjs importer uses node interop (cjs-dynamic-importer-cjs)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-importer-cjs'))
+    .toBe('ok')
+})
 
-test.skipIf(isBundledDev)('dedupe', async () => {
+test('dedupe', async () => {
   await expect.poll(() => page.textContent('.dedupe button')).toBe('count is 0')
   await page.click('.dedupe button')
   await expect.poll(() => page.textContent('.dedupe button')).toBe('count is 1')
 })
 
-test.skipIf(isBundledDev)('cjs browser field (axios)', async () => {
+test('cjs browser field (axios)', async () => {
   await expect.poll(() => page.textContent('.cjs-browser-field')).toBe('pong')
 })
 
-test.skipIf(isBundledDev)('cjs browser field bare', async () => {
+test('cjs browser field bare', async () => {
   await expect
     .poll(() => page.textContent('.cjs-browser-field-bare'))
     .toBe('pong')
 })
 
-test.skipIf(isBundledDev)('dep from linked dep (lodash-es)', async () => {
+test('dep from linked dep (lodash-es)', async () => {
   await expect.poll(() => page.textContent('.deps-linked')).toBe('fooBarBaz')
 })
 
-test.skipIf(isBundledDev)('forced include', async () => {
+test('forced include', async () => {
   await expect
     .poll(() => page.textContent('.force-include'))
     .toMatch(`[success]`)
 })
 
-test.skipIf(isBundledDev)('import * from optimized dep', async () => {
+test('import * from optimized dep', async () => {
   await expect.poll(() => page.textContent('.import-star')).toMatch(`[success]`)
 })
 
-test.skipIf(isBundledDev)(
-  'import from dep with process.env.NODE_ENV',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.node-env'))
-      .toMatch(isBuild ? 'prod' : 'dev')
-  },
-)
+test('import from dep with process.env.NODE_ENV', async () => {
+  await expect
+    .poll(() => page.textContent('.node-env'))
+    .toMatch(isBuild ? 'prod' : 'dev')
+})
 
-test.skipIf(isBundledDev)('import from dep with .notjs files', async () => {
+test('import from dep with .notjs files', async () => {
   await expect.poll(() => page.textContent('.not-js')).toMatch(`[success]`)
 })
 
-test.skipIf(isBundledDev)(
-  'Import from dependency which uses relative path which needs to be resolved by main field',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.relative-to-main'))
-      .toMatch(`[success]`)
-  },
-)
+test('Import from dependency which uses relative path which needs to be resolved by main field', async () => {
+  await expect
+    .poll(() => page.textContent('.relative-to-main'))
+    .toMatch(`[success]`)
+})
 
-test.skipIf(isBundledDev)('dep with dynamic import', async () => {
+test('dep with dynamic import', async () => {
   await expect
     .poll(() => page.textContent('.dep-with-dynamic-import'))
     .toMatch(`[success]`)
 })
 
-test.skipIf(isBundledDev)('dep with optional peer dep', async () => {
+test('dep with optional peer dep', async () => {
   await expect
     .poll(() => page.textContent('.dep-with-optional-peer-dep'))
     .toMatch(`[success]`)
@@ -200,7 +152,7 @@ test.skipIf(isBundledDev)('dep with optional peer dep', async () => {
     .toMatch(`[success]`)
 })
 
-test.skipIf(isBundledDev)('dep with optional peer dep submodule', async () => {
+test('dep with optional peer dep submodule', async () => {
   await expect
     .poll(() => page.textContent('.dep-with-optional-peer-dep-submodule'))
     .toMatch(`[success]`)
@@ -209,7 +161,7 @@ test.skipIf(isBundledDev)('dep with optional peer dep submodule', async () => {
     .toMatch(`[success]`)
 })
 
-test.skipIf(isBundledDev)('dep with optional peer dep (cjs)', async () => {
+test('dep with optional peer dep (cjs)', async () => {
   await expect
     .poll(() => page.textContent('.dep-with-optional-peer-dep-cjs'))
     .toMatch(`[success]`)
@@ -218,82 +170,65 @@ test.skipIf(isBundledDev)('dep with optional peer dep (cjs)', async () => {
     .toMatch(`[success]`)
 })
 
-test.skipIf(isBundledDev)('dep with css import', async () => {
+test('dep with css import', async () => {
   await expect.poll(() => getColor('.dep-linked-include')).toBe('red')
 })
 
-test.skipIf(isBundledDev)('CJS dep with css import', async () => {
+test('CJS dep with css import', async () => {
   await expect.poll(() => getColor('.cjs-with-assets')).toBe('blue')
 })
 
-test.skipIf(isBundledDev)(
-  'CJS dep requiring dep with css main field',
-  async () => {
-    await expect
-      .poll(() => getColor('.cjs-require-css-main-field'))
-      .toBe('coral')
-  },
-)
+test('CJS dep requiring dep with css main field', async () => {
+  await expect.poll(() => getColor('.cjs-require-css-main-field')).toBe('coral')
+})
 
-test.skipIf(isBundledDev)(
-  'externalize known non-js files in optimize included dep',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.externalize-known-non-js'))
-      .toMatch(`[success]`)
-  },
-)
+test('externalize known non-js files in optimize included dep', async () => {
+  await expect
+    .poll(() => page.textContent('.externalize-known-non-js'))
+    .toMatch(`[success]`)
+})
 
-test.skipIf(isBundledDev)('vue + vuex', async () => {
+test('vue + vuex', async () => {
   await expect.poll(() => page.textContent('.vue')).toMatch(`[success]`)
 })
 
 // When we use the Rollup CommonJS plugin instead of esbuild prebundling,
 // the esbuild plugins won't apply to dependencies
-test.runIf(isServe && !isBundledDev)('esbuild-plugin', async () => {
+test.runIf(isServe)('esbuild-plugin', async () => {
   await expect
     .poll(() => page.textContent('.esbuild-plugin'))
     .toMatch(`Hello from an esbuild plugin`)
 })
 
-test.skipIf(isBundledDev)('import from hidden dir', async () => {
+test('import from hidden dir', async () => {
   await expect.poll(() => page.textContent('.hidden-dir')).toBe('hello!')
 })
 
-test.skipIf(isBundledDev)(
-  'import optimize-excluded package that imports optimized-included package',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.nested-include'))
-      .toBe('nested-include')
-  },
-)
+test('import optimize-excluded package that imports optimized-included package', async () => {
+  await expect
+    .poll(() => page.textContent('.nested-include'))
+    .toBe('nested-include')
+})
 
-test.skipIf(isBundledDev)('import aliased package with colon', async () => {
+test('import aliased package with colon', async () => {
   await expect.poll(() => page.textContent('.url')).toBe('vite.dev')
 })
 
-test.skipIf(isBundledDev)(
-  'import aliased package using absolute path',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.alias-using-absolute-path'))
-      .toBe('From dep-alias-using-absolute-path')
-  },
-)
+test('import aliased package using absolute path', async () => {
+  await expect
+    .poll(() => page.textContent('.alias-using-absolute-path'))
+    .toBe('From dep-alias-using-absolute-path')
+})
 
-test.skipIf(isBundledDev)(
-  'variable names are reused in different scripts',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.reused-variable-names'))
-      .toBe('reused')
-  },
-)
+test('variable names are reused in different scripts', async () => {
+  await expect
+    .poll(() => page.textContent('.reused-variable-names'))
+    .toBe('reused')
+})
 
 // Regression test for #8428: flattenId must encode '/' and '.' differently
 // to avoid collisions between 'lodash/cloneDeep' and 'lodash.clonedeep'
-test.skipIf(isBundledDev)('flatten id should generate correctly', async () => {
+test('flatten id should generate correctly', async () => {
   await expect
     .poll(() => page.textContent('.clonedeep-slash'))
     .toBe('clonedeep-slash')
@@ -305,16 +240,13 @@ test.skipIf(isBundledDev)('flatten id should generate correctly', async () => {
     .toBe('plus-subpath')
 })
 
-test.skipIf(isBundledDev)(
-  'non optimized module is not duplicated',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.non-optimized-module-is-not-duplicated'))
-      .toBe('from-absolute-path, from-relative-path')
-  },
-)
+test('non optimized module is not duplicated', async () => {
+  await expect
+    .poll(() => page.textContent('.non-optimized-module-is-not-duplicated'))
+    .toBe('from-absolute-path, from-relative-path')
+})
 
-test.runIf(isServe && !isBundledDev)('error on builtin modules usage', () => {
+test.runIf(isServe)('error on builtin modules usage', () => {
   expect(browserLogs).toEqual(
     expect.arrayContaining([
       // from dep-with-builtin-module-esm
@@ -351,7 +283,7 @@ test.runIf(isServe && !isBundledDev)('error on builtin modules usage', () => {
   )
 })
 
-test.skipIf(isBundledDev)('pre bundle css require', async () => {
+test('pre bundle css require', async () => {
   if (isServe) {
     const response = page.waitForResponse(/@vitejs_test-dep-css-require\.js/)
     await page.goto(viteTestUrl)
@@ -372,7 +304,7 @@ test.runIf(isBuild)('no missing deps during build', async () => {
   })
 })
 
-test.skipIf(isBundledDev)('name file limit is 170 characters', async () => {
+test('name file limit is 170 characters', async () => {
   if (isServe) {
     const response = page.waitForResponse(
       /@vitejs_longfilename-\w+_[a-zA-Z\d]+\.js\?v=[a-zA-Z\d]+/,
@@ -388,7 +320,7 @@ test.skipIf(isBundledDev)('name file limit is 170 characters', async () => {
 })
 
 describe.runIf(isServe)('optimizeDeps config', () => {
-  test.skipIf(isBundledDev)('supports include glob syntax', () => {
+  test('supports include glob syntax', () => {
     const metadata = readDepOptimizationMetadata()
     expect(Object.keys(metadata.optimized)).to.include.members([
       '@vitejs/test-dep-optimize-exports-with-glob',
@@ -410,13 +342,13 @@ describe.runIf(isServe)('optimizeDeps config', () => {
   })
 })
 
-test.skipIf(isBundledDev)('long file name should work', async () => {
+test('long file name should work', async () => {
   await expect
     .poll(() => page.textContent('.long-file-name'))
     .toMatch(`hello world`)
 })
 
-test.runIf(isServe && !isBundledDev)('warn on incompatible dependency', () => {
+test.runIf(isServe)('warn on incompatible dependency', () => {
   expect(serverLogs).toContainEqual(
     expect.stringContaining(
       'The dependency might be incompatible with the dep optimizer.',
@@ -424,54 +356,40 @@ test.runIf(isServe && !isBundledDev)('warn on incompatible dependency', () => {
   )
 })
 
-test.skipIf(isBundledDev)(
-  'import the CommonJS external package that omits the js suffix',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.external-package-js'))
-      .toBe('okay')
-    await expect
-      .poll(() => page.textContent('.external-package-scss-js'))
-      .toBe('scss')
-    await expect
-      .poll(() => page.textContent('.external-package-astro-js'))
-      .toBe('astro')
-    await expect
-      .poll(() => page.textContent('.external-package-tsx-js'))
-      .toBe('tsx')
-  },
-)
+test('import the CommonJS external package that omits the js suffix', async () => {
+  await expect.poll(() => page.textContent('.external-package-js')).toBe('okay')
+  await expect
+    .poll(() => page.textContent('.external-package-scss-js'))
+    .toBe('scss')
+  await expect
+    .poll(() => page.textContent('.external-package-astro-js'))
+    .toBe('astro')
+  await expect
+    .poll(() => page.textContent('.external-package-tsx-js'))
+    .toBe('tsx')
+})
 
-test.skipIf(isBundledDev)(
-  'external package name with asset extension',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.dep-with-asset-ext-no-dual-package'))
-      .toBe('true')
-    await expect
-      .poll(() => page.textContent('.dep-with-asset-ext-prebundled'))
-      .toBe(String(isServe))
-  },
-)
+test('external package name with asset extension', async () => {
+  await expect
+    .poll(() => page.textContent('.dep-with-asset-ext-no-dual-package'))
+    .toBe('true')
+  await expect
+    .poll(() => page.textContent('.dep-with-asset-ext-prebundled'))
+    .toBe(String(isServe))
+})
 
-test.skipIf(isBundledDev)(
-  'dependency with external sub-dependencies',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.dep-cjs-with-external-deps-object'))
-      .toBe('ok')
-    await expect
-      .poll(() => page.textContent('.dep-cjs-with-external-deps-node-builtin'))
-      .toBe('foo bar')
-  },
-)
+test('dependency with external sub-dependencies', async () => {
+  await expect
+    .poll(() => page.textContent('.dep-cjs-with-external-deps-object'))
+    .toBe('ok')
+  await expect
+    .poll(() => page.textContent('.dep-cjs-with-external-deps-node-builtin'))
+    .toBe('foo bar')
+})
 
-test.skipIf(isBundledDev)(
-  'virtual module with .vue extension does not error during scan',
-  async () => {
-    await expect.poll(() => page.textContent('.virtual-module-vue')).toBe('ok')
-  },
-)
+test('virtual module with .vue extension does not error during scan', async () => {
+  await expect.poll(() => page.textContent('.virtual-module-vue')).toBe('ok')
+})
 
 test.runIf(isServe)(
   'no dep scan error for virtual modules with html-like extensions',
@@ -486,25 +404,20 @@ test.runIf(isServe)(
   },
 )
 
-test.skipIf(isBundledDev)(
-  'should fix relative worker paths in optimized dependencies',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.worker-lib'))
-      .toBe('worker-success')
-    await expect
-      .poll(() => page.textContent('.worker-nested'))
-      .toBe('worker-success')
+test('should fix relative worker paths in optimized dependencies', async () => {
+  await expect
+    .poll(() => page.textContent('.worker-lib'))
+    .toBe('worker-success')
+  await expect
+    .poll(() => page.textContent('.worker-nested'))
+    .toBe('worker-success')
 
-    const assetMatcher = isBuild
-      ? /assets\/logo-[-\w]+\.png/
-      : /\/node_modules\/@vitejs\/test-dep-with-assets\/logo\.png/
-    await expect
-      .poll(() => page.textContent('.asset-url'))
-      .toMatch(assetMatcher)
+  const assetMatcher = isBuild
+    ? /assets\/logo-[-\w]+\.png/
+    : /\/node_modules\/@vitejs\/test-dep-with-assets\/logo\.png/
+  await expect.poll(() => page.textContent('.asset-url')).toMatch(assetMatcher)
 
-    const url = await page.textContent('.asset-url')
-    const res = await page.request.get(url)
-    expect(res.status()).toBe(200)
-  },
-)
+  const url = await page.textContent('.asset-url')
+  const res = await page.request.get(url)
+  expect(res.status()).toBe(200)
+})

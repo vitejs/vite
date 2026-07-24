@@ -9,7 +9,6 @@ import {
   getBg,
   getColor,
   isBuild,
-  isBundledDev,
   page,
   readFile,
   removeFile,
@@ -25,7 +24,7 @@ test('should render', async () => {
 })
 
 if (!isBuild) {
-  test.skipIf(isBundledDev)('should connect', async () => {
+  test('should connect', async () => {
     expect(browserLogs.length).toBe(5)
     expect(browserLogs.some((msg) => msg.includes('connected'))).toBe(true)
     browserLogs.length = 0
@@ -38,7 +37,7 @@ if (!isBuild) {
     const res = await fetch(viteTestUrl + '/hot-events-counts')
     return res.json()
   }
-  test.skipIf(isBundledDev)('hot events', async () => {
+  test('hot events', async () => {
     expect(await fetchHotEvents()).toStrictEqual({
       connectCount: 1,
       disconnectCount: 0,
@@ -50,7 +49,7 @@ if (!isBuild) {
     })
   })
 
-  test.skipIf(isBundledDev)('self accept', async () => {
+  test('self accept', async () => {
     const el = await page.$('.app')
     await untilBrowserLogAfter(
       () =>
@@ -87,42 +86,39 @@ if (!isBuild) {
     await expect.poll(() => el.textContent()).toMatch('3')
   })
 
-  test.skipIf(isBundledDev)(
-    'hot data persists across module instances',
-    async () => {
-      await untilBrowserLogAfter(
-        () =>
-          editFile('hotData.js', (code) =>
-            code.replace('const value = 1', 'const value = 2 '),
-          ),
-        [
-          '>>> vite:beforeUpdate -- update',
-          '(hot data) value from execution: 1',
-          '(hot data) value from dispose: 1',
-          '[vite] hot updated: /hotData.js',
-          '>>> vite:afterUpdate -- update',
-        ],
-        true,
-      )
+  test('hot data persists across module instances', async () => {
+    await untilBrowserLogAfter(
+      () =>
+        editFile('hotData.js', (code) =>
+          code.replace('const value = 1', 'const value = 2 '),
+        ),
+      [
+        '>>> vite:beforeUpdate -- update',
+        '(hot data) value from execution: 1',
+        '(hot data) value from dispose: 1',
+        '[vite] hot updated: /hotData.js',
+        '>>> vite:afterUpdate -- update',
+      ],
+      true,
+    )
 
-      await untilBrowserLogAfter(
-        () =>
-          editFile('hotData.js', (code) =>
-            code.replace('const value = 2', 'const value = 3  '),
-          ),
-        [
-          '>>> vite:beforeUpdate -- update',
-          '(hot data) value from execution: 2',
-          '(hot data) value from dispose: 2',
-          '[vite] hot updated: /hotData.js',
-          '>>> vite:afterUpdate -- update',
-        ],
-        true,
-      )
-    },
-  )
+    await untilBrowserLogAfter(
+      () =>
+        editFile('hotData.js', (code) =>
+          code.replace('const value = 2', 'const value = 3  '),
+        ),
+      [
+        '>>> vite:beforeUpdate -- update',
+        '(hot data) value from execution: 2',
+        '(hot data) value from dispose: 2',
+        '[vite] hot updated: /hotData.js',
+        '>>> vite:afterUpdate -- update',
+      ],
+      true,
+    )
+  })
 
-  test.skipIf(isBundledDev)('accept dep', async () => {
+  test('accept dep', async () => {
     const el = await page.$('.dep')
     await untilBrowserLogAfter(
       () =>
@@ -165,7 +161,7 @@ if (!isBuild) {
     await expect.poll(() => el.textContent()).toMatch('3')
   })
 
-  test.skipIf(isBundledDev)('nested dep propagation', async () => {
+  test('nested dep propagation', async () => {
     const el = await page.$('.nested')
     await untilBrowserLogAfter(
       () =>
@@ -208,7 +204,7 @@ if (!isBuild) {
     await expect.poll(() => el.textContent()).toMatch('3')
   })
 
-  test.skipIf(isBundledDev)('invalidate', async () => {
+  test('invalidate', async () => {
     const el = await page.$('.invalidation-parent')
     await untilBrowserLogAfter(
       () =>
@@ -231,7 +227,7 @@ if (!isBuild) {
     await expect.poll(() => el.textContent()).toMatch('child updated')
   })
 
-  test.skipIf(isBundledDev)('invalidate works with multiple tabs', async () => {
+  test('invalidate works with multiple tabs', async () => {
     let page2: Page
     try {
       page2 = await browser.newPage()
@@ -311,26 +307,23 @@ if (!isBuild) {
       .toMatch('child updated')
   })
 
-  test.skipIf(isBundledDev)(
-    'invalidate in circular dep should be hot updated if possible',
-    async () => {
-      const el = await page.$('.invalidation-circular-deps-handled')
-      await expect.poll(() => el.textContent()).toMatch('child')
-      editFile(
-        'invalidation-circular-deps/invalidate-handled-in-circle/child.js',
-        (code) => code.replace('child', 'child updated'),
-      )
-      await expect.poll(() => el.textContent()).toMatch('child updated')
-    },
-  )
+  test('invalidate in circular dep should be hot updated if possible', async () => {
+    const el = await page.$('.invalidation-circular-deps-handled')
+    await expect.poll(() => el.textContent()).toMatch('child')
+    editFile(
+      'invalidation-circular-deps/invalidate-handled-in-circle/child.js',
+      (code) => code.replace('child', 'child updated'),
+    )
+    await expect.poll(() => el.textContent()).toMatch('child updated')
+  })
 
-  test.skipIf(isBundledDev)('plugin hmr handler + custom event', async () => {
+  test('plugin hmr handler + custom event', async () => {
     const el = await page.$('.custom')
     editFile('customFile.js', (code) => code.replace('custom', 'edited2'))
     await expect.poll(() => el.textContent()).toMatch('edited2')
   })
 
-  test.skipIf(isBundledDev)('plugin hmr remove custom events', async () => {
+  test('plugin hmr remove custom events', async () => {
     const el = await page.$('.toRemove')
     await expect.poll(() => el.textContent()).toMatch('edited2')
     editFile('customFile.js', (code) => code.replace('edited2', 'custom33'))
@@ -342,7 +335,7 @@ if (!isBuild) {
     await expect.poll(() => el.textContent()).toMatch('3')
   })
 
-  test.skipIf(isBundledDev)('full-reload encodeURI path', async () => {
+  test('full-reload encodeURI path', async () => {
     await page.goto(
       viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
     )
@@ -357,7 +350,7 @@ if (!isBuild) {
       .toBe('title2')
   })
 
-  test.skipIf(isBundledDev)('CSS update preserves query params', async () => {
+  test('CSS update preserves query params', async () => {
     await page.goto(viteTestUrl)
 
     editFile('global.css', (code) => code.replace('white', 'tomato'))
@@ -373,7 +366,7 @@ if (!isBuild) {
     expect(textpost).not.toMatch('direct')
   })
 
-  test.skipIf(isBundledDev)('it swaps out link tags', async () => {
+  test('it swaps out link tags', async () => {
     await page.goto(viteTestUrl)
 
     editFile('global.css', (code) => code.replace('tomato', 'white'))
@@ -387,7 +380,7 @@ if (!isBuild) {
     expect((await page.$$('link')).length).toBe(1)
   })
 
-  test.skipIf(isBundledDev)('not loaded dynamic import', async () => {
+  test('not loaded dynamic import', async () => {
     await page.goto(viteTestUrl + '/counter/index.html', { waitUntil: 'load' })
 
     let btn = await page.$('button')
@@ -422,7 +415,7 @@ if (!isBuild) {
   })
 
   // #2255
-  test.skipIf(isBundledDev)('importing reloaded', async () => {
+  test('importing reloaded', async () => {
     await page.goto(viteTestUrl)
     const outputEle = await page.$('.importing-reloaded')
     const getOutput = () => {
@@ -455,7 +448,7 @@ if (!isBuild) {
 
     const baseDir = 'accept-exports'
 
-    describe.skipIf(isBundledDev)('when all used exports are accepted', () => {
+    describe('when all used exports are accepted', () => {
       const testDir = baseDir + '/main-accepted'
 
       const fileName = 'target.ts'
@@ -587,271 +580,241 @@ if (!isBuild) {
       })
     })
 
-    describe.skipIf(isBundledDev)(
-      'when some used exports are not accepted',
-      () => {
-        const testDir = baseDir + '/main-non-accepted'
+    describe('when some used exports are not accepted', () => {
+      const testDir = baseDir + '/main-non-accepted'
 
-        const namedFileName = 'named.ts'
-        const namedFile = `${testDir}/${namedFileName}`
-        const defaultFileName = 'default.ts'
-        const defaultFile = `${testDir}/${defaultFileName}`
-        const depFileName = 'dep.ts'
-        const depFile = `${testDir}/${depFileName}`
+      const namedFileName = 'named.ts'
+      const namedFile = `${testDir}/${namedFileName}`
+      const defaultFileName = 'default.ts'
+      const defaultFile = `${testDir}/${defaultFileName}`
+      const depFileName = 'dep.ts'
+      const depFile = `${testDir}/${depFileName}`
 
-        const a = 'A0'
-        let dep = 'dep0'
+      const a = 'A0'
+      let dep = 'dep0'
 
-        beforeAll(async () => {
+      beforeAll(async () => {
+        await untilBrowserLogAfter(
+          () => page.goto(`${viteTestUrl}/${testDir}/`),
+          [CONNECTED, />>>>>>/],
+          (logs) => {
+            expect(logs).toContain(`<<< named: ${a} ; ${dep}`)
+            expect(logs).toContain(`<<< default: def0`)
+            expect(logs).toContain(`>>>>>> ${a} def0`)
+          },
+        )
+      })
+
+      it('does not stop the HMR bubble on change to dep', async () => {
+        await untilBrowserLogAfter(
+          async () => {
+            editFile(
+              depFile,
+              (code) => code.replace('dep0', (dep = 'dep1')) + '\n',
+            )
+            await page.waitForEvent('load')
+          },
+          [CONNECTED, />>>>>>/],
+          (logs) => {
+            expect(logs).toContain(`<<< named: ${a} ; ${dep}`)
+          },
+        )
+      })
+
+      describe('does not stop the HMR bubble on change to self', () => {
+        it('with named exports', async () => {
           await untilBrowserLogAfter(
-            () => page.goto(`${viteTestUrl}/${testDir}/`),
+            async () => {
+              editFile(namedFile, (code) => code.replace(a, 'A1') + '\n')
+              await page.waitForEvent('load')
+            },
             [CONNECTED, />>>>>>/],
             (logs) => {
-              expect(logs).toContain(`<<< named: ${a} ; ${dep}`)
-              expect(logs).toContain(`<<< default: def0`)
-              expect(logs).toContain(`>>>>>> ${a} def0`)
+              expect(logs).toContain(`<<< named: A1 ; ${dep}`)
             },
           )
         })
 
-        it('does not stop the HMR bubble on change to dep', async () => {
+        it('with default export', async () => {
           await untilBrowserLogAfter(
             async () => {
               editFile(
-                depFile,
-                (code) => code.replace('dep0', (dep = 'dep1')) + '\n',
+                defaultFile,
+                (code) => code.replace('def0', 'def1') + '\n',
               )
               await page.waitForEvent('load')
             },
             [CONNECTED, />>>>>>/],
             (logs) => {
-              expect(logs).toContain(`<<< named: ${a} ; ${dep}`)
+              expect(logs).toContain(`<<< default: def1`)
             },
           )
         })
+      })
+    })
 
-        describe('does not stop the HMR bubble on change to self', () => {
-          it('with named exports', async () => {
-            await untilBrowserLogAfter(
-              async () => {
-                editFile(namedFile, (code) => code.replace(a, 'A1') + '\n')
-                await page.waitForEvent('load')
-              },
-              [CONNECTED, />>>>>>/],
-              (logs) => {
-                expect(logs).toContain(`<<< named: A1 ; ${dep}`)
-              },
-            )
-          })
+    test('accepts itself when imported for side effects only (no bindings imported)', async () => {
+      const testDir = baseDir + '/side-effects'
+      const file = 'side-effects.ts'
 
-          it('with default export', async () => {
-            await untilBrowserLogAfter(
-              async () => {
-                editFile(
-                  defaultFile,
-                  (code) => code.replace('def0', 'def1') + '\n',
-                )
-                await page.waitForEvent('load')
-              },
-              [CONNECTED, />>>>>>/],
-              (logs) => {
-                expect(logs).toContain(`<<< default: def1`)
-              },
-            )
-          })
-        })
-      },
-    )
+      await untilBrowserLogAfter(
+        () => page.goto(`${viteTestUrl}/${testDir}/`),
+        [CONNECTED, />>>/],
+        (logs) => {
+          expect(logs).toContain('>>> side FX')
+        },
+      )
 
-    test.skipIf(isBundledDev)(
-      'accepts itself when imported for side effects only (no bindings imported)',
-      async () => {
-        const testDir = baseDir + '/side-effects'
-        const file = 'side-effects.ts'
+      await untilBrowserLogAfter(
+        () => {
+          editFile(`${testDir}/${file}`, (code) =>
+            code.replace('>>> side FX', '>>> side FX !!'),
+          )
+        },
+        HOT_UPDATED,
+        (logs) => {
+          expect(logs).toEqual([
+            '>>> side FX !!',
+            `[vite] hot updated: /${testDir}/${file}`,
+          ])
+        },
+      )
+    })
+
+    describe('acceptExports([])', () => {
+      const testDir = baseDir + '/unused-exports'
+
+      test('accepts itself if no exports are imported', async () => {
+        const fileName = 'unused.ts'
+        const file = `${testDir}/${fileName}`
+        const url = '/' + file
 
         await untilBrowserLogAfter(
           () => page.goto(`${viteTestUrl}/${testDir}/`),
-          [CONNECTED, />>>/],
+          [CONNECTED, '-- unused --'],
           (logs) => {
-            expect(logs).toContain('>>> side FX')
+            expect(logs).toContain('-- unused --')
           },
         )
 
         await untilBrowserLogAfter(
           () => {
-            editFile(`${testDir}/${file}`, (code) =>
-              code.replace('>>> side FX', '>>> side FX !!'),
+            editFile(
+              file,
+              (code) => code.replace('-- unused --', '-> unused <-') + '\n',
             )
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
-              '>>> side FX !!',
-              `[vite] hot updated: /${testDir}/${file}`,
-            ])
+            expect(logs).toEqual(['-> unused <-', `[vite] hot updated: ${url}`])
           },
         )
-      },
-    )
+      })
 
-    describe('acceptExports([])', () => {
-      const testDir = baseDir + '/unused-exports'
+      test("doesn't accept itself if any of its exports is imported", async () => {
+        const fileName = 'used.ts'
+        const file = `${testDir}/${fileName}`
 
-      test.skipIf(isBundledDev)(
-        'accepts itself if no exports are imported',
-        async () => {
-          const fileName = 'unused.ts'
-          const file = `${testDir}/${fileName}`
-          const url = '/' + file
+        await untilBrowserLogAfter(
+          () => page.goto(`${viteTestUrl}/${testDir}/`),
+          [CONNECTED, '-- used --'],
+          (logs) => {
+            expect(logs).toContain('-- used --')
+            expect(logs).toContain('used:foo0')
+          },
+        )
 
-          await untilBrowserLogAfter(
-            () => page.goto(`${viteTestUrl}/${testDir}/`),
-            [CONNECTED, '-- unused --'],
-            (logs) => {
-              expect(logs).toContain('-- unused --')
-            },
-          )
-
-          await untilBrowserLogAfter(
-            () => {
-              editFile(
-                file,
-                (code) => code.replace('-- unused --', '-> unused <-') + '\n',
-              )
-            },
-            HOT_UPDATED,
-            (logs) => {
-              expect(logs).toEqual([
-                '-> unused <-',
-                `[vite] hot updated: ${url}`,
-              ])
-            },
-          )
-        },
-      )
-
-      test.skipIf(isBundledDev)(
-        "doesn't accept itself if any of its exports is imported",
-        async () => {
-          const fileName = 'used.ts'
-          const file = `${testDir}/${fileName}`
-
-          await untilBrowserLogAfter(
-            () => page.goto(`${viteTestUrl}/${testDir}/`),
-            [CONNECTED, '-- used --'],
-            (logs) => {
-              expect(logs).toContain('-- used --')
-              expect(logs).toContain('used:foo0')
-            },
-          )
-
-          await untilBrowserLogAfter(
-            async () => {
-              editFile(
-                file,
-                (code) =>
-                  code
-                    .replace('foo0', 'foo1')
-                    .replace('-- used --', '-> used <-') + '\n',
-              )
-              await page.waitForEvent('load')
-            },
-            [CONNECTED, /used:foo/],
-            (logs) => {
-              expect(logs).toContain('-> used <-')
-              expect(logs).toContain('used:foo1')
-            },
-          )
-        },
-      )
+        await untilBrowserLogAfter(
+          async () => {
+            editFile(
+              file,
+              (code) =>
+                code
+                  .replace('foo0', 'foo1')
+                  .replace('-- used --', '-> used <-') + '\n',
+            )
+            await page.waitForEvent('load')
+          },
+          [CONNECTED, /used:foo/],
+          (logs) => {
+            expect(logs).toContain('-> used <-')
+            expect(logs).toContain('used:foo1')
+          },
+        )
+      })
     })
 
     describe('indiscriminate imports: import *', () => {
       const testStarExports = (testDirName: string) => {
         const testDir = `${baseDir}/${testDirName}`
 
-        it.skipIf(isBundledDev)(
-          'accepts itself if all its exports are accepted',
-          async () => {
-            const fileName = 'deps-all-accepted.ts'
-            const file = `${testDir}/${fileName}`
-            const url = '/' + file
+        it('accepts itself if all its exports are accepted', async () => {
+          const fileName = 'deps-all-accepted.ts'
+          const file = `${testDir}/${fileName}`
+          const url = '/' + file
 
-            await untilBrowserLogAfter(
-              () => page.goto(`${viteTestUrl}/${testDir}/`),
-              [CONNECTED, '>>> ready <<<'],
-              (logs) => {
-                expect(logs).toContain('loaded:all:a0b0c0default0')
-                expect(logs).toContain('all >>>>>> a0, b0, c0')
-              },
-            )
+          await untilBrowserLogAfter(
+            () => page.goto(`${viteTestUrl}/${testDir}/`),
+            [CONNECTED, '>>> ready <<<'],
+            (logs) => {
+              expect(logs).toContain('loaded:all:a0b0c0default0')
+              expect(logs).toContain('all >>>>>> a0, b0, c0')
+            },
+          )
 
-            await untilBrowserLogAfter(
-              () => {
-                editFile(
-                  file,
-                  (code) => code.replace(/([abc])0/g, '$11') + '\n',
-                )
-              },
-              HOT_UPDATED,
-              (logs) => {
-                expect(logs).toEqual([
-                  'all >>>>>> a1, b1, c1',
-                  `[vite] hot updated: ${url}`,
-                ])
-              },
-            )
+          await untilBrowserLogAfter(
+            () => {
+              editFile(file, (code) => code.replace(/([abc])0/g, '$11') + '\n')
+            },
+            HOT_UPDATED,
+            (logs) => {
+              expect(logs).toEqual([
+                'all >>>>>> a1, b1, c1',
+                `[vite] hot updated: ${url}`,
+              ])
+            },
+          )
 
-            await untilBrowserLogAfter(
-              () => {
-                editFile(
-                  file,
-                  (code) => code.replace(/([abc])1/g, '$12') + '\n',
-                )
-              },
-              HOT_UPDATED,
-              (logs) => {
-                expect(logs).toEqual([
-                  'all >>>>>> a2, b2, c2',
-                  `[vite] hot updated: ${url}`,
-                ])
-              },
-            )
-          },
-        )
+          await untilBrowserLogAfter(
+            () => {
+              editFile(file, (code) => code.replace(/([abc])1/g, '$12') + '\n')
+            },
+            HOT_UPDATED,
+            (logs) => {
+              expect(logs).toEqual([
+                'all >>>>>> a2, b2, c2',
+                `[vite] hot updated: ${url}`,
+              ])
+            },
+          )
+        })
 
-        it.skipIf(isBundledDev)(
-          "doesn't accept itself if one export is not accepted",
-          async () => {
-            const fileName = 'deps-some-accepted.ts'
-            const file = `${testDir}/${fileName}`
+        it("doesn't accept itself if one export is not accepted", async () => {
+          const fileName = 'deps-some-accepted.ts'
+          const file = `${testDir}/${fileName}`
 
-            await untilBrowserLogAfter(
-              () => page.goto(`${viteTestUrl}/${testDir}/`),
-              [CONNECTED, '>>> ready <<<'],
-              (logs) => {
-                expect(logs).toContain('loaded:some:a0b0c0default0')
-                expect(logs).toContain('some >>>>>> a0, b0, c0')
-              },
-            )
+          await untilBrowserLogAfter(
+            () => page.goto(`${viteTestUrl}/${testDir}/`),
+            [CONNECTED, '>>> ready <<<'],
+            (logs) => {
+              expect(logs).toContain('loaded:some:a0b0c0default0')
+              expect(logs).toContain('some >>>>>> a0, b0, c0')
+            },
+          )
 
-            await untilBrowserLogAfter(
-              async () => {
-                const loadPromise = page.waitForEvent('load')
-                editFile(
-                  file,
-                  (code) => code.replace(/([abc])0/g, '$11') + '\n',
-                )
-                await loadPromise
-              },
-              [CONNECTED, '>>> ready <<<'],
-              (logs) => {
-                expect(logs).toContain('loaded:some:a1b1c1default0')
-                expect(logs).toContain('some >>>>>> a1, b1, c1')
-              },
-            )
-          },
-        )
+          await untilBrowserLogAfter(
+            async () => {
+              const loadPromise = page.waitForEvent('load')
+              editFile(file, (code) => code.replace(/([abc])0/g, '$11') + '\n')
+              await loadPromise
+            },
+            [CONNECTED, '>>> ready <<<'],
+            (logs) => {
+              expect(logs).toContain('loaded:some:a1b1c1default0')
+              expect(logs).toContain('some >>>>>> a1, b1, c1')
+            },
+          )
+        })
       }
 
       describe('import * from ...', () => testStarExports('star-imports'))
@@ -860,7 +823,7 @@ if (!isBuild) {
     })
   })
 
-  test.skipIf(isBundledDev)('css in html hmr', async () => {
+  test('css in html hmr', async () => {
     await page.goto(viteTestUrl)
     expect(await getBg('.import-image')).toMatch('icon')
     await page.goto(viteTestUrl + '/foo/', { waitUntil: 'load' })
@@ -872,7 +835,7 @@ if (!isBuild) {
     expect(await getBg('.import-image')).toMatch('')
   })
 
-  test.skipIf(isBundledDev)('HTML', async () => {
+  test('HTML', async () => {
     await page.goto(viteTestUrl + '/counter/index.html')
     let btn = await page.$('button')
     expect(await btn.textContent()).toBe('Counter 0')
@@ -886,7 +849,7 @@ if (!isBuild) {
     expect(await btn.textContent()).toBe('Compteur 0')
   })
 
-  test.skipIf(isBundledDev)('handle virtual module updates', async () => {
+  test('handle virtual module updates', async () => {
     await page.goto(viteTestUrl)
     const el = await page.$('.virtual')
     expect(await el.textContent()).toBe('[success]0')
@@ -899,7 +862,7 @@ if (!isBuild) {
       .toBe('[wow]0')
   })
 
-  test.skipIf(isBundledDev)('invalidate virtual module', async () => {
+  test('invalidate virtual module', async () => {
     await page.goto(viteTestUrl)
     const el = await page.$('.virtual')
     expect(await el.textContent()).toBe('[wow]0')
@@ -913,123 +876,111 @@ if (!isBuild) {
       .toBe('[wow]1')
   })
 
-  test.skipIf(isBundledDev)(
-    'handle virtual module accept updates',
-    async () => {
-      await page.goto(viteTestUrl)
-      const el = await page.$('.virtual-dep')
-      expect(await el.textContent()).toBe('0')
-      editFile('importedVirtual.js', (code) => code.replace('[wow]', '[wow2]'))
-      await expect
-        .poll(async () => {
-          const el = await page.$('.virtual-dep')
-          return await el.textContent()
-        })
-        .toBe('[wow2]0')
-    },
-  )
+  test('handle virtual module accept updates', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('.virtual-dep')
+    expect(await el.textContent()).toBe('0')
+    editFile('importedVirtual.js', (code) => code.replace('[wow]', '[wow2]'))
+    await expect
+      .poll(async () => {
+        const el = await page.$('.virtual-dep')
+        return await el.textContent()
+      })
+      .toBe('[wow2]0')
+  })
 
-  test.skipIf(isBundledDev)(
-    'invalidate virtual module and accept',
-    async () => {
-      await page.goto(viteTestUrl)
-      const el = await page.$('.virtual-dep')
-      expect(await el.textContent()).toBe('0')
-      const btn = await page.$('.virtual-update-dep')
-      btn.click()
-      await expect
-        .poll(async () => {
-          const el = await page.$('.virtual-dep')
-          return await el.textContent()
-        })
-        .toBe('[wow2]2')
-    },
-  )
+  test('invalidate virtual module and accept', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('.virtual-dep')
+    expect(await el.textContent()).toBe('0')
+    const btn = await page.$('.virtual-update-dep')
+    btn.click()
+    await expect
+      .poll(async () => {
+        const el = await page.$('.virtual-dep')
+        return await el.textContent()
+      })
+      .toBe('[wow2]2')
+  })
 
-  test.skipIf(isBundledDev)(
-    'keep hmr reload after missing import on server startup',
-    async () => {
-      const file = 'missing-import/a.js'
-      const importCode = "import 'missing-modules'"
-      const unImportCode = `// ${importCode}`
+  test('keep hmr reload after missing import on server startup', async () => {
+    const file = 'missing-import/a.js'
+    const importCode = "import 'missing-modules'"
+    const unImportCode = `// ${importCode}`
 
-      await untilBrowserLogAfter(
-        () =>
-          page.goto(viteTestUrl + '/missing-import/index.html', {
-            waitUntil: 'load',
-          }),
-        /connected/, // wait for HMR connection
-      )
+    await untilBrowserLogAfter(
+      () =>
+        page.goto(viteTestUrl + '/missing-import/index.html', {
+          waitUntil: 'load',
+        }),
+      /connected/, // wait for HMR connection
+    )
 
-      await untilBrowserLogAfter(async () => {
-        const loadPromise = page.waitForEvent('load')
-        editFile(file, (code) => code.replace(importCode, unImportCode))
-        await loadPromise
-      }, ['missing test', /connected/])
+    await untilBrowserLogAfter(async () => {
+      const loadPromise = page.waitForEvent('load')
+      editFile(file, (code) => code.replace(importCode, unImportCode))
+      await loadPromise
+    }, ['missing test', /connected/])
 
-      await untilBrowserLogAfter(async () => {
-        const loadPromise = page.waitForEvent('load')
-        editFile(file, (code) => code.replace(unImportCode, importCode))
-        await loadPromise
-      }, [/500/, /connected/])
-    },
-  )
+    await untilBrowserLogAfter(async () => {
+      const loadPromise = page.waitForEvent('load')
+      editFile(file, (code) => code.replace(unImportCode, importCode))
+      await loadPromise
+    }, [/500/, /connected/])
+  })
 
-  test.skipIf(isBundledDev)(
-    'should hmr when file is deleted and restored',
-    async () => {
-      await page.goto(viteTestUrl)
+  test('should hmr when file is deleted and restored', async () => {
+    await page.goto(viteTestUrl)
 
-      const parentFile = 'file-delete-restore/parent.js'
-      const childFile = 'file-delete-restore/child.js'
+    const parentFile = 'file-delete-restore/parent.js'
+    const childFile = 'file-delete-restore/child.js'
 
-      await expect
+    await expect
+      .poll(() => page.textContent('.file-delete-restore'))
+      .toMatch('parent:child')
+
+    editFile(childFile, (code) =>
+      code.replace("value = 'child'", "value = 'child1'"),
+    )
+    await expect
+      .poll(() => page.textContent('.file-delete-restore'))
+      .toMatch('parent:child1')
+
+    // delete the file
+    editFile(parentFile, (code) =>
+      code.replace(
+        "export { value as childValue } from './child'",
+        "export const childValue = 'not-child'",
+      ),
+    )
+    const originalChildFileCode = readFile(childFile)
+    await Promise.all([
+      untilBrowserLogAfter(
+        () => removeFile(childFile),
+        `${childFile} is disposed`,
+      ),
+      expect
         .poll(() => page.textContent('.file-delete-restore'))
-        .toMatch('parent:child')
+        .toMatch('parent:not-child'),
+    ])
 
-      editFile(childFile, (code) =>
-        code.replace("value = 'child'", "value = 'child1'"),
-      )
-      await expect
-        .poll(() => page.textContent('.file-delete-restore'))
-        .toMatch('parent:child1')
-
-      // delete the file
+    await untilBrowserLogAfter(async () => {
+      const loadPromise = page.waitForEvent('load')
+      addFile(childFile, originalChildFileCode)
       editFile(parentFile, (code) =>
         code.replace(
-          "export { value as childValue } from './child'",
           "export const childValue = 'not-child'",
+          "export { value as childValue } from './child'",
         ),
       )
-      const originalChildFileCode = readFile(childFile)
-      await Promise.all([
-        untilBrowserLogAfter(
-          () => removeFile(childFile),
-          `${childFile} is disposed`,
-        ),
-        expect
-          .poll(() => page.textContent('.file-delete-restore'))
-          .toMatch('parent:not-child'),
-      ])
+      await loadPromise
+    }, [/connected/])
+    await expect
+      .poll(() => page.textContent('.file-delete-restore'))
+      .toMatch('parent:child')
+  })
 
-      await untilBrowserLogAfter(async () => {
-        const loadPromise = page.waitForEvent('load')
-        addFile(childFile, originalChildFileCode)
-        editFile(parentFile, (code) =>
-          code.replace(
-            "export const childValue = 'not-child'",
-            "export { value as childValue } from './child'",
-          ),
-        )
-        await loadPromise
-      }, [/connected/])
-      await expect
-        .poll(() => page.textContent('.file-delete-restore'))
-        .toMatch('parent:child')
-    },
-  )
-
-  test.skipIf(isBundledDev)('delete file should not break hmr', async () => {
+  test('delete file should not break hmr', async () => {
     await page.goto(viteTestUrl)
 
     await expect
@@ -1074,75 +1025,67 @@ if (!isBuild) {
       .toMatch('count is 2')
   })
 
-  test.skipIf(isBundledDev)(
-    'deleted file should trigger dispose and prune callbacks',
-    async () => {
-      await page.goto(viteTestUrl)
+  test('deleted file should trigger dispose and prune callbacks', async () => {
+    await page.goto(viteTestUrl)
 
-      const parentFile = 'file-delete-restore/parent.js'
-      const childFile = 'file-delete-restore/child.js'
-      const originalChildFileCode = readFile(childFile)
+    const parentFile = 'file-delete-restore/parent.js'
+    const childFile = 'file-delete-restore/child.js'
+    const originalChildFileCode = readFile(childFile)
 
-      await untilBrowserLogAfter(
-        () => {
-          // delete the file
-          editFile(parentFile, (code) =>
-            code.replace(
-              "export { value as childValue } from './child'",
-              "export const childValue = 'not-child'",
-            ),
-          )
-          removeFile(childFile)
-        },
-        [
-          'file-delete-restore/child.js is disposed',
-          'file-delete-restore/child.js is pruned',
-        ],
-        false,
-      )
-      await expect
-        .poll(() => page.textContent('.file-delete-restore'))
-        .toMatch('parent:not-child')
-
-      // restore the file
-      await untilBrowserLogAfter(() => {
-        addFile(childFile, originalChildFileCode)
+    await untilBrowserLogAfter(
+      () => {
+        // delete the file
         editFile(parentFile, (code) =>
           code.replace(
-            "export const childValue = 'not-child'",
             "export { value as childValue } from './child'",
+            "export const childValue = 'not-child'",
           ),
         )
-      }, 'file-delete-restore/child.js hot data after prune: undefined')
-      await expect
-        .poll(() => page.textContent('.file-delete-restore'))
-        .toMatch('parent:child')
-    },
-  )
+        removeFile(childFile)
+      },
+      [
+        'file-delete-restore/child.js is disposed',
+        'file-delete-restore/child.js is pruned',
+      ],
+      false,
+    )
+    await expect
+      .poll(() => page.textContent('.file-delete-restore'))
+      .toMatch('parent:not-child')
 
-  test.skipIf(isBundledDev)(
-    'deleting import from non-self-accepting module can trigger prune event',
-    async () => {
-      await page.goto(viteTestUrl)
-      await expect.poll(() => page.textContent('.prune')).toMatch('prune-init')
-      editFile('prune/dep1.js', (code) =>
-        code.replace(`import './dep2.js'`, `// import './dep2.js'`),
+    // restore the file
+    await untilBrowserLogAfter(() => {
+      addFile(childFile, originalChildFileCode)
+      editFile(parentFile, (code) =>
+        code.replace(
+          "export const childValue = 'not-child'",
+          "export { value as childValue } from './child'",
+        ),
       )
-      // Prune is triggered when there are other dependencies.
-      await expect
-        .poll(() => page.textContent('.prune'))
-        .toMatch('prune-init|dep2-disposed|dep2-pruned')
-      editFile('prune/dep1.js', (code) =>
-        code.replace(`import './dep3.js'`, `// import './dep3.js'`),
-      )
-      // Prune is triggered when there are no more dependencies.
-      await expect
-        .poll(() => page.textContent('.prune'))
-        .toMatch(
-          'prune-init|dep2-disposed|dep2-pruned|dep3-disposed|dep3-pruned',
-        )
-    },
-  )
+    }, 'file-delete-restore/child.js hot data after prune: undefined')
+    await expect
+      .poll(() => page.textContent('.file-delete-restore'))
+      .toMatch('parent:child')
+  })
+
+  test('deleting import from non-self-accepting module can trigger prune event', async () => {
+    await page.goto(viteTestUrl)
+    await expect.poll(() => page.textContent('.prune')).toMatch('prune-init')
+    editFile('prune/dep1.js', (code) =>
+      code.replace(`import './dep2.js'`, `// import './dep2.js'`),
+    )
+    // Prune is triggered when there are other dependencies.
+    await expect
+      .poll(() => page.textContent('.prune'))
+      .toMatch('prune-init|dep2-disposed|dep2-pruned')
+    editFile('prune/dep1.js', (code) =>
+      code.replace(`import './dep3.js'`, `// import './dep3.js'`),
+    )
+    // Prune is triggered when there are no more dependencies.
+    await expect
+      .poll(() => page.textContent('.prune'))
+      .toMatch('prune-init|dep2-disposed|dep2-pruned|dep3-disposed|dep3-pruned')
+  })
 
   test('import.meta.hot?.accept', async () => {
     await page.goto(viteTestUrl)
@@ -1159,44 +1102,38 @@ if (!isBuild) {
     await expect.poll(() => el.textContent()).toMatch('2')
   })
 
-  test.skipIf(isBundledDev)(
-    'hmr works for self-accepted module within circular imported files',
-    async () => {
-      await page.goto(viteTestUrl + '/self-accept-within-circular/index.html')
-      const el = await page.$('.self-accept-within-circular')
-      expect(await el.textContent()).toBe('c')
-      const lastServerLogIndex = serverLogs.length
-      editFile('self-accept-within-circular/c.js', (code) =>
-        code.replace(`export const c = 'c'`, `export const c = 'cc'`),
-      )
-      await expect
-        .poll(() => page.textContent('.self-accept-within-circular'))
-        .toBe('cc')
-      // Should still keep hmr update, but it'll error on the browser-side and will refresh itself.
-      expect(
-        serverLogs.slice(lastServerLogIndex).map(stripVTControlCharacters),
-      ).toContain('hmr update /self-accept-within-circular/c.js')
-    },
-  )
+  test('hmr works for self-accepted module within circular imported files', async () => {
+    await page.goto(viteTestUrl + '/self-accept-within-circular/index.html')
+    const el = await page.$('.self-accept-within-circular')
+    expect(await el.textContent()).toBe('c')
+    const lastServerLogIndex = serverLogs.length
+    editFile('self-accept-within-circular/c.js', (code) =>
+      code.replace(`export const c = 'c'`, `export const c = 'cc'`),
+    )
+    await expect
+      .poll(() => page.textContent('.self-accept-within-circular'))
+      .toBe('cc')
+    // Should still keep hmr update, but it'll error on the browser-side and will refresh itself.
+    expect(
+      serverLogs.slice(lastServerLogIndex).map(stripVTControlCharacters),
+    ).toContain('hmr update /self-accept-within-circular/c.js')
+  })
 
-  test.skipIf(isBundledDev)(
-    'hmr should not reload if no accepted within circular imported files',
-    async () => {
-      await page.goto(viteTestUrl + '/circular/index.html')
-      const el = await page.$('.circular')
-      expect(await el.textContent()).toBe(
-        'mod-a -> mod-b -> mod-c -> mod-a (expected error)',
-      )
-      editFile('circular/mod-b.js', (code) =>
-        code.replace(`mod-b ->`, `mod-b (edited) ->`),
-      )
-      await expect
-        .poll(() => el.textContent())
-        .toBe('mod-a -> mod-b (edited) -> mod-c -> mod-a (expected error)')
-    },
-  )
+  test('hmr should not reload if no accepted within circular imported files', async () => {
+    await page.goto(viteTestUrl + '/circular/index.html')
+    const el = await page.$('.circular')
+    expect(await el.textContent()).toBe(
+      'mod-a -> mod-b -> mod-c -> mod-a (expected error)',
+    )
+    editFile('circular/mod-b.js', (code) =>
+      code.replace(`mod-b ->`, `mod-b (edited) ->`),
+    )
+    await expect
+      .poll(() => el.textContent())
+      .toBe('mod-a -> mod-b (edited) -> mod-c -> mod-a (expected error)')
+  })
 
-  test.skipIf(isBundledDev)('not inlined assets HMR', async () => {
+  test('not inlined assets HMR', async () => {
     await page.goto(viteTestUrl)
     const el = await page.$('#logo-no-inline')
     await untilBrowserLogAfter(
@@ -1211,7 +1148,7 @@ if (!isBuild) {
       .toMatch('40')
   })
 
-  test.skipIf(isBundledDev)('inlined assets HMR', async () => {
+  test('inlined assets HMR', async () => {
     await page.goto(viteTestUrl)
     const el = await page.$('#logo')
     await untilBrowserLogAfter(
@@ -1226,58 +1163,52 @@ if (!isBuild) {
       .toMatch('40')
   })
 
-  test.skipIf(isBundledDev)('CSS HMR with this.addWatchFile', async () => {
+  test('CSS HMR with this.addWatchFile', async () => {
     await page.goto(viteTestUrl + '/css-deps/index.html')
     expect(await getColor('.css-deps')).toBe('red')
     editFile('css-deps/dep.js', (code) => code.replace(`red`, `green`))
     await expect.poll(() => getColor('.css-deps')).toBe('green')
   })
 
-  test.skipIf(isBundledDev)(
-    'hmr should happen after missing file is created',
-    async () => {
-      const file = 'missing-file/a.js'
-      const code = 'console.log("a.js")'
+  test('hmr should happen after missing file is created', async () => {
+    const file = 'missing-file/a.js'
+    const code = 'console.log("a.js")'
 
-      await untilBrowserLogAfter(
-        () =>
-          page.goto(viteTestUrl + '/missing-file/index.html', {
-            waitUntil: 'load',
-          }),
-        /connected/, // wait for HMR connection
-      )
+    await untilBrowserLogAfter(
+      () =>
+        page.goto(viteTestUrl + '/missing-file/index.html', {
+          waitUntil: 'load',
+        }),
+      /connected/, // wait for HMR connection
+    )
 
-      await untilBrowserLogAfter(async () => {
-        const loadPromise = page.waitForEvent('load')
-        addFile(file, code)
-        await loadPromise
-      }, [/connected/, 'a.js'])
-    },
-  )
+    await untilBrowserLogAfter(async () => {
+      const loadPromise = page.waitForEvent('load')
+      addFile(file, code)
+      await loadPromise
+    }, [/connected/, 'a.js'])
+  })
 
-  test.skipIf(isBundledDev)(
-    'deduplicate server rendered link stylesheet',
-    async () => {
-      await page.goto(viteTestUrl + '/css-link/index.html')
-      await expect.poll(() => getColor('.test-css-link')).toBe('orange')
+  test('deduplicate server rendered link stylesheet', async () => {
+    await page.goto(viteTestUrl + '/css-link/index.html')
+    await expect.poll(() => getColor('.test-css-link')).toBe('orange')
 
-      // remove color
-      editFile('css-link/styles.css', (code) =>
-        code.replace('color: orange;', '/* removed */'),
-      )
-      await expect.poll(() => getColor('.test-css-link')).toBe('black')
+    // remove color
+    editFile('css-link/styles.css', (code) =>
+      code.replace('color: orange;', '/* removed */'),
+    )
+    await expect.poll(() => getColor('.test-css-link')).toBe('black')
 
-      // add color
-      editFile('css-link/styles.css', (code) =>
-        code.replace('/* removed */', 'color: blue;'),
-      )
-      await expect.poll(() => getColor('.test-css-link')).toBe('blue')
+    // add color
+    editFile('css-link/styles.css', (code) =>
+      code.replace('/* removed */', 'color: blue;'),
+    )
+    await expect.poll(() => getColor('.test-css-link')).toBe('blue')
 
-      // // remove css import from js
-      editFile('css-link/main.js', (code) =>
-        code.replace(`import './styles.css'`, ``),
-      )
-      await expect.poll(() => getColor('.test-css-link')).toBe('black')
-    },
-  )
+    // // remove css import from js
+    editFile('css-link/main.js', (code) =>
+      code.replace(`import './styles.css'`, ``),
+    )
+    await expect.poll(() => getColor('.test-css-link')).toBe('black')
+  })
 }
