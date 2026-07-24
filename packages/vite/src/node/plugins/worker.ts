@@ -752,9 +752,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           }
         }
       }
-      const liveFileNames = cache.getLiveAssetFileNames(liveModuleIds)
+      // Reference tracking relies on hooks running for every module, which is
+      // not guaranteed when an incremental build reuses cached modules.
+      const liveFileNames =
+        isBuild && !config.build.watch
+          ? cache.getLiveAssetFileNames(liveModuleIds)
+          : undefined
       for (const asset of cache.getAssets()) {
-        if (!liveFileNames.has(asset.fileName)) continue
+        if (liveFileNames && !liveFileNames.has(asset.fileName)) continue
         if (emittedAssets.has(asset.fileName)) continue
         emittedAssets.add(asset.fileName)
 
