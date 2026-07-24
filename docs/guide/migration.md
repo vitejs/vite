@@ -11,7 +11,7 @@ The default browser values of `build.target` and `'baseline-widely-available'` a
 - Firefox 104 → 114
 - Safari 16.0 → 16.4
 
-These browser versions align with [Baseline Widely Available](https://web-platform-dx.github.io/web-features/) feature sets as of 2026-01-01. In other words, they were all released about two and a half years ago.
+These browser versions align with [Baseline Widely Available](https://web-platform-dx.github.io/baseline/) feature sets as of 2026-01-01. In other words, they were all released about two and a half years ago.
 
 ## Rolldown
 
