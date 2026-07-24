@@ -25,6 +25,7 @@
     "typecheck": "tsc -p scripts && pnpm -r --parallel run typecheck",
     "test": "pnpm test-unit && pnpm test-serve && pnpm test-build",
     "test-serve": "vitest run -c vitest.config.e2e.ts",
+    "test-serve-bundled": "VITE_TEST_BUNDLED_DEV=1 vitest run -c vitest.config.e2e.ts",
     "test-build": "VITE_TEST_BUILD=1 vitest run -c vitest.config.e2e.ts",
     "test-unit": "vitest run",
     "test-docs": "pnpm run docs-build",

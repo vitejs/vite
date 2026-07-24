@@ -3,7 +3,7 @@ import { expect, test } from 'vitest'
 import deepJson from 'vue/package.json'
 import testJson from '../../test.json'
 import hmrJson from '../../hmr.json'
-import { editFile, isBuild, isServe, page } from '~utils'
+import { editFile, isBuild, isBundledDev, isServe, page } from '~utils'
 
 const stringified = JSON.stringify(testJson)
 const deepStringified = JSON.stringify(deepJson)
@@ -33,11 +33,11 @@ test('dynamic import, named', async () => {
   expect(await page.textContent('.dynamic-named')).toBe(testJson.hello)
 })
 
-test('fetch', async () => {
+test.skipIf(isBundledDev)('fetch', async () => {
   expect(await page.textContent('.fetch')).toBe(stringified)
 })
 
-test('?url', async () => {
+test.skipIf(isBundledDev)('?url', async () => {
   expect(await page.textContent('.url')).toMatch(
     isBuild ? 'data:application/json' : '/test.json',
   )

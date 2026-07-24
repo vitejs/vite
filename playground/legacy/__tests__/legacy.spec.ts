@@ -3,6 +3,7 @@ import {
   findAssetFile,
   getColor,
   isBuild,
+  isBundledDev,
   listAssets,
   page,
   readFile,
@@ -17,7 +18,7 @@ test('should work', async () => {
   await expect.poll(() => page.textContent('#app')).toMatch('Hello')
 })
 
-test('import.meta.env.LEGACY', async () => {
+test.skipIf(isBundledDev)('import.meta.env.LEGACY', async () => {
   await expect
     .poll(() => page.textContent('#env'))
     .toMatch(isBuild ? 'true' : 'false')
@@ -41,7 +42,7 @@ test('wraps with iife', async () => {
     .toMatch('exposed babel helpers: false')
 })
 
-test('generates assets', async () => {
+test.skipIf(isBundledDev)('generates assets', async () => {
   await expect
     .poll(() => page.textContent('#assets'))
     .toMatch(
@@ -77,7 +78,7 @@ test('should load dynamic import with css', async () => {
   await expect.poll(() => getColor('#dynamic-css')).toBe('red')
 })
 
-test('asset url', async () => {
+test.skipIf(isBundledDev)('asset url', async () => {
   expect(await page.textContent('#asset-path')).toMatch(
     isBuild ? /\/assets\/vite-[-\w]+\.svg/ : '/vite.svg',
   )
