@@ -6,17 +6,20 @@ import { isWindows } from '../../../../shared/utils'
 
 const dirname = import.meta.dirname
 
+async function runRaw(input: string) {
+  return await transformDynamicImport(
+    input,
+    normalizePath(resolve(dirname, 'index.js')),
+    (id) =>
+      id
+        .replace('@', resolve(dirname, './mods/'))
+        .replace('#', resolve(dirname, '../../')),
+    dirname,
+  )
+}
+
 async function run(input: string) {
-  const { glob, rawPattern } =
-    (await transformDynamicImport(
-      input,
-      normalizePath(resolve(dirname, 'index.js')),
-      (id) =>
-        id
-          .replace('@', resolve(dirname, './mods/'))
-          .replace('#', resolve(dirname, '../../')),
-      dirname,
-    )) || {}
+  const { glob, rawPattern } = (await runRaw(input)) || {}
   return `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`)`
 }
 
@@ -67,5 +70,22 @@ describe('parse positives', () => {
     expect(
       await run('`../../plugins/dynamicImportVar/${name}.js`'),
     ).toMatchSnapshot()
+  })
+})
+
+describe('parse negatives', () => {
+  // the module path is static, only the query has a runtime variable, so it
+  // must not be routed through `import.meta.glob` (otherwise the glob keys
+  // wouldn't include the query and the runtime lookup would fail)
+  it('variable only in query', async () => {
+    expect(await runRaw('`./mods/mod.js?foo=${bar}`')).toBeNull()
+  })
+
+  it('multiple variables only in query', async () => {
+    expect(await runRaw('`./mods/mod.js?a=${x}&b=${y}`')).toBeNull()
+  })
+
+  it('variable in both path and query is still transformed', async () => {
+    expect(await runRaw('`./mods/${base}.js?foo=${bar}`')).not.toBeNull()
   })
 })
