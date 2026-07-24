@@ -1,0 +1,39 @@
+name: Semgrep
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 2"
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}-${{ github.sha }}
+  cancel-in-progress: ${{ github.ref_name != 'main' }}
+
+jobs:
+  semgrep:
+    name: Run Semgrep
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write # Required for upload-sarif to upload SARIF files.
+    container:
+      image: semgrep/semgrep:1.171.0@sha256:6b69b78b36b06f8bcf52285ddb018396e53a01ef39c746e64988b6985e00b0b3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - run: >-
+          semgrep scan
+            -q
+            --sarif
+            --config auto
+            --exclude playground
+            --exclude-rule javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
+          > semgrep-results.sarif
+
+      - name: Upload SARIF result
+        uses: github/codeql-action/upload-sarif@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.2
+        with:
+          sarif_file: semgrep-results.sarif
