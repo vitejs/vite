@@ -133,6 +133,71 @@ describe(
         true,
       )
     })
+
+    it('does not treat evaluated imports as live circular requests', async ({
+      runner,
+    }) => {
+      const testGlobal = globalThis as any
+      const sharedUrl = '/fixtures/hmr-evaluated-import-race/shared.js'
+      const evaluatedUrl = '/fixtures/hmr-evaluated-import-race/evaluated.js'
+
+      testGlobal.__vite_ssr_hmr_evaluated_import_race__ = {
+        wait: () => Promise.resolve(),
+      }
+      onTestFinished(() => {
+        delete testGlobal.__vite_ssr_hmr_evaluated_import_race__
+      })
+
+      await runner.import(sharedUrl)
+
+      const sharedModule = runner.evaluatedModules.getModuleByUrl(sharedUrl)
+      const evaluatedModule =
+        runner.evaluatedModules.getModuleByUrl(evaluatedUrl)
+      expect(sharedModule).toBeDefined()
+      expect(evaluatedModule).toBeDefined()
+
+      let waitStarted!: () => void
+      const waitStartedPromise = new Promise<void>((resolve) => {
+        waitStarted = resolve
+      })
+      let releaseWait!: () => void
+      const waitPromise = new Promise<void>((resolve) => {
+        releaseWait = resolve
+      })
+
+      testGlobal.__vite_ssr_hmr_evaluated_import_race__ = {
+        wait: () => {
+          waitStarted()
+          return waitPromise
+        },
+      }
+
+      runner.evaluatedModules.invalidateModule(sharedModule!)
+
+      const firstRequest = runner.import(sharedUrl)
+      await waitStartedPromise
+
+      let secondRequestSettled = false
+      // Simulate a concurrent caller whose callstack still contains a module
+      // that another request has finished evaluating in the meantime.
+      const secondRequest = (runner as any)
+        .cachedRequest(sharedUrl, sharedModule, [evaluatedModule!.id])
+        .then((result: any) => {
+          secondRequestSettled = true
+          return result
+        })
+
+      await new Promise((resolve) => setImmediate(resolve))
+      expect(secondRequestSettled).toBe(false)
+
+      releaseWait()
+      const [firstResult, secondResult] = await Promise.all([
+        firstRequest,
+        secondRequest,
+      ])
+      expect(firstResult.value).toBe('ready')
+      expect(secondResult.value).toBe('ready')
+    })
   },
   process.env.CI ? 50_00 : 5_000,
 )
