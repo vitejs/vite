@@ -1170,6 +1170,20 @@ foo()`,
   `)
 })
 
+// #23034
+test('import hoisted after hashbang with CRLF', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      '#!/usr/bin/env node\r\nconsole.log(foo);\r\nimport foo from "foo"',
+    ),
+  ).toMatchInlineSnapshot(`
+    "#!/usr/bin/env node
+    const __vite_ssr_import_0__ = await __vite_ssr_import__("foo", {"importedNames":["default"]});
+    console.log((0,__vite_ssr_import_0__.default));
+    "
+  `)
+})
+
 // #10289
 test('track scope by class, function, condition blocks', async () => {
   const code = `
