@@ -219,7 +219,7 @@ export function createNativeConfigCompatPlugin(
     transform: {
       filter: {
         id: {
-          include: /\.[cm]?[jt]sx?$/,
+          include: jsTsExtRE,
           // exclude rolldown runtime
           exclude: /^\0/,
         },
