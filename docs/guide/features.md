@@ -859,7 +859,7 @@ To serve the file at a different path, you can pass `{ fileName: 'license.md' }`
 
 ## Build Optimizations
 
-> Features listed below are automatically applied (except for the exprimental chunk importmap feature) as part of the build process and there is no need for explicit configuration unless you want to disable them.
+> Features listed below are automatically applied (except for the experimental chunk import map feature) as part of the build process and there is no need for explicit configuration unless you want to disable them.
 
 ### CSS Code Splitting
 
