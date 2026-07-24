@@ -1865,7 +1865,13 @@ export async function resolveConfig(
         )
       : ''
 
-  const server = await resolveServerOptions(resolvedRoot, config.server, logger)
+  const input = resolveInput(config.input, resolvedRoot)
+  const server = await resolveServerOptions(
+    resolvedRoot,
+    config.server,
+    input,
+    logger,
+  )
 
   const builder = resolveBuilderOptions(config.builder)
 
@@ -2109,7 +2115,7 @@ export async function resolveConfig(
 
     ssr,
 
-    input: resolveInput(config.input, resolvedRoot),
+    input,
     optimizeDeps: backwardCompatibleOptimizeDeps,
     resolve: resolvedDefaultResolve,
     dev: resolvedDevEnvironmentOptions,
