@@ -7,10 +7,6 @@ on:
 
 permissions: {}
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref_name }}-${{ github.sha }}
-  cancel-in-progress: ${{ github.ref_name != 'main' }}
-
 jobs:
   semgrep:
     name: Run Semgrep
