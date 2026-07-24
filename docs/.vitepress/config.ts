@@ -546,6 +546,18 @@ const config = defineConfig({
       md.use(markdownItImageSize, {
         publicDir: path.resolve(import.meta.dirname, '../public'),
       })
+      const imageRule = md.renderer.rules.image
+
+      if (imageRule) {
+        md.renderer.rules.image = (tokens, idx, options, env, self) => {
+          const normalizedEnv =
+            typeof env?.path === 'string'
+              ? { ...env, path: env.path.replaceAll('\\', '/') }
+              : env
+
+          return imageRule(tokens, idx, options, normalizedEnv, self)
+        }
+      }
       await graphvizMarkdownPlugin(md)
     },
   },
