@@ -177,10 +177,6 @@ class WorkerOutputCache {
     childBundleIds.add(childBundleId)
   }
 
-  clearMainBundleReferences() {
-    this.bundleReferences.delete(undefined)
-  }
-
   getLiveAssetFileNames(mainLiveModuleIds: Set<string>): Set<string> {
     const liveBundles = new Set<string>()
     const queue: [BundleId, Set<string>][] = [[undefined, mainLiveModuleIds]]
@@ -502,7 +498,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     buildStart() {
       if (isWorker) return
       emittedAssets.clear()
-      workerOutputCaches.get(config)!.clearMainBundleReferences()
     },
 
     load: {
