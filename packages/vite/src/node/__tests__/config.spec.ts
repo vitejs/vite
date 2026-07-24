@@ -1235,6 +1235,35 @@ describe('resolveConfig', () => {
     })
   })
 
+  test('adds input to server.fs.allow by default', async () => {
+    const inputs = {
+      main: resolveInputFromRoot('src/a.ts'),
+      admin: resolveInputFromRoot('src/b.ts'),
+    }
+    const config = await resolveConfig(
+      { input: { main: 'src/a.ts', admin: 'src/b.ts' } },
+      'serve',
+    )
+
+    expect(config.server.fs.allow).toStrictEqual(
+      expect.arrayContaining(Object.values(inputs)),
+    )
+  })
+
+  test('does not add input to an explicit server.fs.allow', async () => {
+    const config = await resolveConfig(
+      {
+        input: 'src/main.ts',
+        server: { fs: { allow: ['src'] } },
+      },
+      'serve',
+    )
+
+    expect(config.server.fs.allow).not.toContain(
+      resolveInputFromRoot('src/main.ts'),
+    )
+  })
+
   test('reserves glob characters in input', async () => {
     const cases: { name: string; input: UserConfig['input'] }[] = [
       { name: 'wildcard', input: 'src/*.ts' },
