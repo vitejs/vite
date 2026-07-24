@@ -6,17 +6,20 @@ import { isWindows } from '../../../../shared/utils'
 
 const dirname = import.meta.dirname
 
+async function runRaw(input: string) {
+  return await transformDynamicImport(
+    input,
+    normalizePath(resolve(dirname, 'index.js')),
+    (id) =>
+      id
+        .replace('@', resolve(dirname, './mods/'))
+        .replace('#', resolve(dirname, '../../')),
+    dirname,
+  )
+}
+
 async function run(input: string) {
-  const { glob, rawPattern } =
-    (await transformDynamicImport(
-      input,
-      normalizePath(resolve(dirname, 'index.js')),
-      (id) =>
-        id
-          .replace('@', resolve(dirname, './mods/'))
-          .replace('#', resolve(dirname, '../../')),
-      dirname,
-    )) || {}
+  const { glob, rawPattern } = (await runRaw(input)) || {}
   return `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`)`
 }
 
@@ -69,18 +72,6 @@ describe('parse positives', () => {
     ).toMatchSnapshot()
   })
 })
-
-async function runRaw(input: string) {
-  return await transformDynamicImport(
-    input,
-    normalizePath(resolve(dirname, 'index.js')),
-    (id) =>
-      id
-        .replace('@', resolve(dirname, './mods/'))
-        .replace('#', resolve(dirname, '../../')),
-    dirname,
-  )
-}
 
 describe('parse negatives', () => {
   // the module path is static, only the query has a runtime variable, so it

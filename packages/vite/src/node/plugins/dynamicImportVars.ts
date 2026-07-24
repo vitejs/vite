@@ -4,6 +4,7 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { parseAst } from 'rolldown/parseAst'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
+import { isDynamicPattern } from 'tinyglobby'
 import { viteDynamicImportVarsPlugin as nativeDynamicImportVarsPlugin } from 'rolldown/experimental'
 import { exactRegex } from 'rolldown/filter'
 import type { Plugin } from '../plugin'
@@ -91,7 +92,7 @@ function parseDynamicImportPattern(
   // through `import.meta.glob` would generate glob keys without the query,
   // so the runtime lookup would always fail with "Unknown variable dynamic
   // import". Leave the dynamic import untouched in that case.
-  if (!userPattern.includes('*')) {
+  if (!isDynamicPattern(userPattern)) {
     return null
   }
 
