@@ -2055,6 +2055,7 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
+      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual(['example.com'])
@@ -2066,6 +2067,7 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
+      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual([
@@ -2081,6 +2083,7 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
+      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual([
@@ -2096,6 +2099,7 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
+      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual(['example.com', 'test.com'])
@@ -2106,6 +2110,7 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: ['existing.com'] },
+      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual([
@@ -2120,6 +2125,7 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: true },
+      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toBe(true)
@@ -2132,6 +2138,7 @@ describe('resolveServerOptions', () => {
       const resolved = await resolveServerOptions(
         '/root',
         { allowedHosts: [] },
+        undefined,
         logger,
       )
       expect(resolved.allowedHosts).toEqual([])
