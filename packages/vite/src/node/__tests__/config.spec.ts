@@ -1250,6 +1250,12 @@ describe('resolveConfig', () => {
     )
   })
 
+  test('adds the default index.html input to server.fs.allow', async () => {
+    const config = await resolveConfig({}, 'serve')
+
+    expect(config.server.fs.allow).toContain(resolveInputFromRoot('index.html'))
+  })
+
   test('reserves glob characters in input', async () => {
     const cases: { name: string; input: UserConfig['input'] }[] = [
       { name: 'wildcard', input: 'src/*.ts' },
