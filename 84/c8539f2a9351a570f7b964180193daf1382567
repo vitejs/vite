@@ -1,0 +1,19 @@
+packages/vite/src/node/plugins/worker.ts
+  s_013d8cd021e52a::t_bfc829e62d0615 3-8,52-54,56,71-78,81-84,164,172-175,177,192-197,199,251,256,367,754,797-810
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "84c8539f2a9351a570f7b964180193daf1382567",
+  "prompts": {},
+  "sessions": {
+    "s_013d8cd021e52a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8786-e804-7a83-9e78-3033f2cf6658",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
