@@ -22,6 +22,12 @@ test('nested tsconfig.json & references / include works', async () => {
   await expect.poll(() => page.textContent('.nested-b')).toMatch('[success]')
 })
 
+test('import.meta.glob resolves tsconfig paths', async () => {
+  await expect
+    .poll(() => page.textContent('.glob-eager'))
+    .toBe('[success] glob-a [success] glob-b')
+})
+
 test('css @import resolves tsconfig paths', async () => {
   await expect.poll(() => getColor('.tsconfig-paths-css')).toBe('darkcyan')
 })

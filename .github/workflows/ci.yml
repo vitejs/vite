@@ -128,6 +128,9 @@ jobs:
       - name: Test serve
         run: pnpm run test-serve
 
+      - name: Test serve (bundled dev)
+        run: pnpm run test-serve-bundled
+
       - name: Test build
         run: pnpm run test-build
 
