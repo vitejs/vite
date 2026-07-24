@@ -1,0 +1,4 @@
+/* App override; same specificity as vendor.css, relies on source order. */
+.box {
+  background: rgb(0, 0, 255);
+}

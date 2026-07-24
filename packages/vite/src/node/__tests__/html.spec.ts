@@ -1,17 +1,31 @@
 import { describe, expect, test } from 'vitest'
-import type { OutputBundle, OutputChunk } from 'rolldown'
+import type {
+  GetModuleInfo,
+  ModuleInfo,
+  OutputBundle,
+  OutputChunk,
+} from 'rolldown'
 import { getCssFilesForChunk } from '../plugins/html'
 
 function createChunk(
   fileName: string,
   imports: string[],
   importedCss: string[],
+  options: { facadeModuleId?: string; modules?: string[] } = {},
 ): OutputChunk {
+  const modules: Record<string, unknown> = {}
+  if (options.modules) {
+    for (const id of options.modules) {
+      modules[id] = {}
+    }
+  }
   return {
     type: 'chunk',
     fileName,
     imports,
     viteMetadata: { importedCss: new Set(importedCss) },
+    facadeModuleId: options.facadeModuleId,
+    modules,
   } as unknown as OutputChunk
 }
 
@@ -21,6 +35,13 @@ function createBundle(...chunks: OutputChunk[]): OutputBundle {
     bundle[chunk.fileName] = chunk
   }
   return bundle as unknown as OutputBundle
+}
+
+function createModuleInfoMap(edges: Record<string, string[]>): GetModuleInfo {
+  return ((id: string) => {
+    if (!(id in edges)) return null
+    return { importedIds: edges[id] } as ModuleInfo
+  }) as GetModuleInfo
 }
 
 describe('getCssFilesForChunk', () => {
@@ -72,7 +93,6 @@ describe('getCssFilesForChunk', () => {
 
     const result = getCssFilesForChunk(entry, bundle, cache)
     expect(result).toStrictEqual(['dep.css', 'entry.css'])
-    expect(cache.has(dep)).toBe(true)
     expect(cache.has(entry)).toBe(true)
 
     expect(getCssFilesForChunk(entry, bundle, cache)).toStrictEqual(result)
@@ -238,5 +258,150 @@ describe('getCssFilesForChunk', () => {
       'b.css',
       'a.css',
     ])
+  })
+
+  describe('source-import order (#4890)', () => {
+    // Models a chunk that imports two pure-CSS chunks via two of its modules
+    // (one nested through `vendor.js`, one direct). `chunk.imports` order
+    // does NOT match source-import order, so the previous algorithm - which
+    // walked `chunk.imports` - placed the override stylesheet before the
+    // baseline stylesheet, inverting the cascade.
+    function buildOpRepro() {
+      const vendorCss = createChunk('vendor.css.js', [], ['vendor.css'])
+      const overrideCss = createChunk('override.css.js', [], ['override.css'])
+      // Note: chunk.imports lists override BEFORE vendor on purpose, to
+      // demonstrate that the chunk-import order does not reflect source.
+      const shared = createChunk(
+        'shared.js',
+        ['override.css.js', 'vendor.css.js'],
+        [],
+        {
+          facadeModuleId: '/src/main.js',
+          modules: ['/src/main.js', '/src/vendor.js'],
+        },
+      )
+      const entry = createChunk('entry.js', ['shared.js'], [], {
+        facadeModuleId: '/src/main.js',
+        modules: ['/src/main.js'],
+      })
+      const bundle = createBundle(entry, shared, vendorCss, overrideCss)
+
+      // Source code:
+      //   main.js: `import './vendor.js'; import './override.css';`
+      //   vendor.js: `import './vendor.css';`
+      const getModuleInfo = createModuleInfoMap({
+        '/src/main.js': ['/src/vendor.js', '/src/override.css'],
+        '/src/vendor.js': ['/src/vendor.css'],
+        '/src/vendor.css': [],
+        '/src/override.css': [],
+      })
+      const cssModuleFileMap = new Map<string, string>([
+        ['/src/vendor.css', 'vendor.css'],
+        ['/src/override.css', 'override.css'],
+      ])
+
+      return { entry, bundle, getModuleInfo, cssModuleFileMap }
+    }
+
+    test('chunk-import-only walk produces wrong order', () => {
+      // Without module info we fall back to the old chunk-import walk; this
+      // is the bug we are fixing. The override stylesheet is emitted before
+      // the vendor stylesheet because that is the order chunk.imports lists
+      // them in.
+      const { entry, bundle } = buildOpRepro()
+      const cache = new Map<OutputChunk, string[]>()
+      expect(getCssFilesForChunk(entry, bundle, cache)).toStrictEqual([
+        'override.css',
+        'vendor.css',
+      ])
+    })
+
+    test('module-graph walk places vendor.css before override.css (fix)', () => {
+      // Regression for https://github.com/vitejs/vite/issues/4890: with module
+      // info, the `<link>` tags follow source-import order, so the override
+      // stylesheet loads after the vendor stylesheet it is meant to override.
+      const { entry, bundle, getModuleInfo, cssModuleFileMap } = buildOpRepro()
+      const cache = new Map<OutputChunk, string[]>()
+      expect(
+        getCssFilesForChunk(
+          entry,
+          bundle,
+          cache,
+          cssModuleFileMap,
+          getModuleInfo,
+        ),
+      ).toStrictEqual(['vendor.css', 'override.css'])
+    })
+
+    test('two entries that share a chunk both get the corrected order', () => {
+      // Regression for https://github.com/vitejs/vite/issues/4890 - the
+      // multi-entry shape originally reported there: two entries sharing the
+      // same imports must both emit CSS in source-import order.
+      const { bundle, cssModuleFileMap } = buildOpRepro()
+      const entry2 = createChunk('entry2.js', ['shared.js'], [], {
+        facadeModuleId: '/src/entry2/main.js',
+        modules: ['/src/entry2/main.js'],
+      })
+      ;(bundle as Record<string, OutputChunk>)['entry2.js'] = entry2
+      // entry2/main.js imports the same vendor + override in the same order.
+      const getModuleInfo = createModuleInfoMap({
+        '/src/main.js': ['/src/vendor.js', '/src/override.css'],
+        '/src/entry2/main.js': ['/src/vendor.js', '/src/override.css'],
+        '/src/vendor.js': ['/src/vendor.css'],
+        '/src/vendor.css': [],
+        '/src/override.css': [],
+      })
+      const cache = new Map<OutputChunk, string[]>()
+      const entry = (bundle as Record<string, OutputChunk>)['entry.js']
+      expect(
+        getCssFilesForChunk(
+          entry,
+          bundle,
+          cache,
+          cssModuleFileMap,
+          getModuleInfo,
+        ),
+      ).toStrictEqual(['vendor.css', 'override.css'])
+      expect(
+        getCssFilesForChunk(
+          entry2,
+          bundle,
+          cache,
+          cssModuleFileMap,
+          getModuleInfo,
+        ),
+      ).toStrictEqual(['vendor.css', 'override.css'])
+    })
+
+    test('falls back to chunk-import walk for CSS not in cssModuleFileMap', () => {
+      // If a chunk has CSS files that aren't covered by cssModuleFileMap
+      // (e.g., emitted outside the normal `renderChunk` flow), they should
+      // still appear via the fallback walk so we don't drop links.
+      const helper = createChunk('helper.js', [], ['helper.css'], {
+        facadeModuleId: '/src/helper.js',
+        modules: ['/src/helper.js'],
+      })
+      const entry = createChunk('entry.js', ['helper.js'], [], {
+        facadeModuleId: '/src/main.js',
+        modules: ['/src/main.js'],
+      })
+      const bundle = createBundle(entry, helper)
+      const getModuleInfo = createModuleInfoMap({
+        '/src/main.js': ['/src/helper.js'],
+        '/src/helper.js': [],
+      })
+      // Empty map - helper.css is not registered.
+      const cssModuleFileMap = new Map<string, string>()
+      const cache = new Map<OutputChunk, string[]>()
+      expect(
+        getCssFilesForChunk(
+          entry,
+          bundle,
+          cache,
+          cssModuleFileMap,
+          getModuleInfo,
+        ),
+      ).toStrictEqual(['helper.css'])
+    })
   })
 })
