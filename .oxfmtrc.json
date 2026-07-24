@@ -20,6 +20,7 @@
   ],
   "ignorePatterns": [
     "packages/*/CHANGELOG.md",
+    "packages/vite/src/node/__tests__/fixtures/config/shebang-crlf/vite.config.ts",
     "packages/vite/src/node/ssr/__tests__/fixtures/errors/syntax-error.*",
     "playground-temp/",
     "dist/",

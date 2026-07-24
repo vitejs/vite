@@ -65,6 +65,7 @@ import {
   encodeURIPath,
   escapeRegex,
   generateCodeFrame,
+  getFileStartIndex,
   getHash,
   getPackageManagerCommand,
   getPkgName,
@@ -74,6 +75,7 @@ import {
   isExternalUrl,
   isObject,
   joinUrlSegments,
+  lineTerminatorRE,
   mergeWithDefaults,
   normalizePath,
   processSrcSet,
@@ -1225,14 +1227,14 @@ export function injectInlinedCSS(
   } else if (format === 'es') {
     // legacy build
     if (code.startsWith('#!')) {
-      // inject after the shebang line instead of into it
-      const newlinePos = code.indexOf('\n')
-      if (newlinePos === -1) {
+      const fileStartIndex = getFileStartIndex(code)
+      const hashbang = code.slice(0, fileStartIndex)
+      if (!lineTerminatorRE.test(hashbang)) {
         // the shebang has no trailing newline, add one so it stays intact
         s.append(`\n${injectCode}`)
         return
       }
-      injectionPoint = newlinePos + 1
+      injectionPoint = fileStartIndex
     } else {
       injectionPoint = 0
     }
