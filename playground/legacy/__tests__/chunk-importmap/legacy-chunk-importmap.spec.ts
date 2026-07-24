@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
-import { browserLogs, isBundledDev } from '~utils'
+import { browserLogs } from '~utils'
 
-test.skipIf(isBundledDev)('should have no 404s', () => {
+test('should have no 404s', () => {
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
   })

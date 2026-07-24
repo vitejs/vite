@@ -1,14 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { clearServeError, serveError } from './serve'
-import {
-  browserLogs,
-  editFile,
-  isBuild,
-  isBundledDev,
-  isServe,
-  page,
-  readFile,
-} from '~utils'
+import { browserLogs, editFile, isBuild, isServe, page, readFile } from '~utils'
 
 const tsconfigLoadErrorRE =
   /(\[TSCONFIG_ERROR\] )*Failed to load tsconfig|JSONError/
@@ -33,14 +25,11 @@ describe.runIf(isBuild)('build', () => {
 })
 
 describe.runIf(isServe)('server', () => {
-  test.skipIf(isBundledDev)(
-    'should log 500 error in browser for malformed tsconfig',
-    () => {
-      // don't test for actual complete message as this might be locale dependent. chrome does log 500 consistently though
-      expect(browserLogs.find((x) => x.includes('500'))).toBeTruthy()
-      expect(browserLogs).not.toContain('tsconfig error fixed, file loaded')
-    },
-  )
+  test('should log 500 error in browser for malformed tsconfig', () => {
+    // don't test for actual complete message as this might be locale dependent. chrome does log 500 consistently though
+    expect(browserLogs.find((x) => x.includes('500'))).toBeTruthy()
+    expect(browserLogs).not.toContain('tsconfig error fixed, file loaded')
+  })
 
   test('should show error overlay for tsconfig error', async () => {
     const errorOverlay = await page.waitForSelector('vite-error-overlay')
@@ -52,15 +41,12 @@ describe.runIf(isServe)('server', () => {
     expect(message).toMatch(tsconfigLoadErrorRE)
   })
 
-  test.skipIf(isBundledDev)(
-    'should reload when tsconfig is changed',
-    async () => {
-      editFile('has-error/tsconfig.json', (content) => {
-        return content.replace('"compilerOptions":', '"compilerOptions":{}')
-      })
-      await expect
-        .poll(() => browserLogs)
-        .toContain('tsconfig error fixed, file loaded')
-    },
-  )
+  test('should reload when tsconfig is changed', async () => {
+    editFile('has-error/tsconfig.json', (content) => {
+      return content.replace('"compilerOptions":', '"compilerOptions":{}')
+    })
+    await expect
+      .poll(() => browserLogs)
+      .toContain('tsconfig error fixed, file loaded')
+  })
 })

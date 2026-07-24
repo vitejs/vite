@@ -1,18 +1,13 @@
 import { expect, test } from 'vitest'
-import { getBg, isBuild, isBundledDev, page, readManifest } from '~utils'
+import { getBg, isBuild, page, readManifest } from '~utils'
 
 if (!isBuild) {
-  test.skipIf(isBundledDev)(
-    'importing asset with special char in filename works in dev',
-    async () => {
-      expect(await getBg('.plus-circle')).toContain('+circle.svg')
-      expect(await page.textContent('.plus-circle')).toMatch('+circle.svg')
-      expect(await getBg('.underscore-circle')).toContain('_circle.svg')
-      expect(await page.textContent('.underscore-circle')).toMatch(
-        '_circle.svg',
-      )
-    },
-  )
+  test('importing asset with special char in filename works in dev', async () => {
+    expect(await getBg('.plus-circle')).toContain('+circle.svg')
+    expect(await page.textContent('.plus-circle')).toMatch('+circle.svg')
+    expect(await getBg('.underscore-circle')).toContain('_circle.svg')
+    expect(await page.textContent('.underscore-circle')).toMatch('_circle.svg')
+  })
 } else {
   test('importing asset with special char in filename works in build', async () => {
     const manifest = readManifest()
@@ -31,7 +26,7 @@ if (!isBuild) {
   })
 }
 
-test.runIf(!isBuild && !isBundledDev)('denied .env', async () => {
+test.runIf(!isBuild)('denied .env', async () => {
   expect(await page.textContent('.unsafe-dotenv')).toBe('403')
   expect(await page.textContent('.unsafe-dotenv-double-slash')).toBe('200') // SPA fallback
 })

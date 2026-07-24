@@ -6,9 +6,7 @@ import {
   getColor,
   getCssRuleBg,
   isBuild,
-  isBundledDev,
   isServe,
-  isWindows,
   listAssets,
   page,
   ports,
@@ -17,14 +15,14 @@ import {
   untilBrowserLogAfter,
 } from '~utils'
 
-test.skipIf(isBundledDev && isWindows)('should have no 404s', () => {
+test('should have no 404s', () => {
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
   })
 })
 
 describe('asset imports from js', () => {
-  test.skipIf(isBundledDev)('file outside root', async () => {
+  test('file outside root', async () => {
     // assert valid image src https://github.com/microsoft/playwright/issues/6046#issuecomment-1799585719
     await vi.waitUntil(() =>
       page
@@ -111,7 +109,7 @@ describe.runIf(isServe)('serve', () => {
     })
   })
 
-  test.skipIf(isBundledDev)('preserve the base in CSS HMR', async () => {
+  test('preserve the base in CSS HMR', async () => {
     await expect.poll(() => getColor('body')).toBe('black') // sanity check
     editFile('frontend/entrypoints/global.css', (code) =>
       code.replace('black', 'red'),
@@ -123,38 +121,29 @@ describe.runIf(isServe)('serve', () => {
     expect(await link.getAttribute('href')).toContain('/dev/global.css?t=')
   })
 
-  test.skipIf(isBundledDev)(
-    'server.origin is applied to non-public CSS url()',
-    async () => {
-      const bg = await getCssRuleBg('.outside-root--aliased')
-      expect(bg).toContain(
-        `http://localhost:${ports['backend-integration']}/dev/`,
-      )
-    },
-  )
+  test('server.origin is applied to non-public CSS url()', async () => {
+    const bg = await getCssRuleBg('.outside-root--aliased')
+    expect(bg).toContain(
+      `http://localhost:${ports['backend-integration']}/dev/`,
+    )
+  })
 
-  test.skipIf(isBundledDev && isWindows)(
-    'server.origin is applied to public CSS url()',
-    async () => {
-      const bg = await getCssRuleBg('.public-asset')
-      expect(bg).toContain(
-        `http://localhost:${ports['backend-integration']}/dev/icon.png`,
-      )
-    },
-  )
+  test('server.origin is applied to public CSS url()', async () => {
+    const bg = await getCssRuleBg('.public-asset')
+    expect(bg).toContain(
+      `http://localhost:${ports['backend-integration']}/dev/icon.png`,
+    )
+  })
 
-  test.skipIf(isBundledDev)(
-    'CSS dependencies are tracked for HMR',
-    async () => {
-      const el = await page.$('h1')
-      await untilBrowserLogAfter(
-        () =>
-          editFile('frontend/entrypoints/main.ts', (code) =>
-            code.replace('text-black', 'text-[rgb(204,0,0)]'),
-          ),
-        '[vite] css hot updated: /global.css',
-      )
-      await expect.poll(() => getColor(el)).toBe('rgb(204, 0, 0)')
-    },
-  )
+  test('CSS dependencies are tracked for HMR', async () => {
+    const el = await page.$('h1')
+    await untilBrowserLogAfter(
+      () =>
+        editFile('frontend/entrypoints/main.ts', (code) =>
+          code.replace('text-black', 'text-[rgb(204,0,0)]'),
+        ),
+      '[vite] css hot updated: /global.css',
+    )
+    await expect.poll(() => getColor(el)).toBe('rgb(204, 0, 0)')
+  })
 })

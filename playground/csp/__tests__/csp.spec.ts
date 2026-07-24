@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
-import { getColor, isBundledDev, page } from '~utils'
+import { getColor, page } from '~utils'
 
-test.skipIf(isBundledDev)('linked css', async () => {
+test('linked css', async () => {
   expect(await getColor('.linked')).toBe('blue')
 })
 
@@ -9,19 +9,19 @@ test('inline style tag', async () => {
   expect(await getColor('.inline')).toBe('green')
 })
 
-test.skipIf(isBundledDev)('imported css', async () => {
+test('imported css', async () => {
   expect(await getColor('.from-js')).toBe('blue')
 })
 
-test.skipIf(isBundledDev)('dynamic css', async () => {
+test('dynamic css', async () => {
   expect(await getColor('.dynamic')).toBe('red')
 })
 
-test.skipIf(isBundledDev)('script tag', async () => {
+test('script tag', async () => {
   await expect.poll(() => page.textContent('.js')).toBe('js: ok')
 })
 
-test.skipIf(isBundledDev)('dynamic js', async () => {
+test('dynamic js', async () => {
   await expect
     .poll(() => page.textContent('.dynamic-js'))
     .toBe('dynamic-js: ok')
