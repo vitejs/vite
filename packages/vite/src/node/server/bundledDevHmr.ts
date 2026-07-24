@@ -31,7 +31,6 @@ interface RolldownHotUpdateArgs {
   type: 'create' | 'update' | 'delete'
   file: string
   modules: string[]
-  read: () => Promise<string>
 }
 
 interface RolldownHotUpdateContext {
