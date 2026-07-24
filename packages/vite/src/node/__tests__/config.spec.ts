@@ -1955,6 +1955,20 @@ describe('loadConfigFromFile', () => {
     expect(c.dirname).toContain('shebang')
   })
 
+  test('injected variables follow a hashbang ending in CRLF', async () => {
+    const { config, path: configPath } = (await loadConfigFromFile(
+      {} as any,
+      path.resolve(fixtures, './shebang-crlf/vite.config.ts'),
+      path.resolve(fixtures, './shebang-crlf'),
+    ))!
+
+    const configFile = fs.readFileSync(configPath, 'utf8')
+    expect(configFile).toContain('\r\n')
+
+    const c = config as any
+    expect(c.dirname).toContain('shebang-crlf')
+  })
+
   describe('loadConfigFromFile with configLoader: native', () => {
     const fixtureRoot = path.resolve(fixtures, './native-import')
 

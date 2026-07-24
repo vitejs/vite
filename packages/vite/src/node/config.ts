@@ -89,6 +89,7 @@ import {
   createDebugger,
   createFilter,
   deepClone,
+  getFileStartIndex,
   hasBothRollupOptionsAndRolldownOptions,
   isExternalUrl,
   isFilePathESM,
@@ -97,6 +98,7 @@ import {
   isNodeLikeBuiltin,
   isObject,
   isParentDirectory,
+  lineTerminatorRE,
   mergeAlias,
   mergeConfig,
   mergeWithDefaults,
@@ -2634,13 +2636,13 @@ async function bundleConfigFile(
 
             let injectedContents: string
             if (code.startsWith('#!')) {
-              // hashbang
-              let firstLineEndIndex = code.indexOf('\n')
-              if (firstLineEndIndex < 0) firstLineEndIndex = code.length
+              const fileStartIndex = getFileStartIndex(code)
+              const hashbang = code.slice(0, fileStartIndex)
               injectedContents =
-                code.slice(0, firstLineEndIndex + 1) +
+                hashbang +
+                (lineTerminatorRE.test(hashbang) ? '' : '\n') +
                 injectValues +
-                code.slice(firstLineEndIndex + 1)
+                code.slice(fileStartIndex)
             } else {
               injectedContents = injectValues + code
             }
