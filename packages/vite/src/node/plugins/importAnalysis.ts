@@ -603,9 +603,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               const isOptimizerEmittedImport =
                 depsOptimizer?.isOptimizedDepFile(importer) &&
                 specifier[0] === '.' &&
-                path.posix.resolve(
-                  path.posix.dirname(cleanUrl(importer)),
-                  specifier,
+                normalizePath(
+                  path.resolve(path.dirname(cleanUrl(importer)), specifier),
                 ) === cleanUrl(resolvedId)
               if (
                 !isOptimizerEmittedImport &&
