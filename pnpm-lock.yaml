@@ -1086,6 +1086,9 @@ importers:
       '@vitejs/test-dep-cjs-external-package-omit-js-suffix':
         specifier: file:./dep-cjs-external-package-omit-js-suffix
         version: file:playground/optimize-deps/dep-cjs-external-package-omit-js-suffix
+      '@vitejs/test-dep-cjs-for-injected-import':
+        specifier: file:./dep-cjs-for-injected-import
+        version: file:playground/optimize-deps/dep-cjs-for-injected-import
       '@vitejs/test-dep-cjs-require-css-main-field':
         specifier: file:./dep-cjs-require-css-main-field
         version: file:playground/optimize-deps/dep-cjs-require-css-main-field
@@ -1164,6 +1167,9 @@ importers:
       '@vitejs/test-dep-with-dynamic-import':
         specifier: file:./dep-with-dynamic-import
         version: file:playground/optimize-deps/dep-with-dynamic-import
+      '@vitejs/test-dep-with-injected-import':
+        specifier: file:./dep-with-injected-import
+        version: file:playground/optimize-deps/dep-with-injected-import
       '@vitejs/test-dep-with-optional-peer-dep':
         specifier: file:./dep-with-optional-peer-dep
         version: file:playground/optimize-deps/dep-with-optional-peer-dep
@@ -1241,6 +1247,8 @@ importers:
   playground/optimize-deps/dep-cjs-css-main-field: {}
 
   playground/optimize-deps/dep-cjs-external-package-omit-js-suffix: {}
+
+  playground/optimize-deps/dep-cjs-for-injected-import: {}
 
   playground/optimize-deps/dep-cjs-require-css-main-field:
     dependencies:
@@ -1320,6 +1328,8 @@ importers:
   playground/optimize-deps/dep-with-builtin-module-esm: {}
 
   playground/optimize-deps/dep-with-dynamic-import: {}
+
+  playground/optimize-deps/dep-with-injected-import: {}
 
   playground/optimize-deps/dep-with-optional-peer-dep: {}
 
@@ -4411,6 +4421,9 @@ packages:
   '@vitejs/test-dep-cjs-external-package-omit-js-suffix@file:playground/optimize-deps/dep-cjs-external-package-omit-js-suffix':
     resolution: {directory: playground/optimize-deps/dep-cjs-external-package-omit-js-suffix, type: directory}
 
+  '@vitejs/test-dep-cjs-for-injected-import@file:playground/optimize-deps/dep-cjs-for-injected-import':
+    resolution: {directory: playground/optimize-deps/dep-cjs-for-injected-import, type: directory}
+
   '@vitejs/test-dep-cjs-require-css-main-field@file:playground/optimize-deps/dep-cjs-require-css-main-field':
     resolution: {directory: playground/optimize-deps/dep-cjs-require-css-main-field, type: directory}
 
@@ -4524,6 +4537,9 @@ packages:
 
   '@vitejs/test-dep-with-dynamic-import@file:playground/optimize-deps/dep-with-dynamic-import':
     resolution: {directory: playground/optimize-deps/dep-with-dynamic-import, type: directory}
+
+  '@vitejs/test-dep-with-injected-import@file:playground/optimize-deps/dep-with-injected-import':
+    resolution: {directory: playground/optimize-deps/dep-with-injected-import, type: directory}
 
   '@vitejs/test-dep-with-optional-peer-dep-cjs@file:playground/optimize-deps/dep-with-optional-peer-dep-cjs':
     resolution: {directory: playground/optimize-deps/dep-with-optional-peer-dep-cjs, type: directory}
@@ -10389,6 +10405,8 @@ snapshots:
 
   '@vitejs/test-dep-cjs-external-package-omit-js-suffix@file:playground/optimize-deps/dep-cjs-external-package-omit-js-suffix': {}
 
+  '@vitejs/test-dep-cjs-for-injected-import@file:playground/optimize-deps/dep-cjs-for-injected-import': {}
+
   '@vitejs/test-dep-cjs-require-css-main-field@file:playground/optimize-deps/dep-cjs-require-css-main-field':
     dependencies:
       '@vitejs/test-dep-cjs-css-main-field': file:playground/optimize-deps/dep-cjs-css-main-field
@@ -10487,6 +10505,8 @@ snapshots:
   '@vitejs/test-dep-with-builtin-module-esm@file:playground/optimize-deps/dep-with-builtin-module-esm': {}
 
   '@vitejs/test-dep-with-dynamic-import@file:playground/optimize-deps/dep-with-dynamic-import': {}
+
+  '@vitejs/test-dep-with-injected-import@file:playground/optimize-deps/dep-with-injected-import': {}
 
   '@vitejs/test-dep-with-optional-peer-dep-cjs@file:playground/optimize-deps/dep-with-optional-peer-dep-cjs': {}
 

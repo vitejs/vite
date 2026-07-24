@@ -43,6 +43,15 @@ test('default import from cjs (cjs-dep-cjs-compiled-from-cjs)', async () => {
     .toBe('ok')
 })
 
+test.runIf(isServe)(
+  'named import injected into an optimized dep by a plugin (dep-with-injected-import)',
+  async () => {
+    await expect
+      .poll(() => page.textContent('.injected-import-in-optimized-dep'))
+      .toBe('msg from injected cjs import')
+  },
+)
+
 test('dynamic imports from cjs dep (react)', async () => {
   await expect
     .poll(() => page.textContent('.cjs-dynamic button'))

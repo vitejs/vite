@@ -597,8 +597,15 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
             if (url !== specifier) {
               let rewriteDone = false
+              // imports emitted by the optimizer are always relative and
+              // already have the correct shape. bare imports inside an
+              // optimized dep file come from plugins transforming the served
+              // file (e.g. @rollup/plugin-inject) and still need interop.
+              const isOptimizerEmittedImport =
+                depsOptimizer?.isOptimizedDepFile(importer) &&
+                specifier[0] === '.'
               if (
-                !depsOptimizer?.isOptimizedDepFile(importer) &&
+                !isOptimizerEmittedImport &&
                 depsOptimizer?.isOptimizedDepFile(resolvedId) &&
                 !optimizedDepChunkRE.test(resolvedId)
               ) {
