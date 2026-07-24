@@ -3,7 +3,8 @@ import path from 'node:path'
 import colors from 'picocolors'
 import { glob, isDynamicPattern } from 'tinyglobby'
 import { FS_PREFIX } from '../constants'
-import { normalizePath } from '../utils'
+import { normalizePath, normalizeWindowsDriveLetter } from '../utils'
+import { withTrailingSlash } from '../../shared/utils'
 import type { ViteDevServer } from '../index'
 import type { DevEnvironment } from './environment'
 
@@ -53,19 +54,22 @@ async function warmupFile(
 }
 
 function htmlFileToUrl(file: string, root: string) {
-  const url = path.relative(root, file)
-  // out of root, ignore file
-  if (url[0] === '.') return
+  const normalizedFile = normalizeWindowsDriveLetter(normalizePath(file))
+  const normalizedRoot = normalizeWindowsDriveLetter(normalizePath(root))
+  if (!normalizedFile.startsWith(withTrailingSlash(normalizedRoot))) return
+  const url = path.posix.relative(normalizedRoot, normalizedFile)
   // file within root, create root-relative url
   return '/' + normalizePath(url)
 }
 
 function fileToUrl(file: string, root: string) {
-  const url = path.relative(root, file)
+  const normalizedFile = normalizeWindowsDriveLetter(normalizePath(file))
+  const normalizedRoot = normalizeWindowsDriveLetter(normalizePath(root))
   // out of root, use /@fs/ prefix
-  if (url[0] === '.') {
+  if (!normalizedFile.startsWith(withTrailingSlash(normalizedRoot))) {
     return path.posix.join(FS_PREFIX, normalizePath(file))
   }
+  const url = path.posix.relative(normalizedRoot, normalizedFile)
   // file within root, create root-relative url
   return '/' + normalizePath(url)
 }

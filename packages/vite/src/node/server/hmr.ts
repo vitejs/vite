@@ -15,6 +15,7 @@ import {
   formatAndTruncateFileList,
   monotonicDateNow,
   normalizePath,
+  normalizeWindowsDriveLetter,
 } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { getHookHandler } from '../plugins'
@@ -151,8 +152,10 @@ export interface HotChannel<Api = any> {
 }
 
 export function getShortName(file: string, root: string): string {
-  return file.startsWith(withTrailingSlash(root))
-    ? path.posix.relative(root, file)
+  const normalizedFile = normalizeWindowsDriveLetter(file)
+  const normalizedRoot = normalizeWindowsDriveLetter(root)
+  return normalizedFile.startsWith(withTrailingSlash(normalizedRoot))
+    ? path.posix.relative(normalizedRoot, normalizedFile)
     : file
 }
 
@@ -449,7 +452,11 @@ export async function handleHMRUpdate(
   debugHmr?.(`[file change] ${colors.dim(shortFile)}`)
 
   // (dev only) the client itself cannot be hot updated.
-  if (file.startsWith(withTrailingSlash(normalizedClientDir))) {
+  if (
+    normalizeWindowsDriveLetter(file).startsWith(
+      withTrailingSlash(normalizeWindowsDriveLetter(normalizedClientDir)),
+    )
+  ) {
     environments.forEach(({ hot }) =>
       hot.send({
         type: 'full-reload',
