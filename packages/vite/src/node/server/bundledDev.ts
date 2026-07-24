@@ -285,6 +285,15 @@ export class BundledDev {
     )
     const result = await this.devEngine.compileEntry(moduleId, clientId)
     this.pendingPayloadFilenames.add(result.filename)
+    // Serve the chunk's sourcemap, the same way an eager chunk's and an HMR
+    // patch's maps are served. The chunk's relative `sourceMappingURL` resolves
+    // against the URL it is imported from, `/@vite/lazy?...`, so register the map
+    // under that directory for the reference to reach it.
+    if (result.sourcemapFilename && result.sourcemap) {
+      this.memoryFiles.set(`@vite/${result.sourcemapFilename}`, {
+        source: result.sourcemap,
+      })
+    }
     return result
   }
 
