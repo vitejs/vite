@@ -1082,7 +1082,20 @@ export function resolveServerUrls(
       local.push(address)
     } else {
       network.push(address)
-      networkInterfaceNames.push(undefined)
+      // Look up the interface name for the explicit host IP
+      let interfaceName: string | undefined
+      if (hostname.host) {
+        const interfaces = os.networkInterfaces()
+        outer: for (const [name, nInterface] of Object.entries(interfaces)) {
+          for (const detail of nInterface ?? []) {
+            if (detail.address === hostname.host) {
+              interfaceName = name
+              break outer
+            }
+          }
+        }
+      }
+      networkInterfaceNames.push(interfaceName)
     }
   } else {
     Object.entries(os.networkInterfaces()).forEach(([name, nInterface]) => {

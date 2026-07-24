@@ -89,10 +89,14 @@ if (isBuild) {
   // BUNDLED -> GENERATING_HMR_PATCH -> BUNDLED
   test('handle generate hmr patch error', async () => {
     await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+    const lastServerLogIndex = serverLogs.length
     editFile('hmr.js', (code) =>
       code.replace("const foo = 'hello'", "const foo = 'hello"),
     )
     await expect.poll(() => page.isVisible('vite-error-overlay')).toBe(true)
+    await expect
+      .poll(() => serverLogs.slice(lastServerLogIndex).join('\n'))
+      .toContain('Build error')
 
     editFile('hmr.js', (code) =>
       code.replace("const foo = 'hello", "const foo = 'hello'"),
