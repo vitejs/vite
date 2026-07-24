@@ -96,6 +96,11 @@ export function createDevHtmlTransformFn(
     html: string,
     originalUrl?: string,
   ): Promise<string> => {
+    // SSR integrations often derive the url by stripping the base from the
+    // request url, which produces '' for the root (#18228)
+    if (url === '') {
+      url = '/'
+    }
     return applyHtmlTransforms(html, transformHooks, pluginContext, {
       path: url,
       filename: getHtmlFilename(url, server),
