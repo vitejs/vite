@@ -16,6 +16,9 @@
 <p class="nested-a"></p>
 <p class="nested-b"></p>
 
+<h2>import.meta.glob resolves tsconfig paths</h2>
+<p class="glob-eager"></p>
+
 <h2>CSS / Sass @import resolves tsconfig paths (Less does not)</h2>
 <p class="tsconfig-paths-css">This text should be darkcyan</p>
 <p class="tsconfig-paths-scss">This text should be seagreen</p>
@@ -47,4 +50,10 @@
   import { valueA, valueB } from './src/nested/index.ts'
   text('.nested-a', valueA)
   text('.nested-b', valueB)
+
+  const globEager = import.meta.glob('@/glob/**/*', {
+    eager: true,
+    import: 'default',
+  })
+  text('.glob-eager', Object.values(globEager).sort().join(' '))
 </script>

@@ -3,6 +3,7 @@ import {
   findAssetFile,
   getColor,
   isBuild,
+  isBundledDev,
   listAssets,
   page,
   readFile,
@@ -17,7 +18,7 @@ test('should work', async () => {
   await expect.poll(() => page.textContent('#app')).toMatch('Hello')
 })
 
-test('import.meta.env.LEGACY', async () => {
+test.skipIf(isBundledDev)('import.meta.env.LEGACY', async () => {
   await expect
     .poll(() => page.textContent('#env'))
     .toMatch(isBuild ? 'true' : 'false')
@@ -41,7 +42,7 @@ test('wraps with iife', async () => {
     .toMatch('exposed babel helpers: false')
 })
 
-test('generates assets', async () => {
+test.skipIf(isBundledDev)('generates assets', async () => {
   await expect
     .poll(() => page.textContent('#assets'))
     .toMatch(
@@ -77,7 +78,7 @@ test('should load dynamic import with css', async () => {
   await expect.poll(() => getColor('#dynamic-css')).toBe('red')
 })
 
-test('asset url', async () => {
+test.skipIf(isBundledDev)('asset url', async () => {
   expect(await page.textContent('#asset-path')).toMatch(
     isBuild ? /\/assets\/vite-[-\w]+\.svg/ : '/vite.svg',
   )
@@ -107,11 +108,10 @@ describe.runIf(isBuild)('build', () => {
     )
   })
 
-  test('should minify legacy chunks with terser', async () => {
-    // This is a ghetto heuristic, but terser output seems to reliably start
-    // with one of the following, and non-terser output (including unminified or
-    // esbuild-minified) does not!
-    const terserPattern = /^(?:!function|System.register)/
+  test('should minify legacy chunks', async () => {
+    // This is a ghetto heuristic, but Oxc output seems to reliably include
+    // this code
+    const terserPattern = /,function\(e,/
 
     expect(findAssetFile(/chunk-async-legacy/)).toMatch(terserPattern)
     expect(findAssetFile(/chunk-async(?!-legacy)/)).not.toMatch(terserPattern)
@@ -124,6 +124,17 @@ describe.runIf(isBuild)('build', () => {
     expect(findAssetFile(/polyfills-legacy/)).toMatch(terserPattern)
   })
 
+  test('should not use newer syntax when minifying legacy chunks', () => {
+    // The playground targets IE 11, so babel lowers the legacy chunks to ES5.
+    // The minifier must not reintroduce syntax newer than its `es2015` compress
+    // target: `try {} catch (e) {}` must not be collapsed to `try {} catch {}`
+    // (ES2019) and optional chaining (ES2020) must not appear.
+    const mainLegacyChunk = findAssetFile(/chunk-main-legacy/)
+    expect(mainLegacyChunk).toMatch(/catch\s*\(/)
+    expect(mainLegacyChunk).not.toMatch(/catch\s*\{/)
+    expect(mainLegacyChunk).not.toMatch(/\w\?\.\w/)
+  })
+
   test('should emit css file', async () => {
     expect(
       listAssets().some((filename) => filename.endsWith('.css')),
@@ -131,8 +142,8 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('includes structuredClone polyfill which is supported after core-js v3', () => {
-    expect(findAssetFile(/polyfills-legacy/)).toMatch('"structuredClone"')
-    expect(findAssetFile(/polyfills-[-\w]{8}\./)).toMatch('"structuredClone"')
+    expect(findAssetFile(/polyfills-legacy/)).toMatch('`structuredClone`')
+    expect(findAssetFile(/polyfills-[-\w]{8}\./)).toMatch('`structuredClone`')
   })
 
   test('should generate legacy sourcemap file', async () => {

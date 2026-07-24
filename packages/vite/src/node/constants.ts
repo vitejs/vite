@@ -129,6 +129,10 @@ export const CLIENT_ENTRY: string = resolve(
   VITE_PACKAGE_DIR,
   'dist/client/client.mjs',
 )
+export const BUNDLED_DEV_CLIENT_ENTRY: string = resolve(
+  VITE_PACKAGE_DIR,
+  'dist/client/bundledDevClient.mjs',
+)
 export const ENV_ENTRY: string = resolve(
   VITE_PACKAGE_DIR,
   'dist/client/env.mjs',

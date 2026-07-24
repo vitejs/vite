@@ -1,6 +1,6 @@
 import type { OriginalMapping } from '@jridgewell/trace-mapping'
 import type { ModuleRunner } from '../runner'
-import { posixDirname, posixResolve } from '../utils'
+import { decodeBase64, posixDirname, posixResolve } from '../utils'
 import type { EvaluatedModules } from '../evaluatedModules'
 import { slash } from '../../shared/utils'
 import { DecodedMap, getOriginalPosition } from './decoder'
@@ -154,7 +154,7 @@ function retrieveSourceMap(source: string) {
   if (reSourceMap.test(sourceMappingURL)) {
     // Support source map URL as a data url
     const rawData = sourceMappingURL.slice(sourceMappingURL.indexOf(',') + 1)
-    sourceMapData = Buffer.from(rawData, 'base64').toString()
+    sourceMapData = decodeBase64(rawData)
     sourceMappingURL = source
   } else {
     // Support source map URLs relative to the source URL

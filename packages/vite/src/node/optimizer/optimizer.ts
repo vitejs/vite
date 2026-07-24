@@ -154,10 +154,10 @@ export function createDepsOptimizer(
     ])
   }
 
-  let inited = false
+  let initState: 'idle' | 'initializing' | 'initialized' = 'idle'
   async function init() {
-    if (inited) return
-    inited = true
+    if (initState !== 'idle') return
+    initState = 'initializing'
 
     const cachedMetadata = await loadCachedDepOptimizationMetadata(environment)
 
@@ -283,6 +283,7 @@ export function createDepsOptimizer(
         })
       }
     }
+    initState = 'initialized'
   }
 
   function startNextDiscoveredBatch() {
@@ -579,7 +580,10 @@ export function createDepsOptimizer(
     // we can get a list of every missing dependency before giving to the
     // browser a dependency that may be outdated, thus avoiding full page reloads
 
-    if (!waitingForCrawlEnd) {
+    // A module can be transformed between `createServer()` and `server.listen()`,
+    // which discovers a dep before `init()` runs. Starting a run here would race
+    // with `init()` resetting the metadata and crash in `commitProcessing`.
+    if (initState === 'initialized' && !waitingForCrawlEnd) {
       // Debounced rerun, let other missing dependencies be discovered before
       // the running next optimizeDeps
       debouncedProcessing()

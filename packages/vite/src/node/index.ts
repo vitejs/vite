@@ -204,6 +204,7 @@ export type {
   CSSModulesOptions,
   PreprocessCSSResult,
   ResolvedCSSOptions,
+  PostcssUserConfig,
   SassPreprocessorOptions,
   LessPreprocessorOptions,
   StylusPreprocessorOptions,

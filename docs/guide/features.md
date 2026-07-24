@@ -187,7 +187,7 @@ Any HTML files in your project root can be directly accessed by its respective d
 - `<root>/about.html` -> `http://localhost:5173/about.html`
 - `<root>/blog/index.html` -> `http://localhost:5173/blog/index.html`
 
-Assets referenced by HTML elements such as `<script type="module" src>` and `<link href>` are processed and bundled as part of the app. The full list of supported elements are as below:
+Assets referenced by HTML elements such as `<script type="module" src>` and `<link href>` are processed and bundled as part of the app. The full list of supported elements is as below:
 
 - `<audio src>`
 - `<embed src>`
@@ -331,7 +331,7 @@ npm add -D stylus
 
 If using Vue single file components, this also automatically enables `<style lang="sass">` et al.
 
-Vite improves `@import` resolving for Sass and Less so that Vite aliases are also respected. In addition, relative `url()` references inside imported Sass/Less files that are in different directories from the root file are also automatically rebased to ensure correctness. Rebasing `url()` references that start with a variable or a interpolation are not supported due to its API constraints.
+Vite improves `@import` resolving for Sass and Less so that Vite aliases are also respected. In addition, relative `url()` references inside imported Sass/Less files that are in different directories from the root file are also automatically rebased to ensure correctness. Rebasing `url()` references that start with a variable or an interpolation is not supported due to its API constraints.
 
 `@import` alias and url rebasing are not supported for Stylus due to its API constraints.
 
@@ -720,7 +720,7 @@ init({
 })
 ```
 
-In the production build, `.wasm` files smaller than `assetInlineLimit` will be inlined as base64 strings. Otherwise, they will be treated as a [static asset](./assets) and fetched on-demand.
+In the production build, `.wasm` files smaller than `assetsInlineLimit` will be inlined as base64 strings. Otherwise, they will be treated as a [static asset](./assets) and fetched on-demand.
 
 ::: warning For SSR build, Node.js compatible runtimes are only supported
 
@@ -765,7 +765,7 @@ const worker = new Worker(new URL('./worker.js', import.meta.url), {
 })
 ```
 
-The worker detection will only work if the `new URL()` constructor is used directly inside the `new Worker()` declaration. Additionally, all options parameters must be static values (i.e. string literals).
+The worker detection will only work if the `new URL()` constructor is used directly inside the `new Worker()` declaration. Otherwise it is handled as a [static asset URL](./assets#new-url-url-import-meta-url) instead. Additionally, all options parameters must be static values (i.e. string literals).
 
 ### Import with Query Suffixes
 
@@ -859,7 +859,7 @@ To serve the file at a different path, you can pass `{ fileName: 'license.md' }`
 
 ## Build Optimizations
 
-> Features listed below are automatically applied (except for the exprimental chunk importmap feature) as part of the build process and there is no need for explicit configuration unless you want to disable them.
+> Features listed below are automatically applied (except for the experimental chunk import map feature) as part of the build process and there is no need for explicit configuration unless you want to disable them.
 
 ### CSS Code Splitting
 

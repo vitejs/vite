@@ -3,9 +3,15 @@ import net from 'node:net'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { wildcardHosts } from '../constants'
 import { createServer } from '..'
-import type { ViteDevServer } from '..'
+import type { InlineConfig, ViteDevServer } from '..'
 
 const BASE_PORT = 15181
+
+// `server.listen()` would otherwise start a dep scan that crawls every HTML fixture under `__tests__`
+const optimizeDeps: InlineConfig['optimizeDeps'] = {
+  noDiscovery: true,
+  include: [],
+}
 
 describe('port detection', () => {
   let blockingServer: http.Server | null = null
@@ -50,6 +56,7 @@ describe('port detection', () => {
 
       viteServer = await createServer({
         root: import.meta.dirname,
+        optimizeDeps,
         logLevel: 'silent',
         server: { port: BASE_PORT, strictPort: false, ws: false },
       })
@@ -73,6 +80,7 @@ describe('port detection', () => {
 
       viteServer = await createServer({
         root: import.meta.dirname,
+        optimizeDeps,
         logLevel: 'silent',
         server: { port: BASE_PORT, strictPort: false, ws: false },
       })
@@ -92,6 +100,7 @@ describe('port detection', () => {
 
       viteServer = await createServer({
         root: import.meta.dirname,
+        optimizeDeps,
         logLevel: 'silent',
         server: { port: BASE_PORT, strictPort: false, ws: false },
       })
@@ -116,6 +125,7 @@ describe('port detection', () => {
 
       viteServer = await createServer({
         root: import.meta.dirname,
+        optimizeDeps,
         logLevel: 'silent',
         server: { port: BASE_PORT, strictPort: false, ws: false },
       })
@@ -143,6 +153,7 @@ describe('port detection', () => {
 
       viteServer = await createServer({
         root: import.meta.dirname,
+        optimizeDeps,
         logLevel: 'silent',
         server: {
           port: BASE_PORT,
@@ -188,6 +199,7 @@ describe('port detection', () => {
 
     viteServer = await createServer({
       root: import.meta.dirname,
+      optimizeDeps,
       logLevel: 'silent',
       server: { port: BASE_PORT, strictPort: false, ws: false },
     })
@@ -205,6 +217,7 @@ describe('port detection', () => {
 
     viteServer = await createServer({
       root: import.meta.dirname,
+      optimizeDeps,
       logLevel: 'silent',
       server: { port: BASE_PORT, strictPort: true, ws: false },
     })
@@ -220,6 +233,7 @@ describe('port detection', () => {
     const warnMessages: string[] = []
     viteServer = await createServer({
       root: import.meta.dirname,
+      optimizeDeps,
       customLogger: {
         info: () => {},
         warn: (msg) => warnMessages.push(msg),

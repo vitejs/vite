@@ -214,20 +214,24 @@ export class HMRClient {
   // but they may have left behind side effects that need to be cleaned up
   // (e.g. style injections)
   public async prunePaths(paths: string[]): Promise<void> {
-    await Promise.all(
-      paths.map((path) => {
-        const disposer = this.disposeMap.get(path)
-        if (disposer) return disposer(this.dataMap.get(path))
-      }),
-    )
-    await Promise.all(
-      paths.map((path) => {
-        const fn = this.pruneMap.get(path)
-        if (fn) {
-          return fn(this.dataMap.get(path))
-        }
-      }),
-    )
+    try {
+      await Promise.all(
+        paths.map((path) => {
+          const disposer = this.disposeMap.get(path)
+          if (disposer) return disposer(this.dataMap.get(path))
+        }),
+      )
+      await Promise.all(
+        paths.map((path) => {
+          const fn = this.pruneMap.get(path)
+          if (fn) {
+            return fn(this.dataMap.get(path))
+          }
+        }),
+      )
+    } finally {
+      paths.forEach((path) => this.dataMap.delete(path))
+    }
   }
 
   protected warnFailedUpdate(err: Error, path: string | string[]): void {

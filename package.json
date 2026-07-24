@@ -25,6 +25,7 @@
     "typecheck": "tsc -p scripts && pnpm -r --parallel run typecheck",
     "test": "pnpm test-unit && pnpm test-serve && pnpm test-build",
     "test-serve": "vitest run -c vitest.config.e2e.ts",
+    "test-serve-bundled": "VITE_TEST_BUNDLED_DEV=1 vitest run -c vitest.config.e2e.ts",
     "test-build": "VITE_TEST_BUILD=1 vitest run -c vitest.config.e2e.ts",
     "test-unit": "vitest run",
     "test-docs": "pnpm run docs-build",
@@ -41,7 +42,7 @@
     "merge-changelog": "tsx scripts/mergeChangelog.ts"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
+    "@eslint/js": "^9.39.5",
     "@type-challenges/utils": "^0.1.1",
     "@types/babel__core": "^7.20.5",
     "@types/babel__preset-env": "^7.10.0",
@@ -49,29 +50,29 @@
     "@types/cross-spawn": "^6.0.6",
     "@types/etag": "^1.8.4",
     "@types/less": "^3.0.8",
-    "@types/node": "^24.13.2",
+    "@types/node": "^24.13.3",
     "@types/picomatch": "^4.0.3",
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.18.1",
-    "@vitejs/release-scripts": "^1.7.1",
-    "eslint": "^9.39.4",
+    "@vitejs/release-scripts": "^1.8.0",
+    "eslint": "^9.39.5",
     "eslint-plugin-import-x": "^4.17.1",
-    "eslint-plugin-n": "^18.2.1",
+    "eslint-plugin-n": "^18.2.2",
     "eslint-plugin-regexp": "^3.1.1",
     "execa": "^9.6.1",
     "globals": "^17.7.0",
-    "lint-staged": "^17.0.8",
-    "oxfmt": "^0.56.0",
+    "lint-staged": "^17.1.0",
+    "oxfmt": "^0.59.0",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.61.1",
-    "rolldown": "~1.1.3",
+    "rolldown": "~1.2.0",
     "rollup": "^4.59.0",
     "simple-git-hooks": "^2.13.1",
-    "tsx": "^4.22.4",
+    "tsx": "^4.23.1",
     "typescript": "~6.0.2",
-    "typescript-eslint": "^8.62.0",
+    "typescript-eslint": "^8.64.0",
     "vite": "workspace:*",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.10"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
@@ -90,7 +91,7 @@
       "eslint --cache --fix --concurrency auto"
     ]
   },
-  "packageManager": "pnpm@10.34.4",
+  "packageManager": "pnpm@10.34.5",
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"
   }
