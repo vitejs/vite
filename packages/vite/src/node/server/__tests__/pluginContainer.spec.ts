@@ -193,6 +193,258 @@ describe('plugin container', () => {
     })
   })
 
+  describe('onLog', () => {
+    it('can filter logs in dev', async () => {
+      const logger = createLogger()
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+      const onLog = vi.fn(() => false)
+      const environment = await getDevEnvironment({
+        customLogger: logger,
+        plugins: [
+          { name: 'log-filter', onLog },
+          {
+            name: 'source',
+            load() {
+              this.warn('test')
+            },
+          },
+        ],
+      })
+
+      await environment.pluginContainer.load('foo')
+
+      expect(onLog).toHaveBeenCalledWith(
+        'warn',
+        expect.objectContaining({ message: 'test', plugin: 'source' }),
+      )
+      expect(warn).not.toHaveBeenCalled()
+    })
+
+    it('normalizes source plugin log metadata', async () => {
+      const onLog = vi.fn(() => false)
+      const environment = await getDevEnvironment({
+        plugins: [
+          { name: 'log-filter', onLog },
+          {
+            name: 'source',
+            resolveId(id) {
+              return id
+            },
+            load() {
+              this.info({ message: 'info', code: 'INFO_CODE' })
+              this.warn({ message: 'warn', code: 'WARN_CODE' })
+              return 'export {}'
+            },
+            transform() {
+              this.warn({ message: 'transform', code: 'TRANSFORM_CODE' })
+            },
+          },
+        ],
+      })
+
+      const id = '/foo.js'
+      await environment.moduleGraph.ensureEntryFromUrl(id, false)
+      await environment.pluginContainer.load(id)
+      await environment.pluginContainer.transform('export {}', id)
+
+      expect(onLog).toHaveBeenNthCalledWith(
+        1,
+        'info',
+        expect.objectContaining({
+          code: 'PLUGIN_LOG',
+          message: 'info',
+          plugin: 'source',
+          pluginCode: 'INFO_CODE',
+        }),
+      )
+      expect(onLog).toHaveBeenNthCalledWith(
+        2,
+        'warn',
+        expect.objectContaining({
+          code: 'PLUGIN_WARNING',
+          message: 'warn',
+          plugin: 'source',
+          pluginCode: 'WARN_CODE',
+        }),
+      )
+      expect(onLog).toHaveBeenNthCalledWith(
+        3,
+        'warn',
+        expect.objectContaining({
+          code: 'PLUGIN_WARNING',
+          message: 'transform',
+          plugin: 'source',
+          pluginCode: 'TRANSFORM_CODE',
+        }),
+      )
+    })
+
+    it('can change log levels in dev', async () => {
+      const logger = createLogger()
+      const info = vi.spyOn(logger, 'info').mockImplementation(() => {})
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+      const environment = await getDevEnvironment({
+        customLogger: logger,
+        plugins: [
+          {
+            name: 'log-level-changer',
+            onLog(level, log) {
+              if (level === 'warn') {
+                this.info(log)
+                return false
+              }
+            },
+          },
+          {
+            name: 'source',
+            load() {
+              this.warn('test')
+            },
+          },
+        ],
+      })
+
+      await environment.pluginContainer.load('foo')
+
+      expect(info).toHaveBeenCalledOnce()
+      expect(warn).not.toHaveBeenCalled()
+    })
+
+    it('does not attribute fresh logs re-emitted by onLog hooks', async () => {
+      const pluginName = vi.fn()
+      const replacement = vi.fn((_log: unknown) => false)
+      const environment = await getDevEnvironment({
+        plugins: [
+          {
+            name: 'log-level-changer',
+            onLog(level) {
+              if (level === 'warn') {
+                pluginName(this.pluginName)
+                this.info('replacement')
+                return false
+              }
+            },
+          },
+          {
+            name: 'replacement-observer',
+            onLog(level, log) {
+              if (level === 'info') return replacement(log)
+            },
+          },
+          {
+            name: 'source',
+            load() {
+              this.warn('original')
+            },
+          },
+        ],
+      })
+
+      await environment.pluginContainer.load('foo')
+
+      expect(pluginName).toHaveBeenCalledWith('log-level-changer')
+      expect(replacement).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'replacement' }),
+      )
+      expect(replacement.mock.calls[0][0]).not.toHaveProperty('plugin')
+    })
+
+    it('preserves hook order when a hook re-emits a log', async () => {
+      const logger = createLogger()
+      const info = vi.spyOn(logger, 'info').mockImplementation(() => {})
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+      const calls: string[] = []
+      const environment = await getDevEnvironment({
+        customLogger: logger,
+        plugins: [
+          {
+            name: 'first-observer',
+            onLog(level) {
+              calls.push(`first:${level}`)
+            },
+          },
+          {
+            name: 'log-level-changer',
+            onLog(level, log) {
+              if (level === 'warn') {
+                this.info(log)
+                return false
+              }
+            },
+          },
+          {
+            name: 'last-observer',
+            onLog(level) {
+              calls.push(`last:${level}`)
+            },
+          },
+          {
+            name: 'source',
+            load() {
+              this.warn('test')
+            },
+          },
+        ],
+      })
+
+      await environment.pluginContainer.load('foo')
+
+      expect(calls).toEqual(['first:warn', 'first:info', 'last:info'])
+      expect(info).toHaveBeenCalledOnce()
+      expect(warn).not.toHaveBeenCalled()
+    })
+
+    it('includes the source plugin for logs from options hooks', async () => {
+      const onLog = vi.fn(() => false)
+      const pluginName = vi.fn()
+
+      await getDevEnvironment({
+        plugins: [
+          { name: 'log-filter', onLog },
+          {
+            name: 'options-source',
+            options() {
+              pluginName(this.pluginName)
+              this.warn('test')
+            },
+          },
+        ],
+      })
+
+      expect(pluginName).toHaveBeenCalledWith('options-source')
+      expect(onLog).toHaveBeenCalledWith(
+        'warn',
+        expect.objectContaining({
+          code: 'PLUGIN_WARNING',
+          message: 'test',
+          plugin: 'options-source',
+        }),
+      )
+    })
+
+    it('respects the configured log level', async () => {
+      const onLog = vi.fn()
+      const lazyLog = vi.fn(() => 'test')
+      const environment = await getDevEnvironment({
+        logLevel: 'error',
+        plugins: [
+          { name: 'log-filter', onLog },
+          {
+            name: 'source',
+            load() {
+              this.warn(lazyLog)
+            },
+          },
+        ],
+      })
+
+      await environment.pluginContainer.load('foo')
+
+      expect(onLog).not.toHaveBeenCalled()
+      expect(lazyLog).not.toHaveBeenCalled()
+    })
+  })
+
   describe('load', () => {
     it('can resolve a secondary module', async () => {
       const entryUrl = '/x.js'
