@@ -14,6 +14,13 @@ export interface CachedFetchResult {
    * it was not invalidated on the server side.
    */
   cache: true
+  /**
+   * The resolved module ID on the server. The client uses this to verify
+   * that its cached module matches what the server resolved. When a bare
+   * specifier maps to different physical packages for different importers,
+   * the client's cache may hold the wrong version.
+   */
+  id?: string
 }
 
 export interface ExternalFetchResult {

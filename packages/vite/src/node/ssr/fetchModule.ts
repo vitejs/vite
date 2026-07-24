@@ -85,7 +85,7 @@ export async function fetchModule(
 
   // if url is already cached, we can just confirm it's also cached on the server
   if (options.cached && cached) {
-    return { cache: true }
+    return { cache: true, id: mod.id ?? undefined }
   }
 
   let result = await environment.transformRequest(url)
