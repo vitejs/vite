@@ -1104,6 +1104,9 @@ importers:
       '@vitejs/test-dep-esbuild-plugin-transform':
         specifier: file:./dep-esbuild-plugin-transform
         version: file:playground/optimize-deps/dep-esbuild-plugin-transform
+      '@vitejs/test-dep-importing-excluded':
+        specifier: file:./dep-importing-excluded
+        version: file:playground/optimize-deps/dep-importing-excluded
       '@vitejs/test-dep-incompatible':
         specifier: file:./dep-incompatible
         version: file:playground/optimize-deps/dep-incompatible
@@ -1269,6 +1272,12 @@ importers:
 
   playground/optimize-deps/dep-esm-external: {}
 
+  playground/optimize-deps/dep-importing-excluded:
+    dependencies:
+      '@vitejs/test-excluded-not-hoisted':
+        specifier: file:../excluded-not-hoisted
+        version: file:playground/optimize-deps/excluded-not-hoisted
+
   playground/optimize-deps/dep-incompatible: {}
 
   playground/optimize-deps/dep-linked:
@@ -1328,6 +1337,8 @@ importers:
   playground/optimize-deps/dep-with-optional-peer-dep-submodule: {}
 
   playground/optimize-deps/dep-with-plus-subpath: {}
+
+  playground/optimize-deps/excluded-not-hoisted: {}
 
   playground/optimize-deps/longfilename: {}
 
@@ -4438,6 +4449,9 @@ packages:
   '@vitejs/test-dep-esm-external@file:playground/optimize-deps/dep-esm-external':
     resolution: {directory: playground/optimize-deps/dep-esm-external, type: directory}
 
+  '@vitejs/test-dep-importing-excluded@file:playground/optimize-deps/dep-importing-excluded':
+    resolution: {directory: playground/optimize-deps/dep-importing-excluded, type: directory}
+
   '@vitejs/test-dep-including-a@file:playground/preload/dep-including-a':
     resolution: {directory: playground/preload/dep-including-a, type: directory}
 
@@ -4554,6 +4568,9 @@ packages:
 
   '@vitejs/test-entries@file:playground/ssr-resolve/entries':
     resolution: {directory: playground/ssr-resolve/entries, type: directory}
+
+  '@vitejs/test-excluded-not-hoisted@file:playground/optimize-deps/excluded-not-hoisted':
+    resolution: {directory: playground/optimize-deps/excluded-not-hoisted, type: directory}
 
   '@vitejs/test-external-cjs@file:playground/ssr-noexternal/external-cjs':
     resolution: {directory: playground/ssr-noexternal/external-cjs, type: directory}
@@ -10412,6 +10429,10 @@ snapshots:
 
   '@vitejs/test-dep-esm-external@file:playground/optimize-deps/dep-esm-external': {}
 
+  '@vitejs/test-dep-importing-excluded@file:playground/optimize-deps/dep-importing-excluded':
+    dependencies:
+      '@vitejs/test-excluded-not-hoisted': file:playground/optimize-deps/excluded-not-hoisted
+
   '@vitejs/test-dep-including-a@file:playground/preload/dep-including-a':
     dependencies:
       '@vitejs/test-dep-a': file:playground/preload/dep-a
@@ -10497,6 +10518,8 @@ snapshots:
   '@vitejs/test-dep-with-plus-subpath@file:playground/optimize-deps/dep-with-plus-subpath': {}
 
   '@vitejs/test-entries@file:playground/ssr-resolve/entries': {}
+
+  '@vitejs/test-excluded-not-hoisted@file:playground/optimize-deps/excluded-not-hoisted': {}
 
   '@vitejs/test-external-cjs@file:playground/ssr-noexternal/external-cjs': {}
 

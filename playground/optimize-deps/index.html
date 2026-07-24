@@ -108,6 +108,9 @@
 <h2>Nested include</h2>
 <div>Module path: <span class="nested-include"></span></div>
 
+<h2>Excluded dep resolved from importer</h2>
+<div>Should show *A* *B*: <span class="excluded-not-hoisted"></span></div>
+
 <h2>Alias with colon</h2>
 <div>URL: <span class="url"></span></div>
 
@@ -217,6 +220,10 @@
 
   import { nestedInclude } from '@vitejs/test-nested-exclude'
   text('.nested-include', nestedInclude)
+
+  import { msgA } from '@vitejs/test-dep-importing-excluded'
+  import { msgB } from '@vitejs/test-dep-importing-excluded/second'
+  text('.excluded-not-hoisted', msgA + ' ' + msgB)
 
   import { parse } from 'node:url'
   text('.url', parse('https://vite.dev').hostname)
