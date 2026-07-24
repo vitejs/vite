@@ -30,6 +30,9 @@ document
   .querySelector('.modules-treeshake')
   .classList.add(treeshakeMod()['treeshake-module-a'])
 
+// imported only for its side effects: its global rule must survive the build (#19003)
+import './treeshake-module-side-effect.module.css'
+
 import composesPathResolvingMod from './composes-path-resolving.module.css'
 document
   .querySelector('.path-resolved-modules-css')

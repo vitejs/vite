@@ -280,9 +280,21 @@ export const isDirectCSSRequest = (request: string): boolean =>
 export const isDirectRequest = (request: string): boolean =>
   directRequestRE.test(request)
 
+interface CSSModuleData {
+  exports: Record<string, string>
+  /**
+   * Whether every rule in the module is scoped to its exports. A pure module
+   * produces no output once its exports are unused, so it can be tree-shaken.
+   * An impure module has a global side effect (`:global`, an element selector,
+   * `@font-face`, ...) that must be preserved even when its exports are unused.
+   * See #19003.
+   */
+  pure: boolean
+}
+
 const cssModulesCache = new WeakMap<
   ResolvedConfig,
-  Map<string, Record<string, string>>
+  Map<string, CSSModuleData>
 >()
 
 export const removedPureCssFilesCache: WeakMap<
@@ -309,7 +321,7 @@ const cssUrlAssetRE = /__VITE_CSS_URL__([\da-f]+)__/g
  */
 export function cssPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
-  let moduleCache: Map<string, Record<string, string>>
+  let moduleCache: Map<string, CSSModuleData>
 
   const idResolver = createBackCompatIdResolver(config, {
     preferRelative: true,
@@ -331,7 +343,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
     buildStart() {
       // Ensure a new cache for every build (i.e. rebuilding in watch mode)
-      moduleCache = new Map<string, Record<string, string>>()
+      moduleCache = new Map<string, CSSModuleData>()
       cssModulesCache.set(config, moduleCache)
 
       removedPureCssFilesCache.set(config, new Map<string, RenderedChunk>())
@@ -442,6 +454,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         const {
           code: css,
           modules,
+          pure,
           deps,
           map,
         } = await compileCSS(
@@ -452,7 +465,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           urlResolver,
         )
         if (modules) {
-          moduleCache.set(id, modules)
+          moduleCache.set(id, { exports: modules, pure: pure ?? false })
         }
 
         if (deps) {
@@ -577,7 +590,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
 
         const inlined = inlineRE.test(id)
-        const modules = cssModulesCache.get(config)!.get(id)
+        const cssModule = cssModulesCache.get(config)!.get(id)
+        const modules = cssModule?.exports
 
         // #6984, #7552
         // `foo.module.css` => modulesCode
@@ -654,9 +668,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return {
           code,
           map: { mappings: '' },
-          // avoid the css module from being tree-shaken so that we can retrieve
-          // it in renderChunk()
-          moduleSideEffects: modulesCode || inlined ? false : 'no-treeshake',
+          // Allow tree-shaking the css module only when it's "pure" (every rule
+          // is scoped to its exports); an impure css module has global side
+          // effects that must be preserved even when its exports are unused
+          // (#19003). Everything else is kept via 'no-treeshake' so the css can
+          // be retrieved in renderChunk().
+          moduleSideEffects:
+            (modulesCode && cssModule?.pure) || inlined
+              ? false
+              : 'no-treeshake',
           moduleType: 'js',
         }
       },
@@ -1502,6 +1522,7 @@ async function compileCSS(
   code: string
   map?: SourceMapInput
   modules?: Record<string, string>
+  pure?: boolean
   deps?: Set<string>
 }> {
   const { config } = environment
@@ -1569,6 +1590,84 @@ async function compileCSS(
   }
 }
 
+// At-rules that are themselves a global side effect in a CSS module, regardless
+// of whether the module's exports are used.
+const globalCssModuleAtRuleRE =
+  /^(?:font-face|font-feature-values|font-palette-values|counter-style|property|page|viewport)$/
+// At-rules that only group other rules; their purity depends on their children.
+const groupingCssModuleAtRuleRE =
+  /^(?:media|supports|layer|container|scope|document|starting-style)$/
+const keyframesAtRuleRE = /^(?:-\w+-)?keyframes$/
+
+/**
+ * Whether a selector is scoped to one of the module's locally hashed class/id
+ * names, i.e. the rule can only match when one of the exports is used.
+ */
+function cssModuleSelectorIsScoped(
+  selector: string,
+  localNames: Set<string>,
+): boolean {
+  // drop attribute selectors and string literals so class/id-looking tokens
+  // inside them aren't matched
+  const cleaned = selector
+    .replace(/\[[^\]]*\]/g, ' ')
+    .replace(/(['"])(?:\\.|(?!\1).)*\1/g, ' ')
+  for (const match of cleaned.matchAll(/[.#]((?:\\.|[\w-])+)/g)) {
+    if (localNames.has(match[1])) return true
+  }
+  return false
+}
+
+/**
+ * A CSS module is "pure" when every rule is scoped to its exports, so it
+ * produces no output once its exports are unused and can be safely tree-shaken.
+ * It is "impure" when it has a global side effect (a `:global`/element/`:root`
+ * selector, an `@font-face`, global `@keyframes`, ...) that must be preserved in
+ * the build even when its exports are unused. See #19003.
+ */
+async function isPureCSSModule(
+  css: string,
+  modules: Record<string, string>,
+): Promise<boolean> {
+  const postcss = await importPostcss()
+  const localNames = new Set(
+    Object.values(modules).flatMap((value) => value.split(/\s+/)),
+  )
+  let pure = true
+  const visit = (node: PostCSS.ChildNode): void => {
+    if (!pure) return
+    if (node.type === 'rule') {
+      // keyframe steps (`from`, `to`, `50%`) are covered by their parent
+      if (
+        node.parent?.type === 'atrule' &&
+        keyframesAtRuleRE.test((node.parent as PostCSS.AtRule).name)
+      ) {
+        return
+      }
+      if (!cssModuleSelectorIsScoped(node.selector, localNames)) {
+        pure = false
+      }
+    } else if (node.type === 'atrule') {
+      const name = node.name.toLowerCase()
+      if (keyframesAtRuleRE.test(name)) {
+        // scoped keyframes are exported (their name is in localNames)
+        if (!localNames.has(node.params.trim())) pure = false
+      } else if (globalCssModuleAtRuleRE.test(name)) {
+        pure = false
+      } else if (groupingCssModuleAtRuleRE.test(name)) {
+        node.each(visit)
+      }
+    }
+  }
+  try {
+    postcss.parse(css).each(visit)
+  } catch {
+    // if the transformed CSS can't be analyzed, keep the module to be safe
+    return false
+  }
+  return pure
+}
+
 async function compilePostCSS(
   environment: PartialEnvironment,
   id: string,
@@ -1582,6 +1681,7 @@ async function compilePostCSS(
       code: string
       map?: Exclude<SourceMapInput, string>
       modules?: Record<string, string>
+      pure?: boolean
     }
   | undefined
 > {
@@ -1744,7 +1844,11 @@ async function compilePostCSS(
     environment.logger,
     devSourcemap,
   )
-  return { ...result, modules }
+  const pure =
+    modules && config.command === 'build'
+      ? await isPureCSSModule(result.code, modules)
+      : undefined
+  return { ...result, modules, pure }
 }
 
 async function transformSugarSS(
@@ -3285,6 +3389,7 @@ async function compileLightningCSS(
   code: string
   map?: string | undefined
   modules?: Record<string, string>
+  pure?: boolean
 }> {
   const { config } = environment
   const filename = removeDirectQuery(id)
@@ -3500,10 +3605,16 @@ async function compileLightningCSS(
     }
   }
 
+  const pure =
+    modules && config.command === 'build'
+      ? await isPureCSSModule(css, modules)
+      : undefined
+
   return {
     code: css,
     map: 'map' in res ? res.map?.toString() : undefined,
     modules,
+    pure,
   }
 }
 
