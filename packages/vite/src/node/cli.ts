@@ -45,6 +45,7 @@ interface GlobalCLIOptions {
   logLevel?: LogLevel
   clearScreen?: boolean
   configLoader?: 'bundle' | 'runner' | 'native'
+  profile?: boolean | string
   d?: boolean | string
   debug?: boolean | string
   f?: string
@@ -119,6 +120,7 @@ function cleanGlobalCLIOptions<Options extends GlobalCLIOptions>(
   delete ret.logLevel
   delete ret.clearScreen
   delete ret.configLoader
+  delete ret.profile
   delete ret.d
   delete ret.debug
   delete ret.f
@@ -187,6 +189,10 @@ cli
   .option(
     '--configLoader <loader>',
     `[string] use 'bundle' to bundle the config with Rolldown, or 'runner' (experimental) to process it on the fly, or 'native' (experimental) to load using the native runtime (default: bundle)`,
+  )
+  .option(
+    '--profile [name]',
+    `[boolean | string] start built-in Node.js inspector`,
   )
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
   .option('-f, --filter <filter>', `[string] filter debug logs`)
