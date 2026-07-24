@@ -55,6 +55,54 @@ interface SourceMapLike {
   sourceRoot?: string
 }
 
+/**
+ * Rewrites the sourcemap's `sources` entries so debuggers (e.g. VS Code) can
+ * resolve them:
+ *
+ * - Absolute file paths are made relative to the module's directory to give
+ *   debuggers a chance to display them meaningfully.
+ * - Non-virtual entries are encoded with {@link encodeURI} so characters like
+ *   whitespace do not break resolution. The sourcemap spec requires `sources`
+ *   entries to be URIs; a raw path containing a space (e.g. `../My Docs/x.ts`)
+ *   yields an invalid URI reference. See https://github.com/vitejs/vite/issues/17977.
+ *   `#` is escaped as well: encodeURI preserves it as a URI-reserved character,
+ *   but in a path it would be parsed as a fragment delimiter. `?` is left
+ *   untouched since sources may carry legitimate query strings.
+ */
+export function rewriteModuleSourceMapSources(
+  map: SourceMapLike,
+  file: string,
+): void {
+  if (!path.isAbsolute(file)) return
+
+  let modDirname: string | undefined
+  for (let index = 0; index < map.sources.length; index++) {
+    const sourcePath = map.sources[index]
+    if (!sourcePath) continue
+
+    let rewritten = sourcePath
+    // Rewrite sources to relative paths to give debuggers the chance
+    // to resolve and display them in a meaningful way (rather than
+    // with absolute paths).
+    if (path.isAbsolute(rewritten)) {
+      modDirname ??= path.dirname(file)
+      rewritten = path.relative(modDirname, rewritten)
+    }
+
+    // Skip virtual modules (e.g. `\0foo`, `virtual:foo`) — encoding them
+    // would corrupt the identifier the debugger uses to fetch content.
+    if (!virtualSourceRE.test(rewritten)) {
+      // encodeURI leaves `#` untouched (reserved char), but here it is a path
+      // character, not a fragment delimiter — Vite never appends fragments to
+      // module URLs. `?` must stay as-is: sources can carry real query strings
+      // (e.g. `my-worker.ts?worker_file&type=module`).
+      rewritten = encodeURI(rewritten).replace(/#/g, '%23')
+    }
+
+    map.sources[index] = rewritten
+  }
+}
+
 async function computeSourceRoute(map: SourceMapLike, file: string) {
   let sourceRoot: string | undefined
   try {
