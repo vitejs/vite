@@ -1235,6 +1235,27 @@ describe('resolveConfig', () => {
     })
   })
 
+  test('adds input to server.fs.allow by default', async () => {
+    const inputs = {
+      main: resolveInputFromRoot('src/a.ts'),
+      admin: resolveInputFromRoot('src/b.ts'),
+    }
+    const config = await resolveConfig(
+      { input: { main: 'src/a.ts', admin: 'src/b.ts' } },
+      'serve',
+    )
+
+    expect(config.server.fs.allow).toStrictEqual(
+      expect.arrayContaining(Object.values(inputs)),
+    )
+  })
+
+  test('adds the default index.html input to server.fs.allow', async () => {
+    const config = await resolveConfig({}, 'serve')
+
+    expect(config.server.fs.allow).toContain(resolveInputFromRoot('index.html'))
+  })
+
   test('reserves glob characters in input', async () => {
     const cases: { name: string; input: UserConfig['input'] }[] = [
       { name: 'wildcard', input: 'src/*.ts' },
@@ -2026,6 +2047,7 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
+      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual(['example.com'])
@@ -2037,6 +2059,7 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
+      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual([
@@ -2052,6 +2075,7 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
+      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual([
@@ -2067,6 +2091,7 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
+      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual(['example.com', 'test.com'])
@@ -2077,6 +2102,7 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: ['existing.com'] },
+      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual([
@@ -2091,6 +2117,7 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: true },
+      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toBe(true)
@@ -2103,6 +2130,7 @@ describe('resolveServerOptions', () => {
       const resolved = await resolveServerOptions(
         '/root',
         { allowedHosts: [] },
+        undefined,
         logger,
       )
       expect(resolved.allowedHosts).toEqual([])

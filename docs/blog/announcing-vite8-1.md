@@ -164,7 +164,7 @@ export default defineConfig({
   html: {
     additionalAssetSources: {
       'html-import': {
-        srcAttributes: 'src',
+        srcAttributes: ['src'],
       },
       img: {
         srcAttributes: ['data-src-dark', 'data-src-light'],

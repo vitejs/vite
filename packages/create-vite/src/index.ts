@@ -630,6 +630,12 @@ async function init() {
   // 5. Ask whether to use ESLint instead of Oxlint (React templates only)
   const isReactTemplate = template === 'react' || template === 'react-ts'
   let eslint = argEslint
+  if (!isReactTemplate && eslint) {
+    prompts.log.warn(
+      '`--eslint` is only supported for React templates and will be ignored',
+    )
+    eslint = false
+  }
   if (isReactTemplate && eslint === undefined) {
     if (interactive) {
       const eslintResult = await prompts.select({

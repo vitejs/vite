@@ -140,6 +140,12 @@ export class BundledDev {
     this._devEngine = await dev(rolldownOptions, outputOptions, {
       onHmrUpdates: (result) => {
         if (result instanceof Error) {
+          this.environment.logger.error(
+            colors.red(`✘ Build error: ${result.message}`),
+            {
+              error: result,
+            },
+          )
           // TODO: send to the specific client
           for (const client of this.clients.getAll()) {
             client.send({

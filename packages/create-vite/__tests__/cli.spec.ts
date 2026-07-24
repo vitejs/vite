@@ -227,6 +227,23 @@ test('scaffolds React template with ESLint when --eslint is passed', () => {
   expect(pkg).toContain('"lint": "eslint ."')
 })
 
+test('ignores --eslint with a warning for non-React templates', () => {
+  const { stdout, stderr } = run(
+    [projectName, '--template', 'vue', '--eslint'],
+    {
+      cwd: import.meta.dirname,
+    },
+  )
+  expect(stdout).toContain(
+    '`--eslint` is only supported for React templates and will be ignored',
+  )
+  expect(stderr).not.toContain('ENOENT')
+
+  const generatedFiles = fs.readdirSync(genPath).sort()
+  expect(templateFiles).toEqual(generatedFiles)
+  expect(fs.existsSync(path.join(genPath, 'eslint.config.js'))).toBe(false)
+})
+
 test('works with the -t alias', () => {
   const { stdout } = run(
     [
