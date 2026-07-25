@@ -156,12 +156,12 @@ describe.runIf(isBuild)('build', () => {
     // JS should reference the asset via import.meta.url, not inline it
     expect(js).not.toMatch('data:image/svg')
     expect(js).toMatch(
-      /new URL\(['"]\.\/emit-assets\.svg['"],\s*import\.meta\.url\)\.href/,
+      /new URL\(['"]\.?\/?emit-assets\.svg['"],\s*import\.meta\.url\)\.href/,
     )
 
     // CSS should reference the emitted asset with a relative URL
     expect(css).not.toMatch('data:image/svg')
-    expect(css).toMatch(/url\(['"]?\.\/emit-assets\.svg['"]?\)/)
+    expect(css).toMatch(/url\(['"]?\.?\/?emit-assets\.svg['"]?\)/)
   })
 })
 

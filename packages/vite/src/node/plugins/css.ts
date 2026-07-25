@@ -499,7 +499,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   ) => {
     const cssAssetNameDir = path.dirname(cssAssetName)
     if (!assetFileNames) {
-      return path.join(config.build.assetsDir, cssAssetNameDir)
+      // Library mode emits CSS assets at the output root by default (not under
+      // assetsDir). Resolve relative URLs from there so emitted asset references
+      // in CSS line up with the actual output layout.
+      return config.build.lib
+        ? cssAssetNameDir
+        : path.join(config.build.assetsDir, cssAssetNameDir)
     } else if (typeof assetFileNames === 'string') {
       return path.join(path.dirname(assetFileNames), cssAssetNameDir)
     } else {
