@@ -1,6 +1,6 @@
-import '@builder.io/qwik/qwikloader.js'
+import '@qwik.dev/core/qwikloader.js'
 
-import { render } from '@builder.io/qwik'
+import { render } from '@qwik.dev/core'
 import './index.css'
 import { App } from './app.tsx'
 
