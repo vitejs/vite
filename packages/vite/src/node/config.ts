@@ -391,7 +391,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    * the performance. You can use `--force` flag or manually delete the directory
    * to regenerate the cache files. The value can be either an absolute file
    * system path or a path relative to project root.
-   * Default to `.vite` when no `package.json` is detected.
+   * Default to `.vite` when neither a `package.json` nor a `node_modules` directory is detected.
    * @default 'node_modules/.vite'
    */
   cacheDir?: string
