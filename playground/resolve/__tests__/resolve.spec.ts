@@ -2,7 +2,15 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
-import { isBuild, isServe, isWindows, page, testDir, viteTestUrl } from '~utils'
+import {
+  isBuild,
+  isBundledDev,
+  isServe,
+  isWindows,
+  page,
+  testDir,
+  viteTestUrl,
+} from '~utils'
 
 test('bom import', async () => {
   expect(await page.textContent('.utf8-bom')).toMatch('[success]')
@@ -26,12 +34,15 @@ test('deep import with exports field', async () => {
   expect(await page.textContent('.exports-deep')).toMatch('[success]')
 })
 
-test('deep import with query with exports field', async () => {
-  // since it is imported with `?url` it should return a URL
-  expect(await page.textContent('.exports-deep-query')).toMatch(
-    isBuild ? /base64/ : '/exports-path/deep.json',
-  )
-})
+test.skipIf(isBundledDev)(
+  'deep import with query with exports field',
+  async () => {
+    // since it is imported with `?url` it should return a URL
+    expect(await page.textContent('.exports-deep-query')).toMatch(
+      isBuild ? /base64/ : '/exports-path/deep.json',
+    )
+  },
+)
 
 test('deep import with exports field + exposed dir', async () => {
   expect(await page.textContent('.exports-deep-exposed-dir')).toMatch(
@@ -218,12 +229,15 @@ test('Resolving from other package with imports field', async () => {
   expect(await page.textContent('.imports-pkg-slash')).toMatch('[success]')
 })
 
-test('Resolving with query with imports field', async () => {
-  // since it is imported with `?url` it should return a URL
-  expect(await page.textContent('.imports-query')).toMatch(
-    isBuild ? /base64/ : '/imports-path/query.json',
-  )
-})
+test.skipIf(isBundledDev)(
+  'Resolving with query with imports field',
+  async () => {
+    // since it is imported with `?url` it should return a URL
+    expect(await page.textContent('.imports-query')).toMatch(
+      isBuild ? /base64/ : '/imports-path/query.json',
+    )
+  },
+)
 
 test('Resolving dot-prefixed directory with imports field', async () => {
   expect(await page.textContent('.imports-dot-prefixed')).toMatch('[success]')
@@ -275,7 +289,7 @@ test.runIf(isBuild)('sideEffects field glob pattern is respected', async () => {
   expect(sideEffectValues).toStrictEqual(['success'])
 })
 
-describe.runIf(isServe)('HEAD request handling', () => {
+describe.runIf(isServe && !isBundledDev)('HEAD request handling', () => {
   test('HEAD request to JS file returns correct Content-Type', async () => {
     const response = await fetch(new URL('/absolute.js', viteTestUrl), {
       method: 'HEAD',

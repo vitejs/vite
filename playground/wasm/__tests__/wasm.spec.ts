@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { isBuild, page } from '~utils'
+import { isBuild, isBundledDev, page } from '~utils'
 
 test('should work when inlined', async () => {
   await page.click('.inline-wasm .run')
@@ -22,7 +22,7 @@ test('init function returns WebAssembly.Instance', async () => {
     .toMatch('true')
 })
 
-test('?url', async () => {
+test.skipIf(isBundledDev)('?url', async () => {
   expect(await page.textContent('.url')).toMatch(
     isBuild ? 'data:application/wasm' : '/light.wasm',
   )

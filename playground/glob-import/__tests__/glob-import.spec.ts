@@ -6,6 +6,7 @@ import {
   editFile,
   findAssetFile,
   isBuild,
+  isBundledDev,
   page,
   removeFile,
 } from '~utils'
@@ -132,7 +133,7 @@ test('import glob in package', async () => {
 })
 
 if (!isBuild) {
-  test('hmr for adding/removing files', async () => {
+  test.skipIf(isBundledDev)('hmr for adding/removing files', async () => {
     const resultElement = page.locator('.result')
 
     addFile('root/dir/a.js', '')
@@ -197,43 +198,49 @@ if (!isBuild) {
     expect(response.status()).toBe(-1)
   })
 
-  test('hmr for adding/removing files in package', async () => {
-    const resultElement = page.locator('.in-package')
+  test.skipIf(isBundledDev)(
+    'hmr for adding/removing files in package',
+    async () => {
+      const resultElement = page.locator('.in-package')
 
-    addFile('root/pkg-pages/bar.js', '// empty')
-    await expect
-      .poll(async () => JSON.parse(await resultElement.textContent()))
-      .toStrictEqual(['/pkg-pages/foo.js', '/pkg-pages/bar.js'].sort())
+      addFile('root/pkg-pages/bar.js', '// empty')
+      await expect
+        .poll(async () => JSON.parse(await resultElement.textContent()))
+        .toStrictEqual(['/pkg-pages/foo.js', '/pkg-pages/bar.js'].sort())
 
-    removeFile('root/pkg-pages/bar.js')
-    await expect
-      .poll(async () => JSON.parse(await resultElement.textContent()))
-      .toStrictEqual(['/pkg-pages/foo.js'])
-  })
+      removeFile('root/pkg-pages/bar.js')
+      await expect
+        .poll(async () => JSON.parse(await resultElement.textContent()))
+        .toStrictEqual(['/pkg-pages/foo.js'])
+    },
+  )
 
-  test('hmr for adding/removing files with array patterns and exclusions', async () => {
-    const resultElement = page.locator('.array-result')
-    await expect
-      .poll(async () => JSON.parse(await resultElement.textContent()))
-      .toStrictEqual({
-        './array-test-dir/included.js': 'included',
-      })
+  test.skipIf(isBundledDev)(
+    'hmr for adding/removing files with array patterns and exclusions',
+    async () => {
+      const resultElement = page.locator('.array-result')
+      await expect
+        .poll(async () => JSON.parse(await resultElement.textContent()))
+        .toStrictEqual({
+          './array-test-dir/included.js': 'included',
+        })
 
-    addFile('root/array-test-dir/new-file.js', 'export default "new"')
-    await expect
-      .poll(async () => JSON.parse(await resultElement.textContent()))
-      .toStrictEqual({
-        './array-test-dir/included.js': 'included',
-        './array-test-dir/new-file.js': 'new',
-      })
+      addFile('root/array-test-dir/new-file.js', 'export default "new"')
+      await expect
+        .poll(async () => JSON.parse(await resultElement.textContent()))
+        .toStrictEqual({
+          './array-test-dir/included.js': 'included',
+          './array-test-dir/new-file.js': 'new',
+        })
 
-    removeFile('root/array-test-dir/new-file.js')
-    await expect
-      .poll(async () => JSON.parse(await resultElement.textContent()))
-      .toStrictEqual({
-        './array-test-dir/included.js': 'included',
-      })
-  })
+      removeFile('root/array-test-dir/new-file.js')
+      await expect
+        .poll(async () => JSON.parse(await resultElement.textContent()))
+        .toStrictEqual({
+          './array-test-dir/included.js': 'included',
+        })
+    },
+  )
 }
 
 test('follow symlinks', async () => {

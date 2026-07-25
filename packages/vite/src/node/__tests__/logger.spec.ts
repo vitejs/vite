@@ -55,4 +55,13 @@ describe('printServerUrls', () => {
     })
     expect(messages).toMatchSnapshot()
   })
+
+  test('appends interface name for a single explicit host URL', () => {
+    const messages = collectServerUrls({
+      local: [],
+      network: ['http://192.168.1.10:5173/'],
+      networkInterfaceNames: ['eth0'],
+    })
+    expect(messages).toMatchSnapshot()
+  })
 })

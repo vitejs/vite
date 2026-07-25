@@ -538,6 +538,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           minify: resolveLegacyOutputMinify(
             config.build.minify,
             supportsLegacyOxcMinification,
+            // Don't use newer syntax for legacy chunks
+            'es2015',
           ),
         }
       }

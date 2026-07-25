@@ -619,6 +619,14 @@ export interface ExperimentalOptions {
    *
    * This is highly experimental.
    *
+   * HMR semantics under full bundle mode differ from the middleware-based dev server
+   * in two ways (boundaries are computed in the browser from runtime state, not
+   * statically on the server):
+   *
+   * - Acceptance counts only when it executed: an `import.meta.hot.accept()` that
+   *   is in a dead branch does not suppress the update and falls back to a full reload.
+   * - `hot.invalidate()` is handled fully client-side.
+   *
    * @experimental
    * @default false
    */
@@ -1857,7 +1865,13 @@ export async function resolveConfig(
         )
       : ''
 
-  const server = await resolveServerOptions(resolvedRoot, config.server, logger)
+  const input = resolveInput(config.input, resolvedRoot)
+  const server = await resolveServerOptions(
+    resolvedRoot,
+    config.server,
+    input,
+    logger,
+  )
 
   const builder = resolveBuilderOptions(config.builder)
 
@@ -2101,7 +2115,7 @@ export async function resolveConfig(
 
     ssr,
 
-    input: resolveInput(config.input, resolvedRoot),
+    input,
     optimizeDeps: backwardCompatibleOptimizeDeps,
     resolve: resolvedDefaultResolve,
     dev: resolvedDevEnvironmentOptions,
@@ -2485,10 +2499,7 @@ async function bundleAndLoadConfigFile(
     isESM,
   )
 
-  if (
-    bundled.nativeIncompatibilities.length > 0 &&
-    !process.env.VITE_CONFIG_NATIVE_IGNORE_WARNING
-  ) {
+  if (bundled.nativeIncompatibilities.length > 0) {
     const logger = createLogger(logLevel, { customLogger })
     logger.warn(
       formatNativeConfigIncompatWarning(
@@ -2548,7 +2559,8 @@ async function bundleConfigFile(
     // this also aligns with other config loader behaviors
     tsconfig: false,
     plugins: [
-      createNativeConfigCompatPlugin(nativeIncompatibilities),
+      !process.env.VITE_CONFIG_NATIVE_IGNORE_WARNING &&
+        createNativeConfigCompatPlugin(nativeIncompatibilities),
       {
         name: 'externalize-deps',
         resolveId: {

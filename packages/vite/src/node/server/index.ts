@@ -14,7 +14,7 @@ import chokidar from 'chokidar'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import { determineAgent } from '@vercel/detect-agent'
 import { disableCache } from '@voidzero-dev/vite-task-client'
-import type { SourceMap } from 'rolldown'
+import type { InputOption, SourceMap } from 'rolldown'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
 import type { Connect } from '#dep-types/connect'
@@ -1214,6 +1214,7 @@ const RESERVED_ALLOWED_HOSTS_CHARACTERS_RE = /[\\"']/
 export async function resolveServerOptions(
   root: string,
   raw: ServerOptions | undefined,
+  input: InputOption | undefined,
   logger: Logger,
 ): Promise<ResolvedServerOptions> {
   const _server = mergeWithDefaults(
@@ -1243,6 +1244,7 @@ export async function resolveServerOptions(
   }
 
   let allowDirs = server.fs.allow
+  allowDirs.push(...getInputPaths(root, input))
 
   const cwd = searchForPackageRoot(root)
   if (process.versions.pnp) {
@@ -1341,6 +1343,12 @@ export async function resolveServerOptions(
   }
 
   return server
+}
+
+function getInputPaths(root: string, input: ResolvedConfig['input']): string[] {
+  if (input == null) return [path.resolve(root, 'index.html')]
+  if (typeof input === 'string') return [input]
+  return Array.isArray(input) ? input : Object.values(input)
 }
 
 async function restartServer(server: ViteDevServer) {

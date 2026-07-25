@@ -1235,6 +1235,27 @@ describe('resolveConfig', () => {
     })
   })
 
+  test('adds input to server.fs.allow by default', async () => {
+    const inputs = {
+      main: resolveInputFromRoot('src/a.ts'),
+      admin: resolveInputFromRoot('src/b.ts'),
+    }
+    const config = await resolveConfig(
+      { input: { main: 'src/a.ts', admin: 'src/b.ts' } },
+      'serve',
+    )
+
+    expect(config.server.fs.allow).toStrictEqual(
+      expect.arrayContaining(Object.values(inputs)),
+    )
+  })
+
+  test('adds the default index.html input to server.fs.allow', async () => {
+    const config = await resolveConfig({}, 'serve')
+
+    expect(config.server.fs.allow).toContain(resolveInputFromRoot('index.html'))
+  })
+
   test('reserves glob characters in input', async () => {
     const cases: { name: string; input: UserConfig['input'] }[] = [
       { name: 'wildcard', input: 'src/*.ts' },
@@ -1917,6 +1938,17 @@ describe('loadConfigFromFile', () => {
       `)
   })
 
+  test('cjs module vars are supported in esm', async () => {
+    const { config } = (await loadConfigFromFile(
+      {} as any,
+      path.resolve(fixtures, './cjs-module-vars-in-esm/vite.config.ts'),
+      path.resolve(fixtures, './cjs-module-vars-in-esm'),
+    ))!
+    const c = config as any
+    expect(c.dirname).toContain('cjs-module-vars-in-esm')
+    expect(c.filename).toContain('vite.config.ts')
+  })
+
   test('import.meta properties are supported', async () => {
     const { config } = (await loadConfigFromFile(
       {} as any,
@@ -2015,6 +2047,7 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
+      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual(['example.com'])
@@ -2026,6 +2059,7 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
+      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual([
@@ -2041,6 +2075,7 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
+      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual([
@@ -2056,6 +2091,7 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
+      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual(['example.com', 'test.com'])
@@ -2066,6 +2102,7 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: ['existing.com'] },
+      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual([
@@ -2080,6 +2117,7 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: true },
+      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toBe(true)
@@ -2092,6 +2130,7 @@ describe('resolveServerOptions', () => {
       const resolved = await resolveServerOptions(
         '/root',
         { allowedHosts: [] },
+        undefined,
         logger,
       )
       expect(resolved.allowedHosts).toEqual([])

@@ -430,6 +430,13 @@ export function isFilePathESM(
     return true
   } else if (/\.c[jt]s$/.test(filePath)) {
     return false
+  } else if (filePath.startsWith('\0')) {
+    // treat virtual modules as ESM
+    return true
+  } else if (!path.isAbsolute(filePath)) {
+    // should not rely on `process.cwd()` as that would depend on
+    // the environment and make it unreproducible
+    return false
   } else {
     // check package.json for type: "module"
     try {
@@ -452,6 +459,15 @@ export function isFilePathFormatExplicit(
 ): boolean {
   if (/\.[mc][jt]s$/.test(filePath)) {
     return true
+  }
+  if (filePath.startsWith('\0')) {
+    // treat virtual modules as ESM
+    return true
+  }
+  if (!path.isAbsolute(filePath)) {
+    // should not rely on `process.cwd()` as that would depend on
+    // the environment and make it unreproducible
+    return false
   }
   try {
     const pkg = findNearestPackageData(path.dirname(filePath), packageCache)
@@ -1066,7 +1082,20 @@ export function resolveServerUrls(
       local.push(address)
     } else {
       network.push(address)
-      networkInterfaceNames.push(undefined)
+      // Look up the interface name for the explicit host IP
+      let interfaceName: string | undefined
+      if (hostname.host) {
+        const interfaces = os.networkInterfaces()
+        outer: for (const [name, nInterface] of Object.entries(interfaces)) {
+          for (const detail of nInterface ?? []) {
+            if (detail.address === hostname.host) {
+              interfaceName = name
+              break outer
+            }
+          }
+        }
+      }
+      networkInterfaceNames.push(interfaceName)
     }
   } else {
     Object.entries(os.networkInterfaces()).forEach(([name, nInterface]) => {
