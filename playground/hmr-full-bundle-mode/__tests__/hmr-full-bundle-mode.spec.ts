@@ -33,11 +33,11 @@ if (isBuild) {
       .poll(() => page.textContent('.worker-query'))
       .toBe('worker-query')
     await expect.poll(() => page.textContent('.worker-url')).toBe('worker-url')
-    expect(serverLogs.join('\n')).not.toContain('page reload')
   })
 
   // BUNDLED -> GENERATE_HMR_PATCH -> BUNDLING -> BUNDLE_ERROR -> BUNDLING -> BUNDLED
   test('handle bundle error', async () => {
+    const lastServerLogIndex = serverLogs.length
     editFile('main.js', (code) =>
       code.replace("text('.app', 'hello')", "text('.app', 'hello'); text("),
     )
@@ -47,6 +47,9 @@ if (isBuild) {
     )
     await expect.poll(() => page.isVisible('vite-error-overlay')).toBe(false)
     await expect.poll(() => page.textContent('.app')).toBe('hello')
+    const logs = serverLogs.slice(lastServerLogIndex).join('\n')
+    expect(logs).toContain('page reload')
+    expect(logs).not.toContain('hmr update')
   })
 
   // BUNDLED -> GENERATE_HMR_PATCH -> BUNDLING -> BUNDLED

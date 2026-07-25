@@ -73,9 +73,9 @@ export class BundledDev {
   })
 
   private fullReloadPending = false
+  private lastBuildErrored = false
 
   private lastBuildError: Error | null = null
-  private initialBuildHadError = false
 
   memoryFiles: MemoryFiles = new MemoryFiles()
 
@@ -147,6 +147,7 @@ export class BundledDev {
               error: result,
             },
           )
+          this.lastBuildErrored = true
           // TODO: send to the specific client
           for (const client of this.clients.getAll()) {
             client.send({
@@ -158,6 +159,16 @@ export class BundledDev {
         }
         const { updates, changedFiles } = result
         if (changedFiles.length === 0) {
+          return
+        }
+        // When recovering from a build error, an HMR patch is not enough to
+        // restore a consistent bundle. Wait for the full rebuild and trigger a
+        // page reload instead of sending individual HMR updates.
+        if (this.lastBuildErrored) {
+          this.lastBuildErrored = false
+          this.devEngine.ensureLatestBuildOutput().then(() => {
+            this.debouncedFullReload()
+          })
           return
         }
         if (updates.every((update) => update.update.type === 'Noop')) {
@@ -179,9 +190,7 @@ export class BundledDev {
               error: result,
             },
           )
-          if (!this.initialBuildCompleted) {
-            this.initialBuildHadError = true
-          }
+          this.lastBuildErrored = true
           this.lastBuildError = result
           this.fullReloadPending = false
           this.environment.hot.send({
@@ -219,12 +228,6 @@ export class BundledDev {
     this.waitForInitialBuildFinish().then(() => {
       if (this._closed) return
       debug?.('INITIAL: build done')
-      if (this.initialBuildHadError) {
-        this.environment.logger.info(colors.green(`page reload`), {
-          timestamp: true,
-        })
-        this.initialBuildHadError = false
-      }
       this.initialBuildCompleted = true
       if (!this.lastBuildError) {
         this.environment.hot.send({
@@ -241,11 +244,13 @@ export class BundledDev {
     await this.devEngine.ensureCurrentBuildFinish()
     if (this._closed) return
 
-    while (this.memoryFiles.size === 0) {
+    let state = await this.devEngine.getBundleState()
+    while (this.memoryFiles.size === 0 && !state.lastBuildErrored) {
       await setTimeout(10)
       if (this._closed) return
       await this.devEngine.ensureCurrentBuildFinish()
       if (this._closed) return
+      state = await this.devEngine.getBundleState()
     }
   }
 
@@ -260,6 +265,7 @@ export class BundledDev {
       bundleState.lastErrorStage === 'Hmr'
     ) {
       debug?.(`TRIGGER: access after HMR-stage failure, forcing full rebuild`)
+      this.lastBuildErrored = false
 
       this.devEngine.triggerFullBuild()
       this.devEngine.ensureLatestBuildOutput().then(() => {
