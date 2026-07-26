@@ -231,6 +231,40 @@ if (isBuild) {
     await expect.poll(() => page.textContent('.worker-url')).toBe('worker-url')
   })
 
+  // The importer self-accepts, so this update is delivered as an HMR patch.
+  // A patch is generated without a generate phase, so the worker's files have
+  // to reach the server on their own; otherwise the patch ships a URL for a
+  // file that was never emitted and the browser gets the fallback HTML back.
+  test('worker updated through an HMR patch is served', async () => {
+    const original = readFile('worker-accept-src.js')
+    onTestFinished(async () => {
+      addFile('worker-accept-src.js', original)
+      await expect
+        .poll(() => page.textContent('.worker-accept'))
+        .toBe('worker-accept')
+    })
+
+    await expect
+      .poll(() => page.textContent('.worker-accept'))
+      .toBe('worker-accept')
+
+    // survives an HMR patch, but not a page reload
+    await page.evaluate(() => {
+      ;(window as any).__workerAcceptKeptAlive = true
+    })
+
+    editFile('worker-accept-src.js', (code) =>
+      code.replace("'worker-accept'", "'worker-accept-updated'"),
+    )
+    await expect
+      .poll(() => page.textContent('.worker-accept'))
+      .toBe('worker-accept-updated')
+
+    expect(
+      await page.evaluate(() => (window as any).__workerAcceptKeptAlive),
+    ).toBe(true)
+  })
+
   test('lazy bundling', async () => {
     await page.click('#load-dynamic')
     await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')

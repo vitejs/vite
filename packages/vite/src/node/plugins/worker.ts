@@ -1,6 +1,6 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { RolldownOutput, RollupError } from 'rolldown'
+import type { PluginContext, RolldownOutput, RollupError } from 'rolldown'
 import colors from 'picocolors'
 import { type ImportSpecifier, init, parse } from 'es-module-lexer'
 import { viteWebWorkerPostPlugin as nativeWebWorkerPostPlugin } from 'rolldown/experimental'
@@ -134,6 +134,16 @@ class WorkerOutputCache {
 
   getAssets() {
     return this.assets.values()
+  }
+
+  /** The entry and every asset `bundle` pulled in, in emit order. */
+  getAssetsOfBundle(bundle: WorkerBundle): WorkerBundleAsset[] {
+    const assets: WorkerBundleAsset[] = []
+    for (const fileName of [bundle.entryFilename, ...bundle.referencedAssets]) {
+      const asset = this.assets.get(fileName)
+      if (asset) assets.push(asset)
+    }
+    return assets
   }
 
   getEntryFilenameFromHash(hash: string) {
@@ -325,6 +335,41 @@ export async function workerFileToUrl(
   return bundle
 }
 
+/**
+ * Hand a bundled worker's files to the bundler while still in `load`/`transform`.
+ *
+ * Worker bytes normally reach the output through this plugin's `generateBundle`,
+ * but an HMR patch is generated without a generate phase, so a worker whose URL
+ * the patch already carries would have no file behind it. Emitting here instead
+ * puts the bytes on the same delivery path `vite:asset` uses, which the dev
+ * server drains before the patch reaches the browser.
+ *
+ * Only the main build emits. A worker sub-bundle leaves its files in the shared
+ * cache for the parent build to pick up, matching the `isWorker` bail in
+ * `generateBundle`.
+ *
+ * Emitting the same worker again is harmless: an explicit `fileName` keys the
+ * emitted file, so a repeat is the same entry rather than a second one, and the
+ * bundler delivers it once. `generateBundle` then finds the file already in the
+ * bundle and skips it.
+ */
+export function emitWorkerAssetsForBundledDev(
+  pluginContext: { emitFile: PluginContext['emitFile'] },
+  config: ResolvedConfig,
+  bundle: WorkerBundle,
+): void {
+  if (config.isWorker) return
+
+  const workerOutput = workerOutputCaches.get(config.mainConfig || config)!
+  for (const asset of workerOutput.getAssetsOfBundle(bundle)) {
+    pluginContext.emitFile({
+      type: 'asset',
+      fileName: asset.fileName,
+      source: asset.source,
+    })
+  }
+}
+
 export function webWorkerPostPlugin(_config: ResolvedConfig): Plugin {
   return {
     name: 'vite:worker-post',
@@ -485,6 +530,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               this.environment.config.command === 'serve' &&
               this.environment.config.isBundled
             ) {
+              emitWorkerAssetsForBundledDev(this, config, result)
               url = toOutputFilePathInJSForBundledDev(
                 this.environment,
                 result.entryFilename,
