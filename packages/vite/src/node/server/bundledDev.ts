@@ -73,7 +73,7 @@ export class BundledDev {
   })
 
   private fullReloadPending = false
-  private lastBuildErrored = false
+  private pendingReloadAfterError = false
 
   private lastBuildError: Error | null = null
 
@@ -147,7 +147,7 @@ export class BundledDev {
               error: result,
             },
           )
-          this.lastBuildErrored = true
+          this.pendingReloadAfterError = true
           // TODO: send to the specific client
           for (const client of this.clients.getAll()) {
             client.send({
@@ -164,8 +164,8 @@ export class BundledDev {
         // When recovering from a build error, an HMR patch is not enough to
         // restore a consistent bundle. Wait for the full rebuild and trigger a
         // page reload instead of sending individual HMR updates.
-        if (this.lastBuildErrored) {
-          this.lastBuildErrored = false
+        if (this.pendingReloadAfterError) {
+          this.pendingReloadAfterError = false
           this.devEngine.ensureLatestBuildOutput().then(() => {
             this.debouncedFullReload()
           })
@@ -190,7 +190,7 @@ export class BundledDev {
               error: result,
             },
           )
-          this.lastBuildErrored = true
+          this.pendingReloadAfterError = true
           this.lastBuildError = result
           this.fullReloadPending = false
           this.environment.hot.send({
@@ -265,7 +265,7 @@ export class BundledDev {
       bundleState.lastErrorStage === 'Hmr'
     ) {
       debug?.(`TRIGGER: access after HMR-stage failure, forcing full rebuild`)
-      this.lastBuildErrored = false
+      this.pendingReloadAfterError = false
 
       this.devEngine.triggerFullBuild()
       this.devEngine.ensureLatestBuildOutput().then(() => {
