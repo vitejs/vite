@@ -21,6 +21,13 @@ export interface HMRLogger {
   debug(...msg: unknown[]): void
 }
 
+export interface HMRClientOptions {
+  onUpdateError?: (
+    error: Error,
+    path: string | string[],
+  ) => void | Promise<void>
+}
+
 export class HMRContext implements ViteHotContext {
   private newListeners: CustomListenersMap
 
@@ -182,6 +189,7 @@ export class HMRClient {
     private transport: NormalizedModuleRunnerTransport,
     // This allows implementing reloading via different methods depending on the environment
     private importUpdatedModule: (update: Update) => Promise<ModuleNamespace>,
+    private options: HMRClientOptions = {},
   ) {}
 
   public async notifyListeners<T extends string>(
@@ -285,7 +293,9 @@ export class HMRClient {
       try {
         fetchedModule = await this.importUpdatedModule(update)
       } catch (e) {
-        this.warnFailedUpdate(e, acceptedPath)
+        const error = e instanceof Error ? e : new Error(String(e))
+        this.warnFailedUpdate(error, acceptedPath)
+        await this.options.onUpdateError?.(error, acceptedPath)
       }
     }
 

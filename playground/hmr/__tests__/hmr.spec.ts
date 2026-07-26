@@ -897,6 +897,26 @@ if (!isBuild) {
     }, [/500/, /connected/])
   })
 
+  test('shows an error overlay when an HMR update fails to import a module', async () => {
+    const file = 'importing-updated/b.js'
+    const existingImport = "import a from './a.js'"
+    const invalidImport = "import { missing } from './a.js'"
+
+    await page.goto(viteTestUrl)
+    expect(await page.isVisible('vite-error-overlay')).toBe(false)
+
+    editFile(file, (code) => code.replace(existingImport, invalidImport))
+    const overlay = await page.waitForSelector('vite-error-overlay')
+    const message = await overlay.$$eval(
+      '.message-body',
+      (elements) => elements[0].textContent,
+    )
+    expect(message).toContain('does not provide an export')
+
+    editFile(file, (code) => code.replace(invalidImport, existingImport))
+    await expect.poll(() => page.isVisible('vite-error-overlay')).toBe(false)
+  })
+
   test('should hmr when file is deleted and restored', async () => {
     await page.goto(viteTestUrl)
 

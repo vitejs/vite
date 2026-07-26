@@ -198,10 +198,28 @@ const hmrClient = new HMRClient(
         }
         return await importPromise
       },
+  {
+    onUpdateError: handleHMRUpdateError,
+  },
 )
 transport.connect!(createHMRHandler(handleMessage))
 
 setupForwardConsoleHandler(transport, forwardConsole)
+
+async function handleHMRUpdateError(error: Error, path: string | string[]) {
+  const payload: ErrorPayload = {
+    type: 'error',
+    err: {
+      message: error.message,
+      stack: error.stack ?? '',
+      id: Array.isArray(path) ? path.join(', ') : path,
+    },
+  }
+  await hmrClient.notifyListeners('vite:error', payload)
+  if (hasDocument && enableOverlay) {
+    createErrorOverlay(payload.err)
+  }
+}
 
 async function handleMessage(payload: HotPayload) {
   switch (payload.type) {
