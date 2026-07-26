@@ -287,6 +287,24 @@ export function isFileInTargetPath(
 }
 
 const windowsDriveRE = /^[A-Z]:/i
+// A Windows 8.3 "short name" segment looks like `NAME~1` or `NAME~1.EXT`: at
+// most 6 non-`~`/`.` characters, a `~`, then digits, within a single path
+// segment. Matching only this shape (rather than any `~`) still blocks the
+// short-name aliasing bypass while allowing filenames that merely contain a
+// tilde, e.g. `0~rslib-runtime.js`.
+const windowsShortNameSegmentRE = /^[^~.]{1,6}~\d+(?:\.[^~.]{0,3})?$/
+
+/**
+ * Warning: parameters are not validated, only works with normalized absolute paths
+ */
+export function looksLikeWindowsShortNamePath(filePath: string): boolean {
+  return (
+    filePath.includes('~') &&
+    filePath
+      .split('/')
+      .some((segment) => windowsShortNameSegmentRE.test(segment))
+  )
+}
 
 /**
  * Warning: parameters are not validated, only works with normalized absolute paths
@@ -299,9 +317,10 @@ export function isFileLoadingAllowed(
 
   if (!fs.strict) return true
 
-  if (isWindows && filePath.includes('~')) {
-    // `~` is used for Windows 8.3 short names, which can be used to bypass the check.
-    // While is it valid to have files with `~` in the path, we disallow it to be safe.
+  if (isWindows && looksLikeWindowsShortNamePath(filePath)) {
+    // Windows 8.3 short names (e.g. `PROGRA~1`) can alias a different long
+    // path and bypass `safeModulePaths`/`fs.allow` prefix checks, so reject
+    // paths that look like one.
     return false
   }
 
