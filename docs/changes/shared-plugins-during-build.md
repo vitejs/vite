@@ -54,7 +54,7 @@ function PerEnvironmentCountTransformedModulesPlugin() {
     },
     buildEnd() {
       console.log(this.environment.name, state.get(this.environment).count)
-    }
+    },
   }
 }
 ```
@@ -75,7 +75,7 @@ function PerEnvironmentCountTransformedModulesPlugin() {
     },
     buildEnd() {
       console.log(this.environment.name, state(this).count)
-    }
+    },
   }
 }
 ```
