@@ -330,7 +330,9 @@ function CallSiteToString(this: CallSite) {
 }
 
 function cloneCallSite(frame: CallSite) {
-  const object = {} as CallSite
+  // null prototype so assigning `constructor` below doesn't throw
+  // when user code has frozen `Object.prototype`
+  const object = Object.create(null) as CallSite
   Object.getOwnPropertyNames(Object.getPrototypeOf(frame)).forEach((name) => {
     const key = name as keyof CallSite
     // @ts-expect-error difficult to type
