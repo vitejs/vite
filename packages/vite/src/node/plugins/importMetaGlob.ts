@@ -86,11 +86,13 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
             const affirmedMatcher = picomatch(affirmed, {
               noextglob: true,
               dot: !!i.options.exhaustive,
+              nocase: !(i.options.caseSensitive ?? true),
               ignore: i.options.exhaustive ? [] : ['**/node_modules/**'],
             })
             const negatedMatcher = picomatch(negated, {
               noextglob: true,
               dot: !!i.options.exhaustive,
+              nocase: !(i.options.caseSensitive ?? true),
               ignore: i.options.exhaustive ? [] : ['**/node_modules/**'],
             })
 

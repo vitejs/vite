@@ -224,7 +224,7 @@ In a project where Vite is installed, you can use the `vite` binary in your npm 
 
 You can specify additional CLI options like `--port` or `--open`. For a full list of CLI options, run `npx vite --help` in your project.
 
-Learn more about the [Command Line Interface](./cli.md)
+Learn more about the [Command Line Interface](./cli.md).
 
 ## Using Unreleased Commits
 

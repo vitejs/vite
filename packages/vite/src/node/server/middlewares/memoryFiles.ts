@@ -6,8 +6,9 @@ import type { ViteDevServer } from '..'
 export function memoryFilesMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  const memoryFiles = server.environments.client.bundledDev?.memoryFiles
-  if (!memoryFiles) {
+  const bundledDev = server.environments.client.bundledDev
+  const memoryFiles = bundledDev?.memoryFiles
+  if (!bundledDev || !memoryFiles) {
     throw new Error('memoryFilesMiddleware can only be used for fullBundleMode')
   }
   const headers = server.config.server.headers
@@ -18,7 +19,13 @@ export function memoryFilesMiddleware(
       return next()
     }
 
-    const pathname = decodeURIComponent(cleanedUrl)
+    let pathname
+    try {
+      pathname = decodeURIComponent(cleanedUrl)
+    } catch {
+      // ignore malformed URI
+      return next()
+    }
     const filePath = pathname.slice(1) // remove first /
 
     const file = memoryFiles.get(filePath)
@@ -41,6 +48,7 @@ export function memoryFilesMiddleware(
         res.setHeader(name, headers[name]!)
       }
 
+      res.on('finish', () => bundledDev.markPayloadDelivered(filePath))
       return res.end(file.source)
     }
     next()

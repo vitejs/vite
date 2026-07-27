@@ -1,7 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
-import { describe, expect, test } from 'vitest'
+import os, { type NetworkInterfaceInfoIPv4 } from 'node:os'
+import { describe, expect, test, vi, onTestFinished } from 'vitest'
 import { fileURLToPath } from 'mlly'
 import {
   asyncFlatten,
@@ -335,7 +336,9 @@ foo()
       expect('\n' + value + '\n').toMatchSnapshot()
     } catch (e) {
       // don't include this function in stacktrace
-      Error.captureStackTrace(e, expectSnapshot)
+      if (e instanceof Error) {
+        Error.captureStackTrace(e, expectSnapshot)
+      }
       throw e
     }
   }
@@ -1095,5 +1098,122 @@ describe('resolveServerUrls', () => {
     )
 
     expect(result.local).toContain('https://localhost:3000/')
+  })
+
+  test('captures interface names aligned with the network URLs', () => {
+    const mockServer = createMockServer('IPv4', '0.0.0.0')
+    const networkInterfacesSpy = vi
+      .spyOn(os, 'networkInterfaces')
+      .mockReturnValue({
+        lo: [
+          { address: '127.0.0.1', family: 'IPv4' } as NetworkInterfaceInfoIPv4,
+        ],
+        eth0: [
+          {
+            address: '192.168.1.10',
+            family: 'IPv4',
+          } as NetworkInterfaceInfoIPv4,
+        ],
+        wlan0: [
+          { address: '10.0.0.5', family: 'IPv4' } as NetworkInterfaceInfoIPv4,
+        ],
+      })
+    onTestFinished(() => {
+      networkInterfacesSpy.mockRestore()
+    })
+
+    const result = resolveServerUrls(
+      mockServer,
+      { https: false } as any,
+      { host: undefined, name: 'localhost' } as any,
+      {},
+      { rawBase: '/' } as any,
+    )
+
+    expect(result.network).toEqual([
+      'http://192.168.1.10:3000/',
+      'http://10.0.0.5:3000/',
+    ])
+    expect(result.networkInterfaceNames).toStrictEqual(['eth0', 'wlan0'])
+    expect(result.networkInterfaceNames).toHaveLength(result.network.length)
+    // The loopback interface is reported as a local URL, not a network one.
+    expect(result.local).toContain('http://localhost:3000/')
+  })
+
+  test('uses an undefined interface name for an explicit network host', () => {
+    const mockServer = createMockServer('IPv4', '0.0.0.0')
+
+    const result = resolveServerUrls(
+      mockServer,
+      { https: false } as any,
+      { host: 'example.com', name: 'example.com' } as any,
+      {},
+      { rawBase: '/' } as any,
+    )
+
+    expect(result.network).toStrictEqual(['http://example.com:3000/'])
+    expect(result.networkInterfaceNames).toStrictEqual([undefined])
+  })
+
+  test('resolves interface name for an explicit host IP that matches a network interface', () => {
+    const mockServer = createMockServer('IPv4', '0.0.0.0')
+    const networkInterfacesSpy = vi
+      .spyOn(os, 'networkInterfaces')
+      .mockReturnValue({
+        lo: [
+          { address: '127.0.0.1', family: 'IPv4' } as NetworkInterfaceInfoIPv4,
+        ],
+        eth0: [
+          {
+            address: '192.168.1.10',
+            family: 'IPv4',
+          } as NetworkInterfaceInfoIPv4,
+        ],
+      })
+    onTestFinished(() => {
+      networkInterfacesSpy.mockRestore()
+    })
+
+    const result = resolveServerUrls(
+      mockServer,
+      { https: false } as any,
+      { host: '192.168.1.10', name: '192.168.1.10' } as any,
+      {},
+      { rawBase: '/' } as any,
+    )
+
+    expect(result.network).toStrictEqual(['http://192.168.1.10:3000/'])
+    expect(result.networkInterfaceNames).toStrictEqual(['eth0'])
+  })
+
+  test('uses undefined interface name when explicit host IP does not match any interface', () => {
+    const mockServer = createMockServer('IPv4', '0.0.0.0')
+    const networkInterfacesSpy = vi
+      .spyOn(os, 'networkInterfaces')
+      .mockReturnValue({
+        lo: [
+          { address: '127.0.0.1', family: 'IPv4' } as NetworkInterfaceInfoIPv4,
+        ],
+        eth0: [
+          {
+            address: '192.168.1.10',
+            family: 'IPv4',
+          } as NetworkInterfaceInfoIPv4,
+        ],
+      })
+    onTestFinished(() => {
+      networkInterfacesSpy.mockRestore()
+    })
+
+    const result = resolveServerUrls(
+      mockServer,
+      { https: false } as any,
+      { host: '10.0.0.5', name: '10.0.0.5' } as any,
+      {},
+      { rawBase: '/' } as any,
+    )
+
+    expect(result.network).toStrictEqual(['http://10.0.0.5:3000/'])
+    expect(result.networkInterfaceNames).toStrictEqual([undefined])
   })
 })

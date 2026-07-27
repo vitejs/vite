@@ -12,7 +12,7 @@ import { markdownItImageSize } from 'markdown-it-image-size'
 import { extendConfig } from '@voidzero-dev/vitepress-theme/config'
 import type { FooterLink } from '@voidzero-dev/vitepress-theme'
 import packageJson from '../../packages/vite/package.json' with { type: 'json' }
-import { buildEnd } from './buildEnd.config'
+import { buildEnd } from './buildEnd.config.ts'
 
 const viteVersion = packageJson.version
 const viteMajorVersion = +viteVersion.split('.')[0]
@@ -101,15 +101,6 @@ const config = defineConfig({
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
     ['meta', { name: 'twitter:site', content: '@vite_js' }],
     ['meta', { name: 'theme-color', content: '#646cff' }],
-    [
-      'script',
-      {
-        src: 'https://cdn.usefathom.com/script.js',
-        'data-site': 'CBDFBSLI',
-        'data-spa': 'auto',
-        defer: '',
-      },
-    ],
   ],
 
   locales: {

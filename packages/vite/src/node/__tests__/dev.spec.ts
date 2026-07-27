@@ -40,6 +40,12 @@ describe('the dev server', () => {
     server = await createServer({
       root: import.meta.dirname,
       logLevel: 'error',
+      // `server.listen()` would otherwise start a dep scan that crawls every
+      // HTML fixture under `__tests__`
+      optimizeDeps: {
+        noDiscovery: true,
+        include: [],
+      },
       server: {
         strictPort: true,
         ws: false,
@@ -63,6 +69,7 @@ describe('the dev server', () => {
     expect(urls).toStrictEqual({
       local: ['http://localhost:5013/'],
       network: [],
+      networkInterfaceNames: [],
     })
   })
 })

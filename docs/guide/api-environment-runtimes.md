@@ -26,9 +26,7 @@ function createWorkerdEnvironment(
   return mergeConfig(
     {
       resolve: {
-        conditions: [
-          /*...*/
-        ],
+        conditions: [/*...*/],
       },
       dev: {
         createEnvironment(name, config) {
@@ -251,10 +249,7 @@ interface ModuleRunnerOptions {
    * source maps are resolved for files that were not processed by Vite.
    */
   sourcemapInterceptor?:
-    | false
-    | 'node'
-    | 'prepareStackTrace'
-    | InterceptorOptions
+    false | 'node' | 'prepareStackTrace' | InterceptorOptions
   /**
    * Disable HMR or configure HMR options.
    *

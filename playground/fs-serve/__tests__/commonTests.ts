@@ -463,6 +463,14 @@ describe('cross origin', () => {
     let page2: Page
     beforeEach(async () => {
       page2 = await browser.newPage()
+      // Serve the navigation locally so the tests don't depend on reaching the
+      // public `vite.dev` site (flaky from CI runners).
+      await page2.route('http://vite.dev/**', (route) =>
+        route.fulfill({
+          contentType: 'text/html',
+          body: '<!doctype html><title>404</title>',
+        }),
+      )
       await page2.goto('http://vite.dev/404')
     })
     afterEach(async () => {

@@ -84,7 +84,7 @@ export function createDevHtmlTransformFn(
     ...normalHooks,
     ...postHooks,
     injectNonceAttributeTagHook(config),
-    postImportMapHook(),
+    postImportMapHook(config),
   ]
   const pluginContext = new BasicMinimalPluginContext(
     { ...basePluginContextMeta, watchMode: true },
@@ -465,7 +465,13 @@ export function indexHtmlMiddleware(
     // htmlFallbackMiddleware appends '.html' to URLs
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
       if (fullBundle) {
-        const pathname = decodeURIComponent(url)
+        let pathname
+        try {
+          pathname = decodeURIComponent(url)
+        } catch {
+          // ignore malformed URI
+          return next()
+        }
         const filePath = pathname.slice(1) // remove first /
 
         let file = fullBundle.memoryFiles.get(filePath)
@@ -473,15 +479,16 @@ export function indexHtmlMiddleware(
           return next()
         }
         const secFetchDest = req.headers['sec-fetch-dest']
+        const isDocumentRequest = [
+          'document',
+          'iframe',
+          'frame',
+          'fencedframe',
+          '',
+          undefined,
+        ].includes(secFetchDest)
         if (
-          [
-            'document',
-            'iframe',
-            'frame',
-            'fencedframe',
-            '',
-            undefined,
-          ].includes(secFetchDest) &&
+          isDocumentRequest &&
           ((await fullBundle.triggerBundleRegenerationIfStale()) ||
             file === undefined)
         ) {
@@ -565,6 +572,7 @@ async function generateFallbackHtml(server: ViteDevServer) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>globalThis.__vite_is_fallback_page__ = true</script>
   <script type="module">
     ${hmrRuntime.replaceAll('</script>', '<\\/script>')}
   </script>

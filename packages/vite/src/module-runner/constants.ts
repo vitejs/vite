@@ -9,4 +9,5 @@ export const ssrImportMetaKey = `__vite_ssr_import_meta__`
 export const ssrRolldownRuntimeKey = `__rolldown_runtime__`
 export const ssrRolldownRuntimeDefineMethod = `__vite_ssr_defineRuntime__`
 export const ssrRolldownRuntimeCreateHotContextMethod = `__vite_ssr_createHotContext__`
+export const ssrRolldownRuntimeModuleCacheRemovalMethod = `__vite_ssr_onModuleCacheRemoval__`
 export const ssrRolldownRuntimeTransport = `__vite_ssr_transport__`

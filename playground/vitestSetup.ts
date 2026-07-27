@@ -65,6 +65,13 @@ export const workspaceRoot = path.resolve(import.meta.dirname, '../')
 
 export const isBuild = !!process.env.VITE_TEST_BUILD
 export const isServe = !isBuild
+/**
+ * Serve mode with `experimental.bundledDev` force-enabled for every playground
+ * (`VITE_TEST_BUNDLED_DEV=1`). `isServe` stays `true` in this mode; use
+ * `test.skipIf(isBundledDev)` / `describe.skipIf(isBundledDev)` for cases that
+ * don't pass under bundled dev yet.
+ */
+export const isBundledDev = isServe && !!process.env.VITE_TEST_BUNDLED_DEV
 export const isWindows = process.platform === 'win32'
 export const viteBinPath = path.posix.join(
   workspaceRoot,
@@ -269,7 +276,13 @@ async function loadConfig(configEnv: ConfigEnv) {
     customLogger: createInMemoryLogger(serverLogs),
     plugins: [throwHtmlParseError()],
   }
-  return mergeConfig(options, config || {})
+  let merged = mergeConfig(options, config || {})
+  // applied after the merge so the playground's own config cannot turn it off —
+  // the whole point of the bundled-dev run is to force the mode everywhere
+  if (isBundledDev) {
+    merged = mergeConfig(merged, { experimental: { bundledDev: true } })
+  }
+  return merged
 }
 
 export async function startDefaultServe(): Promise<void> {
@@ -284,6 +297,20 @@ export async function startDefaultServe(): Promise<void> {
       server.config.base,
     )
     await page.goto(viteTestUrl)
+    // bundled dev serves a self-reloading fallback page until the first
+    // bundle completes; tests must not assert against that placeholder.
+    // Bounded: a playground whose first bundle fails keeps the fallback
+    // forever, and its tests are expected to handle that state themselves.
+    // hmr-full-bundle-mode is exempt — it asserts the fallback page itself.
+    if (isBundledDev && testName !== 'hmr-full-bundle-mode') {
+      await page
+        .waitForFunction(
+          () => !(globalThis as any).__vite_is_fallback_page__,
+          undefined,
+          { timeout: 15_000 },
+        )
+        .catch(() => {})
+    }
   } else {
     process.env.VITE_INLINE = 'inline-build'
     let resolvedConfig: ResolvedConfig

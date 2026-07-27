@@ -1,5 +1,9 @@
 import type { DevRuntime } from 'rolldown/experimental/runtime-types'
-import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
+import { HMRContext, type HMRLogger } from '../shared/hmr'
+import {
+  BundledDevHMRClient,
+  BundledDevHMRContext,
+} from '../shared/bundledDevHmr'
 import { cleanUrl, isPrimitive } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
 import {
@@ -27,10 +31,11 @@ import {
   ssrRolldownRuntimeCreateHotContextMethod,
   ssrRolldownRuntimeDefineMethod,
   ssrRolldownRuntimeKey,
+  ssrRolldownRuntimeModuleCacheRemovalMethod,
   ssrRolldownRuntimeTransport,
 } from './constants'
 import { hmrLogger, silentConsole } from './hmrLogger'
-import { createHMRHandlerForRunner } from './hmrHandler'
+import { createHMRHandlerForRunner, reloadEntrypoints } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
 import { ESModulesEvaluator } from './esmEvaluator'
 import { createDefaultImportMeta } from './createImportMeta'
@@ -41,7 +46,7 @@ interface ModuleRunnerDebugger {
 
 export class ModuleRunner {
   public evaluatedModules: EvaluatedModules
-  public hmrClient?: HMRClient
+  public hmrClient?: BundledDevHMRClient
 
   private readonly transport: NormalizedModuleRunnerTransport
   private readonly resetSourceMapSupport?: () => void
@@ -75,6 +80,10 @@ export class ModuleRunner {
             : (url: string) => this.ensureModuleHotContext(url)
         }
 
+        if (p === ssrRolldownRuntimeModuleCacheRemovalMethod) {
+          return (url: string) => this.hmrClient?.handleModuleCacheRemoval(url)
+        }
+
         if (p === ssrRolldownRuntimeTransport) {
           return this.closed ? undefined : this.transport
         }
@@ -105,22 +114,27 @@ export class ModuleRunner {
           : optionsHmr.logger === false
             ? silentConsole
             : optionsHmr.logger
-      this.hmrClient = new HMRClient(
+      this.hmrClient = new BundledDevHMRClient(
         resolvedHmrLogger,
         this.transport,
-        async ({ acceptedPath, url }) => {
-          if (this.rolldownDevRuntime && url) {
-            const moduleExports = await this.import(url).then(() =>
-              this.rolldownDevRuntimeProxy.loadExports(acceptedPath),
-            )
+        this.rolldownDevRuntimeProxy,
+        {
+          loadPatch: async (url) => {
+            await this.import(url)
             // don't leave the HMR patch in memory
             const patchModule = this.evaluatedModules.getModuleByUrl(url)
             if (patchModule) {
               this.evaluatedModules.removeModule(patchModule)
             }
-            return moduleExports
-          }
-          return this.import(acceptedPath)
+          },
+          beforeApply: () => 'continue',
+          // there is no page to reload — re-execute every entrypoint instead
+          pageReload: () => {
+            reloadEntrypoints(this).catch((err) => {
+              resolvedHmrLogger.error(err)
+            })
+          },
+          importUpdatedModule: ({ acceptedPath }) => this.import(acceptedPath),
         },
       )
       if (!this.transport.connect) {
@@ -151,7 +165,7 @@ export class ModuleRunner {
       fetchedModule.meta &&
       'regionId' in fetchedModule.meta &&
       fetchedModule.meta.regionId &&
-      fetchedModule.meta.regionId in this.rolldownDevRuntime.modules
+      this.rolldownDevRuntime.isExecuted(fetchedModule.meta.regionId)
     ) {
       const loadedExports = this.rolldownDevRuntime.loadExports(
         fetchedModule.meta.regionId,
@@ -502,7 +516,11 @@ export class ModuleRunner {
 
     if (!this.moduleHotContexts.has(url)) {
       this.debug?.('[module runner] creating hmr context for', url)
-      const hotContext = new HMRContext(this.hmrClient, url)
+      // in full-bundle mode `invalidate()` is resolved locally against the
+      // rolldown runtime graph instead of being sent to the server
+      const hotContext = this.rolldownDevRuntime
+        ? new BundledDevHMRContext(this.hmrClient, url)
+        : new HMRContext(this.hmrClient, url)
       this.moduleHotContexts.set(url, hotContext)
     }
     return this.moduleHotContexts.get(url)

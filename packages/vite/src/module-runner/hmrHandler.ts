@@ -47,21 +47,7 @@ export function createHMRHandlerForRunner(
 
         hmrClient.logger.debug(`program reload`)
         await hmrClient.notifyListeners('vite:beforeFullReload', payload)
-        runner.evaluatedModules.clear()
-
-        for (const url of clearEntrypointUrls) {
-          if (runner.isClosed()) break
-          try {
-            await runner.import(url)
-          } catch (err) {
-            if (runner.isClosed()) break
-            if (err.code !== ERR_OUTDATED_OPTIMIZED_DEP) {
-              hmrClient.logger.error(
-                `An error happened during full reload\n${err.message}\n${err.stack}`,
-              )
-            }
-          }
-        }
+        await reimportEntrypoints(runner, clearEntrypointUrls)
         break
       }
       case 'prune':
@@ -78,12 +64,44 @@ export function createHMRHandlerForRunner(
       }
       case 'ping': // noop
         break
+      case 'bundled-dev-update':
+        hmrClient.handlePush(payload)
+        break
       default: {
         const check: never = payload
         return check
       }
     }
   })
+}
+
+/**
+ * The module runner equivalent of a browser page reload: drop every evaluated
+ * module and run the entrypoints again.
+ */
+export function reloadEntrypoints(runner: ModuleRunner): Promise<void> {
+  return reimportEntrypoints(runner, findAllEntrypoints(runner))
+}
+
+async function reimportEntrypoints(
+  runner: ModuleRunner,
+  entrypointUrls: Set<string>,
+): Promise<void> {
+  runner.evaluatedModules.clear()
+
+  for (const url of entrypointUrls) {
+    if (runner.isClosed()) break
+    try {
+      await runner.import(url)
+    } catch (err) {
+      if (runner.isClosed()) break
+      if (err.code !== ERR_OUTDATED_OPTIMIZED_DEP) {
+        runner.hmrClient?.logger.error(
+          `An error happened during full reload\n${err.message}\n${err.stack}`,
+        )
+      }
+    }
+  }
 }
 
 function getModulesByFile(runner: ModuleRunner, file: string): string[] {

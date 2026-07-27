@@ -80,7 +80,7 @@ export interface CommonServerOptions {
    * Set to `true` to allow all methods from any origin, or configure separately
    * using an object.
    *
-   * @default false
+   * @default { origin: /^https?:\/\/(?:(?:[^:]+\.)?localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/ }
    */
   cors?: CorsOptions | boolean
   /**

@@ -14,7 +14,7 @@ import chokidar from 'chokidar'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import { determineAgent } from '@vercel/detect-agent'
 import { disableCache } from '@voidzero-dev/vite-task-client'
-import type { SourceMap } from 'rolldown'
+import type { InputOption, SourceMap } from 'rolldown'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
 import type { Connect } from '#dep-types/connect'
@@ -256,7 +256,7 @@ export interface FileSystemServeOptions {
    * This will have higher priority than `allow`.
    * picomatch patterns are supported.
    *
-   * @default ['.env', '.env.*', '*.{crt,pem}', '**\/.git/**']
+   * @default ['.env', '.env.*', '*.{crt,pem,key,p12,pfx,cer,der}', '.npmrc', '.yarnrc.yml', '**\/.git/**']
    */
   deny?: string[]
 }
@@ -468,6 +468,13 @@ export interface ViteDevServer {
 export interface ResolvedServerUrls {
   local: string[]
   network: string[]
+  /**
+   * Names of the network interface that each {@link ResolvedServerUrls.network}
+   * URL is bound to, in the same order as `network`. An entry is `undefined`
+   * when the interface name is not known, for example when an explicit `host`
+   * is set.
+   */
+  networkInterfaceNames?: (string | undefined)[]
 }
 
 export function createServer(
@@ -1182,7 +1189,14 @@ const _serverConfigDefaults = Object.freeze({
   fs: {
     strict: true,
     // allow
-    deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**'],
+    deny: [
+      '.env',
+      '.env.*',
+      '*.{crt,pem,key,p12,pfx,cer,der}',
+      '.npmrc',
+      '.yarnrc.yml',
+      '**/.git/**',
+    ],
   },
   // origin
   preTransformRequests: true,
@@ -1200,6 +1214,7 @@ const RESERVED_ALLOWED_HOSTS_CHARACTERS_RE = /[\\"']/
 export async function resolveServerOptions(
   root: string,
   raw: ServerOptions | undefined,
+  input: InputOption | undefined,
   logger: Logger,
 ): Promise<ResolvedServerOptions> {
   const _server = mergeWithDefaults(
@@ -1213,12 +1228,13 @@ export async function resolveServerOptions(
 
   setupHmrWsOptionCompat(_server)
 
+  const workspaceRoot = searchForWorkspaceRoot(root)
   const server: ResolvedServerOptions = {
     ..._server,
     fs: {
       ..._server.fs,
       // run searchForWorkspaceRoot only if needed
-      allow: raw?.fs?.allow ?? [searchForWorkspaceRoot(root)],
+      allow: raw?.fs?.allow ?? [workspaceRoot],
     },
     sourcemapIgnoreList:
       _server.sourcemapIgnoreList === false
@@ -1228,6 +1244,7 @@ export async function resolveServerOptions(
   }
 
   let allowDirs = server.fs.allow
+  allowDirs.push(...getInputPaths(root, input))
 
   const cwd = searchForPackageRoot(root)
   if (process.versions.pnp) {
@@ -1256,7 +1273,13 @@ export async function resolveServerOptions(
   // Read node_modules/.modules.yaml which pnpm always writes on install — this works
   // unconditionally regardless of how Vite is launched (node / npx / pnpm run),
   // avoiding the need for subprocess calls or user-agent sniffing.
-  const pnpmModulesYaml = path.join(cwd, 'node_modules', '.modules.yaml')
+  // Use workspace root (not package root) because .modules.yaml lives at the
+  // monorepo root's node_modules/, not in nested workspace packages.
+  const pnpmModulesYaml = path.join(
+    workspaceRoot,
+    'node_modules',
+    '.modules.yaml',
+  )
   try {
     const content = fs.readFileSync(pnpmModulesYaml, 'utf-8')
     const parsed = JSON.parse(content)
@@ -1266,7 +1289,10 @@ export async function resolveServerOptions(
         allowDirs.push(virtualStoreDir)
       } else if (virtualStoreDir.startsWith('..')) {
         allowDirs.push(
-          path.resolve(path.join(cwd, 'node_modules'), virtualStoreDir),
+          path.resolve(
+            path.join(workspaceRoot, 'node_modules'),
+            virtualStoreDir,
+          ),
         )
       }
     }
@@ -1317,6 +1343,12 @@ export async function resolveServerOptions(
   }
 
   return server
+}
+
+function getInputPaths(root: string, input: ResolvedConfig['input']): string[] {
+  if (input == null) return [path.resolve(root, 'index.html')]
+  if (typeof input === 'string') return [input]
+  return Array.isArray(input) ? input : Object.values(input)
 }
 
 async function restartServer(server: ViteDevServer) {

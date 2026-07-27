@@ -162,7 +162,7 @@ After your project has been imported and deployed, all subsequent pushes to bran
 3. Vercel will detect that you are using Vite and will enable the correct settings for your deployment.
 4. Your application is deployed! (e.g. [vite-vue-template.vercel.app](https://vite-vue-template.vercel.app/))
 
-After your project has been imported and deployed, all subsequent pushes to branches will generate [Preview Deployments](https://vercel.com/docs/concepts/deployments/environments#preview), and all changes made to the Production Branch (commonly “main”) will result in a [Production Deployment](https://vercel.com/docs/concepts/deployments/environments#production).
+After your project has been imported and deployed, all subsequent pushes to branches will generate [Preview Deployments](https://vercel.com/docs/deployments/environments#preview-environment-pre-production), and all changes made to the Production Branch (commonly “main”) will result in a [Production Deployment](https://vercel.com/docs/deployments/environments#production-environment).
 
 Learn more about Vercel’s [Git Integration](https://vercel.com/docs/concepts/git).
 
@@ -213,7 +213,7 @@ Cloudflare Pages gives you a way to deploy directly to Cloudflare without having
 
 After your project has been imported and deployed, all subsequent pushes to branches will generate [Preview Deployments](https://developers.cloudflare.com/pages/platform/preview-deployments/) unless specified not to in your [branch build controls](https://developers.cloudflare.com/pages/platform/branch-build-controls/). All changes to the Production Branch (commonly "main") will result in a Production Deployment.
 
-You can also add custom domains and handle custom build settings on Pages. Learn more about [Cloudflare Pages Git Integration](https://developers.cloudflare.com/pages/get-started/#manage-your-site).
+You can also add custom domains and handle custom build settings on Pages. Learn more about [Cloudflare Pages Git Integration](https://developers.cloudflare.com/pages/configuration/git-integration/).
 
 ## Google Firebase
 
@@ -288,7 +288,7 @@ You can deploy your Vite app as a Static Site on [Render](https://render.com/).
 
 5. Click **Create Static Site**. Your app should be deployed at `https://<PROJECTNAME>.onrender.com/`.
 
-By default, any new commit pushed to the specified branch will automatically trigger a new deployment. [Auto-Deploy](https://render.com/docs/deploys#toggling-auto-deploy-for-a-service) can be configured in the project settings.
+By default, any new commit pushed to the specified branch will automatically trigger a new deployment. [Auto-Deploy](https://render.com/docs/deploys#configuring-auto-deploys) can be configured in the project settings.
 
 You can also add a [custom domain](https://render.com/docs/custom-domains) to your project.
 
@@ -302,7 +302,7 @@ Deploy your static site using [Kinsta](https://kinsta.com/static-site-hosting/) 
 
 ## xmit Static Site Hosting
 
-Deploy your static site using [xmit](https://xmit.co) by following this [guide](https://xmit.dev/posts/vite-quickstart/).
+Deploy your static site using [xmit](https://xmit.co) by following this [guide](https://xmit.dev/guides/vite-quickstart/).
 
 ## Zephyr Cloud
 
