@@ -136,16 +136,6 @@ class WorkerOutputCache {
     return this.assets.values()
   }
 
-  /** The entry and every asset `bundle` pulled in, in emit order. */
-  getAssetsOfBundle(bundle: WorkerBundle): WorkerBundleAsset[] {
-    const assets: WorkerBundleAsset[] = []
-    for (const fileName of [bundle.entryFilename, ...bundle.referencedAssets]) {
-      const asset = this.assets.get(fileName)
-      if (asset) assets.push(asset)
-    }
-    return assets
-  }
-
   getEntryFilenameFromHash(hash: string) {
     return this.fileNameHash.get(hash)
   }
@@ -348,6 +338,11 @@ export async function workerFileToUrl(
  * cache for the parent build to pick up, matching the `isWorker` bail in
  * `generateBundle`.
  *
+ * Emits every worker file known so far, the same set `generateBundle` emits, so
+ * a patch and a full rebuild agree. Narrowing it to the worker being resolved
+ * would miss nested workers: a worker referenced from inside another worker is
+ * bundled separately and never appears in its parent's `referencedAssets`.
+ *
  * Emitting the same worker again is harmless: an explicit `fileName` keys the
  * emitted file, so a repeat is the same entry rather than a second one, and the
  * bundler delivers it once. `generateBundle` then finds the file already in the
@@ -356,12 +351,11 @@ export async function workerFileToUrl(
 export function emitWorkerAssetsForBundledDev(
   pluginContext: { emitFile: PluginContext['emitFile'] },
   config: ResolvedConfig,
-  bundle: WorkerBundle,
 ): void {
   if (config.isWorker) return
 
   const workerOutput = workerOutputCaches.get(config.mainConfig || config)!
-  for (const asset of workerOutput.getAssetsOfBundle(bundle)) {
+  for (const asset of workerOutput.getAssets()) {
     pluginContext.emitFile({
       type: 'asset',
       fileName: asset.fileName,
@@ -530,7 +524,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               this.environment.config.command === 'serve' &&
               this.environment.config.isBundled
             ) {
-              emitWorkerAssetsForBundledDev(this, config, result)
+              emitWorkerAssetsForBundledDev(this, config)
               url = toOutputFilePathInJSForBundledDev(
                 this.environment,
                 result.entryFilename,

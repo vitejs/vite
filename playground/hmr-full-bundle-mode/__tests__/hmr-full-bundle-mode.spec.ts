@@ -265,6 +265,39 @@ if (isBuild) {
     ).toBe(true)
   })
 
+  // A worker spawned from inside another worker is bundled on its own and is
+  // not part of the outer worker's referenced assets, so a patch that only
+  // emits the worker it just resolved leaves one of the two files unserved.
+  test('nested worker updated through an HMR patch is served', async () => {
+    const original = readFile('worker-nested-inner.js')
+    onTestFinished(async () => {
+      addFile('worker-nested-inner.js', original)
+      await expect
+        .poll(() => page.textContent('.worker-nested'))
+        .toBe('nested-outer+nested-inner')
+    })
+
+    await expect
+      .poll(() => page.textContent('.worker-nested'))
+      .toBe('nested-outer+nested-inner')
+
+    // survives an HMR patch, but not a page reload
+    await page.evaluate(() => {
+      ;(window as any).__workerNestedKeptAlive = true
+    })
+
+    editFile('worker-nested-inner.js', (code) =>
+      code.replace("'nested-inner'", "'nested-inner-updated'"),
+    )
+    await expect
+      .poll(() => page.textContent('.worker-nested'))
+      .toBe('nested-outer+nested-inner-updated')
+
+    expect(
+      await page.evaluate(() => (window as any).__workerNestedKeptAlive),
+    ).toBe(true)
+  })
+
   test('lazy bundling', async () => {
     await page.click('#load-dynamic')
     await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')

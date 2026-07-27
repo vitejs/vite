@@ -261,7 +261,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             if (isBundled) {
               const result = await workerFileToUrl(config, file)
               if (this.environment.config.command === 'serve') {
-                emitWorkerAssetsForBundledDev(this, config, result)
+                emitWorkerAssetsForBundledDev(this, config)
                 builtUrl = toOutputFilePathInJSForBundledDev(
                   this.environment,
                   result.entryFilename,
