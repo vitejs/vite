@@ -231,10 +231,9 @@ if (isBuild) {
     await expect.poll(() => page.textContent('.worker-url')).toBe('worker-url')
   })
 
-  // The importer self-accepts, so this update is delivered as an HMR patch.
-  // A patch is generated without a generate phase, so the worker's files have
-  // to reach the server on their own; otherwise the patch ships a URL for a
-  // file that was never emitted and the browser gets the fallback HTML back.
+  // The importer self-accepts, so this update arrives as an HMR patch. A patch
+  // skips the generate phase, so without the worker files being emitted earlier
+  // it ships a URL for a file that was never written.
   test('worker updated through an HMR patch is served', async () => {
     const original = readFile('worker-accept-src.js')
     onTestFinished(async () => {
@@ -265,9 +264,8 @@ if (isBuild) {
     ).toBe(true)
   })
 
-  // A worker spawned from inside another worker is bundled on its own and is
-  // not part of the outer worker's referenced assets, so a patch that only
-  // emits the worker it just resolved leaves one of the two files unserved.
+  // The inner worker is bundled on its own, so a patch that emits only the
+  // worker it just resolved leaves one of the two files unserved.
   test('nested worker updated through an HMR patch is served', async () => {
     const original = readFile('worker-nested-inner.js')
     onTestFinished(async () => {

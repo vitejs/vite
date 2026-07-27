@@ -326,27 +326,11 @@ export async function workerFileToUrl(
 }
 
 /**
- * Hand a bundled worker's files to the bundler while still in `load`/`transform`.
+ * Emit the bundled worker files during `load` / `transform`.
  *
- * Worker bytes normally reach the output through this plugin's `generateBundle`,
- * but an HMR patch is generated without a generate phase, so a worker whose URL
- * the patch already carries would have no file behind it. Emitting here instead
- * puts the bytes on the same delivery path `vite:asset` uses, which the dev
- * server drains before the patch reaches the browser.
- *
- * Only the main build emits. A worker sub-bundle leaves its files in the shared
- * cache for the parent build to pick up, matching the `isWorker` bail in
- * `generateBundle`.
- *
- * Emits every worker file known so far, the same set `generateBundle` emits, so
- * a patch and a full rebuild agree. Narrowing it to the worker being resolved
- * would miss nested workers: a worker referenced from inside another worker is
- * bundled separately and never appears in its parent's `referencedAssets`.
- *
- * Emitting the same worker again is harmless: an explicit `fileName` keys the
- * emitted file, so a repeat is the same entry rather than a second one, and the
- * bundler delivers it once. `generateBundle` then finds the file already in the
- * bundle and skips it.
+ * They normally reach the output through `generateBundle`, which an HMR patch
+ * skips, so without this a patched worker points at a file that was never
+ * emitted.
  */
 export function emitWorkerAssetsForBundledDev(
   pluginContext: { emitFile: PluginContext['emitFile'] },

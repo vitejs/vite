@@ -1,4 +1,3 @@
-// Self-accepting, so editing the inner worker stays on the HMR patch path.
 const worker = new Worker(
   new URL('./worker-nested-outer.js', import.meta.url),
   {
