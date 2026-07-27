@@ -1,4 +1,5 @@
-import type { DevRuntime } from 'rolldown/experimental/runtime-types'
+import { DevRuntime } from 'rolldown/experimental/runtime'
+import { nanoid } from 'nanoid/non-secure'
 import type { Update } from '#types/hmrPayload'
 import type { ModuleNamespace } from '#types/hot'
 import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
@@ -30,17 +31,14 @@ import {
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
-  ssrRolldownRuntimeCreateHotContextMethod,
-  ssrRolldownRuntimeDefineMethod,
   ssrRolldownRuntimeKey,
-  ssrRolldownRuntimeModuleCacheRemovalMethod,
-  ssrRolldownRuntimeTransport,
 } from './constants'
 import { hmrLogger, silentConsole } from './hmrLogger'
 import { createHMRHandlerForRunner, reloadEntrypoints } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
 import { ESModulesEvaluator } from './esmEvaluator'
 import { createDefaultImportMeta } from './createImportMeta'
+import { installRolldownRuntimeHelpers } from './rolldownRuntimeHelpers'
 
 interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
@@ -63,47 +61,11 @@ export class ModuleRunner {
   >()
   private isBuiltin?: (id: string) => boolean
   private builtinsPromise?: Promise<void>
+  // Owned by the runner rather than bootstrapped from the bundle: the modules
+  // receive it as the `__rolldown_runtime__` argument, so it has to exist
+  // before the first one runs. It is per-runner on purpose — `ssrLoadModule`
+  // has its own compat runner, and a global would collide.
   private rolldownDevRuntime?: DevRuntime
-
-  // We need the proxy because the runtime MUST be ready before the first import is processed.
-  // Because `context['__rolldown_runtime__']` is passed down before the modules are executed as a function argument.
-  private rolldownDevRuntimeProxy = new Proxy(
-    {},
-    {
-      get: (_, p, receiver) => {
-        // Special `__rolldown_runtime__.__vite_ssr_defineRuntime__` method only for the module runner,
-        // It's not available in the browser because it's a global there. We cannot have it as a global because
-        //   - It's possible to have multiple runners (`ssrLoadModule` has its own compat runner);
-        //   - We don't want to pollute Dev Server's global namespace.
-        if (p === ssrRolldownRuntimeDefineMethod) {
-          return (runtime: DevRuntime) => {
-            this.rolldownDevRuntime = runtime
-          }
-        }
-
-        if (p === ssrRolldownRuntimeCreateHotContextMethod) {
-          return this.closed
-            ? () => {}
-            : (url: string) => this.ensureModuleHotContext(url)
-        }
-
-        if (p === ssrRolldownRuntimeModuleCacheRemovalMethod) {
-          return (url: string) =>
-            this._bundledDevHmrClient?.handleModuleCacheRemoval(url)
-        }
-
-        if (p === ssrRolldownRuntimeTransport) {
-          return this.closed ? undefined : this.transport
-        }
-
-        if (!this.rolldownDevRuntime) {
-          throw new Error(`__rolldown_runtime__ was not initialized.`)
-        }
-
-        return Reflect.get(this.rolldownDevRuntime, p, receiver)
-      },
-    },
-  ) as DevRuntime
 
   private closed = false
 
@@ -114,6 +76,18 @@ export class ModuleRunner {
   ) {
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
     this.transport = normalizeModuleRunnerTransport(options.transport)
+    // independent of HMR: the bundle needs `__rolldown_runtime__` to execute
+    // at all, so the runtime exists even when HMR is disabled
+    let runtime: DevRuntime | undefined
+    if (options.rolldownRuntime) {
+      installRolldownRuntimeHelpers()
+      runtime = this.rolldownDevRuntime = new DevRuntime(nanoid())
+      runtime.hooks = {
+        createModuleHotContext: (id) => this.ensureModuleHotContext(id),
+        onModuleCacheRemoval: (id) =>
+          this._bundledDevHmrClient?.handleModuleCacheRemoval(id),
+      }
+    }
     if (options.hmr !== false) {
       const optionsHmr = options.hmr ?? true
       const resolvedHmrLogger: HMRLogger =
@@ -124,11 +98,11 @@ export class ModuleRunner {
             : optionsHmr.logger
       const importUpdatedModule = ({ acceptedPath }: Update) =>
         this.import<ModuleNamespace>(acceptedPath)
-      if (options.rolldownRuntime) {
+      if (runtime) {
         this.hmrClient = this._bundledDevHmrClient = new BundledDevHMRClient(
           resolvedHmrLogger,
           this.transport,
-          this.rolldownDevRuntimeProxy,
+          runtime,
           {
             loadPatch: async (url) => {
               await this.import(url)
@@ -163,6 +137,14 @@ export class ModuleRunner {
       this.transport.connect(createHMRHandlerForRunner(this))
     } else {
       this.transport.connect?.()
+    }
+    if (runtime) {
+      // registers this runner with the dev engine so it gets its own ship map
+      this.transport.send({
+        type: 'custom',
+        event: 'vite:client-connected',
+        data: { clientId: runtime.clientId },
+      })
     }
     if (options.sourcemapInterceptor !== false) {
       this.resetSourceMapSupport = enableSourceMapSupport(this)
@@ -516,7 +498,7 @@ export class ModuleRunner {
           get: getter,
         }),
       [ssrImportMetaKey]: meta,
-      [ssrRolldownRuntimeKey]: this.rolldownDevRuntimeProxy,
+      [ssrRolldownRuntimeKey]: this.rolldownDevRuntime,
     }
 
     this.debug?.('[module runner] executing', meta.href)

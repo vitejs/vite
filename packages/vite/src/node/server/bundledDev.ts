@@ -14,13 +14,6 @@ import {
   createDebugger,
   formatAndTruncateFileList,
 } from '../utils'
-import {
-  ssrRolldownRuntimeCreateHotContextMethod,
-  ssrRolldownRuntimeDefineMethod,
-  ssrRolldownRuntimeKey,
-  ssrRolldownRuntimeModuleCacheRemovalMethod,
-  ssrRolldownRuntimeTransport,
-} from '../../module-runner/constants'
 import type { DevEnvironment } from './environment'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
 import { prepareError } from './middlewares/error'
@@ -340,13 +333,6 @@ export class BundledDev {
     }
   }
 
-  protected async getDevRuntimeImplementation(): Promise<string> {
-    if (this.environment.config.consumer === 'server') {
-      return this.getDevServerRuntimeImplementation()
-    }
-    return await getHmrImplementation(this.environment.getTopLevelConfig())
-  }
-
   protected async getRolldownOptions(): Promise<RolldownOptions> {
     const chunkMetadataMap = new ChunkMetadataMap()
     const rolldownOptions = resolveRolldownOptions(
@@ -354,12 +340,19 @@ export class BundledDev {
       chunkMetadataMap,
     )
     rolldownOptions.experimental ??= {}
+    // The module runner constructs the `DevRuntime` itself and hands it to each
+    // module as `__rolldown_runtime__`, so a server bundle needs neither the
+    // runtime classes nor a bootstrap prelude.
+    const isServerConsumer = this.environment.config.consumer === 'server'
     rolldownOptions.experimental.devMode = {
       lazy: true,
       ...(typeof rolldownOptions.experimental.devMode === 'object'
         ? rolldownOptions.experimental.devMode
         : {}),
-      implement: await this.getDevRuntimeImplementation(),
+      implement: isServerConsumer
+        ? ''
+        : await getHmrImplementation(this.environment.getTopLevelConfig()),
+      skipCommonRuntimeInjection: isServerConsumer,
     }
 
     // disable inlineConst optimization due to a bug in Rolldown
@@ -477,40 +470,6 @@ export class BundledDev {
         timestamp: true,
       },
     )
-  }
-
-  /**
-   * The module runner counterpart of `src/client/bundledDevClient.ts`. There is
-   * no global to hang the runtime off here: a single dev server can drive
-   * several runners, so the runtime is handed to the owning runner through the
-   * `${ssrRolldownRuntimeKey}` argument the module receives.
-   */
-  private getDevServerRuntimeImplementation(): string {
-    return /* js */ `
-      class ViteDevRuntime extends DevRuntime {
-        createModuleHotContext(moduleId) {
-          return ${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeCreateHotContextMethod}(moduleId)
-        }
-      }
-
-      const rand = (Math.random() * 1000).toFixed(0).padStart(3, '0')
-      const clientId = String(Date.now()) + rand
-
-      ${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeTransport}?.send({
-        type: 'custom',
-        event: 'vite:client-connected',
-        data: { clientId },
-      })
-
-      const runtime = new ViteDevRuntime(clientId)
-      runtime.hooks = {
-        createModuleHotContext: (id) => runtime.createModuleHotContext(id),
-        onModuleCacheRemoval: (id) =>
-          ${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeModuleCacheRemovalMethod}(id),
-      }
-
-      ;${ssrRolldownRuntimeKey}.${ssrRolldownRuntimeDefineMethod}(runtime)
-        `
   }
 }
 

@@ -5,7 +5,7 @@ import path from 'node:path'
 import kill from 'kill-port'
 import { createInMemoryLogger, hmrPorts, ports, rootDir } from '~utils'
 
-export const port = ports.ssr
+export const port = ports['ssr-bundled-dev']
 
 export const serverLogs = []
 
@@ -15,7 +15,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
   const { createServer } = await import(path.resolve(rootDir, 'server.js'))
   const { app, vite } = await createServer(
     rootDir,
-    hmrPorts.ssr,
+    hmrPorts['ssr-bundled-dev'],
     createInMemoryLogger(serverLogs),
   )
 

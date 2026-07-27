@@ -49,7 +49,7 @@ minimumReleaseAgeExclude:
   - rolldown
   - '@rolldown/binding-*'
   - '@voidzero-dev/vitepress-theme@5.0.2'
-blockExoticSubdeps: true
+blockExoticSubdeps: false # TODO - remove this! only for pkg.pr.new test
 trustPolicy: no-downgrade
 trustPolicyExclude:
   - chokidar@4.0.3 # https://github.com/paulmillr/chokidar/issues/1440

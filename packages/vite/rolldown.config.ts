@@ -155,7 +155,7 @@ const moduleRunnerConfig = defineConfig({
     '@vitejs/devtools/cli-commands',
     ...Object.keys(pkg.dependencies),
   ],
-  plugins: [bundleSizeLimit(66), enableSourceMapsInWatchModePlugin()],
+  plugins: [bundleSizeLimit(68), enableSourceMapsInWatchModePlugin()],
   output: {
     ...sharedNodeOptions.output,
     minify: {
