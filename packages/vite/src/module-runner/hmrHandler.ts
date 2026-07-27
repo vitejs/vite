@@ -65,7 +65,7 @@ export function createHMRHandlerForRunner(
       case 'ping': // noop
         break
       case 'bundled-dev-update':
-        hmrClient.handlePush(payload)
+        runner._bundledDevHmrClient?.handlePush(payload)
         break
       default: {
         const check: never = payload

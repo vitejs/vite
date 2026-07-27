@@ -127,6 +127,14 @@ export interface ModuleRunnerOptions {
    * Custom module cache. If not provided, creates a separate module cache for each ModuleRunner instance.
    */
   evaluatedModules?: EvaluatedModules
+  /**
+   * The modules are served as a rolldown bundle that ships its own dev runtime,
+   * instead of one module at a time. HMR is then driven by the runtime's module
+   * graph rather than by the server's.
+   *
+   * @default false
+   */
+  rolldownRuntime?: boolean
 }
 
 export interface ImportMetaEnv {

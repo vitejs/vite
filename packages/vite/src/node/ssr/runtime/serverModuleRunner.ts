@@ -151,6 +151,7 @@ export function createServerModuleRunner(
   const hmr = createHMROptions(environment, options)
   return new ModuleRunner(
     {
+      rolldownRuntime: environment.config.isBundled,
       ...options,
       transport: createServerModuleRunnerTransport({
         channel: environment.hot as NormalizedServerHotChannel,
