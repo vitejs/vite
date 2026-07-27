@@ -181,18 +181,18 @@ Some common test helpers (e.g. `testDir`, `isBuild`, or `editFile`) are also ava
 > [!NOTE]
 > The dev server's file watcher runs in polling mode during tests. Polling (chokidar) only registers a file as changed when its size differs or its mtime strictly increases. On some platforms a quick in-place rewrite may not report an advanced mtime, so an edit that keeps the exact same byte length can be missed, and the expected HMR update or rebuild never fires (causing flaky timeouts). To enforce this, `editFile` throws if your replacement leaves the file's byte length unchanged; make the edit change the size (for example by adding a trailing space or an extra character that doesn't affect the test's semantics). If you trigger a watched change by some other means, make sure the edit changes the file's byte length.
 
-Note: The test build environment uses a [different default set of Vite config](https://github.com/vitejs/vite/blob/main/playground/vitestSetup.ts#L271-L275) to skip transpilation during tests to make it faster. This may produce a different result compared to the default production build.
+Note: The test build environment uses a [different default set of Vite config](https://github.com/vitejs/vite/blob/v8.1.5/playground/vitestSetup.ts#L265-L269) to skip transpilation during tests to make it faster. This may produce a different result compared to the default production build.
 
 ### Extending the Test Suite
 
-To add new tests, you should find a related playground to the fix or feature (or create a new one). As an example, static assets loading is tested in the [assets playground](https://github.com/vitejs/vite/tree/main/playground/assets). In this Vite app, there is a test for `?raw` imports with [a section defined in the `index.html` for it](https://github.com/vitejs/vite/blob/main/playground/assets/index.html#L270-L271):
+To add new tests, you should find a related playground to the fix or feature (or create a new one). As an example, static assets loading is tested in the [assets playground](https://github.com/vitejs/vite/tree/main/playground/assets). In this Vite app, there is a test for `?raw` imports with [a section defined in the `index.html` for it](https://github.com/vitejs/vite/blob/v8.1.5/playground/assets/index.html#L270-L271):
 
 ```html
 <h2>?raw import</h2>
 <code class="raw"></code>
 ```
 
-This will be modified [with the result of a file import](https://github.com/vitejs/vite/blob/main/playground/assets/index.html#L557-L558):
+This will be modified [with the result of a file import](https://github.com/vitejs/vite/blob/v8.1.5/playground/assets/index.html#L557-L558):
 
 ```js
 import rawSvg from './nested/fragment.svg?raw'
@@ -207,7 +207,7 @@ function text(el, text) {
 }
 ```
 
-In the [spec tests](https://github.com/vitejs/vite/blob/main/playground/assets/__tests__/assets.spec.ts#L483-L485), the modifications to the DOM listed above are used to test this feature:
+In the [spec tests](https://github.com/vitejs/vite/blob/v8.1.5/playground/assets/__tests__/assets.spec.ts#L483-L485), the modifications to the DOM listed above are used to test this feature:
 
 ```js
 test('?raw import', async () => {
