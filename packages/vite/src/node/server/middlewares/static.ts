@@ -11,6 +11,7 @@ import {
   decodeURIIfPossible,
   fsPathFromUrl,
   isFileReadable,
+  isHTMLRequest,
   isImportRequest,
   isInternalRequest,
   isParentDirectory,
@@ -142,7 +143,7 @@ export function serveStaticMiddleware(
     const cleanedUrl = cleanUrl(req.url!)
     if (
       cleanedUrl.endsWith('/') ||
-      path.extname(cleanedUrl) === '.html' ||
+      isHTMLRequest(cleanedUrl) ||
       isInternalRequest(req.url!) ||
       // skip url starting with // as these will be interpreted as
       // scheme relative URLs by new URL() and will not be a valid file path

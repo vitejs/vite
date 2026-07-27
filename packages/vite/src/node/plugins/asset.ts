@@ -23,6 +23,7 @@ import {
   encodeURIPath,
   getHash,
   injectQuery,
+  isHTMLRequest,
   joinUrlSegments,
   normalizePath,
   rawRE,
@@ -550,7 +551,7 @@ function shouldInline(
     if (buildPluginContext.getModuleInfo(id)?.isEntry) return false
   }
   if (forceInline !== undefined) return forceInline
-  if (file.endsWith('.html')) return false
+  if (isHTMLRequest(file)) return false
   // Don't inline SVG with fragments, as they are meant to be reused
   if (file.endsWith('.svg') && id.includes('#')) return false
   let limit: number
