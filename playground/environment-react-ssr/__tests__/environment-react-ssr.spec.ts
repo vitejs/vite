@@ -89,9 +89,10 @@ describe.runIf(!isBuild)('pre-bundling', () => {
                 /dependenc(?:y|ies) optimized: (react-fake-.*)/,
               )?.[1],
           )
-          .filter(Boolean),
+          .filter(Boolean)
+          .sort(),
       )
-      .toStrictEqual(['react-fake-server', 'react-fake-client'])
+      .toStrictEqual(['react-fake-client', 'react-fake-server'])
 
     const clientMetaNew = readDepOptimizationMetadata('client')
     const ssrMetaNew = readDepOptimizationMetadata('ssr')

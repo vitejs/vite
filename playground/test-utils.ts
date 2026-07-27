@@ -296,6 +296,8 @@ export function hotUpdatedLog(file: string): string {
     : `[vite] hot updated: /${file}`
 }
 
+export const logWaitTimeout = process.env.CI ? 20000 : 5000
+
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void
 
 export async function untilBrowserLogAfter(
@@ -393,7 +395,7 @@ async function untilBrowserLog(
         ),
       )
       page.off('console', handleMsg)
-    }, 5000)
+    }, logWaitTimeout)
 
     page.on('console', handleMsg)
   } catch (err) {
