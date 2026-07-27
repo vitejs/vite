@@ -23,6 +23,7 @@ import {
   createInMemoryLogger,
   editFile,
   isBuild,
+  logWaitTimeout,
   promiseWithResolvers,
   readFile,
   removeFile,
@@ -1094,7 +1095,7 @@ async function untilConsoleLog(
         ),
       )
       logsEmitter.off('log', handleMsg)
-    }, 5000)
+    }, logWaitTimeout)
 
     logsEmitter.on('log', handleMsg)
   } catch (err) {

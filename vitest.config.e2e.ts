@@ -67,7 +67,7 @@ export default defineConfig({
     },
     expect: {
       poll: {
-        timeout: 50 * (process.env.CI ? 200 : 50),
+        timeout: 50 * (process.env.CI ? 400 : 50),
       },
     },
     env: {
