@@ -11,7 +11,11 @@ import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
 import { cleanUrl, slash } from '../../shared/utils'
 import type { WorkerType } from './worker'
-import { WORKER_FILE_ID, workerFileToUrl } from './worker'
+import {
+  WORKER_FILE_ID,
+  recordWorkerReference,
+  workerFileToUrl,
+} from './worker'
 import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
 import type { InternalResolveOptions } from './resolve'
 import { tryFsResolve } from './resolve'
@@ -255,6 +259,12 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           } else {
             let builtUrl: string
             if (isBundled) {
+              recordWorkerReference(
+                config,
+                config.bundleChain.at(-1),
+                cleanUrl(file),
+                id,
+              )
               const result = await workerFileToUrl(config, file)
               if (this.environment.config.command === 'serve') {
                 builtUrl = toOutputFilePathInJSForBundledDev(
