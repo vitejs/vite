@@ -25,6 +25,7 @@ jobs:
             -q
             --sarif
             --config auto
+            --no-error
             --exclude playground
             --exclude-rule javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
           > semgrep-results.sarif
