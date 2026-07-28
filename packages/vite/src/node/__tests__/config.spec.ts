@@ -1223,6 +1223,19 @@ describe('resolveConfig', () => {
     })
   })
 
+  test('adds URLs and their cleaned paths to safeModulePaths', async () => {
+    const config = await resolveConfig({}, 'serve')
+    const safeModulePaths = config.safeModulePaths
+
+    expect(safeModulePaths.addUrl).toBeTypeOf('function')
+    safeModulePaths.addUrl('/foo/bar?raw')
+    expect([...safeModulePaths]).toEqual(['/foo/bar?raw', '/foo/bar'])
+
+    safeModulePaths.clear()
+    safeModulePaths.add('/foo/bar?url')
+    expect([...safeModulePaths]).toEqual(['/foo/bar?url'])
+  })
+
   test('reserves glob characters in input', async () => {
     const cases: { name: string; input: UserConfig['input'] }[] = [
       { name: 'wildcard', input: 'src/*.ts' },

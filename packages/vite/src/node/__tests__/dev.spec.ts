@@ -57,9 +57,11 @@ describe('the dev server', () => {
       ],
     })
 
-    expect(server.config.safeModulePaths).toStrictEqual(new Set([clientEntry]))
+    expect(new Set(server.config.safeModulePaths)).toStrictEqual(
+      new Set([clientEntry]),
+    )
     await server.environments.ssr.pluginContainer.buildStart()
-    expect(server.config.safeModulePaths).toStrictEqual(
+    expect(new Set(server.config.safeModulePaths)).toStrictEqual(
       new Set([clientEntry, ssrEntry]),
     )
   })
@@ -120,7 +122,9 @@ describe('the dev server', () => {
     expect(resolvedEnvironments).toStrictEqual(new Set(['client']))
     await server.environments.ssr.pluginContainer.buildStart()
     expect(resolvedEnvironments).toStrictEqual(new Set(['client', 'ssr']))
-    expect(server.config.safeModulePaths).toStrictEqual(new Set([clientEntry]))
+    expect(new Set(server.config.safeModulePaths)).toStrictEqual(
+      new Set([clientEntry]),
+    )
     expect(logger.warn).not.toHaveBeenCalled()
   })
 

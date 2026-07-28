@@ -38,7 +38,7 @@ const generatedContentImports = [
   },
 ]
 
-export default defineConfig({
+export const baseConfig = defineConfig({
   resolve: {
     extensions: ['.mjs', '.js', '.es', '.ts'],
     mainFields: ['browser', 'custom', 'module'],
@@ -168,3 +168,14 @@ export default defineConfig({
     copyPublicDir: false,
   },
 })
+
+export default defineConfig(({ command }) => ({
+  ...baseConfig,
+  input:
+    command === 'serve'
+      ? [
+          path.resolve(import.meta.dirname, 'index.html'),
+          path.resolve(import.meta.dirname, 'style.css'),
+        ]
+      : undefined,
+}))
