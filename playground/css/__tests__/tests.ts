@@ -8,6 +8,7 @@ import {
   getBgColor,
   getColor,
   isBuild,
+  isBundled,
   isBundledDev,
   page,
   removeFile,
@@ -109,18 +110,18 @@ test('less', async () => {
   expect(await getColor(imported)).toBe('blue')
   expect(await getColor(atImport)).toBe('darkslateblue')
   expect(await getBg(atImport)).toMatch(
-    isBuild || isBundledDev ? /base64/ : '/nested/icon.png',
+    isBundled ? /base64/ : '/nested/icon.png',
   )
   expect(await getColor(atImportAlias)).toBe('darkslateblue')
   expect(await getBg(atImportAlias)).toMatch(
-    isBuild || isBundledDev ? /base64/ : '/nested/icon.png',
+    isBundled ? /base64/ : '/nested/icon.png',
   )
   expect(await getColor(atImportUrlOmmer)).toBe('darkorange')
   expect(await getBg(urlStartsWithVariable)).toMatch(
-    isBuild || isBundledDev ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+    isBundled ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
   expect(await getBg(urlStartsWithInterpolation)).toMatch(
-    isBuild || isBundledDev ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+    isBundled ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
 
   if (isBuild) return
@@ -156,7 +157,7 @@ test('stylus', async () => {
   expect(await getColor(relativeImport)).toBe('darkslateblue')
   expect(await getColor(relativeImportAlias)).toBe('darkslateblue')
   expect(await getBg(relativeImportAlias)).toMatch(
-    isBuild || isBundledDev ? /base64/ : '/nested/icon.png',
+    isBundled ? /base64/ : '/nested/icon.png',
   )
   expect(await getColor(optionsRelativeImport)).toBe('green')
   expect(await getColor(optionsAbsoluteImport)).toBe('red')
@@ -428,7 +429,7 @@ test('?raw', async () => {
   )
 
   // bundled dev: editing a ?raw import doesn't propagate to the page (vitejs/vite#23028)
-  if (!isBuild && !isBundledDev) {
+  if (!isBundled) {
     editFile('raw-imported.css', (code) =>
       code.replace('color: yellow', 'color: blue'),
     )
@@ -483,11 +484,11 @@ test('sugarss', async () => {
   expect(await getColor(imported)).toBe('blue')
   expect(await getColor(atImport)).toBe('darkslateblue')
   expect(await getBg(atImport)).toMatch(
-    isBuild || isBundledDev ? /base64/ : '/nested/icon.png',
+    isBundled ? /base64/ : '/nested/icon.png',
   )
   expect(await getColor(atImportAlias)).toBe('darkslateblue')
   expect(await getBg(atImportAlias)).toMatch(
-    isBuild || isBundledDev ? /base64/ : '/nested/icon.png',
+    isBundled ? /base64/ : '/nested/icon.png',
   )
 
   if (isBuild) return

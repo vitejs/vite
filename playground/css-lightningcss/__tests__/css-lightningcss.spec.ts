@@ -5,6 +5,7 @@ import {
   getBg,
   getColor,
   isBuild,
+  isBundled,
   isBundledDev,
   page,
   viteTestUrl,
@@ -93,7 +94,7 @@ test('css with external url', async () => {
 test('nested css with relative asset', async () => {
   const css = await page.$('.nested-css-relative-asset')
   expect(await getBg(css)).toMatch(
-    isBuild || isBundledDev ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+    isBundled ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
 })
 

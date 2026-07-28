@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { getBg, isBuild, isBundledDev, page, viteTestUrl } from '~utils'
+import { getBg, isBundled, page, viteTestUrl } from '~utils'
 import './tests'
 
 // not included in tests.ts because the lightningcss variant does not use
@@ -11,6 +11,6 @@ test('postcss plugin that injects url() at OnceExit', async () => {
   const imported = await page.waitForSelector('.inject-url-once-exit')
   // url should be rebased against the injected source file
   expect(await getBg(imported)).toMatch(
-    isBuild || isBundledDev ? /base64/ : '/injected-source/injected-bg.png',
+    isBundled ? /base64/ : '/injected-source/injected-bg.png',
   )
 })

@@ -4,7 +4,7 @@ import {
   getBg,
   getColor,
   isBuild,
-  isBundledDev,
+  isBundled,
   page,
   viteTestUrl,
 } from '~utils'
@@ -36,31 +36,31 @@ export const sassTest = () => {
     expect(await getColor(imported)).toBe('orange')
     expect(await getColor(atImport)).toBe('olive')
     expect(await getBg(atImport)).toMatch(
-      isBuild || isBundledDev ? /base64/ : '/nested/icon.png',
+      isBundled ? /base64/ : '/nested/icon.png',
     )
     expect(await getColor(atImportAlias)).toBe('olive')
     expect(await getBg(atImportAlias)).toMatch(
-      isBuild || isBundledDev ? /base64/ : '/nested/icon.png',
+      isBundled ? /base64/ : '/nested/icon.png',
     )
     expect(await getColor(atImportRelative)).toBe('olive')
     expect(await getBg(atImportRelative)).toMatch(
-      isBuild || isBundledDev ? /base64/ : '/nested/icon.png',
+      isBundled ? /base64/ : '/nested/icon.png',
     )
     expect(await getColor(atImportReplacementAlias)).toBe('olive')
     expect(await getBg(urlStartsWithVariable)).toMatch(
-      isBuild || isBundledDev ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+      isBundled ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
     )
     expect(await getBg(urlStartsWithVariableInterpolation1)).toMatch(
-      isBuild || isBundledDev ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+      isBundled ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
     )
     expect(await getBg(urlStartsWithVariableInterpolation2)).toMatch(
-      isBuild || isBundledDev ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+      isBundled ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
     )
     expect(await getBg(urlStartsWithVariableConcat)).toMatch(
-      isBuild || isBundledDev ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+      isBundled ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
     )
     expect(await getBg(urlStartsWithFunctionCall)).toMatch(
-      isBuild || isBundledDev ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+      isBundled ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
     )
     expect(await getColor(partialImport)).toBe('orchid')
     expect(await getColor(await page.$('.sass-file-absolute'))).toBe('orange')
