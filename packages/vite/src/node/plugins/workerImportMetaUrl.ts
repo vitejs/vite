@@ -254,6 +254,8 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 : slash(path.resolve(path.dirname(id), urlWithoutPostfix))
           }
 
+          config.safeModulePaths.add(cleanUrl(file))
+
           if (
             isBundled &&
             config.isWorker &&
