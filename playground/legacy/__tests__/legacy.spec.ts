@@ -18,6 +18,8 @@ test('should work', async () => {
   await expect.poll(() => page.textContent('#app')).toMatch('Hello')
 })
 
+// bundled dev: import.meta.env.LEGACY is not replaced — needs a fix in vite's
+// legacy-env define handling (vitejs/vite#23028)
 test.skipIf(isBundledDev)('import.meta.env.LEGACY', async () => {
   await expect
     .poll(() => page.textContent('#env'))
@@ -42,7 +44,7 @@ test('wraps with iife', async () => {
     .toMatch('exposed babel helpers: false')
 })
 
-test.skipIf(isBundledDev)('generates assets', async () => {
+test('generates assets', async () => {
   await expect
     .poll(() => page.textContent('#assets'))
     .toMatch(
@@ -56,15 +58,28 @@ test.skipIf(isBundledDev)('generates assets', async () => {
             'immutable-chunk-legacy: text/javascript',
             'polyfills-legacy: text/html',
           ].join('\n')
-        : [
-            'index: text/html',
-            'index-legacy: text/html',
-            'chunk-async: text/html',
-            'chunk-async-legacy: text/html',
-            'immutable-chunk: text/html',
-            'immutable-chunk-legacy: text/html',
-            'polyfills-legacy: text/html',
-          ].join('\n'),
+        : isBundledDev
+          ? [
+              // the bundle's entry is served at the unhashed /assets/index.js;
+              // legacy chunks don't exist (legacy plugin is build-only) and
+              // other chunks are hashed, so those requests fall back to html
+              'index: text/javascript',
+              'index-legacy: text/html',
+              'chunk-async: text/html',
+              'chunk-async-legacy: text/html',
+              'immutable-chunk: text/html',
+              'immutable-chunk-legacy: text/html',
+              'polyfills-legacy: text/html',
+            ].join('\n')
+          : [
+              'index: text/html',
+              'index-legacy: text/html',
+              'chunk-async: text/html',
+              'chunk-async-legacy: text/html',
+              'immutable-chunk: text/html',
+              'immutable-chunk-legacy: text/html',
+              'polyfills-legacy: text/html',
+            ].join('\n'),
     )
 })
 
@@ -78,9 +93,9 @@ test('should load dynamic import with css', async () => {
   await expect.poll(() => getColor('#dynamic-css')).toBe('red')
 })
 
-test.skipIf(isBundledDev)('asset url', async () => {
+test('asset url', async () => {
   expect(await page.textContent('#asset-path')).toMatch(
-    isBuild ? /\/assets\/vite-[-\w]+\.svg/ : '/vite.svg',
+    isBuild || isBundledDev ? /\/assets\/vite-[-\w]+\.svg/ : '/vite.svg',
   )
 })
 

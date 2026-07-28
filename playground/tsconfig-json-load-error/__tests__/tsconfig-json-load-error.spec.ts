@@ -1,6 +1,14 @@
 import { describe, expect, test } from 'vitest'
 import { clearServeError, serveError } from './serve'
-import { browserLogs, editFile, isBuild, isServe, page, readFile } from '~utils'
+import {
+  browserLogs,
+  editFile,
+  isBuild,
+  isBundledDev,
+  isServe,
+  page,
+  readFile,
+} from '~utils'
 
 const tsconfigLoadErrorRE =
   /(\[TSCONFIG_ERROR\] )*Failed to load tsconfig|JSONError/
@@ -25,11 +33,29 @@ describe.runIf(isBuild)('build', () => {
 })
 
 describe.runIf(isServe)('server', () => {
-  test('should log 500 error in browser for malformed tsconfig', () => {
-    // don't test for actual complete message as this might be locale dependent. chrome does log 500 consistently though
-    expect(browserLogs.find((x) => x.includes('500'))).toBeTruthy()
-    expect(browserLogs).not.toContain('tsconfig error fixed, file loaded')
-  })
+  test.runIf(!isBundledDev)(
+    'should log 500 error in browser for malformed tsconfig',
+    () => {
+      // don't test for actual complete message as this might be locale dependent. chrome does log 500 consistently though
+      expect(browserLogs.find((x) => x.includes('500'))).toBeTruthy()
+      expect(browserLogs).not.toContain('tsconfig error fixed, file loaded')
+    },
+  )
+
+  test.runIf(isBundledDev)(
+    'should keep the fallback page for malformed tsconfig',
+    async () => {
+      // bundled dev has no per-module requests, so there is no 500 response;
+      // the failed initial build keeps the fallback page (HTTP 200) and shows
+      // the error in the overlay (asserted in the next test)
+      expect(
+        await page.evaluate(
+          () => (globalThis as any).__vite_is_fallback_page__,
+        ),
+      ).toBe(true)
+      expect(browserLogs).not.toContain('tsconfig error fixed, file loaded')
+    },
+  )
 
   test('should show error overlay for tsconfig error', async () => {
     const errorOverlay = await page.waitForSelector('vite-error-overlay')
@@ -41,12 +67,16 @@ describe.runIf(isServe)('server', () => {
     expect(message).toMatch(tsconfigLoadErrorRE)
   })
 
-  test('should reload when tsconfig is changed', async () => {
-    editFile('has-error/tsconfig.json', (content) => {
-      return content.replace('"compilerOptions":', '"compilerOptions":{}')
-    })
-    await expect
-      .poll(() => browserLogs)
-      .toContain('tsconfig error fixed, file loaded')
-  })
+  // bundled dev: no rebuild after initial-build failure yet (vitejs/vite#23028, rolldown#9598)
+  test.skipIf(isBundledDev)(
+    'should reload when tsconfig is changed',
+    async () => {
+      editFile('has-error/tsconfig.json', (content) => {
+        return content.replace('"compilerOptions":', '"compilerOptions":{}')
+      })
+      await expect
+        .poll(() => browserLogs)
+        .toContain('tsconfig error fixed, file loaded')
+    },
+  )
 })

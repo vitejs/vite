@@ -34,15 +34,12 @@ test('deep import with exports field', async () => {
   expect(await page.textContent('.exports-deep')).toMatch('[success]')
 })
 
-test.skipIf(isBundledDev)(
-  'deep import with query with exports field',
-  async () => {
-    // since it is imported with `?url` it should return a URL
-    expect(await page.textContent('.exports-deep-query')).toMatch(
-      isBuild ? /base64/ : '/exports-path/deep.json',
-    )
-  },
-)
+test('deep import with query with exports field', async () => {
+  // since it is imported with `?url` it should return a URL
+  expect(await page.textContent('.exports-deep-query')).toMatch(
+    isBuild || isBundledDev ? /base64/ : '/exports-path/deep.json',
+  )
+})
 
 test('deep import with exports field + exposed dir', async () => {
   expect(await page.textContent('.exports-deep-exposed-dir')).toMatch(
@@ -229,15 +226,12 @@ test('Resolving from other package with imports field', async () => {
   expect(await page.textContent('.imports-pkg-slash')).toMatch('[success]')
 })
 
-test.skipIf(isBundledDev)(
-  'Resolving with query with imports field',
-  async () => {
-    // since it is imported with `?url` it should return a URL
-    expect(await page.textContent('.imports-query')).toMatch(
-      isBuild ? /base64/ : '/imports-path/query.json',
-    )
-  },
-)
+test('Resolving with query with imports field', async () => {
+  // since it is imported with `?url` it should return a URL
+  expect(await page.textContent('.imports-query')).toMatch(
+    isBuild || isBundledDev ? /base64/ : '/imports-path/query.json',
+  )
+})
 
 test('Resolving dot-prefixed directory with imports field', async () => {
   expect(await page.textContent('.imports-dot-prefixed')).toMatch('[success]')
@@ -289,6 +283,8 @@ test.runIf(isBuild)('sideEffects field glob pattern is respected', async () => {
   expect(sideEffectValues).toStrictEqual(['success'])
 })
 
+// bundled dev: HEAD requests hit raw source files (/absolute.js, /style.css),
+// which need static serving; bundled dev only serves the bundle output
 describe.runIf(isServe && !isBundledDev)('HEAD request handling', () => {
   test('HEAD request to JS file returns correct Content-Type', async () => {
     const response = await fetch(new URL('/absolute.js', viteTestUrl), {

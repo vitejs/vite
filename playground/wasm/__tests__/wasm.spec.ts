@@ -22,9 +22,9 @@ test('init function returns WebAssembly.Instance', async () => {
     .toMatch('true')
 })
 
-test.skipIf(isBundledDev)('?url', async () => {
+test('?url', async () => {
   expect(await page.textContent('.url')).toMatch(
-    isBuild ? 'data:application/wasm' : '/light.wasm',
+    isBuild || isBundledDev ? 'data:application/wasm' : '/light.wasm',
   )
 })
 

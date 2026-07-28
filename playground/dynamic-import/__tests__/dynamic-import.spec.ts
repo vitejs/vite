@@ -14,6 +14,8 @@ test('should load literal dynamic import', async () => {
   await expect.poll(() => page.textContent('.view')).toMatch('Baz view')
 })
 
+// bundled dev: the `@vite-ignore` import requests /views/qux.js at runtime,
+// which needs static serving of root files; only the bundle output is served
 test.skipIf(isBundledDev)(
   'should load full dynamic import from public',
   async () => {
@@ -42,6 +44,8 @@ test('should have same reference on static and dynamic js import, .mxd', async (
 })
 
 // in this case, it is not possible to detect the correct module
+// bundled dev: the `@vite-ignore` URL resolves to the raw source file
+// ../files/mxd.js at runtime, which isn't served
 test.skipIf(isBundledDev)(
   'should have same reference on static and dynamic js import, .mxd2',
   async () => {
@@ -113,15 +117,14 @@ test('should load dynamic import with vars raw', async () => {
     .toMatch('export function hello()')
 })
 
-test.skipIf(isBundledDev)(
-  'should load dynamic import with vars url',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.dynamic-import-with-vars-url'))
-      .toMatch(isBuild ? 'data:text/javascript' : '/alias/url.js')
-  },
-)
+test('should load dynamic import with vars url', async () => {
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-vars-url'))
+    .toMatch(isBuild || isBundledDev ? 'data:text/javascript' : '/alias/url.js')
+})
 
+// bundled dev: workers created through the dynamic-import-vars glob aren't
+// bundled as worker entries yet
 test.skipIf(isBundledDev)(
   'should load dynamic import with vars worker',
   async () => {

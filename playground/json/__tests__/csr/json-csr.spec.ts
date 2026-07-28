@@ -33,13 +33,15 @@ test('dynamic import, named', async () => {
   expect(await page.textContent('.dynamic-named')).toBe(testJson.hello)
 })
 
+// bundled dev: fetch('/test.json') needs the raw root file served statically;
+// bundled dev only serves the bundle output
 test.skipIf(isBundledDev)('fetch', async () => {
   expect(await page.textContent('.fetch')).toBe(stringified)
 })
 
-test.skipIf(isBundledDev)('?url', async () => {
+test('?url', async () => {
   expect(await page.textContent('.url')).toMatch(
-    isBuild ? 'data:application/json' : '/test.json',
+    isBuild || isBundledDev ? 'data:application/json' : '/test.json',
   )
 })
 
