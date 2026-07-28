@@ -62,6 +62,18 @@ defineConfig(() => ({
   unknownProperty: 1, // we cannot catch invalid option for this case, ideally we should
 }))
 
+defineConfig({
+  server: {
+    proxy: {
+      '/api': {
+        target: {
+          socketPath: '/tmp/backend.sock',
+        },
+      },
+    },
+  },
+})
+
 // @ts-expect-error --- nested invalid option `build.unknown` should error
 defineConfig(() => ({
   base: '',

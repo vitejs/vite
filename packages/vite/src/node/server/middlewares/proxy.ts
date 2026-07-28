@@ -8,7 +8,22 @@ import type { HttpServer } from '..'
 
 const debug = createDebugger('vite:proxy')
 
-export interface ProxyOptions extends httpProxy.ServerOptions {
+type HttpProxyTargetDetailed = Extract<
+  httpProxy.ProxyTarget,
+  { socketPath?: string }
+>
+
+type SocketPathProxyTarget = Omit<HttpProxyTargetDetailed, 'host' | 'port'> & {
+  socketPath: string
+  host?: string
+  port?: number
+}
+
+type ProxyOptionsTarget = httpProxy.ProxyTarget | SocketPathProxyTarget
+
+export interface ProxyOptions extends Omit<httpProxy.ServerOptions, 'target'> {
+  /** URL string, URL object, host/port object or Unix socket target. */
+  target?: ProxyOptionsTarget
   /**
    * rewrite path
    */
@@ -88,7 +103,7 @@ export function proxyMiddleware(
     if (typeof opts === 'string') {
       opts = { target: opts, changeOrigin: true }
     }
-    const proxy = httpProxy.createProxyServer(opts)
+    const proxy = httpProxy.createProxyServer(opts as httpProxy.ServerOptions)
 
     if (opts.configure) {
       opts.configure(proxy, opts)
