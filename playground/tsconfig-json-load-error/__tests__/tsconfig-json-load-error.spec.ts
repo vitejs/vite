@@ -45,9 +45,10 @@ describe.runIf(isServe)('server', () => {
   test.runIf(isBundledDev)(
     'should keep the fallback page for malformed tsconfig',
     async () => {
-      // bundled dev has no per-module requests, so there is no 500 response;
-      // the failed initial build keeps the fallback page (HTTP 200) and shows
-      // the error in the overlay (asserted in the next test)
+      // bundled dev does not request modules one by one, so nothing can
+      // answer with 500. The first build failed, so the server keeps serving
+      // the fallback page with status 200. The error shows up in the overlay
+      // instead, which the next test checks.
       expect(
         await page.evaluate(
           () => (globalThis as any).__vite_is_fallback_page__,

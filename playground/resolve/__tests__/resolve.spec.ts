@@ -284,8 +284,9 @@ test.runIf(isBuild)('sideEffects field glob pattern is respected', async () => {
   expect(sideEffectValues).toStrictEqual(['success'])
 })
 
-// bundled dev: HEAD requests hit raw source files (/absolute.js, /style.css),
-// which need static serving; bundled dev only serves the bundle output
+// bundled dev: these HEAD requests ask for source files (/absolute.js,
+// /style.css). Those files are not in the bundle, and bundled dev serves
+// only the bundle.
 describe.runIf(isServe && !isBundledDev)('HEAD request handling', () => {
   test('HEAD request to JS file returns correct Content-Type', async () => {
     const response = await fetch(new URL('/absolute.js', viteTestUrl), {

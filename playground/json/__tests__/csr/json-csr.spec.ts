@@ -33,8 +33,8 @@ test('dynamic import, named', async () => {
   expect(await page.textContent('.dynamic-named')).toBe(testJson.hello)
 })
 
-// bundled dev: fetch('/test.json') needs the raw root file served statically;
-// bundled dev only serves the bundle output
+// bundled dev: fetch('/test.json') asks the server for a file in the project
+// root. That file is not in the bundle, and bundled dev serves only the bundle.
 test.skipIf(isBundledDev)('fetch', async () => {
   expect(await page.textContent('.fetch')).toBe(stringified)
 })

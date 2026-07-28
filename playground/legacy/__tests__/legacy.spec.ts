@@ -61,9 +61,15 @@ test('generates assets', async () => {
           ].join('\n')
         : isBundledDev
           ? [
-              // the bundle's entry is served at the unhashed /assets/index.js;
-              // legacy chunks don't exist (legacy plugin is build-only) and
-              // other chunks are hashed, so those requests fall back to html
+              // bundled dev serves the entry at /assets/index.js. That name
+              // has no hash, so the request finds it and gets JavaScript.
+              // Legacy chunks do not exist at all, because the legacy plugin
+              // only runs on build.
+              // Every other chunk name has a hash. A request for the plain
+              // name finds nothing and falls back to index.html.
+              // `immutable-chunk` gets a hash here too, because the dev bundle
+              // ignores `build.rolldownOptions.output` naming. Whether it
+              // should ignore it is still undecided (vitejs/vite#23028).
               'index: text/javascript',
               'index-legacy: text/html',
               'chunk-async: text/html',

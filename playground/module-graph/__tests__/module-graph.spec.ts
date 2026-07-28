@@ -1,8 +1,8 @@
 import { expect, test } from 'vitest'
 import { isBundled, page, viteServer } from '~utils'
 
-// bundled dev by design: server.moduleGraph stays empty — the rolldown
-// bundle owns the module graph
+// bundled dev by design: server.moduleGraph stays empty. The rolldown bundle
+// holds the module graph instead.
 test.runIf(!isBundled)('importedUrls order is preserved', async () => {
   const el = page.locator('.imported-urls-order')
   expect(await el.textContent()).toBe('[success]')

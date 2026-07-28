@@ -15,8 +15,11 @@ test('should load literal dynamic import', async () => {
   await expect.poll(() => page.textContent('.view')).toMatch('Baz view')
 })
 
-// bundled dev: the `@vite-ignore` import requests /views/qux.js at runtime,
-// which needs static serving of root files; only the bundle output is served
+// bundled dev: the `@vite-ignore` import asks for /views/qux.js when clicked.
+// That file is in the project root but not in the bundle.
+// Bundled dev serves only the bundle, so the request fails.
+// This is a real gap that should be fixed, not expected behavior.
+// Tracked in vitejs/vite#23028
 test.skipIf(isBundledDev)(
   'should load full dynamic import from public',
   async () => {
@@ -45,8 +48,8 @@ test('should have same reference on static and dynamic js import, .mxd', async (
 })
 
 // in this case, it is not possible to detect the correct module
-// bundled dev: the `@vite-ignore` URL resolves to the raw source file
-// ../files/mxd.js at runtime, which isn't served
+// bundled dev: the `@vite-ignore` URL points at the source file
+// ../files/mxd.js. That file is not in the bundle, so it is not served.
 test.skipIf(isBundledDev)(
   'should have same reference on static and dynamic js import, .mxd2',
   async () => {
