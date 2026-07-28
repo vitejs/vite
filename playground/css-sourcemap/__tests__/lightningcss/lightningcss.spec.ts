@@ -4,8 +4,10 @@ import {
   extractSourcemap,
   formatSourcemapForSnapshot,
   isBuild,
+  isBundledDev,
   isServe,
   page,
+  readFile,
   serverLogs,
 } from '~utils'
 
@@ -27,7 +29,30 @@ describe.runIf(isServe)('serve', () => {
     throw new Error('Not found')
   }
 
-  test('linked css', async () => {
+  // bundled dev injects CSS through JS style tags; their inline maps carry the
+  // same sources/content but not the exact serialization the normal-dev inline
+  // snapshots pin down (`ignoreList`/`sourceRoot`/key order differ), so the
+  // bundled-dev branches assert the maps semantically instead (vitejs/vite#23028)
+  const expectBundledDevStyleMap = (
+    map: any,
+    css: string,
+    sourceFiles: string[],
+  ) => {
+    const normalized = formatSourcemapForSnapshot(map, css).map
+    expect(
+      normalized.sources.map((source: string) =>
+        source.replace(/^\/root\//, ''),
+      ),
+    ).toEqual(sourceFiles)
+    expect(normalized.sourcesContent).toEqual(
+      sourceFiles.map((file) => readFile(file)),
+    )
+    expect(normalized.mappings).not.toBe('')
+  }
+
+  // bundled dev: `/linked.css` is not served as a URL — the bundle injects it
+  // via a JS style tag instead (vitejs/vite#23028)
+  test.skipIf(isBundledDev)('linked css', async () => {
     const res = await page.request.get(
       new URL('./linked.css', page.url()).href,
       {
@@ -41,6 +66,15 @@ describe.runIf(isServe)('serve', () => {
   })
 
   test('linked css with import', async () => {
+    if (isBundledDev) {
+      // not served as a URL — assert the style tag injected by the bundle
+      const css = await getStyleTagContentIncluding('.linked-with-import ')
+      expectBundledDevStyleMap(extractSourcemap(css), css, [
+        'linked-with-import.css',
+        'be-imported.css',
+      ])
+      return
+    }
     const res = await page.request.get(
       new URL('./linked-with-import.css', page.url()).href,
       {
@@ -79,7 +113,8 @@ describe.runIf(isServe)('serve', () => {
     `)
   })
 
-  test.runIf(isServe)(
+  // bundled dev: same — source-path CSS URLs are not served
+  test.runIf(isServe && !isBundledDev)(
     'js .css request does not include sourcemap',
     async () => {
       const res = await page.request.get(
@@ -93,6 +128,10 @@ describe.runIf(isServe)('serve', () => {
   test('imported css', async () => {
     const css = await getStyleTagContentIncluding('.imported ')
     const map = extractSourcemap(css)
+    if (isBundledDev) {
+      expectBundledDevStyleMap(map, css, ['imported.css'])
+      return
+    }
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
@@ -117,6 +156,13 @@ describe.runIf(isServe)('serve', () => {
   test('imported css with import', async () => {
     const css = await getStyleTagContentIncluding('.imported-with-import ')
     const map = extractSourcemap(css)
+    if (isBundledDev) {
+      expectBundledDevStyleMap(map, css, [
+        'imported-with-import.css',
+        'be-imported.css',
+      ])
+      return
+    }
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
@@ -148,6 +194,10 @@ describe.runIf(isServe)('serve', () => {
   test('imported sass', async () => {
     const css = await getStyleTagContentIncluding('.imported-sass ')
     const map = extractSourcemap(css)
+    if (isBundledDev) {
+      expectBundledDevStyleMap(map, css, ['imported.sass'])
+      return
+    }
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
@@ -174,6 +224,10 @@ describe.runIf(isServe)('serve', () => {
   test('imported sass module', async () => {
     const css = await getStyleTagContentIncluding('_imported-sass-module')
     const map = extractSourcemap(css)
+    if (isBundledDev) {
+      expectBundledDevStyleMap(map, css, ['imported.module.sass'])
+      return
+    }
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
@@ -198,6 +252,10 @@ describe.runIf(isServe)('serve', () => {
   test('imported less', async () => {
     const css = await getStyleTagContentIncluding('.imported-less ')
     const map = extractSourcemap(css)
+    if (isBundledDev) {
+      expectBundledDevStyleMap(map, css, ['imported.less'])
+      return
+    }
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
@@ -224,6 +282,10 @@ describe.runIf(isServe)('serve', () => {
   test('imported stylus', async () => {
     const css = await getStyleTagContentIncluding('.imported-stylus ')
     const map = extractSourcemap(css)
+    if (isBundledDev) {
+      expectBundledDevStyleMap(map, css, ['imported.styl'])
+      return
+    }
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
@@ -248,6 +310,10 @@ describe.runIf(isServe)('serve', () => {
   test('imported sugarss', async () => {
     const css = await getStyleTagContentIncluding('.imported-sugarss ')
     const map = extractSourcemap(css)
+    if (isBundledDev) {
+      expectBundledDevStyleMap(map, css, ['imported.sss'])
+      return
+    }
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
       SourceMap {
         content: {

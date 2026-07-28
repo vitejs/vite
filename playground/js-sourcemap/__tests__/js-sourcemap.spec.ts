@@ -3,7 +3,7 @@ import { promisify } from 'node:util'
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { mapFileCommentRegex } from 'convert-source-map'
 import { commentSourceMap } from '../foo-with-sourcemap-plugin'
 import {
@@ -11,6 +11,7 @@ import {
   findAssetFile,
   formatSourcemapForSnapshot,
   isBuild,
+  isBundledDev,
   listAssets,
   page,
   readFile,
@@ -68,8 +69,73 @@ function expectConsoleLogArgumentMapsToOriginalX(
   })
 }
 
+// bundled dev serves the playground as one rolldown bundle from memory, so
+// per-module dev-transform URLs (`/foo.js`) are not served. The bundled-dev
+// branches below assert against the served entry chunk and its real `.js.map`
+// instead (vitejs/vite#23028).
+async function getServedEntryChunk() {
+  // poll: right after navigation the server may still answer with the
+  // self-reloading fallback page, which has no external script tag
+  const srcMatch = await vi.waitUntil(
+    async () => {
+      const html = await (await page.request.get(page.url())).text()
+      return html.match(/<script[^>]* src="([^"]+)"/)
+    },
+    { timeout: 10_000 },
+  )
+  expect(srcMatch).toBeTruthy()
+  const entryUrl = new URL(srcMatch![1], page.url())
+  const js = await (await page.request.get(entryUrl.href)).text()
+  const mapUrlMatch = js.match(/^\/\/# sourceMappingURL=(\S+)$/m)
+  expect(mapUrlMatch).toBeTruthy()
+  const mapRes = await page.request.get(new URL(mapUrlMatch![1], entryUrl).href)
+  expect(mapRes.status()).toBe(200)
+  return { js, map: await mapRes.json() }
+}
+
+function expectMapHasSource(map: any, fileName: string, content: string) {
+  const index = map.sources.findIndex(
+    (source: string) => source === fileName || source.endsWith(`/${fileName}`),
+  )
+  expect(
+    index,
+    `map.sources should contain ${fileName}`,
+  ).toBeGreaterThanOrEqual(0)
+  expect(map.sourcesContent[index]).toBe(content)
+}
+
+// `export const <name> = '<name>'` compiles to `var <name, maybe renamed> = "<name>"`
+// in the bundle; the identifier must map back to the original identifier
+// (line 1, column 13 in the source file)
+function expectVarInitMapsBackToExportConst(
+  js: string,
+  map: any,
+  name: string,
+  fileName: string,
+) {
+  const lines = js.split('\n')
+  const varRE = new RegExp(
+    `^var ${escapeRegex(name)}\\S* = "${escapeRegex(name)}"`,
+  )
+  const lineIndex = lines.findIndex((line) => varRE.test(line))
+  expect(lineIndex).toBeGreaterThanOrEqual(0)
+  const position = originalPositionFor(new TraceMap(map), {
+    line: lineIndex + 1,
+    column: 'var '.length,
+  })
+  expect(position.source).toMatch(new RegExp(`(^|/)${escapeRegex(fileName)}$`))
+  expect(position.line).toBe(1)
+  expect(position.column).toBe(13)
+}
+
 if (!isBuild) {
   test('js', async () => {
+    if (isBundledDev) {
+      const { js, map } = await getServedEntryChunk()
+      expectMapHasSource(map, 'foo.js', readFile('foo.js'))
+      expectVarInitMapsBackToExportConst(js, map, 'foo', 'foo.js')
+      return
+    }
     const res = await page.request.get(new URL('./foo.js', page.url()).href)
     const js = await res.text()
     const map = extractSourcemap(js)
@@ -92,6 +158,14 @@ if (!isBuild) {
   })
 
   test('plugin return sourcemap with `sources: [""]`', async () => {
+    if (isBundledDev) {
+      // rolldown drops the appended '// add comment' text, but the plugin's
+      // `sources: [""]` map must still remap to the real zoo.js in the bundle map
+      const { js, map } = await getServedEntryChunk()
+      expectMapHasSource(map, 'zoo.js', readFile('zoo.js'))
+      expectVarInitMapsBackToExportConst(js, map, 'zoo', 'zoo.js')
+      return
+    }
     const res = await page.request.get(new URL('./zoo.js', page.url()).href)
     const js = await res.text()
     expect(js).toContain('// add comment')
@@ -115,18 +189,22 @@ if (!isBuild) {
     `)
   })
 
-  test('js with inline sourcemap injected by a plugin', async () => {
-    const res = await page.request.get(
-      new URL('./foo-with-sourcemap.js', page.url()).href,
-    )
-    const js = await res.text()
+  // bundled dev: foo-with-sourcemap.js is not imported by index.html, so it is
+  // not part of the bundle and nothing serves it (dev-only on-demand transform)
+  test.skipIf(isBundledDev)(
+    'js with inline sourcemap injected by a plugin',
+    async () => {
+      const res = await page.request.get(
+        new URL('./foo-with-sourcemap.js', page.url()).href,
+      )
+      const js = await res.text()
 
-    expect(js).toContain(commentSourceMap)
-    const sourcemapComments = js.match(mapFileCommentRegex).length
-    expect(sourcemapComments).toBe(1)
+      expect(js).toContain(commentSourceMap)
+      const sourcemapComments = js.match(mapFileCommentRegex).length
+      expect(sourcemapComments).toBe(1)
 
-    const map = extractSourcemap(js)
-    expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
+      const map = extractSourcemap(js)
+      expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
           "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG",
@@ -138,9 +216,16 @@ if (!isBuild) {
         visualization: "https://evanw.github.io/source-map-visualization/#NzMAZXhwb3J0IGNvbnN0IGZvbyA9ICdmb28nCi8vIGRlZmF1bHQgYm91bmRhcnkgc291cmNlbWFwIHdpdGggbWFnaWMtc3RyaW5nCjk2AHsidmVyc2lvbiI6Mywic291cmNlcyI6WyIiXSwibWFwcGluZ3MiOiJBQUFBLE1BQU0sQ0FBQyxLQUFLLENBQUMsR0FBRyxDQUFDLENBQUMsQ0FBQyxDQUFDLEdBQUcifQ=="
       }
     `)
-  })
+    },
+  )
 
   test('ts', async () => {
+    if (isBundledDev) {
+      const { js, map } = await getServedEntryChunk()
+      expectMapHasSource(map, 'bar.ts', readFile('bar.ts'))
+      expectVarInitMapsBackToExportConst(js, map, 'bar', 'bar.ts')
+      return
+    }
     const res = await page.request.get(new URL('./bar.ts', page.url()).href)
     const js = await res.text()
     const map = extractSourcemap(js)
@@ -163,6 +248,29 @@ if (!isBuild) {
   })
 
   test('multiline import', async () => {
+    if (isBundledDev) {
+      const { js, map } = await getServedEntryChunk()
+      expectMapHasSource(
+        map,
+        'with-multiline-import.ts',
+        readFile('with-multiline-import.ts'),
+      )
+      // the console.log after the multiline import must map back to its
+      // original line (line 6) despite the import being collapsed
+      const lines = js.split('\n')
+      const lineIndex = lines.findIndex((line) =>
+        line.startsWith('console.log("with-multiline-import"'),
+      )
+      expect(lineIndex).toBeGreaterThanOrEqual(0)
+      const position = originalPositionFor(new TraceMap(map), {
+        line: lineIndex + 1,
+        column: 0,
+      })
+      expect(position.source).toMatch(/(^|\/)with-multiline-import\.ts$/)
+      expect(position.line).toBe(6)
+      expect(position.column).toBe(0)
+      return
+    }
     const res = await page.request.get(
       new URL('./with-multiline-import.ts', page.url()).href,
     )
@@ -198,6 +306,23 @@ if (!isBuild) {
   })
 
   test('should not leak file contents via sourcemap path traversal in node_modules', async () => {
+    if (isBundledDev) {
+      // bundled dev: the dep is served inside the bundle, not from a
+      // `/node_modules/...` URL, so assert the same no-leak property on the
+      // served bundle map. A raw-fs `.map`-serving equivalent is still owed
+      // when static serving lands (vitejs/vite#23028).
+      const { map } = await getServedEntryChunk()
+      expect(
+        map.sources.some((source: string) =>
+          source.includes('test-dep-malicious-sourcemap'),
+        ),
+      ).toBe(true)
+      expect(map.sourcesContent).toBeDefined()
+      expect(map.sourcesContent).not.toContainEqual(
+        expect.stringContaining('defineConfig'),
+      )
+      return
+    }
     const res = await page.request.get(
       new URL('./malicious-import.js', page.url()).href,
     )
@@ -215,52 +340,66 @@ if (!isBuild) {
     )
   })
 
-  test('should not leak file contents via sourcemap path traversal in optimized deps', async () => {
-    const res = await page.request.get(
-      new URL('./optimized-malicious-import.js', page.url()).href,
-    )
-    const js = await res.text()
-    // Find the rewritten import URL for the optimized malicious dep
-    const depUrlMatch = js.match(/from\s+"([^"]*optimized-malicious[^"]*)"/)
-    expect(depUrlMatch).toBeTruthy()
-    const depUrl = depUrlMatch![1]
-    // Ensure the dep was actually optimized (served from .vite/deps)
-    expect(depUrl).toContain('.vite/deps')
-    const depRes = await page.request.get(new URL(depUrl, page.url()).href)
-    const depJs = await depRes.text()
-    expect(depJs).toMatch(
-      /^\/\/# sourceMappingURL=data:application\/json;base64,/m,
-    )
-    const map = extractSourcemap(depJs)
-    expect(map.sourcesContent).toBeDefined()
-    expect(map.sourcesContent).not.toContainEqual(
-      expect.stringContaining('defineConfig'),
-    )
-  })
+  // bundled dev: `/node_modules/.vite/deps/` does not exist (no optimizer, by
+  // design); the dep still bundles and the previous test's whole-map scan
+  // covers its no-leak property
+  test.skipIf(isBundledDev)(
+    'should not leak file contents via sourcemap path traversal in optimized deps',
+    async () => {
+      const res = await page.request.get(
+        new URL('./optimized-malicious-import.js', page.url()).href,
+      )
+      const js = await res.text()
+      // Find the rewritten import URL for the optimized malicious dep
+      const depUrlMatch = js.match(/from\s+"([^"]*optimized-malicious[^"]*)"/)
+      expect(depUrlMatch).toBeTruthy()
+      const depUrl = depUrlMatch![1]
+      // Ensure the dep was actually optimized (served from .vite/deps)
+      expect(depUrl).toContain('.vite/deps')
+      const depRes = await page.request.get(new URL(depUrl, page.url()).href)
+      const depJs = await depRes.text()
+      expect(depJs).toMatch(
+        /^\/\/# sourceMappingURL=data:application\/json;base64,/m,
+      )
+      const map = extractSourcemap(depJs)
+      expect(map.sourcesContent).toBeDefined()
+      expect(map.sourcesContent).not.toContainEqual(
+        expect.stringContaining('defineConfig'),
+      )
+    },
+  )
 
-  test('babel-transformed downleveled optimized dep maps to the correct original name', async () => {
-    const depJs = await getDepJs(
-      './optimized-class-field-import-babel.js',
-      'test-dep-class-field-sourcemap-babel',
-    )
+  // bundled dev: optimizer-only cases — the test plugins hook on `/deps/` URLs
+  // which do not exist under bundled dev
+  test.skipIf(isBundledDev)(
+    'babel-transformed downleveled optimized dep maps to the correct original name',
+    async () => {
+      const depJs = await getDepJs(
+        './optimized-class-field-import-babel.js',
+        'test-dep-class-field-sourcemap-babel',
+      )
 
-    expect(depJs).toContain('x = () => 1')
-    expect(depJs).toContain('constructor(_x)')
-    expect(depJs).toContain('console.log(_x)')
-    expectConsoleLogArgumentMapsToOriginalX(depJs, '_x')
-  })
+      expect(depJs).toContain('x = () => 1')
+      expect(depJs).toContain('constructor(_x)')
+      expect(depJs).toContain('console.log(_x)')
+      expectConsoleLogArgumentMapsToOriginalX(depJs, '_x')
+    },
+  )
 
-  test('oxc-transformed downleveled optimized dep maps to the correct original name', async () => {
-    const depJs = await getDepJs(
-      './optimized-class-field-import-oxc.js',
-      'test-dep-class-field-sourcemap-oxc',
-    )
+  test.skipIf(isBundledDev)(
+    'oxc-transformed downleveled optimized dep maps to the correct original name',
+    async () => {
+      const depJs = await getDepJs(
+        './optimized-class-field-import-oxc.js',
+        'test-dep-class-field-sourcemap-oxc',
+      )
 
-    expect(depJs).toContain('x$$$ = () => 1')
-    expect(depJs).toContain('constructor$$$(_x$$$)')
-    expect(depJs).toContain('console$$$.log$$$(_x$$$)')
-    expectConsoleLogArgumentMapsToOriginalX(depJs, '_x$$$')
-  })
+      expect(depJs).toContain('x$$$ = () => 1')
+      expect(depJs).toContain('constructor$$$(_x$$$)')
+      expect(depJs).toContain('console$$$.log$$$(_x$$$)')
+      expectConsoleLogArgumentMapsToOriginalX(depJs, '_x$$$')
+    },
+  )
 }
 
 describe.runIf(isBuild)('build tests', () => {
