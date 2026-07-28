@@ -174,6 +174,18 @@ describe.runIf(isBuild)('build', () => {
     })
   })
 
+  describe('scriptFetchPriority', () => {
+    beforeAll(async () => {
+      await page.goto(viteTestUrl + '/scriptFetchPriority.html')
+    })
+
+    test('script preserves fetchpriority', async () => {
+      expect(
+        await page.$('head script[type=module][fetchpriority="high"]'),
+      ).toBeTruthy()
+    })
+  })
+
   describe('zeroJS', () => {
     // Ensure that the modulePreload polyfill is discarded in this case
 
