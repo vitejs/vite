@@ -1,0 +1,21 @@
+packages/vite/src/node/server/middlewares/__tests__/static.spec.ts
+  s_4901f29ad8b30e::t_627d1780dd219a 2-3,31-44
+packages/vite/src/node/server/middlewares/static.ts
+  s_4901f29ad8b30e::t_61978c061c0d78 322
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "eed887f78ba0c8ff897fa95187ee900c745c003f",
+  "prompts": {},
+  "sessions": {
+    "s_4901f29ad8b30e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa76d-c3ae-7cb0-ab7f-42e6688e291d",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
