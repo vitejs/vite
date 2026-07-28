@@ -1,7 +1,8 @@
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { type ViteDevServer, createServer } from '../index'
+import { resolveConfig } from '../../config'
+import { type ViteDevServer, createServer, getServerWatchPaths } from '../index'
 
 const stubGetWatchedCode = /\(\)\s*\{\s*return this;\s*\}/
 
@@ -52,5 +53,21 @@ describe('watcher configuration', () => {
         ]),
       )
     })
+  })
+
+  it('does not watch a missing public directory explicitly', async () => {
+    const root = fileURLToPath(
+      new URL('./fixtures/watcher/nested-root', import.meta.url),
+    )
+    const missingPublicDir = resolve(root, '../missing-public')
+    const config = await resolveConfig(
+      {
+        root,
+        publicDir: missingPublicDir,
+      },
+      'serve',
+    )
+
+    expect(getServerWatchPaths(config)).not.toContain(missingPublicDir)
   })
 })

@@ -483,6 +483,18 @@ export function createServer(
   return _createServer(inlineConfig, { listen: true })
 }
 
+export function getServerWatchPaths(config: ResolvedConfig): string[] {
+  const { root, publicDir } = config
+  return [
+    ...(config.experimental.bundledDev ? [] : [root]),
+    ...config.configFileDependencies,
+    ...getEnvFilesForMode(config.mode, config.envDir),
+    // Watch the public directory explicitly because it might be outside
+    // of the root directory.
+    ...(publicDir && fs.existsSync(publicDir) ? [publicDir] : []),
+  ]
+}
+
 export async function _createServer(
   inlineConfig: ResolvedConfig | InlineConfig | undefined = {},
   options: {
@@ -557,15 +569,7 @@ export async function _createServer(
   const watchEnabled = serverConfig.watch !== null
   const watcher = watchEnabled
     ? (chokidar.watch(
-        // config file dependencies and env file might be outside of root
-        [
-          ...(config.experimental.bundledDev ? [] : [root]),
-          ...config.configFileDependencies,
-          ...getEnvFilesForMode(config.mode, config.envDir),
-          // Watch the public directory explicitly because it might be outside
-          // of the root directory.
-          ...(publicDir && publicFiles ? [publicDir] : []),
-        ],
+        getServerWatchPaths(config),
 
         resolvedWatchOptions,
       ) as FSWatcher)
