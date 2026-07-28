@@ -1,7 +1,8 @@
 import { defineConfig } from 'vite'
 import workerPluginTestPlugin from './worker-plugin-test-plugin.js'
 
-export default defineConfig(({ isPreview }) => ({
+export default defineConfig(({ command, isPreview }) => ({
+  input: command === 'serve' ? ['index.html', 'classic-esm.js'] : undefined,
   base: !isPreview ? './' : '/relative-base/',
   resolve: {
     alias: {
