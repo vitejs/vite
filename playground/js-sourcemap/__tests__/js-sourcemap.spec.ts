@@ -75,16 +75,21 @@ function expectConsoleLogArgumentMapsToOriginalX(
 // instead (vitejs/vite#23028).
 async function getServedEntryChunk() {
   // poll: right after navigation the server may still answer with the
-  // self-reloading fallback page, which has no external script tag
-  const srcMatch = await vi.waitUntil(
+  // self-reloading fallback page, which has no external script tag; waitFor
+  // (not waitUntil) so a transient request failure retries instead of aborting
+  const srcMatches = await vi.waitFor(
     async () => {
       const html = await (await page.request.get(page.url())).text()
-      return html.match(/<script[^>]* src="([^"]+)"/)
+      const matches = [...html.matchAll(/<script[^>]* src="([^"]+)"/g)]
+      expect(matches.length).toBeGreaterThan(0)
+      return matches
     },
     { timeout: 10_000 },
   )
-  expect(srcMatch).toBeTruthy()
-  const entryUrl = new URL(srcMatch![1], page.url())
+  // every bundled-dev check reads the map of this one chunk. Fail here and now
+  // if the dev bundle ever starts splitting the entry into more chunks.
+  expect(srcMatches).toHaveLength(1)
+  const entryUrl = new URL(srcMatches[0][1], page.url())
   const js = await (await page.request.get(entryUrl.href)).text()
   const mapUrlMatch = js.match(/^\/\/# sourceMappingURL=(\S+)$/m)
   expect(mapUrlMatch).toBeTruthy()
@@ -189,8 +194,9 @@ if (!isBuild) {
     `)
   })
 
-  // bundled dev: foo-with-sourcemap.js is not imported by index.html, so it is
-  // not part of the bundle and nothing serves it (dev-only on-demand transform)
+  // bundled dev: index.html never imports foo-with-sourcemap.js, so it is not
+  // part of the bundle and nothing serves it. Only dev transforms a file on
+  // demand like this.
   test.skipIf(isBundledDev)(
     'js with inline sourcemap injected by a plugin',
     async () => {
@@ -307,14 +313,21 @@ if (!isBuild) {
 
   test('should not leak file contents via sourcemap path traversal in node_modules', async () => {
     if (isBundledDev) {
-      // bundled dev: the dep is served inside the bundle, not from a
-      // `/node_modules/...` URL, so assert the same no-leak property on the
-      // served bundle map. A raw-fs `.map`-serving equivalent is still owed
-      // when static serving lands (vitejs/vite#23028).
+      // bundled dev serves the dep inside the bundle, not at a
+      // `/node_modules/...` URL. So check the same thing on the bundle map:
+      // no file contents leak. A version of this test that reads a `.map` from
+      // disk is still needed once static serving lands (vitejs/vite#23028).
       const { map } = await getServedEntryChunk()
       expect(
         map.sources.some((source: string) =>
           source.includes('test-dep-malicious-sourcemap'),
+        ),
+      ).toBe(true)
+      // the optimized-deps test below is skipped because this scan of the whole
+      // map is meant to cover its dep as well. Check that it really does.
+      expect(
+        map.sources.some((source: string) =>
+          source.includes('test-dep-optimized-malicious'),
         ),
       ).toBe(true)
       expect(map.sourcesContent).toBeDefined()
@@ -340,9 +353,9 @@ if (!isBuild) {
     )
   })
 
-  // bundled dev: `/node_modules/.vite/deps/` does not exist (no optimizer, by
-  // design); the dep still bundles and the previous test's whole-map scan
-  // covers its no-leak property
+  // bundled dev has no dep optimizer by design, so `/node_modules/.vite/deps/`
+  // does not exist. The dep is still bundled, and the test above scans the
+  // whole map, so the no-leak check still covers it.
   test.skipIf(isBundledDev)(
     'should not leak file contents via sourcemap path traversal in optimized deps',
     async () => {
@@ -369,8 +382,8 @@ if (!isBuild) {
     },
   )
 
-  // bundled dev: optimizer-only cases — the test plugins hook on `/deps/` URLs
-  // which do not exist under bundled dev
+  // bundled dev: these cases only apply with the dep optimizer. The test
+  // plugins act on `/deps/` URLs, which do not exist under bundled dev.
   test.skipIf(isBundledDev)(
     'babel-transformed downleveled optimized dep maps to the correct original name',
     async () => {
