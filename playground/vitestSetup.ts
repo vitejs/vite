@@ -25,7 +25,7 @@ import type {
   RolldownWatcherEvent,
   RollupError,
 } from 'rolldown'
-import { beforeAll, expect, inject } from 'vitest'
+import { beforeAll, expect, inject, vi } from 'vitest'
 
 // #region serializer
 
@@ -308,14 +308,11 @@ export async function startDefaultServe(): Promise<void> {
       // `initialBuildCompleted` / `lastBuildError` are private — the harness
       // reaches in rather than widening the public API for tests only.
       const bundledDev = server.environments.client.bundledDev as any
-      const deadline = Date.now() + 40_000
-      while (
-        bundledDev &&
-        !bundledDev.initialBuildCompleted &&
-        !bundledDev.lastBuildError &&
-        Date.now() < deadline
-      ) {
-        await new Promise((r) => setTimeout(r, 50))
+      if (bundledDev) {
+        await vi.waitUntil(
+          () => bundledDev.initialBuildCompleted || bundledDev.lastBuildError,
+          { timeout: 40_000 },
+        )
       }
       if (bundledDev?.initialBuildCompleted) {
         await page
@@ -327,15 +324,26 @@ export async function startDefaultServe(): Promise<void> {
           .catch(() => {})
         // TODO: workaround — an edit fired while no client is connected is
         // dropped (vitejs/vite#23028). Remove this wait once the server
-        // buffers updates for clients that connect later.
-        const clientDeadline = Date.now() + 10_000
-        while (Date.now() < clientDeadline) {
-          const clientId = await page
-            .evaluate(() => (globalThis as any).__rolldown_runtime__?.clientId)
-            .catch(() => undefined)
-          if (clientId && bundledDev.clients?.get(clientId)) break
-          await new Promise((r) => setTimeout(r, 50))
-        }
+        // buffers updates for clients that connect later. A page that never
+        // loads the client runtime (e.g. SSR-rendered pages) cannot register
+        // a client; a fully loaded page with no runtime counts as settled.
+        await vi.waitUntil(
+          async () => {
+            const state = await page
+              .evaluate(() => ({
+                loaded: document.readyState === 'complete',
+                hasRuntime: !!(globalThis as any).__rolldown_runtime__,
+                clientId: (globalThis as any).__rolldown_runtime__?.clientId,
+              }))
+              .catch(() => undefined)
+            if (!state) return false
+            if (state.clientId && bundledDev.clients?.get(state.clientId)) {
+              return true
+            }
+            return state.loaded && !state.hasRuntime
+          },
+          { timeout: 10_000 },
+        )
       }
     }
   } else {
