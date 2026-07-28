@@ -72,6 +72,7 @@ export const isServe = !isBuild
  * don't pass under bundled dev yet.
  */
 export const isBundledDev = isServe && !!process.env.VITE_TEST_BUNDLED_DEV
+export const isBundled = isBuild || isBundledDev
 export const isWindows = process.platform === 'win32'
 export const viteBinPath = path.posix.join(
   workspaceRoot,
