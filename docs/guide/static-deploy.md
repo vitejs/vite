@@ -314,7 +314,7 @@ Follow the steps in [the Vite deployment guide](https://docs.zephyr-cloud.io/bun
 
 ## Layero
 
-Deploy your static site using [Layero](https://layero.ru/), a hosting platform with build servers in Russia, by following these [instructions](https://docs.layero.ru/en/getting-started/quickstart). Vite is detected automatically, so the build command and the `dist` output directory are filled in for you.
+Deploy your static site using [Layero](https://layero.ru/) by following these [instructions](https://docs.layero.ru/en/getting-started/quickstart). Vite is detected automatically, so the build command and the `dist` output directory are filled in for you. Layero's build servers and hosting are located in Russia.
 
 ## EdgeOne Pages
 
