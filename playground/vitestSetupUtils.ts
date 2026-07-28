@@ -66,7 +66,6 @@ const playgroundsUsingDefaultFsAllow = new Set([
   'css-sourcemap',
   'hmr',
   'html',
-  'optimize-deps',
   'tailwind',
   'tailwind-v3',
 ])

@@ -7,6 +7,7 @@ function createRolldownDepPlugins(cacheDir: string) {
   const baseConfig = {
     cacheDir: normalizePath(cacheDir),
     optimizeDeps: { extensions: [] },
+    safeModulePaths: new Set<string>(),
     server: { fs: { allow: [] } },
     resolve: { builtins: [] },
     createResolver: () => ({}),
