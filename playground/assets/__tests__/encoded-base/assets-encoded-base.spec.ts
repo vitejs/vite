@@ -5,6 +5,7 @@ import {
   getBg,
   getColor,
   isBuild,
+  isBundled,
   isBundledDev,
   page,
 } from '~utils'
@@ -20,10 +21,9 @@ const urlAssetMatch = isBuild
 
 const iconMatch = '/icon.png'
 
-const absoluteIconMatch =
-  isBuild || isBundledDev
-    ? /\/foo%20bar\/.*\/icon-[-\w]{8}\.png/
-    : '/nested/icon.png'
+const absoluteIconMatch = isBundled
+  ? /\/foo%20bar\/.*\/icon-[-\w]{8}\.png/
+  : '/nested/icon.png'
 
 const absolutePublicIconMatch = isBuild ? /\/foo%20bar\/icon\.png/ : '/icon.png'
 

@@ -7,6 +7,7 @@ import {
   getBg,
   getColor,
   isBuild,
+  isBundled,
   isBundledDev,
   isServe,
   listAssets,
@@ -18,9 +19,6 @@ import {
   viteTestUrl,
   watcher,
 } from '~utils'
-
-// bundled dev serves hashed bundle-output asset URLs, same as build
-const isBundled = isBuild || isBundledDev
 
 const assetMatch = isBundled
   ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png/

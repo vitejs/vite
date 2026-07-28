@@ -1,5 +1,12 @@
 import { expect, test } from 'vitest'
-import { getBg, isBuild, isBundledDev, page, readManifest } from '~utils'
+import {
+  getBg,
+  isBuild,
+  isBundled,
+  isBundledDev,
+  page,
+  readManifest,
+} from '~utils'
 
 if (isBuild) {
   test('importing asset with special char in filename works in build', async () => {
@@ -39,7 +46,7 @@ if (isBuild) {
 }
 
 // bundled dev: the /.env request gets the SPA html fallback (200, no file content) instead of the 403 from server.fs.deny (vitejs/vite#23028)
-test.runIf(!isBuild && !isBundledDev)('denied .env', async () => {
+test.runIf(!isBundled)('denied .env', async () => {
   expect(await page.textContent('.unsafe-dotenv')).toBe('403')
   expect(await page.textContent('.unsafe-dotenv-double-slash')).toBe('200') // SPA fallback
 })
