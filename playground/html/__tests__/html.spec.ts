@@ -4,6 +4,7 @@ import {
   editFile,
   getColor,
   isBuild,
+  isBundledDev,
   isServe,
   page,
   serverLogs,
@@ -43,7 +44,8 @@ function testPage(isNested: boolean) {
     expect(await page.textContent('body p.inject')).toBe('This is injected')
   })
 
-  test('server only transform', async () => {
+  // bundled dev: transformIndexHtml runs at bundle time without ctx.server (vitejs/vite#23028)
+  test.skipIf(isBundledDev)('server only transform', async () => {
     if (!isBuild) {
       expect(await page.textContent('body p.server')).toMatch(
         'injected only during dev',
@@ -53,7 +55,8 @@ function testPage(isNested: boolean) {
     }
   })
 
-  test('build only transform', async () => {
+  // bundled dev: bundle-time transformIndexHtml sets ctx.bundle, so the build-only tag is injected in dev too (vitejs/vite#23028)
+  test.skipIf(isBundledDev)('build only transform', async () => {
     if (isBuild) {
       expect(await page.textContent('body p.build')).toMatch(
         'injected only during build',
@@ -283,7 +286,8 @@ describe.runIf(isServe)('SPA fallback', () => {
   })
 })
 
-describe.runIf(isServe)('invalid', () => {
+// bundled dev: invalid*.html are not bundle inputs, so they fall back to index.html (200) and are never parsed — no 500 or error overlay (vitejs/vite#23028)
+describe.runIf(isServe && !isBundledDev)('invalid', () => {
   test('should be 500 with overlay', async () => {
     const response = await page.goto(viteTestUrl + '/invalid.html')
     expect(response.status()).toBe(500)
@@ -431,7 +435,8 @@ describe('relative input', () => {
   })
 })
 
-describe.runIf(isServe)('warmup', () => {
+// bundled dev: server.moduleGraph stays empty by design (the bundle owns transforms), so warmup is not observable through it (vitejs/vite#23028)
+describe.runIf(isServe && !isBundledDev)('warmup', () => {
   test('should warmup /warmup/warm.js', async () => {
     // warmup transform files async during server startup, so the module check
     // here might take a while to load
