@@ -231,6 +231,71 @@ if (isBuild) {
     await expect.poll(() => page.textContent('.worker-url')).toBe('worker-url')
   })
 
+  // The importer self-accepts, so this update arrives as an HMR patch. A patch
+  // skips the generate phase, so without the worker files being emitted earlier
+  // it ships a URL for a file that was never written.
+  test('worker updated through an HMR patch is served', async () => {
+    const original = readFile('worker-accept-src.js')
+    onTestFinished(async () => {
+      addFile('worker-accept-src.js', original)
+      await expect
+        .poll(() => page.textContent('.worker-accept'))
+        .toBe('worker-accept')
+    })
+
+    await expect
+      .poll(() => page.textContent('.worker-accept'))
+      .toBe('worker-accept')
+
+    // survives an HMR patch, but not a page reload
+    await page.evaluate(() => {
+      ;(window as any).__workerAcceptKeptAlive = true
+    })
+
+    editFile('worker-accept-src.js', (code) =>
+      code.replace("'worker-accept'", "'worker-accept-updated'"),
+    )
+    await expect
+      .poll(() => page.textContent('.worker-accept'))
+      .toBe('worker-accept-updated')
+
+    expect(
+      await page.evaluate(() => (window as any).__workerAcceptKeptAlive),
+    ).toBe(true)
+  })
+
+  // The inner worker is bundled on its own, so a patch that emits only the
+  // worker it just resolved leaves one of the two files unserved.
+  test('nested worker updated through an HMR patch is served', async () => {
+    const original = readFile('worker-nested-inner.js')
+    onTestFinished(async () => {
+      addFile('worker-nested-inner.js', original)
+      await expect
+        .poll(() => page.textContent('.worker-nested'))
+        .toBe('nested-outer+nested-inner')
+    })
+
+    await expect
+      .poll(() => page.textContent('.worker-nested'))
+      .toBe('nested-outer+nested-inner')
+
+    // survives an HMR patch, but not a page reload
+    await page.evaluate(() => {
+      ;(window as any).__workerNestedKeptAlive = true
+    })
+
+    editFile('worker-nested-inner.js', (code) =>
+      code.replace("'nested-inner'", "'nested-inner-updated'"),
+    )
+    await expect
+      .poll(() => page.textContent('.worker-nested'))
+      .toBe('nested-outer+nested-inner-updated')
+
+    expect(
+      await page.evaluate(() => (window as any).__workerNestedKeptAlive),
+    ).toBe(true)
+  })
+
   test('lazy bundling', async () => {
     await page.click('#load-dynamic')
     await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')
