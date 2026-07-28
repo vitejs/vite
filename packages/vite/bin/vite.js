@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { performance } from 'node:perf_hooks'
 import module from 'node:module'
+import { removeProfileFlag } from './profile.js'
 
 if (!import.meta.url.includes('node_modules')) {
   if (!process.env.DEBUG_DISABLE_SOURCE_MAP) {
@@ -20,7 +21,6 @@ const debugIndex = process.argv.findIndex((arg) => /^(?:-d|--debug)$/.test(arg))
 const filterIndex = process.argv.findIndex((arg) =>
   /^(?:-f|--filter)$/.test(arg),
 )
-const profileIndex = process.argv.indexOf('--profile')
 
 if (debugIndex > 0) {
   let value = process.argv[debugIndex + 1]
@@ -62,12 +62,8 @@ function start() {
   return import('../dist/node/cli.js')
 }
 
+const profileIndex = removeProfileFlag(process.argv)
 if (profileIndex > 0) {
-  process.argv.splice(profileIndex, 1)
-  const next = process.argv[profileIndex]
-  if (next && next[0] !== '-') {
-    process.argv.splice(profileIndex, 1)
-  }
   const inspector = await import('node:inspector').then((r) => r.default)
   const session = (global.__vite_profile_session = new inspector.Session())
   session.connect()
