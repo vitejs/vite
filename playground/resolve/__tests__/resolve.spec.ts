@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import {
   isBuild,
+  isBundled,
   isBundledDev,
   isServe,
   isWindows,
@@ -37,7 +38,7 @@ test('deep import with exports field', async () => {
 test('deep import with query with exports field', async () => {
   // since it is imported with `?url` it should return a URL
   expect(await page.textContent('.exports-deep-query')).toMatch(
-    isBuild || isBundledDev ? /base64/ : '/exports-path/deep.json',
+    isBundled ? /base64/ : '/exports-path/deep.json',
   )
 })
 
@@ -229,7 +230,7 @@ test('Resolving from other package with imports field', async () => {
 test('Resolving with query with imports field', async () => {
   // since it is imported with `?url` it should return a URL
   expect(await page.textContent('.imports-query')).toMatch(
-    isBuild || isBundledDev ? /base64/ : '/imports-path/query.json',
+    isBundled ? /base64/ : '/imports-path/query.json',
   )
 })
 

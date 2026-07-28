@@ -4,6 +4,7 @@ import {
   findAssetFile,
   getColor,
   isBuild,
+  isBundled,
   isBundledDev,
   page,
   serverLogs,
@@ -120,7 +121,7 @@ test('should load dynamic import with vars raw', async () => {
 test('should load dynamic import with vars url', async () => {
   await expect
     .poll(() => page.textContent('.dynamic-import-with-vars-url'))
-    .toMatch(isBuild || isBundledDev ? 'data:text/javascript' : '/alias/url.js')
+    .toMatch(isBundled ? 'data:text/javascript' : '/alias/url.js')
 })
 
 // bundled dev: workers created through the dynamic-import-vars glob aren't

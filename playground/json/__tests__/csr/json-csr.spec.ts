@@ -3,7 +3,7 @@ import { expect, test } from 'vitest'
 import deepJson from 'vue/package.json'
 import testJson from '../../test.json'
 import hmrJson from '../../hmr.json'
-import { editFile, isBuild, isBundledDev, isServe, page } from '~utils'
+import { editFile, isBundled, isBundledDev, isServe, page } from '~utils'
 
 const stringified = JSON.stringify(testJson)
 const deepStringified = JSON.stringify(deepJson)
@@ -41,7 +41,7 @@ test.skipIf(isBundledDev)('fetch', async () => {
 
 test('?url', async () => {
   expect(await page.textContent('.url')).toMatch(
-    isBuild || isBundledDev ? 'data:application/json' : '/test.json',
+    isBundled ? 'data:application/json' : '/test.json',
   )
 })
 

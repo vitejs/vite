@@ -3,6 +3,7 @@ import {
   findAssetFile,
   getColor,
   isBuild,
+  isBundled,
   isBundledDev,
   listAssets,
   page,
@@ -95,7 +96,7 @@ test('should load dynamic import with css', async () => {
 
 test('asset url', async () => {
   expect(await page.textContent('#asset-path')).toMatch(
-    isBuild || isBundledDev ? /\/assets\/vite-[-\w]+\.svg/ : '/vite.svg',
+    isBundled ? /\/assets\/vite-[-\w]+\.svg/ : '/vite.svg',
   )
 })
 
