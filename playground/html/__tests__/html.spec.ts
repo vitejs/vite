@@ -4,6 +4,7 @@ import {
   editFile,
   getColor,
   isBuild,
+  isBundled,
   isBundledDev,
   isServe,
   page,
@@ -44,7 +45,8 @@ function testPage(isNested: boolean) {
     expect(await page.textContent('body p.inject')).toBe('This is injected')
   })
 
-  // bundled dev: transformIndexHtml runs at bundle time without ctx.server (vitejs/vite#23028)
+  // bundled dev runs transformIndexHtml while bundling, and ctx.server is not
+  // set there. Hooks read that as a build (vitejs/vite#23028)
   test.skipIf(isBundledDev)('server only transform', async () => {
     if (!isBuild) {
       expect(await page.textContent('body p.server')).toMatch(
@@ -55,7 +57,9 @@ function testPage(isNested: boolean) {
     }
   })
 
-  // bundled dev: bundle-time transformIndexHtml sets ctx.bundle, so the build-only tag is injected in dev too (vitejs/vite#23028)
+  // bundled dev runs transformIndexHtml while bundling, which sets ctx.bundle.
+  // The tag meant only for build is therefore added in dev too
+  // (vitejs/vite#23028)
   test.skipIf(isBundledDev)('build only transform', async () => {
     if (isBuild) {
       expect(await page.textContent('body p.build')).toMatch(
@@ -286,8 +290,10 @@ describe.runIf(isServe)('SPA fallback', () => {
   })
 })
 
-// bundled dev: invalid*.html are not bundle inputs, so they fall back to index.html (200) and are never parsed — no 500 or error overlay (vitejs/vite#23028)
-describe.runIf(isServe && !isBundledDev)('invalid', () => {
+// bundled dev does not take invalid*.html as bundle inputs. A request for one
+// falls back to index.html with status 200, and the file is never parsed.
+// So there is no 500 answer and no error overlay (vitejs/vite#23028)
+describe.runIf(!isBundled)('invalid', () => {
   test('should be 500 with overlay', async () => {
     const response = await page.goto(viteTestUrl + '/invalid.html')
     expect(response.status()).toBe(500)
@@ -435,8 +441,9 @@ describe('relative input', () => {
   })
 })
 
-// bundled dev: server.moduleGraph stays empty by design (the bundle owns transforms), so warmup is not observable through it (vitejs/vite#23028)
-describe.runIf(isServe && !isBundledDev)('warmup', () => {
+// bundled dev keeps server.moduleGraph empty by design, because the bundle
+// does the transforms. Warmup cannot be seen through it (vitejs/vite#23028)
+describe.runIf(!isBundled)('warmup', () => {
   test('should warmup /warmup/warm.js', async () => {
     // warmup transform files async during server startup, so the module check
     // here might take a while to load
