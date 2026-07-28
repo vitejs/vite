@@ -12,6 +12,10 @@ import {
 
 // note: tests should retrieve the element at the beginning of test and reuse it
 // in later assertions to ensure CSS HMR doesn't reload the page
+
+// bundled dev: an edit that lands while the page is (re)loading or before the
+// client (re)connects is dropped entirely — the early edit-propagation tests
+// are flaky under parallel suite load (vitejs/vite#23028)
 test.skipIf(isBundledDev)('linked css', async () => {
   const linked = await page.$('.linked')
   const atImport = await page.$('.linked-at-import')
@@ -29,6 +33,7 @@ test.skipIf(isBundledDev)('linked css', async () => {
   await expect.poll(() => getColor(atImport)).toBe('blue')
 })
 
+// bundled dev: same dropped-update window as 'linked css' above
 test.skipIf(isBundledDev)('css import from js', async () => {
   const imported = await page.$('.imported')
   const atImport = await page.$('.imported-at-import')
@@ -46,6 +51,8 @@ test.skipIf(isBundledDev)('css import from js', async () => {
   await expect.poll(() => getColor(atImport)).toBe('blue')
 })
 
+// bundled dev: the remote @import is fetched during the bundle; the fetch is
+// network-dependent and flakes under repeated runs (vitejs/vite#23028)
 test.skipIf(isBundledDev)('@import external css', async () => {
   const icon = page.locator('.icon--mdi-light--help-circle')
   expect(
@@ -83,10 +90,10 @@ test('css with external url', async () => {
   expect(await getBg(css)).toMatch('url("https://vite.dev/logo.svg")')
 })
 
-test.skipIf(isBundledDev)('nested css with relative asset', async () => {
+test('nested css with relative asset', async () => {
   const css = await page.$('.nested-css-relative-asset')
   expect(await getBg(css)).toMatch(
-    isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+    isBuild || isBundledDev ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
 })
 
