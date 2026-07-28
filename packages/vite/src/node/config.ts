@@ -364,6 +364,14 @@ export type DefaultEnvironmentOptions = Omit<
   resolve?: AllResolveOptions
 }
 
+export interface KnownEnvironment extends Record<string & {}, never> {
+  client: never
+  ssr: never
+}
+export type KnownEnvironmentNames = keyof KnownEnvironment
+
+export type EnvironmentsOptions = Partial<Record<KnownEnvironmentNames, EnvironmentOptions>>
+
 export interface UserConfig extends DefaultEnvironmentOptions {
   /**
    * Project root directory. Can be an absolute path, or a path relative from
@@ -532,7 +540,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   /**
    * Environment overrides
    */
-  environments?: Record<string, EnvironmentOptions>
+  environments?: Partial<Record<KnownEnvironmentNames, EnvironmentOptions>>
   /**
    * Whether your application is a Single Page Application (SPA),
    * a Multi-Page Application (MPA), or Custom Application (SSR
@@ -756,7 +764,7 @@ export interface ResolvedConfig extends Readonly<
     appType: AppType
     experimental: RequiredExceptFor<ExperimentalOptions, 'renderBuiltUrl'>
     future: FutureOptions | undefined
-    environments: Record<string, ResolvedEnvironmentOptions>
+    environments: Record<KnownEnvironmentNames, ResolvedEnvironmentOptions>
     /** @internal injected by legacy plugin */
     isOutputOptionsForLegacyChunks?(
       outputOptions: NormalizedOutputOptions,

@@ -40,6 +40,7 @@ import type {
   InlineConfig,
   ResolvedConfig,
   ResolvedEnvironmentOptions,
+  KnownEnvironmentNames,
 } from './config'
 import { resolveConfig } from './config'
 import type { PartialEnvironment } from './baseEnvironment'
@@ -1769,7 +1770,7 @@ export class BuildEnvironment extends BaseEnvironment {
 }
 
 export interface ViteBuilder {
-  environments: Record<string, BuildEnvironment>
+  environments: Record<KnownEnvironmentNames, BuildEnvironment>
   config: ResolvedConfig
   buildApp(): Promise<void>
   build(
