@@ -312,6 +312,10 @@ Zephyr follows a different approach than other cloud providers. It integrates di
 
 Follow the steps in [the Vite deployment guide](https://docs.zephyr-cloud.io/bundlers/vite) to get started.
 
+## Layero
+
+Deploy your static site using [Layero](https://layero.ru/), a hosting platform with build servers in Russia, by following these [instructions](https://docs.layero.ru/en/getting-started/quickstart). Vite is detected automatically, so the build command and the `dist` output directory are filled in for you.
+
 ## EdgeOne Pages
 
 Deploy your static site using [EdgeOne Pages](https://edgeone.ai/products/pages) by following these [instructions](https://pages.edgeone.ai/document/vite).
