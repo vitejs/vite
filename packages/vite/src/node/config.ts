@@ -1704,18 +1704,18 @@ export async function resolveConfig(
   }
 
   for (const name of Object.keys(config.environments)) {
-    config.environments[name] = mergeConfig(
+    config.environments[name as KnownEnvironmentNames] = mergeConfig(
       name === 'client'
         ? defaultClientEnvironmentOptions
         : (deepClone(
             defaultNonClientEnvironmentOptions as object,
           ) as UserConfig),
-      config.environments[name],
+      config.environments[name as KnownEnvironmentNames]!,
     )
   }
 
   await runConfigEnvironmentHook(
-    config.environments,
+    config.environments as Record<string, EnvironmentOptions>,
     userPlugins,
     logger,
     configEnv,
@@ -1726,15 +1726,15 @@ export async function resolveConfig(
 
   // Backward compatibility: merge config.environments.client.resolve back into config.resolve
   config.resolve ??= {}
-  config.resolve.conditions = config.environments.client.resolve?.conditions
-  config.resolve.mainFields = config.environments.client.resolve?.mainFields
+  config.resolve.conditions = config.environments.client!.resolve?.conditions
+  config.resolve.mainFields = config.environments.client!.resolve?.mainFields
 
   const resolvedDefaultResolve = resolveResolveOptions(config.resolve, logger)
 
   const resolvedEnvironments: Record<string, ResolvedEnvironmentOptions> = {}
   for (const environmentName of Object.keys(config.environments)) {
     resolvedEnvironments[environmentName] = resolveEnvironmentOptions(
-      config.environments[environmentName],
+      config.environments[environmentName as KnownEnvironmentNames]!,
       resolvedDefaultResolve.alias,
       resolvedDefaultResolve.preserveSymlinks,
       resolvedRoot,
