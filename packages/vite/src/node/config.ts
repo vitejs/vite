@@ -117,6 +117,7 @@ import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from './server/pluginContainer'
+import { SafeModulePaths } from './server/safeModulePaths'
 import type { WebSocketServer } from './server/ws'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions, ssrConfigDefaults } from './ssr'
@@ -782,7 +783,7 @@ export interface ResolvedConfig extends Readonly<
     /** @internal */
     fsDenyGlob: AnymatchFn
     /** @internal */
-    safeModulePaths: Set<string>
+    safeModulePaths: SafeModulePaths
     /** @internal */
     [SYMBOL_RESOLVED_CONFIG]: true
   } & PluginHookUtils
@@ -2176,7 +2177,7 @@ export async function resolveConfig(
         dot: true,
       },
     ),
-    safeModulePaths: new Set<string>(),
+    safeModulePaths: new SafeModulePaths(),
     [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {
