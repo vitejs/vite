@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'vitest'
+import type { ResolvedConfig } from '../../../config'
 import { normalizeAlias } from '../../../utils'
 import {
   applyStaticAlias,
   isFileInTargetPath,
+  isFileLoadingAllowed,
   looksLikeWindowsShortNamePath,
 } from '../static'
 
@@ -153,4 +155,18 @@ describe('looksLikeWindowsShortNamePath', () => {
       expect(looksLikeWindowsShortNamePath(filePath)).toBe(false)
     })
   }
+})
+
+describe('isFileLoadingAllowed', () => {
+  test('treats query syntax as part of the file path', () => {
+    const safeFilePath = '/foo/bar'
+    const config = {
+      server: { fs: { strict: true, allow: [] } },
+      fsDenyGlob: () => false,
+      safeModulePaths: new Set([safeFilePath]),
+    } as ResolvedConfig
+
+    expect(isFileLoadingAllowed(config, safeFilePath)).toBe(true)
+    expect(isFileLoadingAllowed(config, `${safeFilePath}?baz`)).toBe(false)
+  })
 })
