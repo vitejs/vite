@@ -11,7 +11,7 @@ import {
 
 // bundled dev serves hashed bundle-output asset URLs like build, but at the
 // default assets dir — build's custom assetFileNames (other-assets/) does not
-// apply (vitejs/vite#23028)
+// apply
 const absoluteAssetMatch = isBuild
   ? /http.*\/other-assets\/asset-[-\w]{8}\.png/
   : isBundledDev

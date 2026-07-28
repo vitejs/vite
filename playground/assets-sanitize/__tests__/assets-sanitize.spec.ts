@@ -18,7 +18,7 @@ if (isBuild) {
     expect(Object.keys(manifest).length).toBe(3) // 2 svg, 1 index.js
   })
 } else if (isBundledDev) {
-  // bundled dev sanitizes and hashes filenames like build, but it writes no manifest file to read (vitejs/vite#23028)
+  // bundled dev sanitizes and hashes filenames like build, but it writes no manifest file to read
   test('importing asset with special char in filename works in bundled dev', async () => {
     const plusCircleAsset = await page.textContent('.plus-circle')
     const underscoreCircleAsset = await page.textContent('.underscore-circle')

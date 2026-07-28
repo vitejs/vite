@@ -19,7 +19,7 @@ import {
   watcher,
 } from '~utils'
 
-// bundled dev serves hashed bundle-output asset URLs, same as build (vitejs/vite#23028)
+// bundled dev serves hashed bundle-output asset URLs, same as build
 const isBundled = isBuild || isBundledDev
 
 const assetMatch = isBundled
