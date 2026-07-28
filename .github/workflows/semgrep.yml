@@ -22,12 +22,11 @@ jobs:
 
       - run: >-
           semgrep scan
-            -q
-            --sarif
-            --config auto
-            --no-error
-            --exclude playground
-            --exclude-rule javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
+          --quiet
+          --sarif
+          --config auto
+          --exclude playground
+          --exclude-rule javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
           > semgrep-results.sarif
 
       - name: Upload SARIF result
