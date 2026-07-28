@@ -1543,6 +1543,19 @@ describe('resolveConfig', () => {
     })
   })
 
+  test('adds URLs and their cleaned paths to safeModulePaths', async () => {
+    const config = await resolveConfig({}, 'serve')
+    const safeModulePaths = config.safeModulePaths
+
+    expect(safeModulePaths.addUrl).toBeTypeOf('function')
+    safeModulePaths.addUrl('/foo/bar?raw')
+    expect([...safeModulePaths]).toEqual(['/foo/bar?raw', '/foo/bar'])
+
+    safeModulePaths.clear()
+    safeModulePaths.add('/foo/bar?url')
+    expect([...safeModulePaths]).toEqual(['/foo/bar?url'])
+  })
+
   test('allows glob characters in input', async () => {
     const input = 'src/*.ts'
 

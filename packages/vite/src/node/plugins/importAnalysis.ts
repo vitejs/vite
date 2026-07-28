@@ -597,7 +597,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               ? moduleUrlToBrowserUrl(moduleUrl, ssr ? '' : base)
               : specifier
             if (id != null) {
-              config.safeModulePaths.add(cleanUrl(id))
+              config.safeModulePaths.addUrl(id)
             }
 
             if (browserUrl !== specifier) {
