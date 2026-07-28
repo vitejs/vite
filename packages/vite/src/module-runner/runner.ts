@@ -38,7 +38,6 @@ import { createHMRHandlerForRunner, reloadEntrypoints } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
 import { ESModulesEvaluator } from './esmEvaluator'
 import { createDefaultImportMeta } from './createImportMeta'
-import { installRolldownRuntimeHelpers } from './rolldownRuntimeHelpers'
 
 interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
@@ -80,7 +79,6 @@ export class ModuleRunner {
     // at all, so the runtime exists even when HMR is disabled
     let runtime: DevRuntime | undefined
     if (options.rolldownRuntime) {
-      installRolldownRuntimeHelpers()
       runtime = this.rolldownDevRuntime = new DevRuntime(nanoid())
       runtime.hooks = {
         createModuleHotContext: (id) => this.ensureModuleHotContext(id),
