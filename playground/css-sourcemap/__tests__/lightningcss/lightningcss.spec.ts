@@ -4,6 +4,7 @@ import {
   extractSourcemap,
   formatSourcemapForSnapshot,
   isBuild,
+  isBundled,
   isBundledDev,
   isServe,
   page,
@@ -114,7 +115,7 @@ describe.runIf(isServe)('serve', () => {
   })
 
   // bundled dev: same — source-path CSS URLs are not served
-  test.runIf(isServe && !isBundledDev)(
+  test.runIf(!isBundled)(
     'js .css request does not include sourcemap',
     async () => {
       const res = await page.request.get(
