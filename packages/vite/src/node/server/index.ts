@@ -29,7 +29,11 @@ import {
   resolveHttpsConfig,
   setClientErrorHandler,
 } from '../http'
-import type { InlineConfig, ResolvedConfig, KnownEnvironmentNames } from '../config'
+import type {
+  InlineConfig,
+  ResolvedConfig,
+  KnownEnvironmentNames,
+} from '../config'
 import { isResolvedConfig, resolveConfig } from '../config'
 import {
   type Hostname,

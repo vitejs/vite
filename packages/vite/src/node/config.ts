@@ -370,7 +370,9 @@ export interface KnownEnvironment extends Record<string & {}, never> {
 }
 export type KnownEnvironmentNames = keyof KnownEnvironment
 
-export type EnvironmentsOptions = Partial<Record<KnownEnvironmentNames, EnvironmentOptions>>
+export type EnvironmentsOptions = Partial<
+  Record<KnownEnvironmentNames, EnvironmentOptions>
+>
 
 export interface UserConfig extends DefaultEnvironmentOptions {
   /**
