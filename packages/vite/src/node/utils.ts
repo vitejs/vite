@@ -2002,7 +2002,7 @@ export function formatAndTruncateFileList(files: string[]): {
   return { formatted: log, truncated }
 }
 
-const hashbangRE = /^#!.*\n/
+const hashbangRE = /^#![^\r\n\u2028\u2029]*(?:\r\n|[\r\n\u2028\u2029])?/
 
 // find the start of the file, after the hashbang
 export function getFileStartIndex(code: string): number {

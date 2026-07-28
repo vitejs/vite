@@ -1155,6 +1155,18 @@ import foo from "foo"`,
   `)
 })
 
+test('import hoisted after hashbang with CRLF line endings', async () => {
+  const transformed = await ssrTransformSimpleCode(
+    '#!/usr/bin/env node\r\nconsole.log(foo);\r\nimport foo from "foo"',
+  )
+
+  expect(
+    transformed?.startsWith(
+      '#!/usr/bin/env node\r\nconst __vite_ssr_import_0__',
+    ),
+  ).toBe(true)
+})
+
 test('identity function helper injected after hashbang', async () => {
   expect(
     await ssrTransformSimpleCode(
