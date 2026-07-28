@@ -36,7 +36,10 @@ const fetchPath = (p: string) => {
   })
 }
 
-// bundled dev inlines ?url CSS as a data URI, so its relative url() loses the base and 404s (vitejs/vite#23028)
+// bundled dev inlines ?url CSS as a data URI without running the CSS
+// pipeline, so its relative url() survives untransformed and 404s
+// (vitejs/vite#22863, fix pending in vitejs/vite#23072) — a real bug, so this
+// test must stay red there; once fixed, it un-skips unchanged
 test.skipIf(isBundledDev)('should have no 404s', () => {
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
@@ -520,10 +523,19 @@ test('?raw import', async () => {
   await expect
     .poll(() => page.textContent('.raw-html'))
     .toBe('<div>partial updated</div>\n')
+})
+
+// bundled dev logs `playground-temp/assets/nested/...` instead of the
+// `/nested/...` URL path plain dev prints. Vite-side gap, not rolldown
+// (vitejs/vite#23028): the server never passes `cwd` to rolldown
+// (bundledDev.ts), so module ids anchor at process.cwd() and leak the
+// project's location in the workspace, and bundledDevHmrClient.ts logs the
+// raw ids without normalizing them to URL-style paths. Fix both, then this
+// un-skips unchanged. Relies on the edit made by '?raw import' above.
+test.runIf(!isBundled)('?raw import hot-update log', () => {
   expect(browserLogs).toStrictEqual(
     expect.arrayContaining([
-      // bundled dev logs the module id relative to the workspace root instead of as a URL path
-      expect.stringMatching(/hot updated: \S*nested\/partial\.html\?raw via/),
+      expect.stringContaining('hot updated: /nested/partial.html?raw via'),
     ]),
   )
 })
@@ -541,7 +553,7 @@ test.skipIf(isBundledDev)(
   '?no-inline svg import -- multiple postfix',
   async () => {
     expect(await page.textContent('.no-inline-svg-mp')).toMatch(
-      isBuild
+      isBundled
         ? /\/foo\/bar\/assets\/fragment-[-\w]{8}\.svg\?foo=bar/
         : '/foo/bar/nested/fragment.svg?no-inline&foo=bar',
     )
@@ -575,7 +587,10 @@ test('?url import', async () => {
   )
 })
 
-// bundled dev inlines the ?url CSS as a data URI while build always emits a CSS asset file (vitejs/vite#23028)
+// bundled dev inlines the ?url CSS as a data URI while build always emits a
+// CSS asset file (vitejs/vite#22863, fix pending in vitejs/vite#23072). After
+// the fix bundled dev emits a build-shaped URL — un-skip and flip the ternary
+// below from `isBuild` to `isBundled`.
 test.skipIf(isBundledDev)('?url import on css', async () => {
   const txt = await page.textContent('.url-css')
   expect(txt).toMatch(
