@@ -29,18 +29,20 @@ test('imported css', async () => {
     .toContain('.dir-import')
 })
 
-// bundled dev: an edit that lands while the page is (re)loading or before the
-// client (re)connects is dropped entirely and the update never arrives — the
-// early edit-propagation tests are flaky under parallel suite load
-// (vitejs/vite#23028)
-test.skipIf(isBundledDev)('linked css', async () => {
+test('linked css', async () => {
   const linked = await page.$('.linked')
   const atImport = await page.$('.linked-at-import')
 
   expect(await getColor(linked)).toBe('blue')
   expect(await getColor(atImport)).toBe('red')
+})
 
-  if (isBuild) return
+// bundled dev: an edit that lands while the page is (re)loading or before the
+// client (re)connects is dropped entirely and the update never arrives — the
+// edit-propagation tests are flaky under parallel suite load (vitejs/vite#23028)
+test.runIf(!isBundled)('linked css edit propagation', async () => {
+  const linked = await page.$('.linked')
+  const atImport = await page.$('.linked-at-import')
 
   editFile('linked.css', (code) => code.replace('color: blue', 'color: red'))
   await expect.poll(() => getColor(linked)).toBe('red')
@@ -51,15 +53,18 @@ test.skipIf(isBundledDev)('linked css', async () => {
   await expect.poll(() => getColor(atImport)).toBe('blue')
 })
 
-// bundled dev: same dropped-update window as 'linked css' above
-test.skipIf(isBundledDev)('css import from js', async () => {
+test('css import from js', async () => {
   const imported = await page.$('.imported')
   const atImport = await page.$('.imported-at-import')
 
   expect(await getColor(imported)).toBe('green')
   expect(await getColor(atImport)).toBe('purple')
+})
 
-  if (isBuild) return
+// bundled dev: same dropped-update window as 'linked css edit propagation'
+test.runIf(!isBundled)('css import from js edit propagation', async () => {
+  const imported = await page.$('.imported')
+  const atImport = await page.$('.imported-at-import')
 
   editFile('imported.css', (code) => code.replace('color: green', 'color: red'))
   await expect.poll(() => getColor(imported)).toBe('red')
@@ -76,12 +81,14 @@ test('css import asset with space', async () => {
   expect(await getBg(importedWithSpace)).toMatch(/.*\/ok.*\.png/)
 })
 
-// bundled dev: same dropped-update window as 'linked css' above
-test.skipIf(isBundledDev)('postcss config', async () => {
+test('postcss config', async () => {
   const imported = await page.$('.postcss .nesting')
   expect(await getColor(imported)).toBe('pink')
+})
 
-  if (isBuild) return
+// bundled dev: same dropped-update window as 'linked css edit propagation'
+test.runIf(!isBundled)('postcss config edit propagation', async () => {
+  const imported = await page.$('.postcss .nesting')
 
   editFile('imported.css', (code) => code.replace('color: pink', 'color: red'))
   await expect.poll(() => getColor(imported)).toBe('red')
@@ -416,7 +423,8 @@ test('minify css', async () => {
 })
 
 // bundled dev: css?url resolves to a data: URI of the untransformed source
-// (postcss is not applied), so the rule never matches (vitejs/vite#23028)
+// (postcss is not applied), so the rule never matches (vitejs/vite#22863,
+// fix pending in vitejs/vite#23072 — un-skips unchanged once it lands)
 test.skipIf(isBundledDev)('?url', async () => {
   expect(await getColor('.url-imported-css')).toBe('yellow')
 })
@@ -427,16 +435,16 @@ test('?raw', async () => {
   expect(await rawImportCss.textContent()).toBe(
     readFileSync(require.resolve('../raw-imported.css'), 'utf-8'),
   )
+})
 
-  // bundled dev: editing a ?raw import doesn't propagate to the page (vitejs/vite#23028)
-  if (!isBundled) {
-    editFile('raw-imported.css', (code) =>
-      code.replace('color: yellow', 'color: blue'),
-    )
-    await expect
-      .poll(() => page.textContent('.raw-imported-css'))
-      .toMatch('color: blue')
-  }
+// bundled dev: editing a ?raw import doesn't propagate to the page (vitejs/vite#23028)
+test.runIf(!isBundled)('?raw edit propagation', async () => {
+  editFile('raw-imported.css', (code) =>
+    code.replace('color: yellow', 'color: blue'),
+  )
+  await expect
+    .poll(() => page.textContent('.raw-imported-css'))
+    .toMatch('color: blue')
 })
 
 test('import css in less', async () => {
@@ -539,7 +547,7 @@ test('Scoped CSS should have a correct order', async () => {
   // poll: under bundled dev the page can reload once right after navigation
   // while the dev client settles
   await expect.poll(() => getColor('.treeshake-scoped-order')).toBe('red')
-  expect(await getBgColor('.treeshake-scoped-order')).toBe('blue')
+  await expect.poll(() => getBgColor('.treeshake-scoped-order')).toBe('blue')
 })
 
 test.runIf(isBuild)(
