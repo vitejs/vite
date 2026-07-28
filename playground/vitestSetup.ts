@@ -299,17 +299,44 @@ export async function startDefaultServe(): Promise<void> {
     await page.goto(viteTestUrl)
     // bundled dev serves a self-reloading fallback page until the first
     // bundle completes; tests must not assert against that placeholder.
-    // Bounded: a playground whose first bundle fails keeps the fallback
-    // forever, and its tests are expected to handle that state themselves.
+    // Wait server-side for the first build to settle (success or error) so
+    // slow builds (e.g. many HTML inputs) don't race a fixed page timeout.
+    // A playground whose first bundle fails keeps the fallback page, and its
+    // tests are expected to handle that state themselves.
     // hmr-full-bundle-mode is exempt — it asserts the fallback page itself.
     if (isBundledDev && testName !== 'hmr-full-bundle-mode') {
-      await page
-        .waitForFunction(
-          () => !(globalThis as any).__vite_is_fallback_page__,
-          undefined,
-          { timeout: 15_000 },
-        )
-        .catch(() => {})
+      // `initialBuildCompleted` / `lastBuildError` are private — the harness
+      // reaches in rather than widening the public API for tests only.
+      const bundledDev = server.environments.client.bundledDev as any
+      const deadline = Date.now() + 40_000
+      while (
+        bundledDev &&
+        !bundledDev.initialBuildCompleted &&
+        !bundledDev.lastBuildError &&
+        Date.now() < deadline
+      ) {
+        await new Promise((r) => setTimeout(r, 50))
+      }
+      if (bundledDev?.initialBuildCompleted) {
+        await page
+          .waitForFunction(
+            () => !(globalThis as any).__vite_is_fallback_page__,
+            undefined,
+            { timeout: 15_000 },
+          )
+          .catch(() => {})
+        // TODO: workaround — an edit fired while no client is connected is
+        // dropped (vitejs/vite#23028). Remove this wait once the server
+        // buffers updates for clients that connect later.
+        const clientDeadline = Date.now() + 10_000
+        while (Date.now() < clientDeadline) {
+          const clientId = await page
+            .evaluate(() => (globalThis as any).__rolldown_runtime__?.clientId)
+            .catch(() => undefined)
+          if (clientId && bundledDev.clients?.get(clientId)) break
+          await new Promise((r) => setTimeout(r, 50))
+        }
+      }
     }
   } else {
     process.env.VITE_INLINE = 'inline-build'
