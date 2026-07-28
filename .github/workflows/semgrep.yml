@@ -14,7 +14,7 @@ jobs:
     permissions:
       security-events: write # Required for upload-sarif to upload SARIF files.
     container:
-      image: semgrep/semgrep:1.171.0@sha256:6b69b78b36b06f8bcf52285ddb018396e53a01ef39c746e64988b6985e00b0b3
+      image: semgrep/semgrep:1.171.0@sha256:bdf7013b2c3634a487671158da77c554f531742326b543a9464d2adf6c433ac8
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -22,11 +22,11 @@ jobs:
 
       - run: >-
           semgrep scan
-            -q
-            --sarif
-            --config auto
-            --exclude playground
-            --exclude-rule javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
+          --quiet
+          --sarif
+          --config auto
+          --exclude playground
+          --exclude-rule javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
           > semgrep-results.sarif
 
       - name: Upload SARIF result
