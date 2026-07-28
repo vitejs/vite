@@ -587,7 +587,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // normalize
             let [url, resolvedId] = await normalizeUrl(specifier, start)
             if (resolvedId) {
-              config.safeModulePaths.add(cleanUrl(resolvedId))
+              config.safeModulePaths.addUrl(resolvedId)
             }
             resolvedId = resolvedId || url
 
