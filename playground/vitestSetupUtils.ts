@@ -69,7 +69,6 @@ const playgroundsUsingDefaultFsAllow = new Set([
   'optimize-deps',
   'tailwind',
   'tailwind-v3',
-  'worker',
 ])
 
 // #endregion
