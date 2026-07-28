@@ -3,7 +3,14 @@ import { expect, test } from 'vitest'
 import deepJson from 'vue/package.json'
 import testJson from '../../test.json'
 import hmrJson from '../../hmr.json'
-import { editFile, isBuild, isBundledDev, isServe, page } from '~utils'
+import {
+  editFile,
+  isBuild,
+  isBundledDev,
+  isServe,
+  page,
+  withPageReload,
+} from '~utils'
 
 const stringified = JSON.stringify(testJson)
 const deepStringified = JSON.stringify(deepJson)
@@ -56,10 +63,10 @@ test('require(json) returns object without default export', async () => {
 test.runIf(isServe)('should full reload', async () => {
   expect(await page.textContent('.hmr')).toBe(hmrStringified)
 
-  editFile('hmr.json', (code) =>
-    code.replace('"this is hmr json"', '"this is hmr update json"'),
+  await withPageReload(() =>
+    editFile('hmr.json', (code) =>
+      code.replace('"this is hmr json"', '"this is hmr update json"'),
+    ),
   )
-  await expect
-    .poll(() => page.textContent('.hmr'))
-    .toMatch('"this is hmr update json"')
+  expect(await page.textContent('.hmr')).toMatch('"this is hmr update json"')
 })

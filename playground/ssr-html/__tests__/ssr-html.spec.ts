@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
 import { describe, expect, test } from 'vitest'
 import { port, serverLogs } from './serve'
-import { editFile, isServe, page } from '~utils'
+import { editFile, isServe, page, withPageReload } from '~utils'
 
 const url = `http://localhost:${port}`
 
@@ -76,11 +76,11 @@ describe.runIf(isServe)('hmr', () => {
     const el = await page.$('.virtual')
     expect(await el.textContent()).toBe('[success]')
 
-    const loadPromise = page.waitForEvent('load')
-    editFile('src/importedVirtual.js', (code) =>
-      code.replace('[success]', '[wow]'),
+    await withPageReload(() =>
+      editFile('src/importedVirtual.js', (code) =>
+        code.replace('[success]', '[wow]'),
+      ),
     )
-    await loadPromise
 
     await expect
       .poll(async () => {
