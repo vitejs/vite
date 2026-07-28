@@ -3,7 +3,7 @@ import MagicString from 'magic-string'
 import type { ImportKind, Plugin, RolldownPlugin } from 'rolldown'
 import { exactRegex, prefixRegex } from 'rolldown/filter'
 import { stripLiteral } from 'strip-literal'
-import { isWindows } from '../../shared/utils'
+import { cleanUrl, isWindows } from '../../shared/utils'
 import { JS_TYPES_RE, KNOWN_ASSET_TYPES } from '../constants'
 import type { Environment } from '../environment'
 import { createBackCompatIdResolver } from '../idResolver'
@@ -23,7 +23,6 @@ import {
   moduleListContains,
   normalizePath,
 } from '../utils'
-
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
 const convertedExternalPrefix = 'vite-dep-pre-bundle-external:'
@@ -354,6 +353,9 @@ export function rolldownDepPlugin(
             // we resolve the relative path from the original library file (id) and
             // then rewrite it relative to the bundle (deps) directory.
             const absolutePath = path.resolve(path.dirname(id), url)
+            environment
+              .getTopLevelConfig()
+              .safeModulePaths.add(normalizePath(cleanUrl(absolutePath)))
             const relativePath = path.relative(bundleOutputDir, absolutePath)
             const normalizedRelativePath = normalizePath(relativePath)
             s.update(
