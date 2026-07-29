@@ -621,9 +621,7 @@ export function resolveRolldownOptions(
     : typeof options.ssr === 'string'
       ? resolve(options.ssr)
       : options.rolldownOptions.input ||
-        (topLevelInput != null
-          ? topLevelInput // top-level `input` is already resolved in resolveConfig
-          : resolve('index.html'))
+        (topLevelInput ?? resolve('index.html'))
 
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
     throw new Error(

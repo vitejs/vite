@@ -7,7 +7,11 @@ import {
   scanImports,
   scriptRE,
 } from '../optimizer/scan'
-import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
+import {
+  multilineCommentsRE,
+  normalizePath,
+  singlelineCommentsRE,
+} from '../utils'
 import { createServer, createServerModuleRunner } from '..'
 
 describe('optimizer-scan:script-test', () => {
@@ -224,6 +228,41 @@ test('top-level input is used as the entry for dep scanning', async (ctx) => {
     logLevel: 'error',
     root: path.join(import.meta.dirname, 'fixtures', 'input-option'),
     input: 'entry.js',
+    optimizeDeps: {
+      force: true,
+      noDiscovery: false,
+    },
+  })
+  ctx.onTestFinished(() => server.close())
+
+  const { cancel, result } = scanImports(
+    devToScanEnvironment(server.environments.client),
+  )
+  ctx.onTestFinished(cancel)
+
+  const scanResult = await result
+  expect(scanResult.deps).toHaveProperty('vue')
+})
+
+test('top-level input can be resolved by a plugin for dep scanning', async (ctx) => {
+  const root = path.join(import.meta.dirname, 'fixtures', 'input-option')
+  const input = 'virtual:entry'
+  const server = await createServer({
+    configFile: false,
+    logLevel: 'error',
+    root,
+    input,
+    plugins: [
+      {
+        name: 'virtual-entry',
+        enforce: 'pre',
+        resolveId(id, _importer) {
+          if (id === input) {
+            return normalizePath(path.resolve(root, 'entry.js'))
+          }
+        },
+      },
+    ],
     optimizeDeps: {
       force: true,
       noDiscovery: false,
