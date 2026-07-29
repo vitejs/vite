@@ -1,0 +1,58 @@
+packages/vite/src/node/optimizer/scan.ts
+  s_25c3a8cc4c98ed::t_fa32d5c6f0f880 217,222,237-242
+packages/vite/src/node/__tests__/scan.spec.ts
+  s_8a310a2d6a4804::t_e73dc519c61960 244-246
+  s_8a310a2d6a4804::t_e049b3cf6e4b79 247-273
+  s_8a310a2d6a4804::t_b6bc9a70a4e5be 241-243
+packages/vite/src/node/config.ts
+  s_b66953525cff61::t_003f0243fed9c1 926,933,936,940,1040,1860
+  s_b66953525cff61::t_ee076b0c8fbaeb 1861
+packages/vite/src/node/__tests__/build.spec.ts
+  s_8a310a2d6a4804::t_2f8640a8cdc6ea 115-144
+packages/vite/src/node/server/pluginContainer.ts
+  s_54d5bd3c84b54a::t_20d48dbe621f99 337,348-353
+packages/vite/src/node/server/environment.ts
+  s_54d5bd3c84b54a::t_e9ef02d136abb6 1,20,224-260
+packages/vite/src/node/server/index.ts
+  s_54d5bd3c84b54a::t_59085d50908e0b 17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "1125c40b10bb8859600cdb5360778a362dec5893",
+  "prompts": {},
+  "sessions": {
+    "s_25c3a8cc4c98ed": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fac27-2606-79d1-9b96-bedce35f4a5b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_54d5bd3c84b54a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fac4a-5b32-7683-bc9f-a1f22ba297f3",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_8a310a2d6a4804": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fac21-2e94-78a0-9b3b-1fca69883aa8",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_b66953525cff61": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa8c8-d756-7d92-9f9f-6ac112340c35",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
