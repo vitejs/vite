@@ -160,14 +160,17 @@ test('scan jsx-runtime', async (ctx) => {
       },
     },
   })
+  ctx.onTestFinished(() => server.close())
 
   // start server to ensure optimizer run
   await server.listen()
-  ctx.onTestFinished(() => server.close())
 
   const runner = createServerModuleRunner(server.environments.ssr, {
     hmr: { logger: false },
   })
+
+  // The dependency scan should be able to finish before the first request.
+  await server.environments.ssr.depsOptimizer?.scanProcessing
 
   // flush initial optimizer by importing any file
   await runner.import('./entry-no-jsx.js')

@@ -238,6 +238,10 @@ export class DevEnvironment extends BaseEnvironment {
         entries.map((entry) =>
           this.pluginContainer.resolveId(entry, undefined, {
             isEntry: true,
+            // Avoid a deadlock when the dependency scanner triggers the first
+            // buildStart. Normal resolution waits for the scan to finish,
+            // while the scan is waiting for buildStart to finish.
+            scan: true,
           }),
         ),
       )
