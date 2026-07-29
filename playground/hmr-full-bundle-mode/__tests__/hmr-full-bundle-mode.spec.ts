@@ -296,6 +296,69 @@ if (isBuild) {
     ).toBe(true)
   })
 
+  // The entry of an inline worker is embedded as a blob, but assets it
+  // references are still emitted as files. A patch skips the generate phase,
+  // so without emitting them during `load` the new asset URL is never served.
+  test('inline worker asset updated through an HMR patch is served', async () => {
+    const urlRe = /worker-inline-asset-data-[\w-]+\.txt/
+    const originalData = readFile('worker-inline-asset-data.txt')
+    const originalSrc = readFile('worker-inline-asset-src.js')
+    onTestFinished(async () => {
+      addFile('worker-inline-asset-data.txt', originalData)
+      addFile('worker-inline-asset-src.js', originalSrc)
+      await expect
+        .poll(() => page.textContent('.worker-inline-asset'))
+        .toContain('#inline-asset-label-v1')
+    })
+
+    const fetchAsset = (url: string) =>
+      page.evaluate(async (url) => {
+        const res = await fetch(url)
+        return { status: res.status, body: await res.text() }
+      }, url)
+    const displayedAsset = async () =>
+      (await page.textContent('.worker-inline-asset'))!.split('#')
+
+    await expect
+      .poll(() => page.textContent('.worker-inline-asset'))
+      .toContain('#inline-asset-label-v1')
+    const [urlBefore] = await displayedAsset()
+    expect(urlBefore).toMatch(urlRe)
+    expect(await fetchAsset(urlBefore)).toEqual({
+      status: 200,
+      body: 'inline-asset-v1\n',
+    })
+
+    // survives an HMR patch, but not a page reload
+    await page.evaluate(() => {
+      ;(window as any).__workerInlineAssetKeptAlive = true
+    })
+
+    // Editing the asset alone does not propagate to the worker module (it is
+    // not part of the main module graph). The following worker edit re-runs
+    // the sub-build, which picks up the edited asset with a new content hash.
+    editFile('worker-inline-asset-data.txt', (code) =>
+      code.replace('inline-asset-v1', 'inline-asset-version-2'),
+    )
+    editFile('worker-inline-asset-src.js', (code) =>
+      code.replace('inline-asset-label-v1', 'inline-asset-label-version-2'),
+    )
+    await expect
+      .poll(() => page.textContent('.worker-inline-asset'))
+      .toContain('#inline-asset-label-version-2')
+    const [urlAfter] = await displayedAsset()
+    expect(urlAfter).toMatch(urlRe)
+    expect(urlAfter).not.toBe(urlBefore)
+    expect(await fetchAsset(urlAfter)).toEqual({
+      status: 200,
+      body: 'inline-asset-version-2\n',
+    })
+
+    expect(
+      await page.evaluate(() => (window as any).__workerInlineAssetKeptAlive),
+    ).toBe(true)
+  })
+
   test('lazy bundling', async () => {
     await page.click('#load-dynamic')
     await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')
