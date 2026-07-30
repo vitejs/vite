@@ -18,7 +18,15 @@ import {
 } from 'convert-source-map'
 import { expect } from 'vitest'
 import type { ResultPromise as ExecaResultPromise } from 'execa'
-import { isWindows, page, sourcemapSnapshot, testDir } from './vitestSetup'
+import {
+  getBundledDevHmrEventCount,
+  isWindows,
+  noteFileMutation,
+  page,
+  sourcemapSnapshot,
+  testDir,
+  waitForBundledDevSettled,
+} from './vitestSetup'
 
 export * from './vitestSetup'
 
@@ -202,16 +210,33 @@ export function editFile(
     throw e
   }
   fs.writeFileSync(filename, modified)
+  noteFileMutation()
 }
 
 export function addFile(filename: string, content: string): void {
   const resolvedFilename = path.resolve(testDir, filename)
   fs.mkdirSync(path.dirname(resolvedFilename), { recursive: true })
   fs.writeFileSync(resolvedFilename, content)
+  noteFileMutation()
 }
 
 export function removeFile(filename: string): void {
   fs.unlinkSync(path.resolve(testDir, filename))
+  noteFileMutation()
+}
+
+/**
+ * Runs a mutation that should fully reload the page and waits until the page
+ * is loaded and at rest again (under bundled dev: the whole update chain,
+ * however long the build takes). Serve mode only. Not for edits expecting a
+ * hot update or no effect — no load event comes and this would time out.
+ */
+export async function withPageReload(action: () => void): Promise<void> {
+  const afterHmrEventCount = getBundledDevHmrEventCount()
+  const loadPromise = page.waitForEvent('load')
+  action()
+  await loadPromise
+  await waitForBundledDevSettled({ afterHmrEventCount })
 }
 
 export function listAssets(base = ''): string[] {
