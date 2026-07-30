@@ -131,7 +131,11 @@ export function scanImports(environment: ScanEnvironment): {
   async function scan() {
     const entries = await computeEntries(environment)
     if (!entries.length) {
-      if (!config.optimizeDeps.entries && !config.optimizeDeps.include) {
+      if (
+        !config.optimizeDeps.entries &&
+        !config.optimizeDeps.include &&
+        !config.input
+      ) {
         environment.logger.warn(
           colors.yellow(
             '(!) Could not auto-determine entry point from rolldownOptions or html files ' +
@@ -210,14 +214,13 @@ async function computeEntries(environment: ScanEnvironment) {
   let entries: string[] = []
 
   const explicitEntryPatterns = environment.config.optimizeDeps.entries
-  const buildInput = environment.config.build.rolldownOptions.input
+  const input =
+    environment.config.input ?? environment.config.build.rolldownOptions.input
 
   if (explicitEntryPatterns) {
     entries = await globEntries(explicitEntryPatterns, environment)
-  } else if (buildInput) {
+  } else if (input) {
     const resolvePath = async (p: string) => {
-      // `build.rollupOptions.input` is resolved from the root (not `process.cwd()`)
-      // by the build, so resolve it from the root here too by not passing an importer.
       const id = (
         await environment.pluginContainer.resolveId(p, undefined, {
           isEntry: true,
@@ -231,12 +234,12 @@ async function computeEntries(environment: ScanEnvironment) {
       }
       return id
     }
-    if (typeof buildInput === 'string') {
-      entries = [await resolvePath(buildInput)]
-    } else if (Array.isArray(buildInput)) {
-      entries = await Promise.all(buildInput.map(resolvePath))
-    } else if (isObject(buildInput)) {
-      entries = await Promise.all(Object.values(buildInput).map(resolvePath))
+    if (typeof input === 'string') {
+      entries = [await resolvePath(input)]
+    } else if (Array.isArray(input)) {
+      entries = await Promise.all(input.map(resolvePath))
+    } else if (isObject(input)) {
+      entries = await Promise.all(Object.values(input).map(resolvePath))
     } else {
       throw new Error('invalid rolldownOptions.input value.')
     }

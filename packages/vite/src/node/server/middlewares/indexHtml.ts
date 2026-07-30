@@ -176,7 +176,7 @@ const processNodeUrl = (
 
     if (server) {
       const mod = server.environments.client.moduleGraph.urlToModuleMap.get(
-        preTransformUrl || url,
+        stripBase(preTransformUrl || url, config.decodedBase),
       )
       if (mod && mod.lastHMRTimestamp > 0) {
         url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
@@ -479,15 +479,16 @@ export function indexHtmlMiddleware(
           return next()
         }
         const secFetchDest = req.headers['sec-fetch-dest']
+        const isDocumentRequest = [
+          'document',
+          'iframe',
+          'frame',
+          'fencedframe',
+          '',
+          undefined,
+        ].includes(secFetchDest)
         if (
-          [
-            'document',
-            'iframe',
-            'frame',
-            'fencedframe',
-            '',
-            undefined,
-          ].includes(secFetchDest) &&
+          isDocumentRequest &&
           ((await fullBundle.triggerBundleRegenerationIfStale()) ||
             file === undefined)
         ) {
@@ -571,6 +572,7 @@ async function generateFallbackHtml(server: ViteDevServer) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>globalThis.__vite_is_fallback_page__ = true</script>
   <script type="module">
     ${hmrRuntime.replaceAll('</script>', '<\\/script>')}
   </script>

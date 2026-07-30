@@ -1,6 +1,6 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { RolldownOutput, RollupError } from 'rolldown'
+import type { PluginContext, RolldownOutput, RollupError } from 'rolldown'
 import colors from 'picocolors'
 import { type ImportSpecifier, init, parse } from 'es-module-lexer'
 import { viteWebWorkerPostPlugin as nativeWebWorkerPostPlugin } from 'rolldown/experimental'
@@ -325,6 +325,29 @@ export async function workerFileToUrl(
   return bundle
 }
 
+/**
+ * Emit the bundled worker files during `load` / `transform`.
+ *
+ * They normally reach the output through `generateBundle`, which an HMR patch
+ * skips, so without this a patched worker points at a file that was never
+ * emitted.
+ */
+export function emitWorkerAssetsForBundledDev(
+  pluginContext: { emitFile: PluginContext['emitFile'] },
+  config: ResolvedConfig,
+): void {
+  if (config.isWorker) return
+
+  const workerOutput = workerOutputCaches.get(config.mainConfig || config)!
+  for (const asset of workerOutput.getAssets()) {
+    pluginContext.emitFile({
+      type: 'asset',
+      fileName: asset.fileName,
+      source: asset.source,
+    })
+  }
+}
+
 export function webWorkerPostPlugin(_config: ResolvedConfig): Plugin {
   return {
     name: 'vite:worker-post',
@@ -485,6 +508,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               this.environment.config.command === 'serve' &&
               this.environment.config.isBundled
             ) {
+              emitWorkerAssetsForBundledDev(this, config)
               url = toOutputFilePathInJSForBundledDev(
                 this.environment,
                 result.entryFilename,
