@@ -43,6 +43,7 @@ export default defineConfig({
           resolve(dirname, 'relative-input.html'),
         ),
         malformedUrl: resolve(dirname, 'malformed-url.html'),
+        htmExtension: resolve(dirname, 'htm-extension.htm'),
       },
       external: ['/external-path-by-rollup-options.js'],
     },

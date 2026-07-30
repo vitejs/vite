@@ -305,6 +305,10 @@ export const isJSRequest = (url: string): boolean => {
 export const isCSSRequest = (request: string): boolean =>
   CSS_LANGS_RE.test(request)
 
+export const htmlExtensionRE: RegExp = /\.(?:html|htm)$/
+export const isHTMLRequest = (request: string): boolean =>
+  htmlExtensionRE.test(request)
+
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const directRequestRE = /(\?|&)direct=?(?:&|$)/
 const internalPrefixes = [

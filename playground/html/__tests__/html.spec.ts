@@ -364,6 +364,15 @@ describe('Valid HTML', () => {
   })
 })
 
+describe('.htm extension', () => {
+  test('is treated the same as .html', async () => {
+    await page.goto(viteTestUrl + '/htm-extension.htm')
+    expect(await page.textContent('.htm-extension')).toBe('htm extension')
+    expect(await page.$('head meta[name=viewport]')).toBeTruthy()
+    expect(browserLogs).toContain('shared from main')
+  })
+})
+
 describe('env', () => {
   beforeAll(async () => {
     await page.goto(viteTestUrl + '/env.html')

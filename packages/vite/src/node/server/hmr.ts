@@ -13,6 +13,7 @@ import { CLIENT_DIR } from '../constants'
 import {
   createDebugger,
   formatAndTruncateFileList,
+  isHTMLRequest,
   monotonicDateNow,
   normalizePath,
 } from '../utils'
@@ -630,7 +631,7 @@ export async function handleHMRUpdate(
       }
       if (!options.modules.length) {
         // html file cannot be hot updated
-        if (file.endsWith('.html') && environment.name === 'client') {
+        if (isHTMLRequest(file) && environment.name === 'client') {
           environment.logger.info(
             colors.green(`page reload `) + colors.dim(shortFile),
             {
@@ -747,7 +748,7 @@ export function updateModules(
 
   // html file cannot be hot updated because it may be used as the template for a top-level request response.
   const isClientHtmlChange =
-    file.endsWith('.html') &&
+    isHTMLRequest(file) &&
     environment.name === 'client' &&
     // if the html file is imported as a module, we assume that this file is
     // not used as the template for top-level request response
