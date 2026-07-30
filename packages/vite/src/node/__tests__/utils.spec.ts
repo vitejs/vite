@@ -12,6 +12,7 @@ import {
   extractHostnamesFromSubjectAltName,
   flattenId,
   generateCodeFrame,
+  getFileStartIndex,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
   getServerUrlByHost,
@@ -1215,5 +1216,19 @@ describe('resolveServerUrls', () => {
 
     expect(result.network).toStrictEqual(['http://10.0.0.5:3000/'])
     expect(result.networkInterfaceNames).toStrictEqual([undefined])
+  })
+})
+
+describe('getFileStartIndex', () => {
+  test('returns 0 when no hashbang present', () => {
+    expect(getFileStartIndex('console.log("hello")')).toBe(0)
+  })
+
+  test('returns index after LF hashbang', () => {
+    expect(getFileStartIndex('#!/usr/bin/env node\nconsole.log("hello")')).toBe(20)
+  })
+
+  test('returns index after CRLF hashbang', () => {
+    expect(getFileStartIndex('#!/usr/bin/env node\r\nconsole.log("hello")')).toBe(21)
   })
 })
