@@ -9,10 +9,14 @@ import crypto from 'node:crypto'
 import colors from 'picocolors'
 import type { WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
-import type { WebSocket as WebSocketTypes } from 'dep-types/ws'
-import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
-import type { InferCustomEventPayload } from 'types/customEvent'
 import { isHostAllowed } from 'host-validation-middleware'
+import type { WebSocket as WebSocketTypes } from '#dep-types/ws'
+import type {
+  ErrorPayload,
+  FullReloadPayload,
+  HotPayload,
+} from '#types/hmrPayload'
+import type { InferCustomEventPayload } from '#types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
 import type { NormalizedHotChannel, NormalizedHotChannelClient } from './hmr'
@@ -32,10 +36,9 @@ export const HMR_HEADER = 'vite-hmr'
 export type WebSocketCustomListener<T> = (
   data: T,
   client: WebSocketClient,
-  invoke?: 'send' | `send:${string}`,
 ) => void
 
-export const isWebSocketServer = Symbol('isWebSocketServer')
+export const isWebSocketServer: unique symbol = Symbol('isWebSocketServer')
 
 export interface WebSocketServer extends NormalizedHotChannel {
   /**
@@ -143,12 +146,12 @@ export function createWebSocketServer(
 
   let wsHttpServer: Server | undefined = undefined
 
-  const hmr = isObject(config.server.hmr) && config.server.hmr
-  const hmrServer = hmr && hmr.server
-  const hmrPort = hmr && hmr.port
+  const wsOptions = isObject(config.server.ws) ? config.server.ws : undefined
+  const wsCustomServer = wsOptions?.server
+  const wsPort = wsOptions?.port
   // TODO: the main server port may not have been chosen yet as it may use the next available
-  const portsAreCompatible = !hmrPort || hmrPort === config.server.port
-  const wsServer = hmrServer || (portsAreCompatible && server)
+  const portsAreCompatible = !wsPort || wsPort === config.server.port
+  const wsServer = wsCustomServer || (portsAreCompatible && server)
   let hmrServerWsListener: (
     req: InstanceType<typeof IncomingMessage>,
     socket: Duplex,
@@ -156,8 +159,8 @@ export function createWebSocketServer(
   ) => void
   const customListeners = new Map<string, Set<WebSocketCustomListener<any>>>()
   const clientsMap = new WeakMap<WebSocketRaw, WebSocketClient>()
-  const port = hmrPort || 24678
-  const host = (hmr && hmr.host) || undefined
+  const port = wsPort || 24678
+  const host = wsOptions?.host || undefined
   const allowedHosts =
     config.server.allowedHosts === true
       ? config.server.allowedHosts
@@ -216,9 +219,9 @@ export function createWebSocketServer(
 
   if (wsServer) {
     let hmrBase = config.base
-    const hmrPath = hmr ? hmr.path : undefined
-    if (hmrPath) {
-      hmrBase = path.posix.join(hmrBase, hmrPath)
+    const wsPath = wsOptions?.path
+    if (wsPath) {
+      hmrBase = path.posix.join(hmrBase, wsPath)
     }
     hmrServerWsListener = (req, socket, head) => {
       const protocol = req.headers['sec-websocket-protocol']!
@@ -281,6 +284,20 @@ export function createWebSocketServer(
     })
   }
 
+  const emitCustomEvent = <T extends string>(
+    event: T,
+    data: InferCustomEventPayload<T>,
+    socket: WebSocketRaw,
+  ) => {
+    const listeners = customListeners.get(event)
+    if (!listeners?.size) return
+
+    const client = getSocketClient(socket)
+    for (const listener of listeners) {
+      listener(data, client)
+    }
+  }
+
   wss.on('connection', (socket) => {
     socket.on('message', (raw) => {
       if (!customListeners.size) return
@@ -289,12 +306,7 @@ export function createWebSocketServer(
         parsed = JSON.parse(String(raw))
       } catch {}
       if (!parsed || parsed.type !== 'custom' || !parsed.event) return
-      const listeners = customListeners.get(parsed.event)
-      if (!listeners?.size) return
-      const client = getSocketClient(socket)
-      listeners.forEach((listener) =>
-        listener(parsed.data, client, parsed.invoke),
-      )
+      emitCustomEvent(parsed.event, parsed.data, socket)
     })
     socket.on('error', (err) => {
       config.logger.error(`${colors.red(`ws error:`)}\n${err.stack}`, {
@@ -302,10 +314,16 @@ export function createWebSocketServer(
         error: err,
       })
     })
+    socket.on('close', () => {
+      emitCustomEvent('vite:client:disconnect', undefined, socket)
+    })
+
+    emitCustomEvent('vite:client:connect', undefined, socket)
+
     socket.send(JSON.stringify({ type: 'connected' }))
-    if (bufferedError) {
-      socket.send(JSON.stringify(bufferedError))
-      bufferedError = null
+    if (bufferedMessage) {
+      socket.send(JSON.stringify(bufferedMessage))
+      bufferedMessage = null
     }
   })
 
@@ -351,13 +369,18 @@ export function createWebSocketServer(
   // sends the error payload before the client connection is established.
   // If we have no open clients, buffer the error and send it to the next
   // connected client.
-  let bufferedError: ErrorPayload | null = null
+  // The same thing may happen when the optimizer runs fast enough to
+  // finish the bundling before the client connects.
+  let bufferedMessage: ErrorPayload | FullReloadPayload | null = null
 
   const normalizedHotChannel = normalizeHotChannel(
     {
       send(payload) {
-        if (payload.type === 'error' && !wss.clients.size) {
-          bufferedError = payload
+        if (
+          (payload.type === 'error' || payload.type === 'full-reload') &&
+          !wss.clients.size
+        ) {
+          bufferedMessage = payload
           return
         }
 

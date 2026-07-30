@@ -1,4 +1,4 @@
-import type { ViteHotContext } from 'types/hot'
+import type { ViteHotContext } from '#types/hot'
 import type { HMRLogger } from '../shared/hmr'
 import type {
   DefineImportMetadata,
@@ -24,10 +24,14 @@ import type { InterceptorOptions } from './sourcemap/interceptor'
 
 export type { DefineImportMetadata, SSRImportMetadata }
 
-export interface ModuleRunnerImportMeta extends ImportMeta {
+export interface ModuleRunnerImportMeta {
   url: string
   env: ImportMetaEnv
   hot?: ViteHotContext
+  dirname: string
+  filename: string
+  glob: (...args: any[]) => any
+  resolve(specifier: string, parent?: string): string
   [key: string]: any
 }
 

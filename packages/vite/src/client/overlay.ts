@@ -1,4 +1,4 @@
-import type { ErrorPayload } from 'types/hmrPayload'
+import type { ErrorPayload } from '#types/hmrPayload'
 
 // injected by the hmr plugin when served
 declare const __BASE__: string
@@ -108,7 +108,7 @@ pre.frame {
 
 .message {
   line-height: 1.3;
-  font-weight: 600;
+  font-weight: 400;
   white-space: pre-wrap;
 }
 

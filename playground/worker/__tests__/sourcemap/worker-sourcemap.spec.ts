@@ -8,8 +8,14 @@ describe.runIf(isBuild)('build', () => {
   test('sourcemap generation for web workers', async () => {
     const assetsDir = path.resolve(testDir, 'dist/iife-sourcemap/assets')
     const files = fs.readdirSync(assetsDir)
-    // should have 2 worker chunk
-    expect(files.length).toBe(46)
+
+    // every .js file should have a corresponding .js.map
+    for (const jsFile of files.filter((f) => f.endsWith('.js'))) {
+      expect(files, `missing sourcemap for ${jsFile}`).toContain(
+        `${jsFile}.map`,
+      )
+    }
+
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const indexSourcemap = getSourceMapUrl(content)
@@ -86,24 +92,24 @@ describe.runIf(isBuild)('build', () => {
     expect(subWorkerSourcemap).toMatch(/^sub-worker-[-\w]+\.js\.map$/)
 
     // worker should have all imports resolved and no exports
-    expect(workerContent).not.toMatch(`import`)
-    expect(workerContent).not.toMatch(`export`)
+    expect(workerContent).not.toMatch(/import\s*["(]/)
+    expect(workerContent).not.toMatch(/\bexport\b/)
 
     // shared worker should have all imports resolved and no exports
-    expect(sharedWorkerContent).not.toMatch(`import`)
-    expect(sharedWorkerContent).not.toMatch(`export`)
+    expect(sharedWorkerContent).not.toMatch(/import\s*["(]/)
+    expect(sharedWorkerContent).not.toMatch(/\bexport\b/)
 
     // chunk
-    expect(content).toMatch(`new Worker("/iife-sourcemap/assets/my-worker`)
-    expect(content).toMatch(`new Worker("data:text/javascript;charset=utf-8,"+`)
+    expect(content).toMatch('new Worker(`/iife-sourcemap/assets/my-worker')
+    expect(content).toMatch('new Worker(`data:text/javascript;charset=utf-8,')
     expect(content).toMatch(
-      `new Worker("/iife-sourcemap/assets/possible-ts-output-worker`,
+      'new Worker(`/iife-sourcemap/assets/possible-ts-output-worker',
     )
     expect(content).toMatch(
-      `new Worker("/iife-sourcemap/assets/worker-nested-worker`,
+      'new Worker(`/iife-sourcemap/assets/worker-nested-worker',
     )
     expect(content).toMatch(
-      `new SharedWorker("/iife-sourcemap/assets/my-shared-worker`,
+      'new SharedWorker(`/iife-sourcemap/assets/my-shared-worker',
     )
 
     // inlined
@@ -111,7 +117,7 @@ describe.runIf(isBuild)('build', () => {
     expect(content).toMatch(`self.Blob`)
 
     expect(workerNestedWorkerContent).toMatch(
-      `new Worker("/iife-sourcemap/assets/sub-worker`,
+      'new Worker(`/iife-sourcemap/assets/sub-worker',
     )
   })
 })

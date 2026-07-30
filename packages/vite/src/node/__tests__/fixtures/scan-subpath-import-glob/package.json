@@ -1,0 +1,7 @@
+{
+  "name": "scan-subpath-import-glob",
+  "private": true,
+  "imports": {
+    "#src/*": "./src/*"
+  }
+}

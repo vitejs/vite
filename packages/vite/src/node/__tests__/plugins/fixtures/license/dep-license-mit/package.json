@@ -1,0 +1,10 @@
+{
+  "name": "@vitejs/test-dep-license-mit",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "@vitejs/test-dep-nested-license-isc": "file:../dep-nested-license-isc"
+  }
+}

@@ -7,16 +7,18 @@ on:
       - "plugin-*" # Push events to matching plugin-*, i.e. plugin-(vue|vue-jsx|react|legacy)@1.0.0
       - "create-vite*" # # Push events to matching create-vite*, i.e. create-vite@1.0.0
 
-# $GITHUB_REF_NAME - https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
+# $GITHUB_REF_NAME - https://docs.github.com/en/actions/reference/workflows-and-actions/variables#default-environment-variables
 
 jobs:
   release:
     if: github.repository == 'vitejs/vite'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions:
       contents: write # for yyx990803/release-tag to create a release tag
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Get pkgName for tag
         id: tag

@@ -22,6 +22,9 @@ export function optimizedDepsPlugin(): Plugin {
     name: 'vite:optimized-deps',
 
     applyToEnvironment(environment) {
+      if (environment.config.isBundled) {
+        return false
+      }
       return !isDepOptimizationDisabled(environment.config.optimizeDeps)
     },
 
@@ -50,7 +53,11 @@ export function optimizedDepsPlugin(): Plugin {
         // Search in both the currently optimized and newly discovered deps
         const info = optimizedDepInfoFromFile(metadata, file)
         if (info) {
-          if (browserHash && info.browserHash !== browserHash) {
+          if (
+            browserHash &&
+            info.browserHash !== browserHash &&
+            !environment.config.optimizeDeps.ignoreOutdatedRequests
+          ) {
             throwOutdatedRequest(id)
           }
           try {
@@ -65,7 +72,10 @@ export function optimizedDepsPlugin(): Plugin {
           const newMetadata = depsOptimizer.metadata
           if (metadata !== newMetadata) {
             const currentInfo = optimizedDepInfoFromFile(newMetadata!, file)
-            if (info.browserHash !== currentInfo?.browserHash) {
+            if (
+              info.browserHash !== currentInfo?.browserHash &&
+              !environment.config.optimizeDeps.ignoreOutdatedRequests
+            ) {
               throwOutdatedRequest(id)
             }
           }
@@ -75,9 +85,25 @@ export function optimizedDepsPlugin(): Plugin {
         // load hooks to avoid race conditions, once processing is resolved,
         // we are sure that the file has been properly save to disk
         try {
-          return await fsp.readFile(file, 'utf-8')
+          const [code, map] = await Promise.all([
+            fsp.readFile(file, 'utf-8'),
+            fsp
+              .readFile(`${file}.map`, 'utf-8')
+              .then((map) => JSON.parse(map))
+              .catch(() => null),
+          ])
+          if (map) {
+            return {
+              code,
+              map,
+            }
+          }
+          return code
         } catch {
-          if (browserHash) {
+          if (
+            browserHash &&
+            !environment.config.optimizeDeps.ignoreOutdatedRequests
+          ) {
             // Outdated optimized files loaded after a rerun
             throwOutdatedRequest(id)
           }

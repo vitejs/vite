@@ -17,7 +17,7 @@ export default defineConfig({
     watch: null,
     minify: false,
     assetsInlineLimit: 0,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         entryFileNames: 'entries/[name].js',
         chunkFileNames: 'chunks/[name]-[hash].js',

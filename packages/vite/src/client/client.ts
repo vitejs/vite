@@ -1,12 +1,15 @@
-import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
-import type { ViteHotContext } from 'types/hot'
+import type { ErrorPayload, HotPayload } from '#types/hmrPayload'
+import type { ViteHotContext } from '#types/hot'
 import { HMRClient, HMRContext } from '../shared/hmr'
 import {
   createWebSocketModuleRunnerTransport,
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
 import { createHMRHandler } from '../shared/hmrHandler'
+import { setupForwardConsoleHandler } from '../shared/forwardConsole'
+import type { BundledDevHMRClient } from './bundledDevHmrClient'
 import { ErrorOverlay, cspNonce, overlayId } from './overlay'
+// @ts-expect-error internal virtual module
 import '@vite/env'
 
 // injected by the hmr plugin when served
@@ -20,6 +23,7 @@ declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
 declare const __WS_TOKEN__: string
+declare const __SERVER_FORWARD_CONSOLE__: any
 
 console.debug('[vite] connecting...')
 
@@ -34,11 +38,12 @@ const socketHost = `${__HMR_HOSTNAME__ || importMetaUrl.hostname}:${
   hmrPort || importMetaUrl.port
 }${__HMR_BASE__}`
 const directSocketHost = __HMR_DIRECT_TARGET__
-const base = __BASE__ || '/'
+export const base = __BASE__ || '/'
 const hmrTimeout = __HMR_TIMEOUT__
 const wsToken = __WS_TOKEN__
+const forwardConsole = __SERVER_FORWARD_CONSOLE__
 
-const transport = normalizeModuleRunnerTransport(
+export const transport = normalizeModuleRunnerTransport(
   (() => {
     let wsTransport = createWebSocketModuleRunnerTransport({
       createConnection: () =>
@@ -132,7 +137,7 @@ const debounceReload = (time: number) => {
     }, time)
   }
 }
-const pageReload = debounceReload(20)
+export const pageReload = debounceReload(20)
 
 const hmrClient = new HMRClient(
   {
@@ -167,29 +172,47 @@ const hmrClient = new HMRClient(
     return await importPromise
   },
 )
+// set by the full-bundle-mode entry (`bundledDevClient.ts`); the `import type` above keeps
+// `BundledDevHMRClient` compile-time only, so `client.mjs` bundles no bundled-dev code
+let bundledDevClient: BundledDevHMRClient | undefined
+export function registerBundledDevClient(client: BundledDevHMRClient): void {
+  bundledDevClient = client
+}
 transport.connect!(createHMRHandler(handleMessage))
 
+setupForwardConsoleHandler(transport, forwardConsole)
+
+// if this is the first update and there's already an error overlay, it means the
+// page opened with existing server compile error and the whole module script failed
+// to load (since one of the nested imports is 500). in this case a normal update
+// won't work and a full reload is needed.
+export function clearOverlayOrReloadOnFirstUpdate(): 'reload' | 'continue' {
+  if (hasDocument) {
+    if (isFirstUpdate && hasErrorOverlay()) {
+      location.reload()
+      return 'reload'
+    }
+    if (enableOverlay) {
+      clearErrorOverlay()
+    }
+    isFirstUpdate = false
+  }
+  return 'continue'
+}
+
 async function handleMessage(payload: HotPayload) {
+  const activeHmrClient = bundledDevClient ?? hmrClient
   switch (payload.type) {
     case 'connected':
       console.debug(`[vite] connected.`)
       break
+    case 'bundled-dev-update':
+      bundledDevClient!.handlePush(payload)
+      break
     case 'update':
-      await hmrClient.notifyListeners('vite:beforeUpdate', payload)
-      if (hasDocument) {
-        // if this is the first update and there's already an error overlay, it
-        // means the page opened with existing server compile error and the whole
-        // module script failed to load (since one of the nested imports is 500).
-        // in this case a normal update won't work and a full reload is needed.
-        if (isFirstUpdate && hasErrorOverlay()) {
-          location.reload()
-          return
-        } else {
-          if (enableOverlay) {
-            clearErrorOverlay()
-          }
-          isFirstUpdate = false
-        }
+      await activeHmrClient.notifyListeners('vite:beforeUpdate', payload)
+      if (clearOverlayOrReloadOnFirstUpdate() === 'reload') {
+        return
       }
       await Promise.all(
         payload.updates.map(async (update): Promise<void> => {
@@ -239,10 +262,10 @@ async function handleMessage(payload: HotPayload) {
           })
         }),
       )
-      await hmrClient.notifyListeners('vite:afterUpdate', payload)
+      await activeHmrClient.notifyListeners('vite:afterUpdate', payload)
       break
     case 'custom': {
-      await hmrClient.notifyListeners(payload.event, payload.data)
+      await activeHmrClient.notifyListeners(payload.event, payload.data)
       if (payload.event === 'vite:ws:disconnect') {
         if (hasDocument && !willUnload) {
           console.log(`[vite] server connection lost. Polling for restart...`)
@@ -256,7 +279,15 @@ async function handleMessage(payload: HotPayload) {
       break
     }
     case 'full-reload':
-      await hmrClient.notifyListeners('vite:beforeFullReload', payload)
+      // `ifFallback` reloads are addressed only to the bundling-fallback page,
+      // which marks itself with this global (see `generateFallbackHtml`)
+      if (
+        payload.ifFallback &&
+        !(globalThis as any).__vite_is_fallback_page__
+      ) {
+        break
+      }
+      await activeHmrClient.notifyListeners('vite:beforeFullReload', payload)
       if (hasDocument) {
         if (payload.path && payload.path.endsWith('.html')) {
           // if html file is edited, only reload the page if the browser is
@@ -277,11 +308,11 @@ async function handleMessage(payload: HotPayload) {
       }
       break
     case 'prune':
-      await hmrClient.notifyListeners('vite:beforePrune', payload)
-      await hmrClient.prunePaths(payload.paths)
+      await activeHmrClient.notifyListeners('vite:beforePrune', payload)
+      await activeHmrClient.prunePaths(payload.paths)
       break
     case 'error': {
-      await hmrClient.notifyListeners('vite:error', payload)
+      await activeHmrClient.notifyListeners('vite:error', payload)
       if (hasDocument) {
         const err = payload.err
         if (enableOverlay) {
@@ -363,7 +394,7 @@ function waitForSuccessfulPing(socketUrl: string) {
       document.removeEventListener('visibilitychange', onVisibilityChange)
       sharedWorker.port.close()
 
-      const data: { type: 'success' } | { type: 'error'; error: unknown } =
+      const data: { type: 'success' } | { type: 'error'; error: Error } =
         event.data
       if (data.type === 'error') {
         reject(data.error)
@@ -495,6 +526,7 @@ async function waitForSuccessfulPingInternal(
 }
 
 const sheetsMap = new Map<string, HTMLStyleElement>()
+const linkSheetsMap = new Map<string, HTMLLinkElement>()
 
 // collect existing style elements that may have been inserted during SSR
 // to avoid FOUC or duplicate styles
@@ -504,6 +536,13 @@ if ('document' in globalThis) {
     .forEach((el) => {
       sheetsMap.set(el.getAttribute('data-vite-dev-id')!, el)
     })
+  document
+    .querySelectorAll<HTMLLinkElement>(
+      'link[rel="stylesheet"][data-vite-dev-id]',
+    )
+    .forEach((el) => {
+      linkSheetsMap.set(el.getAttribute('data-vite-dev-id')!, el)
+    })
 }
 
 // all css imports should be inserted at the same position
@@ -511,6 +550,8 @@ if ('document' in globalThis) {
 let lastInsertedStyle: HTMLStyleElement | undefined
 
 export function updateStyle(id: string, content: string): void {
+  if (linkSheetsMap.has(id)) return
+
   let style = sheetsMap.get(id)
   if (!style) {
     style = document.createElement('style')
@@ -540,6 +581,15 @@ export function updateStyle(id: string, content: string): void {
 }
 
 export function removeStyle(id: string): void {
+  if (linkSheetsMap.has(id)) {
+    // re-select elements since HMR can replace links
+    document
+      .querySelectorAll<HTMLLinkElement>(
+        `link[rel="stylesheet"][data-vite-dev-id="${CSS.escape(id)}"]`,
+      )
+      .forEach((el) => el.remove())
+    linkSheetsMap.delete(id)
+  }
   const style = sheetsMap.get(id)
   if (style) {
     document.head.removeChild(style)

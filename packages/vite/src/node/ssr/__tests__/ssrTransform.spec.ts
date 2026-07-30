@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { assert, expect, test } from 'vitest'
-import type { SourceMap } from 'rollup'
+import type { SourceMap } from 'rolldown'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import { transformWithEsbuild } from '../../plugins/esbuild'
 import { ssrTransform } from '../ssrTransform'
@@ -45,6 +45,19 @@ test('named import: arbitrary module namespace specifier', async () => {
     `
     "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["some thing"]});
     function foo() { return (0,__vite_ssr_import_0__["some thing"])(0) }"
+  `,
+  )
+})
+
+test('named import colliding with label', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `import { query } from 'vue';function foo() { query: while (true) { continue query; break query } }`,
+    ),
+  ).toMatchInlineSnapshot(
+    `
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["query"]});
+    function foo() { query: while (true) { continue query; break query } }"
   `,
   )
 })
@@ -298,6 +311,18 @@ test('import.meta', async () => {
   expect(
     await ssrTransformSimpleCode(`console.log(import.meta.url)`),
   ).toMatchInlineSnapshot(`"console.log(__vite_ssr_import_meta__.url)"`)
+})
+
+test('import.meta with imported variable named meta', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `import { meta } from './meta';\nconsole.log(import.meta.url, \`Hello, \${meta}!\`)`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("./meta", {"importedNames":["meta"]});
+
+    console.log(__vite_ssr_import_meta__.url, \`Hello, \${__vite_ssr_import_0__.meta}!\`)"
+  `)
 })
 
 test('dynamic import', async () => {
@@ -599,6 +624,61 @@ test('sourcemap is correct for hoisted imports', async () => {
   })
 })
 
+test('sourcemap call site of imported binding maps to callee start', async () => {
+  // When calling an imported binding, the call is wrapped with `(0, ...)` to
+  // avoid binding `this`. V8 anchors the call-site stack frame to the
+  // argument list `(` of such a parenthesized callee. The sourcemap should map
+  // that `(` back to the start of the original callee identifier (matching
+  // Node), instead of the `(`'s own column. See #19625.
+  const wrap = '(0,__vite_ssr_import_0__.fn)'
+
+  // map the call's argument list `(` (the first `(` after the `(0, ...)` wrap)
+  const mapArgParen = (generated: string, map: unknown) => {
+    const afterWrap = generated.indexOf(wrap) + wrap.length
+    const parenIndex = generated.indexOf('(', afterWrap)
+    let line = 1
+    let column = 0
+    for (let i = 0; i < parenIndex; i++) {
+      if (generated[i] === '\n') {
+        line++
+        column = 0
+      } else {
+        column++
+      }
+    }
+    return originalPositionFor(new TraceMap(map as any), { line, column })
+  }
+
+  // The callee `fn` always starts at line 2, column 0. Whitespace and comments
+  // between the callee and the `(` must not change where the frame points.
+  for (const call of [
+    'fn()',
+    'fn ()',
+    'fn /* c */ ()',
+    'fn\n()',
+    'fn(1)',
+    'fn /* c */ (1)',
+  ]) {
+    const code = `import { fn } from 'vue'\n${call}`
+    const result = (await ssrTransform(code, null, 'input.js', code))!
+    expect(mapArgParen(result.code, result.map), call).toMatchObject({
+      source: 'input.js',
+      line: 2,
+      column: 0,
+    })
+  }
+
+  // Optional calls are anchored to the `(` by Node itself (not the callee), so
+  // they must keep mapping to the original `(` (here line 2, column 4).
+  const code = `import { fn } from 'vue'\nfn?.()`
+  const result = (await ssrTransform(code, null, 'input.js', code))!
+  expect(mapArgParen(result.code, result.map)).toMatchObject({
+    source: 'input.js',
+    line: 2,
+    column: 4,
+  })
+})
+
 test('sourcemap with multiple sources', async () => {
   const code = readFixture('bundle.js')
   const map = readFixture('bundle.js.map')
@@ -848,25 +928,35 @@ test('class props', async () => {
   expect(
     await ssrTransformSimpleCode(
       `
-import { remove, add } from 'vue'
+import { remove, add, update, del, call } from 'vue'
 
 class A {
   remove = 1
   add = null
+  update = update
+  del = () => del()
+  call = call(4)
 }
+
+remove(2);
+add(4);
 `,
     ),
   ).toMatchInlineSnapshot(`
-    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["remove","add"]});
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["remove","add","update","del","call"]});
 
 
 
-    const add = __vite_ssr_import_0__.add;
-    const remove = __vite_ssr_import_0__.remove;
     class A {
       remove = 1
       add = null
+      update = __vite_ssr_import_0__.update
+      del = () => (0,__vite_ssr_import_0__.del)()
+      call = (0,__vite_ssr_import_0__.call)(4)
     }
+
+    (0,__vite_ssr_import_0__.remove)(2);
+    (0,__vite_ssr_import_0__.add)(4);
     "
   `)
 })
@@ -1479,6 +1569,69 @@ switch(1){}f()
 
     {}(0,__vite_ssr_import_0__.f)(1)
     "
+  `)
+})
+
+test('a switch-case local shadows an import only within the case block', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `import { createObjectProperty as o } from './ast'
+export function buildProps(node) {
+  const marker = () => o('ref_for')
+  switch (o(node.type)) {
+    case 1:
+      let o = node.value
+      console.log(o)
+      break
+  }
+  return o(marker)
+}`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "__vite_ssr_exportName__("buildProps", () => { try { return buildProps } catch {} });
+    const __vite_ssr_import_0__ = await __vite_ssr_import__("./ast", {"importedNames":["createObjectProperty"]});
+
+    function buildProps(node) {
+      const marker = () => (0,__vite_ssr_import_0__.createObjectProperty)('ref_for');
+      switch ((0,__vite_ssr_import_0__.createObjectProperty)(node.type)) {
+        case 1:
+          let o = node.value;
+          console.log(o);
+          break
+      };
+      return (0,__vite_ssr_import_0__.createObjectProperty)(marker)
+    }"
+  `)
+})
+
+test('a switch-case function or class declaration is scoped to the case block', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `import { f, C } from './m'
+function run(v) {
+  switch (v) {
+    case 1:
+      function f() {}
+      class C {}
+      console.log(f, C)
+      break
+  }
+  return [f(), new C()]
+}`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("./m", {"importedNames":["f","C"]});
+
+    function run(v) {
+      switch (v) {
+        case 1:
+          function f() {}
+          class C {}
+          console.log(f, C);
+          break
+      };
+      return [(0,__vite_ssr_import_0__.f)(), new __vite_ssr_import_0__.C()]
+    }"
   `)
 })
 

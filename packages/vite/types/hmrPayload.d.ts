@@ -4,6 +4,7 @@ export type HotPayload =
   | ConnectedPayload
   | PingPayload
   | UpdatePayload
+  | BundledDevUpdatePayload
   | FullReloadPayload
   | CustomPayload
   | ErrorPayload
@@ -20,6 +21,19 @@ export interface PingPayload {
 export interface UpdatePayload {
   type: 'update'
   updates: Update[]
+}
+
+/**
+ * Full-bundle-mode update notification. The client computes the HMR boundaries
+ * itself from `changedIds`.
+ */
+export interface BundledDevUpdatePayload {
+  type: 'bundled-dev-update'
+  changedIds: string[]
+  /** URL of the per-client HMR patch chunk */
+  url: string
+  /** Per-client sequence number */
+  seq: number
 }
 
 export interface Update {
@@ -47,6 +61,12 @@ export interface FullReloadPayload {
   path?: string
   /** @internal */
   triggeredBy?: string
+  /**
+   * When set, only the bundling-fallback page acts on the reload;
+   * other pages ignore the message.
+   * @internal
+   */
+  ifFallback?: boolean
 }
 
 export interface CustomPayload {

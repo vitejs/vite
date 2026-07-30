@@ -1,6 +1,6 @@
 import type { OriginalMapping } from '@jridgewell/trace-mapping'
 import type { ModuleRunner } from '../runner'
-import { posixDirname, posixResolve } from '../utils'
+import { decodeBase64, posixDirname, posixResolve } from '../utils'
 import type { EvaluatedModules } from '../evaluatedModules'
 import { slash } from '../../shared/utils'
 import { DecodedMap, getOriginalPosition } from './decoder'
@@ -154,7 +154,7 @@ function retrieveSourceMap(source: string) {
   if (reSourceMap.test(sourceMappingURL)) {
     // Support source map URL as a data url
     const rawData = sourceMappingURL.slice(sourceMappingURL.indexOf(',') + 1)
-    sourceMapData = Buffer.from(rawData, 'base64').toString()
+    sourceMapData = decodeBase64(rawData)
     sourceMappingURL = source
   } else {
     // Support source map URLs relative to the source URL
@@ -271,7 +271,7 @@ function CallSiteToString(this: CallSite) {
   } else {
     fileName = this.getScriptNameOrSourceURL()
     if (!fileName && this.isEval()) {
-      fileLocation = this.getEvalOrigin() as string
+      fileLocation = this.getEvalOrigin()!
       fileLocation += ', ' // Expecting source position to follow.
     }
 
@@ -330,7 +330,9 @@ function CallSiteToString(this: CallSite) {
 }
 
 function cloneCallSite(frame: CallSite) {
-  const object = {} as CallSite
+  // null prototype so assigning `constructor` below doesn't throw
+  // when user code has frozen `Object.prototype`
+  const object = Object.create(null) as CallSite
   Object.getOwnPropertyNames(Object.getPrototypeOf(frame)).forEach((name) => {
     const key = name as keyof CallSite
     // @ts-expect-error difficult to type
@@ -358,17 +360,8 @@ function wrapCallSite(frame: CallSite, state: State) {
   // from getScriptNameOrSourceURL() instead
   const source = frame.getFileName() || frame.getScriptNameOrSourceURL()
   if (source) {
-    const line = frame.getLineNumber() as number
-    let column = (frame.getColumnNumber() as number) - 1
-
-    // Fix position in Node where some (internal) code is prepended.
-    // See https://github.com/evanw/node-source-map-support/issues/36
-    // Header removed in node at ^10.16 || >=11.11.0
-    // v11 is not an LTS candidate, we can just test the one version with it.
-    // Test node versions for: 10.16-19, 10.20+, 12-19, 20-99, 100+, or 11.11
-    const headerLength = 62
-    if (line === 1 && column > headerLength && !frame.isEval())
-      column -= headerLength
+    const line = frame.getLineNumber() ?? 0
+    const column = (frame.getColumnNumber() ?? 1) - 1
 
     const position = mapSourcePosition({
       name: null,
@@ -397,7 +390,7 @@ function wrapCallSite(frame: CallSite, state: State) {
       return position.column + 1
     }
     frame.getScriptNameOrSourceURL = function () {
-      return position.source as string
+      return position.source!
     }
     return frame
   }

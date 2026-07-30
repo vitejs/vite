@@ -179,6 +179,23 @@ selfReferenceUrlWorker.addEventListener('message', (e) => {
     `${e.data}\n`
 })
 
+// only run on build
+if (!import.meta.hot) {
+  const cjsInteropWorker = new Worker(
+    new URL('../worker-require-json.js', import.meta.url),
+    { type: 'module' },
+  )
+  cjsInteropWorker.addEventListener('message', (e) => {
+    if (e.data.ok) {
+      text('.worker-require-json', e.data.content)
+    } else {
+      text('.worker-require-json', e.data.error)
+    }
+  })
+} else {
+  text('.worker-require-json', 'skipped in dev')
+}
+
 depSelfReferenceUrlWorker.startWorker((e) => {
   document.querySelector('.self-reference-url-worker-dep').textContent +=
     `${e.data}\n`

@@ -43,7 +43,7 @@ Vite is used by OpenAI, Google, Apple, Microsoft, NASA, Shopify, Cloudflare, Git
 
 ## Speeding up the Vite ecosystem
 
-Last month, the community gathered for the third edition of [ViteConf](https://viteconf.org/24/replay), hosted once more by [StackBlitz](https://stackblitz.com). It was the biggest Vite conference, with a broad representation of builders from the ecosystem. Among other announcements, Evan You announced [VoidZero](https://staging.voidzero.dev/posts/announcing-voidzero-inc), a company dedicated to building an open-source, high-performance, and unified development toolchain for the JavaScript ecosystem. VoidZero is behind [Rolldown](https://rolldown.rs) and [Oxc](https://oxc.rs), and their team is making significant strides, getting them rapidly ready for being adopted by Vite. Watch Evan's keynote to learn more about the next steps for Vite's rust-powered future.
+Last month, the community gathered for the third edition of [ViteConf](https://viteconf.org/24/replay), hosted once more by [StackBlitz](https://stackblitz.com). It was the biggest Vite conference, with a broad representation of builders from the ecosystem. Among other announcements, Evan You announced [VoidZero](https://voidzero.dev/posts/announcing-voidzero-inc), a company dedicated to building an open-source, high-performance, and unified development toolchain for the JavaScript ecosystem. VoidZero is behind [Rolldown](https://rolldown.rs) and [Oxc](https://oxc.rs), and their team is making significant strides, getting them rapidly ready for being adopted by Vite. Watch Evan's keynote to learn more about the next steps for Vite's rust-powered future.
 
 <YouTubeVideo videoId="EKvvptbTx6k?si=EZ-rFJn4pDW3tUvp" />
 
@@ -66,7 +66,7 @@ If you're new to Vite, we suggest reading the [Getting Started](/guide/) and [Fe
 
 We want to thank the more than [1K contributors to Vite Core](https://github.com/vitejs/vite/graphs/contributors) and the maintainers and contributors of Vite plugins, integrations, tools, and translations that have helped us craft this new major. We invite you to get involved and help us improve Vite for the whole ecosystem. Learn more at our [Contributing Guide](https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md).
 
-To get started, we suggest helping [triage issues](https://github.com/vitejs/vite/issues), [review PRs](https://github.com/vitejs/vite/pulls), send failing tests PRs based on open issues, and support others in [Discussions](https://github.com/vitejs/vite/discussions) and Vite Land's [help forum](https://discord.com/channels/804011606160703521/1019670660856942652). If you'd like to talk to us, join our [Discord community](http://chat.vite.dev/) and say hi on the [#contributing channel](https://discord.com/channels/804011606160703521/804439875226173480).
+To get started, we suggest helping [triage issues](https://github.com/vitejs/vite/issues), [review PRs](https://github.com/vitejs/vite/pulls), send failing tests PRs based on open issues, and support others in [Discussions](https://github.com/vitejs/vite/discussions) and Vite Land's [help forum](https://discord.com/channels/804011606160703521/1019670660856942652). If you'd like to talk to us, join our [Discord community](https://chat.vite.dev) and say hi on the [#contributing channel](https://discord.com/channels/804011606160703521/804439875226173480).
 
 For the latest news about the Vite ecosystem and Vite core, follow us on [Bluesky](https://bsky.app/profile/vite.dev), [X](https://twitter.com/vite_js), or [Mastodon](https://webtoo.ls/@vite).
 

@@ -22,7 +22,7 @@ test('cli should work', async () => {
 
 test.runIf(isServe)('should restart', async () => {
   const logsLengthBeforeEdit = streams.server.out.length
-  editFile('./vite.config.js', (content) => content)
+  editFile('./vite.config.js', (content) => content + '\n')
   await expect
     .poll(() => {
       const logs = streams.server.out.slice(logsLengthBeforeEdit)

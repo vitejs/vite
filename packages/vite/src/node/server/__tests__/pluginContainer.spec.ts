@@ -107,7 +107,7 @@ describe('plugin container', () => {
             return this.resolve('foobar', 'notreal', {
               custom: { p1: 'success' },
               isEntry: true,
-            })
+            } as any)
           }
         },
       }
@@ -331,6 +331,7 @@ describe('plugin container', () => {
         const plugin: Plugin = {
           name: 'p1',
           async resolveId(id, importer) {
+            if (id !== '/x.js') return
             calledCount++
             if (calledCount <= 1) {
               return await this.resolve(id, importer, { skipSelf: true })

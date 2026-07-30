@@ -10,8 +10,7 @@ export interface RollupDynamicImportVarsOptions {
    */
   exclude?: string | RegExp | (string | RegExp)[]
   /**
-   * By default, the plugin quits the build process when it encounters an error. If you set this option to true, it will throw a warning instead and leave the code untouched.
-   * @default false
+   * @deprecated This option is no-op and will be removed in future versions.
    */
   warnOnError?: boolean
 }

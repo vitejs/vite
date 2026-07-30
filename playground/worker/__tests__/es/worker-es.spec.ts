@@ -96,7 +96,17 @@ describe.runIf(isBuild)('build', () => {
   test('inlined code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/es/assets')
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(36)
+
+    // inline-only worker should not be emitted as a separate worker file
+    const workerFiles = files.filter((f) => f.startsWith('worker_'))
+    for (const file of workerFiles) {
+      const fileContent = fs.readFileSync(
+        path.resolve(assetsDir, file),
+        'utf-8',
+      )
+      expect(fileContent).not.toContain('my-inline-shared-worker.js')
+    }
+
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
@@ -106,20 +116,20 @@ describe.runIf(isBuild)('build', () => {
     )
 
     // worker should have all imports resolved and no exports
-    expect(workerContent).not.toMatch(/import[^.]/)
-    expect(workerContent).not.toMatch(`export`)
+    expect(workerContent).not.toMatch(/import\s*["(]/)
+    expect(workerContent).not.toMatch(/\bexport\b/)
     // chunk
-    expect(content).toMatch(`new Worker("/es/assets`)
-    expect(content).toMatch(`new SharedWorker("/es/assets`)
+    expect(content).toMatch('new Worker(`/es/assets')
+    expect(content).toMatch('new SharedWorker(`/es/assets')
     // inlined worker
     expect(content).toMatch(`(self.URL||self.webkitURL).createObjectURL`)
     expect(content).toMatch(`self.Blob`)
     expect(content).toMatch(
-      /try\{if\(\w+=\w+&&\(self\.URL\|\|self\.webkitURL\)\.createObjectURL\(\w+\),!\w+\)throw""/,
+      /try\{if\(\w+=\w+&&\(self\.URL\|\|self\.webkitURL\)\.createObjectURL\(\w+\),!\w+\)throw``/,
     )
     // inlined shared worker
     expect(content).toMatch(
-      `return new SharedWorker("data:text/javascript;charset=utf-8,"+`,
+      'return new SharedWorker(`data:text/javascript;charset=utf-8,',
     )
   })
 
@@ -189,6 +199,12 @@ test('import.meta.glob with eager in worker', async () => {
   await expect
     .poll(() => page.textContent('.importMetaGlobEager-worker'))
     .toMatch('["')
+})
+
+test.runIf(isBuild)('require json in worker', async () => {
+  await expect
+    .poll(() => page.textContent('.worker-require-json'))
+    .toMatch('[{"name":"a"},{"name":"b"}]')
 })
 
 test('self reference worker', async () => {

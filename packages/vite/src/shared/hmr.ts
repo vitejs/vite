@@ -1,6 +1,6 @@
-import type { HotPayload, Update } from 'types/hmrPayload'
-import type { ModuleNamespace, ViteHotContext } from 'types/hot'
-import type { InferCustomEventPayload } from 'types/customEvent'
+import type { HotPayload, Update } from '#types/hmrPayload'
+import type { ModuleNamespace, ViteHotContext } from '#types/hot'
+import type { InferCustomEventPayload } from '#types/customEvent'
 import type { NormalizedModuleRunnerTransport } from './moduleRunnerTransport'
 
 type CustomListenersMap = Map<string, ((data: any) => void)[]>
@@ -168,12 +168,13 @@ export class HMRContext implements ViteHotContext {
 }
 
 export class HMRClient {
-  public hotModulesMap = new Map<string, HotModule>()
-  public disposeMap = new Map<string, (data: any) => void | Promise<void>>()
-  public pruneMap = new Map<string, (data: any) => void | Promise<void>>()
-  public dataMap = new Map<string, any>()
+  public hotModulesMap: Map<string, HotModule> = new Map()
+  public disposeMap: Map<string, (data: any) => void | Promise<void>> =
+    new Map()
+  public pruneMap: Map<string, (data: any) => void | Promise<void>> = new Map()
+  public dataMap: Map<string, any> = new Map()
   public customListenersMap: CustomListenersMap = new Map()
-  public ctxToListenersMap = new Map<string, CustomListenersMap>()
+  public ctxToListenersMap: Map<string, CustomListenersMap> = new Map()
   public currentFirstInvalidatedBy: string | undefined
 
   constructor(
@@ -213,20 +214,24 @@ export class HMRClient {
   // but they may have left behind side effects that need to be cleaned up
   // (e.g. style injections)
   public async prunePaths(paths: string[]): Promise<void> {
-    await Promise.all(
-      paths.map((path) => {
-        const disposer = this.disposeMap.get(path)
-        if (disposer) return disposer(this.dataMap.get(path))
-      }),
-    )
-    await Promise.all(
-      paths.map((path) => {
-        const fn = this.pruneMap.get(path)
-        if (fn) {
-          return fn(this.dataMap.get(path))
-        }
-      }),
-    )
+    try {
+      await Promise.all(
+        paths.map((path) => {
+          const disposer = this.disposeMap.get(path)
+          if (disposer) return disposer(this.dataMap.get(path))
+        }),
+      )
+      await Promise.all(
+        paths.map((path) => {
+          const fn = this.pruneMap.get(path)
+          if (fn) {
+            return fn(this.dataMap.get(path))
+          }
+        }),
+      )
+    } finally {
+      paths.forEach((path) => this.dataMap.delete(path))
+    }
   }
 
   protected warnFailedUpdate(err: Error, path: string | string[]): void {

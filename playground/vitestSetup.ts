@@ -20,9 +20,12 @@ import {
   preview,
 } from 'vite'
 import type { Browser, Page } from 'playwright-chromium'
-import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
-import type { RunnerTestFile } from 'vitest'
-import { beforeAll, expect, inject } from 'vitest'
+import type {
+  RolldownWatcher,
+  RolldownWatcherEvent,
+  RollupError,
+} from 'rolldown'
+import { beforeAll, expect, inject, vi } from 'vitest'
 
 // #region serializer
 
@@ -58,10 +61,18 @@ ${indentation}}`
 
 // #region env
 
-export const workspaceRoot = path.resolve(__dirname, '../')
+export const workspaceRoot = path.resolve(import.meta.dirname, '../')
 
 export const isBuild = !!process.env.VITE_TEST_BUILD
 export const isServe = !isBuild
+/**
+ * Serve mode with `experimental.bundledDev` force-enabled for every playground
+ * (`VITE_TEST_BUNDLED_DEV=1`). `isServe` stays `true` in this mode; use
+ * `test.skipIf(isBundledDev)` / `describe.skipIf(isBundledDev)` for cases that
+ * don't pass under bundled dev yet.
+ */
+export const isBundledDev = isServe && !!process.env.VITE_TEST_BUNDLED_DEV
+export const isBundled = isBuild || isBundledDev
 export const isWindows = process.platform === 'win32'
 export const viteBinPath = path.posix.join(
   workspaceRoot,
@@ -102,7 +113,7 @@ export const browserErrors: Error[] = []
 export let page: Page = undefined!
 export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
-export let watcher: RollupWatcher | undefined = undefined
+export let watcher: RolldownWatcher | undefined = undefined
 
 export function setViteUrl(url: string): void {
   viteTestUrl = url
@@ -125,22 +136,17 @@ function throwHtmlParseError() {
 }
 // #endregion
 
-beforeAll(async (s) => {
-  const suite = s as RunnerTestFile
-
-  testPath = suite.filepath!
+// eslint-disable-next-line no-empty-pattern
+beforeAll(async ({}, suite) => {
+  testPath = suite.file.filepath!
   testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
   testDir = path.dirname(testPath)
   if (testName) {
     testDir = path.resolve(workspaceRoot, 'playground-temp', testName)
   }
 
-  // skip browser setup for non-playground tests
-  // TODO: ssr playground?
-  if (
-    !suite.filepath.includes('playground') ||
-    suite.filepath.includes('hmr-ssr')
-  ) {
+  // skip browser setup for hmr-ssr playground
+  if (testName === 'hmr-ssr') {
     return
   }
 
@@ -267,13 +273,17 @@ async function loadConfig(configEnv: ConfigEnv) {
       // esbuild do not minify ES lib output since that would remove pure annotations and break tree-shaking
       // skip transpilation during tests to make it faster
       target: 'esnext',
-      // tests are flaky when `emptyOutDir` is `true`
-      emptyOutDir: false,
     },
     customLogger: createInMemoryLogger(serverLogs),
     plugins: [throwHtmlParseError()],
   }
-  return mergeConfig(options, config || {})
+  let merged = mergeConfig(options, config || {})
+  // applied after the merge so the playground's own config cannot turn it off —
+  // the whole point of the bundled-dev run is to force the mode everywhere
+  if (isBundledDev) {
+    merged = mergeConfig(merged, { experimental: { bundledDev: true } })
+  }
+  return merged
 }
 
 export async function startDefaultServe(): Promise<void> {
@@ -288,6 +298,55 @@ export async function startDefaultServe(): Promise<void> {
       server.config.base,
     )
     await page.goto(viteTestUrl)
+    // bundled dev serves a self-reloading fallback page until the first
+    // bundle completes; tests must not assert against that placeholder.
+    // Wait server-side for the first build to settle (success or error) so
+    // slow builds (e.g. many HTML inputs) don't race a fixed page timeout.
+    // A playground whose first bundle fails keeps the fallback page, and its
+    // tests are expected to handle that state themselves.
+    // hmr-full-bundle-mode is exempt — it asserts the fallback page itself.
+    if (isBundledDev && testName !== 'hmr-full-bundle-mode') {
+      // `initialBuildCompleted` / `lastBuildError` are private — the harness
+      // reaches in rather than widening the public API for tests only.
+      const bundledDev = server.environments.client.bundledDev as any
+      if (bundledDev) {
+        await vi.waitUntil(
+          () => bundledDev.initialBuildCompleted || bundledDev.lastBuildError,
+          { timeout: 40_000 },
+        )
+      }
+      if (bundledDev?.initialBuildCompleted) {
+        await page
+          .waitForFunction(
+            () => !(globalThis as any).__vite_is_fallback_page__,
+            undefined,
+            { timeout: 15_000 },
+          )
+          .catch(() => {})
+        // TODO: workaround — an edit fired while no client is connected is
+        // dropped (vitejs/vite#23028). Remove this wait once the server
+        // buffers updates for clients that connect later. A page that never
+        // loads the client runtime (e.g. SSR-rendered pages) cannot register
+        // a client; a fully loaded page with no runtime counts as settled.
+        await vi.waitUntil(
+          async () => {
+            const state = await page
+              .evaluate(() => ({
+                loaded: document.readyState === 'complete',
+                hasRuntime: !!(globalThis as any).__rolldown_runtime__,
+                clientId: (globalThis as any).__rolldown_runtime__?.clientId,
+              }))
+              .catch(() => undefined)
+            if (!state) return false
+            if (state.clientId && bundledDev.clients?.get(state.clientId)) {
+              return true
+            }
+            return state.loaded && !state.hasRuntime
+          },
+          { timeout: 10_000 },
+        )
+      }
+    }
   } else {
     process.env.VITE_INLINE = 'inline-build'
     let resolvedConfig: ResolvedConfig
@@ -312,7 +371,7 @@ export async function startDefaultServe(): Promise<void> {
       const isWatch = !!resolvedConfig!.build.watch
       // in build watch,call startStaticServer after the build is complete
       if (isWatch) {
-        watcher = rollupOutput as RollupWatcher
+        watcher = rollupOutput as RolldownWatcher
         await notifyRebuildComplete(watcher)
       }
       if (buildConfig.__test__) {
@@ -341,10 +400,10 @@ export async function startDefaultServe(): Promise<void> {
  * Send the rebuild complete message in build watch
  */
 export async function notifyRebuildComplete(
-  watcher: RollupWatcher,
-): Promise<RollupWatcher> {
+  watcher: RolldownWatcher,
+): Promise<void> {
   let resolveFn: undefined | (() => void)
-  const callback = (event: RollupWatcherEvent): void => {
+  const callback = (event: RolldownWatcherEvent): void => {
     if (event.code === 'END') {
       resolveFn?.()
     }
@@ -353,7 +412,8 @@ export async function notifyRebuildComplete(
   await new Promise<void>((resolve) => {
     resolveFn = resolve
   })
-  return watcher.off('event', callback)
+
+  watcher.off('event', callback)
 }
 
 export function createInMemoryLogger(logs: string[]): Logger {

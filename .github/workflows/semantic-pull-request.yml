@@ -1,6 +1,11 @@
 name: Semantic Pull Request
 
 on:
+  # zizmor: ignore[dangerous-triggers]
+  # SAFETY: pull_request_target is used here because:
+  # - The workflow does NOT check out PR code
+  # - Only PR title is read
+  # - No PR-supplied code is executed
   pull_request_target:
     types:
       - opened
@@ -10,7 +15,7 @@ on:
 jobs:
   main:
     if: github.repository == 'vitejs/vite'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     name: Semantic Pull Request
     permissions:
       pull-requests: read

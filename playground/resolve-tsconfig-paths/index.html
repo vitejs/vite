@@ -1,0 +1,59 @@
+<h1>Resolve: tsconfig paths</h1>
+
+<h2>Import from .ts</h2>
+<p class="ts"></p>
+
+<h2>Import from .js</h2>
+<p class="js"></p>
+
+<h2>Fallback works</h2>
+<p class="fallback"></p>
+
+<h2>Import using # prefixed path</h2>
+<p class="hash"></p>
+
+<h2>Nested tsconfig.json & references / include works</h2>
+<p class="nested-a"></p>
+<p class="nested-b"></p>
+
+<h2>import.meta.glob resolves tsconfig paths</h2>
+<p class="glob-eager"></p>
+
+<h2>CSS / Sass @import resolves tsconfig paths (Less does not)</h2>
+<p class="tsconfig-paths-css">This text should be darkcyan</p>
+<p class="tsconfig-paths-scss">This text should be seagreen</p>
+<p class="tsconfig-paths-less">
+  This text should stay navy (Less is unsupported)
+</p>
+
+<script type="module">
+  import '@/style.css'
+  import '@/style.scss'
+  import '@/style.less'
+
+  function text(selector, text) {
+    document.querySelector(selector).textContent = text
+  }
+
+  import ts from './src/ts.ts'
+  text('.ts', ts)
+
+  import js from './src/js.js'
+  text('.js', js)
+
+  import fallback from '@fallback/fallback'
+  text('.fallback', fallback)
+
+  import hash from './src/hash.ts'
+  text('.hash', hash)
+
+  import { valueA, valueB } from './src/nested/index.ts'
+  text('.nested-a', valueA)
+  text('.nested-b', valueB)
+
+  const globEager = import.meta.glob('@/glob/**/*', {
+    eager: true,
+    import: 'default',
+  })
+  text('.glob-eager', Object.values(globEager).sort().join(' '))
+</script>

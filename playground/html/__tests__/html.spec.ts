@@ -123,7 +123,7 @@ describe('main', () => {
   })
 
   test.runIf(isBuild)(
-    'external paths by rollupOptions.external works',
+    'external paths by rolldownOptions.external works',
     async () => {
       expect(await page.textContent('.external-path-by-rollup-options')).toBe(
         'works',
@@ -273,6 +273,16 @@ describe('link with props', () => {
   })
 })
 
+describe.runIf(isServe)('SPA fallback', () => {
+  test('should serve index.html via page navigation even when path matches file basename', async () => {
+    const response = await page.goto(viteTestUrl + '/test')
+    expect(response.status()).toBe(200)
+    const content = await page.content()
+    expect(content).toContain('Transformed')
+    expect(content).not.toContain('This is test.js')
+  })
+})
+
 describe.runIf(isServe)('invalid', () => {
   test('should be 500 with overlay', async () => {
     const response = await page.goto(viteTestUrl + '/invalid.html')
@@ -416,7 +426,7 @@ describe('relative input', () => {
     await page.goto(viteTestUrl + '/relative-input.html')
   })
 
-  test('passing relative path to rollupOptions.input works', async () => {
+  test('passing relative path to rolldownOptions.input works', async () => {
     await expect.poll(() => page.textContent('.relative-input')).toBe('OK')
   })
 })

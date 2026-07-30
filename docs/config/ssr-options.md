@@ -42,7 +42,7 @@ These conditions are used in the plugin pipeline, and only affect non-externaliz
 ## ssr.resolve.externalConditions
 
 - **Type:** `string[]`
-- **Default:** `['node']`
+- **Default:** `['node', 'module-sync']`
 
 Conditions that are used during ssr import (including `ssrLoadModule`) of externalized direct dependencies (external dependencies imported by Vite).
 

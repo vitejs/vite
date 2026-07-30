@@ -1,0 +1,9 @@
+{
+  "name": "@vitejs/test-dep-cjs-require-css-main-field",
+  "private": true,
+  "version": "0.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "@vitejs/test-dep-cjs-css-main-field": "file:../dep-cjs-css-main-field"
+  }
+}

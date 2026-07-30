@@ -1,25 +1,33 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
-import type { ObjectHook } from 'rollup'
+import colors from 'picocolors'
+import type { ObjectHook } from 'rolldown'
+import {
+  viteAliasPlugin as nativeAliasPlugin,
+  viteJsonPlugin as nativeJsonPlugin,
+  oxcRuntimePlugin,
+} from 'rolldown/experimental'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
-import type { HookHandler, Plugin, PluginWithRequiredHook } from '../plugin'
+import {
+  type HookHandler,
+  type Plugin,
+  type PluginWithRequiredHook,
+} from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
-import { jsonPlugin } from './json'
-import { resolvePlugin } from './resolve'
+import { resolveBuildPlugins } from '../build'
+import { oxcResolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
-import { esbuildPlugin } from './esbuild'
 import { importAnalysisPlugin } from './importAnalysis'
 import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
 import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
-import { wasmFallbackPlugin, wasmHelperPlugin } from './wasm'
+import { wasmHelperPlugin } from './wasm'
 import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
 import { webWorkerPlugin } from './worker'
 import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
 import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
-import { metadataPlugin } from './metadata'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { importGlobPlugin } from './importMetaGlob'
 import {
@@ -28,6 +36,9 @@ import {
   createFilterForTransform,
   createIdFilter,
 } from './pluginFilter'
+import { forwardConsolePlugin } from './forwardConsole'
+import { oxcPlugin } from './oxc'
+import { esbuildBannerFooterCompatPlugin } from './esbuildBannerFooterCompatPlugin'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -37,49 +48,96 @@ export async function resolvePlugins(
 ): Promise<Plugin[]> {
   const isBuild = config.command === 'build'
   const isWorker = config.isWorker
-  const buildPlugins = isBuild
-    ? await (await import('../build')).resolveBuildPlugins(config)
+  const anyEnvBundled =
+    isBuild || Object.values(config.environments).some((env) => env.isBundled)
+  const buildPlugins = anyEnvBundled
+    ? resolveBuildPlugins(config)
     : { pre: [], post: [] }
+  const devtoolsIntegrationPlugin =
+    config.devtools.enabled && !isWorker
+      ? await loadDevToolsIntegrationPlugin(config)
+      : null
   const { modulePreload } = config.build
 
   return [
-    !isBuild ? optimizedDepsPlugin() : null,
-    isBuild ? metadataPlugin() : null,
+    optimizedDepsPlugin(),
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
-    !isBuild ? preAliasPlugin(config) : null,
-    aliasPlugin({
-      entries: config.resolve.alias,
-      customResolver: viteAliasCustomResolver,
-    }),
+    preAliasPlugin(config),
+    {
+      ...aliasPlugin({
+        // @ts-expect-error aliasPlugin receives rollup types
+        entries: config.resolve.alias,
+        customResolver: viteAliasCustomResolver,
+      }),
+      applyToEnvironment(environment) {
+        if (
+          environment.config.isBundled &&
+          !environment.config.resolve.alias.some((v) => v.customResolver)
+        ) {
+          return nativeAliasPlugin({
+            entries: config.resolve.alias.map((item) => {
+              return {
+                find: item.find,
+                replacement: item.replacement,
+              }
+            }),
+          })
+        }
+        return true
+      },
+    } as Plugin,
 
     ...prePlugins,
 
     modulePreload !== false && modulePreload.polyfill
-      ? modulePreloadPolyfillPlugin(config)
+      ? modulePreloadPolyfillPlugin()
       : null,
-    resolvePlugin({
-      root: config.root,
-      isProduction: config.isProduction,
-      isBuild,
-      packageCache: config.packageCache,
-      asSrc: true,
-      optimizeDeps: true,
-      externalize: true,
-    }),
+    ...oxcResolvePlugin(
+      {
+        root: config.root,
+        isProduction: config.isProduction,
+        isBuild,
+        packageCache: config.packageCache,
+        asSrc: true,
+        optimizeDeps: true,
+        externalize: true,
+        legacyInconsistentCjsInterop: config.legacy?.inconsistentCjsInterop,
+      },
+      isWorker
+        ? {
+            ...config,
+            consumer: 'client',
+            isBundled: true,
+            optimizeDepsPluginNames: [],
+          }
+        : undefined,
+    ),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
-    config.esbuild !== false ? esbuildPlugin(config) : null,
-    jsonPlugin(config.json, isBuild),
+    esbuildBannerFooterCompatPlugin(config),
+    // @oxc-project/runtime resolution is handled by rolldown in build
+    config.oxc !== false
+      ? ({
+          ...oxcRuntimePlugin(),
+          applyToEnvironment(environment) {
+            return !environment.config.isBundled
+          },
+        } satisfies Plugin)
+      : null,
+    config.oxc !== false ? oxcPlugin(config) : null,
+    nativeJsonPlugin({ ...config.json, minify: isBuild }),
     wasmHelperPlugin(),
     webWorkerPlugin(config),
     assetPlugin(config),
+    // for now client only
+    config.server.forwardConsole.enabled &&
+      forwardConsolePlugin({ environments: ['client'] }),
 
     ...normalPlugins,
 
-    wasmFallbackPlugin(),
     definePlugin(config),
     cssPostPlugin(config),
-    isBuild && buildHtmlPlugin(config),
+    buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
     assetImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
@@ -89,16 +147,30 @@ export async function resolvePlugins(
     ...postPlugins,
 
     ...buildPlugins.post,
+    devtoolsIntegrationPlugin,
 
     // internal server-only plugins are always applied after everything else
-    ...(isBuild
-      ? []
-      : [
-          clientInjectionsPlugin(config),
-          cssAnalysisPlugin(config),
-          importAnalysisPlugin(config),
-        ]),
+    clientInjectionsPlugin(config),
+    cssAnalysisPlugin(config),
+    importAnalysisPlugin(config),
   ].filter(Boolean) as Plugin[]
+}
+
+async function loadDevToolsIntegrationPlugin(
+  config: ResolvedConfig,
+): Promise<Plugin | null> {
+  try {
+    const { DevToolsIntegration } = await import('@vitejs/devtools/integration')
+    return DevToolsIntegration({ config })
+  } catch (error: any) {
+    config.logger.error(
+      colors.red(
+        `Failed to load Vite DevTools integration: ${error?.message || error?.stack}`,
+      ),
+      { error },
+    )
+    return null
+  }
 }
 
 export function createPluginHookUtils(
@@ -203,6 +275,7 @@ export function getCachedFilterForPlugin<
       filters.transform = createFilterForTransform(
         rawFilters?.id,
         rawFilters?.code,
+        rawFilters?.moduleType,
       )
       filter = filters.transform
       break

@@ -1,18 +1,15 @@
-import { dirname, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import { promises as fs } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { transformGlobImport } from '../../../plugins/importMetaGlob'
 import { transformWithEsbuild } from '../../../plugins/esbuild'
 
-const __dirname = resolve(dirname(fileURLToPath(import.meta.url)))
-
 describe('fixture', async () => {
   const resolveId = (id: string) => id
-  const root = __dirname
+  const root = import.meta.dirname
 
   it('transform', async () => {
-    const id = resolve(__dirname, './fixture-a/index.ts')
+    const id = resolve(import.meta.dirname, './fixture-a/index.ts')
     const code = (
       await transformWithEsbuild(await fs.readFile(id, 'utf-8'), id)
     ).code
@@ -28,12 +25,12 @@ describe('fixture', async () => {
         .toString()
         .split('\n').length
 
-    expect(await getTransformedLineCount("import.meta.glob('./*.js')")).toBe(1)
+    expect(await getTransformedLineCount("import.meta.glob('/*.js')")).toBe(1)
     expect(
       await getTransformedLineCount(
         `
           import.meta.glob(
-            './*.js'
+            '/*.js'
           )
         `.trim(),
       ),
@@ -41,7 +38,7 @@ describe('fixture', async () => {
   })
 
   it('virtual modules', async () => {
-    const root = resolve(__dirname, './fixture-a')
+    const root = resolve(import.meta.dirname, './fixture-a')
     const code = [
       "import.meta.glob('/modules/*.ts')",
       "import.meta.glob(['/../fixture-b/*.ts'])",
@@ -66,10 +63,24 @@ describe('fixture', async () => {
         "[Error: In virtual modules, all globs must start with '/']",
       )
     }
+
+    // Regression test for vitejs/vite#22345: even when the relative glob
+    // matches zero files, virtual modules must still surface the error
+    // instead of silently returning `{}`.
+    await expect(async () => {
+      await transformGlobImport(
+        "import.meta.glob('./no-such-dir/*.ts')",
+        'virtual:module',
+        root,
+        resolveId,
+      )
+    }).rejects.toMatchInlineSnapshot(
+      `[Error: In virtual modules, all globs must start with '/']`,
+    )
   })
 
   it('transform with restoreQueryExtension', async () => {
-    const id = resolve(__dirname, './fixture-a/index.ts')
+    const id = resolve(import.meta.dirname, './fixture-a/index.ts')
     const code = (
       await transformWithEsbuild(await fs.readFile(id, 'utf-8'), id)
     ).code

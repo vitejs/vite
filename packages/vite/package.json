@@ -1,29 +1,53 @@
 {
   "name": "vite",
-  "version": "7.1.7",
-  "type": "module",
+  "version": "8.2.0",
+  "description": "Native-ESM powered web dev build tool",
+  "keywords": [
+    "build-tool",
+    "dev-server",
+    "framework",
+    "frontend",
+    "hmr",
+    "vite"
+  ],
+  "homepage": "https://vite.dev",
+  "bugs": {
+    "url": "https://github.com/vitejs/vite/issues"
+  },
   "license": "MIT",
   "author": "Evan You",
-  "description": "Native-ESM powered web dev build tool",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vitejs/vite.git",
+    "directory": "packages/vite"
+  },
+  "funding": "https://github.com/vitejs/vite?sponsor=1",
   "bin": {
     "vite": "bin/vite.js"
   },
-  "keywords": [
-    "frontend",
-    "framework",
-    "hmr",
-    "dev-server",
-    "build-tool",
-    "vite"
+  "files": [
+    "bin",
+    "dist",
+    "misc/**/*.js",
+    "client.d.ts",
+    "types"
   ],
-  "main": "./dist/node/index.js",
-  "types": "./dist/node/index.d.ts",
+  "type": "module",
+  "imports": {
+    "#module-sync-enabled": {
+      "module-sync": "./misc/true.js",
+      "default": "./misc/false.js"
+    },
+    "#types/*": "./types/*.d.ts",
+    "#dep-types/*": "./src/types/*.d.ts"
+  },
   "exports": {
     ".": "./dist/node/index.js",
     "./client": {
       "types": "./client.d.ts"
     },
     "./module-runner": "./dist/node/module-runner.js",
+    "./internal": "./dist/node/internal.js",
     "./dist/client/*": "./dist/client/*",
     "./types/*": {
       "types": "./types/*"
@@ -31,41 +55,6 @@
     "./types/internal/*": null,
     "./package.json": "./package.json"
   },
-  "typesVersions": {
-    "*": {
-      "module-runner": [
-        "dist/node/module-runner.d.ts"
-      ]
-    }
-  },
-  "imports": {
-    "#module-sync-enabled": {
-      "module-sync": "./misc/true.js",
-      "default": "./misc/false.js"
-    }
-  },
-  "files": [
-    "bin",
-    "dist",
-    "misc/**/*.js",
-    "client.d.ts",
-    "index.cjs",
-    "index.d.cts",
-    "types"
-  ],
-  "engines": {
-    "node": "^20.19.0 || >=22.12.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/vitejs/vite.git",
-    "directory": "packages/vite"
-  },
-  "bugs": {
-    "url": "https://github.com/vitejs/vite/issues"
-  },
-  "homepage": "https://vite.dev",
-  "funding": "https://github.com/vitejs/vite?sponsor=1",
   "scripts": {
     "dev": "premove dist && pnpm build-bundle -w",
     "build": "premove dist && pnpm build-bundle && pnpm build-types",
@@ -73,89 +62,83 @@
     "build-types": "pnpm build-types-roll && pnpm build-types-check",
     "build-types-roll": "rolldown --config rolldown.dts.config.ts",
     "build-types-check": "tsc --project tsconfig.check.json",
-    "typecheck": "tsc && tsc -p src/node",
+    "typecheck": "tsc && tsc -p src/node && tsc -p src/client && tsc -p src/module-runner && tsc -p src/shared && tsc -p src/node/__tests_dts__ && tsc -p src/module-runner/__tests_dts__",
     "lint": "eslint --cache --ext .ts src/**",
-    "format": "prettier --write --cache --parser typescript \"src/**/*.ts\"",
+    "format": "oxfmt",
     "generate-target": "tsx scripts/generateTarget.ts",
     "prepublishOnly": "npm run build"
   },
-  "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "esbuild": "^0.25.0",
-    "fdir": "^6.5.0",
-    "picomatch": "^4.0.3",
-    "postcss": "^8.5.6",
-    "rollup": "^4.43.0",
-    "tinyglobby": "^0.2.15"
-  },
-  "optionalDependencies": {
-    "fsevents": "~2.3.3"
+    "lightningcss": "^1.33.0",
+    "picomatch": "^4.0.5",
+    "postcss": "^8.5.23",
+    "rolldown": "~1.2.0",
+    "tinyglobby": "^0.2.17"
   },
   "devDependencies": {
-    "@babel/parser": "^7.28.4",
+    "@babel/parser": "^7.29.7",
     "@jridgewell/remapping": "^2.3.5",
     "@jridgewell/trace-mapping": "^0.3.31",
-    "@oxc-project/types": "0.90.0",
     "@polka/compression": "^1.0.0-next.25",
-    "@rolldown/pluginutils": "^1.0.0-beta.41",
-    "@rollup/plugin-alias": "^5.1.1",
-    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-alias": "^6.0.0",
     "@rollup/plugin-dynamic-import-vars": "2.1.4",
-    "@rollup/pluginutils": "^5.3.0",
+    "@rollup/pluginutils": "^5.4.0",
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
-    "artichokie": "^0.4.2",
-    "baseline-browser-mapping": "^2.8.9",
-    "cac": "^6.7.14",
+    "@vercel/detect-agent": "^1.2.3",
+    "@vitejs/devtools": "^0.4.8",
+    "@vitest/utils": "4.1.10",
+    "@voidzero-dev/vite-task-client": "^0.2.0",
+    "artichokie": "^0.4.4",
+    "baseline-browser-mapping": "^2.11.3",
+    "cac": "^7.0.0",
     "chokidar": "^3.6.0",
     "connect": "^3.7.0",
     "convert-source-map": "^2.0.0",
-    "cors": "^2.8.5",
+    "cors": "^2.8.6",
     "cross-spawn": "^7.0.6",
-    "debug": "^4.4.3",
-    "dep-types": "link:./src/types",
-    "dotenv": "^17.2.3",
-    "dotenv-expand": "^12.0.3",
-    "es-module-lexer": "^1.7.0",
+    "dotenv-expand": "^13.0.0",
+    "es-module-lexer": "^2.3.1",
+    "esbuild": "^0.28.1",
     "escape-html": "^1.0.3",
     "estree-walker": "^3.0.3",
     "etag": "^1.8.1",
-    "host-validation-middleware": "^0.1.1",
-    "http-proxy-3": "^1.21.1",
-    "launch-editor-middleware": "^2.11.1",
-    "lightningcss": "^1.30.2",
-    "magic-string": "^0.30.19",
-    "mlly": "^1.8.0",
+    "fresh-import": "^0.2.1",
+    "host-validation-middleware": "^0.1.4",
+    "http-proxy-3": "^1.23.3",
+    "launch-editor-middleware": "^2.14.1",
+    "magic-string": "^1.1.0",
+    "mlly": "^1.8.2",
     "mrmime": "^2.0.1",
-    "nanoid": "^5.1.6",
+    "nanoid": "^5.1.16",
+    "obug": "^1.0.2",
     "open": "^10.2.0",
-    "parse5": "^8.0.0",
+    "parse5": "^8.0.1",
     "pathe": "^2.0.3",
-    "periscopic": "^4.0.2",
+    "periscopic": "^4.0.3",
     "picocolors": "^1.1.1",
     "postcss-import": "^16.1.1",
     "postcss-load-config": "^6.0.1",
-    "postcss-modules": "^6.0.1",
+    "postcss-modules": "^9.0.1",
     "premove": "^4.0.0",
     "resolve.exports": "^2.0.3",
-    "rolldown": "^1.0.0-beta.41",
-    "rolldown-plugin-dts": "^0.16.11",
-    "rollup-plugin-license": "^3.6.0",
-    "sass": "^1.93.2",
-    "sass-embedded": "^1.93.2",
+    "rolldown-plugin-dts": "^0.27.9",
+    "rollup": "^4.59.0",
+    "rollup-plugin-license": "^3.7.1",
+    "sass": "^1.102.0",
+    "sass-embedded": "^1.100.0",
     "sirv": "^3.0.2",
     "strip-literal": "^3.1.0",
-    "terser": "^5.44.0",
-    "tsconfck": "^3.1.6",
-    "types": "link:./types",
-    "ufo": "^1.6.1",
-    "ws": "^8.18.3"
+    "terser": "^5.49.0",
+    "ufo": "^1.6.4",
+    "ws": "^8.21.1"
   },
   "peerDependencies": {
     "@types/node": "^20.19.0 || >=22.12.0",
+    "@vitejs/devtools": "^0.4.0",
+    "esbuild": "^0.27.0 || ^0.28.0",
     "jiti": ">=1.21.0",
     "less": "^4.0.0",
-    "lightningcss": "^1.21.0",
     "sass": "^1.70.0",
     "sass-embedded": "^1.70.0",
     "stylus": ">=0.54.8",
@@ -166,6 +149,12 @@
   },
   "peerDependenciesMeta": {
     "@types/node": {
+      "optional": true
+    },
+    "@vitejs/devtools": {
+      "optional": true
+    },
+    "esbuild": {
       "optional": true
     },
     "jiti": {
@@ -186,9 +175,6 @@
     "sugarss": {
       "optional": true
     },
-    "lightningcss": {
-      "optional": true
-    },
     "terser": {
       "optional": true
     },
@@ -198,5 +184,12 @@
     "yaml": {
       "optional": true
     }
-  }
+  },
+  "optionalDependencies": {
+    "fsevents": "~2.3.3"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!"
 }

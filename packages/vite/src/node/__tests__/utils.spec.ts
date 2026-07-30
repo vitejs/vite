@@ -1,12 +1,14 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
-import { describe, expect, test } from 'vitest'
+import os, { type NetworkInterfaceInfoIPv4 } from 'node:os'
+import { describe, expect, test, vi, onTestFinished } from 'vitest'
 import { fileURLToPath } from 'mlly'
 import {
   asyncFlatten,
   bareImportRE,
   combineSourcemaps,
+  extractHostnamesFromCerts,
   extractHostnamesFromSubjectAltName,
   flattenId,
   generateCodeFrame,
@@ -22,9 +24,43 @@ import {
   posToNumber,
   processSrcSetSync,
   resolveHostname,
+  resolveServerUrls,
 } from '../utils'
 import { isWindows } from '../../shared/utils'
 import type { CommonServerOptions, ResolvedServerUrls } from '..'
+
+// Test certificate for SAN parsing (localhost, foo.localhost, *.vite.localhost)
+// Generate once:
+// openssl req -x509 -nodes -newkey rsa:2048 -days 365 -subj "/CN=example.org" \
+//   -addext "subjectAltName=DNS:localhost,DNS:foo.localhost,DNS:*.vite.localhost" \
+//   -keyout /tmp/test.key -out /tmp/test.crt
+// Paste /tmp/test.crt below.
+const WORKING_TEST_CERT = `
+-----BEGIN CERTIFICATE-----
+MIID7zCCAtegAwIBAgIJS9D2rIN7tA8mMA0GCSqGSIb3DQEBCwUAMGkxFDASBgNV
+BAMTC2V4YW1wbGUub3JnMQswCQYDVQQGEwJVUzERMA8GA1UECBMIVmlyZ2luaWEx
+EzARBgNVBAcTCkJsYWNrc2J1cmcxDTALBgNVBAoTBFRlc3QxDTALBgNVBAsTBFRl
+c3QwHhcNMjUwMTMwMDQxNTI1WhcNMjUwMzAxMDQxNTI1WjBpMRQwEgYDVQQDEwtl
+eGFtcGxlLm9yZzELMAkGA1UEBhMCVVMxETAPBgNVBAgTCFZpcmdpbmlhMRMwEQYD
+VQQHEwpCbGFja3NidXJnMQ0wCwYDVQQKEwRUZXN0MQ0wCwYDVQQLEwRUZXN0MIIB
+IjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxNPlCqTmUZ7/F7GyFWDopqZ6
+w19Y7/98B10JEeFGTAQIj/RP2UgZNcTABQDUvtkF7y+bOeoVJW7Zz8ozQYhRaDp8
+CN2gXMcYeTUku/pKLXyCzHHVrOPAXTeU7sMRgLvPCrrJtx5OjvndW+O/PhohPRi3
+iEpPvpM8gi7MVRGhnWVSx0/Ynx5c0+/vqyBTzrM2OX7Ufg8Nv7LaTXpCAnmIQp+f
+Sqq7HZ7t6Y7laS4RApityvlnFHZ4f2cEibAKv/vXLED7bgAlGb8R1viPRdMtAPuI
+MYvHBgGFjyX1fmq6Mz3aqlAscJILtbQlwty1oYyaENE0lq8+nZXQ+t6I+CIVLQID
+AQABo4GZMIGWMAsGA1UdDwQEAwIC9DAxBgNVHSUEKjAoBggrBgEFBQcDAQYIKwYB
+BQUHAwIGCCsGAQUFBwMDBggrBgEFBQcDCDBUBgNVHREETTBLgglsb2NhbGhvc3SC
+DWZvby5sb2NhbGhvc3SCECoudml0ZS5sb2NhbGhvc3SCBVs6OjFdhwR/AAABhxD+
+gAAAAAAAAAAAAAAAAAABMA0GCSqGSIb3DQEBCwUAA4IBAQBi302qLCgxWsUalgc2
+olFxVKob1xCciS8yUVX6HX0vza0WJ7oGW6qZsBbQtfgDwB/dHv7rwsfpjRWvFhmq
+gEUrewa1h0TIC+PPTYYz4M0LOwcLIWZLZr4am1eI7YP9NDgRdhfAfM4hw20vjf2a
+kYLKyRTC5+3/ly5opMq+CGLQ8/gnFxhP3ho8JYrRnqLeh3KCTGen3kmbAhD4IOJ9
+lxMwFPTTWLFFjxbXjXmt5cEiL2mpcq13VCF2HmheCen37CyYIkrwK9IfLhBd5QQh
+WEIBLwjKCAscrtyayXWp6zUTmgvb8PQf//3Mh2DiEngAi3WI/nL+8Y0RkqbvxBar
+X2JN
+-----END CERTIFICATE-----
+`.trim()
 
 describe('bareImportRE', () => {
   test('should work with normal package name', () => {
@@ -218,33 +254,7 @@ describe('extractHostnamesFromSubjectAltName', () => {
   }
 
   test('should extract names from actual certificate', () => {
-    const certText = `
------BEGIN CERTIFICATE-----
-MIID7zCCAtegAwIBAgIJS9D2rIN7tA8mMA0GCSqGSIb3DQEBCwUAMGkxFDASBgNV
-BAMTC2V4YW1wbGUub3JnMQswCQYDVQQGEwJVUzERMA8GA1UECBMIVmlyZ2luaWEx
-EzARBgNVBAcTCkJsYWNrc2J1cmcxDTALBgNVBAoTBFRlc3QxDTALBgNVBAsTBFRl
-c3QwHhcNMjUwMTMwMDQxNTI1WhcNMjUwMzAxMDQxNTI1WjBpMRQwEgYDVQQDEwtl
-eGFtcGxlLm9yZzELMAkGA1UEBhMCVVMxETAPBgNVBAgTCFZpcmdpbmlhMRMwEQYD
-VQQHEwpCbGFja3NidXJnMQ0wCwYDVQQKEwRUZXN0MQ0wCwYDVQQLEwRUZXN0MIIB
-IjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxNPlCqTmUZ7/F7GyFWDopqZ6
-w19Y7/98B10JEeFGTAQIj/RP2UgZNcTABQDUvtkF7y+bOeoVJW7Zz8ozQYhRaDp8
-CN2gXMcYeTUku/pKLXyCzHHVrOPAXTeU7sMRgLvPCrrJtx5OjvndW+O/PhohPRi3
-iEpPvpM8gi7MVRGhnWVSx0/Ynx5c0+/vqyBTzrM2OX7Ufg8Nv7LaTXpCAnmIQp+f
-Sqq7HZ7t6Y7laS4RApityvlnFHZ4f2cEibAKv/vXLED7bgAlGb8R1viPRdMtAPuI
-MYvHBgGFjyX1fmq6Mz3aqlAscJILtbQlwty1oYyaENE0lq8+nZXQ+t6I+CIVLQID
-AQABo4GZMIGWMAsGA1UdDwQEAwIC9DAxBgNVHSUEKjAoBggrBgEFBQcDAQYIKwYB
-BQUHAwIGCCsGAQUFBwMDBggrBgEFBQcDCDBUBgNVHREETTBLgglsb2NhbGhvc3SC
-DWZvby5sb2NhbGhvc3SCECoudml0ZS5sb2NhbGhvc3SCBVs6OjFdhwR/AAABhxD+
-gAAAAAAAAAAAAAAAAAABMA0GCSqGSIb3DQEBCwUAA4IBAQBi302qLCgxWsUalgc2
-olFxVKob1xCciS8yUVX6HX0vza0WJ7oGW6qZsBbQtfgDwB/dHv7rwsfpjRWvFhmq
-gEUrewa1h0TIC+PPTYYz4M0LOwcLIWZLZr4am1eI7YP9NDgRdhfAfM4hw20vjf2a
-kYLKyRTC5+3/ly5opMq+CGLQ8/gnFxhP3ho8JYrRnqLeh3KCTGen3kmbAhD4IOJ9
-lxMwFPTTWLFFjxbXjXmt5cEiL2mpcq13VCF2HmheCen37CyYIkrwK9IfLhBd5QQh
-WEIBLwjKCAscrtyayXWp6zUTmgvb8PQf//3Mh2DiEngAi3WI/nL+8Y0RkqbvxBar
-X2JN
------END CERTIFICATE-----
-    `.trim()
-    const cert = new crypto.X509Certificate(certText)
+    const cert = new crypto.X509Certificate(WORKING_TEST_CERT)
     expect(
       extractHostnamesFromSubjectAltName(cert.subjectAltName ?? ''),
     ).toStrictEqual([
@@ -326,7 +336,9 @@ foo()
       expect('\n' + value + '\n').toMatchSnapshot()
     } catch (e) {
       // don't include this function in stacktrace
-      Error.captureStackTrace(e, expectSnapshot)
+      if (e instanceof Error) {
+        Error.captureStackTrace(e, expectSnapshot)
+      }
       throw e
     }
   }
@@ -497,7 +509,8 @@ describe('isFileReadable', () => {
     expect(isFileReadable('/does_not_exist')).toBe(false)
   })
 
-  const testFile = require.resolve(
+  const testFile = path.resolve(
+    import.meta.dirname,
     './utils/isFileReadable/permission-test-file',
   )
   test('file with normal permission', async () => {
@@ -659,6 +672,43 @@ describe('flattenId', () => {
     id += tenChars
     const result2 = flattenId(id)
     expect(result2).toHaveLength(170)
+  })
+
+  test('should replace + symbols in package subpath exports', () => {
+    // Packages like ravelinjs use + in their subpath exports
+    const id = 'ravelinjs/core+track+encrypt+promise'
+    const result = flattenId(id)
+    expect(result).not.toContain('+')
+    expect(result).toBe('ravelinjs_core_02b_track_02b_encrypt_02b_promise')
+  })
+
+  test('escape _', () => {
+    expect(flattenId('foo_bar')).toMatchInlineSnapshot(`"foo___bar"`)
+    expect(flattenId('foo__bar')).toMatchInlineSnapshot(`"foo____bar"`)
+    expect(flattenId('foo___bar')).toMatchInlineSnapshot(`"foo_____bar"`)
+    expect(flattenId('foo____bar')).toMatchInlineSnapshot(`"foo______bar"`)
+  })
+
+  test('escape /', () => {
+    expect(flattenId('foo/bar')).toMatchInlineSnapshot(`"foo_bar"`)
+  })
+
+  test('escape .', () => {
+    expect(flattenId('foo.bar')).toMatchInlineSnapshot(`"foo__bar"`)
+  })
+
+  test('escape invalid URL path chars', () => {
+    expect(flattenId('foo#bar')).toMatchInlineSnapshot(`"foo_023_bar"`)
+    expect(flattenId('foo$bar')).toMatchInlineSnapshot(`"foo_024_bar"`)
+    expect(flattenId('foo*bar')).toMatchInlineSnapshot(`"foo_02a_bar"`)
+    expect(flattenId('foo+bar')).toMatchInlineSnapshot(`"foo_02b_bar"`)
+  })
+
+  test('escape nested IDs', () => {
+    expect(flattenId('foo>bar')).toMatchInlineSnapshot(`"foo_n_bar"`)
+    expect(flattenId('foo >bar')).toMatchInlineSnapshot(`"foo_n_bar"`)
+    expect(flattenId('foo> bar')).toMatchInlineSnapshot(`"foo_n_bar"`)
+    expect(flattenId('foo > bar')).toMatchInlineSnapshot(`"foo_n_bar"`)
   })
 })
 
@@ -907,4 +957,263 @@ describe('getServerUrlByHost', () => {
       expect(actual).toBe(expected)
     })
   }
+})
+
+describe('extractHostnamesFromCerts', () => {
+  test('should extract hostnames from certificate', () => {
+    const certs = [WORKING_TEST_CERT]
+    const result = extractHostnamesFromCerts(certs)
+    expect(result).toStrictEqual([
+      'localhost',
+      'foo.localhost',
+      'vite.vite.localhost',
+    ])
+  })
+
+  test('should extract hostnames from multiple certificates', () => {
+    const certs = [WORKING_TEST_CERT, WORKING_TEST_CERT]
+    const result = extractHostnamesFromCerts(certs)
+    expect(result).toStrictEqual([
+      'localhost',
+      'foo.localhost',
+      'vite.vite.localhost',
+    ])
+  })
+})
+
+describe('resolveServerUrls', () => {
+  const createMockServer = (
+    family: 'IPv4' | 'IPv6' = 'IPv4',
+    address: string = '127.0.0.1',
+  ) =>
+    ({
+      address: () => ({ port: 3000, address, family }),
+    }) as any
+
+  const createTestConfig = () => ({
+    options: { https: true } as any,
+    hostname: { host: '127.0.0.1', name: 'localhost' } as any,
+    config: { rawBase: '/' } as any,
+  })
+
+  test('should handle no certificate', () => {
+    const mockServer = createMockServer()
+    const { options, hostname, config } = createTestConfig()
+    const httpsOptions = {}
+
+    const result = resolveServerUrls(
+      mockServer,
+      options,
+      hostname,
+      httpsOptions,
+      config,
+    )
+
+    expect(result.local).toContain('https://localhost:3000/')
+  })
+
+  test('should handle IPv4 single certificate', () => {
+    const mockServer = createMockServer()
+    const { options, hostname, config } = createTestConfig()
+    const httpsOptions = { cert: [WORKING_TEST_CERT] }
+
+    const result = resolveServerUrls(
+      mockServer,
+      options,
+      hostname,
+      httpsOptions,
+      config,
+    )
+
+    expect(result.local).toContain('https://localhost:3000/')
+    expect(result.local).toContain('https://foo.localhost:3000/')
+    expect(result.local).toContain('https://vite.vite.localhost:3000/')
+  })
+
+  test('should handle IPv4 multiple certificates', () => {
+    const mockServer = createMockServer()
+    const { options, hostname, config } = createTestConfig()
+    const httpsOptions = { cert: [WORKING_TEST_CERT, WORKING_TEST_CERT] }
+
+    const result = resolveServerUrls(
+      mockServer,
+      options,
+      hostname,
+      httpsOptions,
+      config,
+    )
+
+    expect(result.local).toContain('https://localhost:3000/')
+    expect(result.local).toContain('https://foo.localhost:3000/')
+    expect(result.local).toContain('https://vite.vite.localhost:3000/')
+  })
+
+  test('should handle IPv6 single certificate', () => {
+    const mockServer = createMockServer('IPv6', '::1')
+    const { options, hostname, config } = createTestConfig()
+    const httpsOptions = { cert: [WORKING_TEST_CERT] }
+
+    const result = resolveServerUrls(
+      mockServer,
+      options,
+      hostname,
+      httpsOptions,
+      config,
+    )
+
+    expect(result.local).toContain('https://localhost:3000/')
+    expect(result.local).toContain('https://foo.localhost:3000/')
+    expect(result.local).toContain('https://vite.vite.localhost:3000/')
+  })
+
+  test('should handle IPv6 multiple certificates', () => {
+    const mockServer = createMockServer('IPv6', '::1')
+    const { options, hostname, config } = createTestConfig()
+    const httpsOptions = { cert: [WORKING_TEST_CERT, WORKING_TEST_CERT] }
+
+    const result = resolveServerUrls(
+      mockServer,
+      options,
+      hostname,
+      httpsOptions,
+      config,
+    )
+
+    expect(result.local).toContain('https://localhost:3000/')
+    expect(result.local).toContain('https://foo.localhost:3000/')
+    expect(result.local).toContain('https://vite.vite.localhost:3000/')
+  })
+
+  test('should handle invalid certificate', () => {
+    const mockServer = createMockServer()
+    const { options, hostname, config } = createTestConfig()
+    const httpsOptions = { cert: ['invalid-cert'] }
+
+    const result = resolveServerUrls(
+      mockServer,
+      options,
+      hostname,
+      httpsOptions,
+      config,
+    )
+
+    expect(result.local).toContain('https://localhost:3000/')
+  })
+
+  test('captures interface names aligned with the network URLs', () => {
+    const mockServer = createMockServer('IPv4', '0.0.0.0')
+    const networkInterfacesSpy = vi
+      .spyOn(os, 'networkInterfaces')
+      .mockReturnValue({
+        lo: [
+          { address: '127.0.0.1', family: 'IPv4' } as NetworkInterfaceInfoIPv4,
+        ],
+        eth0: [
+          {
+            address: '192.168.1.10',
+            family: 'IPv4',
+          } as NetworkInterfaceInfoIPv4,
+        ],
+        wlan0: [
+          { address: '10.0.0.5', family: 'IPv4' } as NetworkInterfaceInfoIPv4,
+        ],
+      })
+    onTestFinished(() => {
+      networkInterfacesSpy.mockRestore()
+    })
+
+    const result = resolveServerUrls(
+      mockServer,
+      { https: false } as any,
+      { host: undefined, name: 'localhost' } as any,
+      {},
+      { rawBase: '/' } as any,
+    )
+
+    expect(result.network).toEqual([
+      'http://192.168.1.10:3000/',
+      'http://10.0.0.5:3000/',
+    ])
+    expect(result.networkInterfaceNames).toStrictEqual(['eth0', 'wlan0'])
+    expect(result.networkInterfaceNames).toHaveLength(result.network.length)
+    // The loopback interface is reported as a local URL, not a network one.
+    expect(result.local).toContain('http://localhost:3000/')
+  })
+
+  test('uses an undefined interface name for an explicit network host', () => {
+    const mockServer = createMockServer('IPv4', '0.0.0.0')
+
+    const result = resolveServerUrls(
+      mockServer,
+      { https: false } as any,
+      { host: 'example.com', name: 'example.com' } as any,
+      {},
+      { rawBase: '/' } as any,
+    )
+
+    expect(result.network).toStrictEqual(['http://example.com:3000/'])
+    expect(result.networkInterfaceNames).toStrictEqual([undefined])
+  })
+
+  test('resolves interface name for an explicit host IP that matches a network interface', () => {
+    const mockServer = createMockServer('IPv4', '0.0.0.0')
+    const networkInterfacesSpy = vi
+      .spyOn(os, 'networkInterfaces')
+      .mockReturnValue({
+        lo: [
+          { address: '127.0.0.1', family: 'IPv4' } as NetworkInterfaceInfoIPv4,
+        ],
+        eth0: [
+          {
+            address: '192.168.1.10',
+            family: 'IPv4',
+          } as NetworkInterfaceInfoIPv4,
+        ],
+      })
+    onTestFinished(() => {
+      networkInterfacesSpy.mockRestore()
+    })
+
+    const result = resolveServerUrls(
+      mockServer,
+      { https: false } as any,
+      { host: '192.168.1.10', name: '192.168.1.10' } as any,
+      {},
+      { rawBase: '/' } as any,
+    )
+
+    expect(result.network).toStrictEqual(['http://192.168.1.10:3000/'])
+    expect(result.networkInterfaceNames).toStrictEqual(['eth0'])
+  })
+
+  test('uses undefined interface name when explicit host IP does not match any interface', () => {
+    const mockServer = createMockServer('IPv4', '0.0.0.0')
+    const networkInterfacesSpy = vi
+      .spyOn(os, 'networkInterfaces')
+      .mockReturnValue({
+        lo: [
+          { address: '127.0.0.1', family: 'IPv4' } as NetworkInterfaceInfoIPv4,
+        ],
+        eth0: [
+          {
+            address: '192.168.1.10',
+            family: 'IPv4',
+          } as NetworkInterfaceInfoIPv4,
+        ],
+      })
+    onTestFinished(() => {
+      networkInterfacesSpy.mockRestore()
+    })
+
+    const result = resolveServerUrls(
+      mockServer,
+      { https: false } as any,
+      { host: '10.0.0.5', name: '10.0.0.5' } as any,
+      {},
+      { rawBase: '/' } as any,
+    )
+
+    expect(result.network).toStrictEqual(['http://10.0.0.5:3000/'])
+    expect(result.networkInterfaceNames).toStrictEqual([undefined])
+  })
 })

@@ -1,22 +1,19 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type {
-  ParseError as EsModuleLexerParseError,
-  ImportSpecifier,
-} from 'es-module-lexer'
+import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { SourceMap } from 'rollup'
+import type { SourceMap } from 'rolldown'
+import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
 import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
-import { exactRegex } from '@rolldown/pluginutils'
 import { combineSourcemaps, generateCodeFrame, numberToPos } from '../utils'
-import type { Plugin } from '../plugin'
+import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { PartialEnvironment } from '../baseEnvironment'
 import { removedPureCssFilesCache } from './css'
-import { createParseErrorInfo } from './importAnalysis'
+import { getImportMap, getImportMapFilename } from './html'
 
 type FileDep = {
   url: string
@@ -33,29 +30,68 @@ type VitePreloadErrorEvent = Event & { payload: Error }
 export const isModernFlag = `__VITE_IS_MODERN__`
 export const preloadMethod = `__vitePreload`
 export const preloadMarker = `__VITE_PRELOAD__`
-export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
 export const preloadHelperId = '\0vite/preload-helper.js'
 const preloadMarkerRE = new RegExp(preloadMarker, 'g')
-
-const dynamicImportPrefixRE = /import\s*\(/
-
-const dynamicImportTreeshakenRE =
-  /((?:\bconst\s+|\blet\s+|\bvar\s+|,\s*)(\{[^{}.=]+\})\s*=\s*await\s+import\([^)]+\))(?=\s*(?:$|[^[.]))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[\w$]+))|\bimport\([^)]+\)(\s*\.then\(\s*(?:function\s*)?\(\s*\{([^{}.=]+)\}\))/g
 
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.posix.relative(path.posix.dirname(importer), filename)
   return relPath[0] === '.' ? relPath : `./${relPath}`
 }
 
-function indexOfMatchInSlice(
-  str: string,
-  reg: RegExp,
-  pos: number = 0,
-): number {
-  reg.lastIndex = pos
-  const result = reg.exec(str)
+function findPreloadMarker(str: string, pos: number = 0): number {
+  preloadMarkerRE.lastIndex = pos
+  const result = preloadMarkerRE.exec(str)
   return result?.index ?? -1
+}
+
+/**
+ * Pairs each dynamic `import()` with the `__VITE_PRELOAD__` marker that belongs to it.
+ *
+ * Each import is wrapped as `__vitePreload(factory, __VITE_PRELOAD__)`, so its marker
+ * comes right after it. Nested imports nest the wrappers, so the imports and markers
+ * form balanced brackets. For example, in `import('a').then(() => import('b'))`, b's
+ * marker ends up before a's. Pairing each import with the next marker would give b's
+ * marker to both imports and drop a's CSS to `void 0` (#22700). Instead the markers are
+ * matched with a stack in one pass, and each marker closes the innermost import that is
+ * still open.
+ *
+ * The returned array is parallel to `imports`. Entry `i` holds the start position of
+ * import `i`'s marker, or -1 when the import has no marker.
+ */
+export function matchImportsToPreloadMarkers(
+  code: string,
+  imports: readonly ImportSpecifier[],
+): number[] {
+  const importMarkerPos = new Array<number>(imports.length).fill(-1)
+  if (imports.length === 0) return importMarkerPos
+
+  const openImports: number[] = []
+  let nextImport = 0
+  for (
+    let markerStartPos = findPreloadMarker(code, imports[0].e);
+    markerStartPos !== -1;
+    markerStartPos = findPreloadMarker(
+      code,
+      markerStartPos + preloadMarker.length,
+    )
+  ) {
+    while (
+      nextImport < imports.length &&
+      imports[nextImport].e <= markerStartPos
+    ) {
+      openImports.push(nextImport++)
+    }
+    if (openImports.length) {
+      importMarkerPos[openImports.pop()!] = markerStartPos
+    }
+  }
+  // #3051: a lone import whose marker isn't placed after it pairs with the only marker
+  if (imports.length === 1 && importMarkerPos[0] === -1) {
+    importMarkerPos[0] = findPreloadMarker(code)
+  }
+
+  return importMarkerPos
 }
 
 /**
@@ -105,32 +141,34 @@ function preload(
       )
     }
 
+    function importMetaResolve(specifier: string): string {
+      // @ts-expect-error import.meta.resolve is not supported by all browsers we support
+      // But `import.meta.resolve` is only needed when build.chunkImportMap is enabled,
+      // and that option requires `import.meta.resolve` support.
+      if (import.meta.resolve) {
+        return import.meta.resolve(specifier)
+      }
+      return new URL(specifier, /** #__KEEP__ */ import.meta.url).href
+    }
+
     promise = allSettled(
       deps.map((dep) => {
         // @ts-expect-error assetsURL is declared before preload.toString()
         dep = assetsURL(dep, importerUrl)
+        dep = importMetaResolve(dep)
         if (dep in seen) return
         seen[dep] = true
         const isCss = dep.endsWith('.css')
-        const cssSelector = isCss ? '[rel="stylesheet"]' : ''
-        const isBaseRelative = !!importerUrl
 
         // check if the file is already preloaded by SSR markup
-        if (isBaseRelative) {
-          // When isBaseRelative is true then we have `importerUrl` and `dep` is
-          // already converted to an absolute URL by the `assetsURL` function
-          for (let i = links.length - 1; i >= 0; i--) {
-            const link = links[i]
-            // The `links[i].href` is an absolute URL thanks to browser doing the work
-            // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
-            if (link.href === dep && (!isCss || link.rel === 'stylesheet')) {
-              return
-            }
+        // `dep` is already converted to an absolute URL by the `assetsURL` function
+        for (let i = links.length - 1; i >= 0; i--) {
+          const link = links[i]
+          // The `links[i].href` is an absolute URL thanks to browser doing the work
+          // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
+          if (link.href === dep && (!isCss || link.rel === 'stylesheet')) {
+            return
           }
-        } else if (
-          document.querySelector(`link[href="${dep}"]${cssSelector}`)
-        ) {
-          return
         }
 
         const link = document.createElement('link')
@@ -204,14 +242,16 @@ function getPreloadCode(
       : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
         // is appended inside __vitePreload too.
         `function(dep) { return ${JSON.stringify(environment.config.base)}+dep }`
-  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
+  // replace `import` as a workaround for stackblitz: https://stackblitz.com/edit/node-vqfvv8dy?file=index.js
+  const preloadMethodCode = preload.toString().replaceAll('𝐢𝐦𝐩𝐨𝐫𝐭', 'import')
+  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preloadMethodCode}`
   return preloadCode
 }
 
 /**
  * Build only. During serve this is performed as part of ./importAnalysis.
  */
-export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
+export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
   const getInsertPreload = (environment: PartialEnvironment) =>
     environment.config.consumer === 'client' &&
     !config.isWorker &&
@@ -220,191 +260,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const renderBuiltUrl = config.experimental.renderBuiltUrl
   const isRelativeBase = config.base === './' || config.base === ''
 
-  return {
+  const plugin: Plugin = {
     name: 'vite:build-import-analysis',
-    resolveId: {
-      filter: { id: exactRegex(preloadHelperId) },
-      handler(id) {
-        return id
-      },
-    },
-
-    load: {
-      filter: { id: exactRegex(preloadHelperId) },
-      handler(_id) {
-        const preloadCode = getPreloadCode(
-          this.environment,
-          !!renderBuiltUrl,
-          isRelativeBase,
-        )
-        return { code: preloadCode, moduleSideEffects: false }
-      },
-    },
-
-    transform: {
-      filter: { code: dynamicImportPrefixRE },
-      async handler(source, importer) {
-        await init
-
-        let imports: readonly ImportSpecifier[] = []
-        try {
-          imports = parseImports(source)[0]
-        } catch (_e: unknown) {
-          const e = _e as EsModuleLexerParseError
-          const { message, showCodeFrame } = createParseErrorInfo(
-            importer,
-            source,
-          )
-          this.error(message, showCodeFrame ? e.idx : undefined)
-        }
-
-        if (!imports.length) {
-          return null
-        }
-
-        const insertPreload = getInsertPreload(this.environment)
-        // when wrapping dynamic imports with a preload helper, Rollup is unable to analyze the
-        // accessed variables for treeshaking. This below tries to match common accessed syntax
-        // to "copy" it over to the dynamic import wrapped by the preload helper.
-        const dynamicImports: Record<
-          number,
-          { declaration?: string; names?: string }
-        > = {}
-
-        if (insertPreload) {
-          let match
-          while ((match = dynamicImportTreeshakenRE.exec(source))) {
-            /* handle `const {foo} = await import('foo')`
-             *
-             * match[1]: `const {foo} = await import('foo')`
-             * match[2]: `{foo}`
-             * import end: `const {foo} = await import('foo')_`
-             *                                               ^
-             */
-            if (match[1]) {
-              dynamicImports[dynamicImportTreeshakenRE.lastIndex] = {
-                declaration: `const ${match[2]}`,
-                names: match[2]?.trim(),
-              }
-              continue
-            }
-
-            /* handle `(await import('foo')).foo`
-             *
-             * match[3]: `(await import('foo')).foo`
-             * match[4]: `.foo`
-             * import end: `(await import('foo'))`
-             *                                  ^
-             */
-            if (match[3]) {
-              let names = /\.([^.?]+)/.exec(match[4])?.[1] || ''
-              // avoid `default` keyword error
-              if (names === 'default') {
-                names = 'default: __vite_default__'
-              }
-              dynamicImports[
-                dynamicImportTreeshakenRE.lastIndex - match[4]?.length - 1
-              ] = { declaration: `const {${names}}`, names: `{ ${names} }` }
-              continue
-            }
-
-            /* handle `import('foo').then(({foo})=>{})`
-             *
-             * match[5]: `.then(({foo})`
-             * match[6]: `foo`
-             * import end: `import('foo').`
-             *                           ^
-             */
-            const names = match[6]?.trim()
-            dynamicImports[
-              dynamicImportTreeshakenRE.lastIndex - match[5]?.length
-            ] = { declaration: `const {${names}}`, names: `{ ${names} }` }
-          }
-        }
-
-        let s: MagicString | undefined
-        const str = () => s || (s = new MagicString(source))
-        let needPreloadHelper = false
-
-        for (let index = 0; index < imports.length; index++) {
-          const {
-            s: start,
-            e: end,
-            ss: expStart,
-            se: expEnd,
-            d: dynamicIndex,
-            a: attributeIndex,
-          } = imports[index]
-
-          const isDynamicImport = dynamicIndex > -1
-
-          // strip import attributes as we can process them ourselves
-          if (!isDynamicImport && attributeIndex > -1) {
-            str().remove(end + 1, expEnd)
-          }
-
-          if (
-            isDynamicImport &&
-            insertPreload &&
-            // Only preload static urls
-            (source[start] === '"' ||
-              source[start] === "'" ||
-              source[start] === '`')
-          ) {
-            needPreloadHelper = true
-            const { declaration, names } = dynamicImports[expEnd] || {}
-            if (names) {
-              /* transform `const {foo} = await import('foo')`
-               * to `const {foo} = await __vitePreload(async () => { const {foo} = await import('foo');return {foo}}, ...)`
-               *
-               * transform `import('foo').then(({foo})=>{})`
-               * to `__vitePreload(async () => { const {foo} = await import('foo');return { foo }},...).then(({foo})=>{})`
-               *
-               * transform `(await import('foo')).foo`
-               * to `__vitePreload(async () => { const {foo} = (await import('foo')).foo; return { foo }},...)).foo`
-               */
-              str().prependLeft(
-                expStart,
-                `${preloadMethod}(async () => { ${declaration} = await `,
-              )
-              str().appendRight(expEnd, `;return ${names}}`)
-            } else {
-              str().prependLeft(expStart, `${preloadMethod}(() => `)
-            }
-
-            str().appendRight(
-              expEnd,
-              `,${isModernFlag}?${preloadMarker}:void 0${
-                renderBuiltUrl || isRelativeBase ? ',import.meta.url' : ''
-              })`,
-            )
-          }
-        }
-
-        if (
-          needPreloadHelper &&
-          insertPreload &&
-          !source.includes(`const ${preloadMethod} =`)
-        ) {
-          str().prepend(
-            `import { ${preloadMethod} } from "${preloadHelperId}";`,
-          )
-        }
-
-        if (s) {
-          return {
-            code: s.toString(),
-            map: this.environment.config.build.sourcemap
-              ? s.generateMap({ hires: 'boundary' })
-              : null,
-          }
-        }
-      },
-    },
 
     renderChunk(code, _, { format }) {
       // make sure we only perform the preload logic in modern builds.
-      if (code.indexOf(isModernFlag) > -1) {
+      if (code.includes(isModernFlag)) {
         const re = new RegExp(isModernFlag, 'g')
         const isModern = String(format === 'es')
         const isModernWithPadding =
@@ -417,10 +278,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       return null
     },
 
-    generateBundle({ format }, bundle) {
+    async generateBundle(opts, bundle) {
+      const { format } = opts
       if (format !== 'es') {
         return
       }
+
+      await init
 
       // If preload is not enabled, we parse through each imports and remove any imports to pure CSS chunks
       // as they are removed from the bundle
@@ -458,7 +322,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 let url = name
                 if (!url) {
                   const rawUrl = code.slice(start, end)
-                  if (rawUrl[0] === `"` && rawUrl.endsWith(`"`))
+                  if (
+                    (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`) ||
+                    (rawUrl[0] === '`' && rawUrl[rawUrl.length - 1] === '`')
+                  )
                     url = rawUrl.slice(1, -1)
                 }
                 if (!url) continue
@@ -483,11 +350,30 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       const buildSourcemap = this.environment.config.build.sourcemap
       const { modulePreload } = this.environment.config.build
 
+      let importMapMapping: Record<string, string> | undefined
+      let importMapReverseMapping: Record<string, string> | undefined
+      if (config.build.chunkImportMap) {
+        const importMap = getImportMap(bundle, config)!
+        importMapMapping = importMap.mapping
+        importMapReverseMapping = Object.fromEntries(
+          Object.entries(importMapMapping).map(([k, v]) => [v, k]),
+        )
+
+        if (config.isOutputOptionsForLegacyChunks?.(opts)) {
+          this.emitFile({
+            type: 'asset',
+            fileName: 'importmap.legacy.json',
+            source: importMap.asset.source,
+          })
+          delete bundle[getImportMapFilename(config)]
+        }
+      }
+
       for (const file in bundle) {
         const chunk = bundle[file]
         // can't use chunk.dynamicImports.length here since some modules e.g.
         // dynamic import to constant json may get inlined.
-        if (chunk.type === 'chunk' && chunk.code.indexOf(preloadMarker) > -1) {
+        if (chunk.type === 'chunk' && chunk.code.includes(preloadMarker)) {
           const code = chunk.code
           let imports!: ImportSpecifier[]
           try {
@@ -522,6 +408,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           if (imports.length) {
+            const importMarkerPos = matchImportsToPreloadMarkers(code, imports)
+
             for (let index = 0; index < imports.length; index++) {
               // To handle escape sequences in specifier strings, the .n field will be provided where possible.
               const {
@@ -535,7 +423,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               let url = name
               if (!url) {
                 const rawUrl = code.slice(start, end)
-                if (rawUrl[0] === `"` && rawUrl.endsWith(`"`))
+                if (
+                  (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`) ||
+                  (rawUrl[0] === '`' && rawUrl[rawUrl.length - 1] === '`')
+                )
                   url = rawUrl.slice(1, -1)
               }
               const deps = new Set<string>()
@@ -552,7 +443,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 const ownerFilename = chunk.fileName
                 // literal import - trace direct imports and add to deps
                 const analyzed: Set<string> = new Set<string>()
-                const addDeps = (filename: string) => {
+                const addDeps = (rawFilename: string) => {
+                  const filename =
+                    importMapMapping?.[rawFilename] ?? rawFilename
                   if (filename === ownerFilename) return
                   if (analyzed.has(filename)) return
                   analyzed.add(filename)
@@ -586,15 +479,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 addDeps(normalizedFile)
               }
 
-              let markerStartPos = indexOfMatchInSlice(
-                code,
-                preloadMarkerRE,
-                end,
-              )
-              // fix issue #3051
-              if (markerStartPos === -1 && imports.length === 1) {
-                markerStartPos = indexOfMatchInSlice(code, preloadMarkerRE)
-              }
+              const markerStartPos = importMarkerPos[index]
 
               if (markerStartPos > 0) {
                 // the dep list includes the main chunk, so only need to reload when there are actual other deps.
@@ -621,6 +506,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     ;(dep.endsWith('.css') ? cssDeps : otherDeps).push(dep)
                   }
                   depsArray = [
+                    // NOTE: deps are URLs, not specifiers using the import map mapping
                     ...resolveDependencies(normalizedFile, otherDeps, {
                       hostId: file,
                       hostType: 'js',
@@ -628,6 +514,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     ...cssDeps,
                   ]
                 }
+
+                depsArray = depsArray.map(
+                  (dep) => importMapReverseMapping?.[dep] ?? dep,
+                )
 
                 let renderedDeps: number[]
                 if (renderBuiltUrl) {
@@ -688,7 +578,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless
-          let markerStartPos = indexOfMatchInSlice(code, preloadMarkerRE)
+          let markerStartPos = findPreloadMarker(code)
           while (markerStartPos >= 0) {
             if (!rewroteMarkerStartPos.has(markerStartPos)) {
               s.update(
@@ -697,9 +587,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 'void 0',
               )
             }
-            markerStartPos = indexOfMatchInSlice(
+            markerStartPos = findPreloadMarker(
               code,
-              preloadMarkerRE,
               markerStartPos + preloadMarker.length,
             )
           }
@@ -711,11 +600,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 source: chunk.fileName,
                 hires: 'boundary',
               })
+              const originalFile = chunk.map.file
               const map = combineSourcemaps(chunk.fileName, [
                 nextMap as RawSourceMap,
                 chunk.map as RawSourceMap,
               ]) as SourceMap
               map.toUrl = () => genSourceMapUrl(map)
+              if (originalFile) {
+                map.file = originalFile
+              }
 
               const originalDebugId = chunk.map.debugId
               chunk.map = map
@@ -741,4 +634,23 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
     },
   }
+
+  return [
+    plugin,
+    perEnvironmentPlugin('native:import-analysis-build', (environment) => {
+      const preloadCode = getPreloadCode(
+        environment,
+        !!renderBuiltUrl,
+        isRelativeBase,
+      )
+      return nativeBuildImportAnalysisPlugin({
+        preloadCode,
+        insertPreload: getInsertPreload(environment),
+        // this field looks redundant, put a dummy value for now
+        optimizeModulePreloadRelativePaths: false,
+        renderBuiltUrl: !!renderBuiltUrl,
+        isRelativeBase,
+      })
+    }),
+  ]
 }

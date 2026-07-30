@@ -58,7 +58,7 @@ Docs in other languages:
 
 If you're new to Vite, we suggest reading first the [Getting Started](/guide/) and [Features](/guide/features) guides.
 
-We appreciate the more than [850 contributors to Vite Core](https://github.com/vitejs/vite/graphs/contributors), and the maintainers and contributors of Vite plugins, integrations, tools, and translations that have helped us reach here. We encourage you to get involved and continue to improve Vite with us. You can learn more at our [Contributing Guide](https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md). To get started, we recommend [triaging issues](https://github.com/vitejs/vite/issues), [reviewing PRs](https://github.com/vitejs/vite/pulls), sending failing tests PRs based on open issues, and helping others in [Discussions](https://github.com/vitejs/vite/discussions) and Vite Land's [help forum](https://discord.com/channels/804011606160703521/1019670660856942652). You'll learn a lot along the way and have a smooth path to further contributions to the project. If you have doubts, join us on our [Discord community](http://chat.vite.dev/) and say hi on the [#contributing channel](https://discord.com/channels/804011606160703521/804439875226173480).
+We appreciate the more than [850 contributors to Vite Core](https://github.com/vitejs/vite/graphs/contributors), and the maintainers and contributors of Vite plugins, integrations, tools, and translations that have helped us reach here. We encourage you to get involved and continue to improve Vite with us. You can learn more at our [Contributing Guide](https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md). To get started, we recommend [triaging issues](https://github.com/vitejs/vite/issues), [reviewing PRs](https://github.com/vitejs/vite/pulls), sending failing tests PRs based on open issues, and helping others in [Discussions](https://github.com/vitejs/vite/discussions) and Vite Land's [help forum](https://discord.com/channels/804011606160703521/1019670660856942652). You'll learn a lot along the way and have a smooth path to further contributions to the project. If you have doubts, join us on our [Discord community](https://chat.vite.dev) and say hi on the [#contributing channel](https://discord.com/channels/804011606160703521/804439875226173480).
 
 To stay up to date, follow us on [X](https://twitter.com/vite_js) or [Mastodon](https://webtoo.ls/@vite).
 
@@ -86,10 +86,10 @@ Vite 5 also introduces [server.warmup](/guide/performance.html#warm-up-frequentl
 - [SSR externalized modules value now matches production](/guide/migration#ssr-externalized-modules-value-now-matches-production)
 - [`worker.plugins` is now a function](/guide/migration#worker-plugins-is-now-a-function)
 - [Allow path containing `.` to fallback to index.html](/guide/migration#allow-path-containing-to-fallback-to-index-html)
-- [Align dev and preview HTML serving behavior](/guide/migration#align-dev-and-preview-html-serving-behaviour)
+- [Align dev and preview HTML serving behavior](https://v5.vite.dev/guide/migration#align-dev-and-preview-html-serving-behaviour)
 - [Manifest files are now generated in `.vite` directory by default](/guide/migration#manifest-files-are-now-generated-in-vite-directory-by-default)
 - [CLI shortcuts require an additional `Enter` press](/guide/migration#cli-shortcuts-require-an-additional-enter-press)
-- [Update `experimentalDecorators` and `useDefineForClassFields` TypeScript behavior](/guide/migration#update-experimentaldecorators-and-usedefineforclassfields-typescript-behaviour)
+- [Update `experimentalDecorators` and `useDefineForClassFields` TypeScript behavior](https://v5.vite.dev/guide/migration#update-experimentaldecorators-and-usedefineforclassfields-typescript-behaviour)
 - [Remove `--https` flag and `https: true`](/guide/migration#remove-https-flag-and-https-true)
 - [Remove `resolvePackageEntry` and `resolvePackageData` APIs](/guide/migration#remove-resolvepackageentry-and-resolvepackagedata-apis)
 - [Removes previously deprecated APIs](/guide/migration#removed-deprecated-apis)

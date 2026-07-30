@@ -20,7 +20,7 @@ function delayIndexCssPlugin(): Plugin {
 export default defineConfig({
   resolve: {
     alias: {
-      '/@': __dirname,
+      '/@': import.meta.dirname,
     },
   },
   build: {

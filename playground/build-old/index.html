@@ -6,12 +6,23 @@
 <h2>dynamic import</h2>
 <p class="dynamic-import"></p>
 
+<h2>private field</h2>
+<p class="private-field"></p>
+
 <script type="module">
   text('.import-meta-url', typeof import.meta.url)
 
   import('./dynamic.js').then((m) => {
     text('.dynamic-import', m.default)
   })
+
+  class PrivateField {
+    #privateField = 'private'
+    get val() {
+      return this.#privateField
+    }
+  }
+  text('.private-field', new PrivateField().val)
 
   function text(el, text) {
     document.querySelector(el).textContent = text

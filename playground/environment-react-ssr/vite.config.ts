@@ -37,18 +37,22 @@ export default defineConfig((env) => ({
         sourcemap: true,
         outDir: 'dist/client',
       },
+      optimizeDeps: {
+        rolldownOptions: {
+          // manual test for https://github.com/vitejs/rolldown-vite/issues/416
+          transform: {},
+        },
+      },
     },
     ssr: {
+      input: {
+        index: '/src/entry-server',
+      },
       optimizeDeps: {
         noDiscovery: false,
       },
       build: {
         outDir: 'dist/server',
-        rollupOptions: {
-          input: {
-            index: '/src/entry-server',
-          },
-        },
       },
     },
   },

@@ -33,20 +33,21 @@ concurrency:
 jobs:
   changed:
     name: Get changed files
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     outputs:
       should_skip: ${{ steps.changed-files.outputs.only_changed == 'true' }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           # Assume PRs are less than 50 commits
           fetch-depth: 50
+          persist-credentials: false
 
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         with:
           files: |
             docs/**
@@ -63,25 +64,28 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node_version: [20, 22, 24]
+        node_version: [20, 22, 24, 26]
         include:
           # Active LTS + other OS
           - os: macos-latest
-            node_version: 22
+            node_version: 24
           - os: windows-latest
-            node_version: 22
+            # use older minor to workaround https://github.com/nodejs/node/issues/63638
+            node_version: 24.15.0
       fail-fast: false
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Install pnpm
-        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
       - name: Set node version to ${{ matrix.node_version }}
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ matrix.node_version }}
           cache: "pnpm"
@@ -104,7 +108,7 @@ jobs:
           echo "PLAYWRIGHT_VERSION=$env:PLAYWRIGHT_VERSION" >> $env:GITHUB_ENV
 
       - name: Cache Playwright's binary
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           key: ${{ runner.os }}-playwright-bin-v1-${{ env.PLAYWRIGHT_VERSION }}
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
@@ -124,13 +128,16 @@ jobs:
       - name: Test serve
         run: pnpm run test-serve
 
+      - name: Test serve (bundled dev)
+        run: pnpm run test-serve-bundled
+
       - name: Test build
         run: pnpm run test-build
 
   test-passed:
     if: (!cancelled() && !failure())
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     name: Build & Test Passed or Skipped
     steps:
       - run: echo "Build & Test Passed or Skipped"
@@ -138,7 +145,7 @@ jobs:
   test-failed:
     if: (!cancelled() && failure())
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     name: Build & Test Failed
     steps:
       - run: echo "Build & Test Failed"
@@ -146,17 +153,19 @@ jobs:
   lint:
     timeout-minutes: 10
     runs-on: ubuntu-latest
-    name: "Lint: node-22, ubuntu-latest"
+    name: "Lint: node-24, ubuntu-latest"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Install pnpm
-        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
-      - name: Set node version to 22
-        uses: actions/setup-node@v5
+      - name: Set node version to 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 22
+          node-version: 24
           cache: "pnpm"
 
       - name: Install deps
@@ -169,7 +178,7 @@ jobs:
         run: pnpm run lint
 
       - name: Check formatting
-        run: pnpm prettier --write --log-level=warn . && git diff --exit-code
+        run: pnpm format && git diff --exit-code
 
       - name: Typecheck
         run: pnpm run typecheck

@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import viteConfig from '../vite.config'
-import { page } from '~utils'
+import { isBundledDev, page } from '~utils'
 
 const defines = viteConfig.define
 const envDefines = viteConfig.environments.client.define
@@ -115,3 +115,11 @@ test('optional values are detected by pattern properly', async () => {
     JSON.parse(defines['process.env.SOMEVAR']),
   )
 })
+
+// bundled dev serves `?query` env imports without injecting __DEFINES__
+test.skipIf(isBundledDev)(
+  'env import with query parameters works correctly',
+  async () => {
+    expect(await page.textContent('.env-with-query')).toBe('success')
+  },
+)

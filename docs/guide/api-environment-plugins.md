@@ -8,10 +8,18 @@ We plan to stabilize these new APIs (with potential breaking changes) in a futur
 Resources:
 
 - [Feedback discussion](https://github.com/vitejs/vite/discussions/16358) where we are gathering feedback about the new APIs.
-- [Environment API PR](https://github.com/vitejs/vite/pull/16471) where the new API were implemented and reviewed.
+- [Environment API PR](https://github.com/vitejs/vite/pull/16471) where the new APIs were implemented and reviewed.
 
 Please share your feedback with us.
 :::
+
+## Per-environment Hooks and Global Hooks
+
+Plugins run on a shared pipeline, but their hooks fall into two categories depending on whether they run once for the whole server or once for each environment.
+
+Global hooks are called a single time, independent of the configured environments. They handle app-wide concerns such as resolving the config or setting up the dev and preview servers, so `this.environment` is not relevant to them. Config resolution related hooks and server related hooks are global hooks.
+
+Per-environment hooks are called once for each environment, and expose the current environment through `this.environment` in their context. All [universal hooks](/guide/api-plugin#universal-hooks) are per-environment, as are other Vite-specific hooks that handle modules. However, note that `buildStart` and `buildEnd` are only called for the client environment without [the `perEnvironmentStartEndDuringDev: true` flag](##per-environment-state-in-plugins).
 
 ## Accessing the Current Environment in Hooks
 
@@ -47,9 +55,13 @@ Plugins can add new environments in the `config` hook. For example, [RSC support
   }
 ```
 
-An empty object is enough to register the environment, default values from the root level environment config.
+An empty object is enough to register the environment, using default values from the root level environment config.
 
-## Configuring Environment Using Hooks
+## Configuring Environment Using the `configEnvironment` Hook
+
+- **Type:** `(name: string, config: EnvironmentOptions, env: { mode: string, command: 'build' | 'serve', isSsrBuild?: boolean, isPreview?: boolean, isSsrTargetWebworker?: boolean }) => EnvironmentOptions | null | void`
+- **Kind:** `async`, `sequential`
+- **Scope:** [Per-environment](#per-environment-hooks-and-global-hooks)
 
 While the `config` hook is running, the complete list of environments isn't yet known and the environments can be affected by both the default values from the root level environment config or explicitly through the `config.environments` record.
 Plugins should set default values using the `config` hook. To configure each environment, they can use the new `configEnvironment` hook. This hook is called for each environment with its partially resolved config including resolution of final defaults.
@@ -71,6 +83,7 @@ Plugins should set default values using the `config` hook. To configure each env
 
 - **Type:** `(this: { environment: DevEnvironment }, options: HotUpdateOptions) => Array<EnvironmentModuleNode> | void | Promise<Array<EnvironmentModuleNode> | void>`
 - **Kind:** `async`, `sequential`
+- **Scope:** [Per-environment](#per-environment-hooks-and-global-hooks)
 - **See also:** [HMR API](./api-hmr)
 
 The `hotUpdate` hook allows plugins to perform custom HMR update handling for a given environment. When a file changes, the HMR algorithm is run for each environment in series according to the order in `server.environments`, so the `hotUpdate` hook will be called multiple times. The hook receives a context object with the following signature:
@@ -146,7 +159,7 @@ The hook can choose to:
 
 ## Per-environment State in Plugins
 
-Given that the same plugin instance is used for different environments, the plugin state needs to be keyed with `this.environment`. This is the same pattern the ecosystem has already been using to keep state about modules using the `ssr` boolean as key to avoid mixing client and ssr modules state. A `Map<Environment, State>` can be used to keep the state for each environment separately. Note that for backward compatibility, `buildStart` and `buildEnd` are only called for the client environment without the `perEnvironmentStartEndDuringDev: true` flag.
+Given that the same plugin instance is used for different environments, the plugin state needs to be keyed with `this.environment`. This is the same pattern the ecosystem has already been using to keep state about modules using the `ssr` boolean as key to avoid mixing client and ssr modules state. A `Map<Environment, State>` can be used to keep the state for each environment separately. Note that for backward compatibility, `buildStart` and `buildEnd` are only called for the client environment without the `perEnvironmentStartEndDuringDev: true` flag. Same for `watchChange` and the `perEnvironmentWatchChangeDuringDev: true` flag.
 
 ```js
 function PerEnvironmentCountTransformedModulesPlugin() {
@@ -167,7 +180,11 @@ function PerEnvironmentCountTransformedModulesPlugin() {
 }
 ```
 
-## Per-environment Plugins
+## Per-environment Plugins Using the `applyToEnvironment` Hook
+
+- **Type:** `(environment: PartialEnvironment) => boolean | PluginOption | Promise<boolean>`
+- **Kind:** `async`, `sequential`
+- **Scope:** [Per-environment](#per-environment-hooks-and-global-hooks)
 
 A plugin can define what are the environments it should apply to with the `applyToEnvironment` function.
 
@@ -227,6 +244,43 @@ export default defineConfig({
 
 The `applyToEnvironment` hook is called at config time, currently after `configResolved` due to projects in the ecosystem modifying the plugins in it. Environment plugins resolution may be moved before `configResolved` in the future.
 
+## Application-Plugin Communication
+
+`environment.hot` allows plugins to communicate with the code on the application side for a given environment. This is the equivalent of [the Client-server Communication feature](/guide/api-plugin#client-server-communication), but supports environments other than the client environment.
+
+:::warning Note
+
+Note that this feature is only available for environments that support HMR.
+
+:::
+
+### Managing the Application Instances
+
+Be aware that there might be multiple application instances running in the same environment. For example, if you have multiple tabs open in the browser, each tab is a separate application instance and has a separate connection to the server.
+
+When a new connection is established, a `vite:client:connect` event is emitted on the environment's `hot` instance. When the connection is closed, a `vite:client:disconnect` event is emitted.
+
+Each event handler receives the `NormalizedHotChannelClient` as the second argument. The client is an object with a `send` method that can be used to send messages to that specific application instance. The client reference is always the same for the same connection, so you can keep it to track the connection.
+
+### Example Usage
+
+The plugin side:
+
+```js
+configureServer(server) {
+  server.environments.ssr.hot.on('my:greetings', (data, client) => {
+    // do something with the data,
+    // and optionally send a response to that application instance
+    client.send('my:foo:reply', `Hello from server! You said: ${data}`)
+  })
+
+  // broadcast a message to all application instances
+  server.environments.ssr.hot.send('my:foo', 'Hello from server!')
+}
+```
+
+The application side is same with the Client-server Communication feature. You can use the `import.meta.hot` object to send messages to the plugin.
+
 ## Environment in Build Hooks
 
 In the same way as during dev, plugin hooks also receive the environment instance during build, replacing the `ssr` boolean.
@@ -243,7 +297,7 @@ This forced frameworks to share state between the `client` build and the `ssr` b
 
 In a future major, we could have complete alignment:
 
-- **During both dev and build:** plugins are shared, with [per-environment filtering](#per-environment-plugins)
+- **During both dev and build:** plugins are shared, with [per-environment filtering](#per-environment-plugins-using-the-applytoenvironment-hook)
 
 There will also be a single `ResolvedConfig` instance shared during build, allowing for caching at entire app build process level in the same way as we have been doing with `WeakMap<ResolvedConfig, CachedData>` during dev.
 

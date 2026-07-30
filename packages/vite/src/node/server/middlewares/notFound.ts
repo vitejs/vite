@@ -1,4 +1,4 @@
-import type { Connect } from 'dep-types/connect'
+import type { Connect } from '#dep-types/connect'
 
 export function notFoundMiddleware(): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`

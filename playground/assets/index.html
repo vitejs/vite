@@ -482,7 +482,9 @@
 <link rel="stylesheet" href="asset/style.css" />
 <div class="relative-css">link style</div>
 <div class="relative-js"></div>
+<div class="update-content"></div>
 <script src="asset/main.js" type="module"></script>
+<script src="asset/update.js" type="module"></script>
 <style>
   @import '/foo.css';
 </style>
@@ -648,9 +650,10 @@
   import someString from './static/foo.txt?raw'
   document.querySelector('.raw-query').textContent = someString
 
+  // NOTE: add `'' +` to opt-out rolldown's transform: https://github.com/rolldown/rolldown/issues/2745
   const metaUrlNonExistent = new URL(
     /* @vite-ignore */ 'non-existent',
-    import.meta.url,
+    '' + import.meta.url,
   ).pathname
   text('.non-existent-import-meta-url', metaUrlNonExistent)
 

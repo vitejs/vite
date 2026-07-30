@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "noEmit": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@fallback/*": ["./src/*", "./fallback/*"],
+      "#/*": ["./src/*"]
+    }
+  },
+  "include": ["**/*", "**/*.css", "**/*.scss", "**/*.less", "index.html"],
+  "exclude": ["./__tests__"]
+}

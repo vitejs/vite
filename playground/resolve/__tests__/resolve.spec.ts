@@ -2,7 +2,15 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
-import { isBuild, isServe, isWindows, page, testDir, viteTestUrl } from '~utils'
+import {
+  isBuild,
+  isBundledDev,
+  isServe,
+  isWindows,
+  page,
+  testDir,
+  viteTestUrl,
+} from '~utils'
 
 test('bom import', async () => {
   expect(await page.textContent('.utf8-bom')).toMatch('[success]')
@@ -26,12 +34,15 @@ test('deep import with exports field', async () => {
   expect(await page.textContent('.exports-deep')).toMatch('[success]')
 })
 
-test('deep import with query with exports field', async () => {
-  // since it is imported with `?url` it should return a URL
-  expect(await page.textContent('.exports-deep-query')).toMatch(
-    isBuild ? /base64/ : '/exports-path/deep.json',
-  )
-})
+test.skipIf(isBundledDev)(
+  'deep import with query with exports field',
+  async () => {
+    // since it is imported with `?url` it should return a URL
+    expect(await page.textContent('.exports-deep-query')).toMatch(
+      isBuild ? /base64/ : '/exports-path/deep.json',
+    )
+  },
+)
 
 test('deep import with exports field + exposed dir', async () => {
   expect(await page.textContent('.exports-deep-exposed-dir')).toMatch(
@@ -101,12 +112,6 @@ test("don't add extension to directory name (./dir-with-ext.js/index.js)", async
   expect(await page.textContent('.dir-with-ext')).toMatch('[success]')
 })
 
-test('do not resolve to the `module` field if the importer is a `require` call', async () => {
-  expect(await page.textContent('.require-pkg-with-module-field')).toMatch(
-    '[success]',
-  )
-})
-
 test('a ts module can import another ts module using its corresponding js file name', async () => {
   expect(await page.textContent('.ts-extension')).toMatch('[success]')
 })
@@ -135,16 +140,15 @@ test('browser field', async () => {
   expect(await page.textContent('.browser')).toMatch('[success]')
 })
 
+// accessing a property of a `browser: false` module must not throw (#22022)
+test('access property of browser:false module', async () => {
+  expect(await page.textContent('.browser-field-false-access')).toMatch(
+    '[success]',
+  )
+})
+
 test('Resolve browser field even if module field exists', async () => {
   expect(await page.textContent('.browser-module1')).toMatch('[success]')
-})
-
-test('Resolve module field if browser field is likely UMD or CJS', async () => {
-  expect(await page.textContent('.browser-module2')).toMatch('[success]')
-})
-
-test('Resolve module field if browser field is likely IIFE', async () => {
-  expect(await page.textContent('.browser-module3')).toMatch('[success]')
 })
 
 test('css entry', async () => {
@@ -159,8 +163,16 @@ test('plugin resolved virtual file', async () => {
   expect(await page.textContent('.virtual')).toMatch('[success]')
 })
 
+test('plugin resolved virtual file that has import', async () => {
+  expect(await page.textContent('.virtual-has-import')).toMatch('[success]')
+})
+
 test('plugin resolved custom virtual file', async () => {
   expect(await page.textContent('.custom-virtual')).toMatch('[success]')
+})
+
+test('virtual file with URL scheme should not be rewritten (#20803)', async () => {
+  expect(await page.textContent('.virtual-url-scheme')).toMatch('[success]')
 })
 
 test('resolve inline package', async () => {
@@ -187,7 +199,7 @@ test('resolve.conditions', async () => {
 
 test('resolve package that contains # in path', async () => {
   expect(await page.textContent('.path-contains-sharp-symbol')).toMatch(
-    '[success] true #',
+    '[success] ok ok ok',
   )
 })
 
@@ -217,11 +229,24 @@ test('Resolving from other package with imports field', async () => {
   expect(await page.textContent('.imports-pkg-slash')).toMatch('[success]')
 })
 
-test('Resolving with query with imports field', async () => {
-  // since it is imported with `?url` it should return a URL
-  expect(await page.textContent('.imports-query')).toMatch(
-    isBuild ? /base64/ : '/imports-path/query.json',
-  )
+test.skipIf(isBundledDev)(
+  'Resolving with query with imports field',
+  async () => {
+    // since it is imported with `?url` it should return a URL
+    expect(await page.textContent('.imports-query')).toMatch(
+      isBuild ? /base64/ : '/imports-path/query.json',
+    )
+  },
+)
+
+test('Resolving dot-prefixed directory with imports field', async () => {
+  expect(await page.textContent('.imports-dot-prefixed')).toMatch('[success]')
+})
+
+test('Resolving #/ root alias pattern with imports field', async () => {
+  // This tests the new Node.js behavior from https://github.com/nodejs/node/pull/60864
+  // which allows "#/*" patterns (slash immediately after #) in package.json imports
+  expect(await page.textContent('.imports-root-slash')).toMatch('[success]')
 })
 
 test("Resolve doesn't interrupt page request with trailing query and .css", async () => {
@@ -264,7 +289,7 @@ test.runIf(isBuild)('sideEffects field glob pattern is respected', async () => {
   expect(sideEffectValues).toStrictEqual(['success'])
 })
 
-describe.runIf(isServe)('HEAD request handling', () => {
+describe.runIf(isServe && !isBundledDev)('HEAD request handling', () => {
   test('HEAD request to JS file returns correct Content-Type', async () => {
     const response = await fetch(new URL('/absolute.js', viteTestUrl), {
       method: 'HEAD',

@@ -67,7 +67,7 @@ test('should get a 404 when using incorrect case', async () => {
   expect(barResult.status).toBe(200)
 })
 
-test('should fallback to index.html when accessing non-existant html file', async () => {
+test('should fallback to index.html when accessing non-existent html file', async () => {
   expect((await fetchPath('doesnt-exist.html')).status).toBe(200)
 })
 
@@ -698,11 +698,32 @@ test.runIf(isBuild)('manifest', async () => {
 
 describe.runIf(isBuild)('css and assets in css in build watch', () => {
   test('css will not be lost and css does not contain undefined', async () => {
-    editFile('index.html', (code) => code.replace('Assets', 'assets'))
+    editFile('index.html', (code) => code.replace('Assets', 'assets2'))
     await notifyRebuildComplete(watcher)
     const cssFile = findAssetFile(/index-[-\w]+\.css$/, 'foo')
     expect(cssFile).not.toBe('')
     expect(cssFile).not.toMatch(/undefined/)
+  })
+
+  test('old file is removed when the content changes', async () => {
+    await expect.poll(() => page.textContent('.update-content')).toBe('hello')
+
+    const oldMainJsFiles = listAssets('foo').filter((f) =>
+      /index-[-\w]+\.js$/.test(f),
+    )
+    expect(oldMainJsFiles.length).toBe(1)
+    const oldMainJsFile = oldMainJsFiles[0]
+
+    editFile('asset/update.js', (code) => code.replace('hello', 'world2'))
+    await notifyRebuildComplete(watcher)
+    await page.reload()
+    await expect.poll(() => page.textContent('.update-content')).toBe('world2')
+
+    const newMainJsFiles = listAssets('foo').filter((f) =>
+      /index-[-\w]+\.js$/.test(f),
+    )
+    expect(newMainJsFiles).not.toContain(oldMainJsFile)
+    expect(newMainJsFiles.length).toBe(1)
   })
 
   test('import module.css', async () => {
@@ -715,10 +736,10 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
 
   test('import with raw query', async () => {
     expect(await page.textContent('.raw-query')).toBe('foo')
-    editFile('static/foo.txt', (code) => code.replace('foo', 'zoo'))
+    editFile('static/foo.txt', (code) => code.replace('foo', 'zoo2'))
     await notifyRebuildComplete(watcher)
     await page.reload()
-    expect(await page.textContent('.raw-query')).toBe('zoo')
+    expect(await page.textContent('.raw-query')).toBe('zoo2')
   })
 })
 
@@ -731,7 +752,7 @@ if (!isBuild) {
   test('@import in html style tag hmr', async () => {
     await expect.poll(() => getColor('.import-css')).toBe('rgb(0, 136, 255)')
     const loadPromise = page.waitForEvent('load')
-    editFile('./css/import.css', (code) => code.replace('#0088ff', '#00ff88'))
+    editFile('./css/import.css', (code) => code.replace('#0088ff', '#00ff88 '))
     await loadPromise
     await expect.poll(() => getColor('.import-css')).toBe('rgb(0, 255, 136)')
   })

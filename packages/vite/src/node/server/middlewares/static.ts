@@ -2,8 +2,8 @@ import path from 'node:path'
 import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
-import type { Connect } from 'dep-types/connect'
 import escapeHtml from 'escape-html'
+import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '../../server'
 import type { ResolvedConfig } from '../../config'
 import { FS_PREFIX } from '../../constants'
@@ -93,7 +93,7 @@ export function servePublicMiddleware(
 
   const toFilePath = (url: string) => {
     let filePath = cleanUrl(url)
-    if (filePath.indexOf('%') !== -1) {
+    if (filePath.includes('%')) {
       try {
         filePath = decodeURI(filePath)
       } catch {
@@ -286,6 +286,8 @@ export function isFileInTargetPath(
   )
 }
 
+const windowsDriveRE = /^[A-Z]:/i
+
 /**
  * Warning: parameters are not validated, only works with normalized absolute paths
  */
@@ -297,7 +299,25 @@ export function isFileLoadingAllowed(
 
   if (!fs.strict) return true
 
-  if (config.fsDenyGlob(filePath)) return false
+  if (isWindows && filePath.includes('~')) {
+    // `~` is used for Windows 8.3 short names, which can be used to bypass the check.
+    // While is it valid to have files with `~` in the path, we disallow it to be safe.
+    return false
+  }
+
+  const hasDriveLetter = isWindows && windowsDriveRE.test(filePath)
+  const hasColon = (hasDriveLetter ? filePath.slice(2) : filePath).includes(':')
+  if (hasColon) {
+    // the `:` is included in the path which may be used for NTFS ADS
+    return false
+  }
+
+  // NOTE: `fs.readFile('/foo.png/')` tries to load `'/foo.png'`
+  // so we should check the path without trailing slash
+  const filePathWithoutTrailingSlash = filePath.endsWith('/')
+    ? filePath.slice(0, -1)
+    : filePath
+  if (config.fsDenyGlob(filePathWithoutTrailingSlash)) return false
 
   if (config.safeModulePaths.has(filePath)) return true
 

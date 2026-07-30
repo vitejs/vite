@@ -119,6 +119,12 @@ The directory defaults to `<root>/public`, but can be configured via the [`publi
 
 Note that you should always reference `public` assets using root absolute path - for example, `public/icon.png` should be referenced in source code as `/icon.png`.
 
+::: tip Choosing between imports and the `public` directory
+
+In general, prefer **importing assets** unless you specifically need the guarantees provided by the `public` directory.
+
+:::
+
 ## new URL(url, import.meta.url)
 
 [import.meta.url](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import.meta) is a native ESM feature that exposes the current module's URL. Combining it with the native [URL constructor](https://developer.mozilla.org/en-US/docs/Web/API/URL), we can obtain the full, resolved URL of a static asset using relative path from a JavaScript module:
@@ -140,7 +146,7 @@ function getImageUrl(name) {
 }
 ```
 
-During the production build, Vite will perform necessary transforms so that the URLs still point to the correct location even after bundling and asset hashing. However, the URL string must be static so it can be analyzed, otherwise the code will be left as is, which can cause runtime errors if `build.target` does not support `import.meta.url`
+During the production build, Vite will perform necessary transforms so that the URLs still point to the correct location even after bundling and asset hashing. However, the URL string must be static so it can be analyzed, otherwise the code will be left as is, which can cause runtime errors if `build.target` does not support `import.meta.url`.
 
 ```js
 // Vite will not transform this

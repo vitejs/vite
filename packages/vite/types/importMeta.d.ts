@@ -22,9 +22,9 @@ interface ImportMetaEnv extends Record<ImportMetaEnvFallbackKey, any> {
 interface ImportMeta {
   url: string
 
-  readonly hot?: import('./hot').ViteHotContext
+  readonly hot?: import('./hot.js').ViteHotContext
 
   readonly env: ImportMetaEnv
 
-  glob: import('./importGlob').ImportGlobFunction
+  glob: import('./importGlob.js').ImportGlobFunction
 }

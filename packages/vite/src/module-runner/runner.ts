@@ -1,4 +1,4 @@
-import type { ViteHotContext } from 'types/hot'
+import type { ViteHotContext } from '#types/hot'
 import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
 import { cleanUrl, isPrimitive } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
@@ -6,6 +6,7 @@ import {
   type NormalizedModuleRunnerTransport,
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
+import { createIsBuiltin } from '../shared/builtin'
 import type { EvaluatedModuleNode } from './evaluatedModules'
 import { EvaluatedModules } from './evaluatedModules'
 import type {
@@ -44,13 +45,15 @@ export class ModuleRunner {
     string,
     Promise<EvaluatedModuleNode>
   >()
+  private isBuiltin?: (id: string) => boolean
+  private builtinsPromise?: Promise<void>
 
   private closed = false
 
   constructor(
     public options: ModuleRunnerOptions,
     public evaluator: ModuleEvaluator = new ESModulesEvaluator(),
-    private debug?: ModuleRunnerDebugger,
+    private debug?: ModuleRunnerDebugger | undefined,
   ) {
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
     this.transport = normalizeModuleRunnerTransport(options.transport)
@@ -130,37 +133,32 @@ export class ModuleRunner {
     return exports
   }
 
-  private isCircularModule(mod: EvaluatedModuleNode) {
-    for (const importedFile of mod.imports) {
-      if (mod.importers.has(importedFile)) {
-        return true
-      }
-    }
-    return false
-  }
-
-  private isCircularImport(
-    importers: Set<string>,
-    moduleUrl: string,
+  private isCircularRequest(
+    mod: EvaluatedModuleNode,
+    callstack: string[],
     visited = new Set<string>(),
-  ) {
-    for (const importer of importers) {
-      if (visited.has(importer)) {
-        continue
-      }
-      visited.add(importer)
-      if (importer === moduleUrl) {
+  ): boolean {
+    if (visited.has(mod.id)) {
+      return false
+    }
+    visited.add(mod.id)
+
+    for (const importedModuleId of mod.imports) {
+      if (callstack.includes(importedModuleId)) {
         return true
       }
-      const mod = this.evaluatedModules.getModuleById(importer)
+
+      const importedModule =
+        this.evaluatedModules.getModuleById(importedModuleId)
       if (
-        mod &&
-        mod.importers.size &&
-        this.isCircularImport(mod.importers, moduleUrl, visited)
+        importedModule?.promise &&
+        !importedModule.evaluated &&
+        this.isCircularRequest(importedModule, callstack, visited)
       ) {
         return true
       }
     }
+
     return false
   }
 
@@ -173,19 +171,23 @@ export class ModuleRunner {
     const meta = mod.meta!
     const moduleId = meta.id
 
-    const { importers } = mod
-
     const importee = callstack[callstack.length - 1]
 
-    if (importee) importers.add(importee)
+    if (importee) mod.importers.add(importee)
 
-    // check circular dependency
-    if (
-      callstack.includes(moduleId) ||
-      this.isCircularModule(mod) ||
-      this.isCircularImport(importers, moduleId)
-    ) {
-      if (mod.exports) return this.processImport(mod.exports, meta, metadata)
+    // fast path: already evaluated modules can't deadlock
+    if (mod.evaluated && mod.promise) {
+      return this.processImport(await mod.promise, meta, metadata)
+    }
+
+    if (mod.promise) {
+      if (
+        mod.exports &&
+        (callstack.includes(moduleId) || this.isCircularRequest(mod, callstack))
+      ) {
+        return this.processImport(mod.exports, meta, metadata)
+      }
+      return this.processImport(await mod.promise, meta, metadata)
     }
 
     let debugTimer: any
@@ -204,10 +206,6 @@ export class ModuleRunner {
     }
 
     try {
-      // cached module
-      if (mod.promise)
-        return this.processImport(await mod.promise, meta, metadata)
-
       const promise = this.directRequest(url, mod, callstack)
       mod.promise = promise
       mod.evaluated = false
@@ -238,6 +236,34 @@ export class ModuleRunner {
     return cached
   }
 
+  private ensureBuiltins(): Promise<void> | undefined {
+    if (this.isBuiltin) return
+
+    this.builtinsPromise ??= (async () => {
+      try {
+        this.debug?.('[module runner] fetching builtins from server')
+        const serializedBuiltins = await this.transport.invoke(
+          'getBuiltins',
+          [],
+        )
+        const builtins = serializedBuiltins.map((builtin) =>
+          typeof builtin === 'object' && builtin && 'type' in builtin
+            ? builtin.type === 'string'
+              ? builtin.value
+              : new RegExp(builtin.source, builtin.flags)
+            : // NOTE: Vitest returns raw values instead of serialized ones
+              builtin,
+        )
+        this.isBuiltin = createIsBuiltin(builtins)
+        this.debug?.('[module runner] builtins loaded:', builtins)
+      } finally {
+        this.builtinsPromise = undefined
+      }
+    })()
+
+    return this.builtinsPromise
+  }
+
   private async getModuleInformation(
     url: string,
     importer: string | undefined,
@@ -247,13 +273,15 @@ export class ModuleRunner {
       throw new Error(`Vite module runner has been closed.`)
     }
 
+    await this.ensureBuiltins()
+
     this.debug?.('[module runner] fetching', url)
 
     const isCached = !!(typeof cachedModule === 'object' && cachedModule.meta)
 
     const fetchedModule = // fast return for established externalized pattern
       (
-        url.startsWith('data:')
+        url.startsWith('data:') || this.isBuiltin?.(url)
           ? { externalize: url, type: 'builtin' }
           : await this.transport.invoke('fetchModule', [
               url,

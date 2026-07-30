@@ -12,13 +12,13 @@ export default defineConfig({
         passes: 3,
       },
     },
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('chunk.js')) {
-            return 'chunk'
-          }
-        },
+        // manualChunks(id) {
+        //   if (id.includes('chunk.js')) {
+        //     return 'chunk'
+        //   }
+        // },
       },
     },
     modulePreload: {

@@ -93,6 +93,25 @@ if (import.meta.hot) {
 
 A module that "accepts" hot updates is considered an **HMR boundary**.
 
+```dot
+digraph hmr_boundary {
+  rankdir=RL
+  ranksep=0.3
+  node [shape=box style="rounded,filled" fontname="Arial" fontsize=11 margin="0.2,0.1" fontcolor="${#3c3c43|#ffffff}" color="${#c2c2c4|#3c3f44}"]
+  edge [color="${#67676c|#98989f}" fontname="Arial" fontsize=10 fontcolor="${#67676c|#98989f}"]
+  bgcolor="transparent"
+
+  root [label="main.js" fillcolor="${#f6f6f7|#2e2e32}"]
+  parent [label="App.vue" fillcolor="${#f6f6f7|#2e2e32}"]
+  boundary [label="Component.vue\n(HMR boundary)\nhot.accept()" fillcolor="${#def5ed|#15312d}" color="${#18794e|#3dd68c}" penwidth=2]
+  edited [label="utils.js\n(edited)" fillcolor="${#fcf4dc|#38301a}" color="${#915930|#f9b44e}" penwidth=2]
+
+  boundary -> edited [label="imports" color="${#915930|#f9b44e}" style=bold]
+  parent -> boundary [label="imports" style=dashed]
+  root -> parent [label="imports" style=dashed]
+}
+```
+
 Vite's HMR does not actually swap the originally imported module: if an HMR boundary module re-exports imports from a dep, then it is responsible for updating those re-exports (and these exports must be using `let`). In addition, importers up the chain from the boundary module will not be notified of the change. This simplified HMR implementation is sufficient for most dev use cases, while allowing us to skip the expensive work of generating proxy modules.
 
 Vite requires that the call to this function appears as `import.meta.hot.accept(` (whitespace-sensitive) in the source code in order for the module to accept update. This is a requirement of the static analysis that Vite does to enable HMR support for a module.
@@ -168,7 +187,9 @@ if (import.meta.hot) {
 
 ## `hot.data`
 
-The `import.meta.hot.data` object is persisted across different instances of the same updated module. It can be used to pass on information from a previous version of the module to the next one.
+Vite creates one `import.meta.hot.data` object for each module path. The object is persisted across successive instances of the same module during HMR. Mutations made during module execution or through the `data` argument passed to `hot.dispose` are visible to the next instance of the module.
+
+When a module is pruned, its `hot.dispose` and `hot.prune` callbacks receive the current data object. Vite clears the data after those callbacks complete. If the module is imported again later, it receives a new empty data object.
 
 Note that re-assignment of `data` itself is not supported. Instead, you should mutate properties of the `data` object so information added from other handlers are preserved.
 

@@ -22,8 +22,8 @@ test.runIf(isServe)('postcss config', async () => {
     return server
   }
 
-  const blueAppDir = path.join(__dirname, 'blue-app')
-  const greenAppDir = path.join(__dirname, 'green-app')
+  const blueAppDir = path.join(import.meta.dirname, 'blue-app')
+  const greenAppDir = path.join(import.meta.dirname, 'green-app')
   let blueApp
   let greenApp
   try {
