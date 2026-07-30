@@ -1,4 +1,5 @@
 import { setTimeout } from 'node:timers/promises'
+import type { Response } from 'playwright-chromium'
 import { expect, test, onTestFinished } from 'vitest'
 import {
   addFile,
@@ -368,6 +369,53 @@ if (isBuild) {
     await expect
       .poll(() => page.textContent('.dead-accept'))
       .toBe('dead-accept-updated')
+  })
+
+  test('a full reload navigates once, onto the rebuilt bundle', async () => {
+    const original = readFile('dead-accept.js')
+
+    // the client must not navigate on its own decision: it sends
+    // `vite:bundled-dev:reload-needed` and the server answers `full-reload`
+    // only after the rebuilt bundle is served — so the page never sees the
+    // bundling-fallback document and loads exactly once
+    let documentLoads = 0
+    let sawFallbackPage = false
+    const onResponse = async (response: Response) => {
+      if (response.request().resourceType() !== 'document') return
+      documentLoads++
+      if ((await response.text()).includes('__vite_is_fallback_page__')) {
+        sawFallbackPage = true
+      }
+    }
+    page.on('response', onResponse)
+    onTestFinished(async () => {
+      page.off('response', onResponse)
+      addFile('dead-accept.js', original)
+      await expect
+        .poll(() => page.textContent('.dead-accept'))
+        .toBe('dead-accept')
+    })
+
+    const serverLogIndex = serverLogs.length
+    editFile('dead-accept.js', (code) =>
+      code.replace("'dead-accept'", "'dead-accept-reloaded'"),
+    )
+    await expect
+      .poll(() => page.textContent('.dead-accept'))
+      .toBe('dead-accept-reloaded')
+
+    await expect
+      .poll(() =>
+        serverLogs
+          .slice(serverLogIndex)
+          .some((l) => l.includes('bundling for page reload')),
+      )
+      .toBe(true)
+
+    // give a hypothetical second navigation time to happen before counting
+    await setTimeout(300)
+    expect(documentLoads).toBe(1)
+    expect(sawFallbackPage).toBe(false)
   })
 
   test('editing a worker-only module without accept reloads the page', async () => {

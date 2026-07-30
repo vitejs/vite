@@ -74,6 +74,18 @@ export class BundledDev {
 
   private fullReloadPending = false
 
+  private reloadNeededClientIds = new Set<string>()
+  private debouncedReloadNeededFlush = debounce(20, () => {
+    if (this.lastBuildError || this.reloadNeededClientIds.size === 0) return
+    for (const clientId of this.reloadNeededClientIds) {
+      this.clients.get(clientId)?.send({ type: 'full-reload', path: '*' })
+    }
+    this.reloadNeededClientIds.clear()
+    this.environment.logger.info(colors.green(`page reload`), {
+      timestamp: true,
+    })
+  })
+
   private lastBuildError: Error | null = null
 
   memoryFiles: MemoryFiles = new MemoryFiles()
@@ -134,8 +146,26 @@ export class BundledDev {
       const clientId = this.clients.delete(client)
       if (clientId) {
         this.devEngine.removeClient(clientId)
+        this.reloadNeededClientIds.delete(clientId)
       }
     })
+    this.environment.hot.on(
+      'vite:bundled-dev:reload-needed',
+      (payload, client) => {
+        const clientId = this.clients.getId(client)
+        if (!clientId) return
+        debug?.(
+          `TRIGGER: client ${clientId} requested a page reload (${payload.reason})`,
+        )
+        this.environment.logger.info(
+          colors.green(`bundling for page reload `) +
+            colors.dim(payload.reason),
+          { clear: true, timestamp: true },
+        )
+        this.reloadNeededClientIds.add(clientId)
+        this.ensureOutputAndFlushReloadNeeded()
+      },
+    )
 
     this._devEngine = await dev(rolldownOptions, outputOptions, {
       onHmrUpdates: (result) => {
@@ -169,6 +199,12 @@ export class BundledDev {
             this.handleHmrOutput(client, changedFiles, update)
           }
         }
+        // an edit requested a reload but its rebuild failed, leaving the page
+        // waiting behind the error overlay. The fix produced this successful
+        // build — regenerate output now, or the page would never reload.
+        if (this.reloadNeededClientIds.size) {
+          this.ensureOutputAndFlushReloadNeeded()
+        }
       },
       onOutput: (result) => {
         if (result instanceof Error) {
@@ -194,6 +230,9 @@ export class BundledDev {
         if (this.fullReloadPending) {
           this.fullReloadPending = false
           this.debouncedFullReload()
+        }
+        if (this.reloadNeededClientIds.size) {
+          this.debouncedReloadNeededFlush()
         }
       },
       onAdditionalAssets: (result) => {
@@ -239,6 +278,13 @@ export class BundledDev {
       if (this._closed) return
       state = await this.devEngine.getBundleState()
     }
+  }
+
+  private ensureOutputAndFlushReloadNeeded(): void {
+    this.devEngine.ensureLatestBuildOutput().then(
+      () => this.debouncedReloadNeededFlush(),
+      () => {},
+    )
   }
 
   async triggerBundleRegenerationIfStale(): Promise<boolean> {
@@ -471,6 +517,10 @@ class Clients {
 
   get(id: string): NormalizedHotChannelClient | undefined {
     return this.idToClient.get(id)
+  }
+
+  getId(client: NormalizedHotChannelClient): string | undefined {
+    return this.clientToId.get(client)
   }
 
   getAll(): NormalizedHotChannelClient[] {

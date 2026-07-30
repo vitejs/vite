@@ -176,7 +176,7 @@ const processNodeUrl = (
 
     if (server) {
       const mod = server.environments.client.moduleGraph.urlToModuleMap.get(
-        preTransformUrl || url,
+        stripBase(preTransformUrl || url, config.decodedBase),
       )
       if (mod && mod.lastHMRTimestamp > 0) {
         url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)

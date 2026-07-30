@@ -19,6 +19,8 @@ export interface CustomEventMap {
   'vite:forward-console': ForwardConsolePayload
   /** @internal */
   'vite:client-connected': { clientId: string }
+  /** @internal */
+  'vite:bundled-dev:reload-needed': { reason: string }
 
   // server events
   'vite:client:connect': undefined
