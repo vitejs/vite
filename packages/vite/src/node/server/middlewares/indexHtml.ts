@@ -175,13 +175,6 @@ const processNodeUrl = (
     }
 
     if (server) {
-      // The module graph keys request URLs without the base (the base
-      // middleware strips it before any transform happens), so the lookup
-      // must strip it too — otherwise the entry never gets the HMR
-      // timestamp injected when `base` is not the root, leaving the HTML
-      // entry URL out of sync with the module's own (timestamped)
-      // references and executing the entry twice. Aligns with
-      // `preTransformRequest` below, which already strips the base.
       const mod = server.environments.client.moduleGraph.urlToModuleMap.get(
         stripBase(preTransformUrl || url, config.decodedBase),
       )
