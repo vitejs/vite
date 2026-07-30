@@ -3,47 +3,51 @@ import { defineConfig } from 'vite'
 
 const dirname = import.meta.dirname
 
+const input = {
+  main: resolve(dirname, 'index.html'),
+  nested: resolve(dirname, 'nested/index.html'),
+  scriptAsync: resolve(dirname, 'scriptAsync.html'),
+  scriptMixed: resolve(dirname, 'scriptMixed.html'),
+  emptyAttr: resolve(dirname, 'emptyAttr.html'),
+  link: resolve(dirname, 'link.html'),
+  'link/target': resolve(dirname, 'index.html'),
+  zeroJS: resolve(dirname, 'zeroJS.html'),
+  noHead: resolve(dirname, 'noHead.html'),
+  noBody: resolve(dirname, 'noBody.html'),
+  inlinea: resolve(dirname, 'inline/shared_a.html'),
+  inline1: resolve(dirname, 'inline/shared-1.html'),
+  inline2: resolve(dirname, 'inline/shared-2.html'),
+  inline3: resolve(dirname, 'inline/unique.html'),
+  unicodePath: resolve(
+    dirname,
+    'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
+  ),
+  linkProps: resolve(dirname, 'link-props/index.html'),
+  valid: resolve(dirname, 'valid.html'),
+  importmapOrder: resolve(dirname, 'importmapOrder.html'),
+  env: resolve(dirname, 'env.html'),
+  sideEffects: resolve(dirname, 'side-effects/index.html'),
+  'a á': resolve(dirname, 'a á.html'),
+  serveFile: resolve(dirname, 'serve/file.html'),
+  serveFolder: resolve(dirname, 'serve/folder/index.html'),
+  serveBothFile: resolve(dirname, 'serve/both.html'),
+  serveBothFolder: resolve(dirname, 'serve/both/index.html'),
+  write: resolve(dirname, 'write.html'),
+  'transform-inline-js': resolve(dirname, 'transform-inline-js.html'),
+  malformedUrl: resolve(dirname, 'malformed-url.html'),
+  // resolved from `process.cwd()` by Rolldown (resolved from `root` by vite's resolver first)
+  relativeInput: relative(
+    process.cwd(),
+    resolve(dirname, 'relative-input.html'),
+  ),
+}
+
 export default defineConfig({
+  input,
+
   base: './',
   build: {
     rolldownOptions: {
-      input: {
-        main: resolve(dirname, 'index.html'),
-        nested: resolve(dirname, 'nested/index.html'),
-        scriptAsync: resolve(dirname, 'scriptAsync.html'),
-        scriptMixed: resolve(dirname, 'scriptMixed.html'),
-        emptyAttr: resolve(dirname, 'emptyAttr.html'),
-        link: resolve(dirname, 'link.html'),
-        'link/target': resolve(dirname, 'index.html'),
-        zeroJS: resolve(dirname, 'zeroJS.html'),
-        noHead: resolve(dirname, 'noHead.html'),
-        noBody: resolve(dirname, 'noBody.html'),
-        inlinea: resolve(dirname, 'inline/shared_a.html'),
-        inline1: resolve(dirname, 'inline/shared-1.html'),
-        inline2: resolve(dirname, 'inline/shared-2.html'),
-        inline3: resolve(dirname, 'inline/unique.html'),
-        unicodePath: resolve(
-          dirname,
-          'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
-        ),
-        linkProps: resolve(dirname, 'link-props/index.html'),
-        valid: resolve(dirname, 'valid.html'),
-        importmapOrder: resolve(dirname, 'importmapOrder.html'),
-        env: resolve(dirname, 'env.html'),
-        sideEffects: resolve(dirname, 'side-effects/index.html'),
-        'a á': resolve(dirname, 'a á.html'),
-        serveFile: resolve(dirname, 'serve/file.html'),
-        serveFolder: resolve(dirname, 'serve/folder/index.html'),
-        serveBothFile: resolve(dirname, 'serve/both.html'),
-        serveBothFolder: resolve(dirname, 'serve/both/index.html'),
-        write: resolve(dirname, 'write.html'),
-        'transform-inline-js': resolve(dirname, 'transform-inline-js.html'),
-        relativeInput: relative(
-          process.cwd(),
-          resolve(dirname, 'relative-input.html'),
-        ),
-        malformedUrl: resolve(dirname, 'malformed-url.html'),
-      },
       external: ['/external-path-by-rollup-options.js'],
     },
   },
