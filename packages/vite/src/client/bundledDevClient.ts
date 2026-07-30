@@ -7,7 +7,6 @@ import {
 import {
   base,
   clearOverlayOrReloadOnFirstUpdate,
-  pageReload,
   registerBundledDevClient,
   removeStyle,
   transport,
@@ -57,7 +56,6 @@ if (typeof DevRuntime !== 'undefined') {
     {
       base,
       beforeApply: clearOverlayOrReloadOnFirstUpdate,
-      pageReload,
     },
   )
   registerBundledDevClient(bundledDevHmrClient)
