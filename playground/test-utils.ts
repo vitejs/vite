@@ -19,13 +19,11 @@ import {
 import { expect } from 'vitest'
 import type { ResultPromise as ExecaResultPromise } from 'execa'
 import {
-  getBundledDevHmrEventCount,
   isWindows,
   noteFileMutation,
   page,
   sourcemapSnapshot,
   testDir,
-  waitForBundledDevSettled,
 } from './vitestSetup'
 
 export * from './vitestSetup'
@@ -226,17 +224,25 @@ export function removeFile(filename: string): void {
 }
 
 /**
- * Runs a mutation that should fully reload the page and waits until the page
- * is loaded and at rest again (under bundled dev: the whole update chain,
- * however long the build takes). Serve mode only. Not for edits expecting a
- * hot update or no effect — no load event comes and this would time out.
+ * Runs a mutation that should fully reload the page and waits for that one
+ * navigation (under bundled dev the reload is sent only after the rebuild
+ * completes, so this waits through the build too). Serve mode only. Not for
+ * edits expecting a hot update or no effect — no load event comes and this
+ * would time out.
+ *
+ * Only needed when the test cannot prove the reload through its own
+ * assertions: the asserted content is the same before and after the reload,
+ * or the test only checks side effects. When the edit changes the asserted
+ * content, prefer a plain `expect.poll` on a re-queried selector — selector
+ * reads retry internally through the navigation, and `expect.poll` retries
+ * probes that throw (e.g. `getColor`). Never poll on an `ElementHandle`
+ * captured before the edit: the old document's handle stays dead after the
+ * reload and every poll attempt throws.
  */
 export async function withPageReload(action: () => void): Promise<void> {
-  const afterHmrEventCount = getBundledDevHmrEventCount()
   const loadPromise = page.waitForEvent('load')
   action()
   await loadPromise
-  await waitForBundledDevSettled({ afterHmrEventCount })
 }
 
 export function listAssets(base = ''): string[] {

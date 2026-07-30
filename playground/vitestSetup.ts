@@ -571,8 +571,6 @@ class SettleHarnessError extends Error {}
  * Waits until bundled dev has finished processing the latest change and the
  * page is at rest. Every condition is a definite state, not a timing guess,
  * so slow builds just make it wait longer:
- *   - the server saw a change past `afterHmrEventCount`
- *      (if passed, has the dev engine seen the latest file edit yet?)
  *   - no full reload is waiting to be sent (server) or started (page marker)
  *   - the page is loaded and not the fallback page (a fallback page counts
  *     only while the build is broken AND no reload went out since it was
@@ -582,8 +580,6 @@ class SettleHarnessError extends Error {}
  * Prefer `withPageReload` (test-utils) over calling this directly.
  */
 export async function waitForBundledDevSettled(opts?: {
-  /** first wait until the server has seen a change past this count */
-  afterHmrEventCount?: number
   timeout?: number
 }): Promise<void> {
   if (!isBundledDev || !page) return
@@ -594,12 +590,6 @@ export async function waitForBundledDevSettled(opts?: {
   if (!bundledDev || !state || state.bundledDev !== bundledDev) return
   const deadline = performance.now() + (opts?.timeout ?? 40_000)
   const remaining = () => Math.max(1, deadline - performance.now())
-  if (opts?.afterHmrEventCount !== undefined) {
-    await vi.waitUntil(() => watchChangeCount > opts.afterHmrEventCount!, {
-      timeout: remaining(),
-      interval: 20,
-    })
-  }
   // Reload decisions reach the ledger when the wraps run, inside the closures
   // the dev engine enqueues (`onHmrUpdates` / `onOutput`) — an enqueued but
   // not-yet-run closure is invisible to the ledger for a tick. The
@@ -676,7 +666,7 @@ export async function waitForBundledDevSettled(opts?: {
   )
 }
 
-export function getBundledDevHmrEventCount(): number | undefined {
+function getBundledDevHmrEventCount(): number | undefined {
   const bundledDev = (viteServer as any)?.environments?.client?.bundledDev
   if (!bundledDev || !settleState || settleState.bundledDev !== bundledDev) {
     return undefined
