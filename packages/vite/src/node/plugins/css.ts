@@ -4,11 +4,13 @@ import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import postcssrc from 'postcss-load-config'
 import type {
+  EmittedFile,
   ExistingRawSourceMap,
   InternalModuleFormat,
   MinimalPluginContext,
   OutputAsset,
   OutputChunk,
+  PluginContext,
   RenderedChunk,
   RenderedModule,
   RollupError,
@@ -53,6 +55,7 @@ import {
   SPECIAL_QUERY_RE,
 } from '../constants'
 import type { ResolvedConfig } from '../config'
+import type { Environment } from '../environment'
 import type { Plugin } from '../plugin'
 import { checkPublicFile } from '../publicDir'
 import {
@@ -533,6 +536,34 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     return cssBundleName
   }
 
+  type CSSEntryConfig = {
+    name?: string
+    environment?: Environment
+    fileName?: string
+  }
+  function emitCssEntry(
+    context: PluginContext,
+    file: EmittedFile,
+    entryConfig?: CSSEntryConfig,
+  ): string {
+    const referenceId = context.emitFile(file)
+    const env = entryConfig?.environment ?? context.environment
+    const fileName = entryConfig?.fileName ?? file.fileName
+    const name = entryConfig?.name ?? file.name
+    if (!fileName) {
+      throw new Error(
+        `emitCssEntry requires a filename to be specified in the entryConfig or in the emitted file.`,
+      )
+    }
+    if (!name) {
+      throw new Error(
+        `emitCssEntry requires a name to be specified in the entryConfig or in the emitted file.`,
+      )
+    }
+    cssEntriesMap.get(env)!.set(fileName, { referenceId, name })
+    return referenceId
+  }
+
   return {
     name: 'vite:css-post',
 
@@ -928,18 +959,19 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   })
 
                   // emit corresponding css file
-                  const referenceId = this.emitFile({
+                  const emitFileConfig: EmittedFile = {
                     type: 'asset',
                     name: cssAssetName,
                     originalFileName,
                     source: chunkCSS,
-                  })
-                  chunkCssReferences.set(chunk.fileName, referenceId)
-                  if (isEntry) {
-                    cssEntriesMap
-                      .get(this.environment)!
-                      .set(chunk.fileName, { referenceId, name: chunk.name })
                   }
+                  const referenceId = isEntry
+                    ? emitCssEntry(this, emitFileConfig, {
+                        fileName: chunk.fileName,
+                        name: chunk.name,
+                      })
+                    : this.emitFile(emitFileConfig)
+                  chunkCssReferences.set(chunk.fileName, referenceId)
                   chunk.viteMetadata!.importedCss.add(
                     this.getFileName(referenceId),
                   )
@@ -1061,14 +1093,29 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (extractedCss) {
           hasEmitted = true
           extractedCss = await finalizeCss(extractedCss, config)
-          this.emitFile({
-            name: getCssBundleName(),
-            type: 'asset',
-            source: extractedCss,
-            // this file is an implicit entry point, use defaultCssBundleName as the original file name
-            // this name is also used as a key in the manifest
-            originalFileName: defaultCssBundleName,
-          })
+          const bundleName = getCssBundleName()
+          const referenceId = emitCssEntry(
+            this,
+            {
+              name: bundleName,
+              type: 'asset',
+              source: extractedCss,
+              // this file is an implicit entry point, use defaultCssBundleName as the original file name
+              // this name is also used as a key in the manifest
+              originalFileName: defaultCssBundleName,
+            },
+            { name: bundleName, fileName: defaultCssBundleName },
+          )
+
+          for (const cssChunk of pureCssChunks) {
+            if (cssChunk.isEntry) {
+              cssEntriesMap.get(this.environment)!.set(cssChunk.fileName, {
+                referenceId,
+                // All these chunks are merged into the file under `bundleName`
+                name: bundleName,
+              })
+            }
+          }
         }
       }
 
@@ -1188,10 +1235,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             const realCssEntry = bundle[realCssEntryName]!
             importedCss.delete(realCssEntryName)
             if (importedAssets.size) {
-              realCssEntry.viteMetadata!.importedAssets = importedAssets
+              realCssEntry.viteMetadata!.importedAssets = new Set([
+                ...(realCssEntry.viteMetadata!.importedAssets ?? []),
+                ...importedAssets,
+              ])
             }
             if (importedCss.size) {
-              realCssEntry.viteMetadata!.importedCss = importedCss
+              realCssEntry.viteMetadata!.importedCss = new Set([
+                ...(realCssEntry.viteMetadata!.importedCss ?? []),
+                ...importedCss,
+              ])
             }
           }
 
