@@ -1,3 +1,30 @@
+## [8.2.0](https://github.com/vitejs/vite/compare/v8.2.0-beta.0...v8.2.0) (2026-07-30)
+### Features
+
+* add `input` to `server.fs.allow` ([#23035](https://github.com/vitejs/vite/issues/23035)) ([95a3cda](https://github.com/vitejs/vite/commit/95a3cdab83e1125b03d2e8dd942fb6b64209e5fa))
+* **bundled-dev:** reload once after rebuild instead of via the fallback page ([#23106](https://github.com/vitejs/vite/issues/23106)) ([b24381d](https://github.com/vitejs/vite/commit/b24381d741941b9ce2b1c07db62cc5f4d7bad981))
+* **bundled-dev:** support worker file update accepted by HMR ([#23068](https://github.com/vitejs/vite/issues/23068)) ([0d04351](https://github.com/vitejs/vite/commit/0d04351fdc12258c75b9f1cda5780fdb836ed0ef))
+* **config:** include column in config incompatibility location ([#23064](https://github.com/vitejs/vite/issues/23064)) ([8a24572](https://github.com/vitejs/vite/commit/8a245726944ed29225920d49be77c33c6e03afc8))
+* **dev:** resolve interface name for explicit host in network URLs ([#22965](https://github.com/vitejs/vite/issues/22965)) ([3ac77d9](https://github.com/vitejs/vite/commit/3ac77d9dd742968961af38a5a91ed6b061ceda7d))
+
+### Bug Fixes
+
+* **bundledDev:** print build errors to the terminal when an HMR update fails ([#23024](https://github.com/vitejs/vite/issues/23024)) ([41c4658](https://github.com/vitejs/vite/commit/41c465896e8b11b1eb9c5fbdafbdcc528e189a2c))
+* **deps:** update all non-major dependencies ([#23069](https://github.com/vitejs/vite/issues/23069)) ([4c07b74](https://github.com/vitejs/vite/commit/4c07b74416f859d7e8bdace13409ef2d080edf76))
+* **hmr:** preserve environment snapshot during server restart ([#22992](https://github.com/vitejs/vite/issues/22992)) ([b1186c3](https://github.com/vitejs/vite/commit/b1186c36d06bb94941c58e8272fc4acb8512c93b))
+* **importAnalysis:** interop imports injected into optimized dep files by plugins ([#23029](https://github.com/vitejs/vite/issues/23029)) ([8c2a87d](https://github.com/vitejs/vite/commit/8c2a87d41fb24536e59643351758084cde4d0dd7))
+* **module-runner:** keep stack trace interception working when `Object.prototype` is frozen ([#23073](https://github.com/vitejs/vite/issues/23073)) ([599c5b0](https://github.com/vitejs/vite/commit/599c5b02a8b6879b05ede988020f1331e877aaea))
+* **server:** strip base in indexHtml module graph lookup ([#22932](https://github.com/vitejs/vite/issues/22932)) ([fa005d1](https://github.com/vitejs/vite/commit/fa005d19af5d847931c6dbefc63841c137383e6c))
+* support resolving top-level input option with plugins ([#23101](https://github.com/vitejs/vite/issues/23101)) ([41df81a](https://github.com/vitejs/vite/commit/41df81a6a4c3eef08f7a9a8ac9530cd136c0eafa))
+
+### Documentation
+
+* **config:** correct cacheDir default fallback description ([#23060](https://github.com/vitejs/vite/issues/23060)) ([aafa103](https://github.com/vitejs/vite/commit/aafa103af5d71fb59d7c3dd617d0cbef3b222f1f))
+
+### Tests
+
+* config CJS module vars in ESM case ([#23010](https://github.com/vitejs/vite/issues/23010)) ([d8cd388](https://github.com/vitejs/vite/commit/d8cd38830251b95fd7dddcd0eee0ce94cc61c2f4))
+
 ## [8.2.0-beta.0](https://github.com/vitejs/vite/compare/v8.1.5...v8.2.0-beta.0) (2026-07-22)
 ### Features
 
