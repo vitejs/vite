@@ -1,0 +1,19 @@
+docs/superpowers/specs/2026-07-30-css-code-split-sourcemaps-design.md
+  s_be045573f38ba6::t_d26e9046d1f685 1-75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "5f02f4100c4bb566ea61ea8798e4b25231c7443e",
+  "prompts": {},
+  "sessions": {
+    "s_be045573f38ba6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa8b2-2155-7b40-9100-a624d85dc376",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
