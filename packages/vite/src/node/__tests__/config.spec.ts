@@ -1175,16 +1175,11 @@ describe('resolveConfig', () => {
     )
   })
 
-  const resolveInputFromRoot = (p: string) =>
-    normalizePath(path.resolve(process.cwd(), p))
-
   test('top-level input applies to the client environment only (non-inherit)', async () => {
     const config = await resolveConfig({ input: 'src/main.ts' }, 'serve')
 
-    expect(config.input).toBe(resolveInputFromRoot('src/main.ts'))
-    expect(config.environments.client.input).toBe(
-      resolveInputFromRoot('src/main.ts'),
-    )
+    expect(config.input).toBe('src/main.ts')
+    expect(config.environments.client.input).toBe('src/main.ts')
     expect(
       config.environments.client.build.rolldownOptions.input,
     ).toBeUndefined()
@@ -1203,57 +1198,29 @@ describe('resolveConfig', () => {
       'serve',
     )
 
-    expect(config.environments.client.input).toBe(
-      resolveInputFromRoot('src/main.ts'),
-    )
-    expect(config.environments.ssr.input).toBe(
-      resolveInputFromRoot('src/entry-server.ts'),
-    )
+    expect(config.environments.client.input).toBe('src/main.ts')
+    expect(config.environments.ssr.input).toBe('src/entry-server.ts')
   })
 
-  test('resolves array input to absolute paths', async () => {
+  test('keeps array input relative to the root', async () => {
     const config = await resolveConfig(
       { input: ['src/a.ts', 'src/b.ts'] },
       'serve',
     )
 
-    expect(config.environments.client.input).toEqual([
-      resolveInputFromRoot('src/a.ts'),
-      resolveInputFromRoot('src/b.ts'),
-    ])
+    expect(config.environments.client.input).toEqual(['src/a.ts', 'src/b.ts'])
   })
 
-  test('resolves record input to absolute paths', async () => {
+  test('keeps record input relative to the root', async () => {
     const config = await resolveConfig(
       { input: { main: 'src/a.ts', admin: 'src/b.ts' } },
       'serve',
     )
 
     expect(config.environments.client.input).toEqual({
-      main: resolveInputFromRoot('src/a.ts'),
-      admin: resolveInputFromRoot('src/b.ts'),
+      main: 'src/a.ts',
+      admin: 'src/b.ts',
     })
-  })
-
-  test('adds input to server.fs.allow by default', async () => {
-    const inputs = {
-      main: resolveInputFromRoot('src/a.ts'),
-      admin: resolveInputFromRoot('src/b.ts'),
-    }
-    const config = await resolveConfig(
-      { input: { main: 'src/a.ts', admin: 'src/b.ts' } },
-      'serve',
-    )
-
-    expect(config.server.fs.allow).toStrictEqual(
-      expect.arrayContaining(Object.values(inputs)),
-    )
-  })
-
-  test('adds the default index.html input to server.fs.allow', async () => {
-    const config = await resolveConfig({}, 'serve')
-
-    expect(config.server.fs.allow).toContain(resolveInputFromRoot('index.html'))
   })
 
   test('reserves glob characters in input', async () => {
@@ -1286,17 +1253,17 @@ describe('resolveConfig', () => {
       {
         name: 'glob',
         input: 'src/\\*.ts',
-        expected: resolveInputFromRoot('src/*.ts'),
+        expected: 'src/*.ts',
       },
       {
         name: 'array element',
         input: ['src/\\*.ts'],
-        expected: [resolveInputFromRoot('src/*.ts')],
+        expected: ['src/*.ts'],
       },
       {
         name: 'record',
         input: { main: 'src/\\*.ts' },
-        expected: { main: resolveInputFromRoot('src/*.ts') },
+        expected: { main: 'src/*.ts' },
       },
     ]
 
@@ -1319,14 +1286,14 @@ describe('resolveConfig', () => {
       {
         name: 'special characters',
         input: 'src/a-b_c$.ts',
-        expected: resolveInputFromRoot('src/a-b_c$.ts'),
+        expected: 'src/a-b_c$.ts',
       },
       ...(isWindows
         ? [
             {
               name: 'windows path',
               input: 'src\\foo.ts',
-              expected: resolveInputFromRoot('src/foo.ts'),
+              expected: 'src\\foo.ts',
             },
           ]
         : []),
@@ -2047,7 +2014,6 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
-      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual(['example.com'])
@@ -2059,7 +2025,6 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
-      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual([
@@ -2075,7 +2040,6 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
-      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual([
@@ -2091,7 +2055,6 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
-      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual(['example.com', 'test.com'])
@@ -2102,7 +2065,6 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: ['existing.com'] },
-      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual([
@@ -2117,7 +2079,6 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: true },
-      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toBe(true)
@@ -2130,7 +2091,6 @@ describe('resolveServerOptions', () => {
       const resolved = await resolveServerOptions(
         '/root',
         { allowedHosts: [] },
-        undefined,
         logger,
       )
       expect(resolved.allowedHosts).toEqual([])
