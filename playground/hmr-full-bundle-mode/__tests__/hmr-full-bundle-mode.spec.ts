@@ -310,12 +310,20 @@ if (isBuild) {
     await expect.poll(() => page.textContent('.data-count')).toBe('1')
     await expect.poll(() => page.textContent('.data-disposed')).toBe('0')
 
-    editFile('data.js', (code) => code.replace('// @hmr-bump', '// @hmr-bump1'))
+    editFile('data.js', (code) =>
+      code.replace(
+        "globalThis.__hmrBump = 'initial'",
+        "globalThis.__hmrBump = 'first-update'",
+      ),
+    )
     await expect.poll(() => page.textContent('.data-count')).toBe('2')
     await expect.poll(() => page.textContent('.data-disposed')).toBe('1')
 
     editFile('data.js', (code) =>
-      code.replace('// @hmr-bump1', '// @hmr-bump12'),
+      code.replace(
+        "globalThis.__hmrBump = 'first-update'",
+        "globalThis.__hmrBump = 'second-update2'",
+      ),
     )
     await expect.poll(() => page.textContent('.data-count')).toBe('3')
     await expect.poll(() => page.textContent('.data-disposed')).toBe('2')
