@@ -10,7 +10,6 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "express": "^5.2.1",
-    "ws": "^8.21.0"
+    "express": "^5.2.1"
   }
 }

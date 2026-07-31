@@ -4,9 +4,6 @@ import { browserLogs, editFile, isServe, page } from '~utils'
 
 const url = `http://localhost:${port}`
 
-// TODO: playground works only because there is a direct dependency on "ws",
-// It should removed on rolldown side
-
 // TODO: this crashes the server, not yet supported(?)
 test.skip(`circular dependencies modules doesn't throw`, async () => {
   await page.goto(`${url}/circular-dep`)
