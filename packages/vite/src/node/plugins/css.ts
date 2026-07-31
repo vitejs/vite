@@ -1121,6 +1121,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const pureCssChunkNames = [...pureCssChunks]
           .map((pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName])
           .filter(Boolean)
+        // Looked up once per import of every chunk below, so keep it as a set:
+        // scanning the array made that loop cost chunks x imports x pureCssChunks.
+        const pureCssChunkNameSet = new Set(pureCssChunkNames)
 
         let importMapReverseMapping: Record<string, string> | undefined
         if (config.build.chunkImportMap) {
@@ -1148,7 +1151,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // and also register the emitted CSS files under the importer
             // chunks instead.
             chunk.imports = chunk.imports.filter((file) => {
-              if (pureCssChunkNames.includes(file)) {
+              if (pureCssChunkNameSet.has(file)) {
                 const { importedCss, importedAssets } = (
                   bundle[file] as OutputChunk
                 ).viteMetadata!
