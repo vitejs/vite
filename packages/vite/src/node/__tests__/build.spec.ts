@@ -5,6 +5,7 @@ import colors from 'picocolors'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import type {
   LogLevel,
+  OutputAsset,
   OutputChunk,
   OutputOptions,
   RolldownOptions,
@@ -1019,6 +1020,95 @@ test.for([true, false])(
     ).toEqual([1, 8, 1, 8])
   },
 )
+
+function virtualPlugin(modules: Record<string, string>) {
+  return {
+    name: 'virtual-test-modules',
+    resolveId(id: string) {
+      if (id in modules) return id
+    },
+    load(id: string) {
+      return modules[id]
+    },
+  }
+}
+
+test('uses environment chunkImportMap config with shared plugins', async () => {
+  const builder = await createBuilder({
+    root: resolve(dirname, 'packages/build-project'),
+    logLevel: 'silent',
+    configFile: false,
+    build: {
+      write: false,
+    },
+    environments: {
+      client: {
+        build: {
+          chunkImportMap: true,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    builder: {
+      sharedPlugins: true,
+    },
+    plugins: [
+      virtualPlugin({
+        '/entry.js': `import('./dynamic.js')`,
+        './dynamic.js': `import './dynamic.css'\nexport const value = 'dynamic'`,
+        './dynamic.css': `.dynamic { color: red }`,
+      }),
+    ],
+  })
+
+  const result = (await builder.build(
+    builder.environments.client,
+  )) as RolldownOutput
+  const entryChunk = result.output.find(
+    (file): file is OutputChunk => file.type === 'chunk' && file.isEntry,
+  )!
+  const importMap = result.output.find(
+    (file): file is OutputAsset => file.fileName === 'importmap.json',
+  )!
+
+  expect(JSON.parse(importMap.source.toString()).imports).not.toEqual({})
+  expect(entryChunk.code).toContain('__vite__mapDeps([0,1])')
+  expect(entryChunk.code).toContain('.css')
+})
+
+test('skips chunk import map injection when an environment opts out', async () => {
+  const builder = await createBuilder({
+    root: resolve(dirname, 'packages/build-project'),
+    logLevel: 'silent',
+    configFile: false,
+    build: {
+      chunkImportMap: true,
+      write: false,
+    },
+    environments: {
+      client: {
+        build: {
+          chunkImportMap: false,
+        },
+      },
+    },
+    builder: {
+      sharedPlugins: true,
+    },
+    plugins: [virtualPlugin({ 'entry.js': `console.log('entry')` })],
+  })
+
+  const result = (await builder.build(
+    builder.environments.client,
+  )) as RolldownOutput
+  const html = result.output.find(
+    (file): file is OutputAsset => file.fileName === 'index.html',
+  )!
+
+  expect(html.source.toString()).not.toContain('type="importmap"')
+})
 
 test('sharedConfigBuild and emitAssets', async () => {
   const root = resolve(dirname, 'fixtures/shared-config-build/emitAssets')

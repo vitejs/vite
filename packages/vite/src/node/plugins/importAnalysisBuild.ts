@@ -352,25 +352,28 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         }
         return
       }
-      const buildSourcemap = this.environment.config.build.sourcemap
-      const { modulePreload } = this.environment.config.build
+      const environmentConfig = this.environment.config
+      const buildSourcemap = environmentConfig.build.sourcemap
+      const { modulePreload } = environmentConfig.build
 
       let importMapMapping: Record<string, string> | undefined
       let importMapReverseMapping: Record<string, string> | undefined
-      if (config.build.chunkImportMap) {
-        const importMap = getImportMap(bundle, config)!
-        importMapMapping = importMap.mapping
-        importMapReverseMapping = Object.fromEntries(
-          Object.entries(importMapMapping).map(([k, v]) => [v, k]),
-        )
+      if (environmentConfig.build.chunkImportMap) {
+        const importMap = getImportMap(bundle, environmentConfig)
+        if (importMap) {
+          importMapMapping = importMap.mapping
+          importMapReverseMapping = Object.fromEntries(
+            Object.entries(importMapMapping).map(([k, v]) => [v, k]),
+          )
 
-        if (config.isOutputOptionsForLegacyChunks?.(opts)) {
-          this.emitFile({
-            type: 'asset',
-            fileName: 'importmap.legacy.json',
-            source: importMap.asset.source,
-          })
-          delete bundle[getImportMapFilename(config)]
+          if (environmentConfig.isOutputOptionsForLegacyChunks?.(opts)) {
+            this.emitFile({
+              type: 'asset',
+              fileName: 'importmap.legacy.json',
+              source: importMap.asset.source,
+            })
+            delete bundle[getImportMapFilename(environmentConfig)]
+          }
         }
       }
 

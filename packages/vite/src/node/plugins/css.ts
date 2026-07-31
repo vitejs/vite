@@ -1074,35 +1074,42 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       // With `cssCodeSplit: false`, CSS is emitted as a single stylesheet in the HTML,
       // so this per-chunk import map handling is irrelevant.
-      if (config.build.chunkImportMap && chunkCssReferences.size) {
+      const environmentConfig = this.environment.config
+
+      if (environmentConfig.build.chunkImportMap && chunkCssReferences.size) {
         // The import map hash identifies the JS chunk independently of its content.
         // Since each chunk has at most one extracted CSS sidecar, we can reuse that
         // stable identity with a `.css` extension while mapping it to the CSS content hash.
-        const importMap = getImportMap(bundle, config)!
-        const importMapReverseMapping = Object.fromEntries(
-          Object.entries(importMap.mapping).map(([k, v]) => [v, k]),
-        )
-        const chunksByPreliminaryFileName = new Map(
-          Object.values(bundle)
-            .filter((output): output is OutputChunk => output.type === 'chunk')
-            .map((chunk) => [chunk.preliminaryFileName, chunk]),
-        )
+        const importMap = getImportMap(bundle, environmentConfig)
+        if (importMap) {
+          const importMapReverseMapping = Object.fromEntries(
+            Object.entries(importMap.mapping).map(([k, v]) => [v, k]),
+          )
+          const chunksByPreliminaryFileName = new Map(
+            Object.values(bundle)
+              .filter(
+                (output): output is OutputChunk => output.type === 'chunk',
+              )
+              .map((chunk) => [chunk.preliminaryFileName, chunk]),
+          )
 
-        for (const [chunkFileName, referenceId] of chunkCssReferences) {
-          const chunk = chunksByPreliminaryFileName.get(chunkFileName)
-          if (!chunk) continue
+          for (const [chunkFileName, referenceId] of chunkCssReferences) {
+            const chunk = chunksByPreliminaryFileName.get(chunkFileName)
+            if (!chunk) continue
 
-          const stableChunkFileName =
-            importMapReverseMapping[chunk.fileName] ?? chunk.fileName
-          const extension = path.posix.extname(stableChunkFileName)
-          const stableCssFileName = `${stableChunkFileName.slice(
-            0,
-            extension ? -extension.length : undefined,
-          )}.css`
-          importMap.content.imports[config.base + stableCssFileName] =
-            config.base + this.getFileName(referenceId)
+            const stableChunkFileName =
+              importMapReverseMapping[chunk.fileName] ?? chunk.fileName
+            const extension = path.posix.extname(stableChunkFileName)
+            const stableCssFileName = `${stableChunkFileName.slice(
+              0,
+              extension ? -extension.length : undefined,
+            )}.css`
+            importMap.content.imports[
+              environmentConfig.base + stableCssFileName
+            ] = environmentConfig.base + this.getFileName(referenceId)
+          }
+          importMap.asset.source = JSON.stringify(importMap.content)
         }
-        importMap.asset.source = JSON.stringify(importMap.content)
       }
 
       // remove empty css chunks and their imports
@@ -1125,11 +1132,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           .filter(Boolean)
 
         let importMapReverseMapping: Record<string, string> | undefined
-        if (config.build.chunkImportMap) {
-          const importMap = getImportMap(bundle, config)!
-          importMapReverseMapping = Object.fromEntries(
-            Object.entries(importMap.mapping).map(([k, v]) => [v, k]),
-          )
+        if (environmentConfig.build.chunkImportMap) {
+          const importMap = getImportMap(bundle, environmentConfig)
+          if (importMap) {
+            importMapReverseMapping = Object.fromEntries(
+              Object.entries(importMap.mapping).map(([k, v]) => [v, k]),
+            )
+          }
         }
         const pureCssChunkNamesInCode = importMapReverseMapping
           ? pureCssChunkNames.map(

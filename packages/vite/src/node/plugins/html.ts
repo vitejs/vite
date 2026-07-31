@@ -418,7 +418,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   preHooks.unshift(preImportMapHook(config))
   preHooks.push(htmlEnvHook(config))
   postHooks.push(injectNonceAttributeTagHook(config))
-  postHooks.push(postImportMapHook(config))
   const processedHtml = perEnvironmentState(() => new Map<string, string>())
 
   const isExcludedUrl = (url: string) =>
@@ -1029,7 +1028,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
         result = await applyHtmlTransforms(
           result,
-          [...normalHooks, ...postHooks],
+          [
+            ...normalHooks,
+            ...postHooks,
+            postImportMapHook(this.environment.config),
+          ],
           this,
           {
             path: '/' + relativeUrlPath,
@@ -1234,7 +1237,10 @@ export function postImportMapHook(
 
     if (chunkImportMapEnabled) {
       const nonce = config.html?.cspNonce
-      const importMap = bundle![getImportMapFilename(config)] as OutputAsset
+      const importMap = bundle![getImportMapFilename(config)] as
+        | OutputAsset
+        | undefined
+      if (!importMap) return html
       const importMapHtml = serializeTag({
         tag: 'script',
         attrs: { type: 'importmap', ...(nonce ? { nonce } : {}) },
