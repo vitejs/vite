@@ -568,7 +568,7 @@ return `export default import.meta.ROLLDOWN_FILE_URL_${referenceId} + '#frag'`
 `import.meta.ROLLDOWN_FILE_URL_<referenceId>` only works in JavaScript expression position. In CSS or HTML, use the `__VITE_ASSET__<referenceId>__` token instead, appending any query or hash right after it:
 
 ```css
-background: url(__VITE_ASSET__abc__#frag);
+background: url(__VITE_ASSET__<referenceId>__#frag);
 ```
 
 ## Plugin Ordering
