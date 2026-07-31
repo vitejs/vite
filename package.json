@@ -36,7 +36,6 @@
     "docs-serve": "pnpm --filter=./docs run docs-serve",
     "build": "pnpm -r --filter='./packages/*' run build",
     "dev": "pnpm -r --parallel --filter='./packages/*' run dev",
-    "release": "tsx scripts/release.ts",
     "ci-publish": "tsx scripts/publishCI.ts",
     "ci-docs": "pnpm build && pnpm docs-build",
     "merge-changelog": "tsx scripts/mergeChangelog.ts"
