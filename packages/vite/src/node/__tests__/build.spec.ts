@@ -112,6 +112,36 @@ describe('build', () => {
     expect(chunk?.code).toContain('from-top-level-input')
   })
 
+  test('top-level input can be a virtual module for build', async () => {
+    const input = 'virtual:entry'
+    const resolvedInput = `\0${input}`
+    const result = (await build({
+      root: resolve(dirname, 'packages/build-project'),
+      logLevel: 'silent',
+      input,
+      build: {
+        write: false,
+      },
+      plugins: [
+        {
+          name: 'virtual-entry',
+          resolveId(id) {
+            if (id === input) {
+              return resolvedInput
+            }
+          },
+          load(id) {
+            if (id === resolvedInput) {
+              return `console.log('from-virtual-top-level-input')`
+            }
+          },
+        },
+      ],
+    })) as RolldownOutput
+    const chunk = result.output.find((o) => o.type === 'chunk')
+    expect(chunk?.code).toContain('from-virtual-top-level-input')
+  })
+
   test('file hash should change when pure css chunk changes', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({

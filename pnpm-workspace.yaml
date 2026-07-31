@@ -32,6 +32,9 @@ packageExtensions:
   '@rollup/plugin-dynamic-import-vars':
     dependencies:
       '@types/estree': ^1.0.0
+  '@volar/typescript':
+    dependencies:
+      '@volar/language-service': 2.4.28
 allowBuilds:
   core-js: false
   vue-demi: false

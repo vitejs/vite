@@ -35,7 +35,6 @@ export interface BundledDevHMRClientOptions {
   loadPatch: (url: string) => Promise<void>
   /** returning `'reload'` aborts the apply — the hook reloads the page itself */
   beforeApply: () => 'reload' | 'continue'
-  pageReload: () => void
   /**
    * Only used for the plain `update` payloads this client inherits from
    * `HMRClient`. Full-bundle updates never go through it, but the module runner
@@ -47,6 +46,7 @@ export interface BundledDevHMRClientOptions {
 export class BundledDevHMRClient extends HMRClient {
   private applyQueue = Promise.resolve()
   private lastSeq = 0
+  private reloadPending = false
 
   constructor(
     logger: HMRLogger,
@@ -189,6 +189,7 @@ export class BundledDevHMRClient extends HMRClient {
     url,
     seq,
   }: BundledDevUpdatePayload): Promise<void> {
+    if (this.reloadPending) return
     if (seq !== this.lastSeq + 1) {
       this.requestFullReload(
         `hmr update sequence gap (expected ${this.lastSeq + 1}, got ${seq})`,
@@ -220,6 +221,7 @@ export class BundledDevHMRClient extends HMRClient {
   }
 
   private async applyInvalidate(id: string): Promise<void> {
+    if (this.reloadPending) return
     const firstInvalidatedBy = this.currentFirstInvalidatedBy ?? id
     const importers = this.runtime
       .getImporters(id)
@@ -312,8 +314,14 @@ export class BundledDevHMRClient extends HMRClient {
   }
 
   private requestFullReload(reason: string): void {
-    this.logger.debug(`full reload: ${reason}`)
-    this.options.pageReload()
+    if (this.reloadPending) return
+    this.reloadPending = true
+    this.logger.debug(`full reload needed: ${reason}`)
+    this.send({
+      type: 'custom',
+      event: 'vite:bundled-dev:reload-needed',
+      data: { reason },
+    })
   }
 }
 

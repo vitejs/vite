@@ -7,7 +7,6 @@ import {
 import {
   base,
   clearOverlayOrReloadOnFirstUpdate,
-  pageReload,
   registerBundledDevClient,
   removeStyle,
   transport,
@@ -57,7 +56,6 @@ if (typeof DevRuntime !== 'undefined') {
     {
       loadPatch: (url) => import(/* @vite-ignore */ base + url),
       beforeApply: clearOverlayOrReloadOnFirstUpdate,
-      pageReload,
     },
   )
   registerBundledDevClient(bundledDevHmrClient)
