@@ -12,6 +12,7 @@ import {
   extractHostnamesFromSubjectAltName,
   flattenId,
   generateCodeFrame,
+  getFileStartIndex,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
   getServerUrlByHost,
@@ -452,6 +453,33 @@ foo()
       { line: 3, column: 30 },
     )
     expectSnapshot(frame)
+  })
+})
+
+describe('getFileStartIndex', () => {
+  const LINE_TERMINATORS = {
+    LF: '\n',
+    CRLF: '\r\n',
+    CR: '\r',
+    'LINE SEPARATOR': '\u2028',
+    'PARAGRAPH SEPARATOR': '\u2029',
+  }
+  for (const [terminatorName, terminator] of Object.entries(LINE_TERMINATORS)) {
+    test(`returns the index after a hashbang ending in ${terminatorName}`, () => {
+      const hashbang = `#!/usr/bin/env node${terminator}`
+      expect(getFileStartIndex(`${hashbang}console.log(1)`)).toBe(
+        hashbang.length,
+      )
+    })
+  }
+
+  test('returns the end of an unterminated hashbang', () => {
+    const code = '#!/usr/bin/env node'
+    expect(getFileStartIndex(code)).toBe(code.length)
+  })
+
+  test('returns zero without a hashbang', () => {
+    expect(getFileStartIndex('console.log(1)')).toBe(0)
   })
 })
 

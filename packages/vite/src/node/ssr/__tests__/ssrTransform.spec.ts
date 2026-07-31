@@ -1155,6 +1155,19 @@ import foo from "foo"`,
   `)
 })
 
+test('import hoisted after CRLF hashbang', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      '#!/usr/bin/env node\r\nconsole.log(foo);\r\nimport foo from "foo"',
+    ),
+  ).toMatchInlineSnapshot(`
+    "#!/usr/bin/env node
+    const __vite_ssr_import_0__ = await __vite_ssr_import__("foo", {"importedNames":["default"]});
+    console.log((0,__vite_ssr_import_0__.default));
+    "
+  `)
+})
+
 test('identity function helper injected after hashbang', async () => {
   expect(
     await ssrTransformSimpleCode(
