@@ -34,7 +34,7 @@ import {
   ssrRolldownRuntimeKey,
 } from './constants'
 import { hmrLogger, silentConsole } from './hmrLogger'
-import { createHMRHandlerForRunner, reloadEntrypoints } from './hmrHandler'
+import { createHMRHandlerForRunner } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
 import { ESModulesEvaluator } from './esmEvaluator'
 import { createDefaultImportMeta } from './createImportMeta'
@@ -111,12 +111,6 @@ export class ModuleRunner {
               }
             },
             beforeApply: () => 'continue',
-            // there is no page to reload — re-execute every entrypoint instead
-            pageReload: () => {
-              reloadEntrypoints(this).catch((err) => {
-                resolvedHmrLogger.error(err)
-              })
-            },
             importUpdatedModule,
           },
         )
