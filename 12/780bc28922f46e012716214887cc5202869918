@@ -1,0 +1,19 @@
+packages/vite/src/client/client.ts
+  s_39c6903aab69f9::t_f1669f24c0a8ff 154-156,160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "12780bc28922f46e012716214887cc5202869918",
+  "prompts": {},
+  "sessions": {
+    "s_39c6903aab69f9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb134-cfae-79b2-8256-7e3ce1ffaf48",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
