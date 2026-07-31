@@ -1121,8 +1121,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const pureCssChunkNames = [...pureCssChunks]
           .map((pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName])
           .filter(Boolean)
-        // Looked up once per import of every chunk below, so keep it as a set:
-        // scanning the array made that loop cost chunks x imports x pureCssChunks.
         const pureCssChunkNameSet = new Set(pureCssChunkNames)
 
         let importMapReverseMapping: Record<string, string> | undefined
