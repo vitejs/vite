@@ -396,19 +396,39 @@ export class BundledDev {
     // https://github.com/vitejs/vite/issues/22651
     const plugins = await asyncFlatten([rolldownOptions.plugins])
     for (const plugin of plugins) {
-      const transform =
-        plugin && 'transform' in plugin ? plugin.transform : undefined
-      if (!transform) continue
-      const handler =
-        typeof transform === 'function' ? transform : transform.handler
-      const wrappedHandler: typeof handler = function (this, code, id, opts) {
-        if (id.includes('?rolldown-lazy=')) return null
-        return handler.call(this, code, id, opts)
+      if (!plugin) continue
+      const resolveId = 'resolveId' in plugin ? plugin.resolveId : undefined
+      if (resolveId) {
+        const handler =
+          typeof resolveId === 'function' ? resolveId : resolveId.handler
+        const wrappedHandler: typeof handler = function (
+          this,
+          source,
+          importer,
+          opts,
+        ) {
+          if (source.includes('?rolldown-lazy=')) return source
+          return handler.call(this, source, importer, opts)
+        }
+        if (typeof resolveId === 'function') {
+          ;(plugin as any).resolveId = wrappedHandler
+        } else {
+          resolveId.handler = wrappedHandler
+        }
       }
-      if (typeof transform === 'function') {
-        ;(plugin as any).transform = wrappedHandler
-      } else {
-        transform.handler = wrappedHandler
+      const transform = 'transform' in plugin ? plugin.transform : undefined
+      if (transform) {
+        const handler =
+          typeof transform === 'function' ? transform : transform.handler
+        const wrappedHandler: typeof handler = function (this, code, id, opts) {
+          if (id.includes('?rolldown-lazy=')) return null
+          return handler.call(this, code, id, opts)
+        }
+        if (typeof transform === 'function') {
+          ;(plugin as any).transform = wrappedHandler
+        } else {
+          transform.handler = wrappedHandler
+        }
       }
     }
     rolldownOptions.plugins = plugins
