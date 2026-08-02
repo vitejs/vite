@@ -481,6 +481,14 @@ export const splitRE: RegExp = /\r?\n/g
 
 const range: number = 2
 
+/**
+ * `splitRE` treats both LF and CRLF as a line terminator, so the terminator
+ * following a line is 2 characters long when the source uses CRLF.
+ */
+function lineTerminatorLengthAt(source: string, index: number): number {
+  return source[index] === '\r' ? 2 : 1
+}
+
 export function pad(source: string, n = 2): string {
   const lines = source.split(splitRE)
   return lines.map((l) => ` `.repeat(n) + l).join(`\n`)
@@ -499,7 +507,8 @@ export function posToNumber(source: string, pos: number | Pos): number {
   const { line, column } = pos
   let start = 0
   for (let i = 0; i < line - 1 && i < lines.length; i++) {
-    start += lines[i].length + 1
+    start += lines[i].length
+    start += lineTerminatorLengthAt(source, start)
   }
   return start + column
 }
@@ -592,12 +601,12 @@ export function generateCodeFrame(
             const underline = '^'.repeat(Math.min(length, MAX_DISPLAY_LEN))
             res.push(`${' '.repeat(lineNumberWidth)}|  ` + underline)
           }
-          count += lineLength + 1
+          count += lineTerminatorLengthAt(source, count) + lineLength
         }
       }
       break
     }
-    count++
+    count += lineTerminatorLengthAt(source, count)
   }
   return res.join('\n')
 }
