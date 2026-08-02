@@ -7,6 +7,7 @@ import {
 } from 'vite/module-runner'
 import type { ViteDevServer } from '../server'
 import { unwrapId } from '../../shared/utils'
+import { isTransportInvokeTimeoutError } from '../../shared/moduleRunnerTransport'
 import type { DevEnvironment } from '../server/environment'
 import type { NormalizedServerHotChannel } from '../server/hmr'
 import { buildErrorMessage } from '../server/middlewares/error'
@@ -109,7 +110,9 @@ class SSRCompatModuleRunner extends ModuleRunner {
       viteMod.ssrModule = exports
       return exports
     } catch (err) {
-      viteMod.ssrError = err
+      if (!isTransportInvokeTimeoutError(err)) {
+        viteMod.ssrError = err
+      }
       throw err
     }
   }
