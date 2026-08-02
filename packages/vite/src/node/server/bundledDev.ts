@@ -9,11 +9,7 @@ import colors from 'picocolors'
 import getEtag from 'etag'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
 import { getHmrImplementation } from '../plugins/clientInjections'
-import {
-  asyncFlatten,
-  createDebugger,
-  formatAndTruncateFileList,
-} from '../utils'
+import { createDebugger, formatAndTruncateFileList } from '../utils'
 import type { DevEnvironment } from './environment'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
 import { prepareError } from './middlewares/error'
@@ -389,29 +385,6 @@ export class BundledDev {
     // https://github.com/vitejs/vite/issues/21843
     rolldownOptions.optimization ??= {}
     rolldownOptions.optimization.inlineConst = false
-
-    // In bundledDev mode, Rolldown's DevEngine generates lazy-loading stub modules
-    // for dynamically imported files, appending `?rolldown-lazy=1` to the module ID.
-    // Skip all plugins for these stub modules as a workaround.
-    // https://github.com/vitejs/vite/issues/22651
-    const plugins = await asyncFlatten([rolldownOptions.plugins])
-    for (const plugin of plugins) {
-      const transform =
-        plugin && 'transform' in plugin ? plugin.transform : undefined
-      if (!transform) continue
-      const handler =
-        typeof transform === 'function' ? transform : transform.handler
-      const wrappedHandler: typeof handler = function (this, code, id, opts) {
-        if (id.includes('?rolldown-lazy=')) return null
-        return handler.call(this, code, id, opts)
-      }
-      if (typeof transform === 'function') {
-        ;(plugin as any).transform = wrappedHandler
-      } else {
-        transform.handler = wrappedHandler
-      }
-    }
-    rolldownOptions.plugins = plugins
 
     // set filenames to make output paths predictable so that `renderChunk` hook does not need to be used
     if (Array.isArray(rolldownOptions.output)) {
