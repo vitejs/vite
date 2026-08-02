@@ -270,7 +270,10 @@ export class DevEnvironment extends BaseEnvironment {
    */
   async listen(server: ViteDevServer): Promise<void> {
     this.hot.listen()
-    await Promise.all([this.bundledDev?.listen(), this.depsOptimizer?.init()])
+    await Promise.all([
+      this.bundledDev?.listen(server),
+      this.depsOptimizer?.init(),
+    ])
     warmupFiles(server, this)
   }
 

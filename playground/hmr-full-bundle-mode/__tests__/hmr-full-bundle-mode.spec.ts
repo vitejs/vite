@@ -1,6 +1,9 @@
 import { setTimeout } from 'node:timers/promises'
+import path from 'node:path'
+import { type Plugin, normalizePath } from 'vite'
 import type { Response } from 'playwright-chromium'
 import { expect, test, onTestFinished } from 'vitest'
+import type { HotUpdateContextApi } from '../vite.config'
 import {
   addFile,
   browserLogs,
@@ -9,6 +12,8 @@ import {
   page,
   readFile,
   serverLogs,
+  testDir,
+  viteServer,
 } from '~utils'
 
 const assetUrl = /asset-[\w-]+\.png/
@@ -34,6 +39,46 @@ if (isBuild) {
       .poll(() => page.textContent('.worker-query'))
       .toBe('worker-query')
     await expect.poll(() => page.textContent('.worker-url')).toBe('worker-url')
+  })
+
+  test('hotUpdate receives the complete Vite context', async () => {
+    const original = readFile('hmr.js')
+    onTestFinished(() => addFile('hmr.js', original))
+    const plugins = [
+      'capture-function-hot-update-context',
+      'capture-object-hot-update-context',
+    ].map(
+      (name) =>
+        viteServer.config.plugins.find((plugin) => plugin.name === name) as
+          | Plugin<HotUpdateContextApi>
+          | undefined,
+    )
+
+    const beforeUpdate = Date.now()
+    editFile('hmr.js', (code) =>
+      code.replace("const foo = 'hello'", "const foo = 'context-update'"),
+    )
+    await expect
+      .poll(() => plugins.map((plugin) => plugin?.api?.content))
+      .toEqual([
+        expect.stringContaining("const foo = 'context-update'"),
+        expect.stringContaining("const foo = 'context-update'"),
+      ])
+
+    for (const plugin of plugins) {
+      expect(plugin?.api?.options).toMatchObject({
+        type: expect.stringMatching(/^(create|update)$/),
+        file: normalizePath(path.resolve(testDir, 'hmr.js')),
+        timestamp: expect.any(Number),
+        modules: expect.any(Array),
+        read: expect.any(Function),
+        server: viteServer,
+      })
+      expect(plugin!.api!.options!.timestamp).toBeGreaterThanOrEqual(
+        beforeUpdate,
+      )
+    }
+    expect(plugins[1]!.api!.callOrder).toBeLessThan(plugins[0]!.api!.callOrder!)
   })
 
   // BUNDLED -> GENERATE_HMR_PATCH -> BUNDLING -> BUNDLE_ERROR -> BUNDLING -> BUNDLED

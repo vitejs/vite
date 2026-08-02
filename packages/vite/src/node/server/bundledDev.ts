@@ -8,15 +8,23 @@ import type { RolldownOutput } from 'rolldown'
 import colors from 'picocolors'
 import getEtag from 'etag'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
+import type { Plugin } from '../plugin'
 import { getHmrImplementation } from '../plugins/clientInjections'
 import {
   asyncFlatten,
   createDebugger,
   formatAndTruncateFileList,
+  monotonicDateNow,
 } from '../utils'
 import type { DevEnvironment } from './environment'
-import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
+import {
+  type NormalizedHotChannelClient,
+  debugHmr,
+  getShortName,
+  readModifiedFile,
+} from './hmr'
 import { prepareError } from './middlewares/error'
+import type { ViteDevServer } from '.'
 
 const debug = createDebugger('vite:full-bundle-mode')
 
@@ -107,10 +115,10 @@ export class BundledDev {
 
   private pendingPayloadFilenames = new Set<string>()
 
-  async listen(): Promise<void> {
+  async listen(server: ViteDevServer): Promise<void> {
     this._closed = false
     debug?.('INITIAL: setup bundle options')
-    const rolldownOptions = await this.getRolldownOptions()
+    const rolldownOptions = await this.getRolldownOptions(server)
     // NOTE: only single outputOptions is supported here
     if (
       Array.isArray(rolldownOptions.output) &&
@@ -368,7 +376,7 @@ export class BundledDev {
     }
   }
 
-  private async getRolldownOptions() {
+  private async getRolldownOptions(server: ViteDevServer) {
     const chunkMetadataMap = new ChunkMetadataMap()
     const rolldownOptions = resolveRolldownOptions(
       this.environment,
@@ -396,6 +404,25 @@ export class BundledDev {
     // https://github.com/vitejs/vite/issues/22651
     const plugins = await asyncFlatten([rolldownOptions.plugins])
     for (const plugin of plugins) {
+      const vitePlugin = plugin as Plugin | undefined
+      const hotUpdate = vitePlugin?.hotUpdate
+      if (hotUpdate) {
+        const handler =
+          typeof hotUpdate === 'function' ? hotUpdate : hotUpdate.handler
+        const wrappedHandler: typeof handler = function (this, options) {
+          return handler.call(this, {
+            ...options,
+            timestamp: monotonicDateNow(),
+            read: () => readModifiedFile(options.file),
+            server,
+          })
+        }
+        vitePlugin.hotUpdate =
+          typeof hotUpdate === 'function'
+            ? wrappedHandler
+            : { ...hotUpdate, handler: wrappedHandler }
+      }
+
       const transform =
         plugin && 'transform' in plugin ? plugin.transform : undefined
       if (!transform) continue

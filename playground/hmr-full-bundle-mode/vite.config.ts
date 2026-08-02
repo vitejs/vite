@@ -1,4 +1,10 @@
-import { type Plugin, defineConfig } from 'vite'
+import { type HotUpdateOptions, type Plugin, defineConfig } from 'vite'
+
+export interface HotUpdateContextApi {
+  options?: HotUpdateOptions
+  content?: string
+  callOrder?: number
+}
 
 export default defineConfig({
   experimental: {
@@ -8,8 +14,41 @@ export default defineConfig({
     // emit assets as files instead of inlining, for the new-asset HMR test
     assetsInlineLimit: 0,
   },
-  plugins: [waitBundleCompleteUntilAccess(), delayTransformComment()],
+  plugins: [
+    waitBundleCompleteUntilAccess(),
+    delayTransformComment(),
+    ...captureHotUpdateContexts(),
+  ],
 })
+
+function captureHotUpdateContexts(): Plugin<HotUpdateContextApi>[] {
+  const functionApi: HotUpdateContextApi = {}
+  const objectApi: HotUpdateContextApi = {}
+  let callIndex = 0
+  return [
+    {
+      name: 'capture-function-hot-update-context',
+      api: functionApi,
+      async hotUpdate(options) {
+        functionApi.callOrder = callIndex++
+        functionApi.options = options
+        functionApi.content = await options.read()
+      },
+    },
+    {
+      name: 'capture-object-hot-update-context',
+      api: objectApi,
+      hotUpdate: {
+        order: 'pre',
+        async handler(options) {
+          objectApi.callOrder = callIndex++
+          objectApi.options = options
+          objectApi.content = await options.read()
+        },
+      },
+    },
+  ]
+}
 
 function waitBundleCompleteUntilAccess(): Plugin {
   let resolvers: PromiseWithResolvers<void>
