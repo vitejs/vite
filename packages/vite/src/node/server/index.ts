@@ -16,7 +16,7 @@ import { determineAgent } from '@vercel/detect-agent'
 import { disableCache } from '@voidzero-dev/vite-task-client'
 import type { SourceMap } from 'rolldown'
 import type { ModuleRunner } from 'vite/module-runner'
-import type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
+import type { FSWatcher } from '#dep-types/chokidar'
 import type { Connect } from '#dep-types/connect'
 import type { CommonServerOptions } from '../http'
 import type {
@@ -68,6 +68,7 @@ import {
   resolveChokidarOptions,
   resolveEmptyOutDir,
 } from '../watch'
+import type { ServerWatchOptions } from '../watch'
 import { initPublicFiles } from '../publicDir'
 import { getEnvFilesForMode } from '../env'
 import type { RequiredExceptFor } from '../typeUtils'
@@ -139,10 +140,14 @@ export interface ServerOptions extends CommonServerOptions {
     ssrFiles?: string[]
   }
   /**
-   * chokidar watch options or null to disable FS watching
-   * https://github.com/paulmillr/chokidar/tree/3.6.0#api
+   * File system watcher options, or null to disable FS watching.
+   *
+   * Accepts chokidar options
+   * (https://github.com/paulmillr/chokidar/tree/3.6.0#api), which are used by
+   * the chokidar watcher, and Rolldown watch options, which are used by the
+   * Rolldown file watcher when full bundle mode is enabled.
    */
-  watch?: WatchOptions | null
+  watch?: ServerWatchOptions | null
   /**
    * Create Vite dev server to be used as a middleware in an existing server
    * @default false

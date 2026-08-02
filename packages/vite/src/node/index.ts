@@ -146,6 +146,7 @@ export type {
   ResolvedServerUrls,
   HttpServer,
 } from './server'
+export type { ServerWatchOptions } from './watch'
 export type {
   ViteBuilder,
   BuildAppHook,
