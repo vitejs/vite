@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-legacy",
-  "version": "8.2.0",
+  "version": "8.2.2",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -36,14 +36,14 @@
   "dependencies": {
     "@babel/core": "^7.29.7",
     "@babel/plugin-transform-dynamic-import": "^7.29.7",
-    "@babel/plugin-transform-modules-systemjs": "^7.29.7",
+    "@babel/plugin-transform-modules-systemjs": "^7.29.8",
     "@babel/preset-env": "^7.29.7",
     "babel-plugin-polyfill-corejs3": "^0.14.2",
     "babel-plugin-polyfill-regenerator": "^0.6.8",
-    "browserslist": "^4.28.6",
+    "browserslist": "^4.28.7",
     "browserslist-to-esbuild": "^2.1.1",
     "core-js": "^3.49.0",
-    "magic-string": "^0.30.21",
+    "magic-string": "^1.1.0",
     "regenerator-runtime": "^0.14.1",
     "systemjs": "^6.15.1"
   },
@@ -52,9 +52,9 @@
     "vite": "^8.0.0"
   },
   "devDependencies": {
-    "acorn": "^8.17.0",
+    "acorn": "^8.18.0",
     "picocolors": "^1.1.1",
-    "tsdown": "^0.22.5",
+    "tsdown": "^0.22.14",
     "unrun": "^0.3.1",
     "vite": "workspace:*"
   },
