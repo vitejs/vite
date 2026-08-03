@@ -661,8 +661,8 @@ importers:
         specifier: ^1.33.0
         version: 1.33.0
       postcss-nested:
-        specifier: ^7.0.2
-        version: 7.0.2(postcss@8.5.23)
+        specifier: ^8.0.0
+        version: 8.0.0(postcss@8.5.23)
       sass:
         specifier: ^1.102.0
         version: 1.102.0
@@ -6966,9 +6966,9 @@ packages:
     peerDependencies:
       postcss: ^8.2.14
 
-  postcss-nested@7.0.2:
-    resolution: {integrity: sha512-5osppouFc0VR9/VYzYxO03VaDa3e8F23Kfd6/9qcZTUI8P58GIYlArOET2Wq0ywSl2o2PjELhYOFI4W7l5QHKw==}
-    engines: {node: '>=18.0'}
+  postcss-nested@8.0.0:
+    resolution: {integrity: sha512-4iVyYzSpreefQJO1VLv3x2Eg5PBFDUGckCE9FeXPlyXjjO7QeKFeWYCjXVYEOsqzn4G8t1XqSziTtQfyjBQ3ag==}
+    engines: {node: ^22.0.0 || ^24.0.0 || >= 26.0.0}
     peerDependencies:
       postcss: ^8.2.14
 
@@ -6980,8 +6980,8 @@ packages:
     resolution: {integrity: sha512-Q8qQfPiZ+THO/3ZrOrO0cJJKfpYCagtMUkXbnEfmgUjwXg6z/WBeOyS9APBBPCTSiDV+s4SwQGu8yFsiMRIudg==}
     engines: {node: '>=4'}
 
-  postcss-selector-parser@7.1.1:
-    resolution: {integrity: sha512-orRsuYpJVw8LdAwqqLykBj9ecS5/cRHlI5+nvTo8LcCKmzDmqVORXtOIYEEQuL9D4BxtA1lm5isAqzQZCoQ6Eg==}
+  postcss-selector-parser@7.1.4:
+    resolution: {integrity: sha512-HeP7D2wyhkR+XaK6v4W8oRF62Dsz4flyuczALJp61GckGm42u1saSSJ/0auvcBqxs3jMRFEcPK34At/0JBKdOg==}
     engines: {node: '>=4'}
 
   postcss-value-parser@4.2.0:
@@ -13048,13 +13048,13 @@ snapshots:
     dependencies:
       icss-utils: 5.1.0(postcss@8.5.23)
       postcss: 8.5.23
-      postcss-selector-parser: 7.1.1
+      postcss-selector-parser: 7.1.4
       postcss-value-parser: 4.2.0
 
   postcss-modules-scope@3.2.1(postcss@8.5.23):
     dependencies:
       postcss: 8.5.23
-      postcss-selector-parser: 7.1.1
+      postcss-selector-parser: 7.1.4
 
   postcss-modules-values@4.0.0(postcss@8.5.23):
     dependencies:
@@ -13078,10 +13078,10 @@ snapshots:
       postcss: 8.5.23
       postcss-selector-parser: 6.1.2
 
-  postcss-nested@7.0.2(postcss@8.5.23):
+  postcss-nested@8.0.0(postcss@8.5.23):
     dependencies:
       postcss: 8.5.23
-      postcss-selector-parser: 7.1.1
+      postcss-selector-parser: 7.1.4
 
   postcss-selector-parser@6.0.10:
     dependencies:
@@ -13093,7 +13093,7 @@ snapshots:
       cssesc: 3.0.0
       util-deprecate: 1.0.2
 
-  postcss-selector-parser@7.1.1:
+  postcss-selector-parser@7.1.4:
     dependencies:
       cssesc: 3.0.0
       util-deprecate: 1.0.2
