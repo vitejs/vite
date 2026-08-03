@@ -296,10 +296,6 @@ You can also add a [custom domain](https://render.com/docs/custom-domains) to yo
 
 Deploy your static site using [Flightcontrol](https://www.flightcontrol.dev/?ref=docs-vite) by following these [instructions](https://www.flightcontrol.dev/docs/reference/examples/vite?ref=docs-vite).
 
-## Kinsta Static Site Hosting
-
-Deploy your static site using [Kinsta](https://kinsta.com/static-site-hosting/) by following these [instructions](https://kinsta.com/docs/static-site-hosting/static-site-quick-start/react-static-site-examples/#react-with-vite).
-
 ## xmit Static Site Hosting
 
 Deploy your static site using [xmit](https://xmit.co) by following this [guide](https://xmit.dev/guides/vite-quickstart/).
