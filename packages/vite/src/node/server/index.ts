@@ -145,7 +145,7 @@ export interface ServerOptions extends CommonServerOptions {
    * Accepts chokidar options
    * (https://github.com/paulmillr/chokidar/tree/3.6.0#api), which are used by
    * the chokidar watcher, and Rolldown watch options, which are used by the
-   * Rolldown file watcher when full bundle mode is enabled.
+   * Rolldown file watcher when bundled dev mode is enabled.
    */
   watch?: ServerWatchOptions | null
   /**
