@@ -35,9 +35,11 @@ test('linked css', async () => {
   expect(await getColor(atImport)).toBe('red')
 })
 
-// bundled dev: an edit that lands while the page is (re)loading or before the
-// client (re)connects is dropped entirely and the update never arrives — the
-// edit-propagation tests are flaky under parallel suite load (vitejs/vite#23028)
+// bundled dev drops an edit that arrives at a bad moment. Two such moments:
+// while the page is loading, and before the client has connected.
+// The update is then lost and never reaches the page.
+// That makes the edit-propagation tests flaky when the suite runs in parallel
+// (vitejs/vite#23028)
 test.runIf(!isBundled)('linked css edit propagation', async () => {
   const linked = await page.$('.linked')
   const atImport = await page.$('.linked-at-import')
@@ -59,7 +61,7 @@ test('css import from js', async () => {
   expect(await getColor(atImport)).toBe('purple')
 })
 
-// bundled dev: same dropped-update window as 'linked css edit propagation'
+// bundled dev: same dropped update as 'linked css edit propagation' above
 test.runIf(!isBundled)('css import from js edit propagation', async () => {
   const imported = await page.$('.imported')
   const atImport = await page.$('.imported-at-import')
@@ -84,7 +86,7 @@ test('postcss config', async () => {
   expect(await getColor(imported)).toBe('pink')
 })
 
-// bundled dev: same dropped-update window as 'linked css edit propagation'
+// bundled dev: same dropped update as 'linked css edit propagation' above
 test.runIf(!isBundled)('postcss config edit propagation', async () => {
   const imported = await page.$('.postcss .nesting')
 
@@ -420,9 +422,10 @@ test('minify css', async () => {
   expect(cssFile).not.toMatch('#ffff00b3')
 })
 
-// bundled dev: css?url resolves to a data: URI of the untransformed source
-// (postcss is not applied), so the rule never matches (vitejs/vite#22863,
-// fix pending in vitejs/vite#23072 — un-skips unchanged once it lands)
+// bundled dev turns css?url into a data: URI of the source file, without
+// running postcss on it. The rule this test looks for is never produced.
+// This is a real bug (vitejs/vite#22863).
+// The test passes again once it is fixed, with no change to the test.
 test.skipIf(isBundledDev)('?url', async () => {
   expect(await getColor('.url-imported-css')).toBe('yellow')
 })
@@ -435,7 +438,7 @@ test('?raw', async () => {
   )
 })
 
-// bundled dev: editing a ?raw import doesn't propagate to the page (vitejs/vite#23028)
+// bundled dev: editing a ?raw import does not reach the page (vitejs/vite#23028)
 test.runIf(!isBundled)('?raw edit propagation', async () => {
   editFile('raw-imported.css', (code) =>
     code.replace('color: yellow', 'color: blue'),
@@ -542,8 +545,6 @@ test.runIf(isBuild)('Scoped CSS via cssScopeTo should be treeshaken', () => {
 
 test('Scoped CSS should have a correct order', async () => {
   await page.goto(viteTestUrl + '/treeshake-scoped/')
-  // poll: under bundled dev the page can reload once right after navigation
-  // while the dev client settles
   await expect.poll(() => getColor('.treeshake-scoped-order')).toBe('red')
   await expect.poll(() => getBgColor('.treeshake-scoped-order')).toBe('blue')
 })
