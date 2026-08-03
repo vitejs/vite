@@ -5,7 +5,7 @@ function getWindows83ShortName(inputPath: string): string | undefined {
   try {
     const result = execSync(
       `powershell -Command "(New-Object -ComObject Scripting.FileSystemObject).GetFile('${inputPath}').ShortPath"`,
-      { encoding: 'utf-8', stdio: 'ignore' },
+      { encoding: 'utf-8', stdio: 'pipe' },
     ).trim()
     return result !== inputPath && result.includes('~') ? result : undefined
   } catch {
