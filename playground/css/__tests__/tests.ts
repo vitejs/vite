@@ -19,8 +19,6 @@ import {
 // note: tests should retrieve the element at the beginning of test and reuse it
 // in later assertions to ensure CSS HMR doesn't reload the page
 test('imported css', async () => {
-  // poll: under bundled dev the page can settle (reload once) right after
-  // navigation, so a one-shot read can catch an empty element
   await expect
     .poll(() => page.textContent('.imported-css-glob'))
     .toContain('.dir-import')
