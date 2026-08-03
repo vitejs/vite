@@ -71,12 +71,12 @@
   "dependencies": {
     "lightningcss": "^1.33.0",
     "picomatch": "^4.0.5",
-    "postcss": "^8.5.23",
+    "postcss": "^8.5.25",
     "rolldown": "~1.2.1",
     "tinyglobby": "^0.2.17"
   },
   "devDependencies": {
-    "@babel/parser": "^7.29.7",
+    "@babel/parser": "^7.29.8",
     "@jridgewell/remapping": "^2.3.5",
     "@jridgewell/trace-mapping": "^0.3.31",
     "@polka/compression": "^1.0.0-next.25",
@@ -86,11 +86,11 @@
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
     "@vercel/detect-agent": "^1.2.3",
-    "@vitejs/devtools": "^0.4.8",
+    "@vitejs/devtools": "^0.4.10",
     "@vitest/utils": "4.1.10",
     "@voidzero-dev/vite-task-client": "^0.2.0",
     "artichokie": "^0.4.4",
-    "baseline-browser-mapping": "^2.11.3",
+    "baseline-browser-mapping": "^2.11.10",
     "cac": "^7.0.0",
     "chokidar": "^3.6.0",
     "connect": "^3.7.0",

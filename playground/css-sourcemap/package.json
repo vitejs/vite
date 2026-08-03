@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "less": "^4.8.0",
+    "less": "^4.8.1",
     "lightningcss": "^1.33.0",
     "magic-string": "^1.1.0",
     "sass": "^1.102.0",
