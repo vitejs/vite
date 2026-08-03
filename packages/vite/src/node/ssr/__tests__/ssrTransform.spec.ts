@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { assert, expect, test } from 'vitest'
 import type { SourceMap } from 'rolldown'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
-import { transformWithEsbuild } from '../../plugins/esbuild'
+import { transformWithOxc } from '../../plugins/oxc'
 import { ssrTransform } from '../ssrTransform'
 import { createServer } from '../..'
 
@@ -1067,15 +1067,17 @@ test('jsx', async () => {
   }
   `
   const id = '/foo.jsx'
-  const result = await transformWithEsbuild(code, id)
+  const result = await transformWithOxc(code, id, {
+    jsx: { runtime: 'classic' },
+  })
   expect(await ssrTransformSimpleCode(result.code, '/foo.jsx'))
     .toMatchInlineSnapshot(`
       "const __vite_ssr_import_0__ = await __vite_ssr_import__("react", {"importedNames":["default"]});
       const __vite_ssr_import_1__ = await __vite_ssr_import__("foo", {"importedNames":["Foo","Slot"]});
 
 
-      function Bar({ Slot: Slot2 = /* @__PURE__ */ __vite_ssr_import_0__.default.createElement((0,__vite_ssr_import_1__.Foo), null) }) {
-        return /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(__vite_ssr_import_0__.default.Fragment, null, /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(Slot2, null));
+      function Bar({ Slot = /* @__PURE__ */ __vite_ssr_import_0__.default.createElement((0,__vite_ssr_import_1__.Foo), null) }) {
+      	return /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(__vite_ssr_import_0__.default.Fragment, null, /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(Slot, null));
       }
       "
     `)
@@ -1103,7 +1105,7 @@ export function fn1() {
 
 // https://github.com/vitest-dev/vitest/issues/1141
 test('export default expression', async () => {
-  // esbuild transform result of following TS code
+  // Oxc transform result of following TS code
   // export default <MyFn> function getRandom() {
   //   return Math.random()
   // }
@@ -1146,6 +1148,19 @@ test('import hoisted after hashbang', async () => {
       `#!/usr/bin/env node
 console.log(foo);
 import foo from "foo"`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "#!/usr/bin/env node
+    const __vite_ssr_import_0__ = await __vite_ssr_import__("foo", {"importedNames":["default"]});
+    console.log((0,__vite_ssr_import_0__.default));
+    "
+  `)
+})
+
+test('import hoisted after CRLF hashbang', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      '#!/usr/bin/env node\r\nconsole.log(foo);\r\nimport foo from "foo"',
     ),
   ).toMatchInlineSnapshot(`
     "#!/usr/bin/env node

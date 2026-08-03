@@ -1,3 +1,85 @@
+## [8.2.0](https://github.com/vitejs/vite/compare/v8.2.0-beta.0...v8.2.0) (2026-07-30)
+### Features
+
+* add `input` to `server.fs.allow` ([#23035](https://github.com/vitejs/vite/issues/23035)) ([95a3cda](https://github.com/vitejs/vite/commit/95a3cdab83e1125b03d2e8dd942fb6b64209e5fa))
+* **bundled-dev:** reload once after rebuild instead of via the fallback page ([#23106](https://github.com/vitejs/vite/issues/23106)) ([b24381d](https://github.com/vitejs/vite/commit/b24381d741941b9ce2b1c07db62cc5f4d7bad981))
+* **bundled-dev:** support worker file update accepted by HMR ([#23068](https://github.com/vitejs/vite/issues/23068)) ([0d04351](https://github.com/vitejs/vite/commit/0d04351fdc12258c75b9f1cda5780fdb836ed0ef))
+* **config:** include column in config incompatibility location ([#23064](https://github.com/vitejs/vite/issues/23064)) ([8a24572](https://github.com/vitejs/vite/commit/8a245726944ed29225920d49be77c33c6e03afc8))
+* **dev:** resolve interface name for explicit host in network URLs ([#22965](https://github.com/vitejs/vite/issues/22965)) ([3ac77d9](https://github.com/vitejs/vite/commit/3ac77d9dd742968961af38a5a91ed6b061ceda7d))
+
+### Bug Fixes
+
+* **bundledDev:** print build errors to the terminal when an HMR update fails ([#23024](https://github.com/vitejs/vite/issues/23024)) ([41c4658](https://github.com/vitejs/vite/commit/41c465896e8b11b1eb9c5fbdafbdcc528e189a2c))
+* **deps:** update all non-major dependencies ([#23069](https://github.com/vitejs/vite/issues/23069)) ([4c07b74](https://github.com/vitejs/vite/commit/4c07b74416f859d7e8bdace13409ef2d080edf76))
+* **hmr:** preserve environment snapshot during server restart ([#22992](https://github.com/vitejs/vite/issues/22992)) ([b1186c3](https://github.com/vitejs/vite/commit/b1186c36d06bb94941c58e8272fc4acb8512c93b))
+* **importAnalysis:** interop imports injected into optimized dep files by plugins ([#23029](https://github.com/vitejs/vite/issues/23029)) ([8c2a87d](https://github.com/vitejs/vite/commit/8c2a87d41fb24536e59643351758084cde4d0dd7))
+* **module-runner:** keep stack trace interception working when `Object.prototype` is frozen ([#23073](https://github.com/vitejs/vite/issues/23073)) ([599c5b0](https://github.com/vitejs/vite/commit/599c5b02a8b6879b05ede988020f1331e877aaea))
+* **server:** strip base in indexHtml module graph lookup ([#22932](https://github.com/vitejs/vite/issues/22932)) ([fa005d1](https://github.com/vitejs/vite/commit/fa005d19af5d847931c6dbefc63841c137383e6c))
+* support resolving top-level input option with plugins ([#23101](https://github.com/vitejs/vite/issues/23101)) ([41df81a](https://github.com/vitejs/vite/commit/41df81a6a4c3eef08f7a9a8ac9530cd136c0eafa))
+
+### Documentation
+
+* **config:** correct cacheDir default fallback description ([#23060](https://github.com/vitejs/vite/issues/23060)) ([aafa103](https://github.com/vitejs/vite/commit/aafa103af5d71fb59d7c3dd617d0cbef3b222f1f))
+
+### Tests
+
+* config CJS module vars in ESM case ([#23010](https://github.com/vitejs/vite/issues/23010)) ([d8cd388](https://github.com/vitejs/vite/commit/d8cd38830251b95fd7dddcd0eee0ce94cc61c2f4))
+
+## [8.2.0-beta.0](https://github.com/vitejs/vite/compare/v8.1.5...v8.2.0-beta.0) (2026-07-22)
+### Features
+
+* add `input` option ([#22642](https://github.com/vitejs/vite/issues/22642)) ([9beae37](https://github.com/vitejs/vite/commit/9beae37d7221b25463a011feb40b0303ca328d87))
+* **config:** warn features incompatible with native loader in bundle loader ([#22850](https://github.com/vitejs/vite/issues/22850)) ([05302b0](https://github.com/vitejs/vite/commit/05302b07267f6b4f9dbeac5b1d73fcc3dc06d730))
+* **css:** export PostCSS config type for type-safe configs ([#22792](https://github.com/vitejs/vite/issues/22792)) ([302c755](https://github.com/vitejs/vite/commit/302c755a8125b9a26214e3b413922b5513e41981))
+* **dev:** label network URLs with their interface name ([#22830](https://github.com/vitejs/vite/issues/22830)) ([78accc4](https://github.com/vitejs/vite/commit/78accc42a5b8887d9df624f7d4a934d3ead677d1))
+* **optimizer:** support aube lockfile ([#22813](https://github.com/vitejs/vite/issues/22813)) ([6319827](https://github.com/vitejs/vite/commit/6319827116c5be2a19c1b91c84ba3d38ad26a41c))
+* **optimizer:** support nub lockfile ([#22891](https://github.com/vitejs/vite/issues/22891)) ([65d3604](https://github.com/vitejs/vite/commit/65d3604f6fdbfcf6e86244d7fe3c1ca86acae701))
+* update rolldown-related dependencies and use client-side HMR in bundled-dev ([#22961](https://github.com/vitejs/vite/issues/22961)) ([960e9ef](https://github.com/vitejs/vite/commit/960e9efbc1372000caac46cc2f123cef4824e2bb))
+* **wasm:** expand test suite, unwrap WebAssembly.Global and enable js-string builtins ([#22674](https://github.com/vitejs/vite/issues/22674)) ([9e79b51](https://github.com/vitejs/vite/commit/9e79b51579457a9af4fa623b68a0bfabbf38010b))
+
+### Bug Fixes
+
+* **build:** map CSS chunks in chunk import maps (fix [#22946](https://github.com/vitejs/vite/issues/22946)) ([#22947](https://github.com/vitejs/vite/issues/22947)) ([e16ff3a](https://github.com/vitejs/vite/commit/e16ff3a1199293ac9cdfa6132c08fdea162215f3))
+* **config:** exclude virtual modules from native config compat check ([#22979](https://github.com/vitejs/vite/issues/22979)) ([2ced1fe](https://github.com/vitejs/vite/commit/2ced1fe4e4e480ed78cb7aa5c78319e57bfa7783))
+* **css:** rewrite urls in OnceExit-injected content ([#22983](https://github.com/vitejs/vite/issues/22983)) ([abb793e](https://github.com/vitejs/vite/commit/abb793e18c92592c21fbb8e1f3fc450b5839f04f))
+* **deps:** update all non-major dependencies ([#22985](https://github.com/vitejs/vite/issues/22985)) ([04f345b](https://github.com/vitejs/vite/commit/04f345b37064cd0bba6447eb5c32be5c22162f3d))
+* **deps:** update dependency magic-string to v1 ([#22998](https://github.com/vitejs/vite/issues/22998)) ([c60b4d7](https://github.com/vitejs/vite/commit/c60b4d7cdb85b7d4f78671cdcfb863e5f8b66bb7))
+* **hmr:** remove hot data after prune ([#23002](https://github.com/vitejs/vite/issues/23002)) ([be96316](https://github.com/vitejs/vite/commit/be9631658f5191ee5c5665e780239d42a330280a))
+* resolve root to real path ([#22832](https://github.com/vitejs/vite/issues/22832)) ([55bba7b](https://github.com/vitejs/vite/commit/55bba7bbd9de40d031360e4408fe91bff5b29ec9))
+
+### Performance Improvements
+
+* **config:** skip native config compat check when warning is ignored ([#23000](https://github.com/vitejs/vite/issues/23000)) ([18535d1](https://github.com/vitejs/vite/commit/18535d11cff9ce2a508798146a29d56a8fc5d901))
+* **optimizer:** check popular package manager lockfiles first ([#22909](https://github.com/vitejs/vite/issues/22909)) ([14fcb66](https://github.com/vitejs/vite/commit/14fcb66c7513957beea28de9657d15936ad48728))
+
+### Documentation
+
+* remove `@experimental` from `resolve.tsconfigPaths` JSDoc ([#23006](https://github.com/vitejs/vite/issues/23006)) ([961643a](https://github.com/vitejs/vite/commit/961643a44c2268b4226a885c89adfdd1d3ace635))
+
+### Miscellaneous Chores
+
+* fix ts erros in test cases ([#22972](https://github.com/vitejs/vite/issues/22972)) ([f654769](https://github.com/vitejs/vite/commit/f6547698b1b71387d7337b8ceac92d9b8aa68e1c))
+
+## <small>[8.1.5](https://github.com/vitejs/vite/compare/v8.1.4...v8.1.5) (2026-07-16)</small>
+### Bug Fixes
+
+* **bundled-dev:** avoid duplicated `buildEnd` ([#22931](https://github.com/vitejs/vite/issues/22931)) ([8100320](https://github.com/vitejs/vite/commit/810032097079be1a7da0e2b09ec9d92dd07ec13f))
+* **client:** overlay error message format align rolldown ([#22869](https://github.com/vitejs/vite/issues/22869)) ([5a72b87](https://github.com/vitejs/vite/commit/5a72b8780705b575026617e86b0b92dea63a56a5))
+* **deps:** update all non-major dependencies ([#22921](https://github.com/vitejs/vite/issues/22921)) ([fef682d](https://github.com/vitejs/vite/commit/fef682d3f067d534a559faf6fd9baedda2e9f8f1))
+* **deps:** update rolldown-related dependencies ([#22922](https://github.com/vitejs/vite/issues/22922)) ([3c345e4](https://github.com/vitejs/vite/commit/3c345e475a5546a1cc6374682af89caebfe9c593))
+* **module-runner:** don't crash stack-trace source mapping when globalThis.Buffer is absent ([#22945](https://github.com/vitejs/vite/issues/22945)) ([f8b38e3](https://github.com/vitejs/vite/commit/f8b38e316bcefbf29f762f90ee49c88cd52c43b5))
+* **optimizer:** respect importer module format for dynamic import interop with CJS deps ([#22951](https://github.com/vitejs/vite/issues/22951)) ([6c08c39](https://github.com/vitejs/vite/commit/6c08c39ac4fb5868d080a51ff976a44693fc56ab))
+* **ssr:** scope switch-case declarations to the switch, not the function ([#22893](https://github.com/vitejs/vite/issues/22893)) ([b59a73f](https://github.com/vitejs/vite/commit/b59a73f76f5557492d83d097bb33b3dd02f27d51))
+
+### Documentation
+
+* **build:** fix incorrect `@default` for build.cssMinify ([#22948](https://github.com/vitejs/vite/issues/22948)) ([c88c236](https://github.com/vitejs/vite/commit/c88c236186d8e2384653e382dd0960ca1ff5b24c))
+* **build:** fix incorrect `@default` for build.lib.formats ([#22911](https://github.com/vitejs/vite/issues/22911)) ([369ed60](https://github.com/vitejs/vite/commit/369ed609a4aace3aee4e4194a54990694aa4e7ac))
+
+### Tests
+
+* avoid scanner scanning all files under `__tests__` ([#22912](https://github.com/vitejs/vite/issues/22912)) ([c961cae](https://github.com/vitejs/vite/commit/c961cae2868cc1521457ec60583867f0440e6949))
+
 ## <small>[8.1.4](https://github.com/vitejs/vite/compare/v8.1.3...v8.1.4) (2026-07-09)</small>
 ### Features
 

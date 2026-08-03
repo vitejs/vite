@@ -331,6 +331,7 @@ describe('plugin container', () => {
         const plugin: Plugin = {
           name: 'p1',
           async resolveId(id, importer) {
+            if (id !== '/x.js') return
             calledCount++
             if (calledCount <= 1) {
               return await this.resolve(id, importer, { skipSelf: true })

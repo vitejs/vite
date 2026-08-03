@@ -6,7 +6,12 @@ import type { SourceMap } from 'rolldown'
 import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
 import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
-import { combineSourcemaps, generateCodeFrame, numberToPos } from '../utils'
+import {
+  combineSourcemaps,
+  generateCodeFrame,
+  getFileStartIndex,
+  numberToPos,
+} from '../utils'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
@@ -570,7 +575,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
             // inject extra code at the top or next line of hashbang
             if (code.startsWith('#!')) {
-              s.prependLeft(code.indexOf('\n') + 1, mapDepsCode)
+              s.prependLeft(getFileStartIndex(code), mapDepsCode)
             } else {
               s.prepend(mapDepsCode)
             }

@@ -6,7 +6,7 @@ import {
   testDirDep,
   testInjectUrl,
   testSourceInput,
-} from './lightningcss-plugins'
+} from './lightningcss-plugins.js'
 
 export default defineConfig({
   ...baseConfig,

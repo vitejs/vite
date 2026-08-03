@@ -1680,6 +1680,7 @@ export function getImportMap(
 ):
   | {
       asset: OutputAsset
+      content: { imports: Record<string, string> }
       /** import map entries with the base stripped (placeholder name -> real name) */
       mapping: Record<string, string>
     }
@@ -1698,5 +1699,5 @@ export function getImportMap(
       v.slice(config.base.length),
     ]),
   )
-  return { asset, mapping }
+  return { asset, content, mapping }
 }

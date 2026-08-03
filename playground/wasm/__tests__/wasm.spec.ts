@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { isBuild, page } from '~utils'
+import { isBuild, isBundledDev, page } from '~utils'
 
 test('should work when inlined', async () => {
   await page.click('.inline-wasm .run')
@@ -22,7 +22,7 @@ test('init function returns WebAssembly.Instance', async () => {
     .toMatch('true')
 })
 
-test('?url', async () => {
+test.skipIf(isBundledDev)('?url', async () => {
   expect(await page.textContent('.url')).toMatch(
     isBuild ? 'data:application/wasm' : '/light.wasm',
   )
@@ -40,4 +40,28 @@ test('direct wasm import with wasm imports', async () => {
   await expect
     .poll(() => page.textContent('.direct-wasm-with-imports .result'))
     .toMatch('42')
+})
+
+test('direct wasm import unwraps exported WebAssembly.Global', async () => {
+  await expect
+    .poll(() => page.textContent('.direct-wasm-global .result'))
+    .toMatch('42 number')
+})
+
+test('wasm importing a global from another wasm', async () => {
+  await expect
+    .poll(() => page.textContent('.direct-wasm-global-import .result'))
+    .toMatch('43')
+})
+
+test('wasm reading a mutable global mutated by another wasm', async () => {
+  await expect
+    .poll(() => page.textContent('.direct-wasm-mutable-global-import .result'))
+    .toMatch('9')
+})
+
+test('wasm using js-string builtins and imported string constants', async () => {
+  await expect
+    .poll(() => page.textContent('.direct-wasm-string-builtins .result'))
+    .toMatch('5')
 })

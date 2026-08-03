@@ -4,6 +4,7 @@ import { stripVTControlCharacters } from 'node:util'
 import { describe, expect, onTestFinished, test } from 'vitest'
 import {
   isBuild,
+  isBundledDev,
   page,
   readDepOptimizationMetadata,
   readFile,
@@ -19,7 +20,7 @@ test('basic', async () => {
 })
 
 describe.runIf(!isBuild)('pre-bundling', () => {
-  test('client', async () => {
+  test.skipIf(isBundledDev)('client', async () => {
     const metaJson = readDepOptimizationMetadata()
 
     expect(metaJson.optimized['react']).toBeTruthy()
@@ -52,7 +53,7 @@ describe.runIf(!isBuild)('pre-bundling', () => {
     expect(depsFilesWithProcessEnvNodeEnv.length).toBeGreaterThan(0)
   })
 
-  test('deps reload', async () => {
+  test.skipIf(isBundledDev)('deps reload', async () => {
     const envs = ['client', 'server'] as const
 
     const clientMeta = readDepOptimizationMetadata('client')
