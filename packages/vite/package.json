@@ -127,6 +127,7 @@
     "rollup-plugin-license": "^3.7.1",
     "sass": "^1.102.0",
     "sass-embedded": "^1.100.0",
+    "signal-exit": "^4.1.0",
     "sirv": "^3.0.2",
     "strip-literal": "^4.0.0",
     "terser": "^5.49.0",

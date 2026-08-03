@@ -44,9 +44,9 @@ import {
   normalizePath,
   resolveHostname,
   resolveServerUrls,
+  setupExitListener,
   setupHmrWsOptionCompat,
-  setupSIGTERMListener,
-  teardownSIGTERMListener,
+  teardownExitListener,
 } from '../utils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
@@ -269,8 +269,8 @@ export type ServerHook = (
 export interface CloseServerHookContext {
   /**
    * Whether the server is being restarted (e.g. a config change or
-   * `server.restart()`) or closed (e.g. the `q` shortcut, SIGTERM, stdin
-   * ending, or `server.close()`).
+   * `server.restart()`) or closed (e.g. the `q` shortcut, a forced exit signal
+   * such as SIGINT/SIGTERM, stdin ending, or `server.close()`).
    */
   reason: 'restart' | 'close'
 }
@@ -629,7 +629,7 @@ export async function _createServer(
   let closeServerPromise: Promise<void> | undefined
   const closeServer = async (reason: 'restart' | 'close') => {
     if (!middlewareMode) {
-      teardownSIGTERMListener(closeServerAndExit)
+      teardownExitListener(closeServerAndExit)
     }
 
     await Promise.allSettled([
@@ -876,17 +876,15 @@ export async function _createServer(
     },
   })
 
-  const closeServerAndExit = async (_: unknown, exitCode?: number) => {
-    try {
-      await server.close()
-    } finally {
-      process.exitCode ??= exitCode ? 128 + exitCode : undefined
-      process.exit()
-    }
+  // Dispose the server on exit (SIGINT/Ctrl+C, SIGTERM, stdin end, etc.). The
+  // shared exit handler in `setupExitListener` awaits this and owns the final
+  // process exit, so this callback only performs cleanup.
+  const closeServerAndExit = async () => {
+    await server.close()
   }
 
   if (!middlewareMode) {
-    setupSIGTERMListener(closeServerAndExit)
+    setupExitListener(closeServerAndExit)
   }
 
   const onHMRUpdate = async (

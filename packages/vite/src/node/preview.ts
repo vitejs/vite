@@ -30,9 +30,9 @@ import {
   normalizePath,
   resolveHostname,
   resolveServerUrls,
-  setupSIGTERMListener,
+  setupExitListener,
   shouldServeFile,
-  teardownSIGTERMListener,
+  teardownExitListener,
 } from './utils'
 import { printServerUrls } from './logger'
 import { bindCLIShortcuts } from './shortcuts'
@@ -172,7 +172,7 @@ export async function preview(
   // Promise used by `server.close()` to ensure `closeServer()` is only called once
   let closeServerPromise: Promise<void> | undefined
   const closeServer = async () => {
-    teardownSIGTERMListener(closeServerAndExit)
+    teardownExitListener(closeServerAndExit)
 
     await closeHttpServer()
     server.resolvedUrls = null
@@ -212,16 +212,14 @@ export async function preview(
     },
   }
 
-  const closeServerAndExit = async (_: unknown, exitCode?: number) => {
-    try {
-      await server.close()
-    } finally {
-      process.exitCode ??= exitCode ? 128 + exitCode : undefined
-      process.exit()
-    }
+  // Dispose the server on exit (SIGINT/Ctrl+C, SIGTERM, stdin end, etc.). The
+  // shared exit handler in `setupExitListener` awaits this and owns the final
+  // process exit, so this callback only performs cleanup.
+  const closeServerAndExit = async () => {
+    await server.close()
   }
 
-  setupSIGTERMListener(closeServerAndExit)
+  setupExitListener(closeServerAndExit)
 
   // cors
   const { cors } = config.preview

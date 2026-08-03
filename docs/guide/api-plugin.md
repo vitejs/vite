@@ -347,7 +347,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
   The `context.reason` distinguishes the two cases:
   - `'restart'` — the server is restarting (e.g. a config file change or a call to `server.restart()`).
-  - `'close'` — the server is shutting down (e.g. the `q` shortcut, or a call to `server.close()`).
+  - `'close'` — the server is shutting down (e.g. the `q` shortcut, `SIGTERM`, a forced exit such as `Ctrl+C`, or a call to `server.close()`).
 
   ```js
   const myPlugin = () => {
