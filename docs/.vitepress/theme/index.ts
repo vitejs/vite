@@ -28,6 +28,29 @@ export default {
     app.component('ScrimbaLink', ScrimbaLink)
     app.use(TwoslashFloatingVue)
 
+    const labelCopyButtons = (root: ParentNode = document) => {
+      root.querySelectorAll<HTMLButtonElement>('button.copy').forEach((button) => {
+        button.setAttribute('aria-label', 'Copy code')
+        button.setAttribute('title', 'Copy code')
+      })
+    }
+
+    if (typeof window !== 'undefined') {
+      labelCopyButtons()
+
+      const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          mutation.addedNodes.forEach((node) => {
+            if (node instanceof Element) {
+              labelCopyButtons(node)
+            }
+          })
+        }
+      })
+
+      observer.observe(document.body, { childList: true, subtree: true })
+    }
+
     Theme.enhanceApp(ctx)
   },
 }
