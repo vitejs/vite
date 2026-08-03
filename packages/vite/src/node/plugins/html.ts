@@ -410,7 +410,7 @@ export function getCssFilesForChunk(
 /**
  * Compiles index.html into an entry js module
  */
-export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
+export function htmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
     config.plugins,
   )
@@ -427,11 +427,20 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
 
+  let server: ViteDevServer | undefined
+
   return {
     name: 'vite:build-html',
 
     applyToEnvironment(environment) {
-      return environment.config.isBundled
+      // in bundled environments (build / full bundle mode) this plugin does the
+      // whole HTML processing. in unbundled dev it only runs for the client
+      // environment, where it delegates to `server.transformIndexHtml`.
+      return environment.config.isBundled || environment.name === 'client'
+    },
+
+    configureServer(s) {
+      server = s
     },
 
     transform: {
@@ -441,6 +450,17 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const relativeUrlPath = normalizePath(path.relative(config.root, id))
         const publicPath = `/${relativeUrlPath}`
         const publicBase = getBaseInHTML(relativeUrlPath, config)
+
+        // in unbundled dev the HTML is processed by the dev html transform
+        // pipeline instead, and only the result is carried on the module meta.
+        if (server && !this.environment.config.isBundled) {
+          const result = await server.transformIndexHtml(publicPath, html)
+          return {
+            code: '',
+            map: { mappings: '' },
+            meta: { 'vite:build-html': result },
+          }
+        }
 
         const publicToRelative = (filename: string) => publicBase + filename
         const toOutputPublicFilePath = (url: string) =>

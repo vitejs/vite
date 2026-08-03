@@ -136,7 +136,7 @@ const processNodeUrl = (
   useSrcSetReplacer: boolean,
   config: ResolvedConfig,
   htmlPath: string,
-  originalUrl?: string,
+  _originalUrl?: string,
   server?: ViteDevServer,
   isClassicScriptLink?: boolean,
 ): string => {
@@ -152,26 +152,20 @@ const processNodeUrl = (
       // rewrite `./index.js` -> `localhost:5173/a/index.js`.
       // rewrite `../index.js` -> `localhost:5173/index.js`.
       // rewrite `relative/index.js` -> `localhost:5173/a/relative/index.js`.
-      ((url[0] === '.' || isBareRelative(url)) &&
-        originalUrl &&
-        originalUrl !== '/' &&
-        htmlPath === '/index.html')
+      url[0] === '.' ||
+      isBareRelative(url)
     ) {
-      url = path.posix.join(config.base, url)
+      url = path.posix.join(
+        config.base,
+        getHtmlDirnameForRelativeUrl(htmlPath),
+        url,
+      )
     }
 
     let preTransformUrl: string | undefined
-
     if (!isClassicScriptLink && shouldPreTransform(url, config)) {
-      if (url[0] === '/' && url[1] !== '/') {
-        preTransformUrl = url
-      } else if (url[0] === '.' || isBareRelative(url)) {
-        preTransformUrl = path.posix.join(
-          config.base,
-          getHtmlDirnameForRelativeUrl(htmlPath),
-          url,
-        )
-      }
+      // relative urls have already been resolved to an absolute url above
+      preTransformUrl = url
     }
 
     if (server) {
@@ -382,6 +376,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         }
       }),
     )
+
+    const module = clientModuleGraph.getModuleById(filename)
+    if (module) {
+      clientModuleGraph.invalidateModule(module)
+    }
   }
 
   await Promise.all([
@@ -538,9 +537,22 @@ export function indexHtmlMiddleware(
           : server.config.preview.headers
 
         try {
-          let html = await fsp.readFile(filePath, 'utf-8')
+          let html: string
           if (isDev) {
-            html = await server.transformIndexHtml(url, html, req.originalUrl)
+            const clientEnv = server.environments.client
+            const resolvedId =
+              await clientEnv.pluginContainer.resolveId(filePath)
+            if (!resolvedId) return next()
+
+            const result = await clientEnv.transformRequest(filePath)
+            if (!result) return next()
+            const moduleInfo = clientEnv.pluginContainer.getModuleInfo(
+              resolvedId.id,
+            )
+            if (!moduleInfo) return next()
+            html = moduleInfo.meta['vite:build-html'] ?? ''
+          } else {
+            html = await fsp.readFile(filePath, 'utf-8')
           }
           return send(req, res, html, 'html', { headers })
         } catch (e) {

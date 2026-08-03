@@ -151,7 +151,7 @@ describe('image', () => {
       expect(s).toMatch(
         isBuild
           ? /other-assets\/asset-[-\w]{8}\.png \dx/
-          : /\.\/nested\/asset\.png \dx/,
+          : /\/nested\/asset\.png \dx/,
       )
     })
   })
