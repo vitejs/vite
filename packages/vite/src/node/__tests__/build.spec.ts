@@ -2,7 +2,7 @@ import { basename, resolve } from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
 import fsp from 'node:fs/promises'
 import colors from 'picocolors'
-import { afterEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, describe, expect, assert, test, vi } from 'vitest'
 import type {
   LogLevel,
   OutputChunk,
@@ -1097,7 +1097,8 @@ test('resolving lib entry from the top-level input does not mutate the user conf
     },
     'build',
   )
-  const resolvedLib = config.environments.client.build.lib as LibraryOptions
+  const resolvedLib = config.environments.client.build.lib
+  assert(resolvedLib !== false)
   expect(resolvedLib.entry).toBe('src/main.ts')
   expect(userLib.entry).toBeUndefined()
 })
