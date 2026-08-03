@@ -2,7 +2,7 @@ import { basename, resolve } from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
 import fsp from 'node:fs/promises'
 import colors from 'picocolors'
-import { afterEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, describe, expect, assert, test, vi } from 'vitest'
 import type {
   LogLevel,
   OutputChunk,
@@ -1085,6 +1085,22 @@ test('sharedConfigBuild and emitAssets', async () => {
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
   ])
+})
+
+test('resolving lib entry from the top-level input does not mutate the user config', async () => {
+  const userLib: LibraryOptions = { formats: ['es'] }
+  const config = await resolveConfig(
+    {
+      configFile: false,
+      input: 'src/main.ts',
+      build: { lib: userLib },
+    },
+    'build',
+  )
+  const resolvedLib = config.environments.client.build.lib
+  assert(resolvedLib !== false)
+  expect(resolvedLib.entry).toBe('src/main.ts')
+  expect(userLib.entry).toBeUndefined()
 })
 
 describe('onRollupLog', () => {
