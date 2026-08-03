@@ -52,7 +52,7 @@ export function resolveEmptyOutDir(
 /**
  * Watch options for the dev server. Accepts both chokidar options and Rolldown
  * watch options. The chokidar options are used by the chokidar watcher, while
- * the Rolldown options are used by the Rolldown file watcher when full bundle
+ * the Rolldown options are used by the Rolldown file watcher when bundled dev
  * mode is enabled.
  */
 export type ServerWatchOptions = WatchOptions &
