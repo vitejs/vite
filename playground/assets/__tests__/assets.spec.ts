@@ -36,10 +36,11 @@ const fetchPath = (p: string) => {
   })
 }
 
-// bundled dev inlines ?url CSS as a data URI without running the CSS
-// pipeline, so its relative url() survives untransformed and 404s
-// (vitejs/vite#22863) — a real bug, so this test must stay red there;
-// once fixed, it un-skips unchanged
+// bundled dev turns a `?url` CSS import into a data URI, and it skips the CSS
+// pipeline while doing so. A `url()` inside that CSS keeps its original
+// relative path, which then points nowhere and gives a 404.
+// This is a real bug (vitejs/vite#22863), so the test must stay skipped here.
+// It will pass again once the bug is fixed, with no change to the test.
 test.skipIf(isBundledDev)('should have no 404s', () => {
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
@@ -370,7 +371,11 @@ describe('css url() references', () => {
     expect(await getBg('.css-image-set-svg')).toMatch(/data:image\/svg\+xml,.+/)
   })
 
-  // bundled dev: ?url CSS is inlined as a data URI (build always emits a file for CSS assets), so the svg inside it is neither inlined nor based (vitejs/vite#23028)
+  // bundled dev turns the `?url` CSS into a data URI, while build always
+  // writes a CSS file. The svg inside that CSS is therefore never processed:
+  // it is not inlined, and it does not get the base prefix.
+  // Same cause as '?url import on css' below: the CSS pipeline never runs on a
+  // `?url` import (vitejs/vite#22863)
   test.skipIf(isBundledDev)('url() with svg in .css?url', async () => {
     const bg = await getBg('.css-url-svg-in-url')
     expect(bg).toMatch(/data:image\/svg\+xml,.+/)
@@ -502,7 +507,9 @@ test('Unknown extension assets import with ?inline', async () => {
 
 test('Asset matched by a relative path in assetsInclude import', async () => {
   expect(await page.textContent('.relative-path-assets-include')).toMatch(
-    isBuild ? 'data:application/octet-stream;' : '/nested/relative-path.custom',
+    isBundled
+      ? 'data:application/octet-stream;'
+      : '/nested/relative-path.custom',
   )
 })
 
@@ -525,13 +532,15 @@ test('?raw import', async () => {
     .toBe('<div>partial updated</div>\n')
 })
 
-// bundled dev logs `playground-temp/assets/nested/...` instead of the
-// `/nested/...` URL path plain dev prints. Vite-side gap, not rolldown
-// (vitejs/vite#23028): the server never passes `cwd` to rolldown
-// (bundledDev.ts), so module ids anchor at process.cwd() and leak the
-// project's location in the workspace, and bundledDevHmrClient.ts logs the
-// raw ids without normalizing them to URL-style paths. Fix both, then this
-// un-skips unchanged. Relies on the edit made by '?raw import' above.
+// bundled dev logs `playground-temp/assets/nested/...` where dev logs the URL
+// path `/nested/...`. This is a gap on the vite side, not in rolldown
+// (vitejs/vite#23028). Two causes:
+// - the server never passes `cwd` to rolldown (bundledDev.ts), so module ids
+//   start from process.cwd() and show where the project sits on disk
+// - bundledDevHmrClient.ts logs those ids as they are, without turning them
+//   into URL paths first
+// Fix both and this test passes again with no change to it.
+// It depends on the file edit made by '?raw import' above.
 test.runIf(!isBundled)('?raw import hot-update log', () => {
   expect(browserLogs).toStrictEqual(
     expect.arrayContaining([
@@ -587,10 +596,10 @@ test('?url import', async () => {
   )
 })
 
-// bundled dev inlines the ?url CSS as a data URI while build always emits a
-// CSS asset file (vitejs/vite#22863, fix pending in vitejs/vite#23072). After
-// the fix bundled dev emits a build-shaped URL — un-skip and flip the ternary
-// below from `isBuild` to `isBundled`.
+// bundled dev turns the `?url` CSS into a data URI, while build always writes
+// a CSS file (vitejs/vite#22863).
+// After the fix, bundled dev returns the same URL shape as build. Then remove
+// the skip and change `isBuild` below to `isBundled`.
 test.skipIf(isBundledDev)('?url import on css', async () => {
   const txt = await page.textContent('.url-css')
   expect(txt).toMatch(

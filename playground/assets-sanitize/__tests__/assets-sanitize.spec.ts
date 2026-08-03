@@ -45,11 +45,9 @@ if (isBuild) {
   })
 }
 
-// bundled dev: the /.env request gets the SPA html fallback (200, no file
-// content) instead of the 403 from server.fs.deny (vitejs/vite#23028).
-// Security-relevant gap, not cosmetic: `server.fs.deny` goes unexercised
-// under bundled dev — verified no file content leaks (fallback body only),
-// but the deny path itself must be restored with static serving.
+// this checks that the dev server refuses to serve /.env. Build and bundled
+// dev serve only the files in the output, so a request can never reach a
+// project file. The check does not apply to them.
 test.runIf(!isBundled)('denied .env', async () => {
   expect(await page.textContent('.unsafe-dotenv')).toBe('403')
   expect(await page.textContent('.unsafe-dotenv-double-slash')).toBe('200') // SPA fallback

@@ -10,9 +10,9 @@ import {
   page,
 } from '~utils'
 
-// bundled dev serves hashed bundle-output asset URLs like build, but at the
-// default assets dir — build's custom assetFileNames (other-assets/) does not
-// apply
+// bundled dev serves hashed asset URLs like build. But it writes them to the
+// default `assets/` folder, because build's custom assetFileNames setting
+// (other-assets/) is not applied here.
 const absoluteAssetMatch = isBuild
   ? /http.*\/other-assets\/asset-[-\w]{8}\.png/
   : isBundledDev
