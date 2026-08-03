@@ -38,8 +38,8 @@ const fetchPath = (p: string) => {
 
 // bundled dev inlines ?url CSS as a data URI without running the CSS
 // pipeline, so its relative url() survives untransformed and 404s
-// (vitejs/vite#22863, fix pending in vitejs/vite#23072) — a real bug, so this
-// test must stay red there; once fixed, it un-skips unchanged
+// (vitejs/vite#22863) — a real bug, so this test must stay red there;
+// once fixed, it un-skips unchanged
 test.skipIf(isBundledDev)('should have no 404s', () => {
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
