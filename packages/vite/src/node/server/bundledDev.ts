@@ -409,6 +409,7 @@ export class BundledDev {
         ? rolldownOptions.experimental.devMode
         : {}),
       implement: '',
+      skipCommonRuntimeInjection: true,
     }
 
     // disable inlineConst optimization due to a bug in Rolldown
