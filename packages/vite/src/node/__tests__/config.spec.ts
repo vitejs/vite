@@ -1798,6 +1798,7 @@ describe('loadConfigFromFile', () => {
         { command: 'build', mode: 'production' },
         undefined,
         root,
+        'silent',
       )
       expect(result).toBeTruthy()
       expect(result?.config).toStrictEqual({ define: { foo: 1 } })
@@ -1910,6 +1911,7 @@ describe('loadConfigFromFile', () => {
       {} as any,
       path.resolve(fixtures, './cjs-module-vars-in-esm/vite.config.ts'),
       path.resolve(fixtures, './cjs-module-vars-in-esm'),
+      'silent',
     ))!
     const c = config as any
     expect(c.dirname).toContain('cjs-module-vars-in-esm')
