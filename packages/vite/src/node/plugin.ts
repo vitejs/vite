@@ -98,7 +98,10 @@ declare module 'rolldown' {
  * Environment Plugins are closer to regular rollup plugins. They can't define
  * app level hooks (like config, configResolved, configureServer, etc).
  */
-export interface Plugin<A = any> extends RolldownPlugin<A> {
+// `hotUpdate` is left out on purpose: rolldown's dev-only version takes plain
+// module ids, Vite's takes `EnvironmentModuleNode` objects. See
+// `bundledDevHmr.ts` for how the two are translated.
+export interface Plugin<A = any> extends Omit<RolldownPlugin<A>, 'hotUpdate'> {
   /**
    * Perform custom handling of HMR updates.
    * The handler receives an options containing changed filename, timestamp, a
