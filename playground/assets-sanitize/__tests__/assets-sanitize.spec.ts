@@ -1,14 +1,14 @@
 import { expect, test } from 'vitest'
-import { getBg, isBuild, page, readManifest } from '~utils'
+import {
+  getBg,
+  isBuild,
+  isBundled,
+  isBundledDev,
+  page,
+  readManifest,
+} from '~utils'
 
-if (!isBuild) {
-  test('importing asset with special char in filename works in dev', async () => {
-    expect(await getBg('.plus-circle')).toContain('+circle.svg')
-    expect(await page.textContent('.plus-circle')).toMatch('+circle.svg')
-    expect(await getBg('.underscore-circle')).toContain('_circle.svg')
-    expect(await page.textContent('.underscore-circle')).toMatch('_circle.svg')
-  })
-} else {
+if (isBuild) {
   test('importing asset with special char in filename works in build', async () => {
     const manifest = readManifest()
     const plusCircleAsset = manifest['+circle.svg'].file
@@ -24,9 +24,31 @@ if (!isBuild) {
     expect(plusCircleAsset).not.toEqual(underscoreCircleAsset)
     expect(Object.keys(manifest).length).toBe(3) // 2 svg, 1 index.js
   })
+} else if (isBundledDev) {
+  // bundled dev sanitizes and hashes filenames like build, but it writes no manifest file to read
+  test('importing asset with special char in filename works in bundled dev', async () => {
+    const plusCircleAsset = await page.textContent('.plus-circle')
+    const underscoreCircleAsset = await page.textContent('.underscore-circle')
+    expect(plusCircleAsset).toMatch(/\/assets\/_circle-[-\w]{8}\.svg/)
+    expect(underscoreCircleAsset).toMatch(/\/assets\/_circle-[-\w]{8}\.svg/)
+    // only the hash tells the two files apart after sanitization
+    expect(plusCircleAsset).not.toEqual(underscoreCircleAsset)
+    expect(await getBg('.plus-circle')).toContain(plusCircleAsset)
+    expect(await getBg('.underscore-circle')).toContain(underscoreCircleAsset)
+  })
+} else {
+  test('importing asset with special char in filename works in dev', async () => {
+    expect(await getBg('.plus-circle')).toContain('+circle.svg')
+    expect(await page.textContent('.plus-circle')).toMatch('+circle.svg')
+    expect(await getBg('.underscore-circle')).toContain('_circle.svg')
+    expect(await page.textContent('.underscore-circle')).toMatch('_circle.svg')
+  })
 }
 
-test.runIf(!isBuild)('denied .env', async () => {
+// this checks that the dev server refuses to serve /.env. Build and bundled
+// dev serve only the files in the output, so a request can never reach a
+// project file. The check does not apply to them.
+test.runIf(!isBundled)('denied .env', async () => {
   expect(await page.textContent('.unsafe-dotenv')).toBe('403')
   expect(await page.textContent('.unsafe-dotenv-double-slash')).toBe('200') // SPA fallback
 })
