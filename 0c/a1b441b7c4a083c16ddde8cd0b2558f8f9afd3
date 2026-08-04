@@ -1,0 +1,27 @@
+playground/assets/__tests__/assets.spec.ts
+  s_1f83c44cb39506::t_0568a1ec1b8b31 143-146
+playground/assets/__tests__/encoded-base/assets-encoded-base.spec.ts
+  s_1f83c44cb39506::t_e1872ed908759f 63-66
+playground/assets/__tests__/relative-base/assets-relative-base.spec.ts
+  s_1f83c44cb39506::t_71e9251a92e54b 67-70
+playground/assets/__tests__/runtime-base/assets-runtime-base.spec.ts
+  s_1f83c44cb39506::t_cb4e6f1a879733 67-70
+playground/assets/__tests__/url-base/assets-url-base.spec.ts
+  s_1f83c44cb39506::t_16f316ad0d955d 65-68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "0ca1b441b7c4a083c16ddde8cd0b2558f8f9afd3",
+  "prompts": {},
+  "sessions": {
+    "s_1f83c44cb39506": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fcb96-ae8b-70c1-a17b-de284ee00ccb",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
