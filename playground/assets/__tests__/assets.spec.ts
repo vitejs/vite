@@ -530,37 +530,22 @@ test('?raw import', async () => {
   await expect
     .poll(() => page.textContent('.raw-html'))
     .toBe('<div>partial updated</div>\n')
-})
 
-// bundled dev logs `playground-temp/assets/nested/...` where dev logs the URL
-// path `/nested/...`. This is a gap on the vite side, not in rolldown
-// (vitejs/vite#23028). Two causes:
-// - the server never passes `cwd` to rolldown (bundledDev.ts), so module ids
-//   start from process.cwd() and show where the project sits on disk
-// - bundledDevHmrClient.ts logs those ids as they are, without turning them
-//   into URL paths first
-// Fix both and this test passes again with no change to it.
-// It depends on the file edit made by '?raw import' above.
-test.runIf(!isBundled)('?raw import hot-update log', () => {
-  expect(browserLogs).toStrictEqual(
-    expect.arrayContaining([
-      expect.stringContaining('hot updated: /nested/partial.html?raw via'),
-    ]),
-
-  // bundled dev logs `playground-temp/assets/nested/...` instead of the
-  // `/nested/...` URL path plain dev prints. Vite-side gap, not rolldown
-  // (vitejs/vite#23028): the server never passes `cwd` to rolldown
-  // (bundledDev.ts), so module ids anchor at process.cwd() and leak the
-  // project's location in the workspace, and bundledDevHmrClient.ts logs the
-  // raw ids without normalizing them to URL-style paths. Fix both, then this
-  // un-skips unchanged. Relies on the edit made by '?raw import' above.
+  // bundled dev logs `playground-temp/assets/nested/...` where dev logs the URL
+  // path `/nested/...`. This is a gap on the vite side, not in rolldown
+  // (vitejs/vite#23028). Two causes:
+  // - the server never passes `cwd` to rolldown (bundledDev.ts), so module ids
+  //   start from process.cwd() and show where the project sits on disk
+  // - bundledDevHmrClient.ts logs those ids as they are, without turning them
+  //   into URL paths first
+  // Fix both, then remove this guard so the check runs in bundled dev too.
   if (!isBundled) {
     expect(browserLogs).toStrictEqual(
-    expect.arrayContaining([
-      expect.stringContaining('hot updated: /nested/partial.html?raw via'),
-    ])
+      expect.arrayContaining([
+        expect.stringContaining('hot updated: /nested/partial.html?raw via'),
+      ]),
+    )
   }
-})
 })
 
 test('?no-inline svg import', async () => {
