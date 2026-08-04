@@ -23,6 +23,8 @@ test.runIf(isBuild)('rebuilds styles only entry on change', async () => {
     originalContents.replace('#ff69b4', '#ffb6c1 '),
   )
   await notifyRebuildComplete(watcher)
+  // wait for both "output" to complete, workaround for https://github.com/rolldown/rolldown/issues/10613
+  await notifyRebuildComplete(watcher)
 
   const updatedManifest = readManifest('watch')
   expect(Object.keys(updatedManifest)).toHaveLength(numberOfManifestEntries)
