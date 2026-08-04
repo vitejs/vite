@@ -84,25 +84,11 @@ jobs:
           permission-pull-requests: write
 
       - name: Open release PR
-        env:
-          APP_SLUG: ${{ steps.generate-token.outputs.app-slug }}
-          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
-          PACKAGE: ${{ inputs.package }}
-          PR_BODY: ${{ steps.prepare.outputs.pr_body }}
-          TAG: ${{ steps.prepare.outputs.tag }}
-          VERSION: ${{ steps.prepare.outputs.version }}
-        run: |
-          BRANCH="release-$PACKAGE-$VERSION-$GITHUB_RUN_ID"
-          BOT_ID="$(gh api "/users/$APP_SLUG%5Bbot%5D" --jq .id)"
-          git config user.name "$APP_SLUG[bot]"
-          git config user.email "$BOT_ID+$APP_SLUG[bot]@users.noreply.github.com"
-          git switch -c "$BRANCH"
-          git add "packages/$PACKAGE"
-          git commit -m "release: $TAG"
-          git push -u "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY.git" HEAD
-          gh pr create \
-            --assignee "$GITHUB_ACTOR" \
-            --base main \
-            --head "$BRANCH" \
-            --title "release: $TAG" \
-            --body "$PR_BODY"
+        uses: vitejs/release-scripts/action/release-pr@hash # version
+        with:
+          app-slug: ${{ steps.generate-token.outputs.app-slug }}
+          token: ${{ steps.generate-token.outputs.token }}
+          package: ${{ inputs.package }}
+          pr-body: ${{ steps.prepare.outputs.pr_body }}
+          tag: ${{ steps.prepare.outputs.tag }}
+          version: ${{ steps.prepare.outputs.version }}
