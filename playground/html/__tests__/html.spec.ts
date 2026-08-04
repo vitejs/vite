@@ -81,8 +81,8 @@ function testPage(isNested: boolean) {
   })
 
   test('css', async () => {
-    expect(await getColor('h1')).toBe(isNested ? 'red' : 'blue')
-    expect(await getColor('p')).toBe('grey')
+    await expect.poll(() => getColor('h1')).toBe(isNested ? 'red' : 'blue')
+    await expect.poll(() => getColor('p')).toBe('grey')
   })
 
   if (isNested) {
