@@ -287,6 +287,8 @@ async function handleMessage(payload: HotPayload) {
       ) {
         break
       }
+      // Cancel the client's reload-needed timeout so we don't navigate twice.
+      bundledDevClient?.acknowledgeFullReload()
       await activeHmrClient.notifyListeners('vite:beforeFullReload', payload)
       if (hasDocument) {
         if (payload.path && payload.path.endsWith('.html')) {

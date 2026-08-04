@@ -30,12 +30,23 @@ export interface BundledDevHMRClientOptions {
   base: string
   /** returning `'reload'` aborts the apply — the hook reloads the page itself */
   beforeApply: () => 'reload' | 'continue'
+  /**
+   * How long to wait for a `full-reload` after requesting one before falling
+   * back to `location.reload()`. Override in tests.
+   */
+  reloadAckTimeoutMs?: number
+  /** Invoked when the client falls back to reloading the page itself. */
+  reloadPage?: () => void
 }
+
+/** default wait for the server's `full-reload` reply after `reload-needed` */
+export const DEFAULT_RELOAD_ACK_TIMEOUT_MS = 8_000
 
 export class BundledDevHMRClient extends HMRClient {
   private applyQueue = Promise.resolve()
   private lastSeq = 0
   private reloadPending = false
+  private reloadAckTimeout: ReturnType<typeof setTimeout> | null = null
 
   constructor(
     logger: HMRLogger,
@@ -173,7 +184,15 @@ export class BundledDevHMRClient extends HMRClient {
     url,
     seq,
   }: BundledDevUpdatePayload): Promise<void> {
-    if (this.reloadPending) return
+    // A later update while waiting for `full-reload` means the reply was lost.
+    // Re-request a server-driven reload instead of navigating blindly (the
+    // in-memory bundle may still be stale until `ensureLatestBuildOutput`).
+    if (this.reloadPending) {
+      this.rerequestFullReload(
+        'received hmr update while full reload was pending (reply likely lost)',
+      )
+      return
+    }
     if (seq !== this.lastSeq + 1) {
       this.requestFullReload(
         `hmr update sequence gap (expected ${this.lastSeq + 1}, got ${seq})`,
@@ -205,7 +224,12 @@ export class BundledDevHMRClient extends HMRClient {
   }
 
   private async applyInvalidate(id: string): Promise<void> {
-    if (this.reloadPending) return
+    if (this.reloadPending) {
+      this.rerequestFullReload(
+        'received invalidate while full reload was pending (reply likely lost)',
+      )
+      return
+    }
     const firstInvalidatedBy = this.currentFirstInvalidatedBy ?? id
     const importers = this.runtime
       .getImporters(id)
@@ -300,12 +324,46 @@ export class BundledDevHMRClient extends HMRClient {
   private requestFullReload(reason: string): void {
     if (this.reloadPending) return
     this.reloadPending = true
+    // Visible at Chrome's default console level (unlike `debug`).
+    console.info(`[vite] full reload needed: ${reason}`)
     this.logger.debug(`full reload needed: ${reason}`)
     this.send({
       type: 'custom',
       event: 'vite:bundled-dev:reload-needed',
       data: { reason },
     })
+    const timeoutMs =
+      this.options.reloadAckTimeoutMs ?? DEFAULT_RELOAD_ACK_TIMEOUT_MS
+    this.reloadAckTimeout = setTimeout(() => {
+      this.reloadAckTimeout = null
+      this.fallbackReload(
+        `full reload reply timed out after ${timeoutMs}ms (${reason})`,
+      )
+    }, timeoutMs)
+  }
+
+  /**
+   * Called when the server's `full-reload` message arrives so the client stops
+   * waiting and does not fall back to a second navigation.
+   */
+  acknowledgeFullReload(): void {
+    if (this.reloadAckTimeout != null) {
+      clearTimeout(this.reloadAckTimeout)
+      this.reloadAckTimeout = null
+    }
+  }
+
+  private rerequestFullReload(reason: string): void {
+    this.acknowledgeFullReload()
+    this.reloadPending = false
+    console.warn(`[vite] ${reason}; re-requesting full reload`)
+    this.requestFullReload(reason)
+  }
+
+  private fallbackReload(reason: string): void {
+    this.acknowledgeFullReload()
+    console.warn(`[vite] ${reason}; reloading page`)
+    ;(this.options.reloadPage ?? (() => location.reload()))()
   }
 }
 

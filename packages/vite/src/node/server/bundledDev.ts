@@ -105,6 +105,15 @@ export class BundledDev {
   }
 
   private pendingPayloadFilenames = new Set<string>()
+  /** client that was sent each still-pending HMR patch (for delivery timeout) */
+  private pendingPayloadClients = new Map<string, NormalizedHotChannelClient>()
+  private pendingPayloadTimers = new Map<
+    string,
+    ReturnType<typeof globalThis.setTimeout>
+  >()
+
+  /** How long an HMR patch may remain unfetched before we force a full reload. */
+  static payloadDeliveryTimeoutMs = 3_000
 
   get hasBuildOutput(): boolean {
     return (
@@ -150,6 +159,7 @@ export class BundledDev {
       }
     })
     this.environment.hot.on('vite:client:disconnect', (_payload, client) => {
+      this.clearPendingPayloadsForClient(client)
       const clientId = this.clients.delete(client)
       if (clientId) {
         this.devEngine.removeClient(clientId)
@@ -160,7 +170,29 @@ export class BundledDev {
       'vite:bundled-dev:reload-needed',
       (payload, client) => {
         const clientId = this.clients.getId(client)
-        if (!clientId) return
+        // Registration happens on `vite:client-connected`. A client that asks
+        // during reconnect may not be in the map yet — still honor the request
+        // via the socket we already have instead of silently dropping it.
+        if (!clientId) {
+          debug?.(
+            `TRIGGER: unregistered client requested a page reload (${payload.reason}); responding via socket`,
+          )
+          this.environment.logger.info(
+            colors.green(`bundling for page reload `) +
+              colors.dim(payload.reason),
+            { clear: true, timestamp: true },
+          )
+          this.devEngine.ensureLatestBuildOutput().then(
+            () => {
+              client.send({ type: 'full-reload', path: '*' })
+              this.environment.logger.info(colors.green(`page reload`), {
+                timestamp: true,
+              })
+            },
+            () => {},
+          )
+          return
+        }
         debug?.(
           `TRIGGER: client ${clientId} requested a page reload (${payload.reason})`,
         )
@@ -353,6 +385,8 @@ export class BundledDev {
    * Note: the payload filename is unique across all clients.
    */
   markPayloadDelivered(filename: string): void {
+    this.clearPayloadDeliveryTimer(filename)
+    this.pendingPayloadClients.delete(filename)
     if (this.pendingPayloadFilenames.delete(filename)) {
       this.devEngine.notifyPayloadDelivered(filename)
     }
@@ -360,9 +394,75 @@ export class BundledDev {
 
   async close(): Promise<void> {
     this._closed = true
+    for (const timer of this.pendingPayloadTimers.values()) {
+      globalThis.clearTimeout(timer)
+    }
+    this.pendingPayloadTimers.clear()
+    this.pendingPayloadClients.clear()
+    this.pendingPayloadFilenames.clear()
     this.memoryFiles.clear()
     await this._devEngine?.close()
     this.initialBuildCompleted = false
+  }
+
+  private trackPendingHmrPayload(
+    filename: string,
+    client: NormalizedHotChannelClient,
+  ): void {
+    this.pendingPayloadFilenames.add(filename)
+    this.clearPayloadDeliveryTimer(filename)
+    this.pendingPayloadClients.set(filename, client)
+    this.pendingPayloadTimers.set(
+      filename,
+      globalThis.setTimeout(() => {
+        this.pendingPayloadTimers.delete(filename)
+        this.pendingPayloadClients.delete(filename)
+        if (!this.pendingPayloadFilenames.has(filename) || this._closed) {
+          return
+        }
+        // Abandon the undelivered patch: the client will load a fresh bundle.
+        this.pendingPayloadFilenames.delete(filename)
+        this.devEngine.notifyPayloadDelivered(filename)
+        debug?.(
+          `payload ${filename} was not delivered within ${BundledDev.payloadDeliveryTimeoutMs}ms; forcing full reload`,
+        )
+        this.devEngine.ensureLatestBuildOutput().then(
+          () => {
+            if (this._closed) return
+            client.send({ type: 'full-reload', path: '*' })
+            this.environment.logger.info(
+              colors.green(`page reload `) +
+                colors.dim(`(hmr patch not delivered: ${filename})`),
+              { timestamp: true },
+            )
+          },
+          () => {},
+        )
+      }, BundledDev.payloadDeliveryTimeoutMs),
+    )
+  }
+
+  private clearPayloadDeliveryTimer(filename: string): void {
+    const timer = this.pendingPayloadTimers.get(filename)
+    if (timer != null) {
+      globalThis.clearTimeout(timer)
+      this.pendingPayloadTimers.delete(filename)
+    }
+  }
+
+  private clearPendingPayloadsForClient(
+    client: NormalizedHotChannelClient,
+  ): void {
+    for (const [filename, pendingClient] of this.pendingPayloadClients) {
+      if (pendingClient !== client) continue
+      this.clearPayloadDeliveryTimer(filename)
+      this.pendingPayloadClients.delete(filename)
+      // Client is gone (reload or disconnect). Abandon the patch so a stale
+      // undelivered payload does not force another reload on the next session.
+      if (this.pendingPayloadFilenames.delete(filename)) {
+        this.devEngine.notifyPayloadDelivered(filename)
+      }
+    }
   }
 
   private storeOutputFiles(output: RolldownOutput['output'][number][]): void {
@@ -464,7 +564,7 @@ export class BundledDev {
       code: typeof hmrOutput.code === 'string' ? '[code]' : hmrOutput.code,
     })
 
-    this.pendingPayloadFilenames.add(hmrOutput.filename)
+    this.trackPendingHmrPayload(hmrOutput.filename, client)
     this.memoryFiles.set(hmrOutput.filename, {
       // ensure that the generated hmr patch contains ESM syntax
       // this is to avoid attacks like GHSA-4v9v-hfq4-rm2v
