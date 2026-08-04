@@ -13,7 +13,7 @@ import type { AddressInfo, Server } from 'node:net'
 import fsp from 'node:fs/promises'
 import remapping from '@jridgewell/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
-import { onExit } from 'signal-exit'
+import { onExit as signalOnExit } from 'signal-exit'
 import colors from 'picocolors'
 import type { Debugger } from 'obug'
 import debug from 'obug'
@@ -1924,7 +1924,22 @@ type ExitCallback = (
 // registry on `globalThis`, so callbacks still fire exactly once.
 const exitCallbacks = new Set<ExitCallback>()
 
-// `signal-exit`'s `onExit` returns a function that removes the listener.
+// `signal-exit` works by patching `process.reallyExit`, which is a no-op in
+// WebContainer (e.g. StackBlitz). Fall back to a plain `exit` listener there so
+// cleanup still runs, matching Rolldown's handling.
+// See https://github.com/rolldown/rolldown/blob/main/packages/rolldown/src/utils/signal-exit.ts.
+const onExit = (callback: Parameters<typeof signalOnExit>[0]): (() => void) => {
+  if (typeof process === 'object' && process.versions.webcontainer) {
+    // `exit` listeners run synchronously and the process terminates as soon as
+    // they return, so any async cleanup is best-effort and may not finish.
+    const listener = (code: number) => callback(code, null)
+    process.on('exit', listener)
+    return () => process.off('exit', listener)
+  }
+  return signalOnExit(callback)
+}
+
+// `onExit` returns a function that removes the listener.
 let removeExitListener: (() => void) | undefined
 
 // Guard so the exit sequence runs once, even though it can be triggered from
