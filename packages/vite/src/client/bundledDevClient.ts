@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid/non-secure'
-import type { DevRuntime as DevRuntimeType } from 'rolldown/experimental/runtime-types'
+import { DevRuntime } from 'rolldown/experimental/runtime'
 import {
   BundledDevHMRClient,
   BundledDevHMRContext,
@@ -21,9 +21,6 @@ export {
   updateStyle,
   ErrorOverlay,
 } from './client'
-
-// injected by rolldown's hmr plugin into the bundle prelude, ahead of this client
-declare const DevRuntime: typeof DevRuntimeType
 
 if (typeof DevRuntime !== 'undefined') {
   class ViteDevRuntime extends DevRuntime {
