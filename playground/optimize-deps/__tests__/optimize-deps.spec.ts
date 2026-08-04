@@ -43,6 +43,15 @@ test('default import from cjs (cjs-dep-cjs-compiled-from-cjs)', async () => {
     .toBe('ok')
 })
 
+test.runIf(isServe)(
+  'named import injected into an optimized dep by a plugin (dep-with-injected-import)',
+  async () => {
+    await expect
+      .poll(() => page.textContent('.injected-import-in-optimized-dep'))
+      .toBe('msg from injected cjs import')
+  },
+)
+
 test('dynamic imports from cjs dep (react)', async () => {
   await expect
     .poll(() => page.textContent('.cjs-dynamic button'))
@@ -76,6 +85,18 @@ test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-cjs)', 
 test('dynamic default import from cjs with es-module-flag (cjs-dynamic-dep-cjs-with-es-module-flag)', async () => {
   await expect
     .poll(() => page.textContent('.cjs-dynamic-dep-cjs-with-es-module-flag'))
+    .toBe('ok')
+})
+
+test('dynamic import from format-ambiguous importer respects __esModule flag (cjs-dynamic-importer-ambiguous)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-importer-ambiguous'))
+    .toBe('ok')
+})
+
+test('dynamic import from explicit cjs importer uses node interop (cjs-dynamic-importer-cjs)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-importer-cjs'))
     .toBe('ok')
 })
 

@@ -112,7 +112,6 @@ export interface ResolveOptions extends EnvironmentResolveOptions {
    * Enable tsconfig paths resolution
    *
    * @default false
-   * @experimental
    */
   tsconfigPaths?: boolean
 }

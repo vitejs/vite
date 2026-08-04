@@ -32,6 +32,9 @@ packageExtensions:
   '@rollup/plugin-dynamic-import-vars':
     dependencies:
       '@types/estree': ^1.0.0
+  '@volar/typescript':
+    dependencies:
+      '@volar/language-service': 2.4.28
 allowBuilds:
   core-js: false
   vue-demi: false
@@ -44,6 +47,12 @@ allowBuilds:
   unrs-resolver: true
   workerd: true
 
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - rolldown
+  - '@rolldown/binding-*'
+  - '@voidzero-dev/vitepress-theme@5.0.2'
+blockExoticSubdeps: true
 trustPolicy: no-downgrade
 trustPolicyExclude:
   - chokidar@4.0.3 # https://github.com/paulmillr/chokidar/issues/1440

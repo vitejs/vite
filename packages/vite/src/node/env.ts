@@ -88,9 +88,9 @@ export function loadEnv(
   }
 
   // Vite Task may know prefixed envs not present here; fetch them and let
-  // the runner record each glob in the build's cache key.
+  // the runner record each prefix in the build's cache key.
   for (const prefix of prefixes) {
-    Object.assign(env, getEnvs(`${prefix}*`))
+    Object.assign(env, getEnvs({ prefix }))
   }
 
   // check if there are actual env variables starting with VITE_*
