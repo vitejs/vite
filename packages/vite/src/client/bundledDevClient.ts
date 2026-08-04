@@ -3,7 +3,7 @@ import type { DevRuntime as DevRuntimeType } from 'rolldown/experimental/runtime
 import {
   BundledDevHMRClient,
   BundledDevHMRContext,
-} from './bundledDevHmrClient'
+} from '../shared/bundledDevHmr'
 import {
   base,
   clearOverlayOrReloadOnFirstUpdate,
@@ -54,7 +54,7 @@ if (typeof DevRuntime !== 'undefined') {
     transport,
     runtime,
     {
-      base,
+      loadPatch: (url) => import(/* @vite-ignore */ base + url),
       beforeApply: clearOverlayOrReloadOnFirstUpdate,
     },
   )

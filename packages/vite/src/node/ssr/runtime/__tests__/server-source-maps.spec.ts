@@ -5,25 +5,20 @@ import type { ViteDevServer } from '../../..'
 import type { ModuleRunnerContext } from '../../../../module-runner'
 import { ESModulesEvaluator } from '../../../../module-runner'
 import { SOURCEMAPPING_URL } from '../../../../shared/constants'
-import {
-  createFixtureEditor,
-  createModuleRunnerTester,
-  resolvePath,
-} from './utils'
+import { createFixtureEditor, runnerTest as it, resolvePath } from './utils'
 
 describe('module runner initialization', async () => {
-  const it = await createModuleRunnerTester(
-    {},
-    {
+  it.scoped({
+    runnerOptions: {
       sourcemapInterceptor: 'prepareStackTrace',
     },
-  )
+  })
 
   const getError = async (cb: () => void): Promise<Error> => {
     try {
       await cb()
       expect.unreachable()
-    } catch (err) {
+    } catch (err: any) {
       return err
     }
   }
@@ -234,13 +229,12 @@ describe('module runner with node:vm executor', async () => {
     }
   }
 
-  const it = await createModuleRunnerTester(
-    {},
-    {
+  it.override({
+    runnerOptions: {
       sourcemapInterceptor: 'prepareStackTrace',
       evaluator: new Evaluator(),
     },
-  )
+  })
 
   it('should not crash when error stacktrace contains negative column', async ({
     runner,
@@ -282,9 +276,8 @@ describe('module runner interceptor with inline data: source map', async () => {
     }
   }
 
-  const it = await createModuleRunnerTester(
-    {},
-    {
+  it.override({
+    runnerOptions: {
       sourcemapInterceptor: {
         // Serves a file that is not part of the runner module graph and
         // carries an inline base64 source map, so mapping goes through
@@ -297,7 +290,7 @@ describe('module runner interceptor with inline data: source map', async () => {
       },
       evaluator: new Evaluator(),
     },
-  )
+  })
 
   it('should not crash when decoding an inline source map while globalThis.Buffer is absent', async ({
     runner,

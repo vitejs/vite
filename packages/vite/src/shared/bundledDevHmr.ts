@@ -3,8 +3,9 @@ import type {
   Update,
   UpdatePayload,
 } from '#types/hmrPayload'
-import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
-import type { NormalizedModuleRunnerTransport } from '../shared/moduleRunnerTransport'
+import type { ModuleNamespace } from '#types/hot'
+import { HMRClient, HMRContext, type HMRLogger } from './hmr'
+import type { NormalizedModuleRunnerTransport } from './moduleRunnerTransport'
 
 /** the subset of `__rolldown_runtime__` the HMR client uses */
 export interface RolldownRuntimeLike {
@@ -27,9 +28,19 @@ type HmrUpdate =
     }
 
 export interface BundledDevHMRClientOptions {
-  base: string
+  /**
+   * Loads and executes the HMR patch chunk served at `url`. The browser imports
+   * it, the module runner fetches it through its own transport.
+   */
+  loadPatch: (url: string) => Promise<void>
   /** returning `'reload'` aborts the apply — the hook reloads the page itself */
   beforeApply: () => 'reload' | 'continue'
+  /**
+   * Only used for the plain `update` payloads this client inherits from
+   * `HMRClient`. Full-bundle updates never go through it, but the module runner
+   * uses the same client for both modes, so it needs a working implementation.
+   */
+  importUpdatedModule?: (update: Update) => Promise<ModuleNamespace>
 }
 
 export class BundledDevHMRClient extends HMRClient {
@@ -43,11 +54,16 @@ export class BundledDevHMRClient extends HMRClient {
     private runtime: RolldownRuntimeLike,
     private options: BundledDevHMRClientOptions,
   ) {
-    super(logger, transport, async () => {
-      throw new Error(
-        'unreachable: full-bundle mode applies patches through its own queue',
-      )
-    })
+    super(
+      logger,
+      transport,
+      options.importUpdatedModule ??
+        (async () => {
+          throw new Error(
+            'unreachable: full-bundle mode applies patches through its own queue',
+          )
+        }),
+    )
   }
 
   isSelfAccepted(id: string): boolean {
@@ -194,7 +210,7 @@ export class BundledDevHMRClient extends HMRClient {
     if (this.options.beforeApply() === 'reload') return
 
     try {
-      await import(/* @vite-ignore */ this.options.base + url)
+      await this.options.loadPatch(url)
     } catch {
       this.requestFullReload(`failed to import hmr patch ${url}`)
       return

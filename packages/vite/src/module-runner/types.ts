@@ -1,3 +1,4 @@
+import type { DevRuntime } from 'rolldown/experimental/runtime-types'
 import type { ViteHotContext } from '#types/hot'
 import type { HMRLogger } from '../shared/hmr'
 import type {
@@ -19,6 +20,7 @@ import type {
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
+  ssrRolldownRuntimeKey,
 } from './constants'
 import type { InterceptorOptions } from './sourcemap/interceptor'
 
@@ -45,6 +47,10 @@ export interface ModuleRunnerContext {
   [ssrExportAllKey]: (obj: any) => void
   [ssrExportNameKey]: (name: string, getter: () => unknown) => void
   [ssrImportMetaKey]: ModuleRunnerImportMeta
+  /**
+   * @internal
+   */
+  [ssrRolldownRuntimeKey]: DevRuntime | undefined
 }
 
 export interface ModuleEvaluator {
@@ -121,6 +127,14 @@ export interface ModuleRunnerOptions {
    * Custom module cache. If not provided, creates a separate module cache for each ModuleRunner instance.
    */
   evaluatedModules?: EvaluatedModules
+  /**
+   * The modules are served as a rolldown bundle that ships its own dev runtime,
+   * instead of one module at a time. HMR is then driven by the runtime's module
+   * graph rather than by the server's.
+   *
+   * @default false
+   */
+  rolldownRuntime?: boolean
 }
 
 export interface ImportMetaEnv {

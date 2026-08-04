@@ -1,5 +1,12 @@
-import type { ViteHotContext } from '#types/hot'
+import { DevRuntime } from 'rolldown/experimental/runtime'
+import { nanoid } from 'nanoid/non-secure'
+import type { Update } from '#types/hmrPayload'
+import type { ModuleNamespace } from '#types/hot'
 import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
+import {
+  BundledDevHMRClient,
+  BundledDevHMRContext,
+} from '../shared/bundledDevHmr'
 import { cleanUrl, isPrimitive } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
 import {
@@ -16,7 +23,7 @@ import type {
   ResolvedResult,
   SSRImportMetadata,
 } from './types'
-import { posixDirname, posixPathToFileHref, posixResolve } from './utils'
+import { posixDirname, posixJoin } from './utils'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -24,6 +31,7 @@ import {
   ssrImportKey,
   ssrImportMetaKey,
   ssrModuleExportsKey,
+  ssrRolldownRuntimeKey,
 } from './constants'
 import { hmrLogger, silentConsole } from './hmrLogger'
 import { createHMRHandlerForRunner } from './hmrHandler'
@@ -38,6 +46,11 @@ interface ModuleRunnerDebugger {
 export class ModuleRunner {
   public evaluatedModules: EvaluatedModules
   public hmrClient?: HMRClient
+  /**
+   * Set instead of a plain `hmrClient` when `rolldownRuntime` is enabled.
+   * @internal
+   */
+  public _bundledDevHmrClient?: BundledDevHMRClient
 
   private readonly transport: NormalizedModuleRunnerTransport
   private readonly resetSourceMapSupport?: () => void
@@ -47,6 +60,11 @@ export class ModuleRunner {
   >()
   private isBuiltin?: (id: string) => boolean
   private builtinsPromise?: Promise<void>
+  // Owned by the runner rather than bootstrapped from the bundle: the modules
+  // receive it as the `__rolldown_runtime__` argument, so it has to exist
+  // before the first one runs. It is per-runner on purpose — `ssrLoadModule`
+  // has its own compat runner, and a global would collide.
+  private rolldownDevRuntime?: DevRuntime
 
   private closed = false
 
@@ -57,6 +75,17 @@ export class ModuleRunner {
   ) {
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
     this.transport = normalizeModuleRunnerTransport(options.transport)
+    // independent of HMR: the bundle needs `__rolldown_runtime__` to execute
+    // at all, so the runtime exists even when HMR is disabled
+    let runtime: DevRuntime | undefined
+    if (options.rolldownRuntime) {
+      runtime = this.rolldownDevRuntime = new DevRuntime(nanoid())
+      runtime.hooks = {
+        createModuleHotContext: (id) => this.ensureModuleHotContext(id),
+        onModuleCacheRemoval: (id) =>
+          this._bundledDevHmrClient?.handleModuleCacheRemoval(id),
+      }
+    }
     if (options.hmr !== false) {
       const optionsHmr = options.hmr ?? true
       const resolvedHmrLogger: HMRLogger =
@@ -65,11 +94,33 @@ export class ModuleRunner {
           : optionsHmr.logger === false
             ? silentConsole
             : optionsHmr.logger
-      this.hmrClient = new HMRClient(
-        resolvedHmrLogger,
-        this.transport,
-        ({ acceptedPath }) => this.import(acceptedPath),
-      )
+      const importUpdatedModule = ({ acceptedPath }: Update) =>
+        this.import<ModuleNamespace>(acceptedPath)
+      if (runtime) {
+        this.hmrClient = this._bundledDevHmrClient = new BundledDevHMRClient(
+          resolvedHmrLogger,
+          this.transport,
+          runtime,
+          {
+            loadPatch: async (url) => {
+              await this.import(url)
+              // don't leave the HMR patch in memory
+              const patchModule = this.evaluatedModules.getModuleByUrl(url)
+              if (patchModule) {
+                this.evaluatedModules.removeModule(patchModule)
+              }
+            },
+            beforeApply: () => 'continue',
+            importUpdatedModule,
+          },
+        )
+      } else {
+        this.hmrClient = new HMRClient(
+          resolvedHmrLogger,
+          this.transport,
+          importUpdatedModule,
+        )
+      }
       if (!this.transport.connect) {
         throw new Error(
           'HMR is not supported by this runner transport, but `hmr` option was set to true',
@@ -78,6 +129,14 @@ export class ModuleRunner {
       this.transport.connect(createHMRHandlerForRunner(this))
     } else {
       this.transport.connect?.()
+    }
+    if (runtime) {
+      // registers this runner with the dev engine so it gets its own ship map
+      this.transport.send({
+        type: 'custom',
+        event: 'vite:client-connected',
+        data: { clientId: runtime.clientId },
+      })
     }
     if (options.sourcemapInterceptor !== false) {
       this.resetSourceMapSupport = enableSourceMapSupport(this)
@@ -89,7 +148,24 @@ export class ModuleRunner {
    */
   public async import<T = any>(url: string): Promise<T> {
     const fetchedModule = await this.cachedModule(url)
-    return await this.cachedRequest(url, fetchedModule)
+    const exportsObject = await this.cachedRequest(
+      fetchedModule.url,
+      fetchedModule,
+    )
+    if (
+      this.rolldownDevRuntime &&
+      fetchedModule.meta &&
+      'regionId' in fetchedModule.meta &&
+      fetchedModule.meta.regionId &&
+      this.rolldownDevRuntime.isExecuted(fetchedModule.meta.regionId)
+    ) {
+      const loadedExports = this.rolldownDevRuntime.loadExports(
+        fetchedModule.meta.regionId,
+      )
+      fetchedModule.exports = loadedExports
+      return loadedExports
+    }
+    return exportsObject
   }
 
   /**
@@ -108,6 +184,7 @@ export class ModuleRunner {
     this.resetSourceMapSupport?.()
     this.clearCache()
     this.hmrClient = undefined
+    this._bundledDevHmrClient = undefined
     this.closed = true
     await this.transport.disconnect?.()
   }
@@ -311,11 +388,17 @@ export class ModuleRunner {
 
     if ('invalidate' in fetchedModule && fetchedModule.invalidate) {
       this.evaluatedModules.invalidateModule(module)
+      this.moduleHotContexts.delete(module.url)
     }
 
     fetchedModule.url = moduleUrl
     fetchedModule.id = moduleId
     module.meta = fetchedModule
+
+    // Do not keep lazy "patches" in memory
+    if (module.url.startsWith('/@vite/lazy?')) {
+      this.evaluatedModules.removeModule(module)
+    }
 
     return module
   }
@@ -343,7 +426,7 @@ export class ModuleRunner {
       // it's possible to provide an object with toString() method inside import()
       dep = String(dep)
       if (dep[0] === '.') {
-        dep = posixResolve(posixDirname(url), dep)
+        dep = posixJoin(posixDirname(url), dep)
       }
       return request(dep, { isDynamicImport: true })
     }
@@ -353,6 +436,7 @@ export class ModuleRunner {
       this.debug?.('[module runner] externalizing', externalize)
       const exports = await this.evaluator.runExternalModule(externalize)
       mod.exports = exports
+      this.rolldownDevRuntime?.registerModule(externalize, { exports })
       return exports
     }
 
@@ -372,7 +456,6 @@ export class ModuleRunner {
 
     const modulePath = cleanUrl(file || moduleId)
     // disambiguate the `<UNIT>:/` on windows: see nodejs/node#31710
-    const href = posixPathToFileHref(modulePath)
     const meta = await createImportMeta(modulePath)
     const exports = Object.create(null)
     Object.defineProperty(exports, Symbol.toStringTag, {
@@ -383,20 +466,14 @@ export class ModuleRunner {
 
     mod.exports = exports
 
-    let hotContext: ViteHotContext | undefined
     if (this.hmrClient) {
       Object.defineProperty(meta, 'hot', {
         enumerable: true,
         get: () => {
-          if (!this.hmrClient) {
-            throw new Error(`[module runner] HMR client was closed.`)
-          }
-          this.debug?.('[module runner] creating hmr context for', mod.url)
-          hotContext ||= new HMRContext(this.hmrClient, mod.url)
-          return hotContext
+          return this.ensureModuleHotContext(mod.url)
         },
         set: (value) => {
-          hotContext = value
+          this.moduleHotContexts.set(mod.url, value)
         },
       })
     }
@@ -413,13 +490,33 @@ export class ModuleRunner {
           get: getter,
         }),
       [ssrImportMetaKey]: meta,
+      [ssrRolldownRuntimeKey]: this.rolldownDevRuntime,
     }
 
-    this.debug?.('[module runner] executing', href)
+    this.debug?.('[module runner] executing', meta.href)
 
     await this.evaluator.runInlinedModule(context, code, mod)
 
     return exports
+  }
+
+  private moduleHotContexts = new Map<string, HMRContext>()
+
+  private ensureModuleHotContext(url: string) {
+    if (!this.hmrClient) {
+      return
+    }
+
+    if (!this.moduleHotContexts.has(url)) {
+      this.debug?.('[module runner] creating hmr context for', url)
+      // in full-bundle mode `invalidate()` is resolved locally against the
+      // rolldown runtime graph instead of being sent to the server
+      const hotContext = this._bundledDevHmrClient
+        ? new BundledDevHMRContext(this._bundledDevHmrClient, url)
+        : new HMRContext(this.hmrClient, url)
+      this.moduleHotContexts.set(url, hotContext)
+    }
+    return this.moduleHotContexts.get(url)
   }
 }
 
