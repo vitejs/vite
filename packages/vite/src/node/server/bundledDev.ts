@@ -8,6 +8,7 @@ import type { RolldownOutput } from 'rolldown'
 import colors from 'picocolors'
 import getEtag from 'etag'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
+import { convertToDevWatchOptions } from '../watch'
 import { getHmrImplementation } from '../plugins/clientInjections'
 import {
   asyncFlatten,
@@ -240,6 +241,7 @@ export class BundledDev {
       },
       watch: {
         skipWrite: true,
+        ...convertToDevWatchOptions(this.environment.config.server.watch),
       },
     })
     debug?.('INITIAL: setup dev engine')
