@@ -551,7 +551,7 @@ describe('closeServer hook', () => {
     await server.close()
 
     // Both hooks start before either finishes.
-    expect(events.slice(0, 2)).toEqual(['a:start', 'b:start'])
+    expect(events.slice(0, 2)).toStrictEqual(['a:start', 'b:start'])
   })
 
   test('is called only once even if close() is called multiple times', async () => {
