@@ -311,3 +311,11 @@ Follow the steps in [the Vite deployment guide](https://docs.zephyr-cloud.io/bun
 ## EdgeOne Pages
 
 Deploy your static site using [EdgeOne Pages](https://edgeone.ai/products/pages) by following these [instructions](https://pages.edgeone.ai/document/vite).
+
+## Chinese documentation
+
+The maintained historical Chinese documentation branches are deployed separately:
+
+- `stable-5.x` -> `https://v5.cn.vite.dev`
+- `stable-6.x` -> `https://v6.cn.vite.dev`
+- `stable-7.x` -> `https://v7.cn.vite.dev`
