@@ -48,6 +48,23 @@ describe('port detection', () => {
   }
 
   describe('port fallback', () => {
+    test('uses an OS-assigned port when port is 0', async () => {
+      viteServer = await createServer({
+        root: import.meta.dirname,
+        optimizeDeps,
+        logLevel: 'silent',
+        server: { port: 0, ws: false },
+      })
+      const listen = vi.spyOn(viteServer.httpServer!, 'listen')
+      await viteServer.listen()
+
+      const address = viteServer.httpServer!.address()
+      expect(listen.mock.calls[0]?.[0]).toBe(0)
+      expect(viteServer._currentServerPort).toBe(
+        typeof address === 'object' && address ? address.port : undefined,
+      )
+    })
+
     test('detects port conflict', async () => {
       await using _blockingServer = await createSimpleServer(
         BASE_PORT,

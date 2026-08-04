@@ -1112,7 +1112,7 @@ async function startServer(
   // When restarting, the original port may be available but to avoid a switch of URL for the running
   // browser tabs, we enforce the previously used port, expect if the config port changed.
   const port =
-    (!configPort || configPort === server._configServerPort
+    (typeof configPort !== 'number' || configPort === server._configServerPort
       ? server._currentServerPort
       : configPort) ?? DEFAULT_DEV_PORT
   server._configServerPort = configPort
