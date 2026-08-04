@@ -7,5 +7,8 @@ export default mergeConfig(
     css: {
       transformer: 'lightningcss',
     },
+    build: {
+      outDir: 'dist/lightningcss',
+    },
   }),
 )

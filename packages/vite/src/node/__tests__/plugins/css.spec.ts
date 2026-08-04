@@ -1,5 +1,9 @@
 import path from 'node:path'
-import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
+import {
+  TraceMap,
+  decodedMappings,
+  originalPositionFor,
+} from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
 import type { InternalModuleFormat } from 'rolldown'
 import { describe, expect, onTestFinished, test } from 'vitest'
@@ -8,11 +12,12 @@ import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
 import {
   convertTargets,
+  concatWithSourcemaps,
   createCSSResolvers,
   cssPlugin,
   cssUrlRE,
   getEmptyChunkReplacer,
-  hoistAtRules,
+  hoistAtRules as hoistAtRulesMagicString,
   injectInlinedCSS,
   preprocessCSS,
   resolveLibCssFilename,
@@ -20,6 +25,10 @@ import {
 import { normalizePath } from '../../utils'
 
 const dirname = import.meta.dirname
+
+function hoistAtRules(css: string): string {
+  return hoistAtRulesMagicString(css).toString()
+}
 
 describe('search css url function', () => {
   test('some spaces before it', () => {
@@ -564,6 +573,20 @@ describe('preprocessCSS', () => {
     `)
   })
 
+  test('returns null map when sourcemaps are enabled and no transform happened', async () => {
+    const resolvedConfig = await resolveConfig(
+      { configFile: false, build: { sourcemap: true } },
+      'build',
+    )
+    const result = await preprocessCSS(
+      '.foo { color: red; }',
+      'foo.css',
+      resolvedConfig,
+    )
+
+    expect(result.map).toBeNull()
+  })
+
   test('works with lightningcss', async () => {
     const resolvedConfig = await resolveConfig(
       {
@@ -1038,4 +1061,131 @@ console.log("foo");`,
       injectCSS();"
     `)
   })
+})
+
+test('concatenates code and offsets sourcemaps', () => {
+  const result = concatWithSourcemaps([
+    {
+      code: 'a{}',
+      map: {
+        version: 3,
+        names: [],
+        sources: ['a.css'],
+        sourcesContent: ['a{}'],
+        mappings: 'AAAA',
+      },
+    },
+    {
+      code: 'b{}\n',
+      map: {
+        version: 3,
+        names: [],
+        sources: ['b.css', 'unused.css'],
+        sourcesContent: ['b{}'],
+        mappings: 'AAAA',
+      },
+    },
+    {
+      code: 'c{}',
+      map: {
+        version: 3,
+        names: [],
+        sources: ['c.css'],
+        sourcesContent: ['c{}'],
+        mappings: 'AAAA',
+      },
+    },
+  ])
+
+  expect(result.code).toBe('a{}b{}\nc{}')
+  expect(result.map!.sources).toStrictEqual([
+    'a.css',
+    'b.css',
+    'unused.css',
+    'c.css',
+  ])
+  expect(result.map!.sourcesContent).toStrictEqual(['a{}', 'b{}', null, 'c{}'])
+  expect(decodedMappings(new TraceMap(result.map! as any))).toStrictEqual([
+    [
+      [0, 0, 0, 0],
+      [3, 1, 0, 0],
+    ],
+    [[0, 3, 0, 0]],
+  ])
+})
+
+test('concatenates code with optional sourcemaps', () => {
+  const result = concatWithSourcemaps([
+    { code: 'a{}' },
+    {
+      code: 'b{}',
+      map: {
+        version: 3,
+        names: [],
+        sources: ['b.css'],
+        sourcesContent: ['b{}'],
+        mappings: 'AAAA',
+      },
+    },
+  ])
+
+  expect(result.code).toBe('a{}b{}')
+  expect(decodedMappings(new TraceMap(result.map! as any))).toStrictEqual([
+    [[3, 0, 0, 0]],
+  ])
+  expect(concatWithSourcemaps([{ code: 'a{}' }]).map).toBeUndefined()
+})
+
+test('handles sources shared by multiple input maps', () => {
+  const result = concatWithSourcemaps([
+    {
+      code: 'a{}\n',
+      map: {
+        version: 3,
+        names: [],
+        sources: ['shared.css'],
+        sourcesContent: ['a{}\nb{}'],
+        mappings: 'AAAA',
+      },
+    },
+    {
+      code: 'b{}',
+      map: {
+        version: 3,
+        names: [],
+        sources: ['shared.css'],
+        sourcesContent: ['a{}\nb{}'],
+        mappings: 'AACA',
+      },
+    },
+  ])
+
+  expect(result.map!.sources).toStrictEqual(['shared.css', 'shared.css'])
+  expect(result.map!.sourcesContent).toStrictEqual(['a{}\nb{}', 'a{}\nb{}'])
+  expect(decodedMappings(new TraceMap(result.map! as any))).toStrictEqual([
+    [[0, 0, 0, 0]],
+    [[0, 1, 1, 0]],
+  ])
+})
+
+test('offsets a sourcemap after unmapped multiline code', () => {
+  const result = concatWithSourcemaps([
+    { code: 'a\nbc' },
+    {
+      code: 'd{}',
+      map: {
+        version: 3,
+        names: [],
+        sources: ['d.css'],
+        sourcesContent: ['d{}'],
+        mappings: 'AAAA',
+      },
+    },
+  ])
+
+  expect(result.code).toBe('a\nbcd{}')
+  expect(decodedMappings(new TraceMap(result.map! as any))).toStrictEqual([
+    [],
+    [[2, 0, 0, 0]],
+  ])
 })
