@@ -88,6 +88,7 @@ jobs:
         with:
           app-slug: ${{ steps.generate-token.outputs.app-slug }}
           token: ${{ steps.generate-token.outputs.token }}
+          package-name: ${{ inputs.package }}
           package-path: packages/${{ inputs.package }}
           pr-body: ${{ steps.prepare.outputs.pr_body }}
           tag: ${{ steps.prepare.outputs.tag }}
