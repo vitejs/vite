@@ -152,6 +152,15 @@ export function createDepsOptimizer(
       depsOptimizer.scanProcessing,
       optimizationResult?.cancel(),
     ])
+
+    // When a dependency is discovered before depsOptimizer.init() runs
+    // (e.g. a transform is requested through the JS API before listen()),
+    // depOptimizationProcessing.promise is never resolved because the
+    // optimizer never starts a run. Resolve it here so in-flight requests
+    // waiting on the dep's processing promise can unblock during close()
+    // instead of causing server.close() to hang forever.
+    depOptimizationProcessing.resolve()
+    resolveEnqueuedProcessingPromises()
   }
 
   let initState: 'idle' | 'initializing' | 'initialized' = 'idle'
