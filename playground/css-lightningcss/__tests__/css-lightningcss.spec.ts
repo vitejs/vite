@@ -6,7 +6,6 @@ import {
   getColor,
   isBuild,
   isBundled,
-  isBundledDev,
   page,
   viteTestUrl,
 } from '~utils'
@@ -14,12 +13,7 @@ import {
 // note: tests should retrieve the element at the beginning of test and reuse it
 // in later assertions to ensure CSS HMR doesn't reload the page
 
-// bundled dev drops an edit that arrives at a bad moment. Two such moments:
-// while the page is loading, and before the client has connected.
-// The update is then lost and never reaches the page.
-// That makes the early edit-propagation tests flaky when the suite runs in
-// parallel (vitejs/vite#23028)
-test.skipIf(isBundledDev)('linked css', async () => {
+test('linked css', async () => {
   const linked = await page.$('.linked')
   const atImport = await page.$('.linked-at-import')
 
@@ -36,8 +30,7 @@ test.skipIf(isBundledDev)('linked css', async () => {
   await expect.poll(() => getColor(atImport)).toBe('blue')
 })
 
-// bundled dev: same dropped update as 'linked css' above
-test.skipIf(isBundledDev)('css import from js', async () => {
+test('css import from js', async () => {
   const imported = await page.$('.imported')
   const atImport = await page.$('.imported-at-import')
 
@@ -54,13 +47,11 @@ test.skipIf(isBundledDev)('css import from js', async () => {
   await expect.poll(() => getColor(atImport)).toBe('blue')
 })
 
-// bundled dev fetches the remote @import while bundling. That fetch needs the
-// network, so the test flakes when the suite runs many times (vitejs/vite#23028)
-test.skipIf(isBundledDev)('@import external css', async () => {
+test('@import external css', async () => {
   const icon = page.locator('.icon--mdi-light--help-circle')
-  expect(
-    await icon.evaluate((span) => getComputedStyle(span).maskImage),
-  ).toContain('data:image/svg+xml,')
+  await expect
+    .poll(() => icon.evaluate((span) => getComputedStyle(span).maskImage))
+    .toContain('data:image/svg+xml,')
 })
 
 test('css modules', async () => {
