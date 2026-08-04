@@ -546,7 +546,21 @@ test.runIf(!isBundled)('?raw import hot-update log', () => {
     expect.arrayContaining([
       expect.stringContaining('hot updated: /nested/partial.html?raw via'),
     ]),
-  )
+
+  // bundled dev logs `playground-temp/assets/nested/...` instead of the
+  // `/nested/...` URL path plain dev prints. Vite-side gap, not rolldown
+  // (vitejs/vite#23028): the server never passes `cwd` to rolldown
+  // (bundledDev.ts), so module ids anchor at process.cwd() and leak the
+  // project's location in the workspace, and bundledDevHmrClient.ts logs the
+  // raw ids without normalizing them to URL-style paths. Fix both, then this
+  // un-skips unchanged. Relies on the edit made by '?raw import' above.
+  if (!isBundled) {
+    expect(browserLogs).toStrictEqual(
+    expect.arrayContaining([
+      expect.stringContaining('hot updated: /nested/partial.html?raw via'),
+    ])
+  }
+})
 })
 
 test('?no-inline svg import', async () => {
