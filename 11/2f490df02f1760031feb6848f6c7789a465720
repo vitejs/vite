@@ -1,0 +1,19 @@
+.github/workflows/prepare-release.yml
+  s_03f2b743616ccf::t_b46e6a79b46d40 91,108
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "112f490df02f1760031feb6848f6c7789a465720",
+  "prompts": {},
+  "sessions": {
+    "s_03f2b743616ccf": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fcc1e-0702-7a50-bfa3-e1602d3a0cbb",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
