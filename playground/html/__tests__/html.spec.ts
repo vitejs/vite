@@ -47,7 +47,7 @@ function testPage(isNested: boolean) {
   test('server only transform', async () => {
     if (!isBundled) {
       expect(await page.textContent('body p.server')).toMatch(
-        'injected only during dev',
+        'injected only when unbundled',
       )
     } else {
       expect(await page.innerHTML('body')).not.toMatch('p class="server"')
@@ -57,7 +57,7 @@ function testPage(isNested: boolean) {
   test('build only transform', async () => {
     if (isBundled) {
       expect(await page.textContent('body p.build')).toMatch(
-        'injected only during build',
+        'injected only when bundled',
       )
     } else {
       expect(await page.innerHTML('body')).not.toMatch('p class="build"')
