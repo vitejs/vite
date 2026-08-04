@@ -112,8 +112,8 @@ export class BundledDev {
 
   get hasBuildOutput(): boolean {
     return (
-      this.memoryFiles.size > 0 &&
-      (this.memoryFiles.size > 1 ||
+      this.memoryFiles.size > 1 ||
+      (this.memoryFiles.size === 1 &&
         !this.memoryFiles.has(BUNDLED_DEV_CLIENT_FILENAME))
     )
   }
