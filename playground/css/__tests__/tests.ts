@@ -33,16 +33,13 @@ test('linked css', async () => {
 
   expect(await getColor(linked)).toBe('blue')
   expect(await getColor(atImport)).toBe('red')
-})
 
-// bundled dev drops an edit that arrives at a bad moment. Two such moments:
-// while the page is loading, and before the client has connected.
-// The update is then lost and never reaches the page.
-// That makes the edit-propagation tests flaky when the suite runs in parallel
-// (vitejs/vite#23028)
-test.runIf(!isBundled)('linked css edit propagation', async () => {
-  const linked = await page.$('.linked')
-  const atImport = await page.$('.linked-at-import')
+  // bundled dev drops an edit that arrives at a bad moment. Two such moments:
+  // while the page is loading, and before the client has connected.
+  // The update is then lost and never reaches the page.
+  // That makes the edit steps below flaky when the suite runs in parallel
+  // (vitejs/vite#23028)
+  if (isBundled) return
 
   editFile('linked.css', (code) => code.replace('color: blue', 'color: red'))
   await expect.poll(() => getColor(linked)).toBe('red')
@@ -59,12 +56,9 @@ test('css import from js', async () => {
 
   expect(await getColor(imported)).toBe('green')
   expect(await getColor(atImport)).toBe('purple')
-})
 
-// bundled dev: same dropped update as 'linked css edit propagation' above
-test.runIf(!isBundled)('css import from js edit propagation', async () => {
-  const imported = await page.$('.imported')
-  const atImport = await page.$('.imported-at-import')
+  // bundled dev: same dropped update as 'linked css' above
+  if (isBundled) return
 
   editFile('imported.css', (code) => code.replace('color: green', 'color: red'))
   await expect.poll(() => getColor(imported)).toBe('red')
@@ -84,11 +78,9 @@ test('css import asset with space', async () => {
 test('postcss config', async () => {
   const imported = await page.$('.postcss .nesting')
   expect(await getColor(imported)).toBe('pink')
-})
 
-// bundled dev: same dropped update as 'linked css edit propagation' above
-test.runIf(!isBundled)('postcss config edit propagation', async () => {
-  const imported = await page.$('.postcss .nesting')
+  // bundled dev: same dropped update as 'linked css' above
+  if (isBundled) return
 
   editFile('imported.css', (code) => code.replace('color: pink', 'color: red'))
   await expect.poll(() => getColor(imported)).toBe('red')
@@ -436,16 +428,16 @@ test('?raw', async () => {
   expect(await rawImportCss.textContent()).toBe(
     readFileSync(require.resolve('../raw-imported.css'), 'utf-8'),
   )
-})
 
-// bundled dev: editing a ?raw import does not reach the page (vitejs/vite#23028)
-test.runIf(!isBundled)('?raw edit propagation', async () => {
-  editFile('raw-imported.css', (code) =>
-    code.replace('color: yellow', 'color: blue'),
-  )
-  await expect
-    .poll(() => page.textContent('.raw-imported-css'))
-    .toMatch('color: blue')
+  // bundled dev: editing a ?raw import does not reach the page (vitejs/vite#23028)
+  if (!isBundled) {
+    editFile('raw-imported.css', (code) =>
+      code.replace('color: yellow', 'color: blue'),
+    )
+    await expect
+      .poll(() => page.textContent('.raw-imported-css'))
+      .toMatch('color: blue')
+  }
 })
 
 test('import css in less', async () => {
