@@ -140,6 +140,10 @@ describe('asset imports from js', () => {
     expect(await page.textContent('.public-import')).toMatch(iconMatch)
   })
 
+  test('typeof asset import', async () => {
+    expect(await page.textContent('.asset-import-typeof')).toBe('string')
+  })
+
   test('from /public (json)', async () => {
     expect(await page.textContent('.public-json-import')).toMatch(
       '/foo/bar/foo.json',
