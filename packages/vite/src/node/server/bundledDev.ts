@@ -1,4 +1,3 @@
-import path from 'node:path'
 import { setTimeout } from 'node:timers/promises'
 import {
   type BindingClientHmrUpdate,
@@ -9,6 +8,7 @@ import type { RolldownOutput } from 'rolldown'
 import colors from 'picocolors'
 import getEtag from 'etag'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
+import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
 import { getHmrImplementation } from '../plugins/clientInjections'
 import { createDebugger, formatAndTruncateFileList } from '../utils'
 import type { DevEnvironment } from './environment'
@@ -16,7 +16,6 @@ import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
 import { prepareError } from './middlewares/error'
 
 const debug = createDebugger('vite:full-bundle-mode')
-const BUNDLED_DEV_CLIENT_FILENAME = 'bundledDevClient.mjs'
 
 type HmrOutput = BindingClientHmrUpdate['update']
 
@@ -375,15 +374,8 @@ export class BundledDev {
     }
     for (const outputFile of output) {
       this.memoryFiles.set(outputFile.fileName, () => {
-        let source =
+        const source =
           outputFile.type === 'chunk' ? outputFile.code : outputFile.source
-        if (outputFile.type === 'chunk' && outputFile.isEntry) {
-          const runtimePath = path.posix.join(
-            this.environment.config.base,
-            BUNDLED_DEV_CLIENT_FILENAME,
-          )
-          source = `import ${JSON.stringify(runtimePath)}\n${source}`
-        }
         return {
           source,
           etag: getEtag(Buffer.from(source), { weak: true }),
