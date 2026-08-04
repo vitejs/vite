@@ -20,6 +20,7 @@ function createClient(options?: {
       sent.push(payload)
       options?.send?.(payload)
     },
+    invoke: async () => undefined as never,
   }
   const runtime: RolldownRuntimeLike = {
     getImporters: () => [],
