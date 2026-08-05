@@ -48,26 +48,38 @@ describe('port detection', () => {
   }
 
   describe('port fallback', () => {
-    test('uses an OS-assigned port when port is 0', async () => {
-      viteServer = await createServer({
-        root: import.meta.dirname,
-        optimizeDeps,
-        logLevel: 'silent',
-        server: { port: 0, ws: false },
-      })
-      const listen = vi.spyOn(viteServer.httpServer!, 'listen')
-      await viteServer.listen()
+    test.each([0, BASE_PORT])(
+      'uses the same port on every interface when port is %i',
+      async (configPort) => {
+        using listen = vi.spyOn(net.Server.prototype, 'listen')
 
-      const address = viteServer.httpServer!.address()
-      expect(listen.mock.calls[0]?.[0]).toBe(0)
-      expect(address).toStrictEqual(
-        expect.objectContaining({ port: expect.any(Number) }),
-      )
-      expect(viteServer._currentServerPort).toBe(
-        // already checked that address is an object with port
-        (address as net.AddressInfo).port,
-      )
-    })
+        viteServer = await createServer({
+          root: import.meta.dirname,
+          optimizeDeps,
+          logLevel: 'silent',
+          server: { port: configPort, ws: false },
+        })
+        await viteServer.listen()
+
+        const address = viteServer.httpServer!.address()
+        expect(address).toStrictEqual(
+          expect.objectContaining({ port: expect.any(Number) }),
+        )
+        const assignedPort = (address as net.AddressInfo).port
+        expect(viteServer._currentServerPort).toBe(assignedPort)
+        const [firstWildcardHost, ...remainingWildcardHosts] = wildcardHosts
+        expect(
+          listen.mock.calls.map(([port, host]) => ({ port, host })),
+        ).toStrictEqual([
+          { port: configPort, host: firstWildcardHost },
+          ...remainingWildcardHosts.map((host) => ({
+            port: assignedPort,
+            host,
+          })),
+          { port: assignedPort, host: 'localhost' },
+        ])
+      },
+    )
 
     test('detects port conflict', async () => {
       await using _blockingServer = await createSimpleServer(
