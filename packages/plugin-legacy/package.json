@@ -36,7 +36,7 @@
   "dependencies": {
     "@babel/core": "^7.29.7",
     "@babel/plugin-transform-dynamic-import": "^7.29.7",
-    "@babel/plugin-transform-modules-systemjs": "^7.29.7",
+    "@babel/plugin-transform-modules-systemjs": "^7.29.8",
     "@babel/preset-env": "^7.29.7",
     "babel-plugin-polyfill-corejs3": "^0.14.2",
     "babel-plugin-polyfill-regenerator": "^0.6.8",
@@ -52,7 +52,7 @@
     "vite": "^8.0.0"
   },
   "devDependencies": {
-    "acorn": "^8.17.0",
+    "acorn": "^8.18.0",
     "picocolors": "^1.1.1",
     "tsdown": "^0.22.14",
     "unrun": "^0.3.1",

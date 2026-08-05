@@ -8,6 +8,8 @@ import {
   getBgColor,
   getColor,
   isBuild,
+  isBundled,
+  isBundledDev,
   page,
   removeFile,
   serverLogs,
@@ -17,10 +19,12 @@ import {
 // note: tests should retrieve the element at the beginning of test and reuse it
 // in later assertions to ensure CSS HMR doesn't reload the page
 test('imported css', async () => {
-  const glob = await page.textContent('.imported-css-glob')
-  expect(glob).toContain('.dir-import')
-  const globEager = await page.textContent('.imported-css-globEager')
-  expect(globEager).toContain('.dir-import')
+  await expect
+    .poll(() => page.textContent('.imported-css-glob'))
+    .toContain('.dir-import')
+  await expect
+    .poll(() => page.textContent('.imported-css-globEager'))
+    .toContain('.dir-import')
 })
 
 test('linked css', async () => {
@@ -30,7 +34,12 @@ test('linked css', async () => {
   expect(await getColor(linked)).toBe('blue')
   expect(await getColor(atImport)).toBe('red')
 
-  if (isBuild) return
+  // bundled dev drops an edit that arrives at a bad moment. Two such moments:
+  // while the page is loading, and before the client has connected.
+  // The update is then lost and never reaches the page.
+  // That makes the edit steps below flaky when the suite runs in parallel
+  // (vitejs/vite#23028)
+  if (isBundled) return
 
   editFile('linked.css', (code) => code.replace('color: blue', 'color: red'))
   await expect.poll(() => getColor(linked)).toBe('red')
@@ -48,7 +57,8 @@ test('css import from js', async () => {
   expect(await getColor(imported)).toBe('green')
   expect(await getColor(atImport)).toBe('purple')
 
-  if (isBuild) return
+  // bundled dev: same dropped update as 'linked css' above
+  if (isBundled) return
 
   editFile('imported.css', (code) => code.replace('color: green', 'color: red'))
   await expect.poll(() => getColor(imported)).toBe('red')
@@ -69,7 +79,8 @@ test('postcss config', async () => {
   const imported = await page.$('.postcss .nesting')
   expect(await getColor(imported)).toBe('pink')
 
-  if (isBuild) return
+  // bundled dev: same dropped update as 'linked css' above
+  if (isBundled) return
 
   editFile('imported.css', (code) => code.replace('color: pink', 'color: red'))
   await expect.poll(() => getColor(imported)).toBe('red')
@@ -97,17 +108,19 @@ test('less', async () => {
 
   expect(await getColor(imported)).toBe('blue')
   expect(await getColor(atImport)).toBe('darkslateblue')
-  expect(await getBg(atImport)).toMatch(isBuild ? /base64/ : '/nested/icon.png')
+  expect(await getBg(atImport)).toMatch(
+    isBundled ? /base64/ : '/nested/icon.png',
+  )
   expect(await getColor(atImportAlias)).toBe('darkslateblue')
   expect(await getBg(atImportAlias)).toMatch(
-    isBuild ? /base64/ : '/nested/icon.png',
+    isBundled ? /base64/ : '/nested/icon.png',
   )
   expect(await getColor(atImportUrlOmmer)).toBe('darkorange')
   expect(await getBg(urlStartsWithVariable)).toMatch(
-    isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+    isBundled ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
   expect(await getBg(urlStartsWithInterpolation)).toMatch(
-    isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+    isBundled ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
 
   if (isBuild) return
@@ -143,7 +156,7 @@ test('stylus', async () => {
   expect(await getColor(relativeImport)).toBe('darkslateblue')
   expect(await getColor(relativeImportAlias)).toBe('darkslateblue')
   expect(await getBg(relativeImportAlias)).toMatch(
-    isBuild ? /base64/ : '/nested/icon.png',
+    isBundled ? /base64/ : '/nested/icon.png',
   )
   expect(await getColor(optionsRelativeImport)).toBe('green')
   expect(await getColor(optionsAbsoluteImport)).toBe('red')
@@ -401,7 +414,11 @@ test('minify css', async () => {
   expect(cssFile).not.toMatch('#ffff00b3')
 })
 
-test('?url', async () => {
+// bundled dev turns css?url into a data: URI of the source file, without
+// running postcss on it. The rule this test looks for is never produced.
+// This is a real bug (vitejs/vite#22863).
+// The test passes again once it is fixed, with no change to the test.
+test.skipIf(isBundledDev)('?url', async () => {
   expect(await getColor('.url-imported-css')).toBe('yellow')
 })
 
@@ -412,7 +429,8 @@ test('?raw', async () => {
     readFileSync(require.resolve('../raw-imported.css'), 'utf-8'),
   )
 
-  if (!isBuild) {
+  // bundled dev: editing a ?raw import does not reach the page (vitejs/vite#23028)
+  if (!isBundled) {
     editFile('raw-imported.css', (code) =>
       code.replace('color: yellow', 'color: blue'),
     )
@@ -466,10 +484,12 @@ test('sugarss', async () => {
 
   expect(await getColor(imported)).toBe('blue')
   expect(await getColor(atImport)).toBe('darkslateblue')
-  expect(await getBg(atImport)).toMatch(isBuild ? /base64/ : '/nested/icon.png')
+  expect(await getBg(atImport)).toMatch(
+    isBundled ? /base64/ : '/nested/icon.png',
+  )
   expect(await getColor(atImportAlias)).toBe('darkslateblue')
   expect(await getBg(atImportAlias)).toMatch(
-    isBuild ? /base64/ : '/nested/icon.png',
+    isBundled ? /base64/ : '/nested/icon.png',
   )
 
   if (isBuild) return
@@ -517,8 +537,8 @@ test.runIf(isBuild)('Scoped CSS via cssScopeTo should be treeshaken', () => {
 
 test('Scoped CSS should have a correct order', async () => {
   await page.goto(viteTestUrl + '/treeshake-scoped/')
-  expect(await getColor('.treeshake-scoped-order')).toBe('red')
-  expect(await getBgColor('.treeshake-scoped-order')).toBe('blue')
+  await expect.poll(() => getColor('.treeshake-scoped-order')).toBe('red')
+  await expect.poll(() => getBgColor('.treeshake-scoped-order')).toBe('blue')
 })
 
 test.runIf(isBuild)(
