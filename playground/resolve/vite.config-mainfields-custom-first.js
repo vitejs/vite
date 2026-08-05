@@ -1,17 +1,7 @@
-import { defineConfig } from 'vite'
-import { baseConfig } from './vite.config.js'
-
-export default defineConfig({
-  ...baseConfig,
-  resolve: {
-    ...baseConfig.resolve,
-    mainFields: [
-      'custom',
-      ...baseConfig.resolve.mainFields.filter((f) => f !== 'custom'),
-    ],
-  },
-  build: {
-    ...baseConfig.build,
-    outDir: 'dist-mainfields-custom-first',
-  },
-})
+import config from './vite.config.js'
+config.resolve.mainFields = [
+  'custom',
+  ...config.resolve.mainFields.filter((f) => f !== 'custom'),
+]
+config.build.outDir = 'dist-mainfields-custom-first'
+export default config

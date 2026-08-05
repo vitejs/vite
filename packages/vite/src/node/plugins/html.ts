@@ -28,6 +28,7 @@ import type { Logger } from '../logger'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from '../plugin'
 import { checkPublicFile } from '../publicDir'
 import type { ViteDevServer } from '../server'
+import { addHtmlTagDescriptorToSafeModulePaths } from '../server/htmlSafeModulePaths'
 import {
   decodeURIIfPossible,
   encodeURIPath,
@@ -1495,6 +1496,7 @@ export async function applyHtmlTransforms(
   pluginContext: MinimalPluginContextWithoutEnvironment,
   ctx: IndexHtmlTransformContext,
 ): Promise<string> {
+  const safeModulePathPromises: Promise<void>[] = []
   for (const hook of hooks) {
     const res = await hook.call(pluginContext, html, ctx)
     if (!res) {
@@ -1517,6 +1519,9 @@ export async function applyHtmlTransforms(
       let bodyPrependTags: HtmlTagDescriptor[] | undefined
 
       for (const tag of tags) {
+        safeModulePathPromises.push(
+          addHtmlTagDescriptorToSafeModulePaths(tag, ctx),
+        )
         switch (tag.injectTo) {
           case 'body':
             ;(bodyTags ??= []).push(tag)
@@ -1538,6 +1543,8 @@ export async function applyHtmlTransforms(
       if (bodyTags) html = injectToBody(html, bodyTags)
     }
   }
+
+  await Promise.all(safeModulePathPromises)
 
   return html
 }
