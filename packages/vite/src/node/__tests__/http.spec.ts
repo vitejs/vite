@@ -60,8 +60,12 @@ describe('port detection', () => {
 
       const address = viteServer.httpServer!.address()
       expect(listen.mock.calls[0]?.[0]).toBe(0)
+      expect(address).toStrictEqual(
+        expect.objectContaining({ port: expect.any(Number) }),
+      )
       expect(viteServer._currentServerPort).toBe(
-        typeof address === 'object' && address ? address.port : undefined,
+        // already checked that address is an object with port
+        (address as net.AddressInfo).port,
       )
     })
 
