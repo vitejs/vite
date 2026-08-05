@@ -163,7 +163,10 @@ function preload(
         dep = importMetaResolve(dep)
         if (dep in seen) return
         seen[dep] = true
-        const isCss = dep.endsWith('.css')
+        const isCss = new URL(
+          dep,
+          /** #__KEEP__ */ import.meta.url,
+        ).pathname.endsWith('.css')
 
         // check if the file is already preloaded by SSR markup
         // `dep` is already converted to an absolute URL by the `assetsURL` function
