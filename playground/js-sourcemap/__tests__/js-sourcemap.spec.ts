@@ -104,9 +104,7 @@ function expectMapHasSource(map: any, fileName: string, content: string) {
   expect(map.sourcesContent[index]).toBe(content)
 }
 
-// `export const <name> = '<name>'` compiles to `var <name, maybe renamed> = "<name>"`
-// in the bundle; the identifier must map back to the original identifier
-// (line 1, column 13 in the source file)
+// check the mapping of a variable
 function expectVarInitMapsBackToExportConst(
   js: string,
   map: any,
@@ -190,8 +188,7 @@ if (!isBuild) {
   })
 
   // bundled dev: index.html never imports foo-with-sourcemap.js, so it is not
-  // part of the bundle and nothing serves it. Only dev transforms a file on
-  // demand like this.
+  // part of the bundle and nothing serves it. This test is for unbundled-dev only.
   test.skipIf(isBundledDev)(
     'js with inline sourcemap injected by a plugin',
     async () => {
@@ -308,23 +305,16 @@ if (!isBuild) {
 
   test('should not leak file contents via sourcemap path traversal in node_modules', async () => {
     if (isBundledDev) {
-      // bundled dev serves the dep inside the bundle, not at a
-      // `/node_modules/...` URL. So check the same thing on the bundle map:
-      // no file contents leak. A version of this test that reads a `.map` from
-      // disk is still needed once static serving lands (vitejs/vite#23028).
+      // bundled-dev does not parse input sourcemaps,
+      // it copies them as the input source as a whole into `sourcesContent`,
+      // whereas unbundled-dev extracts the input sourcemaps
       const { map } = await getServedEntryChunk()
-      expect(
-        map.sources.some((source: string) =>
-          source.includes('test-dep-malicious-sourcemap'),
-        ),
-      ).toBe(true)
-      // the optimized-deps test below is skipped because this scan of the whole
-      // map is meant to cover its dep as well. Check that it really does.
-      expect(
-        map.sources.some((source: string) =>
-          source.includes('test-dep-optimized-malicious'),
-        ),
-      ).toBe(true)
+      expect(map.sources).toContainEqual(
+        expect.stringContaining('test-dep-malicious-sourcemap'),
+      )
+      expect(map.sources).toContainEqual(
+        expect.stringContaining('test-dep-optimized-malicious'),
+      )
       expect(map.sourcesContent).toBeDefined()
       expect(map.sourcesContent).not.toContainEqual(
         expect.stringContaining('defineConfig'),
