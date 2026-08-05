@@ -42,6 +42,7 @@ import {
   processSrcSetSync,
   tryStatSync,
 } from '../../utils'
+import { addHtmlUrlToSafeModulePaths } from '../htmlSafeModulePaths'
 import { browserUrlToModuleUrl, moduleUrlToFilePath } from '../moduleUrl'
 import {
   BasicMinimalPluginContext,
@@ -134,7 +135,8 @@ const processNodeUrl = (
   useSrcSetReplacer: boolean,
   config: ResolvedConfig,
   htmlPath: string,
-  originalUrl?: string,
+  originalUrl: string | undefined,
+  registerSafeModulePath: (url: string) => void,
   server?: ViteDevServer,
   isClassicScriptLink?: boolean,
 ): string => {
@@ -178,6 +180,7 @@ const processNodeUrl = (
         decodedUrl = decodeURI(preTransformUrl || url)
       } catch {
         // Malformed uri. Skip pre-transform.
+        registerSafeModulePath(url)
         return url
       }
       const moduleUrl = browserUrlToModuleUrl(decodedUrl, config.decodedBase)
@@ -192,6 +195,7 @@ const processNodeUrl = (
       }
     }
 
+    registerSafeModulePath(url)
     return url
   }
 
@@ -246,6 +250,17 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   const styleUrl: AssetNode[] = []
   const inlineStyles: InlineStyleAttribute[] = []
   const inlineModuleUrls: string[] = []
+  const safeModulePathPromises: Promise<unknown>[] = []
+  const registerSafeModulePath = (url: string) => {
+    safeModulePathPromises.push(
+      addHtmlUrlToSafeModulePaths(url, {
+        path: htmlPath,
+        filename,
+        server,
+        originalUrl,
+      }),
+    )
+  }
 
   const addInlineModule = (
     node: DefaultTreeAdapterMap['element'],
@@ -304,6 +319,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           config,
           htmlPath,
           originalUrl,
+          registerSafeModulePath,
           server,
           !isModule,
         )
@@ -327,6 +343,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
             config,
             htmlPath,
             originalUrl,
+            registerSafeModulePath,
           )
           if (processedUrl !== url) {
             s.update(start, end, processedUrl)
@@ -369,6 +386,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           config,
           htmlPath,
           originalUrl,
+          registerSafeModulePath,
         )
         if (processedUrl !== attr.value) {
           overwriteAttrValue(s, attr.location, processedUrl)
@@ -391,6 +409,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   }
 
   await Promise.all([
+    ...safeModulePathPromises,
     ...styleUrl.map(async ({ start, end, code }, index) => {
       const url = `${proxyModulePath}?html-proxy&direct&index=${index}.css`
 
