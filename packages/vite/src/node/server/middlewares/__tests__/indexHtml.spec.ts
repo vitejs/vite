@@ -3,18 +3,20 @@ import path from 'node:path'
 import { describe, expect, onTestFinished, test } from 'vitest'
 import { createServer } from '../../../server'
 import { FS_PREFIX } from '../../../constants'
+import type { Plugin } from '../../../plugin'
 
 const FIXTURE_DIR = path.resolve(import.meta.dirname, 'fixtures')
 const HTML_PATH = path.resolve(FIXTURE_DIR, 'root/index.html')
 const HTML_CONTENT = fs.readFileSync(HTML_PATH, 'utf-8')
 
-async function createTestServer(rootDir?: string) {
+async function createTestServer(rootDir?: string, plugins?: Plugin[]) {
   const root = path.resolve(import.meta.dirname, rootDir ?? 'fixtures/root')
 
   const server = await createServer({
     configFile: false,
     root,
     logLevel: 'error',
+    plugins,
     server: {
       middlewareMode: true,
       ws: false,
@@ -126,5 +128,59 @@ describe('indexHtml middleware — HMR timestamp injection with non-root base', 
     // the timestamp — two different URLs for the same module, executing the
     // entry twice.
     expect(transformed).toContain(`src="/ui/src/main.ts?t=${timestamp}"`)
+  })
+})
+
+describe('indexHtml middleware — safe module paths', () => {
+  test('registers URLs while scanning source HTML tags', async () => {
+    const server = await createTestServer()
+    const html = `
+      <link rel="stylesheet" href="./style.css?direct">
+      <script src="./classic.js?raw"></script>
+      <script>import('./dynamic.js?url')</script>
+    `
+
+    await server.transformIndexHtml('/index.html', html)
+
+    for (const [file, query] of [
+      ['style.css', '?direct'],
+      ['classic.js', '?raw'],
+      ['dynamic.js', '?url'],
+    ]) {
+      const filePath = path.resolve(FIXTURE_DIR, 'root', file)
+      expect(server.config.safeModulePaths).toContain(filePath)
+      expect(server.config.safeModulePaths).toContain(filePath + query)
+    }
+  })
+
+  test('registers URLs while scanning plugin-injected tags', async () => {
+    const server = await createTestServer(undefined, [
+      {
+        name: 'inject-safe-module-tags',
+        transformIndexHtml() {
+          return [
+            {
+              tag: 'link',
+              attrs: { rel: 'stylesheet', href: './style.css?direct' },
+            },
+            {
+              tag: 'script',
+              attrs: { src: './classic.js?raw' },
+            },
+          ]
+        },
+      },
+    ])
+
+    await server.transformIndexHtml('/index.html', HTML_CONTENT)
+
+    for (const [file, query] of [
+      ['style.css', '?direct'],
+      ['classic.js', '?raw'],
+    ]) {
+      const filePath = path.resolve(FIXTURE_DIR, 'root', file)
+      expect(server.config.safeModulePaths).toContain(filePath)
+      expect(server.config.safeModulePaths).toContain(filePath + query)
+    }
   })
 })

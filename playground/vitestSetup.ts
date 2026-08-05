@@ -79,21 +79,6 @@ export const viteBinPath = path.posix.join(
   'packages/vite/bin/vite.js',
 )
 
-// skip for now until it's compatible
-const playgroundsUsingDefaultFsAllow = new Set([
-  'alias',
-  'assets',
-  'csp',
-  'css',
-  'css-lightningcss',
-  'css-no-codesplit',
-  'css-sourcemap',
-  'hmr',
-  'html',
-  'tailwind',
-  'tailwind-v3',
-])
-
 // #endregion
 
 // #region context
@@ -277,9 +262,7 @@ async function loadConfig(configEnv: ConfigEnv) {
     logLevel: 'silent',
     configFile: false,
     server: {
-      ...(playgroundsUsingDefaultFsAllow.has(testName)
-        ? {}
-        : { fs: { allow: [] } }),
+      fs: { allow: [] },
       watch: {
         // During tests we edit the files too fast and sometimes chokidar
         // misses change events, so enforce polling for consistency
