@@ -580,7 +580,7 @@ export async function _createServer(
   await Promise.all(
     Object.entries(config.environments).map(
       async ([name, environmentOptions]) => {
-        const environment = await environmentOptions.dev.createEnvironment(
+        const environment = await environmentOptions!.dev.createEnvironment(
           name,
           config,
           {
