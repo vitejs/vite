@@ -30,12 +30,7 @@ describe.runIf(isServe)('serve', () => {
     throw new Error('Not found')
   }
 
-  // bundled dev adds CSS to the page through JS style tags. Those inline maps
-  // hold the same sources and the same content as normal dev. They are written
-  // out differently though: `ignoreList` and `sourceRoot` are missing, and the
-  // keys come in another order. The normal-dev snapshots pin that exact text,
-  // so the bundled-dev branches check the meaning of the map instead
-  // (vitejs/vite#23028)
+  // bundled dev adds CSS to the page through JS style tags
   const expectBundledDevStyleMap = (
     map: any,
     css: string,
@@ -53,9 +48,13 @@ describe.runIf(isServe)('serve', () => {
     expect(normalized.mappings).not.toBe('')
   }
 
-  // bundled dev does not serve `/linked.css` at its own URL. The bundle adds
-  // it to the page through a JS style tag instead (vitejs/vite#23028)
-  test.skipIf(isBundledDev)('linked css', async () => {
+  test('linked css', async () => {
+    if (isBundledDev) {
+      const css = await getStyleTagContentIncluding('.linked ')
+      // different from unbundled dev below
+      expect(css).toContain('sourceMappingURL')
+      return
+    }
     const res = await page.request.get(
       new URL('./linked.css', page.url()).href,
       {
@@ -65,6 +64,7 @@ describe.runIf(isServe)('serve', () => {
       },
     )
     const css = await res.text()
+    // drops transform result when the transformed result is the same as the source file.
     expect(css).not.toContain('sourceMappingURL')
   })
 
@@ -115,17 +115,13 @@ describe.runIf(isServe)('serve', () => {
     `)
   })
 
-  // bundled dev: same as above. CSS is not served at its source path.
-  test.runIf(!isBundled)(
-    'js .css request does not include sourcemap',
-    async () => {
-      const res = await page.request.get(
-        new URL('./linked-with-import.css', page.url()).href,
-      )
-      const content = await res.text()
-      expect(content).not.toMatch('//#s*sourceMappingURL')
-    },
-  )
+  test.runIf(!isBundled)('js .css request includes sourcemap', async () => {
+    const res = await page.request.get(
+      new URL('./linked-with-import.css', page.url()).href,
+    )
+    const content = await res.text()
+    expect(content).toMatch('/*# sourceMappingURL')
+  })
 
   // bundled dev gives plain postcss css an empty inline map, with no sources.
   // This is a real gap (vitejs/vite#23028).

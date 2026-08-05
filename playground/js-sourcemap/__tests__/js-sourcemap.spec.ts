@@ -69,20 +69,12 @@ function expectConsoleLogArgumentMapsToOriginalX(
   })
 }
 
-// bundled dev serves the playground as one rolldown bundle from memory, so
-// per-module dev-transform URLs (`/foo.js`) are not served. The bundled-dev
-// branches below assert against the served entry chunk and its real `.js.map`
-// instead (vitejs/vite#23028).
 async function getServedEntryChunk() {
-  // poll: right after navigation the server may still answer with the
-  // self-reloading fallback page, which has no external script tag; waitFor
-  // (not waitUntil) so a transient request failure retries instead of aborting
   const srcMatches = await vi.waitFor(
     async () => {
       const html = await (await page.request.get(page.url())).text()
       const matches = [...html.matchAll(/<script[^>]* src="([^"]+)"/g)]
-        // the server also injects its client runtime as a script tag
-        // (vitejs/vite#23161); only chunk scripts matter here
+        // the server also injects its client runtime as a script tag (vitejs/vite#23161)
         .filter(([, src]) => !src.endsWith('/bundledDevClient.mjs'))
       expect(matches.length).toBeGreaterThan(0)
       return matches
