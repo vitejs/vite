@@ -17,7 +17,7 @@ import {
   createExplicitDepsOptimizer,
 } from '../optimizer/optimizer'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
-import { cleanUrl, promiseWithResolvers, unwrapId } from '../../shared/utils'
+import { cleanUrl, promiseWithResolvers } from '../../shared/utils'
 import type { ViteDevServer } from '../server'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
@@ -176,7 +176,7 @@ export class DevEnvironment extends BaseEnvironment {
       ({ path, message, firstInvalidatedBy }, client) => {
         this.invalidateModule(
           {
-            path: unwrapId(path),
+            path,
             message,
             firstInvalidatedBy,
           },
