@@ -81,6 +81,9 @@ async function getServedEntryChunk() {
     async () => {
       const html = await (await page.request.get(page.url())).text()
       const matches = [...html.matchAll(/<script[^>]* src="([^"]+)"/g)]
+        // the server also injects its client runtime as a script tag
+        // (vitejs/vite#23161); only chunk scripts matter here
+        .filter(([, src]) => !src.endsWith('/bundledDevClient.mjs'))
       expect(matches.length).toBeGreaterThan(0)
       return matches
     },
