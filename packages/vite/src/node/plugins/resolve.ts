@@ -489,11 +489,18 @@ function optimizerResolvePlugin(
   }
 }
 
-function resolveSubpathImports(
+export function resolveSubpathImports(
   id: string,
   importer: string | undefined,
-  options: InternalResolveOptions,
-) {
+  options: Pick<
+    InternalResolveOptions,
+    | 'packageCache'
+    | 'conditions'
+    | 'externalConditions'
+    | 'isProduction'
+    | 'isRequire'
+  >,
+): string | undefined {
   if (!importer || !id.startsWith(subpathImportsPrefix)) return
   const basedir = path.dirname(importer)
   const pkgData = findNearestPackageData(basedir, options.packageCache)
@@ -1027,7 +1034,10 @@ function getConditions(
 function resolveExportsOrImports(
   pkg: PackageData['data'],
   key: string,
-  options: InternalResolveOptions,
+  options: Pick<
+    InternalResolveOptions,
+    'conditions' | 'externalConditions' | 'isProduction' | 'isRequire'
+  >,
   type: 'imports' | 'exports',
   externalize?: boolean,
 ) {
