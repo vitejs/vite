@@ -116,13 +116,20 @@ describe.runIf(isServe)('serve', () => {
     `)
   })
 
-  test.runIf(!isBundled)('js .css request includes sourcemap', async () => {
-    const res = await page.request.get(
-      new URL('./linked-with-import.css', page.url()).href,
-    )
-    const content = await res.text()
-    expect(content).toMatch('/*# sourceMappingURL')
-  })
+  test.runIf(!isBundled)(
+    'js .css request does not include sourcemap',
+    async () => {
+      const res = await page.request.get(
+        new URL('./linked-with-import.css', page.url()).href,
+      )
+      const content = await res.text()
+      // The response is the JS module that wraps the CSS. The JS itself must
+      // not carry a `//# sourceMappingURL` comment. The CSS text inlined in
+      // that JS still contains its own `/*# sourceMappingURL` comment; that
+      // one is fine.
+      expect(content).not.toMatch('//# sourceMappingURL')
+    },
+  )
 
   test('imported css', async () => {
     const css = await getStyleTagContentIncluding('.imported ')
