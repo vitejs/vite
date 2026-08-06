@@ -685,6 +685,10 @@ export function resolveRolldownOptions(
       viteMode: true,
       chunkImportMap: options.chunkImportMap
         ? {
+            ...(typeof options.rolldownOptions.experimental?.chunkImportMap ===
+            'object'
+              ? options.rolldownOptions.experimental?.chunkImportMap
+              : {}),
             baseUrl: base,
           }
         : options.rolldownOptions.experimental?.chunkImportMap,
