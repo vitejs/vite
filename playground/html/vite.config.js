@@ -145,7 +145,7 @@ ${
             {
               tag: 'p',
               attrs: { class: 'server' },
-              children: 'This is injected only during dev',
+              children: 'This is injected only when unbundled',
               injectTo: 'body',
             },
           ]
@@ -160,7 +160,7 @@ ${
             {
               tag: 'p',
               attrs: { class: 'build' },
-              children: 'This is injected only during build',
+              children: 'This is injected only when bundled',
               injectTo: 'body',
             },
           ]

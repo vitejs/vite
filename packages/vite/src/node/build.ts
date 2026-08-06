@@ -177,7 +177,7 @@ export interface BuildEnvironmentOptions {
   /**
    * Set to `false` to disable minification, or specify the minifier to use.
    * Available options are 'oxc' or 'terser' or 'esbuild'.
-   * @default 'oxc'
+   * @default 'oxc' for client build, false for SSR build
    */
   minify?: boolean | 'oxc' | 'terser' | 'esbuild'
   /**
@@ -471,7 +471,8 @@ export function resolveBuildEnvironmentOptions(
     ...merged.rolldownOptions,
   }
   if (merged.lib && merged.lib.entry == null && input != null) {
-    merged.lib.entry = input
+    // avoid mutating the user-provided lib options object
+    merged.lib = { ...merged.lib, entry: input }
   }
 
   // handle special build targets

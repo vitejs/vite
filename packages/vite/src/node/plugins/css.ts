@@ -65,6 +65,7 @@ import {
   encodeURIPath,
   escapeRegex,
   generateCodeFrame,
+  getFileStartIndex,
   getHash,
   getPackageManagerCommand,
   getPkgName,
@@ -74,6 +75,7 @@ import {
   isExternalUrl,
   isObject,
   joinUrlSegments,
+  lineTerminatorRE,
   mergeWithDefaults,
   normalizePath,
   processSrcSet,
@@ -1121,6 +1123,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const pureCssChunkNames = [...pureCssChunks]
           .map((pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName])
           .filter(Boolean)
+        const pureCssChunkNameSet = new Set(pureCssChunkNames)
 
         let importMapReverseMapping: Record<string, string> | undefined
         if (config.build.chunkImportMap) {
@@ -1148,7 +1151,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // and also register the emitted CSS files under the importer
             // chunks instead.
             chunk.imports = chunk.imports.filter((file) => {
-              if (pureCssChunkNames.includes(file)) {
+              if (pureCssChunkNameSet.has(file)) {
                 const { importedCss, importedAssets } = (
                   bundle[file] as OutputChunk
                 ).viteMetadata!
@@ -1225,14 +1228,14 @@ export function injectInlinedCSS(
   } else if (format === 'es') {
     // legacy build
     if (code.startsWith('#!')) {
-      // inject after the shebang line instead of into it
-      const newlinePos = code.indexOf('\n')
-      if (newlinePos === -1) {
+      const fileStartIndex = getFileStartIndex(code)
+      const hashbang = code.slice(0, fileStartIndex)
+      if (!lineTerminatorRE.test(hashbang)) {
         // the shebang has no trailing newline, add one so it stays intact
         s.append(`\n${injectCode}`)
         return
       }
-      injectionPoint = newlinePos + 1
+      injectionPoint = fileStartIndex
     } else {
       injectionPoint = 0
     }

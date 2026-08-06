@@ -1798,6 +1798,7 @@ describe('loadConfigFromFile', () => {
         { command: 'build', mode: 'production' },
         undefined,
         root,
+        'silent',
       )
       expect(result).toBeTruthy()
       expect(result?.config).toStrictEqual({ define: { foo: 1 } })
@@ -1910,6 +1911,7 @@ describe('loadConfigFromFile', () => {
       {} as any,
       path.resolve(fixtures, './cjs-module-vars-in-esm/vite.config.ts'),
       path.resolve(fixtures, './cjs-module-vars-in-esm'),
+      'silent',
     ))!
     const c = config as any
     expect(c.dirname).toContain('cjs-module-vars-in-esm')
@@ -1941,6 +1943,20 @@ describe('loadConfigFromFile', () => {
 
     const c = config as any
     expect(c.dirname).toContain('shebang')
+  })
+
+  test('injected variables follow a hashbang ending in CRLF', async () => {
+    const { config, path: configPath } = (await loadConfigFromFile(
+      {} as any,
+      path.resolve(fixtures, './shebang-crlf/vite.config.ts'),
+      path.resolve(fixtures, './shebang-crlf'),
+    ))!
+
+    const configFile = fs.readFileSync(configPath, 'utf8')
+    expect(configFile).toContain('\r\n')
+
+    const c = config as any
+    expect(c.dirname).toContain('shebang-crlf')
   })
 
   describe('loadConfigFromFile with configLoader: native', () => {

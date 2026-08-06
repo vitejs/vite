@@ -35,6 +35,7 @@ import {
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import { checkPublicFile } from '../publicDir'
+import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
 import { toOutputFilePathInHtml } from '../build'
 import { resolveEnvPrefix } from '../env'
 import { cleanUrl } from '../../shared/utils'
@@ -989,6 +990,30 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           assetTags.push(...getCssTagsForChunk(chunk, toOutputAssetFilePath))
 
           result = injectToHead(result, assetTags)
+        }
+
+        // prepend dev client runtime for bundled client build before other chunk scripts
+        if (
+          config.command === 'serve' &&
+          this.environment.config.consumer === 'client' &&
+          this.environment.config.isBundled
+        ) {
+          result = injectToHead(
+            result,
+            [
+              {
+                tag: 'script',
+                attrs: {
+                  type: 'module',
+                  src: path.posix.join(
+                    config.base,
+                    BUNDLED_DEV_CLIENT_FILENAME,
+                  ),
+                },
+              },
+            ],
+            true,
+          )
         }
 
         // inject css link when cssCodeSplit is false
