@@ -1,0 +1,19 @@
+packages/vite/src/node/__tests__/optimizer/rolldownDepPlugin.spec.ts
+  s_35fa73fab9d82c::t_f3b570ba54ca22 9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "8228e466839c088898d7d14c70e7013185ece0da",
+  "prompts": {},
+  "sessions": {
+    "s_35fa73fab9d82c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd5ba-23aa-7982-8ce2-6b2163d6d112",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
