@@ -84,7 +84,7 @@ jobs:
           permission-pull-requests: write
 
       - name: Open release PR
-        uses: vitejs/release-scripts/action/release-pr@hash # version
+        uses: vitejs/release-scripts/action/release-pr@bec07424241c85b28458756d0ef9edbb130dc63e # v1.9.1
         with:
           app-slug: ${{ steps.generate-token.outputs.app-slug }}
           token: ${{ steps.generate-token.outputs.token }}
