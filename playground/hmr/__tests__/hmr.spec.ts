@@ -377,7 +377,7 @@ if (!isBuild) {
     el = await page.$('.link-tag-removed')
     await expect.poll(() => el.textContent()).toMatch('yes')
 
-    expect((await page.$$('link')).length).toBe(1)
+    await expect.poll(async () => (await page.$$('link')).length).toBe(1)
   })
 
   test('not loaded dynamic import', async () => {
