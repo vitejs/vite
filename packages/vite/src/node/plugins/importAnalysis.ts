@@ -31,7 +31,6 @@ import {
 } from '../server/hmr'
 import {
   createDebugger,
-  fsPathFromUrl,
   generateCodeFrame,
   getFileStartIndex,
   getHash,
@@ -591,9 +590,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             resolvedId = resolvedId || url
 
             // record as safe modules
-            // safeModulesPath should not include the base prefix.
-            // See https://github.com/vitejs/vite/issues/9438#issuecomment-1465270409
-            config.safeModulePaths.add(fsPathFromUrl(stripBase(url, base)))
+            config.safeModulePaths.addUrl(resolvedId)
 
             if (url !== specifier) {
               let rewriteDone = false

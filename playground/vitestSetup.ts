@@ -83,28 +83,15 @@ export const viteBinPath = path.posix.join(
 const playgroundsUsingDefaultFsAllow = new Set([
   'alias',
   'assets',
-  'build-old',
-  'chunk-importmap',
   'csp',
   'css',
-  'css-codesplit',
   'css-lightningcss',
   'css-no-codesplit',
   'css-sourcemap',
-  'dynamic-import',
-  'glob-import',
   'hmr',
   'html',
-  'json',
-  'legacy',
-  'multiple-entrypoints',
-  'optimize-deps',
-  'resolve',
   'tailwind',
   'tailwind-v3',
-  'tsconfig-json-load-error',
-  'wasm',
-  'worker',
 ])
 
 // #endregion

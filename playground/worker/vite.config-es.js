@@ -1,7 +1,8 @@
 import { defineConfig } from 'vite'
 import workerPluginTestPlugin from './worker-plugin-test-plugin.js'
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  input: command === 'serve' ? ['index.html', 'classic-esm.js'] : undefined,
   base: '/es/',
   resolve: {
     alias: {
@@ -47,4 +48,4 @@ export default defineConfig({
     },
   ],
   cacheDir: 'node_modules/.vite-es',
-})
+}))
