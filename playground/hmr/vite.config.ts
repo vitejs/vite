@@ -9,7 +9,17 @@ export default defineConfig(({ command }) => ({
     path.resolve(import.meta.dirname, './index.html'),
     ...(command === 'build'
       ? []
-      : [path.resolve(import.meta.dirname, './missing-import/index.html')]),
+      : [
+          'accept-exports/dynamic-imports',
+          'accept-exports/main-accepted',
+          'accept-exports/main-non-accepted',
+          'accept-exports/side-effects',
+          'accept-exports/star-imports',
+          'accept-exports/unused-exports',
+          'css-link',
+          'missing-file',
+          'missing-import',
+        ].map((dir) => path.resolve(import.meta.dirname, dir, 'index.html'))),
     path.resolve(
       import.meta.dirname,
       './unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
