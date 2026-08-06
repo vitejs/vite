@@ -171,6 +171,8 @@ async function getAvailableEphemeralPort(
 ): Promise<number | null> {
   for (let attempt = 0; attempt < 3; attempt++) {
     // Passing 0 asks the OS for a new candidate on every attempt.
+    // We assume that the OS will return a different candidate on every attempt,
+    // which does not always hold true, but it should be fine for most cases.
     let port = 0
     let available = true
     for (const host of [...wildcardHosts, specifiedHost]) {
@@ -271,6 +273,7 @@ export async function httpServerStart(
     if (result.error.code !== 'EADDRINUSE') {
       throw result.error
     }
+    // this can happen if the port was listened by other process between getAvailableEphemeralPort and tryBindServer
     throw new Error(`Port ${port} is already in use`)
   }
 
