@@ -187,8 +187,7 @@ if (!isBuild) {
     `)
   })
 
-  // bundled dev: index.html never imports foo-with-sourcemap.js, so it is not
-  // part of the bundle and nothing serves it. This test is for unbundled-dev only.
+  // bundled dev does not inject fallback sourcemap, so this test is irrelevant
   test.skipIf(isBundledDev)(
     'js with inline sourcemap injected by a plugin',
     async () => {
