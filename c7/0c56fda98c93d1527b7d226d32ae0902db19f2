@@ -1,0 +1,58 @@
+packages/vite/src/node/__tests__/fixtures/shared-plugins/chunk-import-map/lazy.css
+  s_56e2a89e2a3bd7::t_12369cebdd2684 1-3
+packages/vite/src/node/__tests__/fixtures/shared-plugins/chunk-import-map/lazy.js
+  s_56e2a89e2a3bd7::t_253114f4f04be9 1-3
+packages/vite/src/node/plugins/importAnalysisBuild.ts
+  s_56e2a89e2a3bd7::t_fa80843285de95 360-361,373
+packages/vite/src/node/plugins/html.ts
+  s_f8def00b6e4ee6::t_82004cdfea5583 36,1236-1237,1263-1265,1692-1694,1696,1703-1711,1718,1727,1735,1738-1739
+packages/vite/src/node/__tests__/build.spec.ts
+  s_56e2a89e2a3bd7::t_1442b682246b94 1023-1087,1089-1096,1098-1100,1106-1110,1122,1125-1141,1153,1156-1159,1169-1170,1172-1175,1177-1184,1196
+  s_56e2a89e2a3bd7::t_4de9736b11a4d3 1088
+  s_56e2a89e2a3bd7::t_bf84f8321fb36c 1097
+  s_56e2a89e2a3bd7::t_b872712308465d 1101-1105
+  s_56e2a89e2a3bd7::t_ccb4bda44e9212 1111-1113,1119-1121
+  s_56e2a89e2a3bd7::t_a506a293dcc29c 1123-1124
+  s_56e2a89e2a3bd7::t_3c578ceac6abb5 1142-1144,1150-1152
+  s_56e2a89e2a3bd7::t_e2c960f2165e54 1154-1155
+  s_56e2a89e2a3bd7::t_6cb65ab6675b62 1160-1162,1166-1168
+  s_56e2a89e2a3bd7::t_0eb2d22309ac15 1171
+  s_56e2a89e2a3bd7::t_5cf99aade5d38b 1176
+  s_56e2a89e2a3bd7::t_f49a221e687b1d 1185-1187,1193-1195
+  s_56e2a89e2a3bd7::t_b1e047ed8d1c26 1197
+  s_99c7c8ab0a0c78::t_a91580a2b03158 1114-1118,1145-1149,1163-1165,1188-1192
+packages/vite/src/node/__tests__/fixtures/shared-plugins/chunk-import-map/entry.js
+  s_56e2a89e2a3bd7::t_4e2167b6642eeb 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c70c56fda98c93d1527b7d226d32ae0902db19f2",
+  "prompts": {},
+  "sessions": {
+    "s_56e2a89e2a3bd7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd51e-ff3b-72e3-8527-e0fe054dce10",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_99c7c8ab0a0c78": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd6f3-5efe-7472-b2a1-d466f3b7d56d",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_f8def00b6e4ee6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd5c8-63c2-7e22-84d5-89b23dc4b4a8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
