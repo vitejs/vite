@@ -1096,6 +1096,7 @@ test('chunkImportMap is emitted when emitAssets is false', async () => {
           ssr: true,
           emitAssets: false,
           write: false,
+          chunkImportMap: true,
           rolldownOptions: {
             input: '/entry.js',
             experimental: {
