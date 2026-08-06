@@ -475,7 +475,7 @@ export function indexHtmlMiddleware(
         const filePath = pathname.slice(1) // remove first /
 
         let file = fullBundle.memoryFiles.get(filePath)
-        if (!file && fullBundle.memoryFiles.size !== 0) {
+        if (!file && fullBundle.hasBuildOutput) {
           return next()
         }
         const secFetchDest = req.headers['sec-fetch-dest']

@@ -33,8 +33,9 @@ import {
   removeLeadingSlash,
   unique,
 } from '../utils'
-import type { ResolvedConfig } from '../config'
+import type { ResolvedConfig, ResolvedEnvironmentOptions } from '../config'
 import { checkPublicFile } from '../publicDir'
+import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
 import { toOutputFilePathInHtml } from '../build'
 import { resolveEnvPrefix } from '../env'
 import { cleanUrl } from '../../shared/utils'
@@ -991,6 +992,30 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           result = injectToHead(result, assetTags)
         }
 
+        // prepend dev client runtime for bundled client build before other chunk scripts
+        if (
+          config.command === 'serve' &&
+          this.environment.config.consumer === 'client' &&
+          this.environment.config.isBundled
+        ) {
+          result = injectToHead(
+            result,
+            [
+              {
+                tag: 'script',
+                attrs: {
+                  type: 'module',
+                  src: path.posix.join(
+                    config.base,
+                    BUNDLED_DEV_CLIENT_FILENAME,
+                  ),
+                },
+              },
+            ],
+            true,
+          )
+        }
+
         // inject css link when cssCodeSplit is false
         if (!this.environment.config.build.cssCodeSplit) {
           const cssBundleName = cssBundleNameCache.get(config)
@@ -1208,7 +1233,8 @@ export function postImportMapHook(
   const decoder = new TextDecoder()
   return function (html, { bundle }) {
     const chunkImportMapEnabled =
-      config.command === 'build' && config.build.chunkImportMap
+      config.command === 'build' &&
+      config.environments.client.build.chunkImportMap
 
     if (importMapAppendRE.test(html)) {
       let importMap: string | undefined
@@ -1234,7 +1260,9 @@ export function postImportMapHook(
 
     if (chunkImportMapEnabled) {
       const nonce = config.html?.cspNonce
-      const importMap = bundle![getImportMapFilename(config)] as OutputAsset
+      const importMap = bundle![
+        getImportMapFilename(config.environments.client)
+      ] as OutputAsset
       const importMapHtml = serializeTag({
         tag: 'script',
         attrs: { type: 'importmap', ...(nonce ? { nonce } : {}) },
@@ -1661,13 +1689,24 @@ function incrementIndent(indent: string = '') {
   return `${indent}${indent[0] === '\t' ? '\t' : '  '}`
 }
 
-export function getImportMapFilename(config: ResolvedConfig): string {
+export function getImportMapFilename(
+  options: ResolvedEnvironmentOptions,
+): string {
   const chunkImportMap =
-    config.build.rolldownOptions.experimental?.chunkImportMap
+    options.build.rolldownOptions.experimental?.chunkImportMap
   if (typeof chunkImportMap === 'object' && chunkImportMap.fileName) {
     return chunkImportMap.fileName
   }
   return 'importmap.json'
+}
+
+function getImportMapBaseUrl(options: ResolvedEnvironmentOptions): string {
+  const chunkImportMap =
+    options.build.rolldownOptions.experimental?.chunkImportMap
+  if (typeof chunkImportMap === 'object' && chunkImportMap.baseUrl) {
+    return chunkImportMap.baseUrl
+  }
+  return '/'
 }
 
 /**
@@ -1676,7 +1715,7 @@ export function getImportMapFilename(config: ResolvedConfig): string {
  */
 export function getImportMap(
   bundle: OutputBundle,
-  config: ResolvedConfig,
+  options: ResolvedEnvironmentOptions & ResolvedConfig,
 ):
   | {
       asset: OutputAsset
@@ -1685,7 +1724,7 @@ export function getImportMap(
       mapping: Record<string, string>
     }
   | undefined {
-  const asset = bundle[getImportMapFilename(config)] as OutputAsset | undefined
+  const asset = bundle[getImportMapFilename(options)] as OutputAsset | undefined
   if (!asset) return undefined
 
   const content: { imports: Record<string, string> } = JSON.parse(
@@ -1693,10 +1732,11 @@ export function getImportMap(
       ? asset.source
       : new TextDecoder().decode(asset.source),
   )
+  const baseUrl = getImportMapBaseUrl(options)
   const mapping = Object.fromEntries(
     Object.entries(content.imports).map(([k, v]) => [
-      k.slice(config.base.length),
-      v.slice(config.base.length),
+      k.slice(baseUrl.length),
+      v.slice(baseUrl.length),
     ]),
   )
   return { asset, content, mapping }
