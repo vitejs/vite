@@ -2320,18 +2320,16 @@ async function minifyCSS(
   }
 
   try {
-    // the lightningcss transformer already applied `visitor`/`customAtRules`, so don't run them again while minifying
-    const { visitor, customAtRules, ...lightningcssOptions } =
-      config.css.transformer === 'lightningcss'
-        ? (config.css.lightningcss ?? {})
-        : { ...config.css.lightningcss }
     const { code, warnings } = (await importLightningCSS()).transform({
-      ...lightningcssOptions,
+      ...config.css.lightningcss,
       targets: convertTargets(config.build.cssTarget),
-      cssModules: undefined,
       filename,
       code: Buffer.from(css),
       minify: true,
+      // the transforms should run in `compileLightningCSS` step
+      cssModules: undefined,
+      visitor: undefined,
+      customAtRules: undefined,
     })
 
     for (const warning of warnings) {
