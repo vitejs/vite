@@ -255,7 +255,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 - **Type:** `(server: ViteDevServer) => (() => void) | void | Promise<(() => void) | void>`
 - **Kind:** `async`, `sequential`
-- **See also:** [ViteDevServer](./api-javascript#vitedevserver)
+- **See also:** [ViteDevServer](./api-dev-server)
 - **Scope:** [Global](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks)
 
   Hook for configuring the dev server. The most common use case is adding custom middlewares to the internal [connect](https://github.com/senchalabs/connect) app:
@@ -343,7 +343,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 - **Kind:** `async`, `sequential`
 - **Scope:** [Per-environment](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks)
 
-  Dedicated hook for transforming HTML entry point files such as `index.html`. The hook receives the current HTML string and a transform context. The context exposes the [`ViteDevServer`](./api-javascript#vitedevserver) instance during dev, and exposes the Rollup output bundle during build.
+  Dedicated hook for transforming HTML entry point files such as `index.html`. The hook receives the current HTML string and a transform context. The context exposes the [`ViteDevServer`](./api-dev-server) instance during dev, and exposes the Rollup output bundle during build.
 
   The hook can be async and can return one of the following:
   - Transformed HTML string

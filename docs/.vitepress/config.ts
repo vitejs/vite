@@ -362,6 +362,10 @@ const config = defineConfig({
               link: '/guide/api-javascript',
             },
             {
+              text: 'ViteDevServer API',
+              link: '/guide/api-dev-server',
+            },
+            {
               text: 'Config Reference',
               link: '/config/',
             },
