@@ -166,12 +166,15 @@ async function readFileIfExists(value?: string | Buffer | any[]) {
 
 // Let the OS select an ephemeral port on the first wildcard interface, then
 // verify that same concrete port is available on every remaining interface.
-async function getAvailableEphemeralPort(): Promise<number | null> {
+async function getAvailableEphemeralPort(
+  specifiedHost?: string,
+): Promise<number | null> {
   for (let attempt = 0; attempt < 3; attempt++) {
     // Passing 0 asks the OS for a new candidate on every attempt.
     let port = 0
     let available = true
-    for (const host of wildcardHosts) {
+    for (const host of [...wildcardHosts, specifiedHost]) {
+      if (typeof host !== 'string') continue
       // Gracefully handle errors (e.g., IPv6 disabled on the system)
       const availablePort = await tryListen(port, host).catch(() => port)
       if (availablePort == null) {
@@ -256,7 +259,7 @@ export async function httpServerStart(
   const { port: startPort, strictPort, host, logger } = serverOptions
 
   if (startPort === 0) {
-    const port = await getAvailableEphemeralPort()
+    const port = await getAvailableEphemeralPort(host)
     if (port == null) {
       throw new Error('No available ephemeral port found')
     }

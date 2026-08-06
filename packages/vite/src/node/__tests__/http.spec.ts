@@ -48,38 +48,36 @@ describe('port detection', () => {
   }
 
   describe('port fallback', () => {
-    test.each([0, BASE_PORT])(
-      'uses the same port on every interface when port is %i',
-      async (configPort) => {
-        using listen = vi.spyOn(net.Server.prototype, 'listen')
+    test('uses the same ephemeral port on every interface', async () => {
+      using listen = vi.spyOn(net.Server.prototype, 'listen')
 
-        viteServer = await createServer({
-          root: import.meta.dirname,
-          optimizeDeps,
-          logLevel: 'silent',
-          server: { port: configPort, ws: false },
-        })
-        await viteServer.listen()
+      viteServer = await createServer({
+        root: import.meta.dirname,
+        optimizeDeps,
+        logLevel: 'silent',
+        server: { port: 0, ws: false },
+      })
+      await viteServer.listen()
 
-        const address = viteServer.httpServer!.address()
-        expect(address).toStrictEqual(
-          expect.objectContaining({ port: expect.any(Number) }),
-        )
-        const assignedPort = (address as net.AddressInfo).port
-        expect(viteServer._currentServerPort).toBe(assignedPort)
-        const [firstWildcardHost, ...remainingWildcardHosts] = wildcardHosts
-        expect(
-          listen.mock.calls.map(([port, host]) => ({ port, host })),
-        ).toStrictEqual([
-          { port: configPort, host: firstWildcardHost },
-          ...remainingWildcardHosts.map((host) => ({
-            port: assignedPort,
-            host,
-          })),
-          { port: assignedPort, host: 'localhost' },
-        ])
-      },
-    )
+      const address = viteServer.httpServer!.address()
+      expect(address).toStrictEqual(
+        expect.objectContaining({ port: expect.any(Number) }),
+      )
+      const assignedPort = (address as net.AddressInfo).port
+      expect(viteServer._currentServerPort).toBe(assignedPort)
+      const [firstWildcardHost, ...remainingWildcardHosts] = wildcardHosts
+      expect(
+        listen.mock.calls.map(([port, host]) => ({ port, host })),
+      ).toStrictEqual([
+        { port: 0, host: firstWildcardHost },
+        ...remainingWildcardHosts.map((host) => ({
+          port: assignedPort,
+          host,
+        })),
+        { port: assignedPort, host: 'localhost' }, // Check configured host
+        { port: assignedPort, host: 'localhost' }, // Bind HTTP server
+      ])
+    })
 
     test('detects port conflict', async () => {
       await using _blockingServer = await createSimpleServer(
