@@ -1,0 +1,33 @@
+playground/minify/__tests__/minify.spec.ts
+  s_647eef1064b53c::t_a4dd51aa0d2861 22-33
+playground/css-lightningcss/index.html
+  s_e727fda3f3ba38::t_a47d3dc53c6bbf 3-14
+playground/minify/index.html
+  s_e727fda3f3ba38::t_e0435dcc2e076f 3-14
+playground/css-lightningcss/__tests__/css-lightningcss.spec.ts
+  s_e727fda3f3ba38::t_96a4648df0c0b2 10,83-94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e42191b37ca3db28ea93001b58fb6c5a754f1147",
+  "prompts": {},
+  "sessions": {
+    "s_647eef1064b53c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb2a6-ae44-7953-a364-6666b8f96c3c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_e727fda3f3ba38": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd65e-d799-71b3-bfed-a9eae78d25af",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
