@@ -2,7 +2,6 @@ import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import type { InternalModuleFormat } from 'rolldown'
 import MagicString from 'magic-string'
-import { build } from '../../build'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
 import {
@@ -870,50 +869,5 @@ console.log("foo");`,
       "#!/usr/bin/env node
       injectCSS();"
     `)
-  })
-})
-
-describe('lightningcss minify', () => {
-  test('does not run the visitor again during minify', async () => {
-    let mediaQueryVisits = 0
-    await build({
-      root: path.resolve(dirname, '../packages/build-project'),
-      logLevel: 'silent',
-      css: {
-        transformer: 'lightningcss',
-        lightningcss: {
-          visitor: {
-            MediaQuery(query) {
-              mediaQueryVisits++
-              return query
-            },
-          },
-        },
-      },
-      build: {
-        write: false,
-        cssMinify: 'lightningcss',
-      },
-      plugins: [
-        {
-          name: 'test',
-          resolveId(id) {
-            if (id === 'entry.js' || id === 'style.css') {
-              return '\0' + id
-            }
-          },
-          load(id) {
-            if (id === '\0entry.js') {
-              return `import 'style.css'`
-            }
-            if (id === '\0style.css') {
-              return `@media (min-width: 100px) { a { color: red } }\n@media (min-width: 200px) { b { color: blue } }`
-            }
-          },
-        },
-      ],
-      input: 'entry.js',
-    })
-    expect(mediaQueryVisits).toBe(2)
   })
 })

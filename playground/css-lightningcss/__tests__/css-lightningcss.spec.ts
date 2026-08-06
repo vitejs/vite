@@ -7,6 +7,7 @@ import {
   isBuild,
   isBundledDev,
   page,
+  readFile,
   viteTestUrl,
 } from '~utils'
 
@@ -76,6 +77,10 @@ test.runIf(isBuild)('minify css', async () => {
   const cssFile = findAssetFile(/index-[-\w]+\.css$/)
   expect(cssFile).toMatch('rgba(')
   expect(cssFile).not.toMatch('#ffff00b3')
+})
+
+test.runIf(isBuild)('does not run the visitor again during minify', () => {
+  expect(readFile('dist/media-query-visits.txt')).toBe('2')
 })
 
 test('css with external url', async () => {
