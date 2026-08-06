@@ -1,0 +1,23 @@
+playground/css-lightningcss/__tests__/css-lightningcss.spec.ts
+  s_99c7c8ab0a0c78::t_564f2b7299f5fc 10,82-85
+playground/css-lightningcss/minify.css
+  s_99c7c8ab0a0c78::t_137246e020ebaf 4-15
+playground/css-lightningcss/vite.config.js
+  s_99c7c8ab0a0c78::t_4b1bd59ac71062 17,19-48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "dd949569c0b4ce85e4878381ea238275d9dcb701",
+  "prompts": {},
+  "sessions": {
+    "s_99c7c8ab0a0c78": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd6f3-5efe-7472-b2a1-d466f3b7d56d",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
