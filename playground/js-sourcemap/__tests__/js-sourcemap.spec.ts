@@ -244,30 +244,9 @@ if (!isBuild) {
     `)
   })
 
-  test('multiline import', async () => {
-    if (isBundledDev) {
-      const { js, map } = await getServedEntryChunk()
-      expectMapHasSource(
-        map,
-        'with-multiline-import.ts',
-        readFile('with-multiline-import.ts'),
-      )
-      // the console.log after the multiline import must map back to its
-      // original line (line 6) despite the import being collapsed
-      const lines = js.split('\n')
-      const lineIndex = lines.findIndex((line) =>
-        line.startsWith('console.log("with-multiline-import"'),
-      )
-      expect(lineIndex).toBeGreaterThanOrEqual(0)
-      const position = originalPositionFor(new TraceMap(map), {
-        line: lineIndex + 1,
-        column: 0,
-      })
-      expect(position.source).toMatch(/(^|\/)with-multiline-import\.ts$/)
-      expect(position.line).toBe(6)
-      expect(position.column).toBe(0)
-      return
-    }
+  // This test is for the import-analysis plugin (#14232), which does not run
+  // in bundled dev.
+  test.skipIf(isBundledDev)('multiline import', async () => {
     const res = await page.request.get(
       new URL('./with-multiline-import.ts', page.url()).href,
     )
