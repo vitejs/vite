@@ -159,9 +159,10 @@ export async function transformDynamicImport(
       ? relativePattern
       : `./${relativePattern}`
     let segmentIndex = 0
+    const { dynamicSegments } = dynamicImportPattern
     const rawPattern = userPattern.replace(
       /\*/g,
-      () => dynamicImportPattern.dynamicSegments[segmentIndex++] ?? '*',
+      () => dynamicSegments[segmentIndex++] ?? '*',
     )
     dynamicImportPattern = {
       ...dynamicImportPattern,

@@ -350,11 +350,10 @@ export function oxcResolvePlugin(
                 )
                 return newResolvedId === resolvedId ? undefined : newResolvedId
               },
-          resolveSubpathImports(id, importer, isRequire, scan) {
+          resolveSubpathImports(id, importer, isRequire) {
             return resolveSubpathImports(id, importer, {
               ...options,
               isRequire: resolveOptions.isRequire ?? isRequire,
-              scan,
             })
           },
 
