@@ -8,7 +8,6 @@ import {
   isBundledDev,
   isServe,
   page,
-  readFile,
   serverLogs,
 } from '~utils'
 
@@ -28,24 +27,6 @@ describe.runIf(isServe)('serve', () => {
       }
     }
     throw new Error('Not found')
-  }
-
-  // bundled dev adds CSS to the page through JS style tags
-  const expectBundledDevStyleMap = (
-    map: any,
-    css: string,
-    sourceFiles: string[],
-  ) => {
-    const normalized = formatSourcemapForSnapshot(map, css).map
-    expect(
-      normalized.sources.map((source: string) =>
-        source.replace(/^\/root\//, ''),
-      ),
-    ).toEqual(sourceFiles)
-    expect(normalized.sourcesContent).toEqual(
-      sourceFiles.map((file) => readFile(file)),
-    )
-    expect(normalized.mappings).not.toBe('')
   }
 
   test('linked css', async () => {
@@ -72,10 +53,32 @@ describe.runIf(isServe)('serve', () => {
     if (isBundledDev) {
       // not served at its own URL, so check the style tag the bundle added
       const css = await getStyleTagContentIncluding('.linked-with-import ')
-      expectBundledDevStyleMap(extractSourcemap(css), css, [
-        'linked-with-import.css',
-        'be-imported.css',
-      ])
+      expect(formatSourcemapForSnapshot(extractSourcemap(css), css))
+        .toMatchInlineSnapshot(`
+        SourceMap {
+          content: {
+            "mappings": "ACAA;;;;ADEA",
+            "sources": [
+              "linked-with-import.css",
+              "be-imported.css",
+            ],
+            "sourcesContent": [
+              "@import '@/be-imported.css';
+
+        .linked-with-import {
+          color: red;
+        }
+        ",
+              ".be-imported {
+          color: red;
+        }
+        ",
+            ],
+            "version": 3,
+          },
+          visualization: "https://evanw.github.io/source-map-visualization/#NzAALmJlLWltcG9ydGVkIHsKICBjb2xvcjogcmVkOwp9CgoubGlua2VkLXdpdGgtaW1wb3J0IHsKICBjb2xvcjogcmVkOwp9CjIyNgB7InZlcnNpb24iOjMsInNvdXJjZXMiOlsibGlua2VkLXdpdGgtaW1wb3J0LmNzcyIsImJlLWltcG9ydGVkLmNzcyJdLCJzb3VyY2VzQ29udGVudCI6WyJAaW1wb3J0ICdAL2JlLWltcG9ydGVkLmNzcyc7XG5cbi5saW5rZWQtd2l0aC1pbXBvcnQge1xuICBjb2xvcjogcmVkO1xufVxuIiwiLmJlLWltcG9ydGVkIHtcbiAgY29sb3I6IHJlZDtcbn1cbiJdLCJtYXBwaW5ncyI6IkFDQUE7Ozs7QURFQSJ9"
+        }
+      `)
       return
     }
     const res = await page.request.get(
@@ -135,7 +138,24 @@ describe.runIf(isServe)('serve', () => {
     const css = await getStyleTagContentIncluding('.imported ')
     const map = extractSourcemap(css)
     if (isBundledDev) {
-      expectBundledDevStyleMap(map, css, ['imported.css'])
+      expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
+        SourceMap {
+          content: {
+            "mappings": "AAAA",
+            "sources": [
+              "/root/imported.css",
+            ],
+            "sourcesContent": [
+              ".imported {
+          color: red;
+        }
+        ",
+            ],
+            "version": 3,
+          },
+          visualization: "https://evanw.github.io/source-map-visualization/#MjgALmltcG9ydGVkIHsKICBjb2xvcjogcmVkOwp9CjExNwB7InZlcnNpb24iOjMsInNvdXJjZXMiOlsiL3Jvb3QvaW1wb3J0ZWQuY3NzIl0sInNvdXJjZXNDb250ZW50IjpbIi5pbXBvcnRlZCB7XG4gIGNvbG9yOiByZWQ7XG59XG4iXSwibWFwcGluZ3MiOiJBQUFBIn0="
+        }
+      `)
       return
     }
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
@@ -163,10 +183,31 @@ describe.runIf(isServe)('serve', () => {
     const css = await getStyleTagContentIncluding('.imported-with-import ')
     const map = extractSourcemap(css)
     if (isBundledDev) {
-      expectBundledDevStyleMap(map, css, [
-        'imported-with-import.css',
-        'be-imported.css',
-      ])
+      expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
+        SourceMap {
+          content: {
+            "mappings": "ACAA;;;;ADEA",
+            "sources": [
+              "imported-with-import.css",
+              "be-imported.css",
+            ],
+            "sourcesContent": [
+              "@import '@/be-imported.css';
+
+        .imported-with-import {
+          color: red;
+        }
+        ",
+              ".be-imported {
+          color: red;
+        }
+        ",
+            ],
+            "version": 3,
+          },
+          visualization: "https://evanw.github.io/source-map-visualization/#NzIALmJlLWltcG9ydGVkIHsKICBjb2xvcjogcmVkOwp9CgouaW1wb3J0ZWQtd2l0aC1pbXBvcnQgewogIGNvbG9yOiByZWQ7Cn0KMjMwAHsidmVyc2lvbiI6Mywic291cmNlcyI6WyJpbXBvcnRlZC13aXRoLWltcG9ydC5jc3MiLCJiZS1pbXBvcnRlZC5jc3MiXSwic291cmNlc0NvbnRlbnQiOlsiQGltcG9ydCAnQC9iZS1pbXBvcnRlZC5jc3MnO1xuXG4uaW1wb3J0ZWQtd2l0aC1pbXBvcnQge1xuICBjb2xvcjogcmVkO1xufVxuIiwiLmJlLWltcG9ydGVkIHtcbiAgY29sb3I6IHJlZDtcbn1cbiJdLCJtYXBwaW5ncyI6IkFDQUE7Ozs7QURFQSJ9"
+        }
+      `)
       return
     }
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
@@ -201,7 +242,26 @@ describe.runIf(isServe)('serve', () => {
     const css = await getStyleTagContentIncluding('.imported-sass ')
     const map = extractSourcemap(css)
     if (isBundledDev) {
-      expectBundledDevStyleMap(map, css, ['imported.sass'])
+      expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
+        SourceMap {
+          content: {
+            "mappings": "AAGE",
+            "sources": [
+              "/root/imported.sass",
+            ],
+            "sourcesContent": [
+              "@use "/imported-nested.sass"
+
+        .imported
+          &-sass
+            color: imported-nested.$primary
+        ",
+            ],
+            "version": 3,
+          },
+          visualization: "https://evanw.github.io/source-map-visualization/#MzMALmltcG9ydGVkLXNhc3MgewogIGNvbG9yOiByZWQ7Cn0KMTc5AHsidmVyc2lvbiI6Mywic291cmNlcyI6WyIvcm9vdC9pbXBvcnRlZC5zYXNzIl0sInNvdXJjZXNDb250ZW50IjpbIkB1c2UgXCIvaW1wb3J0ZWQtbmVzdGVkLnNhc3NcIlxuXG4uaW1wb3J0ZWRcbiAgJi1zYXNzXG4gICAgY29sb3I6IGltcG9ydGVkLW5lc3RlZC4kcHJpbWFyeVxuIl0sIm1hcHBpbmdzIjoiQUFHRSJ9"
+        }
+      `)
       return
     }
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
@@ -231,7 +291,24 @@ describe.runIf(isServe)('serve', () => {
     const css = await getStyleTagContentIncluding('_imported-sass-module')
     const map = extractSourcemap(css)
     if (isBundledDev) {
-      expectBundledDevStyleMap(map, css, ['imported.module.sass'])
+      expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
+        SourceMap {
+          content: {
+            "mappings": "AACE",
+            "sources": [
+              "/root/imported.module.sass",
+            ],
+            "sourcesContent": [
+              ".imported
+          &-sass-module
+            color: red
+        ",
+            ],
+            "version": 3,
+          },
+          visualization: "https://evanw.github.io/source-map-visualization/#NDcALmhvUU10V19pbXBvcnRlZC1zYXNzLW1vZHVsZSB7CiAgY29sb3I6IHJlZDsKfQoxMzgAeyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi9yb290L2ltcG9ydGVkLm1vZHVsZS5zYXNzIl0sInNvdXJjZXNDb250ZW50IjpbIi5pbXBvcnRlZFxuICAmLXNhc3MtbW9kdWxlXG4gICAgY29sb3I6IHJlZFxuIl0sIm1hcHBpbmdzIjoiQUFDRSJ9"
+        }
+      `)
       return
     }
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
@@ -259,7 +336,26 @@ describe.runIf(isServe)('serve', () => {
     const css = await getStyleTagContentIncluding('.imported-less ')
     const map = extractSourcemap(css)
     if (isBundledDev) {
-      expectBundledDevStyleMap(map, css, ['imported.less'])
+      expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
+        SourceMap {
+          content: {
+            "mappings": "AACE",
+            "sources": [
+              "/root/imported.less",
+            ],
+            "sourcesContent": [
+              ".imported {
+          &-less {
+            color: @color;
+          }
+        }
+        ",
+            ],
+            "version": 3,
+          },
+          visualization: "https://evanw.github.io/source-map-visualization/#MzMALmltcG9ydGVkLWxlc3MgewogIGNvbG9yOiByZWQ7Cn0KMTQwAHsidmVyc2lvbiI6Mywic291cmNlcyI6WyIvcm9vdC9pbXBvcnRlZC5sZXNzIl0sInNvdXJjZXNDb250ZW50IjpbIi5pbXBvcnRlZCB7XG4gICYtbGVzcyB7XG4gICAgY29sb3I6IEBjb2xvcjtcbiAgfVxufVxuIl0sIm1hcHBpbmdzIjoiQUFDRSJ9"
+        }
+      `)
       return
     }
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
@@ -289,7 +385,24 @@ describe.runIf(isServe)('serve', () => {
     const css = await getStyleTagContentIncluding('.imported-stylus ')
     const map = extractSourcemap(css)
     if (isBundledDev) {
-      expectBundledDevStyleMap(map, css, ['imported.styl'])
+      expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
+        SourceMap {
+          content: {
+            "mappings": "AACE",
+            "sources": [
+              "/root/imported.styl",
+            ],
+            "sourcesContent": [
+              ".imported
+          &-stylus
+            color blue-red-mixed
+        ",
+            ],
+            "version": 3,
+          },
+          visualization: "https://evanw.github.io/source-map-visualization/#MzgALmltcG9ydGVkLXN0eWx1cyB7CiAgY29sb3I6IHB1cnBsZTsKfQoxMzYAeyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi9yb290L2ltcG9ydGVkLnN0eWwiXSwic291cmNlc0NvbnRlbnQiOlsiLmltcG9ydGVkXG4gICYtc3R5bHVzXG4gICAgY29sb3IgYmx1ZS1yZWQtbWl4ZWRcbiJdLCJtYXBwaW5ncyI6IkFBQ0UifQ=="
+        }
+      `)
       return
     }
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
@@ -317,7 +430,23 @@ describe.runIf(isServe)('serve', () => {
     const css = await getStyleTagContentIncluding('.imported-sugarss ')
     const map = extractSourcemap(css)
     if (isBundledDev) {
-      expectBundledDevStyleMap(map, css, ['imported.sss'])
+      expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
+        SourceMap {
+          content: {
+            "mappings": "AAAA",
+            "sources": [
+              "/root/imported.sss",
+            ],
+            "sourcesContent": [
+              ".imported-sugarss
+          color: red
+        ",
+            ],
+            "version": 3,
+          },
+          visualization: "https://evanw.github.io/source-map-visualization/#MzYALmltcG9ydGVkLXN1Z2Fyc3MgewogIGNvbG9yOiByZWQ7Cn0KMTE5AHsidmVyc2lvbiI6Mywic291cmNlcyI6WyIvcm9vdC9pbXBvcnRlZC5zc3MiXSwic291cmNlc0NvbnRlbnQiOlsiLmltcG9ydGVkLXN1Z2Fyc3NcbiAgY29sb3I6IHJlZFxuIl0sIm1hcHBpbmdzIjoiQUFBQSJ9"
+        }
+      `)
       return
     }
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
