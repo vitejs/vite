@@ -223,8 +223,7 @@ async function tryBindServer(
   port: number,
   host: string | undefined,
 ): Promise<
-  | { success: true; port: number }
-  | { success: false; error: NodeJS.ErrnoException }
+  { success: true } | { success: false; error: NodeJS.ErrnoException }
 > {
   return new Promise((resolve) => {
     const onError = (e: NodeJS.ErrnoException) => {
@@ -235,11 +234,7 @@ async function tryBindServer(
     const onListening = () => {
       httpServer.off('error', onError)
       httpServer.off('listening', onListening)
-      const address = httpServer.address()
-      resolve({
-        success: true,
-        port: typeof address === 'object' && address ? address.port : port,
-      })
+      resolve({ success: true })
     }
 
     httpServer.on('error', onError)
@@ -270,7 +265,7 @@ export async function httpServerStart(
 
     const result = await tryBindServer(httpServer, port, host)
     if (result.success) {
-      return result.port
+      return port
     }
     if (result.error.code !== 'EADDRINUSE') {
       throw result.error
@@ -297,7 +292,7 @@ export async function httpServerStart(
             ),
           )
         }
-        return result.port
+        return port
       }
       if (result.error.code !== 'EADDRINUSE') {
         throw result.error
@@ -308,7 +303,7 @@ export async function httpServerStart(
     if (portAvailableOnWildcard) {
       const result = await tryBindServer(httpServer, port, host)
       if (result.success) {
-        return result.port
+        return port
       }
       if (result.error.code !== 'EADDRINUSE') {
         throw result.error
