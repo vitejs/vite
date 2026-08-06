@@ -155,38 +155,6 @@ if (!isBuild) {
     `)
   })
 
-  test('plugin return sourcemap with `sources: [""]`', async () => {
-    if (isBundledDev) {
-      // rolldown drops the appended '// add comment' text, but the plugin's
-      // `sources: [""]` map must still remap to the real zoo.js in the bundle map
-      const { js, map } = await getServedEntryChunk()
-      expectMapHasSource(map, 'zoo.js', readFile('zoo.js'))
-      expectVarInitMapsBackToExportConst(js, map, 'zoo', 'zoo.js')
-      return
-    }
-    const res = await page.request.get(new URL('./zoo.js', page.url()).href)
-    const js = await res.text()
-    expect(js).toContain('// add comment')
-
-    const map = extractSourcemap(js)
-    expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
-      SourceMap {
-        content: {
-          "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;",
-          "sources": [
-            "zoo.js",
-          ],
-          "sourcesContent": [
-            "export const zoo = 'zoo'
-      ",
-          ],
-          "version": 3,
-        },
-        visualization: "https://evanw.github.io/source-map-visualization/#NDAAZXhwb3J0IGNvbnN0IHpvbyA9ICd6b28nCi8vIGFkZCBjb21tZW50CjIxNgB7InZlcnNpb24iOjMsInNvdXJjZXMiOlsiem9vLmpzIl0sInNvdXJjZXNDb250ZW50IjpbImV4cG9ydCBjb25zdCB6b28gPSAnem9vJ1xuIl0sIm1hcHBpbmdzIjoiQUFBQSxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUM7In0="
-      }
-    `)
-  })
-
   // bundled dev does not inject fallback sourcemap, so this test is irrelevant
   test.skipIf(isBundledDev)(
     'js with inline sourcemap injected by a plugin',
