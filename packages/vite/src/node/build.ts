@@ -658,6 +658,7 @@ export function resolveRolldownOptions(
         ? 'strict'
         : false,
     // cache: options.watch ? undefined : false,
+    tsconfig: false,
     ...options.rolldownOptions,
     output: options.rolldownOptions.output,
     input,
