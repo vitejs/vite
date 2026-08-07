@@ -382,6 +382,34 @@ export function oxcResolvePlugin(
         return plugin
       },
     ),
+    // Native vite:resolve uses Rust `fs::exists` for importer checks, which
+    // cannot see Yarn PnP zip/virtual paths. Fall back to the JS optional-peer
+    // path (Node's PnP-patched fs) so uninstalled optional peers still resolve
+    // to `__vite-optional-peer-dep` (see #21881).
+    ...perEnvironmentOrWorkerPlugin(
+      'vite:resolve-optional-peer-dep',
+      overrideEnvConfig,
+      (partialEnv) => {
+        const options: InternalResolveOptions = {
+          ...partialEnv.config.resolve,
+          ...resolveOptions,
+        }
+        return {
+          name: 'vite:resolve-optional-peer-dep',
+          resolveId: {
+            filter: { id: bareImportRE },
+            handler(id, importer, resolveOpts) {
+              if (options.disableOptionalPeerDepHandling) return
+              return tryResolveOptionalPeerDep(id, importer, {
+                ...options,
+                isRequire: resolveOpts.kind === 'require-call',
+                scan: resolveOpts.scan ?? options.scan,
+              })
+            },
+          },
+        } satisfies Plugin
+      },
+    ),
   ]
 }
 
@@ -733,28 +761,7 @@ export function tryNodeResolve(
   if (!pkg) {
     // if import can't be found, check if it's an optional peer dep.
     // if so, we can resolve to a special id that errors only when imported.
-    if (
-      !options.disableOptionalPeerDepHandling &&
-      basedir !== root && // root has no peer dep
-      !isModuleBuiltin(id) &&
-      !id.includes('\0') &&
-      bareImportRE.test(id)
-    ) {
-      const mainPkg = findNearestMainPackageData(basedir, packageCache)?.data
-      if (mainPkg) {
-        const pkgName = getNpmPackageName(id)
-        if (
-          pkgName != null &&
-          mainPkg.peerDependencies?.[pkgName] &&
-          mainPkg.peerDependenciesMeta?.[pkgName]?.optional
-        ) {
-          return {
-            id: `${optionalPeerDepId}:${id}:${mainPkg.name}`,
-          }
-        }
-      }
-    }
-    return
+    return tryResolveOptionalPeerDep(id, importer, options, basedir)
   }
 
   const resolveId = deepMatch ? resolveDeepImport : resolvePackageEntry
@@ -1184,6 +1191,67 @@ function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
 function isDirectory(path: string): boolean {
   const stat = tryStatSync(path)
   return stat?.isDirectory() ?? false
+}
+
+/**
+ * Resolve an uninstalled optional peer dependency to `__vite-optional-peer-dep`.
+ * Used by `tryNodeResolve` and as a JS fallback after the native resolve plugin
+ * (which cannot `fs::exists` Yarn PnP zip importers — see #21881).
+ */
+export function tryResolveOptionalPeerDep(
+  id: string,
+  importer: string | null | undefined,
+  options: InternalResolveOptions,
+  basedir?: string,
+): PartialResolvedId | undefined {
+  const { root, packageCache, preserveSymlinks } = options
+
+  if (
+    options.disableOptionalPeerDepHandling ||
+    !importer ||
+    id.includes('\0') ||
+    !bareImportRE.test(id) ||
+    isBuiltin(options.builtins, id)
+  ) {
+    return
+  }
+
+  let resolvedBasedir = basedir
+  if (resolvedBasedir == null) {
+    if (!path.isAbsolute(importer)) return
+    const cleanImporter = cleanUrl(importer)
+    // css processing appends `*` for importer
+    if (!importer.endsWith('*') && !fs.existsSync(cleanImporter)) {
+      return
+    }
+    resolvedBasedir = path.dirname(cleanImporter)
+  }
+
+  // root has no peer dep
+  if (resolvedBasedir === root) return
+
+  const pkgName = getNpmPackageName(id)
+  if (pkgName == null) return
+
+  // Package is installed — not an uninstalled optional peer.
+  if (
+    resolvePackageData(pkgName, resolvedBasedir, preserveSymlinks, packageCache)
+  ) {
+    return
+  }
+
+  const mainPkg = findNearestMainPackageData(
+    resolvedBasedir,
+    packageCache,
+  )?.data
+  if (
+    mainPkg?.peerDependencies?.[pkgName] &&
+    mainPkg.peerDependenciesMeta?.[pkgName]?.optional
+  ) {
+    return {
+      id: `${optionalPeerDepId}:${id}:${mainPkg.name}`,
+    }
+  }
 }
 
 function findNearestPackagePath(
