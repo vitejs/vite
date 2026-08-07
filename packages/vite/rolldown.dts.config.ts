@@ -125,6 +125,7 @@ const ignoreConfusingTypeNames = [
   // temporary variables for types
   'parseAst$1',
   'parseAstAsync$1',
+  'resolveTsconfig$1',
 ]
 
 /**
