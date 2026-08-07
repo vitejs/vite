@@ -90,3 +90,70 @@ test('does not crash when a dep is discovered before the server starts listening
   await ssr.depsOptimizer?.scanProcessing
   expect(errors).toStrictEqual([])
 })
+
+// regression test for https://github.com/vitejs/vite/issues/23143
+// When a module importing a bare specifier is transformed through the JS API
+// before server.listen() is called, the dep is discovered and a pending warmup
+// request is issued for the optimized dep. That warmup waits on the dep's
+// processing promise, which is never resolved because depsOptimizer.init() has
+// not run. server.close() then waits forever for the pending warmup request.
+// The fix is for depsOptimizer.close() to resolve the processing promise so
+// in-flight requests can unblock during shutdown.
+test('resolves discovered dep processing promise on close before init', async () => {
+  const errors: string[] = []
+  const logger = createLogger('error')
+  logger.error = (msg) => {
+    errors.push(typeof msg === 'string' ? msg : String(msg))
+  }
+
+  server = await createServer({
+    configFile: false,
+    customLogger: logger,
+    root: path.join(
+      import.meta.dirname,
+      '../fixtures/optimizer-discover-before-listen',
+    ),
+    cacheDir: 'node_modules/.vite-client-close',
+    environments: {
+      client: {
+        dev: {
+          preTransformRequests: false,
+        },
+        optimizeDeps: {
+          // ensure no cached metadata/file is reused so the dep is discovered
+          // and its processing promise stays unresolved until close()
+          force: true,
+          noDiscovery: false,
+        },
+      },
+    },
+  })
+
+  const client = server.environments.client
+
+  // Transform a module importing a bare specifier before the server is listening.
+  // This discovers the dep and leaves its processing promise pending because
+  // depsOptimizer.init() is deferred to listen().
+  await client.transformRequest('/entry.js')
+
+  const info = client.depsOptimizer?.metadata.discovered?.vue
+  expect(info).toBeDefined()
+
+  // The dep's processing promise should still be pending at this point.
+  const resolvedBeforeClose = await Promise.race([
+    info!.processing,
+    setTimeout(500, false),
+  ])
+  expect(resolvedBeforeClose).toBe(false)
+
+  // close() should resolve the processing promise so any in-flight or future
+  // requests waiting on it (including server.close()) can unblock.
+  await client.depsOptimizer?.close()
+
+  const resolvedAfterClose = await Promise.race([
+    info!.processing,
+    setTimeout(500, false),
+  ])
+  expect(resolvedAfterClose).toBeUndefined()
+  expect(errors).toStrictEqual([])
+})
