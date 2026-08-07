@@ -341,6 +341,14 @@ export interface LibraryOptions {
    * back to the name option of the project package.json.
    */
   cssFileName?: string
+  /**
+   * Emit static assets as separate files instead of force inlining them in
+   * library mode. When enabled, generated asset URLs are relative to the output
+   * chunk so they can be resolved by the consumer's bundler or server.
+   *
+   * @default false
+   */
+  emitAssets?: boolean
 }
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife' // | 'system'
@@ -1660,6 +1668,10 @@ export function toOutputFilePathInJS(
   const ssr = environment.config.consumer === 'server' // was !!environment.config.build.ssr
   const { renderBuiltUrl } = experimental
   let relative = base === '' || base === './'
+  const libOptions = environment.config.build.lib
+  if (libOptions && libOptions.emitAssets) {
+    relative = true
+  }
   if (renderBuiltUrl) {
     const result = renderBuiltUrl(filename, {
       hostId,
@@ -1707,6 +1719,10 @@ export function toOutputFilePathWithoutRuntime(
 ): string {
   const { renderBuiltUrl } = config.experimental
   let relative = config.base === '' || config.base === './'
+  const libOptions = config.build.lib
+  if (libOptions && libOptions.emitAssets) {
+    relative = true
+  }
   if (renderBuiltUrl) {
     const result = renderBuiltUrl(filename, {
       hostId,

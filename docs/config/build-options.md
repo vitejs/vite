@@ -100,7 +100,7 @@ If a callback is passed, a boolean can be returned to opt-in or opt-out. If noth
 Git LFS placeholders are automatically excluded from inlining because they do not contain the content of the file they represent.
 
 ::: tip Note
-If you specify `build.lib`, `build.assetsInlineLimit` will be ignored and assets will always be inlined, regardless of file size or being a Git LFS placeholder.
+If you specify `build.lib`, `build.assetsInlineLimit` will be ignored and assets will always be inlined, regardless of file size or being a Git LFS placeholder. You can set [`build.lib.emitAssets`](#build-lib) to `true` to emit assets as separate files instead.
 :::
 
 ## build.cssCodeSplit
@@ -182,7 +182,7 @@ Whether to transform dynamic imports with variables.
 
 ## build.lib
 
-- **Type:** `{ entry?: string | string[] | { [entryAlias: string]: string }, name?: string, formats?: ('es' | 'cjs' | 'umd' | 'iife')[], fileName?: string | ((format: ModuleFormat, entryName: string) => string), cssFileName?: string }`
+- **Type:** `{ entry?: string | string[] | { [entryAlias: string]: string }, name?: string, formats?: ('es' | 'cjs' | 'umd' | 'iife')[], fileName?: string | ((format: ModuleFormat, entryName: string) => string), cssFileName?: string, emitAssets?: boolean }`
 - **Related:** [Library Mode](/guide/build#library-mode)
 
 Build as a library. `entry` defaults to the top-level [`input`](/config/shared-options#input) option, and one of them is required since the library cannot use HTML as entry. `name` is the exposed global variable and is required when `formats` includes `'umd'` or `'iife'`. Default `formats` are `['es', 'umd']`, or `['es', 'cjs']`, if multiple entries are used.
@@ -190,6 +190,8 @@ Build as a library. `entry` defaults to the top-level [`input`](/config/shared-o
 `fileName` is the name of the package file output, which defaults to the `"name"` in `package.json`. It can also be defined as a function taking the `format` and `entryName` as arguments, and returning the file name.
 
 If your package imports CSS, `cssFileName` can be used to specify the name of the CSS file output. It defaults to the same value as `fileName` if it's set a string, otherwise it also falls back to the `"name"` in `package.json`.
+
+Set `emitAssets` to `true` to emit static assets as separate files instead of force-inlining them. When enabled, generated asset URLs are relative to the output chunk so the consumer's bundler or server can resolve them.
 
 ```js twoslash [vite.config.js]
 import { defineConfig } from 'vite'

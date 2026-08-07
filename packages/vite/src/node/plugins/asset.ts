@@ -553,7 +553,11 @@ function shouldInline(
   if (inlineRE.test(id)) return true
   // Do build only checks if passed the plugin context during build
   if (buildPluginContext) {
-    if (environment.config.build.lib) return true
+    if (
+      environment.config.build.lib &&
+      !environment.config.build.lib.emitAssets
+    )
+      return true
     if (buildPluginContext.getModuleInfo(id)?.isEntry) return false
   }
   if (forceInline !== undefined) return forceInline

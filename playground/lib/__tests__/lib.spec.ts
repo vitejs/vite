@@ -144,6 +144,25 @@ describe.runIf(isBuild)('build', () => {
     expect(cjs1).toContain('css-entry-1')
     expect(cjs2).toContain('css-entry-2')
   })
+
+  test('lib emitAssets emits assets as separate files with relative urls', () => {
+    const js = readFile('dist/emit-assets/my-lib-emit-assets.js')
+    const css = readFile('dist/emit-assets/my-lib-emit-assets.css')
+    const asset = readFile('dist/emit-assets/emit-assets.svg', null)
+
+    expect(asset).toBeInstanceOf(Buffer)
+    expect(asset.length).toBeGreaterThan(0)
+
+    // JS should reference the asset via import.meta.url, not inline it
+    expect(js).not.toMatch('data:image/svg')
+    expect(js).toMatch(
+      /new URL\(['"]\.?\/?emit-assets\.svg['"],\s*import\.meta\.url\)\.href/,
+    )
+
+    // CSS should reference the emitted asset with a relative URL
+    expect(css).not.toMatch('data:image/svg')
+    expect(css).toMatch(/url\(['"]?\.?\/?emit-assets\.svg['"]?\)/)
+  })
 })
 
 test.runIf(isServe)('dev', async () => {
