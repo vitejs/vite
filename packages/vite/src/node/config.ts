@@ -366,6 +366,16 @@ export type DefaultEnvironmentOptions = Omit<
   resolve?: AllResolveOptions
 }
 
+export interface KnownEnvironment extends Record<string & {}, never> {
+  client: never
+  ssr: never
+}
+export type KnownEnvironmentNames = keyof KnownEnvironment
+
+type EnvironmentsOptions = Partial<
+  Record<KnownEnvironmentNames, EnvironmentOptions>
+>
+
 export interface UserConfig extends DefaultEnvironmentOptions {
   /**
    * Project root directory. Can be an absolute path, or a path relative from
@@ -534,7 +544,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   /**
    * Environment overrides
    */
-  environments?: Record<string, EnvironmentOptions>
+  environments?: EnvironmentsOptions
   /**
    * Whether your application is a Single Page Application (SPA),
    * a Multi-Page Application (MPA), or Custom Application (SSR
@@ -758,7 +768,9 @@ export interface ResolvedConfig extends Readonly<
     appType: AppType
     experimental: RequiredExceptFor<ExperimentalOptions, 'renderBuiltUrl'>
     future: FutureOptions | undefined
-    environments: Record<string, ResolvedEnvironmentOptions>
+    environments: Partial<
+      Record<KnownEnvironmentNames, ResolvedEnvironmentOptions>
+    >
     /** @internal injected by legacy plugin */
     isOutputOptionsForLegacyChunks?(
       outputOptions: NormalizedOutputOptions,
@@ -1411,7 +1423,8 @@ function resolveDepOptimizationOptions(
 
 async function setOptimizeDepsPluginNames(resolvedConfig: ResolvedConfig) {
   await Promise.all(
-    Object.values(resolvedConfig.environments).map(async (environment) => {
+    Object.values(resolvedConfig.environments).map(async (env) => {
+      const environment = env!
       const plugins = environment.optimizeDeps.rolldownOptions?.plugins ?? []
       const outputPlugins =
         environment.optimizeDeps.rolldownOptions?.output?.plugins ?? []
@@ -1689,18 +1702,18 @@ export async function resolveConfig(
   }
 
   for (const name of Object.keys(config.environments)) {
-    config.environments[name] = mergeConfig(
+    config.environments[name as KnownEnvironmentNames] = mergeConfig(
       name === 'client'
         ? defaultClientEnvironmentOptions
         : (deepClone(
             defaultNonClientEnvironmentOptions as object,
           ) as UserConfig),
-      config.environments[name],
+      config.environments[name as KnownEnvironmentNames]!,
     )
   }
 
   await runConfigEnvironmentHook(
-    config.environments,
+    config.environments as Record<string, EnvironmentOptions>,
     userPlugins,
     logger,
     configEnv,
@@ -1711,15 +1724,20 @@ export async function resolveConfig(
 
   // Backward compatibility: merge config.environments.client.resolve back into config.resolve
   config.resolve ??= {}
-  config.resolve.conditions = config.environments.client.resolve?.conditions
-  config.resolve.mainFields = config.environments.client.resolve?.mainFields
+  config.resolve.conditions = config.environments.client!.resolve?.conditions
+  config.resolve.mainFields = config.environments.client!.resolve?.mainFields
 
   const resolvedDefaultResolve = resolveResolveOptions(config.resolve, logger)
 
-  const resolvedEnvironments: Record<string, ResolvedEnvironmentOptions> = {}
-  for (const environmentName of Object.keys(config.environments)) {
+  const resolvedEnvironments = {} as Record<
+    KnownEnvironmentNames,
+    ResolvedEnvironmentOptions
+  >
+  for (const environmentName of Object.keys(
+    config.environments,
+  ) as KnownEnvironmentNames[]) {
     resolvedEnvironments[environmentName] = resolveEnvironmentOptions(
-      config.environments[environmentName],
+      config.environments[environmentName]!,
       resolvedDefaultResolve.alias,
       resolvedDefaultResolve.preserveSymlinks,
       inlineConfig.forceOptimizeDeps,
@@ -1950,7 +1968,7 @@ export async function resolveConfig(
     >) = {
       ...workerResolved.environments,
       client: {
-        ...workerResolved.environments.client,
+        ...workerResolved.environments.client!,
         plugins: await resolveEnvironmentPlugins(
           new PartialEnvironment('client', workerResolved),
         ),
@@ -2192,7 +2210,7 @@ export async function resolveConfig(
   // downstream projects modifying the plugins in it. This may change
   // once the ecosystem is ready.
   for (const name of Object.keys(resolved.environments)) {
-    resolved.environments[name].plugins = await resolveEnvironmentPlugins(
+    resolved.environments[name]!.plugins = await resolveEnvironmentPlugins(
       new PartialEnvironment(name, resolved),
     )
   }

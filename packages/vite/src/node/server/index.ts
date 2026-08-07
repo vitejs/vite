@@ -29,7 +29,11 @@ import {
   resolveHttpsConfig,
   setClientErrorHandler,
 } from '../http'
-import type { InlineConfig, ResolvedConfig } from '../config'
+import type {
+  InlineConfig,
+  ResolvedConfig,
+  KnownEnvironmentNames,
+} from '../config'
 import { isResolvedConfig, resolveConfig } from '../config'
 import {
   type Hostname,
@@ -340,7 +344,7 @@ export interface ViteDevServer {
   /**
    * Module execution environments attached to the Vite server.
    */
-  environments: Record<'client' | 'ssr' | (string & {}), DevEnvironment>
+  environments: Record<KnownEnvironmentNames, DevEnvironment>
   /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
@@ -576,7 +580,7 @@ export async function _createServer(
   await Promise.all(
     Object.entries(config.environments).map(
       async ([name, environmentOptions]) => {
-        const environment = await environmentOptions.dev.createEnvironment(
+        const environment = await environmentOptions!.dev.createEnvironment(
           name,
           config,
           {
