@@ -92,18 +92,9 @@ jobs:
         # zizmor: ignore[adhoc-packages]
         run: npm i -g npm@^11.5.2 && pnpm run ci-publish "$TAG"
 
-      - id: generate-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          client-id: ${{ vars.RELEASE_GITHUB_APP_CLIENT_ID }}
-          private-key: ${{ secrets.RELEASE_GITHUB_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-contents: write
-
       - name: Create GitHub release
         env:
-          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
           NOTES_FILE: ${{ runner.temp }}/release-notes.md
           PACKAGE: ${{ needs.detect-release.outputs.package }}
           TAG: ${{ needs.detect-release.outputs.tag }}
