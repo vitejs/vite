@@ -31,14 +31,16 @@ import {
   partialEncodeURIPath,
   processSrcSet,
   removeLeadingSlash,
+  stripBase,
   unique,
 } from '../utils'
 import type { ResolvedConfig, ResolvedEnvironmentOptions } from '../config'
 import { checkPublicFile } from '../publicDir'
-import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
+import { BUNDLED_DEV_CLIENT_FILENAME, FS_PREFIX } from '../constants'
 import { toOutputFilePathInHtml } from '../build'
 import { resolveEnvPrefix } from '../env'
-import { cleanUrl } from '../../shared/utils'
+import { cleanUrl, unwrapId } from '../../shared/utils'
+import { VALID_ID_PREFIX } from '../../shared/constants'
 import { perEnvironmentState } from '../environment'
 import { getNodeAssetAttributes } from '../assetSource'
 import type { Logger } from '../logger'
@@ -494,6 +496,22 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           path: publicPath,
           filename: id,
         })
+        // In bundledDev, default-order `transformIndexHtml` hooks run after the
+        // HTML→JS scan — too late for injected module scripts/links to enter the
+        // graph, so `/@id/...` URLs 404 (see #22864). Collect only pipeline tags
+        // from those hooks here; the hooks still run fully after generateBundle
+        // for `ctx.bundle` / final HTML transforms.
+        if (config.command === 'serve') {
+          html = await injectModulePipelineTagsFromHtmlTransforms(
+            html,
+            normalHooks,
+            this,
+            {
+              path: publicPath,
+              filename: id,
+            },
+          )
+        }
 
         let js = ''
         const s = new MagicString(html)
@@ -560,11 +578,19 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               if (isModule) {
                 inlineModuleIndex++
                 if (url && !isExcludedUrl(url) && !isPublicFile) {
+                  // Plugins often inject browser URLs like `/@id/virtual:…`.
+                  // Decode those before resolve/import so bundledDev matches
+                  // transform-middleware behavior (see #22864).
+                  const resolvedUrl = unwrapId(
+                    stripBase(url, config.decodedBase || config.base || '/'),
+                  )
                   setModuleSideEffectPromises.push(
-                    this.resolve(url, id).then((resolved) => {
+                    this.resolve(resolvedUrl, id).then((resolved) => {
                       if (!resolved) {
                         return Promise.reject(
-                          new Error(`Failed to resolve ${url} from ${id}`),
+                          new Error(
+                            `Failed to resolve ${resolvedUrl} from ${id}`,
+                          ),
                         )
                       }
                       // set moduleSideEffects to keep the module even if `treeshake.moduleSideEffects=false` is set
@@ -581,7 +607,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   )
                   // <script type="module" src="..."/>
                   // add it as an import
-                  js += `\nimport ${JSON.stringify(url)}`
+                  js += `\nimport ${JSON.stringify(resolvedUrl)}`
                   shouldRemove = true
                 } else if (node.childNodes.length) {
                   const scriptNode =
@@ -1063,6 +1089,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             chunk,
           },
         )
+        // Default-order hooks may re-inject `/@id/` or `/@fs/` module scripts
+        // after the bundle; those URLs are not served in bundledDev.
+        if (config.command === 'serve') {
+          result = stripUnservableDevModuleScripts(result)
+        }
         // resolve asset url references
         result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const file = this.getFileName(fileHash)
@@ -1468,6 +1499,108 @@ function headTagInsertCheck(
   }
 }
 
+function isHtmlModulePipelineTag(tag: HtmlTagDescriptor): boolean {
+  if (tag.tag === 'script') {
+    const src = tag.attrs?.src
+    return (
+      typeof src === 'string' &&
+      src.length > 0 &&
+      tag.attrs?.type === 'module' &&
+      !isExternalUrl(src) &&
+      !isDataUrl(src)
+    )
+  }
+  if (tag.tag === 'link') {
+    const href = tag.attrs?.href
+    const rel = tag.attrs?.rel
+    return (
+      typeof href === 'string' &&
+      href.length > 0 &&
+      (rel === 'stylesheet' || rel === 'modulepreload') &&
+      !isExternalUrl(href) &&
+      !isDataUrl(href)
+    )
+  }
+  return false
+}
+
+function injectHtmlTags(
+  html: string,
+  tags: HtmlTagDescriptor[],
+  ctx: IndexHtmlTransformContext,
+): string {
+  let headTags: HtmlTagDescriptor[] | undefined
+  let headPrependTags: HtmlTagDescriptor[] | undefined
+  let bodyTags: HtmlTagDescriptor[] | undefined
+  let bodyPrependTags: HtmlTagDescriptor[] | undefined
+
+  for (const tag of tags) {
+    switch (tag.injectTo) {
+      case 'body':
+        ;(bodyTags ??= []).push(tag)
+        break
+      case 'body-prepend':
+        ;(bodyPrependTags ??= []).push(tag)
+        break
+      case 'head':
+        ;(headTags ??= []).push(tag)
+        break
+      default:
+        ;(headPrependTags ??= []).push(tag)
+    }
+  }
+  headTagInsertCheck([...(headTags || []), ...(headPrependTags || [])], ctx)
+  if (headPrependTags) html = injectToHead(html, headPrependTags, true)
+  if (headTags) html = injectToHead(html, headTags)
+  if (bodyPrependTags) html = injectToBody(html, bodyPrependTags, true)
+  if (bodyTags) html = injectToBody(html, bodyTags)
+  return html
+}
+
+/**
+ * Runs default-order `transformIndexHtml` hooks and injects only tags that must
+ * enter the HTML→JS module graph (module scripts / stylesheets). Used by
+ * bundledDev before scanning.
+ */
+export async function injectModulePipelineTagsFromHtmlTransforms(
+  html: string,
+  hooks: IndexHtmlTransformHook[],
+  pluginContext: MinimalPluginContextWithoutEnvironment,
+  ctx: IndexHtmlTransformContext,
+): Promise<string> {
+  const pipelineTags: HtmlTagDescriptor[] = []
+  for (const hook of hooks) {
+    const res = await hook.call(pluginContext, html, ctx)
+    if (!res || typeof res === 'string') continue
+    const tags = Array.isArray(res) ? res : res.tags
+    if (!tags) continue
+    for (const tag of tags) {
+      if (isHtmlModulePipelineTag(tag)) {
+        pipelineTags.push(tag)
+      }
+    }
+  }
+  if (!pipelineTags.length) return html
+  return injectHtmlTags(html, pipelineTags, ctx)
+}
+
+/**
+ * Removes module scripts pointing at `/@id/` or `/@fs/` — these are not served
+ * under bundledDev (only Rolldown memory outputs are).
+ */
+export function stripUnservableDevModuleScripts(html: string): string {
+  return html.replace(/<script\b[^>]*>\s*<\/script>/gi, (scriptTag) => {
+    // Quoted values cannot use a trailing `\b` (end is a non-word `"`).
+    if (
+      /\btype\s*=\s*(?:"module"|'module'|module[\s>/])/i.test(scriptTag) &&
+      (scriptTag.includes(VALID_ID_PREFIX) || scriptTag.includes(FS_PREFIX))
+    ) {
+      return ''
+    }
+    return scriptTag
+  })
+}
+
 export async function applyHtmlTransforms(
   html: string,
   hooks: IndexHtmlTransformHook[],
@@ -1489,32 +1622,7 @@ export async function applyHtmlTransforms(
         html = res.html || html
         tags = res.tags
       }
-
-      let headTags: HtmlTagDescriptor[] | undefined
-      let headPrependTags: HtmlTagDescriptor[] | undefined
-      let bodyTags: HtmlTagDescriptor[] | undefined
-      let bodyPrependTags: HtmlTagDescriptor[] | undefined
-
-      for (const tag of tags) {
-        switch (tag.injectTo) {
-          case 'body':
-            ;(bodyTags ??= []).push(tag)
-            break
-          case 'body-prepend':
-            ;(bodyPrependTags ??= []).push(tag)
-            break
-          case 'head':
-            ;(headTags ??= []).push(tag)
-            break
-          default:
-            ;(headPrependTags ??= []).push(tag)
-        }
-      }
-      headTagInsertCheck([...(headTags || []), ...(headPrependTags || [])], ctx)
-      if (headPrependTags) html = injectToHead(html, headPrependTags, true)
-      if (headTags) html = injectToHead(html, headTags)
-      if (bodyPrependTags) html = injectToBody(html, bodyPrependTags, true)
-      if (bodyTags) html = injectToBody(html, bodyTags)
+      html = injectHtmlTags(html, tags, ctx)
     }
   }
 

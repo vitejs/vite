@@ -3,6 +3,8 @@ import fs from 'node:fs'
 import type { Connect } from '#dep-types/connect'
 import { createDebugger, joinUrlSegments } from '../../utils'
 import { cleanUrl } from '../../../shared/utils'
+import { VALID_ID_PREFIX } from '../../../shared/constants'
+import { FS_PREFIX } from '../../constants'
 import type { DevEnvironment } from '../environment'
 
 const debug = createDebugger('vite:html-fallback')
@@ -77,7 +79,14 @@ export function htmlFallbackMiddleware(
       }
     }
 
-    if (spaFallback) {
+    // `/@id/` and `/@fs/` are not served from disk/memory in bundledDev. Do not
+    // SPA-fallback them to index.html — that masks missing virtual modules as a
+    // 200 HTML response (see #22864).
+    if (
+      spaFallback &&
+      !pathname.startsWith(VALID_ID_PREFIX) &&
+      !pathname.startsWith(FS_PREFIX)
+    ) {
       debug?.(`Rewriting ${req.method} ${req.url} to /index.html`)
       req.url = '/index.html'
     }

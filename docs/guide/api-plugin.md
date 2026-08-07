@@ -352,6 +352,8 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
   By default `order` is `undefined`, with this hook applied after the HTML has been transformed. In order to inject a script that should go through the Vite plugins pipeline, `order: 'pre'` will apply the hook before processing the HTML. `order: 'post'` applies the hook after all hooks with `order` undefined are applied.
 
+  Under [`experimental.bundledDev`](/blog/announcing-vite8-1#experimental-bundled-dev-mode), Vite also collects module script / stylesheet tags from default-order hooks before the HTML is turned into JS imports, so injected virtual modules (for example `/@id/virtual:…`) are included in the Rolldown graph. Prefer setting `order: 'pre'` explicitly when injecting pipeline tags so build and bundledDev stay aligned.
+
   **Basic Example:**
 
   ```js
