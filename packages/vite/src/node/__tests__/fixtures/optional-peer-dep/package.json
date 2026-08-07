@@ -1,0 +1,5 @@
+{
+  "name": "optional-peer-dep-app",
+  "private": true,
+  "type": "module"
+}
