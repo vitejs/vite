@@ -682,6 +682,8 @@ importers:
 
   playground/css-dynamic-import: {}
 
+  playground/css-lib-multi-entry: {}
+
   playground/css-lightningcss:
     devDependencies:
       lightningcss:
