@@ -10,6 +10,7 @@ import getEtag from 'etag'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
 import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
 import { getHmrImplementation } from '../plugins/clientInjections'
+import { isHTMLRequest } from '../plugins/html'
 import { createDebugger, formatAndTruncateFileList } from '../utils'
 import type { DevEnvironment } from './environment'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
@@ -193,6 +194,21 @@ export class BundledDev {
         }
         const { updates, changedFiles } = result
         if (changedFiles.length === 0) {
+          return
+        }
+        // Edits to an HTML entry may leave its transformed module code
+        // unchanged (classic inline scripts and markup stay in the html
+        // output; only module scripts/styles turn into imports), in which
+        // case rolldown reports Noop updates and nothing would happen.
+        // Always rebuild and reload on html changes, like the unbundled
+        // dev server does.
+        if (changedFiles.some((file) => isHTMLRequest(file))) {
+          debug?.(`TRIGGER: html entry changed, forcing full rebuild`)
+          this.devEngine.triggerFullBuild()
+          this.devEngine.ensureLatestBuildOutput().then(
+            () => this.debouncedFullReload(),
+            () => {},
+          )
           return
         }
         if (updates.every((update) => update.update.type === 'Noop')) {
