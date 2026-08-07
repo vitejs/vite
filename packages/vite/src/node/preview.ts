@@ -279,7 +279,7 @@ export async function preview(
     app.use(indexHtmlMiddleware(normalizedDistDir, server))
 
     // handle 404s
-    app.use(notFoundMiddleware())
+    app.use(notFoundMiddleware(config.preview.headers))
   }
 
   const hostname = await resolveHostname(options.host)
