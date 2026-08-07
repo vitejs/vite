@@ -8,6 +8,7 @@ Also, please make sure you do the following:
 
 - Read the Contributing Guidelines at https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md.
 - Check that there isn't already a PR that solves the problem the same way. If you find a duplicate, please help us review it.
+- If you used AI, disclose the prompts used.
 - Update the corresponding documentation if needed.
 - Include relevant tests that fail without this PR but pass with it. If the tests are not included, explain why.
 
