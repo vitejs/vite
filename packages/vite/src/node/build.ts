@@ -417,7 +417,7 @@ const _buildEnvironmentOptionsDefaults = Object.freeze({
   ssrManifest: false,
   ssrEmitAssets: false,
   // emitAssets
-  reportCompressedSize: true,
+  reportCompressedSize: false,
   chunkSizeWarningLimit: 500,
   watch: null,
   // createEnvironment
