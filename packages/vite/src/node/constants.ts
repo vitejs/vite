@@ -117,6 +117,7 @@ export const SPECIAL_QUERY_RE: RegExp = /[?&](?:worker|sharedworker|raw|url)\b/
  * Prefix for resolved fs paths, since windows paths may not be valid as URLs.
  */
 export const FS_PREFIX = `/@fs/`
+export const FS_RAW_PREFIX = `/@fs-raw/`
 
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
 export const ENV_PUBLIC_PATH = `/@vite/env`

@@ -15,6 +15,7 @@ import {
   page,
   readFile,
   readManifest,
+  rootDir,
   serverLogs,
   viteTestUrl,
   watcher,
@@ -29,6 +30,9 @@ const encodedAssetMatch = isBundled
   : '/foo/bar/nested/asset[small].png'
 
 const iconMatch = `/foo/bar/icon.png`
+
+const fsPath = (filename: string) =>
+  `/foo/bar/@fs-raw${path.posix.join('/', rootDir.replaceAll('\\', '/'), filename)}`
 
 const fetchPath = (p: string) => {
   return fetch(path.posix.join(viteTestUrl, p), {
@@ -629,7 +633,7 @@ describe.runIf(isBuild)('encodeURI', () => {
 test('new URL(..., import.meta.url)', async () => {
   const imgMatch = isBundled
     ? /\/foo\/bar\/assets\/img-[-\w]{8}\.png/
-    : '/foo/bar/import-meta-url/img.png'
+    : fsPath('import-meta-url/img.png')
 
   expect(await page.textContent('.import-meta-url')).toMatch(imgMatch)
   if (isServe) {
@@ -655,7 +659,9 @@ test('new URL(..., import.meta.url)', async () => {
 })
 
 test('new URL("@/...", import.meta.url)', async () => {
-  expect(await page.textContent('.import-meta-url-dep')).toMatch(assetMatch)
+  expect(await page.textContent('.import-meta-url-dep')).toMatch(
+    isBuild ? assetMatch : fsPath('nested/asset.png'),
+  )
 })
 
 test('new URL("/...", import.meta.url)', async () => {
@@ -744,7 +750,7 @@ test("new URL(/* @vite-ignore */ 'non-existent', import.meta.url)", async () => 
 test('new URL(..., import.meta.url) (multiline)', async () => {
   const assetMatch = isBundled
     ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png/
-    : '/foo/bar/nested/asset.png'
+    : fsPath('nested/asset.png')
 
   expect(await page.textContent('.import-meta-url-multiline')).toMatch(
     assetMatch,

@@ -144,9 +144,9 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             try {
               if (publicDir && isParentDirectory(publicDir, file)) {
                 const publicPath = '/' + path.posix.relative(publicDir, file)
-                builtUrl = await fileToUrl(this, publicPath)
+                builtUrl = await fileToUrl(this, publicPath, undefined, true)
               } else {
-                builtUrl = await fileToUrl(this, file)
+                builtUrl = await fileToUrl(this, file, undefined, true)
                 // during dev, builtUrl may point to a directory or a non-existing file
                 if (tryStatSync(file)?.isFile()) {
                   this.addWatchFile(file)
