@@ -1378,6 +1378,11 @@ export function createCSSResolvers(
         conditions: ['style', DEV_PROD_CONDITION],
         tryIndex: false,
         preferRelative: true,
+        // postcss-import reads the resolved id off disk, so an `@import` must
+        // resolve to a file even in environments that would externalize the
+        // same specifier for JS. Otherwise it is returned unchanged and then
+        // resolved against the project root.
+        noExternal: true,
       }))
     },
 

@@ -3,7 +3,7 @@ import { describe, expect, onTestFinished, test } from 'vitest'
 import type { RolldownOutput } from 'rolldown'
 import { createServer } from '../server'
 import type { InlineConfig } from '../config'
-import { createBuilder } from '../build'
+import { build, createBuilder } from '../build'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
 
 describe('custom environment conditions', () => {
@@ -162,6 +162,28 @@ describe('custom environment conditions', () => {
         "index.default.js",
       ]
     `)
+  })
+
+  test('css @import of an externalized dep resolves in a server build', async () => {
+    // The CSS resolver must resolve a bare `@import` to a file even when the
+    // environment would externalize that dependency for JS.
+    const output = (await build({
+      configFile: false,
+      root: import.meta.dirname,
+      logLevel: 'error',
+      build: {
+        write: false,
+        ssr: true,
+        ssrEmitAssets: true,
+        rolldownOptions: {
+          input: 'fixtures/test-dep-conditions-app/entry.css',
+        },
+      },
+    })) as RolldownOutput
+    const css = output.output.find((o) => o.fileName.endsWith('.css'))
+    expect((css as { source: string }).source.trim()).toBe(
+      '.test-css{color:orange}',
+    )
   })
 
   test('build', async () => {
