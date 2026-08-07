@@ -15,6 +15,8 @@ import {
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
+  rawRE,
+  urlRE,
 } from '../../utils'
 import { send } from '../send'
 import { ERR_DENIED_ID, ERR_LOAD_URL } from '../transformRequest'
@@ -25,6 +27,7 @@ import {
   ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
   ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
   FS_PREFIX,
+  inlineRE,
 } from '../../constants'
 import { isDirectCSSRequest, isDirectRequest } from '../../plugins/css'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
@@ -51,10 +54,6 @@ function isDocumentFetchDest(req: Connect.IncomingMessage) {
   return fetchDest !== undefined && documentFetchDests.has(fetchDest)
 }
 
-// TODO: consolidate this regex pattern with the url, raw, and inline checks in plugins
-const urlRE = /[?&]url\b/
-const rawRE = /[?&]raw\b/
-const inlineRE = /[?&]inline\b/
 const svgRE = /\.svg\b/
 
 export function isServerAccessDeniedForTransform(

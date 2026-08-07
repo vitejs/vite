@@ -6,7 +6,7 @@ import { type ImportSpecifier, init, parse } from 'es-module-lexer'
 import { viteWebWorkerPostPlugin as nativeWebWorkerPostPlugin } from 'rolldown/experimental'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
+import { ENV_ENTRY, ENV_PUBLIC_PATH, inlineRE } from '../constants'
 import {
   encodeURIPath,
   getHash,
@@ -154,7 +154,6 @@ export type WorkerType = 'classic' | 'module' | 'ignore'
 export const workerOrSharedWorkerRE: RegExp =
   /(?:\?|&)(worker|sharedworker)(?:&|$)/
 const workerFileRE = /(?:\?|&)worker_file&type=(\w+)(?:&|$)/
-const inlineRE = /[?&]inline\b/
 
 export const WORKER_FILE_ID = 'worker_file'
 const workerOutputCaches = new WeakMap<ResolvedConfig, WorkerOutputCache>()
