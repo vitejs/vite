@@ -346,8 +346,8 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   Called when the dev server is restarted or closed, after the server has been torn down. Typically used to dispose resources created in [`configureServer`](/guide/api-plugin.html#configureserver).
 
   The `context.reason` distinguishes the two cases:
-  - `'restart'` — the server is restarting (e.g. a config file change or a call to `server.restart()`).
-  - `'close'` — the server is shutting down (e.g. the `q` shortcut, or a call to `server.close()`).
+  - `'restart'`: the server is restarting (e.g. a config file change or a call to `server.restart()`).
+  - `'close'`: the server is shutting down (e.g. the `q` shortcut, or a call to `server.close()`).
 
   ```js
   const myPlugin = () => {
