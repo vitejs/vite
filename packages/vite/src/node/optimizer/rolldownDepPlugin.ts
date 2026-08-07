@@ -20,7 +20,7 @@ import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
 import { isModuleCSSRequest } from '../plugins/css'
 import type { Environment } from '../environment'
 import { createBackCompatIdResolver } from '../idResolver'
-import { isWindows } from '../../shared/utils'
+import { cleanUrl, isWindows } from '../../shared/utils'
 import { hasViteIgnoreRE } from '../plugins/importAnalysis'
 import { assetImportMetaUrlRE } from '../plugins/assetImportMetaUrl'
 
@@ -345,6 +345,9 @@ export function rolldownDepPlugin(
             // we resolve the relative path from the original library file (id) and
             // then rewrite it relative to the bundle (deps) directory.
             const absolutePath = path.resolve(path.dirname(id), url)
+            environment
+              .getTopLevelConfig()
+              .safeModulePaths.add(normalizePath(cleanUrl(absolutePath)))
             const relativePath = path.relative(bundleOutputDir, absolutePath)
             const normalizedRelativePath = normalizePath(relativePath)
             s.update(
