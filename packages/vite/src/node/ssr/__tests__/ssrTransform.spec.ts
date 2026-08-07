@@ -49,6 +49,27 @@ test('named import: arbitrary module namespace specifier', async () => {
   )
 })
 
+test('duplicate module-scope bindings', async () => {
+  for (const code of [
+    `import { join } from 'node:path';import { join } from 'node:path';`,
+    `import { join } from 'node:path';const join = () => {};`,
+    `import { join } from 'node:path';function join() {}`,
+    `import { join } from 'node:path';export class join {}`,
+    `import { join } from 'node:path';export default function join() {}`,
+    `var join;import { join } from 'node:path';`,
+    `import { join } from 'node:path';if (true) { var join; }`,
+    `import { join } from 'node:path';for (var join = 0; false;) {}`,
+  ]) {
+    await expect(ssrTransformSimpleCode(code)).rejects.toThrow(
+      "Identifier 'join' has already been declared",
+    )
+  }
+
+  await expect(ssrTransformSimpleCode(`var join;var join;`)).resolves.toBe(
+    `var join;var join;`,
+  )
+})
+
 test('named import colliding with label', async () => {
   expect(
     await ssrTransformSimpleCode(
