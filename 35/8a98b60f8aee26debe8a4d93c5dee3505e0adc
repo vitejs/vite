@@ -1,0 +1,19 @@
+.github/workflows/publish.yml
+  s_b46dae9a7542e3::t_6c7bb2456b044d 97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "358a98b60f8aee26debe8a4d93c5dee3505e0adc",
+  "prompts": {},
+  "sessions": {
+    "s_b46dae9a7542e3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fdb24-92f4-7260-9922-fe62add675df",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
