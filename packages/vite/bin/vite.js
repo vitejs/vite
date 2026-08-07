@@ -20,7 +20,9 @@ const debugIndex = process.argv.findIndex((arg) => /^(?:-d|--debug)$/.test(arg))
 const filterIndex = process.argv.findIndex((arg) =>
   /^(?:-f|--filter)$/.test(arg),
 )
-const profileIndex = process.argv.indexOf('--profile')
+const profileIndex = process.argv.findIndex(
+  (arg) => arg === '--profile' || arg.startsWith('--profile='),
+)
 
 if (debugIndex > 0) {
   let value = process.argv[debugIndex + 1]
@@ -63,10 +65,19 @@ function start() {
 }
 
 if (profileIndex > 0) {
-  process.argv.splice(profileIndex, 1)
-  const next = process.argv[profileIndex]
-  if (next && next[0] !== '-') {
-    process.argv.splice(profileIndex, 1)
+  const [profileArg] = process.argv.splice(profileIndex, 1)
+  // `--profile [name]` writes the profile to `<name>.cpuprofile`. The value is
+  // optional and consumed like cac does for other `[optional]` value flags.
+  let profileName = profileArg.slice('--profile='.length)
+  if (!profileName) {
+    const next = process.argv[profileIndex]
+    if (next && next[0] !== '-') {
+      process.argv.splice(profileIndex, 1)
+      profileName = next
+    }
+  }
+  if (profileName) {
+    global.__vite_profile_name = profileName
   }
   const inspector = await import('node:inspector').then((r) => r.default)
   const session = (global.__vite_profile_session = new inspector.Session())
