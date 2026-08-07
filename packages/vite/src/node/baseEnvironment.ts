@@ -1,7 +1,14 @@
 import colors from 'picocolors'
+import type { OutputBundle } from 'rolldown'
 import type { Logger } from './logger'
-import type { ResolvedConfig, ResolvedEnvironmentOptions } from './config'
+import type {
+  RequestEntrypointOutput,
+  ResolvedConfig,
+  ResolvedEnvironmentOptions,
+  ResolvedRequestEntrypoint,
+} from './config'
 import type { Plugin } from './plugin'
+import { resolveRequestEntrypointChunks } from './plugins/requestEntrypoints'
 
 const environmentColors = [
   colors.blue,
@@ -104,6 +111,35 @@ export class PartialEnvironment {
 export class BaseEnvironment extends PartialEnvironment {
   get plugins(): readonly Plugin[] {
     return this.config.plugins
+  }
+
+  /**
+   * The normalized server request entrypoints configured for this environment.
+   *
+   * @experimental
+   */
+  getRequestEntrypoints(): ResolvedRequestEntrypoint[] {
+    return this.config.requestEntrypoints
+  }
+
+  /**
+   * Resolve each configured request entrypoint to its emitted entry chunk in the given bundle.
+   * Intended to generally be called from a deployment provider plugin's `generateBundle` hook via
+   * `this.environment.getRequestEntrypointOutputs(bundle)`.
+   *
+   * @experimental
+   */
+  getRequestEntrypointOutputs(bundle: OutputBundle): RequestEntrypointOutput[] {
+    const entrypoints = this.getRequestEntrypoints()
+    const chunkByName = resolveRequestEntrypointChunks(
+      bundle,
+      entrypoints,
+      this.name,
+    )
+    return entrypoints.map(({ name, type }) => {
+      const chunk = chunkByName.get(name)!
+      return { name, type, fileName: chunk.fileName, chunk }
+    })
   }
 
   /**

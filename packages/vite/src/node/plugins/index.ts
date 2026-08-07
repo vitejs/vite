@@ -107,6 +107,7 @@ export async function resolvePlugins(
         ? {
             ...config,
             consumer: 'client',
+            requestEntrypoints: [],
             isBundled: true,
             optimizeDepsPluginNames: [],
           }
