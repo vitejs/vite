@@ -36,6 +36,7 @@ const createNonEmptyDir = (overrideFolder?: string) => {
 const fileNameMap: Record<string, string> = {
   _gitignore: '.gitignore',
   '_oxlintrc.json': '.oxlintrc.json',
+  _editorconfig: '.editorconfig',
 }
 
 // Vue 3 starter template
