@@ -8,6 +8,7 @@ import {
   asyncFlatten,
   bareImportRE,
   combineSourcemaps,
+  encodeURIPath,
   extractHostnamesFromCerts,
   extractHostnamesFromSubjectAltName,
   flattenId,
@@ -1243,5 +1244,43 @@ describe('resolveServerUrls', () => {
 
     expect(result.network).toStrictEqual(['http://10.0.0.5:3000/'])
     expect(result.networkInterfaceNames).toStrictEqual([undefined])
+  })
+})
+
+describe('encodeURIPath', () => {
+  test('encodes characters that are unsafe in a path', () => {
+    expect(encodeURIPath('/assets/a b.svg')).toBe('/assets/a%20b.svg')
+    expect(encodeURIPath('/assets/a"b.svg')).toBe('/assets/a%22b.svg')
+  })
+
+  test('leaves the part after ? or # alone', () => {
+    expect(encodeURIPath('/assets/a b.svg?foo bar')).toBe(
+      '/assets/a%20b.svg?foo bar',
+    )
+  })
+
+  test('returns data URIs untouched', () => {
+    expect(encodeURIPath('data:image/svg+xml,<svg />')).toBe(
+      'data:image/svg+xml,<svg />',
+    )
+  })
+
+  test('does not percent-encode the brackets of an IPv6 host', () => {
+    // `[` and `]` delimit an IPv6 host (RFC 3986 3.2.2) rather than being data to
+    // escape, but they are outside encodeURI's unreserved set. When server.origin
+    // is an IPv6 literal the whole absolute URL reaches this helper, so encoding
+    // them corrupts the authority and the result no longer parses as a URL.
+    expect(encodeURIPath('http://[::1]:5173/src/assets/vite.svg')).toBe(
+      'http://[::1]:5173/src/assets/vite.svg',
+    )
+    expect(encodeURIPath('http://[::1]:5173/src/a b.svg')).toBe(
+      'http://[::1]:5173/src/a%20b.svg',
+    )
+  })
+
+  test('still encodes the path of an absolute URL', () => {
+    expect(encodeURIPath('http://127.0.0.1:5173/src/a b.svg')).toBe(
+      'http://127.0.0.1:5173/src/a%20b.svg',
+    )
   })
 })
