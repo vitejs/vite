@@ -13,6 +13,7 @@ import type { AddressInfo, Server } from 'node:net'
 import fsp from 'node:fs/promises'
 import remapping from '@jridgewell/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
+import { onExit as signalOnExit } from 'signal-exit'
 import colors from 'picocolors'
 import type { Debugger } from 'obug'
 import debug from 'obug'
@@ -1912,34 +1913,101 @@ export function decodeURIIfPossible(input: string): string | undefined {
   }
 }
 
-type SigtermCallback = (signal?: 'SIGTERM', exitCode?: number) => Promise<void>
+type ExitCallback = (
+  signal?: NodeJS.Signals | null,
+  exitCode?: number | null,
+) => Promise<void>
 
-// Use a shared callback when attaching sigterm listeners to avoid `MaxListenersExceededWarning`
-const sigtermCallbacks = new Set<SigtermCallback>()
-const parentSigtermCallback: SigtermCallback = async (signal, exitCode) => {
-  await Promise.all([...sigtermCallbacks].map((cb) => cb(signal, exitCode)))
+// Use a shared callback so we only register a single `signal-exit` handler,
+// avoiding `MaxListenersExceededWarning`. `signal-exit` coordinates across its
+// own separately bundled copies (e.g. Vite's and Rolldown's) via a shared
+// registry on `globalThis`, so callbacks still fire exactly once.
+const exitCallbacks = new Set<ExitCallback>()
+
+// `signal-exit` works by patching `process.reallyExit`, which is a no-op in
+// WebContainer (e.g. StackBlitz). Fall back to a plain `exit` listener there so
+// cleanup still runs, matching Rolldown's handling.
+// See https://github.com/rolldown/rolldown/blob/main/packages/rolldown/src/utils/signal-exit.ts.
+const onExit = (callback: Parameters<typeof signalOnExit>[0]): (() => void) => {
+  if (typeof process === 'object' && process.versions.webcontainer) {
+    // `exit` listeners run synchronously and the process terminates as soon as
+    // they return, so any async cleanup is best-effort and may not finish.
+    const listener = (code: number) => callback(code, null)
+    process.on('exit', listener)
+    return () => process.off('exit', listener)
+  }
+  return signalOnExit(callback)
 }
 
-export const setupSIGTERMListener = (
-  callback: (signal?: 'SIGTERM', exitCode?: number) => Promise<void>,
+// `onExit` returns a function that removes the listener.
+let removeExitListener: (() => void) | undefined
+
+// Guard so the exit sequence runs once, even though it can be triggered from
+// multiple sources (a captured signal, stdin ending, or `process.exit()` being
+// intercepted by `signal-exit`'s patched `reallyExit`).
+let exiting = false
+
+// Run the registered callbacks, then own the final exit. When triggered by a
+// signal we re-raise it (via `signal-exit` having unloaded first) to preserve
+// the conventional `128 + signal number` exit code; otherwise we exit with the
+// given code.
+const runExitCallbacks = (
+  signal: NodeJS.Signals | null,
+  code: number | null | undefined,
 ): void => {
-  if (sigtermCallbacks.size === 0) {
-    process.once('SIGTERM', parentSigtermCallback)
+  if (exiting) return
+  exiting = true
+  Promise.allSettled([...exitCallbacks].map((cb) => cb(signal, code))).finally(
+    () => {
+      if (signal) {
+        process.kill(process.pid, signal)
+      } else {
+        process.exit(code ?? undefined)
+      }
+    },
+  )
+}
+
+// The handler passed to `signal-exit`. It must be synchronous and return
+// `true` to "capture" the signal, which prevents `signal-exit` from
+// synthetically re-killing the process before our async cleanup finishes.
+const parentExitCallback = (
+  code: number | null | undefined,
+  signal: NodeJS.Signals | null,
+): true => {
+  runExitCallbacks(signal, code)
+  // Tell `signal-exit` we are handling this exit; it will not re-kill us.
+  return true
+}
+
+// Gracefully shut down when stdin ends (e.g. a parent process closed the pipe).
+// `signal-exit` does not cover this. This was originally borrowed from Rollup,
+// which has since dropped it; Vite keeps it to avoid leaving zombie processes.
+// See https://github.com/vitejs/vite/pull/1857.
+const onStdinEnd = () => {
+  runExitCallbacks(null, 0)
+}
+
+export const setupExitListener = (callback: ExitCallback): void => {
+  if (exitCallbacks.size === 0) {
+    removeExitListener = onExit(parentExitCallback)
+    // Disabled in CI, where stdin is often already closed and would otherwise
+    // make the process exit immediately.
+    // See https://github.com/vitejs/vite/pull/3659.
     if (process.env.CI !== 'true') {
-      process.stdin.on('end', parentSigtermCallback)
+      process.stdin.on('end', onStdinEnd)
     }
   }
-  sigtermCallbacks.add(callback)
+  exitCallbacks.add(callback)
 }
 
-export const teardownSIGTERMListener = (
-  callback: Parameters<typeof setupSIGTERMListener>[0],
-): void => {
-  sigtermCallbacks.delete(callback)
-  if (sigtermCallbacks.size === 0) {
-    process.off('SIGTERM', parentSigtermCallback)
+export const teardownExitListener = (callback: ExitCallback): void => {
+  exitCallbacks.delete(callback)
+  if (exitCallbacks.size === 0) {
+    removeExitListener?.()
+    removeExitListener = undefined
     if (process.env.CI !== 'true') {
-      process.stdin.off('end', parentSigtermCallback)
+      process.stdin.off('end', onStdinEnd)
     }
   }
 }
