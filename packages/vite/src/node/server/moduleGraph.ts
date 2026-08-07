@@ -139,10 +139,11 @@ export class EnvironmentModuleGraph {
   }
 
   getModulesByFile(file: string): Set<EnvironmentModuleNode> | undefined {
-    return this.fileToModulesMap.get(file)
+    return this.fileToModulesMap.get(normalizePath(file))
   }
 
   onFileChange(file: string): void {
+    file = normalizePath(file)
     const mods = this.getModulesByFile(file)
     if (mods) {
       const seen = new Set<EnvironmentModuleNode>()
@@ -153,6 +154,7 @@ export class EnvironmentModuleGraph {
   }
 
   onFileDelete(file: string): void {
+    file = normalizePath(file)
     const mods = this.getModulesByFile(file)
     if (mods) {
       mods.forEach((mod) => {
