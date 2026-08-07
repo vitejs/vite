@@ -8,5 +8,6 @@ export default defineConfig({
   build: {
     minify: 'esbuild',
     cssMinify: 'esbuild',
+    cssTarget: 'chrome87',
   },
 })
