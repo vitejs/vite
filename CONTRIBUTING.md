@@ -336,22 +336,46 @@ flowchart TD
 
 ### Release
 
-If you have publish access, the steps below explain how to cut a release for a package. There are two phases for the release step: "Release" and "Publish".
+All publishable packages in this repository use a pull-request-driven release flow. GitHub Actions prepares a release PR containing the version bump and changelog, and merging that PR triggers publishing.
 
-"Release" is done locally to generate the changelogs and git tags:
+#### Prepare a Release
 
-1. Make sure the git remote for https://github.com/vitejs/vite is set as `origin`.
-2. In the `vite` project root `main` branch, run `git pull` and `pnpm i` to get it up-to-date. Then run `pnpm build`.
-3. Run `pnpm release` and follow the prompts to cut a release for a package. It will generate the changelog, a git release tag, and push them to `origin`. You can run with the `--dry` flag to test it out.
-4. When the command finishes, it will provide a link to https://github.com/vitejs/vite/actions/workflows/publish.yml.
-5. Click the link to visit the page, and follow the next steps below.
+1. Run the [Prepare Release](.github/workflows/prepare-release.yml) workflow from the `main` branch.
+2. Select `vite`, `create-vite`, or `plugin-legacy`.
+3. Select a `release` type. The default `next` creates the next patch for a stable version or advances an existing prerelease. Alternatively, select another supported release type or enter an exact `version`, which takes precedence over `release`.
+4. Wait for `vite-release-bot` to open the release PR. The PR contains the selected package's version bump and changelog entry. A `create-vite` release also updates template Vite dependency versions when appropriate.
 
-"Publish" is done on GitHub Actions to publish the package to npm:
+To preview the available release types and versions locally, run the following command from the repository root:
 
-1. Shortly in the workflows page, a new workflow will appear for the released package and is waiting for approval to publish to npm.
-2. Click on the workflow to open its page.
-3. Click on the "Review deployments" button in the yellow box, a popup will appear.
-4. Check "Release" and click "Approve and deploy".
-5. The package will start publishing to npm.
+```sh
+node scripts/prepare-release.ts vite patch
+```
+
+Replace `vite` with `create-vite` or `plugin-legacy` as needed.
+
+#### Review and Publish
+
+1. Review the generated version and changelog, and wait for the release PR checks to pass.
+2. Merge the PR while retaining its `release: <tag>` commit subject. Vite uses `release: v<version>`; other packages use `release: <package>@<version>`. A matching commit at the tip of `main` triggers the publish job.
+3. Open the [Publish Package](.github/workflows/publish.yml) run and approve its `Release` environment deployment.
+4. Wait for the workflow to publish the package, create its tag, and create the corresponding GitHub release.
+5. Verify the new version on npm.
+
+#### Repository Configuration
+
+The release flow depends on configuration outside this repository:
+
+- The `vite-release-bot` GitHub App must be installed on `vitejs/vite` with Contents and Pull requests read/write permissions. Webhooks must be disabled.
+- `RELEASE_GITHUB_APP_CLIENT_ID` must be a repository variable containing the app client ID.
+- `RELEASE_GITHUB_APP_PRIVATE_KEY` must be a repository secret containing the app private key.
+- The `Release` environment must require maintainer approval before publishing.
+- The npm trusted publishers for `vite`, `create-vite`, and `@vitejs/plugin-legacy` must be restricted to `vitejs/vite`, `.github/workflows/publish.yml`, and the `Release` environment.
+
+#### Recovery
+
+- If release preparation fails, fix the cause and rerun the preparation workflow. Each run creates a uniquely named branch.
+- If publishing fails before npm accepts the package, fix the cause and rerun the failed workflow.
+- If npm publishing succeeds but tag or GitHub release creation fails, do not rerun the entire publish job blindly because npm versions are immutable. Confirm the package state first, then manually create the tag at the original release commit and create the GitHub release from the corresponding changelog entry.
+- If the release tag already exists, investigate whether the package was previously published before retrying or changing any release state.
 
 To learn more about how and when Vite does releases, check out the [Releases](https://vite.dev/releases) documentation.

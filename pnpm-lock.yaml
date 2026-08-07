@@ -64,8 +64,8 @@ importers:
         specifier: ^8.18.1
         version: 8.18.1
       '@vitejs/release-scripts':
-        specifier: ^1.8.0
-        version: 1.8.0(conventional-commits-filter@6.0.1)
+        specifier: ^1.9.1
+        version: 1.9.1(conventional-commits-filter@6.0.1)
       eslint:
         specifier: ^9.39.5
         version: 9.39.5(jiti@2.7.0)(ms@2.1.3)
@@ -4400,8 +4400,8 @@ packages:
       vite: workspace:*
       vue: ^3.2.25
 
-  '@vitejs/release-scripts@1.8.0':
-    resolution: {integrity: sha512-onsGGV08sBfuV78buZUg0GpJU5iFOoxpxgi66pp5IFtbONPUQOq/9dDUx6QPJJjUovDNftg9QfYe0t9PZt/g6w==}
+  '@vitejs/release-scripts@1.9.1':
+    resolution: {integrity: sha512-QWtOm5A9JPRqmfMhVv+zgppLwNwxq+FTPP8ibIV65WxclzNQ76tvQtML/DOstiDv4SJac/9IDpYQQKyNCdOoTw==}
 
   '@vitejs/require@file:playground/json/dep-json-require':
     resolution: {directory: playground/json/dep-json-require, type: directory}
@@ -10486,7 +10486,7 @@ snapshots:
       vite: link:packages/vite
       vue: 3.5.40(typescript@6.0.3)
 
-  '@vitejs/release-scripts@1.8.0(conventional-commits-filter@6.0.1)':
+  '@vitejs/release-scripts@1.9.1(conventional-commits-filter@6.0.1)':
     dependencies:
       '@conventional-changelog/template': 1.2.1
       conventional-changelog: 8.1.0(conventional-commits-filter@6.0.1)
