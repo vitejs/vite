@@ -13,6 +13,10 @@ If `true`, all dependencies including linked dependencies are externalized.
 
 Note that the explicitly listed dependencies (using `string[]` type) will always take priority if they're also listed in `ssr.noExternal` (using any type).
 
+When using the Environment API, configure the same behavior with
+`environments.<name>.resolve.external`. `ssr.external` is the backward-compatible alias for
+the default `ssr` environment.
+
 ## ssr.noExternal
 
 - **Type:** `string | RegExp | (string | RegExp)[] | true`
@@ -23,6 +27,10 @@ Prevent listed dependencies from being externalized for SSR, which they will get
 If `true`, no dependencies are externalized. However, dependencies explicitly listed in `ssr.external` (using `string[]` type) can take priority and still be externalized. If `ssr.target: 'node'` is set, Node.js built-ins will also be externalized by default.
 
 Note that if both `ssr.noExternal: true` and `ssr.external: true` are configured, `ssr.noExternal` takes priority and no dependencies are externalized.
+
+When using the Environment API, configure the same behavior with
+`environments.<name>.resolve.noExternal`. `ssr.noExternal` is the backward-compatible alias
+for the default `ssr` environment.
 
 ## ssr.target
 
