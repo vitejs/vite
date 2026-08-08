@@ -15,11 +15,12 @@ import { CLIENT_ENTRY } from '../constants'
 import { slash } from '../../shared/utils'
 import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
-import { fileToUrl } from './asset'
+import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
 import type { InternalResolveOptions } from './resolve'
 import { tryFsResolve } from './resolve'
 import { hasViteIgnoreRE } from './importAnalysis'
+import { workerFileToUrl } from './worker'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -139,12 +140,31 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           // Get final asset URL. If the file does not exist,
           // we fall back to the initial URL and let it resolve in runtime
+          const isBundled = this.environment.config.isBundled
           let builtUrl: string | undefined
           if (file) {
             try {
               if (publicDir && isParentDirectory(publicDir, file)) {
                 const publicPath = '/' + path.posix.relative(publicDir, file)
                 builtUrl = await fileToUrl(this, publicPath)
+              } else if (
+                isBundled &&
+                /\.(?:ts|tsx|mts|cts)$/.test(file) &&
+                !/\.d\.[cm]?ts$/.test(file)
+              ) {
+                // In bundled mode, mrmime classifies .ts as video/mp2t; route through workerFileToUrl instead. Skips declaration files.
+                const result = await workerFileToUrl(config, file)
+                if (this.environment.config.command === 'serve') {
+                  builtUrl = toOutputFilePathInJSForBundledDev(
+                    this.environment,
+                    result.entryFilename,
+                  )
+                } else {
+                  builtUrl = result.entryUrlPlaceholder
+                }
+                for (const watchedFile of result.watchedFiles) {
+                  this.addWatchFile(watchedFile)
+                }
               } else {
                 builtUrl = await fileToUrl(this, file)
                 // during dev, builtUrl may point to a directory or a non-existing file
