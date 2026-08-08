@@ -7,6 +7,9 @@ export default defineConfig({
       '@': import.meta.dirname,
     },
   },
+  dev: {
+    sourcemap: true,
+  },
   css: {
     devSourcemap: true,
     preprocessorOptions: {
