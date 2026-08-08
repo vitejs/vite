@@ -33,7 +33,16 @@ import {
   removeLeadingSlash,
   unique,
 } from '../utils'
-import type { ResolvedConfig, ResolvedEnvironmentOptions } from '../config'
+import type {
+  CSPNonce,
+  ResolvedConfig,
+  ResolvedEnvironmentOptions,
+} from '../config'
+import { resolveCspNonce } from '../config'
+import type {
+  CSPNonceDestination,
+  CSPNonceMetaProperty,
+} from '../../shared/cspNonce'
 import { checkPublicFile } from '../publicDir'
 import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
 import { toOutputFilePathInHtml } from '../build'
@@ -1259,7 +1268,7 @@ export function postImportMapHook(
     }
 
     if (chunkImportMapEnabled) {
-      const nonce = config.html?.cspNonce
+      const nonce = resolveCspNonce(config.html?.cspNonce, 'script')
       const importMap = bundle![
         getImportMapFilename(config.environments.client)
       ] as OutputAsset
@@ -1286,22 +1295,44 @@ export function postImportMapHook(
   }
 }
 
+// use nonce attribute so that it's hidden
+// https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/nonce#accessing_nonces_and_nonce_hiding
+const cspNonceMetaTag = (
+  property: CSPNonceMetaProperty,
+  nonce: string,
+): HtmlTagDescriptor => ({
+  tag: 'meta',
+  injectTo: 'head',
+  attrs: { property, nonce },
+})
+
+export function createCspNonceMetaTags(
+  cspNonce: CSPNonce | undefined,
+): HtmlTagDescriptor[] | undefined {
+  if (!cspNonce) return
+
+  const tags: HtmlTagDescriptor[] = []
+  if (typeof cspNonce === 'string') {
+    tags.push(cspNonceMetaTag('csp-nonce', cspNonce))
+  } else {
+    // a destination without a nonce gets no meta tag, matching the fact that
+    // its tags get no nonce attribute either
+    if (cspNonce.script) {
+      tags.push(cspNonceMetaTag('csp-script-nonce', cspNonce.script))
+    }
+    if (cspNonce.style) {
+      tags.push(cspNonceMetaTag('csp-style-nonce', cspNonce.style))
+    }
+  }
+  return tags.length > 0 ? tags : undefined
+}
+
 export function injectCspNonceMetaTagHook(
   config: ResolvedConfig,
 ): IndexHtmlTransformHook {
-  return () => {
-    if (!config.html?.cspNonce) return
-
-    return [
-      {
-        tag: 'meta',
-        injectTo: 'head',
-        // use nonce attribute so that it's hidden
-        // https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/nonce#accessing_nonces_and_nonce_hiding
-        attrs: { property: 'csp-nonce', nonce: config.html.cspNonce },
-      },
-    ]
-  }
+  // reads on every call: at build the hook is created in `resolvePlugins`, before
+  // `configResolved` has had a chance to set the option
+  return () => createCspNonceMetaTags(config.html?.cspNonce)
 }
 
 /**
@@ -1353,14 +1384,51 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
   }
 }
 
+const getAttrValue = (
+  attrs: Token.Attribute[],
+  name: string,
+): string | undefined => attrs.find((attr) => attr.name === name)?.value
+
+/**
+ * Which CSP directive an element is governed by, or `undefined` when the element
+ * loads something a nonce cannot apply to (e.g. `<link rel="preload" as="font">`,
+ * whose `font-src` directive does not support nonces).
+ */
+const getCspNonceDestination = (
+  nodeName: string,
+  attrs: Token.Attribute[],
+): CSPNonceDestination | undefined => {
+  if (nodeName === 'script') return 'script'
+  if (nodeName === 'style') return 'style'
+  if (nodeName !== 'link') return undefined
+
+  const rel = getAttrValue(attrs, 'rel')
+  if (!rel) return undefined
+  const rels = parseRelAttr(rel)
+  if (rels.includes('stylesheet')) return 'style'
+
+  // a preload's nonce follows its request destination, which `as` sets —
+  // `<link rel="modulepreload" as="style">` therefore uses the style nonce.
+  // `modulepreload` without `as` defaults to the script destination.
+  const isModulePreload = rels.includes('modulepreload')
+  if (isModulePreload || rels.includes('preload')) {
+    const as = getAttrValue(attrs, 'as')?.toLowerCase()
+    if (as === 'script' || as === 'style') return as
+    if (isModulePreload && !as) return 'script'
+  }
+  return undefined
+}
+
 export function injectNonceAttributeTagHook(
   config: ResolvedConfig,
 ): IndexHtmlTransformHook {
-  const processRelType = new Set(['stylesheet', 'modulepreload', 'preload'])
-
+  // read on every call: at build the hook is created in `resolvePlugins`, before
+  // `configResolved` has had a chance to set the option
   return async (html, { filename }) => {
-    const nonce = config.html?.cspNonce
-    if (!nonce) return
+    const scriptNonce = resolveCspNonce(config.html?.cspNonce, 'script')
+    const styleNonce = resolveCspNonce(config.html?.cspNonce, 'style')
+    // bail out before parsing the document when there is nothing to add
+    if (!scriptNonce && !styleNonce) return
 
     const s = new MagicString(html)
 
@@ -1371,29 +1439,23 @@ export function injectNonceAttributeTagHook(
 
       const { nodeName, attrs, sourceCodeLocation } = node
 
-      if (
-        nodeName === 'script' ||
-        nodeName === 'style' ||
-        (nodeName === 'link' &&
-          attrs.some(
-            (attr) =>
-              attr.name === 'rel' &&
-              parseRelAttr(attr.value).some((a) => processRelType.has(a)),
-          ))
-      ) {
-        // If we already have a nonce attribute, we don't need to add another one
-        if (attrs.some(({ name }) => name === 'nonce')) {
-          return
-        }
+      const destination = getCspNonceDestination(nodeName, attrs)
+      if (!destination) return
+      const nonce = destination === 'script' ? scriptNonce : styleNonce
+      if (!nonce) return
 
-        const startTagEndOffset = sourceCodeLocation!.startTag!.endOffset
-
-        // if the closing of the start tag includes a `/`, the offset should be 2 so the nonce
-        // is appended prior to the `/`
-        const appendOffset = html[startTagEndOffset - 2] === '/' ? 2 : 1
-
-        s.appendRight(startTagEndOffset - appendOffset, ` nonce="${nonce}"`)
+      // If we already have a nonce attribute, we don't need to add another one
+      if (attrs.some(({ name }) => name === 'nonce')) {
+        return
       }
+
+      const startTagEndOffset = sourceCodeLocation!.startTag!.endOffset
+
+      // if the closing of the start tag includes a `/`, the offset should be 2 so the nonce
+      // is appended prior to the `/`
+      const appendOffset = html[startTagEndOffset - 2] === '/' ? 2 : 1
+
+      s.appendRight(startTagEndOffset - appendOffset, ` nonce="${nonce}"`)
     })
 
     return s.toString()

@@ -1,6 +1,15 @@
 import { describe, expect, test } from 'vitest'
 import type { OutputBundle, OutputChunk } from 'rolldown'
-import { getCssFilesForChunk } from '../plugins/html'
+import type { CSPNonce, ResolvedConfig } from '../config'
+import { resolveCspNonce } from '../config'
+import {
+  createCspNonceMetaTags,
+  getCssFilesForChunk,
+  injectCspNonceMetaTagHook,
+  injectNonceAttributeTagHook,
+  postImportMapHook,
+} from '../plugins/html'
+import { createLogger } from '../logger'
 
 function createChunk(
   fileName: string,
@@ -238,5 +247,256 @@ describe('getCssFilesForChunk', () => {
       'b.css',
       'a.css',
     ])
+  })
+})
+
+describe('resolveCspNonce', () => {
+  test('reads the same value for both destinations from a string', () => {
+    expect(resolveCspNonce('__NONCE__', 'script')).toBe('__NONCE__')
+    expect(resolveCspNonce('__NONCE__', 'style')).toBe('__NONCE__')
+  })
+
+  test('reads each destination from an object', () => {
+    const cspNonce = { script: '__SCRIPT__', style: '__STYLE__' }
+    expect(resolveCspNonce(cspNonce, 'script')).toBe('__SCRIPT__')
+    expect(resolveCspNonce(cspNonce, 'style')).toBe('__STYLE__')
+  })
+
+  test('treats missing, empty and unset values as no nonce', () => {
+    expect(resolveCspNonce(undefined, 'script')).toBeUndefined()
+    expect(resolveCspNonce('', 'script')).toBeUndefined()
+    expect(resolveCspNonce({}, 'script')).toBeUndefined()
+    expect(resolveCspNonce({ style: '__STYLE__' }, 'script')).toBeUndefined()
+    expect(resolveCspNonce({ script: '' }, 'script')).toBeUndefined()
+  })
+})
+
+function createHtmlConfig(cspNonce: CSPNonce | undefined): ResolvedConfig {
+  return {
+    html: { cspNonce },
+    logger: createLogger('silent'),
+  } as unknown as ResolvedConfig
+}
+
+describe('createCspNonceMetaTags', () => {
+  const runHook = createCspNonceMetaTags
+
+  test('injects only the shared tag for a string', () => {
+    expect(runHook('__NONCE__')).toEqual([
+      {
+        tag: 'meta',
+        injectTo: 'head',
+        attrs: { property: 'csp-nonce', nonce: '__NONCE__' },
+      },
+    ])
+  })
+
+  test('injects only the split tags for an object', () => {
+    expect(runHook({ script: '__SCRIPT__', style: '__STYLE__' })).toEqual([
+      {
+        tag: 'meta',
+        injectTo: 'head',
+        attrs: { property: 'csp-script-nonce', nonce: '__SCRIPT__' },
+      },
+      {
+        tag: 'meta',
+        injectTo: 'head',
+        attrs: { property: 'csp-style-nonce', nonce: '__STYLE__' },
+      },
+    ])
+  })
+
+  test('omits the tag of a destination without a nonce', () => {
+    expect(runHook({ style: '__STYLE__' })).toEqual([
+      {
+        tag: 'meta',
+        injectTo: 'head',
+        attrs: { property: 'csp-style-nonce', nonce: '__STYLE__' },
+      },
+    ])
+  })
+
+  test('injects nothing when there is no nonce at all', () => {
+    expect(runHook(undefined)).toBeUndefined()
+    expect(runHook('')).toBeUndefined()
+    expect(runHook({})).toBeUndefined()
+  })
+})
+
+// at build both hooks are created in `resolvePlugins`, which runs before
+// `configResolved` — reading the option eagerly would drop a nonce set there
+describe('CSP nonce hooks read the config lazily', () => {
+  test('injectCspNonceMetaTagHook', () => {
+    const config = createHtmlConfig(undefined)
+    const hook = injectCspNonceMetaTagHook(config)
+
+    config.html!.cspNonce = '__LATE__'
+
+    expect(hook.call(undefined as never, '', undefined as never)).toEqual([
+      {
+        tag: 'meta',
+        injectTo: 'head',
+        attrs: { property: 'csp-nonce', nonce: '__LATE__' },
+      },
+    ])
+  })
+
+  test('injectNonceAttributeTagHook', async () => {
+    const config = createHtmlConfig(undefined)
+    const hook = injectNonceAttributeTagHook(config)
+
+    config.html!.cspNonce = '__LATE__'
+
+    expect(
+      await hook.call(undefined as never, '<style>.a{}</style>', {
+        filename: '/index.html',
+      } as never),
+    ).toBe('<style nonce="__LATE__">.a{}</style>')
+  })
+})
+
+describe('injectNonceAttributeTagHook', () => {
+  const html = [
+    '<link rel="stylesheet" href="/style.css">',
+    '<link rel="modulepreload" href="/dep.js">',
+    '<link rel="modulepreload" as="style" href="/theme.css">',
+    '<link rel="modulepreload" as="json" href="/data.json">',
+    '<link rel="preload" as="script" href="/dep.js">',
+    '<link rel="preload" as="style" href="/dep.css">',
+    '<link rel="preload" as="font" href="/font.woff2" crossorigin>',
+    '<link rel="preload" href="/unknown">',
+    '<link rel="prefetch" href="/next.js">',
+    '<style>.foo { color: red }</style>',
+    '<script type="module" src="/main.js"></script>',
+  ].join('\n')
+
+  const runHook = (cspNonce: CSPNonce | undefined, input = html) =>
+    injectNonceAttributeTagHook(createHtmlConfig(cspNonce)).call(
+      undefined as never,
+      input,
+      { filename: '/index.html' } as never,
+    )
+
+  test('applies the shared nonce to every script and style destination', async () => {
+    const transformed = await runHook('__NONCE__')
+
+    expect(transformed).toBe(
+      [
+        '<link rel="stylesheet" href="/style.css" nonce="__NONCE__">',
+        '<link rel="modulepreload" href="/dep.js" nonce="__NONCE__">',
+        '<link rel="modulepreload" as="style" href="/theme.css" nonce="__NONCE__">',
+        '<link rel="modulepreload" as="json" href="/data.json">',
+        '<link rel="preload" as="script" href="/dep.js" nonce="__NONCE__">',
+        '<link rel="preload" as="style" href="/dep.css" nonce="__NONCE__">',
+        '<link rel="preload" as="font" href="/font.woff2" crossorigin>',
+        '<link rel="preload" href="/unknown">',
+        '<link rel="prefetch" href="/next.js">',
+        '<style nonce="__NONCE__">.foo { color: red }</style>',
+        '<script type="module" src="/main.js" nonce="__NONCE__"></script>',
+      ].join('\n'),
+    )
+  })
+
+  test('routes split nonces by destination', async () => {
+    const transformed = await runHook({
+      script: '__SCRIPT__',
+      style: '__STYLE__',
+    })
+
+    expect(transformed).toBe(
+      [
+        '<link rel="stylesheet" href="/style.css" nonce="__STYLE__">',
+        '<link rel="modulepreload" href="/dep.js" nonce="__SCRIPT__">',
+        '<link rel="modulepreload" as="style" href="/theme.css" nonce="__STYLE__">',
+        '<link rel="modulepreload" as="json" href="/data.json">',
+        '<link rel="preload" as="script" href="/dep.js" nonce="__SCRIPT__">',
+        '<link rel="preload" as="style" href="/dep.css" nonce="__STYLE__">',
+        '<link rel="preload" as="font" href="/font.woff2" crossorigin>',
+        '<link rel="preload" href="/unknown">',
+        '<link rel="prefetch" href="/next.js">',
+        '<style nonce="__STYLE__">.foo { color: red }</style>',
+        '<script type="module" src="/main.js" nonce="__SCRIPT__"></script>',
+      ].join('\n'),
+    )
+  })
+
+  test('leaves a destination without a nonce untouched', async () => {
+    const transformed = await runHook({ style: '__STYLE__' })
+
+    expect(transformed).toContain(
+      '<link rel="stylesheet" href="/style.css" nonce="__STYLE__">',
+    )
+    expect(transformed).toContain(
+      '<style nonce="__STYLE__">.foo { color: red }</style>',
+    )
+    expect(transformed).toContain('<script type="module" src="/main.js">')
+    expect(transformed).toContain('<link rel="modulepreload" href="/dep.js">')
+  })
+
+  test('matches the `as` attribute case-insensitively', async () => {
+    const transformed = await runHook(
+      { script: '__SCRIPT__', style: '__STYLE__' },
+      '<link rel="preload" as="STYLE" href="/dep.css">',
+    )
+
+    expect(transformed).toBe(
+      '<link rel="preload" as="STYLE" href="/dep.css" nonce="__STYLE__">',
+    )
+  })
+
+  test('keeps an existing nonce attribute', async () => {
+    const input = '<script nonce="__EXISTING__">console.log(1)</script>'
+
+    expect(await runHook('__NONCE__', input)).toBe(input)
+  })
+
+  // an empty object is truthy, so it must be rejected on the resolved nonces
+  // rather than on `config.html.cspNonce` itself
+  test('skips parsing entirely when there is no nonce at all', async () => {
+    expect(await runHook(undefined)).toBeUndefined()
+    expect(await runHook('')).toBeUndefined()
+    expect(await runHook({})).toBeUndefined()
+    expect(await runHook({ script: '', style: '' })).toBeUndefined()
+  })
+})
+
+describe('postImportMapHook nonces the generated import map', () => {
+  const runHook = (cspNonce: CSPNonce | undefined) => {
+    const config = {
+      command: 'build',
+      html: { cspNonce },
+      environments: {
+        client: { build: { chunkImportMap: true, rolldownOptions: {} } },
+      },
+      logger: createLogger('silent'),
+    } as unknown as ResolvedConfig
+    const bundle = {
+      'importmap.json': { type: 'asset', source: '{"imports":{}}' },
+    } as unknown as OutputBundle
+
+    return postImportMapHook(config).call(
+      undefined as never,
+      '<script type="module" src="/main.js"></script>',
+      { bundle } as never,
+    )
+  }
+
+  test('uses the script nonce of a split config', () => {
+    expect(runHook({ script: '__SCRIPT__', style: '__STYLE__' })).toContain(
+      '<script type="importmap" nonce="__SCRIPT__">',
+    )
+  })
+
+  test('uses a shared string nonce', () => {
+    expect(runHook('__NONCE__')).toContain(
+      '<script type="importmap" nonce="__NONCE__">',
+    )
+  })
+
+  test('omits the attribute when scripts have no nonce', () => {
+    expect(runHook({ style: '__STYLE__' })).toContain(
+      '<script type="importmap">',
+    )
+    expect(runHook(undefined)).toContain('<script type="importmap">')
   })
 })
