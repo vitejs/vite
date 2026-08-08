@@ -1600,9 +1600,11 @@ export async function resolveConfig(
   let nonNormalizedResolvedRoot = config.root
     ? path.resolve(config.root)
     : process.cwd()
-  try {
-    nonNormalizedResolvedRoot = safeRealpathSync(nonNormalizedResolvedRoot)
-  } catch {}
+  if (!config.resolve?.preserveSymlinks) {
+    try {
+      nonNormalizedResolvedRoot = safeRealpathSync(nonNormalizedResolvedRoot)
+    } catch {}
+  }
   const resolvedRoot = normalizePath(nonNormalizedResolvedRoot)
 
   checkBadCharactersInPath(
