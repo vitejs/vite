@@ -1547,6 +1547,18 @@ export async function resolveConfig(
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   config = await runConfigHook(config, userPlugins, configEnv)
 
+  // Resolver-generated environment defaults must not be written back into
+  // the inline config reused by server.restart().
+  config = {
+    ...config,
+    environments: Object.fromEntries(
+      Object.entries(config.environments ?? {}).map(([name, environment]) => [
+        name,
+        environment ? { ...environment } : environment,
+      ]),
+    ),
+  }
+
   // Ensure default client and ssr environments
   // If there are present, ensure order { client, ssr, ...custom }
   config.environments ??= {}
