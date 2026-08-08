@@ -47,7 +47,7 @@ allowBuilds:
   unrs-resolver: true
   workerd: true
 
-minimumReleaseAge: 1440
+minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - rolldown
   - '@rolldown/binding-*'
