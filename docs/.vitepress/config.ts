@@ -556,6 +556,10 @@ const config = defineConfig({
           import.meta.dirname,
           'theme/components/TopBanner.vue',
         ),
+        '@vp-composables/langs': path.resolve(
+          import.meta.dirname,
+          'theme/langs.ts',
+        ),
       },
     },
     plugins: [
