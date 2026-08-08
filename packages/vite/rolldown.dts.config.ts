@@ -48,6 +48,7 @@ export default defineConfig({
   },
   external,
   plugins: [
+    esmifyPostcssLoadConfigDts(),
     patchTypes(),
     addNodePrefix(),
     dts({
@@ -110,6 +111,9 @@ const identifierReplacements: Record<string, Record<string, string>> = {
   },
   '#types/internal/lightningcssOptions': {
     LightningCSSOptions$1: 'lightningcssOptions_LightningCSSOptions',
+  },
+  postcss: {
+    Plugin$2: 'PostCSS.Plugin',
   },
 }
 
@@ -418,6 +422,50 @@ function escapeRegex(str: string): string {
 
 function unique<T>(arr: T[]): T[] {
   return Array.from(new Set(arr))
+}
+
+const postcssLoadConfigDeepImport =
+  "import Processor from 'postcss/lib/processor'"
+const postcssLoadConfigNamespaceRE =
+  /declare namespace postcssrc \{([\s\S]*?)\n\}\s*\nexport = postcssrc/
+
+/**
+ * `postcss-load-config` declares its types with CommonJS `export =` syntax,
+ * which `rolldown-plugin-dts` cannot re-export named types from, and reaches
+ * `Processor` through the deep `postcss/lib/processor` import, whose `export =`
+ * declarations cannot be bundled either. Rewrite its dts to plain ESM: redirect
+ * the deep import to the `postcss` package entry (an external dependency),
+ * hoist the namespace members to top-level named exports, and replace
+ * `export = postcssrc` with `export default postcssrc`. This lets `Config` be
+ * re-exported (as `PostcssUserConfig`) while everything unused is tree-shaken.
+ */
+function esmifyPostcssLoadConfigDts(): Plugin {
+  return {
+    name: 'esmify-postcss-load-config-dts',
+    transform: {
+      filter: { id: /postcss-load-config[\\/].*\.d\.ts$/ },
+      handler(code, id) {
+        if (
+          !code.includes(postcssLoadConfigDeepImport) ||
+          !postcssLoadConfigNamespaceRE.test(code)
+        ) {
+          this.error(
+            `The shape of the postcss-load-config dts changed and this plugin needs to be updated: ${id}`,
+          )
+        }
+        return code
+          .replace(
+            postcssLoadConfigDeepImport,
+            "import type { Processor } from 'postcss'",
+          )
+          .replace(
+            postcssLoadConfigNamespaceRE,
+            (_, body) => `${body}\nexport default postcssrc`,
+          )
+          .replace(/\bpostcssrc\.(\w+)/g, '$1')
+      },
+    },
+  }
 }
 
 function addNodePrefix(): Plugin {

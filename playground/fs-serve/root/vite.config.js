@@ -1,16 +1,14 @@
 import path from 'node:path'
 import { defineConfig } from 'vite'
-import svgVirtualModulePlugin from './svgVirtualModulePlugin'
-import matrixTestResultPlugin from './matrixTestResultPlugin'
-import { getWindows83ShortNameForDotEnv } from './windows83Filename'
+import svgVirtualModulePlugin from './svgVirtualModulePlugin.ts'
+import matrixTestResultPlugin from './matrixTestResultPlugin.ts'
+import { getWindows83ShortNameForDotEnv } from './windows83Filename.ts'
 
 export default defineConfig({
+  input: {
+    main: path.resolve(import.meta.dirname, 'src/index.html'),
+  },
   build: {
-    rolldownOptions: {
-      input: {
-        main: path.resolve(import.meta.dirname, 'src/index.html'),
-      },
-    },
     outDir: 'dist/main',
   },
   server: {

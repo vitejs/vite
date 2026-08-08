@@ -421,6 +421,22 @@ describe('preprocessCSS', () => {
       "
     `)
   })
+
+  test('lightningcss preserves $ in external @import url', async () => {
+    const resolvedConfig = await resolveConfig(
+      {
+        configFile: false,
+        css: { transformer: 'lightningcss' },
+      },
+      'serve',
+    )
+    const result = await preprocessCSS(
+      `@import 'http://example.com/a.css?x=$&y';`,
+      'foo.css',
+      resolvedConfig,
+    )
+    expect(result.code).toContain('http://example.com/a.css?x=$&y')
+  })
 })
 
 // Sass does not consult the `main` field; see
@@ -827,6 +843,31 @@ exports.foo = foo;
 
       //#endregion
       })();"
+    `)
+  })
+
+  test('should inject CSS after the shebang line for es', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `#!/usr/bin/env node
+console.log("foo");`,
+      'es',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "#!/usr/bin/env node
+      injectCSS();console.log("foo");"
+    `)
+  })
+
+  test('should inject CSS at the start for es without shebang', async () => {
+    const result = getInlinedCSSInjectedCode(`console.log("foo");`, 'es')
+    expect(result).toMatchInlineSnapshot(`"injectCSS();console.log("foo");"`)
+  })
+
+  test('should inject CSS for es shebang without trailing newline', async () => {
+    const result = getInlinedCSSInjectedCode(`#!/usr/bin/env node`, 'es')
+    expect(result).toMatchInlineSnapshot(`
+      "#!/usr/bin/env node
+      injectCSS();"
     `)
   })
 })

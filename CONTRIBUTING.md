@@ -152,6 +152,8 @@ Each integration test can be run under either dev server mode or build mode.
 
 - `pnpm run test-build` runs tests only under build mode.
 
+- `pnpm run test-serve-bundled` runs tests under serve mode with `experimental.bundledDev` force-enabled (no separate configs needed). Spec files that do not pass in this mode yet are listed in `bundledDevExclude` in `vitest.config.e2e.ts` — remove a file from that list once it passes. When only a few cases in a file fail, keep the file out of that list and mark those cases with `test.skipIf(isBundledDev)` (or `describe.skipIf(isBundledDev)`) using the `isBundledDev` flag from `~utils` — they still run in the normal serve and build modes.
+
 `pnpm run test-serve [match]` or `pnpm run test-build [match]` runs tests in specific packages that match the given filter. e.g. `pnpm run test-serve assets` runs tests for both `playground/assets` and `playground/assets-sanitize` under serve mode. Note package matching is not available for the `pnpm test` script, which always runs all tests.
 
 ### Unit Tests
@@ -176,18 +178,21 @@ test('should work', async () => {
 
 Some common test helpers (e.g. `testDir`, `isBuild`, or `editFile`) are also available in the utils. Source code is located at `playground/test-utils.ts`.
 
-Note: The test build environment uses a [different default set of Vite config](https://github.com/vitejs/vite/blob/main/playground/vitestSetup.ts#L207-L227) to skip transpilation during tests to make it faster. This may produce a different result compared to the default production build.
+> [!NOTE]
+> The dev server's file watcher runs in polling mode during tests. Polling (chokidar) only registers a file as changed when its size differs or its mtime strictly increases. On some platforms a quick in-place rewrite may not report an advanced mtime, so an edit that keeps the exact same byte length can be missed, and the expected HMR update or rebuild never fires (causing flaky timeouts). To enforce this, `editFile` throws if your replacement leaves the file's byte length unchanged; make the edit change the size (for example by adding a trailing space or an extra character that doesn't affect the test's semantics). If you trigger a watched change by some other means, make sure the edit changes the file's byte length.
+
+Note: The test build environment uses a [different default set of Vite config](https://github.com/vitejs/vite/blob/v8.1.5/playground/vitestSetup.ts#L264-L268) to skip transpilation during tests to make it faster. This may produce a different result compared to the default production build.
 
 ### Extending the Test Suite
 
-To add new tests, you should find a related playground to the fix or feature (or create a new one). As an example, static assets loading is tested in the [assets playground](https://github.com/vitejs/vite/tree/main/playground/assets). In this Vite app, there is a test for `?raw` imports with [a section defined in the `index.html` for it](https://github.com/vitejs/vite/blob/v6.3.1/playground/assets/index.html#L266-L267):
+To add new tests, you should find a related playground to the fix or feature (or create a new one). As an example, static assets loading is tested in the [assets playground](https://github.com/vitejs/vite/tree/main/playground/assets). In this Vite app, there is a test for `?raw` imports with [a section defined in the `index.html` for it](https://github.com/vitejs/vite/blob/v8.1.5/playground/assets/index.html#L270-L271):
 
 ```html
 <h2>?raw import</h2>
 <code class="raw"></code>
 ```
 
-This will be modified [with the result of a file import](https://github.com/vitejs/vite/blob/v6.3.1/playground/assets/index.html#L543-L544):
+This will be modified [with the result of a file import](https://github.com/vitejs/vite/blob/v8.1.5/playground/assets/index.html#L557-L558):
 
 ```js
 import rawSvg from './nested/fragment.svg?raw'
@@ -202,7 +207,7 @@ function text(el, text) {
 }
 ```
 
-In the [spec tests](https://github.com/vitejs/vite/blob/v6.3.1/playground/assets/__tests__/assets.spec.ts#L469-L471), the modifications to the DOM listed above are used to test this feature:
+In the [spec tests](https://github.com/vitejs/vite/blob/v8.1.5/playground/assets/__tests__/assets.spec.ts#L483-L485), the modifications to the DOM listed above are used to test this feature:
 
 ```js
 test('?raw import', async () => {

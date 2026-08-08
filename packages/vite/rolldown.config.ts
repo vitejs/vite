@@ -26,7 +26,7 @@ const envConfig = defineConfig({
 })
 
 const clientConfig = defineConfig({
-  input: path.resolve(dirname, 'src/client/client.ts'),
+  input: path.resolve(dirname, 'src/client/clientEntry.ts'),
   platform: 'browser',
   transform: {
     target: 'es2020',
@@ -35,6 +35,20 @@ const clientConfig = defineConfig({
   output: {
     dir: path.resolve(dirname, 'dist'),
     entryFileNames: 'client/client.mjs',
+  },
+})
+
+// separate entry so the full-bundle-mode HMR code is never bundled into `client.mjs`
+const bundledDevClientConfig = defineConfig({
+  input: path.resolve(dirname, 'src/client/bundledDevClient.ts'),
+  platform: 'browser',
+  transform: {
+    target: 'es2020',
+  },
+  external: ['@vite/env'],
+  output: {
+    dir: path.resolve(dirname, 'dist'),
+    entryFileNames: 'client/bundledDevClient.mjs',
   },
 })
 
@@ -60,12 +74,6 @@ const sharedNodeOptions = defineConfig({
     exports: 'named',
     format: 'esm',
     externalLiveBindings: false,
-  },
-  onwarn(warning, warn) {
-    if (warning.message.includes('Circular dependency')) {
-      return
-    }
-    warn(warning)
   },
 })
 
@@ -161,6 +169,7 @@ const moduleRunnerConfig = defineConfig({
 export default defineConfig([
   envConfig,
   clientConfig,
+  bundledDevClientConfig,
   nodeConfig,
   moduleRunnerConfig,
 ])

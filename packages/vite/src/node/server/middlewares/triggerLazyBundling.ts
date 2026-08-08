@@ -1,15 +1,11 @@
 import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '..'
-import { FullBundleDevEnvironment } from '../environments/fullBundleEnvironment'
 
 export function triggerLazyBundlingMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  const environment =
-    server.environments.client instanceof FullBundleDevEnvironment
-      ? server.environments.client
-      : undefined
-  if (!environment) {
+  const bundledDev = server.environments.client.bundledDev
+  if (!bundledDev) {
     throw new Error(
       'triggerLazyBundlingMiddleware can only be used for fullBundleMode',
     )
@@ -30,12 +26,13 @@ export function triggerLazyBundlingMiddleware(
 
     const moduleId = params.get('id')
     const clientId = params.get('clientId')
-    const code = await environment.triggerLazyBundling(moduleId, clientId)
-    if (code == null) {
+    const result = await bundledDev.triggerLazyBundling(moduleId, clientId)
+    if (result == null) {
       return next()
     }
 
     res!.setHeader('Content-Type', 'application/javascript')
-    return res!.end(code)
+    res!.on('finish', () => bundledDev.markPayloadDelivered(result.filename))
+    return res!.end(result.code)
   }
 }
