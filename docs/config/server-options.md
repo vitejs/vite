@@ -330,10 +330,13 @@ To fix it, you could either:
 
 ## server.middlewareMode
 
-- **Type:** `boolean`
+- **Type:** `boolean | { server: http.Server }`
 - **Default:** `false`
 
 Create Vite server in middleware mode.
+
+- `true`: Create the Vite server in middleware mode.
+- `{ server: http.Server }`: Create the Vite server in middleware mode and attach it to the given parent server. This is needed to proxy WebSocket connections to the parent server.
 
 - **Related:** [appType](./shared-options#apptype), [SSR - Setting Up the Dev Server](/guide/ssr#setting-up-the-dev-server)
 
