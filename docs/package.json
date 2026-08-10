@@ -15,7 +15,7 @@
     "feed": "^6.0.0",
     "markdown-it-image-size": "^15.1.0",
     "oxc-minify": "^0.142.0",
-    "vitepress": "^2.0.0-alpha.19",
+    "vitepress": "2.0.0-alpha.18",
     "vitepress-plugin-graphviz": "^0.1.0",
     "vitepress-plugin-group-icons": "^1.7.6",
     "vitepress-plugin-llms": "^1.13.4",
