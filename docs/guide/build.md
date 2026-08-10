@@ -84,7 +84,7 @@ When a new deployment occurs, the hosting service may delete the assets from pre
 
 ## Rebuild on Files Changes
 
-You can enable rollup watcher with `vite build --watch`. Or, you can directly adjust the underlying [`WatcherOptions`](https://rolldown.rs/reference/InputOptions.watch) via `build.watch`:
+You can enable Rolldown watcher with `vite build --watch`. Or, you can directly adjust the underlying [`WatcherOptions`](https://rolldown.rs/reference/InputOptions.watch) via `build.watch`:
 
 ```js [vite.config.js]
 export default defineConfig({

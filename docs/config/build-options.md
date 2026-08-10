@@ -364,7 +364,7 @@ Limit for chunk size warnings (in kB). It is compared against the uncompressed c
 - **Type:** [`WatcherOptions`](https://rolldown.rs/reference/InputOptions.watch)`| null`
 - **Default:** `null`
 
-Set to `{}` to enable rollup watcher. This is mostly used in cases that involve build-only plugins or integrations processes.
+Set to `{}` to enable Rolldown watcher. This is mostly used in cases that involve build-only plugins or integrations processes.
 
 ::: warning Using Vite on Windows Subsystem for Linux (WSL) 2
 
