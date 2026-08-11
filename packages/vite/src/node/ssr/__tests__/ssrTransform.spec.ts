@@ -421,6 +421,18 @@ test('rewrite variables in default value of destructuring params', async () => {
   expect(result?.deps).toEqual(['vue'])
 })
 
+// #23232
+test('rewrite imported binding used as a computed key of a defaulted destructuring param', async () => {
+  const result = await ssrTransformSimple(
+    `import { fn } from 'vue';function A({ [fn]: foo } = {}){ return { [fn]: foo }; }`,
+  )
+  expect(result?.code).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["fn"]});
+    function A({ [__vite_ssr_import_0__.fn]: foo } = {}){ return { [__vite_ssr_import_0__.fn]: foo }; }"
+  `)
+  expect(result?.deps).toEqual(['vue'])
+})
+
 test('do not rewrite when function declaration is in scope', async () => {
   const result = await ssrTransformSimple(
     `import { fn } from 'vue';function A(){ function fn() {}; return { fn }; }`,
