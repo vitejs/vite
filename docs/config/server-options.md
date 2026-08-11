@@ -335,8 +335,7 @@ To fix it, you could either:
 
 Create Vite server in middleware mode.
 
-- `true`: Create the Vite server in middleware mode.
-- `{ server: http.Server }`: Create the Vite server in middleware mode and attach it to the given parent server. This is needed to proxy WebSocket connections to the parent server.
+If [proxy](./server-options#server-proxy) is setup for WebSocket, the `server` should be provided to bind the proxy correctly.
 
 - **Related:** [appType](./shared-options#apptype), [SSR - Setting Up the Dev Server](/guide/ssr#setting-up-the-dev-server)
 
