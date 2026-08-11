@@ -2100,7 +2100,7 @@ describe('resolveServerOptions', () => {
     expect(resolved.allowedHosts).toBe(true)
   })
 
-  test('throw an error if it contains `"` or `\'` or `\\`', async () => {
+  test('throw an error if it contains `"` or `'` or `\\`', async () => {
     const envs = ['"example.com"', "'example.com'", '\\example.com']
     for (const env of envs) {
       process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS = env
@@ -2118,4 +2118,30 @@ describe('resolveServerOptions', () => {
       warnFn.mockClear()
     }
   })
+})
+
+test('does not duplicate optimizer plugins when resolving the same inline config twice', async () => {
+  const optimizerPlugin = {
+    name: 'test:resolve-config-idempotence',
+  }
+
+  const inlineConfig: InlineConfig = {
+    configFile: false,
+    logLevel: 'silent',
+    optimizeDeps: {
+      rolldownOptions: {
+        plugins: [optimizerPlugin],
+      },
+    },
+  }
+
+  const first = await resolveConfig(inlineConfig, 'serve')
+  const second = await resolveConfig(inlineConfig, 'serve')
+
+  expect(first.environments.client.optimizeDepsPluginNames).toEqual([
+    optimizerPlugin.name,
+  ])
+  expect(second.environments.client.optimizeDepsPluginNames).toEqual([
+    optimizerPlugin.name,
+  ])
 })
