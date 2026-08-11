@@ -11,6 +11,9 @@ const nonJsRe = /\.json(?:$|\?)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 const importMetaEnvMarker = '__vite_import_meta_env__'
 const importMetaEnvKeyReCache = new Map<string, RegExp>()
+// worker files run in a separate global scope, so they can't access the
+// defines injected into the vite client in the main thread during dev
+const workerFileRE = /[?&]worker_file&/
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -120,7 +123,11 @@ export function definePlugin(config: ResolvedConfig): Plugin {
           // for dev we inject actual global defines in the vite client to
           // avoid the transform cost. see the `clientInjection` and
           // `importAnalysis` plugin.
-          return
+          // workers run in a separate global scope so they can't rely on the
+          // defines injected into the main thread - apply the transform instead
+          if (!workerFileRE.test(id)) {
+            return
+          }
         }
 
         if (
