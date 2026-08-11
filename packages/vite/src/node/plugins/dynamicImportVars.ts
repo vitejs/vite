@@ -21,6 +21,7 @@ import {
 } from '../utils'
 import type { Environment } from '../environment'
 import { perEnvironmentState } from '../environment'
+import type { PartialEnvironment } from '../baseEnvironment'
 import { hasViteIgnoreRE } from './importAnalysis'
 import { resolveSubpathImports } from './resolve'
 import { workerOrSharedWorkerRE } from './worker'
@@ -42,7 +43,6 @@ interface DynamicImportPattern {
   globParams: DynamicImportRequest | null
   userPattern: string
   rawPattern: string
-  dynamicSegments: string[]
 }
 
 const dynamicImportHelper = (
@@ -110,10 +110,6 @@ function parseDynamicImportPattern(
     globParams,
     userPattern,
     rawPattern,
-    dynamicSegments: ast.expressions.map(
-      (expression: { start: number; end: number }) =>
-        `\${${strings.slice(expression.start, expression.end)}}`,
-    ),
   }
 }
 
@@ -123,7 +119,6 @@ export async function transformDynamicImport(
   resolve: (
     url: string,
     importer?: string,
-    isSubImportsPattern?: boolean,
   ) => Promise<string | undefined> | string | undefined,
   root: string,
 ): Promise<{
@@ -131,45 +126,7 @@ export async function transformDynamicImport(
   pattern: string
   rawPattern: string
 } | null> {
-  let dynamicImportPattern: DynamicImportPattern | null
-
-  if (importSource[1] === '#') {
-    dynamicImportPattern = parseDynamicImportPattern(
-      '`./' + importSource.slice(2),
-    )
-    if (!dynamicImportPattern) {
-      return null
-    }
-    dynamicImportPattern.userPattern = `#${dynamicImportPattern.userPattern.slice(2)}`
-    const resolvedPattern = await resolve(
-      dynamicImportPattern.userPattern,
-      importer,
-      true,
-    )
-    if (!resolvedPattern) {
-      return null
-    }
-    const relativePattern = normalizePath(
-      posix.relative(
-        posix.dirname(normalizePath(importer)),
-        normalizePath(resolvedPattern),
-      ),
-    )
-    const userPattern = relativePathRE.test(relativePattern)
-      ? relativePattern
-      : `./${relativePattern}`
-    let segmentIndex = 0
-    const { dynamicSegments } = dynamicImportPattern
-    const rawPattern = userPattern.replace(
-      /\*/g,
-      () => dynamicSegments[segmentIndex++] ?? '*',
-    )
-    dynamicImportPattern = {
-      ...dynamicImportPattern,
-      userPattern,
-      rawPattern,
-    }
-  } else if (importSource[1] !== '.' && importSource[1] !== '/') {
+  if (importSource[1] !== '.' && importSource[1] !== '/') {
     const resolvedFileName = await resolve(importSource.slice(1, -1), importer)
     if (!resolvedFileName) {
       return null
@@ -182,15 +139,11 @@ export async function transformDynamicImport(
     )
     importSource =
       '`' + (relativeFileName[0] === '.' ? '' : './') + relativeFileName + '`'
-    dynamicImportPattern = parseDynamicImportPattern(importSource)
-    if (!dynamicImportPattern) {
-      return null
-    }
-  } else {
-    dynamicImportPattern = parseDynamicImportPattern(importSource)
-    if (!dynamicImportPattern) {
-      return null
-    }
+  }
+
+  const dynamicImportPattern = parseDynamicImportPattern(importSource)
+  if (!dynamicImportPattern) {
+    return null
   }
   const { globParams, rawPattern, userPattern } = dynamicImportPattern
   const params = globParams ? `, ${JSON.stringify(globParams)}` : ''
@@ -221,6 +174,24 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     tryIndex: false,
     extensions: [],
   })
+  const resolveDynamicImport = (
+    environment: PartialEnvironment,
+    id: string,
+    importer?: string,
+  ) => {
+    const subpathImports = resolveSubpathImports(id, importer, {
+      ...environment.config.resolve,
+      packageCache: config.packageCache,
+      isProduction: config.isProduction,
+      isRequire: false,
+    })
+    if (subpathImports && importer) {
+      return normalizePath(
+        posix.resolve(posix.dirname(importer), subpathImports),
+      )
+    }
+    return resolve(environment, id, importer)
+  }
 
   const getFilter = perEnvironmentState((environment: Environment) => {
     const { include, exclude } =
@@ -240,18 +211,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
           include,
           exclude,
           resolver(id, importer) {
-            const subpathImports = resolveSubpathImports(id, importer, {
-              ...environment.config.resolve,
-              packageCache: config.packageCache,
-              isProduction: config.isProduction,
-              isRequire: false,
-            })
-            if (subpathImports) {
-              return normalizePath(
-                posix.resolve(posix.dirname(importer), subpathImports),
-              )
-            }
-            return resolve(environment, id, importer)
+            return resolveDynamicImport(environment, id, importer)
           },
           sourcemap: !!environment.config.build.sourcemap,
         })
@@ -324,19 +284,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
             result = await transformDynamicImport(
               source.slice(start, end),
               importer,
-              async (id, importer, isSubImportsPattern) => {
-                if (isSubImportsPattern) {
-                  return (
-                    await this.resolve(id, importer, {
-                      custom: {
-                        'vite:import-glob': { isSubImportsPattern: true },
-                      },
-                      skipSelf: true,
-                    })
-                  )?.id
-                }
-                return resolve(environment, id, importer)
-              },
+              (id, importer) => resolveDynamicImport(environment, id, importer),
               config.root,
             )
           } catch (error) {
