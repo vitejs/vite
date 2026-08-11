@@ -2100,7 +2100,7 @@ describe('resolveServerOptions', () => {
     expect(resolved.allowedHosts).toBe(true)
   })
 
-  test('throw an error if it contains `"` or `'` or `\\`', async () => {
+  test('throw an error if it contains `"` or `\'` or `\\`', async () => {
     const envs = ['"example.com"', "'example.com'", '\\example.com']
     for (const env of envs) {
       process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS = env
