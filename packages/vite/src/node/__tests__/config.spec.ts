@@ -6,7 +6,12 @@ import { stripVTControlCharacters } from 'node:util'
 import { afterEach, assert, describe, expect, test, vi } from 'vitest'
 import type { InlineConfig, PluginOption } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
-import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
+import {
+  bundleConfigFile,
+  defineConfig,
+  loadConfigFromFile,
+  resolveConfig,
+} from '../config'
 import { resolveServerOptions } from '../server'
 import { resolveEnvPrefix } from '../env'
 import {
@@ -2014,6 +2019,29 @@ describe('loadConfigFromFile', () => {
         normalizePath(path.resolve(fs.realpathSync.native(tempDir), '.vite')),
       )
     })
+  })
+})
+
+describe('bundleConfigFile', () => {
+  const fixtures = path.resolve(import.meta.dirname, './fixtures/config')
+
+  test('sourcemap sources point to the original files', async () => {
+    const root = path.resolve(fixtures, './bundle-sourcemap')
+    const { code } = await bundleConfigFile(
+      path.resolve(root, './vite.config.ts'),
+      true,
+    )
+
+    const base64 = code.match(
+      /\/\/# sourceMappingURL=data:application\/json[^,]*,([\w+/=]+)/,
+    )?.[1]
+    assert(base64)
+    const map = JSON.parse(Buffer.from(base64, 'base64').toString())
+
+    expect([...map.sources].map(normalizePath).sort()).toStrictEqual([
+      normalizePath(path.resolve(root, './dep.ts')),
+      normalizePath(path.resolve(root, './vite.config.ts')),
+    ])
   })
 })
 
