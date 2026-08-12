@@ -2652,8 +2652,8 @@ async function bundleConfigFile(
   const result = await bundle.generate({
     format: isESM ? 'esm' : 'cjs',
     sourcemap: 'inline',
-    sourcemapPathTransform(relative) {
-      return path.resolve(fileName, relative)
+    sourcemapPathTransform(relative, sourcemapPath) {
+      return path.resolve(path.dirname(sourcemapPath), relative)
     },
     // we want to generate a single chunk like esbuild does with `splitting: false`
     codeSplitting: false,
