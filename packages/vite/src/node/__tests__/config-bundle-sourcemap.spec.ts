@@ -55,6 +55,8 @@ describe('bundleConfigFile', () => {
     // nested under it (e.g. `.../.vitepress/.vitepress/config.mts`).
     // `sourceMap.sources` uses `/` separators even on Windows; normalize both
     // sides so the comparison is platform-independent.
-    expect(path.normalize(sourceMap.sources[0])).toBe(path.normalize(configFile))
+    expect(path.normalize(sourceMap.sources[0])).toBe(
+      path.normalize(configFile),
+    )
   })
 })
