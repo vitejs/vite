@@ -2,6 +2,7 @@ import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import { stripVTControlCharacters } from 'node:util'
 import { afterEach, assert, describe, expect, test, vi } from 'vitest'
 import type { InlineConfig, PluginOption } from '..'
@@ -1957,6 +1958,23 @@ describe('loadConfigFromFile', () => {
 
     const c = config as any
     expect(c.dirname).toContain('shebang-crlf')
+  })
+
+  test('sourcemap of a nested config file points to itself', async () => {
+    const configPath = path.resolve(
+      fixtures,
+      './nested/.nested/vite.config.mts',
+    )
+    const writeFile = vi.spyOn(fsp, 'writeFile')
+    await loadConfigFromFile({} as any, configPath, path.dirname(configPath))
+    const code = writeFile.mock.calls[0][1] as string
+    writeFile.mockRestore()
+
+    const [, base64Map] = code.match(
+      /\/\/# sourceMappingURL=data:application\/json;charset=utf-8;base64,(.+)/,
+    )!
+    const map = JSON.parse(Buffer.from(base64Map, 'base64').toString())
+    expect(normalizePath(map.sources[0])).toBe(normalizePath(configPath))
   })
 
   describe('loadConfigFromFile with configLoader: native', () => {
