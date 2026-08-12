@@ -644,8 +644,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           code = modulesCode
         } else if (inlined) {
           let content = css
-          if (config.build.cssMinify) {
-            content = await minifyCSS(content, config, true, id)
+          if (this.environment.config.build.cssMinify) {
+            content = await minifyCSS(
+              content,
+              this.environment.config,
+              true,
+              id,
+            )
           }
           code = `export default ${JSON.stringify(content)}`
         } else {
@@ -839,7 +844,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             await urlEmitQueue.run(async () =>
               Promise.all(
                 urlEmitTasks.map(async (info) => {
-                  info.content = await finalizeCss(info.content, config)
+                  info.content = await finalizeCss(
+                    info.content,
+                    this.environment.config,
+                  )
                 }),
               ),
             )
@@ -924,7 +932,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
                   // wait for previous tasks as well
                   chunkCSS = await codeSplitEmitQueue.run(async () => {
-                    return finalizeCss(chunkCSS!, config)
+                    return finalizeCss(chunkCSS!, this.environment.config)
                   })
 
                   // emit corresponding css file
@@ -952,7 +960,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   // But because entry chunk can be imported by dynamic import,
                   // we shouldn't remove the inlined CSS. (#10285)
 
-                  chunkCSS = await finalizeCss(chunkCSS, config)
+                  chunkCSS = await finalizeCss(
+                    chunkCSS,
+                    this.environment.config,
+                  )
                   let cssString = JSON.stringify(chunkCSS)
                   cssString =
                     renderAssetUrlInJS(
@@ -1060,7 +1071,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // Finally, if there's any extracted CSS, we emit the asset
         if (extractedCss) {
           hasEmitted = true
-          extractedCss = await finalizeCss(extractedCss, config)
+          extractedCss = await finalizeCss(
+            extractedCss,
+            this.environment.config,
+          )
           this.emitFile({
             name: getCssBundleName(),
             type: 'asset',

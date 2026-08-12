@@ -1087,6 +1087,55 @@ test('chunkImportMap per environment with shared plugins', async () => {
   expect(entry.code).toContain(JSON.stringify(cssSpecifier.slice(1)))
 })
 
+test('cssMinify per environment with shared plugins', async () => {
+  const root = resolve(dirname, 'fixtures/shared-plugins/css-minify')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'warn',
+    environments: {
+      client: {
+        build: {
+          cssMinify: false,
+          write: false,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+      custom: {
+        consumer: 'client',
+        build: {
+          write: false,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    builder: {
+      sharedPlugins: true,
+    },
+  })
+
+  const findCss = (output: RolldownOutput) =>
+    (
+      output.output.find(
+        (o): o is OutputAsset =>
+          o.type === 'asset' && o.fileName.endsWith('.css'),
+      )!.source as string
+    ).trim()
+
+  const client = (await builder.build(
+    builder.environments.client,
+  )) as RolldownOutput
+  const custom = (await builder.build(
+    builder.environments.custom,
+  )) as RolldownOutput
+
+  expect(findCss(client)).toContain('\n')
+  expect(findCss(custom)).not.toContain('\n')
+})
+
 test('chunkImportMap is emitted when emitAssets is false', async () => {
   const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
   const builder = await createBuilder({
