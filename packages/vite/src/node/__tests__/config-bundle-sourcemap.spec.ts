@@ -19,14 +19,15 @@ describe('bundleConfigFile', () => {
     // write so we can inspect the emitted sourcemap.
     const originalWriteFile = fsp.writeFile
     let bundledCode = ''
-    const writeSpy = vi.spyOn(fsp, 'writeFile').mockImplementation(
-      ((file: unknown, data: unknown) => {
-        if (typeof data === 'string') {
-          bundledCode = data
-        }
-        return originalWriteFile.call(fsp, file, data)
-      }) as any,
-    )
+    const writeSpy = vi.spyOn(fsp, 'writeFile').mockImplementation(((
+      file: unknown,
+      data: unknown,
+    ) => {
+      if (typeof data === 'string') {
+        bundledCode = data
+      }
+      return originalWriteFile.call(fsp, file, data)
+    }) as any)
 
     try {
       const result = await loadConfigFromFile(
@@ -42,9 +43,7 @@ describe('bundleConfigFile', () => {
       writeSpy.mockRestore()
     }
 
-    const sourceMapMatch = bundledCode.match(
-      /base64,([A-Za-z0-9+/=]+)/,
-    )
+    const sourceMapMatch = bundledCode.match(/base64,([A-Za-z0-9+/=]+)/)
     expect(
       sourceMapMatch,
       'the bundled config should embed an inline sourcemap',
@@ -54,6 +53,8 @@ describe('bundleConfigFile', () => {
     )
     // The source path must point at the actual config file, not a path
     // nested under it (e.g. `.../.vitepress/.vitepress/config.mts`).
-    expect(sourceMap.sources[0]).toBe(configFile)
+    // `sourceMap.sources` uses `/` separators even on Windows; normalize both
+    // sides so the comparison is platform-independent.
+    expect(path.normalize(sourceMap.sources[0])).toBe(path.normalize(configFile))
   })
 })
