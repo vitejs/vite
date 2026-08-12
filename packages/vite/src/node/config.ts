@@ -816,6 +816,10 @@ export async function resolveDevToolsConfig(
 }
 
 // inferred ones are omitted
+// `./build`, `./plugins/css` and `./server` import this module back, so the
+// defaults they own are exposed through getters. Reading them while this object
+// is built hits their temporal dead zone whenever one of them is the entry of
+// the cycle, which the module runner turns into a silent `undefined`.
 const configDefaults = Object.freeze({
   define: {},
   dev: {
@@ -828,7 +832,9 @@ const configDefaults = Object.freeze({
     // recoverable
     // moduleRunnerTransform
   },
-  build: buildEnvironmentOptionsDefaults,
+  get build() {
+    return buildEnvironmentOptionsDefaults
+  },
   resolve: {
     // mainFields
     // conditions
@@ -852,7 +858,9 @@ const configDefaults = Object.freeze({
   html: {
     cspNonce: undefined,
   },
-  css: cssConfigDefaults,
+  get css() {
+    return cssConfigDefaults
+  },
   json: {
     namedExports: true,
     stringify: 'auto',
@@ -860,8 +868,12 @@ const configDefaults = Object.freeze({
   // esbuild
   assetsInclude: undefined,
   /** @experimental */
-  builder: builderOptionsDefaults,
-  server: serverConfigDefaults,
+  get builder() {
+    return builderOptionsDefaults
+  },
+  get server() {
+    return serverConfigDefaults
+  },
   preview: {
     port: DEFAULT_PREVIEW_PORT,
     // strictPort
@@ -924,6 +936,18 @@ const configDefaults = Object.freeze({
   environments: {},
   appType: 'spa',
 } satisfies UserConfig)
+
+/**
+ * The {@link configDefaults} entries owned by modules that import this one
+ * back. Exported for the test that guards them against being read while this
+ * module is evaluated; it is not part of the public API.
+ */
+export const cyclicConfigDefaults: {
+  build: Readonly<Partial<BuildEnvironmentOptions>>
+  builder: Readonly<Partial<BuilderOptions>>
+  css: Readonly<Partial<CSSOptions>>
+  server: Readonly<Partial<ServerOptions>>
+} = configDefaults
 
 function normalizeInput(
   input: InputOption | undefined,
