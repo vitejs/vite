@@ -1,12 +1,5 @@
 import { expect, test } from 'vitest'
-import {
-  getBg,
-  isBuild,
-  isBundled,
-  isBundledDev,
-  page,
-  readManifest,
-} from '~utils'
+import { getBg, isBuild, isBundledDev, page, readManifest } from '~utils'
 
 if (isBuild) {
   test('importing asset with special char in filename works in build', async () => {
@@ -45,10 +38,8 @@ if (isBuild) {
   })
 }
 
-// this checks that the dev server refuses to serve /.env. Build and bundled
-// dev serve only the files in the output, so a request can never reach a
-// project file. The check does not apply to them.
-test.runIf(!isBundled)('denied .env', async () => {
+// this checks that the dev server refuses to serve /.env
+test.runIf(!isBuild)('denied .env', async () => {
   expect(await page.textContent('.unsafe-dotenv')).toBe('403')
   expect(await page.textContent('.unsafe-dotenv-double-slash')).toBe('200') // SPA fallback
 })
