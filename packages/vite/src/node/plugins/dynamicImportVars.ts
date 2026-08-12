@@ -187,7 +187,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     })
     if (subpathImports && importer) {
       return normalizePath(
-        posix.resolve(posix.dirname(importer), subpathImports),
+        posix.resolve(posix.dirname(importer), normalizePath(subpathImports)),
       )
     }
     return resolve(environment, id, importer)
