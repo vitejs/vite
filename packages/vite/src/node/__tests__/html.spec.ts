@@ -1,6 +1,7 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import type { OutputBundle, OutputChunk } from 'rolldown'
-import { getCssFilesForChunk } from '../plugins/html'
+import { getCssFilesForChunk, postImportMapHook } from '../plugins/html'
+import { resolveConfig } from '../config'
 
 function createChunk(
   fileName: string,
@@ -238,5 +239,159 @@ describe('getCssFilesForChunk', () => {
       'b.css',
       'a.css',
     ])
+  })
+})
+
+describe('postImportMapHook', () => {
+  async function createBuildConfig(chunkImportMap = false) {
+    return resolveConfig(
+      {
+        configFile: false,
+        root: import.meta.dirname,
+        logLevel: 'silent',
+        build: { chunkImportMap },
+      },
+      'build',
+    )
+  }
+
+  function createMockContext() {
+    return { warn: vi.fn() }
+  }
+
+  test('moves importmap before module script', async () => {
+    const config = await createBuildConfig()
+    const hook = postImportMapHook(config)
+    const ctx = createMockContext()
+
+    const html = [
+      '<html><head>',
+      '<script type="module" src="/main.js"></script>',
+      '<script type="importmap">{"imports":{}}</script>',
+      '</head></html>',
+    ].join('')
+
+    const result = await hook.call(ctx as any, html, {
+      path: '/index.html',
+      filename: '/index.html',
+    })
+
+    // importmap should be moved before the module script
+    const importmapPos = (result as string).indexOf('type="importmap"')
+    const modulePos = (result as string).indexOf('type="module"')
+    expect(importmapPos).toBeLessThan(modulePos)
+    expect(importmapPos).toBeGreaterThanOrEqual(0)
+  })
+
+  test('ignores importmap inside HTML comments', async () => {
+    const config = await createBuildConfig()
+    const hook = postImportMapHook(config)
+    const ctx = createMockContext()
+
+    const html = [
+      '<html><head>',
+      '<!-- <script type="importmap">{"imports":{}}</script> -->',
+      '<script type="module" src="/main.js"></script>',
+      '</head></html>',
+    ].join('')
+
+    const result = await hook.call(ctx as any, html, {
+      path: '/index.html',
+      filename: '/index.html',
+    })
+
+    // comment should remain intact, importmap should not be extracted
+    expect(result).toContain('<!-- <script type="importmap">')
+    // no uncommented importmap should exist
+    expect(result).not.toMatch(
+      /^(?!.*<!--)[\s\S]*<script[^>]*type="importmap"/m,
+    )
+  })
+
+  test('warns when chunkImportMap is enabled and importmap exists in HTML', async () => {
+    const config = await createBuildConfig(true)
+    const hook = postImportMapHook(config)
+    const ctx = createMockContext()
+
+    const html = [
+      '<html><head>',
+      '<script type="module" src="/main.js"></script>',
+      '<script type="importmap">{"imports":{}}</script>',
+      '</head></html>',
+    ].join('')
+
+    await hook.call(ctx as any, html, {
+      path: '/index.html',
+      filename: '/index.html',
+    })
+
+    expect(ctx.warn).toHaveBeenCalledWith(
+      expect.stringContaining('build.chunkImportMap'),
+    )
+    expect(ctx.warn).toHaveBeenCalledWith(
+      expect.stringContaining('multiple import maps'),
+    )
+  })
+
+  test('does not warn when chunkImportMap is enabled but no importmap in HTML', async () => {
+    const config = await createBuildConfig(true)
+    const hook = postImportMapHook(config)
+    const ctx = createMockContext()
+
+    const html = [
+      '<html><head>',
+      '<script type="module" src="/main.js"></script>',
+      '</head></html>',
+    ].join('')
+
+    await hook.call(ctx as any, html, {
+      path: '/index.html',
+      filename: '/index.html',
+    })
+
+    expect(ctx.warn).not.toHaveBeenCalled()
+  })
+
+  test('does not warn when chunkImportMap is enabled and importmap is only in comment', async () => {
+    const config = await createBuildConfig(true)
+    const hook = postImportMapHook(config)
+    const ctx = createMockContext()
+
+    const html = [
+      '<html><head>',
+      '<!-- <script type="importmap">{"imports":{}}</script> -->',
+      '<script type="module" src="/main.js"></script>',
+      '</head></html>',
+    ].join('')
+
+    await hook.call(ctx as any, html, {
+      path: '/index.html',
+      filename: '/index.html',
+    })
+
+    expect(ctx.warn).not.toHaveBeenCalled()
+  })
+
+  test('handles module script at the start of HTML', async () => {
+    const config = await createBuildConfig()
+    const hook = postImportMapHook(config)
+    const ctx = createMockContext()
+
+    // module script is the very first content (offset 0)
+    const html = [
+      '<script type="module" src="/main.js"></script>',
+      '<script type="importmap">{"imports":{}}</script>',
+    ].join('')
+
+    const result = await hook.call(ctx as any, html, {
+      path: '/index.html',
+      filename: '/index.html',
+    })
+
+    // importmap should still be moved before the module script
+    expect(result).toMatch(/^<script[^>]*type="importmap"/)
+    const importmapPos = (result as string).indexOf('type="importmap"')
+    const modulePos = (result as string).indexOf('type="module"')
+    expect(importmapPos).toBeLessThan(modulePos)
   })
 })

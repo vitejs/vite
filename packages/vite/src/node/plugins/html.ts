@@ -1281,7 +1281,7 @@ export function postImportMapHook(
     return `${importMapHtml}\n${html}`
   }
 
-  return async (html, { path, bundle }) => {
+  return async function (html, { path, bundle }) {
     if (!importMapRE.test(html)) {
       if (chunkImportMapEnabled && bundle) {
         return injectChunkImportMap(html, bundle)
@@ -1296,7 +1296,8 @@ export function postImportMapHook(
       return
     }
 
-    let importMapAppendIndex = 0
+    let importMapAppendIndex = -1
+    let hasImportMap = false
     const s = new MagicString(html)
     await traverseHtml(html, path, config.logger.warn, (node) => {
       if (!nodeIsElement(node)) {
@@ -1305,17 +1306,19 @@ export function postImportMapHook(
 
       const { nodeName, attrs, sourceCodeLocation } = node
       if (
-        importMapAppendIndex &&
         nodeName === 'script' &&
         attrs.some((attr) => attr.name === 'type' && attr.value === 'importmap')
       ) {
-        s.move(
-          sourceCodeLocation!.startTag!.startOffset,
-          sourceCodeLocation!.endOffset,
-          importMapAppendIndex,
-        )
+        hasImportMap = true
+        if (importMapAppendIndex >= 0) {
+          s.move(
+            sourceCodeLocation!.startTag!.startOffset,
+            sourceCodeLocation!.endOffset,
+            importMapAppendIndex,
+          )
+        }
       } else if (
-        !importMapAppendIndex &&
+        importMapAppendIndex < 0 &&
         ((nodeName === 'script' &&
           attrs.some(
             (attr) => attr.name === 'type' && attr.value === 'module',
@@ -1328,6 +1331,14 @@ export function postImportMapHook(
         importMapAppendIndex = node.sourceCodeLocation!.startTag!.startOffset
       }
     })
+
+    if (chunkImportMapEnabled && hasImportMap) {
+      // https://caniuse.com/mdn-html_elements_script_type_importmap_multiple_import_maps
+      this.warn(
+        `The \`build.chunkImportMap\` option is enabled but an import map also exists in the input HTML file.` +
+          ` This leads to multiple import maps generated in the output HTML, which is not supported by older browsers and Firefox.`,
+      )
+    }
 
     let result = s.toString()
 
