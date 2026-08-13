@@ -84,6 +84,69 @@ describe('build', () => {
     assertOutputHashContentChange(result[0], result[1])
   })
 
+  test('conditional dynamic imports keep both branches preload deps (#23221)', async () => {
+    const result = (await build({
+      root: resolve(dirname, 'packages/build-project'),
+      logLevel: 'silent',
+      input: 'conditional-import.js',
+      build: {
+        write: false,
+      },
+      plugins: [
+        {
+          name: 'test',
+          resolveId(id) {
+            if (
+              [
+                'conditional-import.js',
+                'mobile.js',
+                'desktop.js',
+                'mobile.css',
+                'desktop.css',
+              ].includes(id)
+            ) {
+              return '\0' + id
+            }
+          },
+          load(id) {
+            if (id === '\0conditional-import.js') {
+              return `function load(cond) {
+                if (cond) { return import('mobile.js') }
+                else { return import('desktop.js') }
+              }
+              window.load = load`
+            }
+            if (id === '\0mobile.js') {
+              return `import 'mobile.css'; export default 'mobile'`
+            }
+            if (id === '\0desktop.js') {
+              return `import 'desktop.css'; export default 'desktop'`
+            }
+            if (id === '\0mobile.css') {
+              return `.mobile { color: red }`
+            }
+            if (id === '\0desktop.css') {
+              return `.desktop { color: blue }`
+            }
+          },
+        },
+      ],
+    })) as RolldownOutput
+
+    const chunk = result.output.find(
+      (o) => o.type === 'chunk' && o.isEntry,
+    ) as OutputChunk
+    const registry = /m\.f=(\[[^\]]*\])/.exec(chunk.code)?.[1] ?? '[]'
+    const deps = registry.match(/"([^"]+)"/g) ?? []
+
+    // each branch contributes its JS chunk + its CSS file, so both branches'
+    // CSS must be present in the preload deps registry (previously one branch's
+    // deps were silently dropped after minification merged the two
+    // `__vitePreload` calls).
+    expect(deps).toHaveLength(4)
+    expect(deps.filter((dep) => dep.endsWith('.css"'))).toHaveLength(2)
+  })
+
   test('top-level input is used as the default build entry', async () => {
     const result = (await build({
       root: resolve(dirname, 'packages/build-project'),

@@ -37,7 +37,12 @@ export const preloadMethod = `__vitePreload`
 export const preloadMarker = `__VITE_PRELOAD__`
 
 export const preloadHelperId = '\0vite/preload-helper.js'
-const preloadMarkerRE = new RegExp(preloadMarker, 'g')
+// Matches the plain marker as well as the uniquified markers injected by
+// `renderChunk` (`__VITE_PRELOAD_0__`, `__VITE_PRELOAD_1__`, ...). Uniquifying
+// the markers keeps the minifier from merging two `__vitePreload` calls from
+// mutually-exclusive branches into a single call, which would silently drop one
+// branch's preload deps (#23221).
+const preloadMarkerRE = /__VITE_PRELOAD(?:_\d*)?__/g
 
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.posix.relative(path.posix.dirname(importer), filename)
@@ -48,6 +53,12 @@ function findPreloadMarker(str: string, pos: number = 0): number {
   preloadMarkerRE.lastIndex = pos
   const result = preloadMarkerRE.exec(str)
   return result?.index ?? -1
+}
+
+function preloadMarkerEnd(str: string, start: number): number {
+  preloadMarkerRE.lastIndex = start
+  const result = preloadMarkerRE.exec(str)
+  return result ? result.index + result[0].length : start
 }
 
 /**
@@ -78,7 +89,7 @@ export function matchImportsToPreloadMarkers(
     markerStartPos !== -1;
     markerStartPos = findPreloadMarker(
       code,
-      markerStartPos + preloadMarker.length,
+      preloadMarkerEnd(code, markerStartPos),
     )
   ) {
     while (
@@ -269,18 +280,39 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
     name: 'vite:build-import-analysis',
 
     renderChunk(code, _, { format }) {
+      const s = new MagicString(code)
+      if (code.includes(preloadMarker)) {
+        // Uniquify the `__VITE_PRELOAD__` markers so the minifier does not merge
+        // two `__vitePreload` calls from mutually-exclusive branches into a
+        // single call (whose second arg keeps only one branch's deps), silently
+        // dropping the other branch's preload deps (#23221).
+        let index = 0
+        for (let match = preloadMarkerRE.exec(code); match;) {
+          s.overwrite(
+            match.index,
+            match.index + preloadMarker.length,
+            `__VITE_PRELOAD_${index++}__`,
+          )
+          match = preloadMarkerRE.exec(code)
+        }
+      }
       // make sure we only perform the preload logic in modern builds.
       if (code.includes(isModernFlag)) {
         const re = new RegExp(isModernFlag, 'g')
         const isModern = String(format === 'es')
         const isModernWithPadding =
           isModern + ' '.repeat(isModernFlag.length - isModern.length)
-        return {
-          code: code.replace(re, isModernWithPadding),
-          map: null,
-        }
+        s.replace(re, isModernWithPadding)
       }
-      return null
+      if (!s.hasChanged()) {
+        return null
+      }
+      return {
+        code: s.toString(),
+        map: this.environment.config.build.sourcemap
+          ? s.generateMap({ hires: 'boundary' })
+          : null,
+      }
     },
 
     async generateBundle(opts, bundle) {
@@ -378,7 +410,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         const chunk = bundle[file]
         // can't use chunk.dynamicImports.length here since some modules e.g.
         // dynamic import to constant json may get inlined.
-        if (chunk.type === 'chunk' && chunk.code.includes(preloadMarker)) {
+        if (chunk.type === 'chunk' && findPreloadMarker(chunk.code) >= 0) {
           const code = chunk.code
           let imports!: ImportSpecifier[]
           try {
@@ -554,7 +586,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
                 s.update(
                   markerStartPos,
-                  markerStartPos + preloadMarker.length,
+                  preloadMarkerEnd(code, markerStartPos),
                   renderedDeps.length > 0
                     ? `__vite__mapDeps([${renderedDeps.join(',')}])`
                     : `[]`,
@@ -588,13 +620,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             if (!rewroteMarkerStartPos.has(markerStartPos)) {
               s.update(
                 markerStartPos,
-                markerStartPos + preloadMarker.length,
+                preloadMarkerEnd(code, markerStartPos),
                 'void 0',
               )
             }
             markerStartPos = findPreloadMarker(
               code,
-              markerStartPos + preloadMarker.length,
+              preloadMarkerEnd(code, markerStartPos),
             )
           }
 
