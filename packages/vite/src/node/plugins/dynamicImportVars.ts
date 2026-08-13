@@ -1,4 +1,4 @@
-import { posix } from 'node:path'
+import path, { posix } from 'node:path'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
@@ -186,9 +186,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
       isRequire: false,
     })
     if (subpathImports && importer) {
-      return normalizePath(
-        posix.resolve(posix.dirname(importer), normalizePath(subpathImports)),
-      )
+      return normalizePath(path.resolve(path.dirname(importer), subpathImports))
     }
     return resolve(environment, id, importer)
   }
