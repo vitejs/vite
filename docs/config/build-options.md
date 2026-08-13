@@ -123,6 +123,8 @@ If you specify `build.lib`, `build.cssCodeSplit` will be `false` as default.
 
 This option allows users to set a different browser target for CSS minification from the one used for JavaScript transpilation.
 
+When `build.cssMinify` is `'lightningcss'` (the default), this option takes precedence over [`css.lightningcss.targets`](./shared-options.md#css-lightningcss) for the minification step.
+
 It should only be used when you are targeting a non-mainstream browser.
 One example is Android WeChat WebView, which supports most modern JavaScript features but not the [`#RGBA` hexadecimal color notation in CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#rgb_colors).
 In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite from transforming `rgba()` colors into `#RGBA` hexadecimal notations.

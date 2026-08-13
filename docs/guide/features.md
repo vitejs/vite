@@ -281,7 +281,7 @@ Vite is pre-configured to support CSS `@import` inlining via `postcss-import`. V
 
 If the project contains valid PostCSS config (any format supported by [postcss-load-config](https://github.com/postcss/postcss-load-config), e.g. `postcss.config.js`), it will be automatically applied to all imported CSS.
 
-Note that CSS minification will run after PostCSS and will use [`build.cssTarget`](/config/build-options.md#build-csstarget) option.
+Note that CSS minification will run after PostCSS and will use the [`build.cssTarget`](/config/build-options.md#build-csstarget) option. When `build.cssMinify` is `'lightningcss'` (the default), it takes precedence over [`css.lightningcss.targets`](/config/shared-options.md#css-lightningcss) for the minification step.
 
 ### CSS Modules
 
