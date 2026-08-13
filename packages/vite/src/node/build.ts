@@ -29,6 +29,7 @@ import type { EsbuildTarget } from '#types/internal/esbuildOptions'
 import type { RollupCommonJSOptions } from '#dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from '#dep-types/dynamicImportVars'
 import type { AssetMetadata, ChunkMetadata } from '#types/metadata'
+import { cleanUrl } from '../shared/utils'
 import {
   DEFAULT_ASSETS_INLINE_LIMIT,
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
@@ -854,6 +855,24 @@ async function buildEnvironment(
 
     // watch file changes with rollup
     if (options.watch) {
+      // Rolldown's watcher doesn't handle atomic file replacements (e.g. rename-based edits)
+      // for individual files properly. We force the watcher to watch the parent directory
+      // of every loaded module so that it catches new files replacing the old ones.
+      // https://github.com/vitejs/vite/issues/23227
+      const watchDirsPlugin: import('rolldown').Plugin = {
+        name: 'vite:watch-directories',
+        load(id) {
+          const file = cleanUrl(id)
+          if (path.isAbsolute(file) && !file.includes('\0')) {
+            this.addWatchFile(path.dirname(file))
+          }
+        },
+      }
+      rolldownOptions.plugins = [
+        ...arraify(rolldownOptions.plugins),
+        watchDirsPlugin,
+      ]
+
       logger.info(colors.cyan(`\nwatching for file changes...`))
 
       const resolvedOutDirs = getResolvedOutDirs(
