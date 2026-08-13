@@ -90,6 +90,15 @@ describe('definePlugin (SSR dev)', () => {
     ).toBe(undefined)
   })
 
+  test('replaces define keys containing `$`', async () => {
+    const transform = await createJsDefinePluginTransform({
+      $FOO: JSON.stringify('bar'),
+    })
+    expect(await transform('export const x = $FOO;')).toBe(
+      'export const x = "bar";\n',
+    )
+  })
+
   test('replace import.meta.env when it is a invalid json', async () => {
     const transform = await createJsDefinePluginTransform({
       'import.meta.env.LEGACY': '__VITE_IS_LEGACY__',
