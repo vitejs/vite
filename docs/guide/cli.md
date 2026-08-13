@@ -122,7 +122,7 @@ vite preview [root]
 | `--port <port>`           | Specify port (`number`)                                                                                                                                                               |
 | `--strictPort`            | Exit if specified port is already in use (`boolean`)                                                                                                                                  |
 | `--open [path]`           | Open browser on startup (`boolean \| string`)                                                                                                                                         |
-| `--outDir <dir>`          | Output directory (default: `dist`)(`string`)                                                                                                                                          |
+| `--outDir <dir>`          | Output directory (default: `dist`) (`string`)                                                                                                                                         |
 | `-c, --config <file>`     | Use specified config file (`string`)                                                                                                                                                  |
 | `--base <path>`           | Public base path (default: `/`) (`string`)                                                                                                                                            |
 | `-l, --logLevel <level>`  | Info \| warn \| error \| silent (`string`)                                                                                                                                            |

@@ -8,5 +8,9 @@
     "build": "vite build",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
     "preview": "vite preview"
+  },
+  "devDependencies": {
+    "less": "^4.8.1",
+    "sass": "^1.102.0"
   }
 }

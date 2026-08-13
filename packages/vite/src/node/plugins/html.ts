@@ -33,8 +33,9 @@ import {
   removeLeadingSlash,
   unique,
 } from '../utils'
-import type { ResolvedConfig } from '../config'
+import type { ResolvedConfig, ResolvedEnvironmentOptions } from '../config'
 import { checkPublicFile } from '../publicDir'
+import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
 import { toOutputFilePathInHtml } from '../build'
 import { resolveEnvPrefix } from '../env'
 import { cleanUrl } from '../../shared/utils'
@@ -812,7 +813,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         // Force rollup to keep this module from being shared between other entry points.
         // If the resulting chunk is empty, it will be removed in generateBundle.
-        return { code: js, moduleSideEffects: 'no-treeshake' }
+        return {
+          code: js,
+          map: { mappings: '' },
+          moduleSideEffects: 'no-treeshake',
+        }
       },
     },
 
@@ -984,6 +989,30 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           assetTags.push(...getCssTagsForChunk(chunk, toOutputAssetFilePath))
 
           result = injectToHead(result, assetTags)
+        }
+
+        // prepend dev client runtime for bundled client build before other chunk scripts
+        if (
+          config.command === 'serve' &&
+          this.environment.config.consumer === 'client' &&
+          this.environment.config.isBundled
+        ) {
+          result = injectToHead(
+            result,
+            [
+              {
+                tag: 'script',
+                attrs: {
+                  type: 'module',
+                  src: path.posix.join(
+                    config.base,
+                    BUNDLED_DEV_CLIENT_FILENAME,
+                  ),
+                },
+              },
+            ],
+            true,
+          )
         }
 
         // inject css link when cssCodeSplit is false
@@ -1227,11 +1256,14 @@ export function postImportMapHook(
 ): IndexHtmlTransformHook {
   const decoder = new TextDecoder()
   const chunkImportMapEnabled =
-    config.command === 'build' && config.build.chunkImportMap
+    config.command === 'build' &&
+    config.environments.client.build.chunkImportMap
 
   function injectChunkImportMap(html: string, bundle: OutputBundle): string {
     const nonce = config.html?.cspNonce
-    const importMap = bundle[getImportMapFilename(config)] as OutputAsset
+    const importMap = bundle[
+      getImportMapFilename(config.environments.client)
+    ] as OutputAsset
     const importMapHtml = serializeTag({
       tag: 'script',
       attrs: { type: 'importmap', ...(nonce ? { nonce } : {}) },
@@ -1542,12 +1574,20 @@ export async function applyHtmlTransforms(
   return html
 }
 
-const entirelyImportRE =
-  /^(?:import\s*(?:"[^"\n]*[^\\\n]"|'[^'\n]*[^\\\n]');*|\/\*[\s\S]*?\*\/|\/\/.*[$\n])*$/
+const importOrCommentRE =
+  /\s+|\/\*[\s\S]*?\*\/|\/\/[^\n]*(?:\n|$)|import\s*(?:"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')\s*;*/y
+
 function isEntirelyImport(code: string) {
   // only consider "side-effect" imports, which match <script type=module> semantics exactly
-  // the regexes will remove too little in some exotic cases, but false-negatives are alright
-  return entirelyImportRE.test(code.trim())
+  // the regexes will remove too little in some exotic cases, but false-negatives are alright.
+  // Consume one token at a time to avoid backtracking over the whole chunk.
+  importOrCommentRE.lastIndex = 0
+  while (importOrCommentRE.lastIndex < code.length) {
+    if (!importOrCommentRE.test(code)) {
+      return false
+    }
+  }
+  return true
 }
 
 function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
@@ -1702,11 +1742,55 @@ function incrementIndent(indent: string = '') {
   return `${indent}${indent[0] === '\t' ? '\t' : '  '}`
 }
 
-export function getImportMapFilename(config: ResolvedConfig): string {
+export function getImportMapFilename(
+  options: ResolvedEnvironmentOptions,
+): string {
   const chunkImportMap =
-    config.build.rolldownOptions.experimental?.chunkImportMap
+    options.build.rolldownOptions.experimental?.chunkImportMap
   if (typeof chunkImportMap === 'object' && chunkImportMap.fileName) {
     return chunkImportMap.fileName
   }
   return 'importmap.json'
+}
+
+function getImportMapBaseUrl(options: ResolvedEnvironmentOptions): string {
+  const chunkImportMap =
+    options.build.rolldownOptions.experimental?.chunkImportMap
+  if (typeof chunkImportMap === 'object' && chunkImportMap.baseUrl) {
+    return chunkImportMap.baseUrl
+  }
+  return '/'
+}
+
+/**
+ * Read and parse the chunk import map asset from the bundle.
+ * Returns `undefined` when the import map is not present in the bundle.
+ */
+export function getImportMap(
+  bundle: OutputBundle,
+  options: ResolvedEnvironmentOptions & ResolvedConfig,
+):
+  | {
+      asset: OutputAsset
+      content: { imports: Record<string, string> }
+      /** import map entries with the base stripped (placeholder name -> real name) */
+      mapping: Record<string, string>
+    }
+  | undefined {
+  const asset = bundle[getImportMapFilename(options)] as OutputAsset | undefined
+  if (!asset) return undefined
+
+  const content: { imports: Record<string, string> } = JSON.parse(
+    typeof asset.source === 'string'
+      ? asset.source
+      : new TextDecoder().decode(asset.source),
+  )
+  const baseUrl = getImportMapBaseUrl(options)
+  const mapping = Object.fromEntries(
+    Object.entries(content.imports).map(([k, v]) => [
+      k.slice(baseUrl.length),
+      v.slice(baseUrl.length),
+    ]),
+  )
+  return { asset, content, mapping }
 }

@@ -4,10 +4,11 @@ import {
   type DevEngine,
   dev,
 } from 'rolldown/experimental'
+import type { RolldownOutput } from 'rolldown'
 import colors from 'picocolors'
 import getEtag from 'etag'
-import type { Update } from '#types/hmrPayload'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
+import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
 import { getHmrImplementation } from '../plugins/clientInjections'
 import { createDebugger, formatAndTruncateFileList } from '../utils'
 import type { DevEnvironment } from './environment'
@@ -58,18 +59,32 @@ export class MemoryFiles {
 
 export class BundledDev {
   private _devEngine!: DevEngine
+  private viteRuntime?: string
   private initialBuildCompleted = false
+  private _closed = false
   private clients = new Clients()
-  private invalidateCalledModules = new Map<
-    NormalizedHotChannelClient,
-    Set<string>
-  >()
   private debouncedFullReload = debounce(20, () => {
     this.environment.hot.send({ type: 'full-reload', path: '*' })
     this.environment.logger.info(colors.green(`page reload`), {
       timestamp: true,
     })
   })
+
+  private fullReloadPending = false
+
+  private reloadNeededClientIds = new Set<string>()
+  private debouncedReloadNeededFlush = debounce(20, () => {
+    if (this.lastBuildError || this.reloadNeededClientIds.size === 0) return
+    for (const clientId of this.reloadNeededClientIds) {
+      this.clients.get(clientId)?.send({ type: 'full-reload', path: '*' })
+    }
+    this.reloadNeededClientIds.clear()
+    this.environment.logger.info(colors.green(`page reload`), {
+      timestamp: true,
+    })
+  })
+
+  private lastBuildError: Error | null = null
 
   memoryFiles: MemoryFiles = new MemoryFiles()
 
@@ -88,7 +103,18 @@ export class BundledDev {
     return this._devEngine
   }
 
+  private pendingPayloadFilenames = new Set<string>()
+
+  get hasBuildOutput(): boolean {
+    return (
+      this.memoryFiles.size > 1 ||
+      (this.memoryFiles.size === 1 &&
+        !this.memoryFiles.has(BUNDLED_DEV_CLIENT_FILENAME))
+    )
+  }
+
   async listen(): Promise<void> {
+    this._closed = false
     debug?.('INITIAL: setup bundle options')
     const rolldownOptions = await this.getRolldownOptions()
     // NOTE: only single outputOptions is supported here
@@ -104,20 +130,58 @@ export class BundledDev {
         : rolldownOptions.output
     )!
 
-    this.environment.hot.on('vite:module-loaded', (payload, client) => {
-      this.clients.setupIfNeeded(client, payload.clientId)
-      this.devEngine.registerModules(payload.clientId, payload.modules)
+    this.environment.hot.on(
+      'vite:client-connected',
+      async (payload, client) => {
+        this.clients.setupIfNeeded(client, payload.clientId)
+        this.devEngine.registerClient(payload.clientId)
+      },
+    )
+    this.environment.hot.on('vite:client:connect', (_payload, client) => {
+      // Replay the cached build error to freshly connected clients.
+      if (this.lastBuildError) {
+        debug?.('REPLAY: replaying last build error to newly connected client')
+
+        client.send({
+          type: 'error',
+          err: prepareError(this.lastBuildError),
+        })
+      }
     })
     this.environment.hot.on('vite:client:disconnect', (_payload, client) => {
       const clientId = this.clients.delete(client)
       if (clientId) {
         this.devEngine.removeClient(clientId)
+        this.reloadNeededClientIds.delete(clientId)
       }
     })
+    this.environment.hot.on(
+      'vite:bundled-dev:reload-needed',
+      (payload, client) => {
+        const clientId = this.clients.getId(client)
+        if (!clientId) return
+        debug?.(
+          `TRIGGER: client ${clientId} requested a page reload (${payload.reason})`,
+        )
+        this.environment.logger.info(
+          colors.green(`bundling for page reload `) +
+            colors.dim(payload.reason),
+          { clear: true, timestamp: true },
+        )
+        this.reloadNeededClientIds.add(clientId)
+        this.ensureOutputAndFlushReloadNeeded()
+      },
+    )
 
     this._devEngine = await dev(rolldownOptions, outputOptions, {
       onHmrUpdates: (result) => {
         if (result instanceof Error) {
+          this.environment.logger.error(
+            colors.red(`✘ Build error: ${result.message}`),
+            {
+              error: result,
+            },
+          )
           // TODO: send to the specific client
           for (const client of this.clients.getAll()) {
             client.send({
@@ -138,9 +202,14 @@ export class BundledDev {
         for (const { clientId, update } of updates) {
           const client = this.clients.get(clientId)
           if (client) {
-            this.invalidateCalledModules.get(client)?.clear()
             this.handleHmrOutput(client, changedFiles, update)
           }
+        }
+        // an edit requested a reload but its rebuild failed, leaving the page
+        // waiting behind the error overlay. The fix produced this successful
+        // build — regenerate output now, or the page would never reload.
+        if (this.reloadNeededClientIds.size) {
+          this.ensureOutputAndFlushReloadNeeded()
         }
       },
       onOutput: (result) => {
@@ -151,24 +220,29 @@ export class BundledDev {
               error: result,
             },
           )
+          this.lastBuildError = result
+          this.fullReloadPending = false
           this.environment.hot.send({
             type: 'error',
             err: prepareError(result),
           })
           return
         }
+        this.lastBuildError = null
 
-        // NOTE: don't clear memoryFiles here as incremental build reuses the files
-        for (const outputFile of result.output) {
-          this.memoryFiles.set(outputFile.fileName, () => {
-            const source =
-              outputFile.type === 'chunk' ? outputFile.code : outputFile.source
-            return {
-              source,
-              etag: getEtag(Buffer.from(source), { weak: true }),
-            }
-          })
+        this.storeOutputFiles(result.output)
+
+        // Trigger a full reload if there's no error in the result and a reload is pending from HMR.
+        if (this.fullReloadPending) {
+          this.fullReloadPending = false
+          this.debouncedFullReload()
         }
+        if (this.reloadNeededClientIds.size) {
+          this.debouncedReloadNeededFlush()
+        }
+      },
+      onAdditionalAssets: (result) => {
+        this.storeOutputFiles(result.output)
       },
       watch: {
         skipWrite: true,
@@ -183,80 +257,68 @@ export class BundledDev {
         debug?.('INITIAL: run error', e)
       },
     )
+    this.viteRuntime = await getHmrImplementation(
+      this.environment.getTopLevelConfig(),
+    )
+    this.storeOutputFiles([])
     this.waitForInitialBuildFinish().then(() => {
+      if (this._closed) return
       debug?.('INITIAL: build done')
-      this.environment.hot.send({ type: 'full-reload', path: '*' })
       this.initialBuildCompleted = true
+      if (!this.lastBuildError) {
+        this.environment.hot.send({
+          type: 'full-reload',
+          path: '*',
+          ifFallback: true,
+        })
+      }
     })
   }
 
   private async waitForInitialBuildFinish(): Promise<void> {
+    if (this._closed) return
     await this.devEngine.ensureCurrentBuildFinish()
-    while (this.memoryFiles.size === 0) {
+    if (this._closed) return
+
+    let state = await this.devEngine.getBundleState()
+    while (!this.hasBuildOutput && !state.lastBuildErrored) {
       await setTimeout(10)
+      if (this._closed) return
       await this.devEngine.ensureCurrentBuildFinish()
+      if (this._closed) return
+      state = await this.devEngine.getBundleState()
     }
   }
 
-  async invalidateModule(
-    m: {
-      path: string
-      message?: string
-      firstInvalidatedBy: string
-    },
-    client: NormalizedHotChannelClient,
-  ): Promise<void> {
-    const invalidateCalledModules = this.invalidateCalledModules.get(client)
-    if (invalidateCalledModules?.has(m.path)) {
-      debug?.(
-        `INVALIDATE: invalidate received from ${m.path}, but ignored because it was already invalidated`,
-      )
-      return
-    }
-
-    debug?.(`INVALIDATE: invalidate received from ${m.path}, re-triggering HMR`)
-    if (!invalidateCalledModules) {
-      this.invalidateCalledModules.set(client, new Set([]))
-    }
-    this.invalidateCalledModules.get(client)!.add(m.path)
-
-    let update: BindingClientHmrUpdate['update'] | undefined
-    try {
-      const _update = await this.devEngine.invalidate(
-        m.path,
-        m.firstInvalidatedBy,
-      )
-      update = _update.find(
-        (u) => this.clients.get(u.clientId) === client,
-      )?.update
-    } catch (e) {
-      client.send({
-        type: 'error',
-        err: prepareError(e as Error),
-      })
-      return
-    }
-    if (!update) return
-
-    if (update.type === 'Patch') {
-      this.environment.logger.info(
-        colors.yellow(`hmr invalidate `) +
-          colors.dim(m.path) +
-          (m.message ? ` ${m.message}` : ''),
-        { timestamp: true },
-      )
-    }
-
-    this.handleHmrOutput(client, [m.path], update, {
-      firstInvalidatedBy: m.firstInvalidatedBy,
-    })
+  private ensureOutputAndFlushReloadNeeded(): void {
+    this.devEngine.ensureLatestBuildOutput().then(
+      () => this.debouncedReloadNeededFlush(),
+      () => {},
+    )
   }
 
   async triggerBundleRegenerationIfStale(): Promise<boolean> {
     const bundleState = await this.devEngine.getBundleState()
+
+    // Trigger full build if the HMR errors,
+    // this is to make it easier to recover if the HMR generation is broken for some reason.
+    if (
+      this.initialBuildCompleted &&
+      bundleState.lastBuildErrored &&
+      bundleState.lastErrorStage === 'Hmr'
+    ) {
+      debug?.(`TRIGGER: access after HMR-stage failure, forcing full rebuild`)
+
+      this.devEngine.triggerFullBuild()
+      this.devEngine.ensureLatestBuildOutput().then(() => {
+        this.debouncedFullReload()
+      })
+      return true
+    }
+
     const shouldTrigger =
       bundleState.hasStaleOutput &&
-      !bundleState.lastFullBuildFailed &&
+      !bundleState.lastBuildErrored &&
       this.initialBuildCompleted
     if (shouldTrigger) {
       this.devEngine.ensureLatestBuildOutput().then(() => {
@@ -270,20 +332,56 @@ export class BundledDev {
   async triggerLazyBundling(
     moduleId: string | null,
     clientId: string | null,
-  ): Promise<string | undefined> {
+  ): Promise<{ code: string; filename: string } | undefined> {
     if (!moduleId || !clientId) {
       return
     }
     debug?.(
       `TRIGGER-LAZY: trigger lazy bundling for module ${moduleId} for client ${clientId}`,
     )
-    return await this.devEngine.compileEntry(moduleId, clientId)
+    const result = await this.devEngine.compileEntry(moduleId, clientId)
+    this.pendingPayloadFilenames.add(result.filename)
+    return result
+  }
+
+  /**
+   * Called by the serving middlewares when the response for a payload completed.
+   * Only delivered payloads are recorded on the server's per-client ship map, so
+   * later chunks may omit a module only if the payload carrying it was delivered.
+   *
+   * Note: the payload filename is unique across all clients.
+   */
+  markPayloadDelivered(filename: string): void {
+    if (this.pendingPayloadFilenames.delete(filename)) {
+      this.devEngine.notifyPayloadDelivered(filename)
+    }
   }
 
   async close(): Promise<void> {
+    this._closed = true
     this.memoryFiles.clear()
     await this._devEngine?.close()
     this.initialBuildCompleted = false
+  }
+
+  private storeOutputFiles(output: RolldownOutput['output'][number][]): void {
+    // NOTE: don't clear memoryFiles here as incremental build reuses the files
+    if (this.viteRuntime) {
+      this.memoryFiles.set(BUNDLED_DEV_CLIENT_FILENAME, {
+        source: this.viteRuntime,
+        etag: getEtag(Buffer.from(this.viteRuntime), { weak: true }),
+      })
+    }
+    for (const outputFile of output) {
+      this.memoryFiles.set(outputFile.fileName, () => {
+        const source =
+          outputFile.type === 'chunk' ? outputFile.code : outputFile.source
+        return {
+          source,
+          etag: getEtag(Buffer.from(source), { weak: true }),
+        }
+      })
+    }
   }
 
   private async getRolldownOptions() {
@@ -298,9 +396,8 @@ export class BundledDev {
       ...(typeof rolldownOptions.experimental.devMode === 'object'
         ? rolldownOptions.experimental.devMode
         : {}),
-      implement: await getHmrImplementation(
-        this.environment.getTopLevelConfig(),
-      ),
+      implement: '',
+      skipCommonRuntimeInjection: true,
     }
 
     // disable inlineConst optimization due to a bug in Rolldown
@@ -333,7 +430,6 @@ export class BundledDev {
     client: NormalizedHotChannelClient,
     files: string[],
     hmrOutput: HmrOutput,
-    invalidateInformation?: { firstInvalidatedBy: string },
   ) {
     if (hmrOutput.type === 'Noop') return
 
@@ -346,11 +442,12 @@ export class BundledDev {
         : ''
       this.environment.logger.info(
         colors.green(`trigger page reload `) + colors.dim(shortFile) + reason,
-        { clear: !invalidateInformation, timestamp: true },
+        { clear: true, timestamp: true },
       )
-      this.devEngine.ensureLatestBuildOutput().then(() => {
-        this.debouncedFullReload()
-      })
+      // `import.meta.hot.invalidate()` is fully client-side now, so every server-sent
+      // reload comes from a file change: defer it until the `onOutput` callback to
+      // avoid error overlay flashes.
+      this.fullReloadPending = true
       return
     }
 
@@ -359,6 +456,7 @@ export class BundledDev {
       code: typeof hmrOutput.code === 'string' ? '[code]' : hmrOutput.code,
     })
 
+    this.pendingPayloadFilenames.add(hmrOutput.filename)
     this.memoryFiles.set(hmrOutput.filename, {
       // ensure that the generated hmr patch contains ESM syntax
       // this is to avoid attacks like GHSA-4v9v-hfq4-rm2v
@@ -374,27 +472,20 @@ export class BundledDev {
         source: hmrOutput.sourcemap,
       })
     }
-    const updates: Update[] = hmrOutput.hmrBoundaries.map((boundary: any) => {
-      return {
-        type: 'js-update',
-        url: hmrOutput.filename,
-        path: boundary.boundary,
-        acceptedPath: boundary.acceptedVia,
-        firstInvalidatedBy: invalidateInformation?.firstInvalidatedBy,
-        timestamp: Date.now(),
-      }
-    })
     client.send({
-      type: 'update',
-      updates,
+      type: 'bundled-dev-update',
+      changedIds: hmrOutput.changedIds,
+      url: hmrOutput.filename,
+      seq: hmrOutput.seq,
     })
-    const filePaths = [...new Set(updates.map((u) => u.path))]
-    const { formatted, truncated } = formatAndTruncateFileList(filePaths)
-    if (truncated) debugHmr?.(`hmr update ${filePaths.join(', ')}`)
+    const { formatted, truncated } = formatAndTruncateFileList(
+      hmrOutput.changedIds,
+    )
+    if (truncated) debugHmr?.(`hmr update ${hmrOutput.changedIds.join(', ')}`)
     this.environment.logger.info(
       colors.green(`hmr update `) + colors.dim(formatted),
       {
-        clear: !invalidateInformation,
+        clear: true,
         timestamp: true,
       },
     )
@@ -418,6 +509,10 @@ class Clients {
 
   get(id: string): NormalizedHotChannelClient | undefined {
     return this.idToClient.get(id)
+  }
+
+  getId(client: NormalizedHotChannelClient): string | undefined {
+    return this.clientToId.get(client)
   }
 
   getAll(): NormalizedHotChannelClient[] {

@@ -1143,15 +1143,19 @@ export async function extractExportsData(
         ...remainingRolldownOptions.moduleTypes,
       },
     })
-    const result = await build.generate({
-      ...rolldownOptions.output,
-      format: 'esm',
-      sourcemap: false,
-    })
-    const [, exports, , hasModuleSyntax] = parse(result.output[0].code)
-    return {
-      hasModuleSyntax,
-      exports: exports.map((e) => e.n),
+    try {
+      const result = await build.generate({
+        ...rolldownOptions.output,
+        format: 'esm',
+        sourcemap: false,
+      })
+      const [, exports, , hasModuleSyntax] = parse(result.output[0].code)
+      return {
+        hasModuleSyntax,
+        exports: exports.map((e) => e.n),
+      }
+    } finally {
+      await build.close()
     }
   }
 
@@ -1226,6 +1230,12 @@ function isSingleDefaultExport(exports: readonly string[]) {
 
 const lockfileFormats = [
   {
+    path: 'node_modules/.pnpm/lock.yaml',
+    // Included in lockfile
+    checkPatchesDir: false,
+    manager: 'pnpm',
+  },
+  {
     path: 'node_modules/.package-lock.json',
     checkPatchesDir: 'patches',
     manager: 'npm',
@@ -1236,6 +1246,30 @@ const lockfileFormats = [
     checkPatchesDir: false,
     manager: 'yarn',
   },
+  {
+    path: 'bun.lock',
+    checkPatchesDir: 'patches',
+    manager: 'bun',
+  },
+  {
+    path: '.rush/temp/shrinkwrap-deps.json',
+    // Included in lockfile
+    checkPatchesDir: false,
+    manager: 'pnpm',
+  },
+  {
+    path: 'aube-lock.yaml',
+    checkPatchesDir: false,
+    manager: 'aube',
+  },
+  {
+    path: 'nub.lock',
+    checkPatchesDir: 'patches',
+    manager: 'nub',
+  },
+
+  // discouraged package manager lockfiles
+  // or deprecated lockfiles
   {
     // Yarn v3+ PnP
     path: '.pnp.cjs',
@@ -1253,23 +1287,6 @@ const lockfileFormats = [
     path: 'node_modules/.yarn-integrity',
     checkPatchesDir: 'patches',
     manager: 'yarn',
-  },
-  {
-    path: 'node_modules/.pnpm/lock.yaml',
-    // Included in lockfile
-    checkPatchesDir: false,
-    manager: 'pnpm',
-  },
-  {
-    path: '.rush/temp/shrinkwrap-deps.json',
-    // Included in lockfile
-    checkPatchesDir: false,
-    manager: 'pnpm',
-  },
-  {
-    path: 'bun.lock',
-    checkPatchesDir: 'patches',
-    manager: 'bun',
   },
   {
     path: 'bun.lockb',

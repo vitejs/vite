@@ -26,9 +26,7 @@ function createWorkerdEnvironment(
   return mergeConfig(
     {
       resolve: {
-        conditions: [
-          /*...*/
-        ],
+        conditions: [/*...*/],
       },
       dev: {
         createEnvironment(name, config) {
@@ -251,10 +249,7 @@ interface ModuleRunnerOptions {
    * source maps are resolved for files that were not processed by Vite.
    */
   sourcemapInterceptor?:
-    | false
-    | 'node'
-    | 'prepareStackTrace'
-    | InterceptorOptions
+    false | 'node' | 'prepareStackTrace' | InterceptorOptions
   /**
    * Disable HMR or configure HMR options.
    *
@@ -361,7 +356,7 @@ const runner = new ModuleRunner(
 
 ```js [server.js]
 import { BroadcastChannel } from 'node:worker_threads'
-import { createServer, RemoteEnvironmentTransport, DevEnvironment } from 'vite'
+import { createServer, DevEnvironment } from 'vite'
 
 function createWorkerEnvironment(name, config, context) {
   const worker = new Worker('./worker.js')

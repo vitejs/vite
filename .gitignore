@@ -19,3 +19,6 @@ playground-temp
 temp
 TODOs.md
 .eslintcache
+
+# runtime-created symlink for glob-import playground tests
+playground/glob-import/root/follow-symlinks/linked/my-lib

@@ -266,6 +266,11 @@
 
 <h2>Unknown extension assets import</h2>
 <code class="unknown-ext"></code>
+<code class="unknown-ext-inline"></code>
+
+<h2>Asset matched by a relative path in assetsInclude</h2>
+<code class="relative-path-assets-include"></code>
+<code class="relative-path-assets-include-inline"></code>
 
 <h2>?raw import</h2>
 <code class="raw"></code>
@@ -553,6 +558,15 @@
 
   import unknownExtUrl from './nested/foo.unknown'
   text('.unknown-ext', unknownExtUrl)
+
+  import unknownExtInlineUrl from './nested/foo.unknown?inline'
+  text('.unknown-ext-inline', unknownExtInlineUrl)
+
+  import relativePathCustomUrl from './nested/relative-path.custom'
+  text('.relative-path-assets-include', relativePathCustomUrl)
+
+  import relativePathCustomInlineUrl from './nested/relative-path.custom?inline'
+  text('.relative-path-assets-include-inline', relativePathCustomInlineUrl)
 
   import rawSvg from './nested/fragment.svg?raw'
   text('.raw', rawSvg)

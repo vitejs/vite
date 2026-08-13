@@ -163,7 +163,7 @@ export interface BuildEnvironmentOptions {
   /**
    * Override CSS minification specifically instead of defaulting to `build.minify`,
    * so you can configure minification for JS and CSS separately.
-   * @default 'lightningcss'
+   * @default 'lightningcss', but false if build.minify is disabled for client build
    */
   cssMinify?: boolean | 'lightningcss' | 'esbuild'
   /**
@@ -177,7 +177,7 @@ export interface BuildEnvironmentOptions {
   /**
    * Set to `false` to disable minification, or specify the minifier to use.
    * Available options are 'oxc' or 'terser' or 'esbuild'.
-   * @default 'oxc'
+   * @default 'oxc' for client build, false for SSR build
    */
   minify?: boolean | 'oxc' | 'terser' | 'esbuild'
   /**
@@ -313,16 +313,19 @@ export type BuildOptions = BuildEnvironmentOptions
 
 export interface LibraryOptions {
   /**
-   * Path of library entry
+   * Path of library entry.
+   * Defaults to the top-level `input` option when omitted.
    */
-  entry: InputOption
+  entry?: InputOption
   /**
    * The name of the exposed global variable. Required when the `formats` option includes
    * `umd` or `iife`
    */
   name?: string
   /**
-   * Output bundle formats
+   * Output bundle formats. Defaults to `['es', 'umd']` for a single entry, or
+   * `['es', 'cjs']` for multiple entries (`umd` and `iife` do not support
+   * multiple entries).
    * @default ['es', 'umd']
    */
   formats?: LibraryFormats[]
@@ -428,6 +431,7 @@ export function resolveBuildEnvironmentOptions(
   logger: Logger,
   consumer: 'client' | 'server' | undefined,
   isBundledDev: boolean,
+  input?: InputOption,
   isSsrTargetWebworkerEnvironment?: boolean,
 ): ResolvedBuildEnvironmentOptions {
   const deprecatedPolyfillModulePreload = raw.polyfillModulePreload
@@ -465,6 +469,10 @@ export function resolveBuildEnvironmentOptions(
         ? 'browser'
         : 'node',
     ...merged.rolldownOptions,
+  }
+  if (merged.lib && merged.lib.entry == null && input != null) {
+    // avoid mutating the user-provided lib options object
+    merged.lib = { ...merged.lib, entry: input }
   }
 
   // handle special build targets
@@ -593,6 +601,12 @@ export function resolveRolldownOptions(
   const ssr = environment.config.consumer === 'server'
 
   const resolve = (p: string) => path.resolve(root, p)
+  const topLevelInput = environment.config.input
+  if (libOptions && libOptions.entry == null) {
+    throw new Error(
+      `Either "build.lib.entry" or the top-level "input" option is required when "build.lib" is set.`,
+    )
+  }
   const input = libOptions
     ? options.rolldownOptions.input ||
       (typeof libOptions.entry === 'string'
@@ -600,14 +614,15 @@ export function resolveRolldownOptions(
         : Array.isArray(libOptions.entry)
           ? libOptions.entry.map(resolve)
           : Object.fromEntries(
-              Object.entries(libOptions.entry).map(([alias, file]) => [
+              Object.entries(libOptions.entry!).map(([alias, file]) => [
                 alias,
                 resolve(file),
               ]),
             ))
     : typeof options.ssr === 'string'
       ? resolve(options.ssr)
-      : options.rolldownOptions.input || resolve('index.html')
+      : options.rolldownOptions.input ||
+        (topLevelInput ?? resolve('index.html'))
 
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
     throw new Error(
@@ -670,6 +685,10 @@ export function resolveRolldownOptions(
       viteMode: true,
       chunkImportMap: options.chunkImportMap
         ? {
+            ...(typeof options.rolldownOptions.experimental?.chunkImportMap ===
+            'object'
+              ? options.rolldownOptions.experimental?.chunkImportMap
+              : {}),
             baseUrl: base,
           }
         : options.rolldownOptions.experimental?.chunkImportMap,
@@ -1034,6 +1053,7 @@ export function resolveBuildOutputs(
   if (libOptions) {
     const libHasMultipleEntries =
       typeof libOptions.entry !== 'string' &&
+      libOptions.entry &&
       Object.values(libOptions.entry).length > 1
     const libFormats =
       libOptions.formats ||

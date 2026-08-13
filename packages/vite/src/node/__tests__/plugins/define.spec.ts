@@ -55,7 +55,11 @@ async function createDefinePluginTransform(
           attachDebugInfo: 'none',
         },
       })
-      return (await bundler.generate()).output[0].code
+      try {
+        return (await bundler.generate()).output[0].code
+      } finally {
+        await bundler.close()
+      }
     }
   }
 }

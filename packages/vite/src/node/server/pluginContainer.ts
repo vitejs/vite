@@ -334,7 +334,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     }
     this._started = true
     const config = this.environment.getTopLevelConfig()
-    this._buildStartPromise = this.handleHookPromise(
+    const hookPromise = this.handleHookPromise(
       this.hookParallel(
         'buildStart',
         (plugin) => this._getPluginContext(plugin),
@@ -345,6 +345,12 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
           plugin.perEnvironmentStartEndDuringDev,
       ),
     ) as Promise<void>
+    this._buildStartPromise = (async () => {
+      await hookPromise
+      if (this.environment.mode === 'dev') {
+        await this.environment._registerInputsAsSafeModules()
+      }
+    })()
     await this._buildStartPromise
     this._buildStartPromise = undefined
   }

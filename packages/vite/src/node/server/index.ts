@@ -468,6 +468,13 @@ export interface ViteDevServer {
 export interface ResolvedServerUrls {
   local: string[]
   network: string[]
+  /**
+   * Names of the network interface that each {@link ResolvedServerUrls.network}
+   * URL is bound to, in the same order as `network`. An entry is `undefined`
+   * when the interface name is not known, for example when an explicit `host`
+   * is set.
+   */
+  networkInterfaceNames?: (string | undefined)[]
 }
 
 export function createServer(
@@ -1103,11 +1110,11 @@ async function startServer(
   const configPort = inlinePort ?? options.port
   // When using non strict port for the dev server, the running port can be different from the config one.
   // When restarting, the original port may be available but to avoid a switch of URL for the running
-  // browser tabs, we enforce the previously used port, expect if the config port changed.
+  // browser tabs, we enforce the previously used port, except if the config port changed.
   const port =
-    (!configPort || configPort === server._configServerPort
-      ? server._currentServerPort
-      : configPort) ?? DEFAULT_DEV_PORT
+    configPort === server._configServerPort
+      ? (server._currentServerPort ?? configPort)
+      : configPort
   server._configServerPort = configPort
 
   const serverPort = await httpServerStart(httpServer, {
@@ -1220,12 +1227,13 @@ export async function resolveServerOptions(
 
   setupHmrWsOptionCompat(_server)
 
+  const workspaceRoot = searchForWorkspaceRoot(root)
   const server: ResolvedServerOptions = {
     ..._server,
     fs: {
       ..._server.fs,
       // run searchForWorkspaceRoot only if needed
-      allow: raw?.fs?.allow ?? [searchForWorkspaceRoot(root)],
+      allow: raw?.fs?.allow ?? [workspaceRoot],
     },
     sourcemapIgnoreList:
       _server.sourcemapIgnoreList === false
@@ -1263,7 +1271,13 @@ export async function resolveServerOptions(
   // Read node_modules/.modules.yaml which pnpm always writes on install — this works
   // unconditionally regardless of how Vite is launched (node / npx / pnpm run),
   // avoiding the need for subprocess calls or user-agent sniffing.
-  const pnpmModulesYaml = path.join(cwd, 'node_modules', '.modules.yaml')
+  // Use workspace root (not package root) because .modules.yaml lives at the
+  // monorepo root's node_modules/, not in nested workspace packages.
+  const pnpmModulesYaml = path.join(
+    workspaceRoot,
+    'node_modules',
+    '.modules.yaml',
+  )
   try {
     const content = fs.readFileSync(pnpmModulesYaml, 'utf-8')
     const parsed = JSON.parse(content)
@@ -1273,7 +1287,10 @@ export async function resolveServerOptions(
         allowDirs.push(virtualStoreDir)
       } else if (virtualStoreDir.startsWith('..')) {
         allowDirs.push(
-          path.resolve(path.join(cwd, 'node_modules'), virtualStoreDir),
+          path.resolve(
+            path.join(workspaceRoot, 'node_modules'),
+            virtualStoreDir,
+          ),
         )
       }
     }
