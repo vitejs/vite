@@ -139,8 +139,8 @@ importers:
         specifier: ^6.0.0
         version: 6.0.0
       markdown-it-image-size:
-        specifier: ^15.1.0
-        version: 15.1.0(markdown-it@14.3.0)
+        specifier: ^15.2.0
+        version: 15.2.0(markdown-it@14.3.0)
       oxc-minify:
         specifier: ^0.142.0
         version: 0.142.0
@@ -6440,11 +6440,11 @@ packages:
   mark.js@8.11.1:
     resolution: {integrity: sha512-1I+1qpDt4idfgLQG+BNWmrqku+7/2bi5nLf4YwF8y8zXvmfiTBY3PV3ZibfrjBueCByROpuBjLLFCajqkgYoLQ==}
 
-  markdown-it-image-size@15.1.0:
-    resolution: {integrity: sha512-irLIyVV9Mbdqzr71C804b6QGZdtJ+Jv8F2Pypdlm1A8HtgTEJjNCT01HLVM5JlEd/3xJu9iSgAnyPM0aVeQJ2A==}
+  markdown-it-image-size@15.2.0:
+    resolution: {integrity: sha512-AlSkbOdtfKaUk9KbiKC1dJyrVmpVRauxlnDe1RL3NlWQ68bMpjDL4Wpc9uXutFSNhqdJ2LYdcW81tuyDHc4FxA==}
     engines: {node: '>= 20'}
     peerDependencies:
-      markdown-it: '>= 10 < 15'
+      markdown-it: '>= 10 < 16'
     peerDependenciesMeta:
       markdown-it:
         optional: true
@@ -12416,7 +12416,7 @@ snapshots:
 
   mark.js@8.11.1: {}
 
-  markdown-it-image-size@15.1.0(markdown-it@14.3.0):
+  markdown-it-image-size@15.2.0(markdown-it@14.3.0):
     dependencies:
       '@types/markdown-it': 14.1.2
       flat-cache: 6.1.20
