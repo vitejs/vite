@@ -1196,29 +1196,27 @@ if (!isBuild) {
     )
   })
 
-  // bundled dev:
-  // 1. `unexpected no error` is shown instead of `expected error`,
-  //    `_value` in `mod-c` is initialzed with `var` and is hoisted to the top of the module,
-  //    whereas in unbundled dev, `_value` is still in TDZ, which causes a `ReferenceError`.
-  //
-  // 2. an edit inside the circular import chain triggers a full
-  //    page reload instead of a hot update
-  test.skipIf(isBundledDev)(
-    'hmr should not reload if no accepted within circular imported files',
-    async () => {
-      await page.goto(viteTestUrl + '/circular/index.html')
-      const el = page.locator('.circular')
-      await expect
-        .poll(() => el.textContent())
-        .toBe('mod-a -> mod-b -> mod-c -> mod-a (expected error)')
-      editFile('circular/mod-b.js', (code) =>
-        code.replace(`mod-b ->`, `mod-b (edited) ->`),
+  test('hmr should not reload if no accepted within circular imported files', async () => {
+    await page.goto(viteTestUrl + '/circular/index.html')
+    const el = page.locator('.circular')
+    await expect
+      .poll(() => el.textContent())
+      .toBe(
+        isBundledDev
+          ? // bundled-dev: `unexpected no error` is shown instead of `expected error`.
+            // Vite uses `output.topLevelVar = true` by default in bundled dev, which causes the circular import to be `undefined` instead of throwing a TDZ error,
+            // (see https://rolldown.rs/guide/troubleshooting#avoid-relying-on-temporal-dead-zone-tdz-errors),
+            // whereas in unbundled dev, it follows TDZ and shows `expected error`.
+            'mod-a -> mod-b -> mod-c -> undefined (unexpected no error)'
+          : 'mod-a -> mod-b -> mod-c -> mod-a (expected error)',
       )
-      await expect
-        .poll(() => el.textContent())
-        .toBe('mod-a -> mod-b (edited) -> mod-c -> mod-a (expected error)')
-    },
-  )
+    editFile('circular/mod-b.js', (code) =>
+      code.replace(`mod-b ->`, `mod-b (edited) ->`),
+    )
+    await expect
+      .poll(() => el.textContent())
+      .toBe('mod-a -> mod-b (edited) -> mod-c -> mod-a (expected error)')
+  })
 
   // bundled dev: editing an asset file does not push an update to the page
   test.skipIf(isBundledDev)('not inlined assets HMR', async () => {
