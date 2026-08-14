@@ -357,8 +357,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
       let importMapMapping: Record<string, string> | undefined
       let importMapReverseMapping: Record<string, string> | undefined
-      if (config.build.chunkImportMap) {
-        const importMap = getImportMap(bundle, config)!
+      if (this.environment.config.build.chunkImportMap) {
+        const importMap = getImportMap(bundle, this.environment.config)!
         importMapMapping = importMap.mapping
         importMapReverseMapping = Object.fromEntries(
           Object.entries(importMapMapping).map(([k, v]) => [v, k]),
@@ -370,7 +370,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             fileName: 'importmap.legacy.json',
             source: importMap.asset.source,
           })
-          delete bundle[getImportMapFilename(config)]
+          delete bundle[getImportMapFilename(this.environment.config)]
         }
       }
 

@@ -1143,15 +1143,19 @@ export async function extractExportsData(
         ...remainingRolldownOptions.moduleTypes,
       },
     })
-    const result = await build.generate({
-      ...rolldownOptions.output,
-      format: 'esm',
-      sourcemap: false,
-    })
-    const [, exports, , hasModuleSyntax] = parse(result.output[0].code)
-    return {
-      hasModuleSyntax,
-      exports: exports.map((e) => e.n),
+    try {
+      const result = await build.generate({
+        ...rolldownOptions.output,
+        format: 'esm',
+        sourcemap: false,
+      })
+      const [, exports, , hasModuleSyntax] = parse(result.output[0].code)
+      return {
+        hasModuleSyntax,
+        exports: exports.map((e) => e.n),
+      }
+    } finally {
+      await build.close()
     }
   }
 

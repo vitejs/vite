@@ -134,22 +134,22 @@ importers:
         version: 5.0.6
       '@voidzero-dev/vitepress-theme':
         specifier: ^5.0.4
-        version: 5.0.4(focus-trap@8.2.2)(vite@packages+vite)(vitepress@2.0.0-alpha.19)(vue@3.5.40)
+        version: 5.0.4(focus-trap@8.2.2)(vite@packages+vite)(vitepress@2.0.0-alpha.18)(vue@3.5.40)
       feed:
         specifier: ^6.0.0
         version: 6.0.0
       markdown-it-image-size:
-        specifier: ^15.1.0
-        version: 15.1.0(markdown-it@14.3.0)
+        specifier: ^15.2.0
+        version: 15.2.0(markdown-it@14.3.0)
       oxc-minify:
         specifier: ^0.142.0
         version: 0.142.0
       vitepress:
-        specifier: ^2.0.0-alpha.19
-        version: 2.0.0-alpha.19(postcss@8.5.25)(typescript@6.0.3)
+        specifier: 2.0.0-alpha.18
+        version: 2.0.0-alpha.18(postcss@8.5.25)(typescript@6.0.3)
       vitepress-plugin-graphviz:
         specifier: ^0.1.0
-        version: 0.1.0(vitepress@2.0.0-alpha.19)
+        version: 0.1.0(vitepress@2.0.0-alpha.18)
       vitepress-plugin-group-icons:
         specifier: ^1.7.6
         version: 1.7.6(vite@packages+vite)
@@ -6440,11 +6440,11 @@ packages:
   mark.js@8.11.1:
     resolution: {integrity: sha512-1I+1qpDt4idfgLQG+BNWmrqku+7/2bi5nLf4YwF8y8zXvmfiTBY3PV3ZibfrjBueCByROpuBjLLFCajqkgYoLQ==}
 
-  markdown-it-image-size@15.1.0:
-    resolution: {integrity: sha512-irLIyVV9Mbdqzr71C804b6QGZdtJ+Jv8F2Pypdlm1A8HtgTEJjNCT01HLVM5JlEd/3xJu9iSgAnyPM0aVeQJ2A==}
+  markdown-it-image-size@15.2.0:
+    resolution: {integrity: sha512-AlSkbOdtfKaUk9KbiKC1dJyrVmpVRauxlnDe1RL3NlWQ68bMpjDL4Wpc9uXutFSNhqdJ2LYdcW81tuyDHc4FxA==}
     engines: {node: '>= 20'}
     peerDependencies:
-      markdown-it: '>= 10 < 15'
+      markdown-it: '>= 10 < 16'
     peerDependenciesMeta:
       markdown-it:
         optional: true
@@ -7995,8 +7995,8 @@ packages:
     resolution: {integrity: sha512-3/L1ceexjpJirWWGlfvqx2hmaDTFGSkSHrn3y2C7RZm6lNa/vmvU49Ayr4GxLYQfOFfo9CP6rsWdD+6rEbnIxA==}
     engines: {node: '>=18'}
 
-  vitepress@2.0.0-alpha.19:
-    resolution: {integrity: sha512-WnBsb0Bwr43kXKyiis+lld/7ri3hnMbthS8N3hpFtjjwsdLO4IRmiAE08D7aud4q6oMDf9uwRowxzNqRFe/amw==}
+  vitepress@2.0.0-alpha.18:
+    resolution: {integrity: sha512-Lk1G2/QqSf+MwNLICl9fmzWOtoCEwjZoWgaQy41QvWTfcGpLE9XwJDbcCyES/9rj6R2g1zFqFvLVkYKLLDALFw==}
     hasBin: true
     peerDependencies:
       markdown-it-mathjax3: ^4
@@ -10800,7 +10800,7 @@ snapshots:
 
   '@voidzero-dev/vite-task-client@0.2.0': {}
 
-  '@voidzero-dev/vitepress-theme@5.0.4(focus-trap@8.2.2)(vite@packages+vite)(vitepress@2.0.0-alpha.19)(vue@3.5.40)':
+  '@voidzero-dev/vitepress-theme@5.0.4(focus-trap@8.2.2)(vite@packages+vite)(vitepress@2.0.0-alpha.18)(vue@3.5.40)':
     dependencies:
       '@docsearch/css': 4.7.0
       '@docsearch/js': 4.7.0
@@ -10817,7 +10817,7 @@ snapshots:
       minisearch: 7.2.0
       reka-ui: 2.9.0(vue@3.5.40)
       tailwindcss: 4.3.3
-      vitepress: 2.0.0-alpha.19(postcss@8.5.25)(typescript@6.0.3)
+      vitepress: 2.0.0-alpha.18(postcss@8.5.25)(typescript@6.0.3)
       vue: 3.5.40(typescript@6.0.3)
     transitivePeerDependencies:
       - '@vue/composition-api'
@@ -12416,7 +12416,7 @@ snapshots:
 
   mark.js@8.11.1: {}
 
-  markdown-it-image-size@15.1.0(markdown-it@14.3.0):
+  markdown-it-image-size@15.2.0(markdown-it@14.3.0):
     dependencies:
       '@types/markdown-it': 14.1.2
       flat-cache: 6.1.20
@@ -14248,10 +14248,10 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  vitepress-plugin-graphviz@0.1.0(vitepress@2.0.0-alpha.19):
+  vitepress-plugin-graphviz@0.1.0(vitepress@2.0.0-alpha.18):
     dependencies:
       '@hpcc-js/wasm-graphviz': 1.21.2
-      vitepress: 2.0.0-alpha.19(postcss@8.5.25)(typescript@6.0.3)
+      vitepress: 2.0.0-alpha.18(postcss@8.5.25)(typescript@6.0.3)
 
   vitepress-plugin-group-icons@1.7.6(vite@packages+vite):
     dependencies:
@@ -14280,7 +14280,7 @@ snapshots:
     transitivePeerDependencies:
       - ms
 
-  vitepress@2.0.0-alpha.19(postcss@8.5.25)(typescript@6.0.3):
+  vitepress@2.0.0-alpha.18(postcss@8.5.25)(typescript@6.0.3):
     dependencies:
       '@docsearch/css': 4.7.0
       '@docsearch/js': 4.7.0
