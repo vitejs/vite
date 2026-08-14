@@ -180,6 +180,14 @@ export function nodeIsElement(
   return node.nodeName[0] !== '#'
 }
 
+function isAttrValue(
+  attr: Token.Attribute,
+  name: string,
+  value: string,
+): boolean {
+  return attr.name === name && attr.value.toLowerCase() === value
+}
+
 function traverseNodes(
   node: DefaultTreeAdapterMap['node'],
   visitor: (node: DefaultTreeAdapterMap['node']) => void,
@@ -1214,19 +1222,15 @@ export function preImportMapHook(
       const { nodeName, attrs } = node
       if (
         nodeName === 'script' &&
-        attrs.some((attr) => attr.name === 'type' && attr.value === 'importmap')
+        attrs.some((attr) => isAttrValue(attr, 'type', 'importmap'))
       ) {
         importMapIndex = node.sourceCodeLocation!.startTag!.startOffset
       } else if (
         importMapAppendIndex < 0 &&
         ((nodeName === 'script' &&
-          attrs.some(
-            (attr) => attr.name === 'type' && attr.value === 'module',
-          )) ||
+          attrs.some((attr) => isAttrValue(attr, 'type', 'module'))) ||
           (nodeName === 'link' &&
-            attrs.some(
-              (attr) => attr.name === 'rel' && attr.value === 'modulepreload',
-            )))
+            attrs.some((attr) => isAttrValue(attr, 'rel', 'modulepreload'))))
       ) {
         importMapAppendIndex = node.sourceCodeLocation!.startTag!.startOffset
       }
@@ -1307,7 +1311,7 @@ export function postImportMapHook(
       const { nodeName, attrs, sourceCodeLocation } = node
       if (
         nodeName === 'script' &&
-        attrs.some((attr) => attr.name === 'type' && attr.value === 'importmap')
+        attrs.some((attr) => isAttrValue(attr, 'type', 'importmap'))
       ) {
         hasImportMap = true
         if (importMapAppendIndex >= 0) {
@@ -1320,13 +1324,9 @@ export function postImportMapHook(
       } else if (
         importMapAppendIndex < 0 &&
         ((nodeName === 'script' &&
-          attrs.some(
-            (attr) => attr.name === 'type' && attr.value === 'module',
-          )) ||
+          attrs.some((attr) => isAttrValue(attr, 'type', 'module'))) ||
           (nodeName === 'link' &&
-            attrs.some(
-              (attr) => attr.name === 'rel' && attr.value === 'modulepreload',
-            )))
+            attrs.some((attr) => isAttrValue(attr, 'rel', 'modulepreload'))))
       ) {
         importMapAppendIndex = node.sourceCodeLocation!.startTag!.startOffset
       }
