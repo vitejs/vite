@@ -821,7 +821,6 @@ export function parseSrcset(string: string): ImageCandidate[] {
   const matches = string
     .trim()
     .replace(escapedSpaceCharacters, ' ')
-    .replace(/\r?\n/, '')
     .replace(/,\s+/, ', ')
     .replaceAll(/\s+/g, ' ')
     .matchAll(imageCandidateRegex)
