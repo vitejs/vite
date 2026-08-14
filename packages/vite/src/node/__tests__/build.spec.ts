@@ -1489,6 +1489,102 @@ test('watch rebuild manifest', async (ctx) => {
   `)
 })
 
+test('environment.manifest is populated when build.manifest is disabled without emitting a file', async () => {
+  const root = resolve(dirname, 'fixtures/watch-rebuild-manifest')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'error',
+    environments: {
+      client: {
+        build: {
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    build: {
+      write: false,
+      manifest: false,
+    },
+  })
+
+  const environment = builder.environments.client
+  const result = (await builder.build(environment)) as RolldownOutput
+
+  // the manifest file should not be emitted
+  expect(
+    result.output.find((o) => o.fileName === '.vite/manifest.json'),
+  ).toBeUndefined()
+
+  // but the manifest should be available on the environment
+  expect(environment.manifest).toBeDefined()
+  expect(Object.keys(environment.manifest!)).toMatchInlineSnapshot(`
+    [
+      "dep.js",
+      "entry.js",
+    ]
+  `)
+})
+
+test('environment.manifest matches the emitted manifest file when build.manifest is enabled', async () => {
+  const root = resolve(dirname, 'fixtures/watch-rebuild-manifest')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'error',
+    environments: {
+      client: {
+        build: {
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    build: {
+      write: false,
+      manifest: true,
+    },
+  })
+
+  const environment = builder.environments.client
+  const result = (await builder.build(environment)) as RolldownOutput
+
+  const manifestFile = result.output.find(
+    (o) => o.fileName === '.vite/manifest.json',
+  )
+  expect(manifestFile).toBeDefined()
+  expect(environment.manifest).toEqual(JSON.parse((manifestFile as any).source))
+})
+
+test('environment.manifest is populated for the ssr environment', async () => {
+  const root = resolve(dirname, 'fixtures/watch-rebuild-manifest')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'error',
+    environments: {
+      ssr: {
+        build: {
+          ssr: true,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    build: {
+      write: false,
+      manifest: false,
+    },
+  })
+
+  const environment = builder.environments.ssr
+  await builder.build(environment)
+
+  expect(environment.manifest).toBeDefined()
+  expect(Object.keys(environment.manifest!)).toContain('entry.js')
+})
+
 test('copies public directory after building same environment with write false first', async (ctx) => {
   const root = resolve(dirname, 'fixtures/public-dir-write-false')
   ctx.onTestFinished(() =>
