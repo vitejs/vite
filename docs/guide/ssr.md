@@ -121,10 +121,10 @@ export function ssrReload(): Plugin {
         let hasSsrOnlyModules = false
 
         for (const mod of modules) {
-          if (mod.id == null) continue
-          const clientModule =
-            server.environments.client.moduleGraph.getModuleById(mod.id)
-          if (clientModule != null) continue
+          if (mod.file == null) continue
+          const clientModules =
+            server.environments.client.moduleGraph.getModulesByFile(mod.file)
+          if (clientModules != null) continue
 
           this.environment.moduleGraph.invalidateModule(
             mod,
