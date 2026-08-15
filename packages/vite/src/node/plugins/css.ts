@@ -2907,6 +2907,13 @@ const makeLessWorker = (
         rootFile: string,
       ): Less.Plugin => {
         const { FileManager } = less
+        if (!FileManager) {
+          throw new Error(
+            'The installed version of "less" does not expose the "FileManager" plugin API, ' +
+              'which Vite needs to resolve `@import`s. It was removed in Less 5. ' +
+              'Install "less@^4" to use Less with Vite.',
+          )
+        }
         ViteLessManager ??= class ViteManager extends FileManager {
           rootFile
           constructor(rootFile: string) {
