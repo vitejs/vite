@@ -63,7 +63,7 @@ vite build [root]
 | `-w, --watch`                  | Rebuilds when modules have changed on disk (`boolean`)                                                                                                                                |
 | `-c, --config <file>`          | Use specified config file (`string`)                                                                                                                                                  |
 | `--base <path>`                | Public base path (default: `/`) (`string`)                                                                                                                                            |
-| `-l, --logLevel <level>`       | Info \| warn \| error \| silent (`string`)                                                                                                                                            |
+| `-l, --logLevel <level>`       | info \| warn \| error \| silent (`string`)                                                                                                                                            |
 | `--clearScreen`                | Allow/disable clear screen when logging (`boolean`)                                                                                                                                   |
 | `--configLoader <loader>`      | Use `bundle` to bundle the config with Rolldown, or `runner` (experimental) to process it on the fly, or `native` (experimental) to load using the native runtime (default: `bundle`) |
 | `--profile`                    | Start built-in Node.js inspector (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks))                                                                    |
@@ -94,7 +94,7 @@ vite optimize [root]
 | `--force`                 | Force the optimizer to ignore the cache and re-bundle (`boolean`)                                                                                                                     |
 | `-c, --config <file>`     | Use specified config file (`string`)                                                                                                                                                  |
 | `--base <path>`           | Public base path (default: `/`) (`string`)                                                                                                                                            |
-| `-l, --logLevel <level>`  | Info \| warn \| error \| silent (`string`)                                                                                                                                            |
+| `-l, --logLevel <level>`  | info \| warn \| error \| silent (`string`)                                                                                                                                            |
 | `--clearScreen`           | Allow/disable clear screen when logging (`boolean`)                                                                                                                                   |
 | `--configLoader <loader>` | Use `bundle` to bundle the config with Rolldown, or `runner` (experimental) to process it on the fly, or `native` (experimental) to load using the native runtime (default: `bundle`) |
 | `-d, --debug [feat]`      | Show debug logs (`string \| boolean`)                                                                                                                                                 |
@@ -125,7 +125,7 @@ vite preview [root]
 | `--outDir <dir>`          | Output directory (default: `dist`) (`string`)                                                                                                                                         |
 | `-c, --config <file>`     | Use specified config file (`string`)                                                                                                                                                  |
 | `--base <path>`           | Public base path (default: `/`) (`string`)                                                                                                                                            |
-| `-l, --logLevel <level>`  | Info \| warn \| error \| silent (`string`)                                                                                                                                            |
+| `-l, --logLevel <level>`  | info \| warn \| error \| silent (`string`)                                                                                                                                            |
 | `--clearScreen`           | Allow/disable clear screen when logging (`boolean`)                                                                                                                                   |
 | `--configLoader <loader>` | Use `bundle` to bundle the config with Rolldown, or `runner` (experimental) to process it on the fly, or `native` (experimental) to load using the native runtime (default: `bundle`) |
 | `-d, --debug [feat]`      | Show debug logs (`string \| boolean`)                                                                                                                                                 |
