@@ -77,16 +77,4 @@ describe('fixture', async () => {
       `[Error: In virtual modules, all globs must start with '/']`,
     )
   })
-
-  it('transform with restoreQueryExtension', async () => {
-    const id = resolve(import.meta.dirname, './fixture-a/index.ts')
-    const code = (await transformWithOxc(await fs.readFile(id, 'utf-8'), id))
-      .code
-
-    expect(
-      (
-        await transformGlobImport(code, id, root, resolveId, true)
-      )?.s.toString(),
-    ).toMatchSnapshot()
-  })
 })

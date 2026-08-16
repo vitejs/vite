@@ -593,13 +593,6 @@ export interface FutureOptions {
 
 export interface ExperimentalOptions {
   /**
-   * Append fake `&lang.(ext)` when queries are specified, to preserve the file extension for following plugins to process.
-   *
-   * @experimental
-   * @default false
-   */
-  importGlobRestoreExtension?: boolean
-  /**
    * Allow finegrain control over assets and public files paths
    *
    * @experimental
@@ -874,7 +867,6 @@ const configDefaults = Object.freeze({
   },
   /** @experimental */
   experimental: {
-    importGlobRestoreExtension: false,
     renderBuiltUrl: undefined,
     hmrPartialAccept: false,
     bundledDev: false,
