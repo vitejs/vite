@@ -556,6 +556,28 @@ const config = defineConfig({
           import.meta.dirname,
           'theme/components/TopBanner.vue',
         ),
+        // Keep language subdomain links in the current tab (vitejs/vite#21112).
+        // Mirrors vuejs/vitepress#5158; VoidZero theme still vendors pre-fix VPLink.
+        '@vp-default/VPLink.vue': path.resolve(
+          import.meta.dirname,
+          'theme/components/VPLink.vue',
+        ),
+        '@vp-default/VPMenuLink.vue': path.resolve(
+          import.meta.dirname,
+          'theme/components/VPMenuLink.vue',
+        ),
+        '@vp-default/VPNavBarTranslations.vue': path.resolve(
+          import.meta.dirname,
+          'theme/components/VPNavBarTranslations.vue',
+        ),
+        '@vp-default/VPNavBarExtra.vue': path.resolve(
+          import.meta.dirname,
+          'theme/components/VPNavBarExtra.vue',
+        ),
+        '@vp-default/VPNavScreenTranslations.vue': path.resolve(
+          import.meta.dirname,
+          'theme/components/VPNavScreenTranslations.vue',
+        ),
       },
     },
     plugins: [
