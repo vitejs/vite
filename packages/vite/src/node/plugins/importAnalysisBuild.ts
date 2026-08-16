@@ -265,10 +265,46 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
   const renderBuiltUrl = config.experimental.renderBuiltUrl
   const isRelativeBase = config.base === './' || config.base === ''
 
+  // Per-environment import graphs recorded during renderChunk so
+  // augmentChunkHash can include preload-dep *membership* in the chunk
+  // hash. With `build.chunkImportMap`, generateBundle substitutes
+  // `__VITE_PRELOAD__` after hashing, so a graph change that only
+  // alters the injected `__vite__mapDeps` array would otherwise reuse
+  // a content-hashed filename for different bytes (#23225).
+  type ChunkImportGraph = {
+    fileNameToName: Map<string, string>
+    nameToDeps: Map<string, string[]>
+  }
+  const chunkImportGraphs = new Map<string, ChunkImportGraph>()
+
+  const getChunkImportGraph = (environmentName: string): ChunkImportGraph => {
+    let graph = chunkImportGraphs.get(environmentName)
+    if (!graph) {
+      graph = { fileNameToName: new Map(), nameToDeps: new Map() }
+      chunkImportGraphs.set(environmentName, graph)
+    }
+    return graph
+  }
+
   const plugin: Plugin = {
     name: 'vite:build-import-analysis',
 
-    renderChunk(code, _, { format }) {
+    buildStart() {
+      chunkImportGraphs.set(this.environment.name, {
+        fileNameToName: new Map(),
+        nameToDeps: new Map(),
+      })
+    },
+
+    renderChunk(code, chunk, { format }) {
+      if (this.environment.config.build.chunkImportMap) {
+        const graph = getChunkImportGraph(this.environment.name)
+        graph.fileNameToName.set(chunk.fileName, chunk.name)
+        graph.nameToDeps.set(chunk.name, [
+          ...new Set([...chunk.imports, ...chunk.dynamicImports]),
+        ])
+      }
+
       // make sure we only perform the preload logic in modern builds.
       if (code.includes(isModernFlag)) {
         const re = new RegExp(isModernFlag, 'g')
@@ -281,6 +317,25 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         }
       }
       return null
+    },
+
+    augmentChunkHash(chunk) {
+      if (!this.environment.config.build.chunkImportMap) return
+      const graph = chunkImportGraphs.get(this.environment.name)
+      if (!graph) return
+
+      const collected = new Set<string>()
+      const visit = (name: string) => {
+        if (collected.has(name)) return
+        collected.add(name)
+        for (const fileName of graph.nameToDeps.get(name) ?? []) {
+          const depName = graph.fileNameToName.get(fileName)
+          if (depName) visit(depName)
+        }
+      }
+      visit(chunk.name)
+      if (collected.size <= 1) return
+      return [...collected].sort().join('\0')
     },
 
     async generateBundle(opts, bundle) {
