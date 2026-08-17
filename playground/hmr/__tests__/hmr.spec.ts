@@ -351,20 +351,15 @@ if (!isBuild) {
       .toMatch('child updated')
   })
 
-  // bundled dev: the invalidate inside the circular import ends in a full
-  // page reload instead of a hot update
-  test.skipIf(isBundledDev)(
-    'invalidate in circular dep should be hot updated if possible',
-    async () => {
-      const el = page.locator('.invalidation-circular-deps-handled')
-      await expect.poll(() => el.textContent()).toMatch('child')
-      editFile(
-        'invalidation-circular-deps/invalidate-handled-in-circle/child.js',
-        (code) => code.replace('child', 'child updated'),
-      )
-      await expect.poll(() => el.textContent()).toMatch('child updated')
-    },
-  )
+  test('invalidate in circular dep should be hot updated if possible', async () => {
+    const el = page.locator('.invalidation-circular-deps-handled')
+    await expect.poll(() => el.textContent()).toMatch('child')
+    editFile(
+      'invalidation-circular-deps/invalidate-handled-in-circle/child.js',
+      (code) => code.replace('child', 'child updated'),
+    )
+    await expect.poll(() => el.textContent()).toMatch('child updated')
+  })
 
   // bundled dev: file changes do not run the `hotUpdate` plugin hook, so the
   // plugin's custom events never reach the page
