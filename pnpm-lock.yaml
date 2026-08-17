@@ -6,9 +6,9 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
+  debug: npm:obug@^1.0.2
   rolldown: ~1.2.1
   vite: workspace:*
-  debug: npm:obug@^1.0.2
 
 packageExtensionsChecksum: sha256-TN34VxQ4aEf/0bmMCAf/tyq2fur66+GWTFoIOcaYREE=
 
@@ -22,6 +22,9 @@ patchedDependencies:
   sirv@3.0.2:
     hash: c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95
     path: patches/sirv@3.0.2.patch
+  vitepress:
+    hash: f5a056d993c87f7881e7f489d7e4481d0e8b1ef4de8fff701c5b0123c86dfc27
+    path: patches/vitepress.patch
 
 importers:
 
@@ -133,8 +136,8 @@ importers:
         specifier: ^5.0.6
         version: 5.0.6
       '@voidzero-dev/vitepress-theme':
-        specifier: ^5.0.6
-        version: 5.0.6(focus-trap@8.2.2)(vite@packages+vite)(vitepress@2.0.0-alpha.19)(vue@3.5.40)
+        specifier: 5.0.4
+        version: 5.0.4(focus-trap@8.2.2)(vite@packages+vite)(vitepress@2.0.0-alpha.19)(vue@3.5.40)
       feed:
         specifier: ^6.0.0
         version: 6.0.0
@@ -146,7 +149,7 @@ importers:
         version: 0.142.0
       vitepress:
         specifier: ^2.0.0-alpha.19
-        version: 2.0.0-alpha.19(postcss@8.5.25)(typescript@6.0.3)
+        version: 2.0.0-alpha.19(patch_hash=f5a056d993c87f7881e7f489d7e4481d0e8b1ef4de8fff701c5b0123c86dfc27)(postcss@8.5.25)(typescript@6.0.3)
       vitepress-plugin-graphviz:
         specifier: ^0.1.0
         version: 0.1.0(vitepress@2.0.0-alpha.19)
@@ -4772,8 +4775,8 @@ packages:
     resolution: {integrity: sha512-y932hw4I0qrdlqbDhOC4VS7mtLad+MtXToSVJIZ79Cd7Ib6p4bRuoTRrx6OeedhdPm2yf9+r8ndlhJjn8LbsxQ==}
     engines: {node: '>=18'}
 
-  '@voidzero-dev/vitepress-theme@5.0.6':
-    resolution: {integrity: sha512-pzACA3+D564tulGW5XSWSaJ8YwghPJCKYJdZtGuMDkqji6xH/TDhvlHr35b1s9fCLeN/ksGTjBaWO9S5uwTvtA==}
+  '@voidzero-dev/vitepress-theme@5.0.4':
+    resolution: {integrity: sha512-sLCs+hAfejOAQP2B92djz1CIOgRmgRuYEwrE2Fu0i55SQu9+VDz/U9snVOEhYcz/RcHgAU6J24SMyZFqWOZGng==}
     peerDependencies:
       vitepress: ^2.0.0-alpha.16
       vue: ^3.5.0
@@ -10800,7 +10803,7 @@ snapshots:
 
   '@voidzero-dev/vite-task-client@0.2.0': {}
 
-  '@voidzero-dev/vitepress-theme@5.0.6(focus-trap@8.2.2)(vite@packages+vite)(vitepress@2.0.0-alpha.19)(vue@3.5.40)':
+  '@voidzero-dev/vitepress-theme@5.0.4(focus-trap@8.2.2)(vite@packages+vite)(vitepress@2.0.0-alpha.19)(vue@3.5.40)':
     dependencies:
       '@docsearch/css': 4.7.0
       '@docsearch/js': 4.7.0
@@ -10817,7 +10820,7 @@ snapshots:
       minisearch: 7.2.0
       reka-ui: 2.9.0(vue@3.5.40)
       tailwindcss: 4.3.3
-      vitepress: 2.0.0-alpha.19(postcss@8.5.25)(typescript@6.0.3)
+      vitepress: 2.0.0-alpha.19(patch_hash=f5a056d993c87f7881e7f489d7e4481d0e8b1ef4de8fff701c5b0123c86dfc27)(postcss@8.5.25)(typescript@6.0.3)
       vue: 3.5.40(typescript@6.0.3)
     transitivePeerDependencies:
       - '@vue/composition-api'
@@ -14251,7 +14254,7 @@ snapshots:
   vitepress-plugin-graphviz@0.1.0(vitepress@2.0.0-alpha.19):
     dependencies:
       '@hpcc-js/wasm-graphviz': 1.21.2
-      vitepress: 2.0.0-alpha.19(postcss@8.5.25)(typescript@6.0.3)
+      vitepress: 2.0.0-alpha.19(patch_hash=f5a056d993c87f7881e7f489d7e4481d0e8b1ef4de8fff701c5b0123c86dfc27)(postcss@8.5.25)(typescript@6.0.3)
 
   vitepress-plugin-group-icons@1.7.6(vite@packages+vite):
     dependencies:
@@ -14280,7 +14283,7 @@ snapshots:
     transitivePeerDependencies:
       - ms
 
-  vitepress@2.0.0-alpha.19(postcss@8.5.25)(typescript@6.0.3):
+  vitepress@2.0.0-alpha.19(patch_hash=f5a056d993c87f7881e7f489d7e4481d0e8b1ef4de8fff701c5b0123c86dfc27)(postcss@8.5.25)(typescript@6.0.3):
     dependencies:
       '@docsearch/css': 4.7.0
       '@docsearch/js': 4.7.0
