@@ -1,5 +1,12 @@
 import { expect, test } from 'vitest'
-import { getBg, isBundled, page, viteTestUrl } from '~utils'
+import {
+  findAssetFile,
+  getBg,
+  isBuild,
+  isBundled,
+  page,
+  viteTestUrl,
+} from '~utils'
 import './tests'
 
 // not included in tests.ts because the lightningcss variant does not use
@@ -11,4 +18,9 @@ test('postcss plugin that injects url() at OnceExit', async () => {
   expect(await getBg(imported)).toMatch(
     isBundled ? /base64/ : '/injected-source/injected-bg.png',
   )
+})
+
+test.runIf(isBuild)('preserves explicit cascade-layer ordering', () => {
+  const css = findAssetFile(/index-[-\w]+\.css$/)
+  expect(css).toContain('@layer vite-layer-order-reset,vite-layer-order-main;')
 })
