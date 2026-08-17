@@ -19,9 +19,9 @@ import {
 } from '~utils'
 
 test('should render', async () => {
-  expect(await page.textContent('.app')).toBe('1')
-  expect(await page.textContent('.dep')).toBe('1')
-  expect(await page.textContent('.nested')).toBe('1')
+  await expect.poll(() => page.textContent('.app')).toBe('1')
+  await expect.poll(() => page.textContent('.dep')).toBe('1')
+  await expect.poll(() => page.textContent('.nested')).toBe('1')
 })
 
 if (!isBuild) {
@@ -72,7 +72,7 @@ if (!isBuild) {
   })
 
   test('self accept', async () => {
-    const el = await page.$('.app')
+    const el = page.locator('.app')
     await untilBrowserLogAfter(
       () =>
         editFile('hmr.ts', (code) =>
@@ -151,7 +151,7 @@ if (!isBuild) {
   })
 
   test('accept dep', async () => {
-    const el = await page.$('.dep')
+    const el = page.locator('.dep')
     await untilBrowserLogAfter(
       () =>
         editFile('hmrDep.js', (code) =>
@@ -198,7 +198,7 @@ if (!isBuild) {
   })
 
   test('nested dep propagation', async () => {
-    const el = await page.$('.nested')
+    const el = page.locator('.nested')
     await untilBrowserLogAfter(
       () =>
         editFile('hmrNestedDep.js', (code) =>
@@ -248,7 +248,7 @@ if (!isBuild) {
   // fails with `no factory for module \`...invalidation/parent.js\``, so the
   // client falls back to a full page reload instead of hot-updating the parent
   test.skipIf(isBundledDev)('invalidate', async () => {
-    const el = await page.$('.invalidation-parent')
+    const el = page.locator('.invalidation-parent')
     await untilBrowserLogAfter(
       () =>
         editFile('invalidation/child.js', (code) =>
@@ -277,7 +277,7 @@ if (!isBuild) {
       page2 = await browser.newPage()
       await page2.goto(viteTestUrl)
 
-      const el = await page.$('.invalidation-parent')
+      const el = page.locator('.invalidation-parent')
       await untilBrowserLogAfter(
         () =>
           editFile('invalidation/child.js', (code) =>
@@ -307,15 +307,15 @@ if (!isBuild) {
     editFile('invalidation/root.js', (code) => code.replace('Init', 'Updated'))
     await page.waitForEvent('load')
     await expect
-      .poll(async () => (await page.$('.invalidation-root')).textContent())
+      .poll(() => page.textContent('.invalidation-root'))
       .toMatch('Updated')
   })
 
   test('soft invalidate', async () => {
-    const el = await page.$('.soft-invalidation')
-    expect(await el.textContent()).toBe(
-      'soft-invalidation/index.js is transformed 1 times. child is bar',
-    )
+    const el = page.locator('.soft-invalidation')
+    await expect
+      .poll(() => el.textContent())
+      .toBe('soft-invalidation/index.js is transformed 1 times. child is bar')
     editFile('soft-invalidation/child.js', (code) =>
       code.replace('bar', 'updated'),
     )
@@ -339,7 +339,7 @@ if (!isBuild) {
   })
 
   test('invalidate in circular dep should not trigger infinite HMR', async () => {
-    const el = await page.$('.invalidation-circular-deps')
+    const el = page.locator('.invalidation-circular-deps')
     await expect.poll(() => el.textContent()).toMatch('child')
     editFile(
       'invalidation-circular-deps/circular-invalidate/child.js',
@@ -356,7 +356,7 @@ if (!isBuild) {
   test.skipIf(isBundledDev)(
     'invalidate in circular dep should be hot updated if possible',
     async () => {
-      const el = await page.$('.invalidation-circular-deps-handled')
+      const el = page.locator('.invalidation-circular-deps-handled')
       await expect.poll(() => el.textContent()).toMatch('child')
       editFile(
         'invalidation-circular-deps/invalidate-handled-in-circle/child.js',
@@ -369,21 +369,21 @@ if (!isBuild) {
   // bundled dev: file changes do not run the `hotUpdate` plugin hook, so the
   // plugin's custom events never reach the page
   test.skipIf(isBundledDev)('plugin hmr handler + custom event', async () => {
-    const el = await page.$('.custom')
+    const el = page.locator('.custom')
     editFile('customFile.js', (code) => code.replace('custom', 'edited2'))
     await expect.poll(() => el.textContent()).toMatch('edited2')
   })
 
   // bundled dev: same missing `hotUpdate` plugin hook as the previous case
   test.skipIf(isBundledDev)('plugin hmr remove custom events', async () => {
-    const el = await page.$('.toRemove')
+    const el = page.locator('.toRemove')
     await expect.poll(() => el.textContent()).toMatch('edited2')
     editFile('customFile.js', (code) => code.replace('edited2', 'custom33'))
     await expect.poll(() => el.textContent()).toMatch('edited2')
   })
 
   test('plugin client-server communication', async () => {
-    const el = await page.$('.custom-communication')
+    const el = page.locator('.custom-communication')
     await expect.poll(() => el.textContent()).toMatch('3')
   })
 
@@ -392,15 +392,13 @@ if (!isBuild) {
     await page.goto(
       viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
     )
-    const el = await page.$('#app')
-    expect(await el.textContent()).toBe('title')
+    const el = page.locator('#app')
+    await expect.poll(() => el.textContent()).toBe('title')
     editFile('unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html', (code) =>
       code.replace('title', 'title2'),
     )
     await page.waitForEvent('load')
-    await expect
-      .poll(async () => (await page.$('#app')).textContent())
-      .toBe('title2')
+    await expect.poll(() => el.textContent()).toBe('title2')
   })
 
   // bundled dev: css is a bundle asset, so an edit does not swap the
@@ -410,8 +408,8 @@ if (!isBuild) {
 
     editFile('global.css', (code) => code.replace('white', 'tomato'))
 
-    const elprev = await page.$('.css-prev')
-    const elpost = await page.$('.css-post')
+    const elprev = page.locator('.css-prev')
+    const elpost = page.locator('.css-post')
     await expect.poll(() => elprev.textContent()).toMatch('param=required')
     await expect.poll(() => elpost.textContent()).toMatch('param=required')
     const textprev = await elprev.textContent()
@@ -428,13 +426,14 @@ if (!isBuild) {
 
     editFile('global.css', (code) => code.replace('tomato', 'white'))
 
-    let el = await page.$('.link-tag-added')
-    await expect.poll(() => el.textContent()).toMatch('yes')
+    await expect
+      .poll(() => page.locator('.link-tag-added').textContent())
+      .toMatch('yes')
+    await expect
+      .poll(() => page.locator('.link-tag-removed').textContent())
+      .toMatch('yes')
 
-    el = await page.$('.link-tag-removed')
-    await expect.poll(() => el.textContent()).toMatch('yes')
-
-    await expect.poll(async () => (await page.$$('link')).length).toBe(1)
+    await expect.poll(() => page.locator('link').count()).toBe(1)
   })
 
   // bundled dev: editing a dynamic import that was never loaded triggers a
@@ -442,20 +441,19 @@ if (!isBuild) {
   test.skipIf(isBundledDev)('not loaded dynamic import', async () => {
     await page.goto(viteTestUrl + '/counter/index.html', { waitUntil: 'load' })
 
-    let btn = await page.$('button')
-    expect(await btn.textContent()).toBe('Counter 0')
+    const btn = page.locator('button')
+    await expect.poll(() => btn.textContent()).toBe('Counter 0')
     await btn.click()
-    expect(await btn.textContent()).toBe('Counter 1')
+    await expect.poll(() => btn.textContent()).toBe('Counter 1')
 
     // Modifying `index.ts` triggers a page reload, as expected
     const indexTsLoadPromise = page.waitForEvent('load')
     editFile('counter/index.ts', (code) => code + '\n')
     await indexTsLoadPromise
-    btn = await page.$('button')
-    expect(await btn.textContent()).toBe('Counter 0')
+    await expect.poll(() => btn.textContent()).toBe('Counter 0')
 
     await btn.click()
-    expect(await btn.textContent()).toBe('Counter 1')
+    await expect.poll(() => btn.textContent()).toBe('Counter 1')
 
     // #7561
     // `dep.ts` defines `import.module.hot.accept` and has not been loaded.
@@ -469,8 +467,7 @@ if (!isBuild) {
       /page\.waitForEvent: Timeout \d+ms exceeded while waiting for event "load"/,
     )
 
-    btn = await page.$('button')
-    expect(await btn.textContent()).toBe('Counter 1')
+    await expect.poll(() => btn.textContent()).toBe('Counter 1')
   })
 
   // #2255
@@ -478,7 +475,7 @@ if (!isBuild) {
   // resets the log the test builds up
   test.skipIf(isBundledDev)('importing reloaded', async () => {
     await page.goto(viteTestUrl)
-    const outputEle = await page.$('.importing-reloaded')
+    const outputEle = page.locator('.importing-reloaded')
     const getOutput = () => {
       return outputEle.innerHTML()
     }
@@ -890,60 +887,48 @@ if (!isBuild) {
   // and editing index.html does not trigger a page reload
   test.skipIf(isBundledDev)('css in html hmr', async () => {
     await page.goto(viteTestUrl)
-    expect(await getBg('.import-image')).toMatch('icon')
+    await expect.poll(() => getBg('.import-image')).toMatch('icon')
     await page.goto(viteTestUrl + '/foo/', { waitUntil: 'load' })
-    expect(await getBg('.import-image')).toMatch('icon')
+    await expect.poll(() => getBg('.import-image')).toMatch('icon')
 
     const loadPromise = page.waitForEvent('load')
     editFile('index.html', (code) => code.replace("url('./icon.png')", ''))
     await loadPromise
-    expect(await getBg('.import-image')).toMatch('')
+    await expect.poll(() => getBg('.import-image')).toMatch('')
   })
 
   // bundled dev: editing an html file does not trigger a page reload
   test.skipIf(isBundledDev)('HTML', async () => {
     await page.goto(viteTestUrl + '/counter/index.html')
-    let btn = await page.$('button')
-    expect(await btn.textContent()).toBe('Counter 0')
+    const btn = page.locator('button')
+    await expect.poll(() => btn.textContent()).toBe('Counter 0')
 
     const loadPromise = page.waitForEvent('load')
     editFile('counter/index.html', (code) =>
       code.replace('Counter', 'Compteur'),
     )
     await loadPromise
-    btn = await page.$('button')
-    expect(await btn.textContent()).toBe('Compteur 0')
+    await expect.poll(() => btn.textContent()).toBe('Compteur 0')
   })
 
   // bundled dev: updates that flow through a plugin virtual module do not
   // reach the page
   test.skipIf(isBundledDev)('handle virtual module updates', async () => {
     await page.goto(viteTestUrl)
-    const el = await page.$('.virtual')
-    expect(await el.textContent()).toBe('[success]0')
+    const el = page.locator('.virtual')
+    await expect.poll(() => el.textContent()).toBe('[success]0')
     editFile('importedVirtual.js', (code) => code.replace('[success]', '[wow]'))
-    await expect
-      .poll(async () => {
-        const el = await page.$('.virtual')
-        return await el.textContent()
-      })
-      .toBe('[wow]0')
+    await expect.poll(() => el.textContent()).toBe('[wow]0')
   })
 
   // bundled dev: `server.moduleGraph` is empty, so the plugin's
   // `reloadModule(virtual module)` call finds nothing to reload
   test.skipIf(isBundledDev)('invalidate virtual module', async () => {
     await page.goto(viteTestUrl)
-    const el = await page.$('.virtual')
-    expect(await el.textContent()).toBe('[wow]0')
-    const btn = await page.$('.virtual-update')
-    btn.click()
-    await expect
-      .poll(async () => {
-        const el = await page.$('.virtual')
-        return await el.textContent()
-      })
-      .toBe('[wow]1')
+    const el = page.locator('.virtual')
+    await expect.poll(() => el.textContent()).toBe('[wow]0')
+    await page.locator('.virtual-update').click()
+    await expect.poll(() => el.textContent()).toBe('[wow]1')
   })
 
   // bundled dev: same virtual-module gap as `handle virtual module updates`
@@ -951,15 +936,10 @@ if (!isBuild) {
     'handle virtual module accept updates',
     async () => {
       await page.goto(viteTestUrl)
-      const el = await page.$('.virtual-dep')
-      expect(await el.textContent()).toBe('0')
+      const el = page.locator('.virtual-dep')
+      await expect.poll(() => el.textContent()).toBe('0')
       editFile('importedVirtual.js', (code) => code.replace('[wow]', '[wow2]'))
-      await expect
-        .poll(async () => {
-          const el = await page.$('.virtual-dep')
-          return await el.textContent()
-        })
-        .toBe('[wow2]0')
+      await expect.poll(() => el.textContent()).toBe('[wow2]0')
     },
   )
 
@@ -968,16 +948,10 @@ if (!isBuild) {
     'invalidate virtual module and accept',
     async () => {
       await page.goto(viteTestUrl)
-      const el = await page.$('.virtual-dep')
-      expect(await el.textContent()).toBe('0')
-      const btn = await page.$('.virtual-update-dep')
-      btn.click()
-      await expect
-        .poll(async () => {
-          const el = await page.$('.virtual-dep')
-          return await el.textContent()
-        })
-        .toBe('[wow2]2')
+      const el = page.locator('.virtual-dep')
+      await expect.poll(() => el.textContent()).toBe('0')
+      await page.locator('.virtual-update-dep').click()
+      await expect.poll(() => el.textContent()).toBe('[wow2]2')
     },
   )
 
@@ -1187,12 +1161,10 @@ if (!isBuild) {
     },
   )
 
-  // bundled dev: `import.meta.hot?.accept` (optional chaining) is not picked
-  // up as an accept call, so the update never applies
-  test.skipIf(isBundledDev)('import.meta.hot?.accept', async () => {
+  test('import.meta.hot?.accept', async () => {
     await page.goto(viteTestUrl)
 
-    const el = await page.$('.optional-chaining')
+    const el = page.locator('.optional-chaining')
     await untilBrowserLogAfter(
       () =>
         editFile(
@@ -1206,15 +1178,13 @@ if (!isBuild) {
 
   test('hmr works for self-accepted module within circular imported files', async () => {
     await page.goto(viteTestUrl + '/self-accept-within-circular/index.html')
-    const el = await page.$('.self-accept-within-circular')
-    expect(await el.textContent()).toBe('c')
+    const el = page.locator('.self-accept-within-circular')
+    await expect.poll(() => el.textContent()).toBe('c')
     const lastServerLogIndex = serverLogs.length
     editFile('self-accept-within-circular/c.js', (code) =>
       code.replace(`export const c = 'c'`, `export const c = 'cc'`),
     )
-    await expect
-      .poll(() => page.textContent('.self-accept-within-circular'))
-      .toBe('cc')
+    await expect.poll(() => el.textContent()).toBe('cc')
     // Should still keep hmr update, but it'll error on the browser-side and will refresh itself.
     expect(
       serverLogs.slice(lastServerLogIndex).map(stripVTControlCharacters),
@@ -1236,10 +1206,10 @@ if (!isBuild) {
     'hmr should not reload if no accepted within circular imported files',
     async () => {
       await page.goto(viteTestUrl + '/circular/index.html')
-      const el = await page.$('.circular')
-      expect(await el.textContent()).toBe(
-        'mod-a -> mod-b -> mod-c -> mod-a (expected error)',
-      )
+      const el = page.locator('.circular')
+      await expect
+        .poll(() => el.textContent())
+        .toBe('mod-a -> mod-b -> mod-c -> mod-a (expected error)')
       editFile('circular/mod-b.js', (code) =>
         code.replace(`mod-b ->`, `mod-b (edited) ->`),
       )
@@ -1252,7 +1222,7 @@ if (!isBuild) {
   // bundled dev: editing an asset file does not push an update to the page
   test.skipIf(isBundledDev)('not inlined assets HMR', async () => {
     await page.goto(viteTestUrl)
-    const el = await page.$('#logo-no-inline')
+    const el = page.locator('#logo-no-inline')
     await untilBrowserLogAfter(
       () =>
         editFile('logo-no-inline.svg', (code) =>
@@ -1268,7 +1238,7 @@ if (!isBuild) {
   // bundled dev: same asset-edit gap as `not inlined assets HMR`
   test.skipIf(isBundledDev)('inlined assets HMR', async () => {
     await page.goto(viteTestUrl)
-    const el = await page.$('#logo')
+    const el = page.locator('#logo')
     await untilBrowserLogAfter(
       () =>
         editFile('logo.svg', (code) =>
@@ -1283,8 +1253,6 @@ if (!isBuild) {
 
   test('CSS HMR with this.addWatchFile', async () => {
     await page.goto(viteTestUrl + '/css-deps/index.html')
-    // poll: under bundled dev the previous test's error recovery can still be
-    // reloading the page when this test starts
     await expect.poll(() => getColor('.css-deps')).toBe('red')
     editFile('css-deps/dep.js', (code) => code.replace(`red`, `green`))
     await expect.poll(() => getColor('.css-deps')).toBe('green')
