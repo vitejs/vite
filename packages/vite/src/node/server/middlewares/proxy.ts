@@ -8,7 +8,13 @@ import type { HttpServer } from '..'
 
 const debug = createDebugger('vite:proxy')
 
-export interface ProxyOptions extends httpProxy.ServerOptions {
+export interface ProxyOptions extends Omit<httpProxy.ServerOptions, 'target'> {
+  /**
+   * proxy target or a function that returns it
+   */
+  target?:
+    | httpProxy.ServerOptions['target']
+    | ((req: http.IncomingMessage) => httpProxy.ServerOptions['target'])
   /**
    * rewrite path
    */
@@ -61,7 +67,11 @@ const rewriteOriginHeader = (
       return
     }
 
-    if (proxyReq.getHeader('origin') && target) {
+    if (
+      proxyReq.getHeader('origin') &&
+      target &&
+      typeof target !== 'function'
+    ) {
       const changedOrigin =
         typeof target === 'object'
           ? `${target.protocol ?? 'http:'}//${target.host}`
@@ -88,7 +98,7 @@ export function proxyMiddleware(
     if (typeof opts === 'string') {
       opts = { target: opts, changeOrigin: true }
     }
-    const proxy = httpProxy.createProxyServer(opts)
+    const proxy = httpProxy.createProxyServer(opts as httpProxy.ServerOptions)
 
     if (opts.configure) {
       opts.configure(proxy, opts)
@@ -144,10 +154,11 @@ export function proxyMiddleware(
       for (const context in proxies) {
         if (doesProxyContextMatchUrl(context, url)) {
           const [proxy, opts] = proxies[context]
+          const target = resolveProxyTarget(opts, req)
           if (
             opts.ws ||
-            opts.target?.toString().startsWith('ws:') ||
-            opts.target?.toString().startsWith('wss:')
+            target?.toString().startsWith('ws:') ||
+            target?.toString().startsWith('wss:')
           ) {
             if (opts.bypass) {
               try {
@@ -177,8 +188,12 @@ export function proxyMiddleware(
             if (opts.rewrite) {
               req.url = opts.rewrite(url)
             }
-            debug?.(`${req.url} -> ws ${opts.target}`)
-            proxy.ws(req, socket, head)
+            debug?.(`${req.url} -> ws ${target}`)
+            if (typeof opts.target === 'function') {
+              proxy.ws(req, socket, head, { target })
+            } else {
+              proxy.ws(req, socket, head)
+            }
             return
           }
         }
@@ -216,7 +231,11 @@ export function proxyMiddleware(
           }
         }
 
-        debug?.(`${req.url} -> ${opts.target || opts.forward}`)
+        const target = resolveProxyTarget(opts, req)
+        if (typeof opts.target === 'function') {
+          options.target = target
+        }
+        debug?.(`${req.url} -> ${target || opts.forward}`)
         if (opts.rewrite) {
           req.url = opts.rewrite(req.url!)
         }
@@ -226,6 +245,15 @@ export function proxyMiddleware(
     }
     next()
   }
+}
+
+function resolveProxyTarget(
+  options: ProxyOptions,
+  req: http.IncomingMessage,
+): httpProxy.ServerOptions['target'] {
+  return typeof options.target === 'function'
+    ? options.target(req)
+    : options.target
 }
 
 function doesProxyContextMatchUrl(context: string, url: string): boolean {
