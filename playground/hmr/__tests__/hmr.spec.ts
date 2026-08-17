@@ -471,8 +471,8 @@ if (!isBuild) {
   })
 
   // #2255
-  // bundled dev: the edits cause an unexpected full page reload, which
-  // resets the log the test builds up
+  // bundled dev: the test passes on its own, but its edits queue stray page
+  // reloads that swallow a later hot update (`import.meta.hot?.accept` times out)
   test.skipIf(isBundledDev)('importing reloaded', async () => {
     await page.goto(viteTestUrl)
     const outputEle = page.locator('.importing-reloaded')
@@ -911,8 +911,9 @@ if (!isBuild) {
     await expect.poll(() => btn.textContent()).toBe('Compteur 0')
   })
 
-  // bundled dev: updates that flow through a plugin virtual module do not
-  // reach the page
+  // bundled dev: the update itself applies via HMR, but the edit also queues
+  // stray page reloads that swallow a later hot update
+  // (`import.meta.hot?.accept` times out)
   test.skipIf(isBundledDev)('handle virtual module updates', async () => {
     await page.goto(viteTestUrl)
     const el = page.locator('.virtual')
@@ -931,7 +932,7 @@ if (!isBuild) {
     await expect.poll(() => el.textContent()).toBe('[wow]1')
   })
 
-  // bundled dev: same virtual-module gap as `handle virtual module updates`
+  // bundled dev: same stray-reload fallout as `handle virtual module updates`
   test.skipIf(isBundledDev)(
     'handle virtual module accept updates',
     async () => {
