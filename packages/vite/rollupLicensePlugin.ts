@@ -12,7 +12,7 @@ export default function licensePlugin(
 ): Plugin {
   const originalPlugin = license({
     thirdParty(dependencies) {
-      // https://github.com/rollup/rollup/blob/master/build-plugins/generate-license-file.js
+      // https://github.com/rollup/rollup/blob/master/build-plugins/generate-license-file.ts
       // MIT Licensed https://github.com/rollup/rollup/blob/master/LICENSE-CORE.md
       const coreLicense = fs.readFileSync(
         new URL('../../LICENSE', import.meta.url),

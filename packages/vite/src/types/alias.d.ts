@@ -1,5 +1,5 @@
 /**
-Types from https://github.com/rollup/plugins/blob/master/packages/alias/types/index.d.ts
+Types from https://github.com/rollup/plugins/blob/master/packages/alias/src/index.ts
 Inlined because the plugin is bundled.
 
 https://github.com/rollup/plugins/blob/master/LICENSE
