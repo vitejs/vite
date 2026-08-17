@@ -157,6 +157,9 @@ export interface BuildEnvironmentOptions {
    * a niche browser that comes with most modern JavaScript features
    * but has poor CSS support, e.g. Android WeChat WebView, which
    * doesn't support the #RGBA syntax.
+   * When `build.cssMinify` is `lightningcss` (the default), this
+   * option takes precedence over `css.lightningcss.targets` for the
+   * minification step.
    * @default target
    */
   cssTarget?: EsbuildTarget | false
