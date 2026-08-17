@@ -258,14 +258,14 @@ export function transformMiddleware(
         if (result) {
           const depsOptimizer = environment.depsOptimizer
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
-          const isDep =
-            DEP_VERSION_RE.test(url) || depsOptimizer?.isOptimizedDepUrl(url)
+          const isOptimizedDep = depsOptimizer?.isOptimizedDepUrl(url)
+          const isDep = DEP_VERSION_RE.test(url) || isOptimizedDep
           return send(req, res, result.code, type, {
             etag: result.etag,
             // allow browser to cache npm deps!
             cacheControl: isDep ? 'max-age=31536000,immutable' : 'no-cache',
             headers: server.config.server.headers,
-            map: result.map,
+            map: isOptimizedDep ? { mappings: '' } : result.map,
           })
         }
       }
