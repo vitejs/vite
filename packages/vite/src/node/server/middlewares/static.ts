@@ -125,6 +125,7 @@ export function serveStaticMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
   const dir = server.config.root
+  const dirWithTrailingSlash = withTrailingSlash(dir)
   const serve = sirv(
     dir,
     sirvOptions({
@@ -171,7 +172,7 @@ export function serveStaticMiddleware(
     }
     if (redirectedPathname) {
       // dir is pre-normalized to posix style
-      if (redirectedPathname.startsWith(withTrailingSlash(dir))) {
+      if (redirectedPathname.startsWith(dirWithTrailingSlash)) {
         redirectedPathname = redirectedPathname.slice(dir.length)
       }
     }
