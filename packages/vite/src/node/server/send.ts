@@ -27,6 +27,7 @@ export interface SendOptions {
   cacheControl?: string
   headers?: OutgoingHttpHeaders
   map?: SourceMap | { mappings: '' } | null
+  mapUrl?: string
 }
 
 export function send(
@@ -41,6 +42,7 @@ export function send(
     cacheControl = 'no-cache',
     headers,
     map,
+    mapUrl,
   } = options
 
   if (res.writableEnded) {
@@ -64,7 +66,13 @@ export function send(
   }
 
   // inject source map reference
-  if (map && 'version' in map && map.mappings) {
+  if (mapUrl && (type === 'js' || type === 'css')) {
+    const sourceMapComment =
+      type === 'js'
+        ? `\n//# sourceMappingURL=${mapUrl}`
+        : `\n/*# sourceMappingURL=${mapUrl} */`
+    content = `${content.toString()}${sourceMapComment}`
+  } else if (map && 'version' in map && map.mappings) {
     if (type === 'js' || type === 'css') {
       content = getCodeWithSourcemap(type, content.toString(), map)
     }

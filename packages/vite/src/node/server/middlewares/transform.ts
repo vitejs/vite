@@ -166,8 +166,17 @@ export function transformMiddleware(
             return next()
           }
           try {
+            const originalUrl = url.replace(/\.map($|\?)/, '$1')
+            const transformedMap = (
+              await environment.moduleGraph.getModuleByUrl(originalUrl)
+            )?.transformResult?.map
+            if (transformedMap && 'version' in transformedMap) {
+              return send(req, res, JSON.stringify(transformedMap), 'json', {
+                headers: server.config.server.headers,
+              })
+            }
             const map = JSON.parse(
-              await fsp.readFile(sourcemapPath, 'utf-8'),
+              await fsp.readFile(cleanUrl(sourcemapPath), 'utf-8'),
             ) as ExistingRawSourceMap
 
             applySourcemapIgnoreList(
@@ -265,7 +274,10 @@ export function transformMiddleware(
             // allow browser to cache npm deps!
             cacheControl: isDep ? 'max-age=31536000,immutable' : 'no-cache',
             headers: server.config.server.headers,
-            map: isOptimizedDep ? { mappings: '' } : result.map,
+            map: result.map,
+            mapUrl: isOptimizedDep
+              ? url.replace(/(\?.*)?$/, '.map$1')
+              : undefined,
           })
         }
       }

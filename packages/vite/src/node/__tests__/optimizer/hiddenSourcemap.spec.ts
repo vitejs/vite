@@ -59,7 +59,9 @@ test('does not inline hidden source maps into optimized dependency responses', a
     ),
   )
   expect(response.status).toBe(200)
-  expect(await response.text()).not.toContain('sourceMappingURL=data:')
+  expect(await response.text()).toMatch(
+    /sourceMappingURL=\/node_modules\/\.vite\/deps\/source-map-dep\.js\.map\?v=/,
+  )
 
   const mapResponse = await fetch(
     new URL('/node_modules/.vite/deps/source-map-dep.js.map', baseUrl),

@@ -35,14 +35,19 @@ async function getDepJs(entry: string, depIdFragment: string) {
   expect(depUrl).toContain('/deps/')
 
   const depRes = await page.request.get(new URL(depUrl, page.url()).href)
-  return depRes.text()
+  return { js: await depRes.text(), url: depRes.url() }
 }
 
-function expectConsoleLogArgumentMapsToOriginalX(
+async function expectConsoleLogArgumentMapsToOriginalX(
   depJs: string,
+  depUrl: string,
   generatedName: string,
 ) {
-  const map = extractSourcemap(depJs)
+  const map = await extractSourcemap(depJs, async (url) => {
+    const mapRes = await page.request.get(new URL(url, depUrl).href)
+    expect(mapRes.status()).toBe(200)
+    return mapRes.text()
+  })
   const depLines = depJs.split('\n')
   const consoleLogCallRE = new RegExp(
     `console[\\w$]*\\.\\s*log[\\w$]*\\(${escapeRegex(generatedName)}\\)`,
@@ -59,9 +64,7 @@ function expectConsoleLogArgumentMapsToOriginalX(
     column: generatedColumn,
   })
 
-  expect(depJs).toMatch(
-    /^\/\/# sourceMappingURL=data:application\/json;base64,/m,
-  )
+  expect(depJs).toMatch(/^\/\/# sourceMappingURL=\S+\.map(?:\?\S+)?$/m)
   expect(position).toMatchObject({
     line: 6,
     column: 16,
@@ -302,10 +305,11 @@ if (!isBuild) {
       expect(depUrl).toContain('.vite/deps')
       const depRes = await page.request.get(new URL(depUrl, page.url()).href)
       const depJs = await depRes.text()
-      expect(depJs).toMatch(
-        /^\/\/# sourceMappingURL=data:application\/json;base64,/m,
-      )
-      const map = extractSourcemap(depJs)
+      const map = await extractSourcemap(depJs, async (url) => {
+        const mapRes = await page.request.get(new URL(url, depRes.url()).href)
+        expect(mapRes.status()).toBe(200)
+        return mapRes.text()
+      })
       expect(map.sourcesContent).toBeDefined()
       expect(map.sourcesContent).not.toContainEqual(
         expect.stringContaining('defineConfig'),
@@ -318,7 +322,7 @@ if (!isBuild) {
   test.skipIf(isBundledDev)(
     'babel-transformed downleveled optimized dep maps to the correct original name',
     async () => {
-      const depJs = await getDepJs(
+      const { js: depJs, url: depUrl } = await getDepJs(
         './optimized-class-field-import-babel.js',
         'test-dep-class-field-sourcemap-babel',
       )
@@ -326,14 +330,14 @@ if (!isBuild) {
       expect(depJs).toContain('x = () => 1')
       expect(depJs).toContain('constructor(_x)')
       expect(depJs).toContain('console.log(_x)')
-      expectConsoleLogArgumentMapsToOriginalX(depJs, '_x')
+      await expectConsoleLogArgumentMapsToOriginalX(depJs, depUrl, '_x')
     },
   )
 
   test.skipIf(isBundledDev)(
     'oxc-transformed downleveled optimized dep maps to the correct original name',
     async () => {
-      const depJs = await getDepJs(
+      const { js: depJs, url: depUrl } = await getDepJs(
         './optimized-class-field-import-oxc.js',
         'test-dep-class-field-sourcemap-oxc',
       )
@@ -341,7 +345,7 @@ if (!isBuild) {
       expect(depJs).toContain('x$$$ = () => 1')
       expect(depJs).toContain('constructor$$$(_x$$$)')
       expect(depJs).toContain('console$$$.log$$$(_x$$$)')
-      expectConsoleLogArgumentMapsToOriginalX(depJs, '_x$$$')
+      await expectConsoleLogArgumentMapsToOriginalX(depJs, depUrl, '_x$$$')
     },
   )
 }
