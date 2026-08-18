@@ -62,7 +62,9 @@ describe('assetImportMetaUrlPlugin', async () => {
   test('static url is constructed off globalThis', async () => {
     expect(
       await transform('new URL("./foo.png", import.meta.url)'),
-    ).toMatchInlineSnapshot(`"new globalThis.URL("/foo.png", '' + import.meta.url)"`)
+    ).toMatchInlineSnapshot(
+      `"new globalThis.URL("/foo.png", '' + import.meta.url)"`,
+    )
   })
 
   test('ignore starting with a variable', async () => {
