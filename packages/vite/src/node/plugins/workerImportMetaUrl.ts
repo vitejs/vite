@@ -283,7 +283,8 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               expStart,
               expEnd,
               // NOTE: add `'' +` to opt-out rolldown's transform: https://github.com/rolldown/rolldown/issues/2745
-              `new URL(/* @vite-ignore */ ${JSON.stringify(builtUrl)}, '' + import.meta.url)`,
+              // NOTE: `globalThis.URL` because a module of its own can export `URL`
+              `new globalThis.URL(/* @vite-ignore */ ${JSON.stringify(builtUrl)}, '' + import.meta.url)`,
             )
           }
         }

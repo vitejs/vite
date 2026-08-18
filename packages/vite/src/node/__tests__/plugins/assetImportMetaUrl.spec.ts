@@ -27,7 +27,7 @@ describe('assetImportMetaUrlPlugin', async () => {
     expect(
       await transform('new URL(`./foo/${dir}/index.js`, import.meta.url)'),
     ).toMatchInlineSnapshot(
-      `"new URL((import.meta.glob("./foo/*/index.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}/index.js\`], import.meta.url)"`,
+      `"new globalThis.URL((import.meta.glob("./foo/*/index.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}/index.js\`], import.meta.url)"`,
     )
   })
 
@@ -35,7 +35,7 @@ describe('assetImportMetaUrlPlugin', async () => {
     expect(
       await transform('new URL(`./foo/${dir}.js`, import.meta.url)'),
     ).toMatchInlineSnapshot(
-      `"new URL((import.meta.glob("./foo/*.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}.js\`], import.meta.url)"`,
+      `"new globalThis.URL((import.meta.glob("./foo/*.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}.js\`], import.meta.url)"`,
     )
   })
 
@@ -43,7 +43,7 @@ describe('assetImportMetaUrlPlugin', async () => {
     expect(
       await transform('new URL(`./foo/${dir}${file}.js`, import.meta.url)'),
     ).toMatchInlineSnapshot(
-      `"new URL((import.meta.glob("./foo/*.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}\${file}.js\`], import.meta.url)"`,
+      `"new globalThis.URL((import.meta.glob("./foo/*.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}\${file}.js\`], import.meta.url)"`,
     )
   })
 
@@ -53,8 +53,16 @@ describe('assetImportMetaUrlPlugin', async () => {
         'new URL(`./foo/${dir}${dir2}/index.js`, import.meta.url)',
       ),
     ).toMatchInlineSnapshot(
-      `"new URL((import.meta.glob("./foo/*/index.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}\${dir2}/index.js\`], import.meta.url)"`,
+      `"new globalThis.URL((import.meta.glob("./foo/*/index.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}\${dir2}/index.js\`], import.meta.url)"`,
     )
+  })
+
+  // A module can export a binding named `URL`, which then shadows the global in
+  // the bundled chunk. https://github.com/vitejs/vite/issues/11853
+  test('static url is constructed off globalThis', async () => {
+    expect(
+      await transform('new URL("./foo.png", import.meta.url)'),
+    ).toMatchInlineSnapshot(`"new globalThis.URL("/foo.png", '' + import.meta.url)"`)
   })
 
   test('ignore starting with a variable', async () => {
