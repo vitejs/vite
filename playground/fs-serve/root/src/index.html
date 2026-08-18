@@ -33,6 +33,7 @@
 
   const base = typeof BASE !== 'undefined' ? BASE : ''
   const fsBase = joinUrlSegments('/@fs/', ROOT)
+  const dotEnvWindows83ShortName = DOTENV83SHORTNAME
 
   function joinUrlSegments(a, b) {
     if (!a || !b) {
@@ -154,13 +155,26 @@
     },
     // .env with ?import&raw
     { testId: 'unsafe-dotenv-import-raw', path: '/root/src/.env?import&raw' },
+    // .env with NTFS ADS suffix
+    { testId: 'unsafe-dotenv-ntfs-ads', path: '/root/src/.env::$DATA' },
+    // .env with 8.3 short name
+    {
+      testId: 'unsafe-dotenv-83-short-name',
+      path:
+        dotEnvWindows83ShortName === undefined
+          ? false
+          : `/root/src/${dotEnvWindows83ShortName}`,
+    },
   ]
   const variants = {
     '': (path) =>
-      path.startsWith('/root/')
-        ? joinUrlSegments(base, path.replace(/^\/root/, ''))
-        : false,
-    '-fs': (path) => joinUrlSegments(base, fsBase + path),
+      path === false
+        ? path
+        : path.startsWith('/root/')
+          ? joinUrlSegments(base, path.replace(/^\/root/, ''))
+          : false,
+    '-fs': (path) =>
+      path === false ? path : joinUrlSegments(base, fsBase + path),
   }
 
   for (const { testId, path } of paths) {

@@ -27,8 +27,8 @@ function obtainLightningCssAst(filename) {
   }
 }
 
-/** @returns {import('lightningcss').Visitor} */
-export function testDirDep() {
+/** @type {import('lightningcss').VisitorFunction<{}>} */
+export function testDirDep({ addDependency }) {
   /** @type {string[]} */
   let currentStyleSheetSources
   return {
@@ -43,11 +43,11 @@ export function testDirDep() {
           const pattern = normalizePath(
             path.resolve(path.dirname(from), './glob-dep/**/*.css'),
           )
-          // FIXME: there's no way to add a dependency
           const files = globSync(pattern, {
             expandDirectories: false,
             absolute: true,
           })
+          addDependency({ type: 'glob', glob: pattern })
           return files.flatMap((file) => obtainLightningCssAst(file).rules)
         },
       },

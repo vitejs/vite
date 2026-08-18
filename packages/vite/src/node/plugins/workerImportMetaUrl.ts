@@ -11,7 +11,11 @@ import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
 import { cleanUrl, slash } from '../../shared/utils'
 import type { WorkerType } from './worker'
-import { WORKER_FILE_ID, workerFileToUrl } from './worker'
+import {
+  WORKER_FILE_ID,
+  emitWorkerAssetsForBundledDev,
+  workerFileToUrl,
+} from './worker'
 import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
 import type { InternalResolveOptions } from './resolve'
 import { tryFsResolve } from './resolve'
@@ -185,7 +189,6 @@ export const workerImportMetaUrlRE: RegExp =
   /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\))/dg
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
-  const isBundled = config.isBundled
   let workerResolver: ResolveIdFn
 
   const fsResolveOptions: InternalResolveOptions = {
@@ -207,6 +210,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     transform: {
       filter: { code: workerImportMetaUrlRE },
       async handler(code, id) {
+        const isBundled = this.environment.config.isBundled
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
         const re = new RegExp(workerImportMetaUrlRE)
@@ -256,10 +260,8 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             let builtUrl: string
             if (isBundled) {
               const result = await workerFileToUrl(config, file)
-              if (
-                this.environment.config.command === 'serve' &&
-                this.environment.config.experimental.bundledDev
-              ) {
+              if (this.environment.config.command === 'serve') {
+                emitWorkerAssetsForBundledDev(this, config)
                 builtUrl = toOutputFilePathInJSForBundledDev(
                   this.environment,
                   result.entryFilename,

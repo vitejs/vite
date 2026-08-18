@@ -129,6 +129,12 @@ export const CLIENT_ENTRY: string = resolve(
   VITE_PACKAGE_DIR,
   'dist/client/client.mjs',
 )
+export const BUNDLED_DEV_CLIENT_ENTRY: string = resolve(
+  VITE_PACKAGE_DIR,
+  'dist/client/bundledDevClient.mjs',
+)
+/** URL filename the bundled-dev server serves the vite client under */
+export const BUNDLED_DEV_CLIENT_FILENAME: string = 'bundledDevClient.mjs'
 export const ENV_ENTRY: string = resolve(
   VITE_PACKAGE_DIR,
   'dist/client/env.mjs',

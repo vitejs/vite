@@ -2,31 +2,29 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
-import { TestCssLinkPlugin } from './css-link/plugin'
+import { TestCssLinkPlugin } from './css-link/plugin.ts'
 
 export default defineConfig(({ command }) => ({
+  input: [
+    path.resolve(import.meta.dirname, './index.html'),
+    ...(command === 'build'
+      ? []
+      : [path.resolve(import.meta.dirname, './missing-import/index.html')]),
+    path.resolve(
+      import.meta.dirname,
+      './unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
+    ),
+    path.resolve(import.meta.dirname, './counter/index.html'),
+    path.resolve(
+      import.meta.dirname,
+      './self-accept-within-circular/index.html',
+    ),
+    path.resolve(import.meta.dirname, './css-deps/index.html'),
+  ],
   experimental: {
     hmrPartialAccept: true,
   },
   build: {
-    rollupOptions: {
-      input: [
-        path.resolve(import.meta.dirname, './index.html'),
-        ...(command === 'build'
-          ? []
-          : [path.resolve(import.meta.dirname, './missing-import/index.html')]),
-        path.resolve(
-          import.meta.dirname,
-          './unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
-        ),
-        path.resolve(import.meta.dirname, './counter/index.html'),
-        path.resolve(
-          import.meta.dirname,
-          './self-accept-within-circular/index.html',
-        ),
-        path.resolve(import.meta.dirname, './css-deps/index.html'),
-      ],
-    },
     assetsInlineLimit(filePath) {
       if (filePath.endsWith('logo-no-inline.svg')) {
         return false

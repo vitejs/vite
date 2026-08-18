@@ -6,6 +6,7 @@ import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
 import {
   convertTargets,
+  createCSSResolvers,
   cssPlugin,
   cssUrlRE,
   getEmptyChunkReplacer,
@@ -15,6 +16,7 @@ import {
   resolveLibCssFilename,
 } from '../../plugins/css'
 import { PartialEnvironment } from '../../baseEnvironment'
+import { normalizePath } from '../../utils'
 
 const dirname = import.meta.dirname
 
@@ -419,6 +421,52 @@ describe('preprocessCSS', () => {
       "
     `)
   })
+
+  test('lightningcss preserves $ in external @import url', async () => {
+    const resolvedConfig = await resolveConfig(
+      {
+        configFile: false,
+        css: { transformer: 'lightningcss' },
+      },
+      'serve',
+    )
+    const result = await preprocessCSS(
+      `@import 'http://example.com/a.css?x=$&y';`,
+      'foo.css',
+      resolvedConfig,
+    )
+    expect(result.code).toContain('http://example.com/a.css?x=$&y')
+  })
+})
+
+// Sass does not consult the `main` field; see
+// https://sass-lang.com/documentation/js-api/classes/nodepackageimporter/
+describe('sass package resolution', () => {
+  const fixtureRoot = path.resolve(dirname, 'fixtures/sass-package-resolution')
+  const importer = path.resolve(fixtureRoot, 'entry.scss')
+
+  async function getSassResolver() {
+    const config = await resolveConfig(
+      { configFile: false, root: fixtureRoot },
+      'serve',
+    )
+    const environment = new PartialEnvironment('client', config)
+    const resolvers = createCSSResolvers(config)
+    return (id: string) => resolvers.sass(environment, id, importer)
+  }
+
+  test('resolves to index.scss at package root, ignoring main field', async () => {
+    const resolve = await getSassResolver()
+    const resolved = await resolve('sass-pkg-with-index')
+    expect(resolved).toBe(
+      normalizePath(
+        path.resolve(
+          fixtureRoot,
+          'node_modules/sass-pkg-with-index/index.scss',
+        ),
+      ),
+    )
+  })
 })
 
 describe('resolveLibCssFilename', () => {
@@ -795,6 +843,31 @@ exports.foo = foo;
 
       //#endregion
       })();"
+    `)
+  })
+
+  test('should inject CSS after the shebang line for es', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `#!/usr/bin/env node
+console.log("foo");`,
+      'es',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "#!/usr/bin/env node
+      injectCSS();console.log("foo");"
+    `)
+  })
+
+  test('should inject CSS at the start for es without shebang', async () => {
+    const result = getInlinedCSSInjectedCode(`console.log("foo");`, 'es')
+    expect(result).toMatchInlineSnapshot(`"injectCSS();console.log("foo");"`)
+  })
+
+  test('should inject CSS for es shebang without trailing newline', async () => {
+    const result = getInlinedCSSInjectedCode(`#!/usr/bin/env node`, 'es')
+    expect(result).toMatchInlineSnapshot(`
+      "#!/usr/bin/env node
+      injectCSS();"
     `)
   })
 })

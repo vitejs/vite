@@ -35,14 +35,6 @@ interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
 }
 
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
-  if (config.isBundled) {
-    return nativeImportGlobPlugin({
-      root: config.root,
-      sourcemap: !!config.build.sourcemap,
-      restoreQueryExtension: config.experimental.importGlobRestoreExtension,
-    })
-  }
-
   const importGlobMaps = new Map<
     Environment,
     Map<string, Array<(file: string) => boolean>>
@@ -50,6 +42,17 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:import-glob',
+    applyToEnvironment(environment) {
+      if (environment.config.isBundled) {
+        return nativeImportGlobPlugin({
+          root: environment.config.root,
+          sourcemap: !!environment.config.build.sourcemap,
+          restoreQueryExtension:
+            environment.config.experimental.importGlobRestoreExtension,
+        })
+      }
+      return true
+    },
     buildStart() {
       importGlobMaps.clear()
     },
@@ -83,11 +86,13 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
             const affirmedMatcher = picomatch(affirmed, {
               noextglob: true,
               dot: !!i.options.exhaustive,
+              nocase: !(i.options.caseSensitive ?? true),
               ignore: i.options.exhaustive ? [] : ['**/node_modules/**'],
             })
             const negatedMatcher = picomatch(negated, {
               noextglob: true,
               dot: !!i.options.exhaustive,
+              nocase: !(i.options.caseSensitive ?? true),
               ignore: i.options.exhaustive ? [] : ['**/node_modules/**'],
             })
 
@@ -134,6 +139,7 @@ const knownOptions = {
   exhaustive: ['boolean'],
   query: ['object', 'string'],
   base: ['string'],
+  caseSensitive: ['boolean'],
 }
 
 const forceDefaultAs = ['raw', 'url']
@@ -447,6 +453,10 @@ export async function transformGlobImport(
           onlyKeys,
           onlyValues,
         }) => {
+          if (!dir && !options.base && isRelative) {
+            throw new Error("In virtual modules, all globs must start with '/'")
+          }
+
           const cwd = getCommonBase(globsResolved) ?? root
           const files = (
             await glob(globsResolved, {
@@ -454,6 +464,7 @@ export async function transformGlobImport(
               cwd,
               dot: !!options.exhaustive,
               expandDirectories: false,
+              caseSensitiveMatch: options.caseSensitive ?? true,
               ignore: options.exhaustive ? [] : ['**/node_modules/**'],
               extglob: false,
             })
@@ -466,10 +477,6 @@ export async function transformGlobImport(
 
           const resolvePaths = (file: string) => {
             if (!dir) {
-              if (!options.base && isRelative)
-                throw new Error(
-                  "In virtual modules, all globs must start with '/'",
-                )
               const importPath = `/${relative(root, file)}`
               let filePath = options.base
                 ? `${relative(posix.join(root, options.base), file)}`
@@ -498,9 +505,6 @@ export async function transformGlobImport(
               )
               if (!filePath.startsWith('./') && !filePath.startsWith('../')) {
                 filePath = `./${filePath}`
-              }
-              if (options.base[0] === '/') {
-                importPath = `/${relative(root, file)}`
               }
             } else if (isRelative) {
               filePath = importPath
@@ -702,7 +706,11 @@ export function getCommonBase(globsResolved: string[]): null | string {
   const dirS = bases[0].split('/')
   for (let i = 0; i < dirS.length; i++) {
     const candidate = dirS.slice(0, i + 1).join('/')
-    if (bases.every((base) => base.startsWith(candidate)))
+    if (
+      bases.every(
+        (base) => base === candidate || base.startsWith(`${candidate}/`),
+      )
+    )
       commonAncestor = candidate
     else break
   }

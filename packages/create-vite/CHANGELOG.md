@@ -1,3 +1,77 @@
+## <small>[9.1.2](https://github.com/vitejs/vite/compare/create-vite%409.1.1...create-vite%409.1.2) (2026-07-30)</small>
+### Features
+
+* update rolldown-related dependencies and use client-side HMR in bundled-dev ([#22961](https://github.com/vitejs/vite/issues/22961)) ([960e9ef](https://github.com/vitejs/vite/commit/960e9efbc1372000caac46cc2f123cef4824e2bb))
+
+### Bug Fixes
+
+* **create-vite:** ignore --eslint for non-React templates instead of crashing ([#23015](https://github.com/vitejs/vite/issues/23015)) ([428d8af](https://github.com/vitejs/vite/commit/428d8af8135626d783f963e3ba9b2378b64f680b))
+* **deps:** update all non-major dependencies ([#22865](https://github.com/vitejs/vite/issues/22865)) ([d4295a9](https://github.com/vitejs/vite/commit/d4295a9ffce428c0e51892373e00c07fccc0498a))
+* **deps:** update all non-major dependencies ([#22921](https://github.com/vitejs/vite/issues/22921)) ([fef682d](https://github.com/vitejs/vite/commit/fef682d3f067d534a559faf6fd9baedda2e9f8f1))
+* **deps:** update all non-major dependencies ([#22985](https://github.com/vitejs/vite/issues/22985)) ([04f345b](https://github.com/vitejs/vite/commit/04f345b37064cd0bba6447eb5c32be5c22162f3d))
+* **deps:** update all non-major dependencies ([#23069](https://github.com/vitejs/vite/issues/23069)) ([4c07b74](https://github.com/vitejs/vite/commit/4c07b74416f859d7e8bdace13409ef2d080edf76))
+* **deps:** update rolldown-related dependencies ([#22922](https://github.com/vitejs/vite/issues/22922)) ([3c345e4](https://github.com/vitejs/vite/commit/3c345e475a5546a1cc6374682af89caebfe9c593))
+
+## <small>[9.1.1](https://github.com/vitejs/vite/compare/create-vite@9.1.0...create-vite@9.1.1) (2026-06-30)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#22734](https://github.com/vitejs/vite/issues/22734)) ([e635f49](https://github.com/vitejs/vite/commit/e635f493faa24930ae637318d6564539bc668e89))
+* **deps:** update all non-major dependencies ([#22804](https://github.com/vitejs/vite/issues/22804)) ([8837400](https://github.com/vitejs/vite/commit/8837400a676a633af1ad6d3746b584d13cf90ecc))
+* **deps:** update rolldown-related dependencies ([#22591](https://github.com/vitejs/vite/issues/22591)) ([2ce6677](https://github.com/vitejs/vite/commit/2ce6677a151c53a019baec32859b646267f9d320))
+
+### Documentation
+
+* add TypeScript tip for WASM ESM integration type errors ([#22773](https://github.com/vitejs/vite/issues/22773)) ([197b68f](https://github.com/vitejs/vite/commit/197b68fd9276b9dfe02f1fb1f98ba338bb50753c))
+
+### Miscellaneous Chores
+
+* **create-vite:** reword linter prompt to "Which linter to use?" ([#22761](https://github.com/vitejs/vite/issues/22761)) ([e347fef](https://github.com/vitejs/vite/commit/e347fef1df224f93207e3ae1513b3ff7eb69ae67))
+
+## [9.1.0](https://github.com/vitejs/vite/compare/create-vite@9.0.7...create-vite@9.1.0) (2026-06-23)
+### Features
+
+* **create-vite:** use `"moduleResolution": "nodenext"` for `tsconfig.node.json` ([#22592](https://github.com/vitejs/vite/issues/22592)) ([fef134a](https://github.com/vitejs/vite/commit/fef134a37d265db82fba06599636a167a6aee59c))
+* **create-vite:** use Oxlint for react templates and add ESLint option ([#22638](https://github.com/vitejs/vite/issues/22638)) ([456901b](https://github.com/vitejs/vite/commit/456901bb64de3f7c116e2c6cc1f9624d131b52f3))
+
+### Bug Fixes
+
+* **create-vite:** remove tsconfig `moduleResolution` option ([#22643](https://github.com/vitejs/vite/issues/22643)) ([689a066](https://github.com/vitejs/vite/commit/689a0669ad926461f3f1b81701cb6c01f7b2bd4a))
+* **deps:** update all non-major dependencies ([#22471](https://github.com/vitejs/vite/issues/22471)) ([98b8163](https://github.com/vitejs/vite/commit/98b81632139d51820f82036e58d6fbbf122b77b3))
+* **deps:** update all non-major dependencies ([#22511](https://github.com/vitejs/vite/issues/22511)) ([2686d7d](https://github.com/vitejs/vite/commit/2686d7d0b722402204d3bcc687a87adea1bcf9fa))
+* **deps:** update all non-major dependencies ([#22637](https://github.com/vitejs/vite/issues/22637)) ([44bb9d9](https://github.com/vitejs/vite/commit/44bb9d95a246011a2fba9a19cadeac4181bef1b4))
+* **deps:** update all non-major dependencies ([#22681](https://github.com/vitejs/vite/issues/22681)) ([f4f0633](https://github.com/vitejs/vite/commit/f4f063382dde0d67b2158374c56443d0bf5c9501))
+
+### Documentation
+
+* **create-vite:** add more flags to help output ([#22431](https://github.com/vitejs/vite/issues/22431)) ([7190cca](https://github.com/vitejs/vite/commit/7190cca9e02a873fa6b635145e04f318ed5f7bf4))
+
+### Miscellaneous Chores
+
+* **deps:** update all non-major dependencies ([#22682](https://github.com/vitejs/vite/issues/22682)) ([8b89729](https://github.com/vitejs/vite/commit/8b89729eee83492a1bd88ecb6ff1c0fd084a9178))
+* **deps:** update rolldown-related dependencies ([#22566](https://github.com/vitejs/vite/issues/22566)) ([3052a67](https://github.com/vitejs/vite/commit/3052a67d9350f4c5076ab1c222c4a21a589cbcdd))
+* remove irrelevant commits from changelog ([#22430](https://github.com/vitejs/vite/issues/22430)) ([6ea3838](https://github.com/vitejs/vite/commit/6ea383859aaf0ef8e673b458f164e84aeb6ff51d))
+
+## <small>[9.0.7](https://github.com/vitejs/vite/compare/create-vite@9.0.6...create-vite@9.0.7) (2026-05-11)</small>
+### Bug Fixes
+
+* **create-vite:** pass react framework to TanStack CLI ([#22397](https://github.com/vitejs/vite/issues/22397)) ([18f0f90](https://github.com/vitejs/vite/commit/18f0f904442cc45bd4b1c83db2627fd5cb0c9937))
+* **deps:** update all non-major dependencies ([#22334](https://github.com/vitejs/vite/issues/22334)) ([672c962](https://github.com/vitejs/vite/commit/672c96288fd5440bbecddc65551e713edeb8d403))
+* **deps:** update all non-major dependencies ([#22382](https://github.com/vitejs/vite/issues/22382)) ([5c0cfcb](https://github.com/vitejs/vite/commit/5c0cfcb83dde2c6e25b6c3215dd622956bf29631))
+* **deps:** update all non-major dependencies ([#22420](https://github.com/vitejs/vite/issues/22420)) ([2be6000](https://github.com/vitejs/vite/commit/2be6000130e3ae2160acc301baa4f7913fbc1f6e))
+
+### Documentation
+
+* **create-vite:** list react-compiler templates in README ([#22347](https://github.com/vitejs/vite/issues/22347)) ([7c3a61f](https://github.com/vitejs/vite/commit/7c3a61f42da6445904e93f0e29e9a2a838fa684a))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency tsdown to ^0.21.10 ([#22333](https://github.com/vitejs/vite/issues/22333)) ([3b51e05](https://github.com/vitejs/vite/commit/3b51e050214c5a817c163838ab8643fe34c7d0c3))
+* **deps:** update rolldown-related dependencies ([#22421](https://github.com/vitejs/vite/issues/22421)) ([66b9eb3](https://github.com/vitejs/vite/commit/66b9eb35188007e0e9a1bd03b4be820016cad60b))
+
+### Tests
+
+* **create-vite:** use short help alias ([#22389](https://github.com/vitejs/vite/issues/22389)) ([994ab66](https://github.com/vitejs/vite/commit/994ab66bc4dc872278d8353d710ffc4bbd881f8d))
+
 ## <small>[9.0.6](https://github.com/vitejs/vite/compare/create-vite@9.0.5...create-vite@9.0.6) (2026-04-23)</small>
 ### Features
 

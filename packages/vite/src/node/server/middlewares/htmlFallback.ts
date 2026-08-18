@@ -4,7 +4,6 @@ import type { Connect } from '#dep-types/connect'
 import { createDebugger, joinUrlSegments } from '../../utils'
 import { cleanUrl } from '../../../shared/utils'
 import type { DevEnvironment } from '../environment'
-import { FullBundleDevEnvironment } from '../environments/fullBundleEnvironment'
 
 const debug = createDebugger('vite:html-fallback')
 
@@ -13,10 +12,7 @@ export function htmlFallbackMiddleware(
   spaFallback: boolean,
   clientEnvironment?: DevEnvironment,
 ): Connect.NextHandleFunction {
-  const memoryFiles =
-    clientEnvironment instanceof FullBundleDevEnvironment
-      ? clientEnvironment.memoryFiles
-      : undefined
+  const memoryFiles = clientEnvironment?.bundledDev?.memoryFiles
 
   function checkFileExists(relativePath: string) {
     return (

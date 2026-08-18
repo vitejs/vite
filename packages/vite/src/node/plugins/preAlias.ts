@@ -26,6 +26,9 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:pre-alias',
     applyToEnvironment(environment) {
+      if (environment.config.isBundled) {
+        return false
+      }
       return !isDepOptimizationDisabled(environment.config.optimizeDeps)
     },
     async resolveId(id, importer, options) {

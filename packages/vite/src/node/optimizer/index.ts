@@ -3,6 +3,7 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
+import { ignoreInput, ignoreOutput } from '@voidzero-dev/vite-task-client'
 import colors from 'picocolors'
 import { init, parse } from 'es-module-lexer'
 import { isDynamicPattern } from 'tinyglobby'
@@ -176,7 +177,7 @@ export interface DepOptimizationConfig {
 export type DepOptimizationOptions = DepOptimizationConfig & {
   /**
    * By default, Vite will crawl your `index.html` to detect dependencies that
-   * need to be pre-bundled. If `build.rollupOptions.input` is specified, Vite
+   * need to be pre-bundled. If `build.rolldownOptions.input` is specified, Vite
    * will crawl those entry points instead.
    *
    * If neither of these fit your needs, you can specify custom entries using
@@ -396,6 +397,14 @@ export async function loadCachedDepOptimizationMetadata(
   }
 
   const depsCacheDir = getDepsCacheDir(environment)
+
+  // When run inside Vite Task, the dep optimizer cache is both read and
+  // written under this directory (metadata + pre-bundled deps). Tell Vite
+  // Task to treat it as neither a build input nor a build output: the
+  // lockfile hash stored in the metadata already drives re-optimization,
+  // and the cache is process-local scratch space, not a build artifact.
+  ignoreInput(depsCacheDir)
+  ignoreOutput(depsCacheDir)
 
   if (!force) {
     let cachedMetadata: DepOptimizationMetadata | undefined
@@ -855,15 +864,17 @@ async function prepareRolldownOptimizerRun(
       await bundle.close()
       throw new Error('The build was canceled')
     }
-    const result = await bundle.write({
-      ...rolldownOptions.output,
-      format: 'esm',
-      sourcemap: true,
-      dir: processingCacheDir,
-      entryFileNames: '[name].js',
-    })
-    await bundle.close()
-    return result
+    try {
+      return await bundle.write({
+        ...rolldownOptions.output,
+        format: 'esm',
+        sourcemap: 'hidden',
+        dir: processingCacheDir,
+        entryFileNames: '[name].js',
+      })
+    } finally {
+      await bundle.close()
+    }
   }
 
   function cancel() {
@@ -1132,15 +1143,19 @@ export async function extractExportsData(
         ...remainingRolldownOptions.moduleTypes,
       },
     })
-    const result = await build.generate({
-      ...rolldownOptions.output,
-      format: 'esm',
-      sourcemap: false,
-    })
-    const [, exports, , hasModuleSyntax] = parse(result.output[0].code)
-    return {
-      hasModuleSyntax,
-      exports: exports.map((e) => e.n),
+    try {
+      const result = await build.generate({
+        ...rolldownOptions.output,
+        format: 'esm',
+        sourcemap: false,
+      })
+      const [, exports, , hasModuleSyntax] = parse(result.output[0].code)
+      return {
+        hasModuleSyntax,
+        exports: exports.map((e) => e.n),
+      }
+    } finally {
+      await build.close()
     }
   }
 
@@ -1156,7 +1171,7 @@ export async function extractExportsData(
       `Unable to parse: ${filePath}.\n Trying again with a ${lang} transform.`,
     )
     if (lang !== 'jsx' && lang !== 'tsx' && lang !== 'ts') {
-      throw new Error(`Unable to parse : ${filePath}.`)
+      throw new Error(`Unable to parse: ${filePath}.`)
     }
     const transformed = await transformWithOxc(
       entryContent,
@@ -1215,6 +1230,12 @@ function isSingleDefaultExport(exports: readonly string[]) {
 
 const lockfileFormats = [
   {
+    path: 'node_modules/.pnpm/lock.yaml',
+    // Included in lockfile
+    checkPatchesDir: false,
+    manager: 'pnpm',
+  },
+  {
     path: 'node_modules/.package-lock.json',
     checkPatchesDir: 'patches',
     manager: 'npm',
@@ -1225,6 +1246,30 @@ const lockfileFormats = [
     checkPatchesDir: false,
     manager: 'yarn',
   },
+  {
+    path: 'bun.lock',
+    checkPatchesDir: 'patches',
+    manager: 'bun',
+  },
+  {
+    path: '.rush/temp/shrinkwrap-deps.json',
+    // Included in lockfile
+    checkPatchesDir: false,
+    manager: 'pnpm',
+  },
+  {
+    path: 'aube-lock.yaml',
+    checkPatchesDir: false,
+    manager: 'aube',
+  },
+  {
+    path: 'nub.lock',
+    checkPatchesDir: 'patches',
+    manager: 'nub',
+  },
+
+  // discouraged package manager lockfiles
+  // or deprecated lockfiles
   {
     // Yarn v3+ PnP
     path: '.pnp.cjs',
@@ -1242,23 +1287,6 @@ const lockfileFormats = [
     path: 'node_modules/.yarn-integrity',
     checkPatchesDir: 'patches',
     manager: 'yarn',
-  },
-  {
-    path: 'node_modules/.pnpm/lock.yaml',
-    // Included in lockfile
-    checkPatchesDir: false,
-    manager: 'pnpm',
-  },
-  {
-    path: '.rush/temp/shrinkwrap-deps.json',
-    // Included in lockfile
-    checkPatchesDir: false,
-    manager: 'pnpm',
-  },
-  {
-    path: 'bun.lock',
-    checkPatchesDir: 'patches',
-    manager: 'bun',
   },
   {
     path: 'bun.lockb',

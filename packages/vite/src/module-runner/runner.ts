@@ -133,37 +133,32 @@ export class ModuleRunner {
     return exports
   }
 
-  private isCircularModule(mod: EvaluatedModuleNode) {
-    for (const importedFile of mod.imports) {
-      if (mod.importers.has(importedFile)) {
-        return true
-      }
-    }
-    return false
-  }
-
-  private isCircularImport(
-    importers: Set<string>,
-    moduleUrl: string,
+  private isCircularRequest(
+    mod: EvaluatedModuleNode,
+    callstack: string[],
     visited = new Set<string>(),
-  ) {
-    for (const importer of importers) {
-      if (visited.has(importer)) {
-        continue
-      }
-      visited.add(importer)
-      if (importer === moduleUrl) {
+  ): boolean {
+    if (visited.has(mod.id)) {
+      return false
+    }
+    visited.add(mod.id)
+
+    for (const importedModuleId of mod.imports) {
+      if (callstack.includes(importedModuleId)) {
         return true
       }
-      const mod = this.evaluatedModules.getModuleById(importer)
+
+      const importedModule =
+        this.evaluatedModules.getModuleById(importedModuleId)
       if (
-        mod &&
-        mod.importers.size &&
-        this.isCircularImport(mod.importers, moduleUrl, visited)
+        importedModule?.promise &&
+        !importedModule.evaluated &&
+        this.isCircularRequest(importedModule, callstack, visited)
       ) {
         return true
       }
     }
+
     return false
   }
 
@@ -176,24 +171,23 @@ export class ModuleRunner {
     const meta = mod.meta!
     const moduleId = meta.id
 
-    const { importers } = mod
-
     const importee = callstack[callstack.length - 1]
 
-    if (importee) importers.add(importee)
+    if (importee) mod.importers.add(importee)
 
     // fast path: already evaluated modules can't deadlock
     if (mod.evaluated && mod.promise) {
       return this.processImport(await mod.promise, meta, metadata)
     }
 
-    // check circular dependency (only for modules still being evaluated)
-    if (
-      callstack.includes(moduleId) ||
-      this.isCircularModule(mod) ||
-      this.isCircularImport(importers, moduleId)
-    ) {
-      if (mod.exports) return this.processImport(mod.exports, meta, metadata)
+    if (mod.promise) {
+      if (
+        mod.exports &&
+        (callstack.includes(moduleId) || this.isCircularRequest(mod, callstack))
+      ) {
+        return this.processImport(mod.exports, meta, metadata)
+      }
+      return this.processImport(await mod.promise, meta, metadata)
     }
 
     let debugTimer: any
@@ -212,10 +206,6 @@ export class ModuleRunner {
     }
 
     try {
-      // cached module (in-progress, not yet evaluated)
-      if (mod.promise)
-        return this.processImport(await mod.promise, meta, metadata)
-
       const promise = this.directRequest(url, mod, callstack)
       mod.promise = promise
       mod.evaluated = false

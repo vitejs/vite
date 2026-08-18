@@ -1,7 +1,19 @@
 import type { DefaultTreeAdapterMap, Token } from 'parse5'
 
-interface HtmlAssetSource {
+/**
+ * Defines which attributes of an HTML element should be treated as asset sources.
+ * Used in `html.additionalAssetSources` configuration.
+ */
+export interface HtmlAssetSource {
+  /**
+   * Attributes that contain a single asset URL.
+   * @example ['src', 'data-src-dark']
+   */
   srcAttributes?: string[]
+  /**
+   * Attributes that contain srcset-format URLs.
+   * @example ['srcset', 'imagesrcset']
+   */
   srcsetAttributes?: string[]
   /**
    * Called before handling an attribute to determine if it should be processed.
@@ -110,9 +122,12 @@ interface HtmlAssetAttribute {
  */
 export function getNodeAssetAttributes(
   node: DefaultTreeAdapterMap['element'],
+  additionalAssetSources?: Record<string, HtmlAssetSource>,
 ): HtmlAssetAttribute[] {
-  const matched = DEFAULT_HTML_ASSET_SOURCES[node.nodeName]
-  if (!matched) return []
+  const defaults = DEFAULT_HTML_ASSET_SOURCES[node.nodeName]
+  const additional = additionalAssetSources?.[node.nodeName]
+
+  if (!defaults && !additional) return []
 
   const attributes: Record<string, string> = {}
   for (const attr of node.attrs) {
@@ -134,15 +149,38 @@ export function getNodeAssetAttributes(
   }
 
   const actions: HtmlAssetAttribute[] = []
-  function handleAttributeKey(key: string, type: 'src' | 'srcset') {
+  function handleAttributeKey(
+    key: string,
+    type: 'src' | 'srcset',
+    filter?: (data: HtmlAssetSourceFilterData) => boolean,
+  ) {
     const value = attributes[key]
     if (!value) return
-    if (matched.filter && !matched.filter({ key, value, attributes })) return
+    if (filter && !filter({ key, value, attributes })) return
     const location = node.sourceCodeLocation!.attrs![key]
     actions.push({ type, key, value, attributes, location })
   }
-  matched.srcAttributes?.forEach((key) => handleAttributeKey(key, 'src'))
-  matched.srcsetAttributes?.forEach((key) => handleAttributeKey(key, 'srcset'))
+
+  // Run matching for default asset sources
+  if (defaults) {
+    defaults.srcAttributes?.forEach((key) =>
+      handleAttributeKey(key, 'src', defaults.filter),
+    )
+    defaults.srcsetAttributes?.forEach((key) =>
+      handleAttributeKey(key, 'srcset', defaults.filter),
+    )
+  }
+
+  // Run matching for additional asset sources
+  if (additional) {
+    additional.srcAttributes?.forEach((key) =>
+      handleAttributeKey(key, 'src', additional.filter),
+    )
+    additional.srcsetAttributes?.forEach((key) =>
+      handleAttributeKey(key, 'srcset', additional.filter),
+    )
+  }
+
   return actions
 }
 

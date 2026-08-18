@@ -9,7 +9,7 @@ export default defineConfig({
   },
   build: {
     sourcemap: true,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         codeSplitting: false,
       },

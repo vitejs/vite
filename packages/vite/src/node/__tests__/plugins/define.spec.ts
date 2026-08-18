@@ -27,6 +27,9 @@ async function createDefinePluginTransform(
       )
       return result?.code || result
     } else {
+      const nativeDefinePlugin = await (
+        definePlugin(config) as any
+      ).applyToEnvironment(environment)
       const bundler = await rolldown({
         input: 'entry.js',
         plugins: [
@@ -45,16 +48,18 @@ async function createDefinePluginTransform(
           },
           {
             name: 'native:define',
-            options: (definePlugin(config).options! as any).bind({
-              environment,
-            }),
+            options: nativeDefinePlugin.options.bind({ environment }),
           },
         ],
         experimental: {
           attachDebugInfo: 'none',
         },
       })
-      return (await bundler.generate()).output[0].code
+      try {
+        return (await bundler.generate()).output[0].code
+      } finally {
+        await bundler.close()
+      }
     }
   }
 }
@@ -83,6 +88,15 @@ describe('definePlugin (SSR dev)', () => {
     expect(
       await transform('export const version = import.meta.SOMETHING'),
     ).toBe(undefined)
+  })
+
+  test('replaces define keys containing `$`', async () => {
+    const transform = await createJsDefinePluginTransform({
+      $FOO: JSON.stringify('bar'),
+    })
+    expect(await transform('export const x = $FOO;')).toBe(
+      'export const x = "bar";\n',
+    )
   })
 
   test('replace import.meta.env when it is a invalid json', async () => {

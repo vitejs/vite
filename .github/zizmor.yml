@@ -1,0 +1,4 @@
+rules:
+  cache-poisoning:
+    ignore:
+      - ci.yml # it is not used for publishing

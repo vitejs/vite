@@ -80,7 +80,7 @@ export interface CommonServerOptions {
    * Set to `true` to allow all methods from any origin, or configure separately
    * using an object.
    *
-   * @default false
+   * @default { origin: /^https?:\/\/(?:(?:[^:]+\.)?localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/ }
    */
   cors?: CorsOptions | boolean
   /**
@@ -164,6 +164,31 @@ async function readFileIfExists(value?: string | Buffer | any[]) {
   return value
 }
 
+// Let the OS select an ephemeral port on the first wildcard interface, then
+// verify that same concrete port is available on every remaining interface.
+async function getAvailableEphemeralPort(
+  specifiedHost: string | undefined,
+): Promise<number | null> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    // Passing 0 asks the OS for a new candidate on every attempt.
+    // We assume that the OS will return a different candidate on every attempt,
+    // which does not always hold true, but it should be fine for most cases.
+    let port = 0
+    let available = true
+    for (const host of [...wildcardHosts, specifiedHost]) {
+      // Gracefully handle errors (e.g., IPv6 disabled on the system)
+      const availablePort = await tryListen(port, host).catch(() => port)
+      if (availablePort == null) {
+        available = false
+        break
+      }
+      port = availablePort
+    }
+    if (available) return port
+  }
+  return null
+}
+
 // Check if a port is available on wildcard addresses (0.0.0.0, ::)
 async function isPortAvailable(port: number): Promise<boolean> {
   for (const host of wildcardHosts) {
@@ -174,14 +199,20 @@ async function isPortAvailable(port: number): Promise<boolean> {
   return true
 }
 
-function tryListen(port: number, host: string): Promise<boolean> {
+function tryListen(
+  port: number,
+  host: string | undefined,
+): Promise<number | null> {
   return new Promise((resolve) => {
     const server = net.createServer()
     server.once('error', (e: NodeJS.ErrnoException) => {
-      server.close(() => resolve(e.code !== 'EADDRINUSE'))
+      server.close(() => resolve(e.code === 'EADDRINUSE' ? null : port))
     })
     server.once('listening', () => {
-      server.close(() => resolve(true))
+      const address = server.address()
+      server.close(() =>
+        resolve(typeof address === 'object' && address ? address.port : port),
+      )
     })
     server.listen(port, host)
   })
@@ -225,6 +256,23 @@ export async function httpServerStart(
   },
 ): Promise<number> {
   const { port: startPort, strictPort, host, logger } = serverOptions
+
+  if (startPort === 0) {
+    const port = await getAvailableEphemeralPort(host)
+    if (port == null) {
+      throw new Error('No available ephemeral port found')
+    }
+
+    const result = await tryBindServer(httpServer, port, host)
+    if (result.success) {
+      return port
+    }
+    if (result.error.code !== 'EADDRINUSE') {
+      throw result.error
+    }
+    // this can happen if the port was listened by other process between getAvailableEphemeralPort and tryBindServer
+    throw new Error(`Port ${port} is already in use`)
+  }
 
   for (let port = startPort; port <= MAX_PORT; port++) {
     // Pre-check port availability on wildcard addresses (0.0.0.0, ::)
@@ -273,19 +321,35 @@ export function setClientErrorHandler(
   logger: Logger,
 ): void {
   server.on('clientError', (err, socket) => {
-    let msg = '400 Bad Request'
-    if ((err as any).code === 'HPE_HEADER_OVERFLOW') {
-      msg = '431 Request Header Fields Too Large'
-      logger.warn(
-        colors.yellow(
-          'Server responded with status code 431. ' +
-            'See https://vite.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.',
-        ),
-      )
+    // https://github.com/nodejs/node/blob/v26.2.0/lib/_http_server.js#L992
+    let msg
+    switch ((err as any).code) {
+      case 'HPE_HEADER_OVERFLOW': {
+        msg = '431 Request Header Fields Too Large'
+        logger.warn(
+          colors.yellow(
+            'Server responded with status code 431. ' +
+              'See https://vite.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.',
+          ),
+        )
+        break
+      }
+      case 'HPE_CHUNK_EXTENSIONS_OVERFLOW': {
+        msg = '413 Payload Too Large'
+        break
+      }
+      case 'ERR_HTTP_REQUEST_TIMEOUT': {
+        msg = '408 Request Timeout'
+        break
+      }
+      default: {
+        msg = '400 Bad Request'
+        break
+      }
     }
     if ((err as any).code === 'ECONNRESET' || !socket.writable) {
       return
     }
-    socket.end(`HTTP/1.1 ${msg}\r\n\r\n`)
+    socket.end(`HTTP/1.1 ${msg}\r\nConnection: close\r\n\r\n`)
   })
 }
