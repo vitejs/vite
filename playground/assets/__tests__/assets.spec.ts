@@ -212,6 +212,15 @@ describe('asset imports from js', () => {
       )
     }
   })
+
+  test('?raw from /public', async () => {
+    expect(await page.textContent('.public-js-raw-import-content'))
+      .toMatchInlineSnapshot(`
+        "document.querySelector('.raw-js').textContent =
+          '[success] Raw js from /public loaded'
+        "
+      `)
+  })
 })
 
 describe('css url() references', () => {
