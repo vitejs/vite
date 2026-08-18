@@ -204,7 +204,6 @@ export class BundledDev {
         // dev server does.
         if (changedFiles.some((file) => isHTMLRequest(file))) {
           debug?.(`TRIGGER: html entry changed, forcing full rebuild`)
-          this.devEngine.triggerFullBuild()
           this.devEngine.ensureLatestBuildOutput().then(
             () => this.debouncedFullReload(),
             () => {},
