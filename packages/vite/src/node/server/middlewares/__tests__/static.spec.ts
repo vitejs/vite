@@ -29,36 +29,36 @@ describe('isFileInTargetPath', () => {
 })
 
 describe('looksLikeWindowsShortNamePath', () => {
-  const shortNamePaths = {
+  const shortNamePaths = [
     // classic 8.3 short names
-    'C:/PROGRA~1/x': true,
-    'C:/PROGRA~1': true,
-    'C:/LONGFI~1.TXT': true,
-    'C:/MICROS~2/foo': true,
+    'C:/PROGRA~1/x',
+    'C:/PROGRA~1',
+    'C:/LONGFI~1.TXT',
+    'C:/MICROS~2/foo',
     // short-name-looking directory ancestor, not just the basename
-    'C:/foo/DOCUME~1/bar.js': true,
-  }
-  const legitimateTildePaths = {
+    'C:/foo/DOCUME~1/bar.js',
+  ]
+  const legitimateTildePaths = [
     // real-world case from the reported issue: `~` not followed by a digit
-    'C:/project/dist/0~rslib-runtime.js': false,
+    'C:/project/dist/0~rslib-runtime.js',
     // ancestor directory containing a tilde that isn't short-name shaped
-    'C:/Users/foo~bar/project/index.js': false,
+    'C:/Users/foo~bar/project/index.js',
     // tilde-prefixed name with no short-name-style prefix/digit suffix
-    'C:/Users/foo/~backup/index.js': false,
+    'C:/Users/foo/~backup/index.js',
     // prefix longer than the 6 characters a short name can have
-    'C:/project/confirmations~2/index.js': false,
+    'C:/project/confirmations~2/index.js',
     // no tilde at all
-    'C:/Users/foo/project/index.js': false,
-  }
+    'C:/Users/foo/project/index.js',
+  ]
 
-  for (const [filePath, expected] of Object.entries(shortNamePaths)) {
-    test(`looksLikeWindowsShortNamePath("${filePath}") is ${expected}`, () => {
-      expect(looksLikeWindowsShortNamePath(filePath)).toBe(expected)
+  for (const filePath of shortNamePaths) {
+    test(`looksLikeWindowsShortNamePath("${filePath}") is true`, () => {
+      expect(looksLikeWindowsShortNamePath(filePath)).toBe(true)
     })
   }
-  for (const [filePath, expected] of Object.entries(legitimateTildePaths)) {
-    test(`looksLikeWindowsShortNamePath("${filePath}") is ${expected}`, () => {
-      expect(looksLikeWindowsShortNamePath(filePath)).toBe(expected)
+  for (const filePath of legitimateTildePaths) {
+    test(`looksLikeWindowsShortNamePath("${filePath}") is false`, () => {
+      expect(looksLikeWindowsShortNamePath(filePath)).toBe(false)
     })
   }
 })
