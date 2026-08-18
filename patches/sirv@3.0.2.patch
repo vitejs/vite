@@ -1,5 +1,5 @@
 diff --git a/build.js b/build.js
-index 3734120d67745ff83b2df07fa5d0a40dcb92a69b..bd57f693ac2bd4555a12e7a5436fb9524789ef66 100644
+index 3734120d67745ff83b2df07fa5d0a40dcb92a69b..3c99eea2034c748929ae2a4626a8df37ee627e11 100644
 --- a/build.js
 +++ b/build.js
 @@ -35,7 +35,7 @@ function viaCache(cache, uri, extns) {
@@ -19,7 +19,48 @@ index 3734120d67745ff83b2df07fa5d0a40dcb92a69b..bd57f693ac2bd4555a12e7a5436fb952
  			headers = toHeaders(name, stats, isEtag);
  			headers['Cache-Control'] = isEtag ? 'no-cache' : 'no-store';
  			return { abs, stats, headers };
-@@ -164,7 +165,7 @@ module.exports = function (dir, opts={}) {
+@@ -57,6 +58,40 @@ function is404(req, res) {
+ 	return (res.statusCode=404,res.end());
+ }
+ 
++function matchesIfNoneMatch(value, etag) {
++	if (!value) return false;
++	if (Array.isArray(value)) value = value.join(',');
++	if (value.trim() === '*') return true;
++
++	let i=0, matched=false;
++	let current = etag.startsWith('W/') ? etag.slice(2) : etag;
++	while (i < value.length) {
++		while (value[i] === ' ' || value[i] === '\t' || value[i] === ',') i++;
++		if (i >= value.length) return matched;
++
++		let start=i;
++		if (value.startsWith('W/', i)) i += 2;
++		if (value[i++] !== '"') return false;
++
++		while (i < value.length && value[i] !== '"') {
++			let code = value.charCodeAt(i++);
++			if (code !== 0x21 && !(code >= 0x23 && code <= 0x7e) && !(code >= 0x80 && code <= 0xff)) {
++				return false;
++			}
++		}
++		if (value[i++] !== '"') return false;
++
++		let candidate = value.slice(start, i);
++		if (candidate.startsWith('W/')) candidate = candidate.slice(2);
++		if (candidate === current) matched = true;
++
++		while (value[i] === ' ' || value[i] === '\t') i++;
++		if (i >= value.length) return matched;
++		if (value[i++] !== ',') return false;
++	}
++	return matched;
++}
++
+ function send(req, res, file, stats, headers) {
+ 	let code=200, tmp, opts={};
+ 	headers = { ...headers };
+@@ -164,7 +199,7 @@ module.exports = function (dir, opts={}) {
  		});
  	}
  
@@ -28,7 +69,7 @@ index 3734120d67745ff83b2df07fa5d0a40dcb92a69b..bd57f693ac2bd4555a12e7a5436fb952
  
  	return function (req, res, next) {
  		let extns = [''];
-@@ -179,7 +180,7 @@ module.exports = function (dir, opts={}) {
+@@ -179,10 +214,10 @@ module.exports = function (dir, opts={}) {
  			catch (err) { /* malform uri */ }
  		}
  
@@ -36,9 +77,13 @@ index 3734120d67745ff83b2df07fa5d0a40dcb92a69b..bd57f693ac2bd4555a12e7a5436fb952
 +		let data = lookup(pathname, extns, opts.shouldServe) || isSPA && !isMatch(pathname, ignores) && lookup(fallback, extns, opts.shouldServe);
  		if (!data) return next ? next() : isNotFound(req, res);
  
- 		if (isEtag && req.headers['if-none-match'] === data.headers['ETag']) {
+-		if (isEtag && req.headers['if-none-match'] === data.headers['ETag']) {
++		if (isEtag && matchesIfNoneMatch(req.headers['if-none-match'], data.headers['ETag'])) {
+ 			res.writeHead(304);
+ 			return res.end();
+ 		}
 diff --git a/build.mjs b/build.mjs
-index 2f866d5216c951ec125f2044af070fa6b530e375..d5335bfbb16e23b57385c1a83226611e29c39093 100644
+index 2f866d5216c951ec125f2044af070fa6b530e375..e1037448096cff13ff1192f381388ece31cbfa7b 100644
 --- a/build.mjs
 +++ b/build.mjs
 @@ -35,7 +35,7 @@ function viaCache(cache, uri, extns) {
@@ -58,7 +103,48 @@ index 2f866d5216c951ec125f2044af070fa6b530e375..d5335bfbb16e23b57385c1a83226611e
  			headers = toHeaders(name, stats, isEtag);
  			headers['Cache-Control'] = isEtag ? 'no-cache' : 'no-store';
  			return { abs, stats, headers };
-@@ -164,7 +165,7 @@ export default function (dir, opts={}) {
+@@ -57,6 +58,40 @@ function is404(req, res) {
+ 	return (res.statusCode=404,res.end());
+ }
+ 
++function matchesIfNoneMatch(value, etag) {
++	if (!value) return false;
++	if (Array.isArray(value)) value = value.join(',');
++	if (value.trim() === '*') return true;
++
++	let i=0, matched=false;
++	let current = etag.startsWith('W/') ? etag.slice(2) : etag;
++	while (i < value.length) {
++		while (value[i] === ' ' || value[i] === '\t' || value[i] === ',') i++;
++		if (i >= value.length) return matched;
++
++		let start=i;
++		if (value.startsWith('W/', i)) i += 2;
++		if (value[i++] !== '"') return false;
++
++		while (i < value.length && value[i] !== '"') {
++			let code = value.charCodeAt(i++);
++			if (code !== 0x21 && !(code >= 0x23 && code <= 0x7e) && !(code >= 0x80 && code <= 0xff)) {
++				return false;
++			}
++		}
++		if (value[i++] !== '"') return false;
++
++		let candidate = value.slice(start, i);
++		if (candidate.startsWith('W/')) candidate = candidate.slice(2);
++		if (candidate === current) matched = true;
++
++		while (value[i] === ' ' || value[i] === '\t') i++;
++		if (i >= value.length) return matched;
++		if (value[i++] !== ',') return false;
++	}
++	return matched;
++}
++
+ function send(req, res, file, stats, headers) {
+ 	let code=200, tmp, opts={};
+ 	headers = { ...headers };
+@@ -164,7 +199,7 @@ export default function (dir, opts={}) {
  		});
  	}
  
@@ -67,7 +153,7 @@ index 2f866d5216c951ec125f2044af070fa6b530e375..d5335bfbb16e23b57385c1a83226611e
  
  	return function (req, res, next) {
  		let extns = [''];
-@@ -179,7 +180,7 @@ export default function (dir, opts={}) {
+@@ -179,10 +214,10 @@ export default function (dir, opts={}) {
  			catch (err) { /* malform uri */ }
  		}
  
@@ -75,7 +161,11 @@ index 2f866d5216c951ec125f2044af070fa6b530e375..d5335bfbb16e23b57385c1a83226611e
 +		let data = lookup(pathname, extns, opts.shouldServe) || isSPA && !isMatch(pathname, ignores) && lookup(fallback, extns, opts.shouldServe);
  		if (!data) return next ? next() : isNotFound(req, res);
  
- 		if (isEtag && req.headers['if-none-match'] === data.headers['ETag']) {
+-		if (isEtag && req.headers['if-none-match'] === data.headers['ETag']) {
++		if (isEtag && matchesIfNoneMatch(req.headers['if-none-match'], data.headers['ETag'])) {
+ 			res.writeHead(304);
+ 			return res.end();
+ 		}
 diff --git a/index.d.mts b/index.d.mts
 index 8bfe364f1db2d1382c56a9b75a014579083cfa70..a8dfa1c473ff15c979bbfbc28c3630a12e222c3a 100644
 --- a/index.d.mts
