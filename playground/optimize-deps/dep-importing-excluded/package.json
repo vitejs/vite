@@ -1,0 +1,13 @@
+{
+  "name": "@vitejs/test-dep-importing-excluded",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./second": "./second.js"
+  },
+  "dependencies": {
+    "@vitejs/test-excluded-not-hoisted": "file:../excluded-not-hoisted"
+  }
+}
