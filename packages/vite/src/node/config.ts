@@ -74,6 +74,7 @@ import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions, serverConfigDefaults } from './server'
 import { DevEnvironment } from './server/environment'
 import { createRunnableDevEnvironment } from './server/environments/runnableEnvironment'
+import { SafeModulePaths } from './server/safeModulePaths'
 import type { WebSocketServer } from './server/ws'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
@@ -777,7 +778,7 @@ export interface ResolvedConfig extends Readonly<
     /** @internal */
     fsDenyGlob: AnymatchFn
     /** @internal */
-    safeModulePaths: Set<string>
+    safeModulePaths: SafeModulePaths
     /** @internal */
     [SYMBOL_RESOLVED_CONFIG]: true
   } & PluginHookUtils
@@ -2152,7 +2153,7 @@ export async function resolveConfig(
         dot: true,
       },
     ),
-    safeModulePaths: new Set<string>(),
+    safeModulePaths: new SafeModulePaths(),
     [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {

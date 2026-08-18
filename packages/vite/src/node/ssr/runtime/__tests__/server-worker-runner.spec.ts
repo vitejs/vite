@@ -73,6 +73,7 @@ describe('running module runner inside a worker', () => {
     })
     const server = await createServer({
       root: import.meta.dirname,
+      input: './fixtures/default-string.ts',
       logLevel: 'error',
       server: {
         middlewareMode: true,
