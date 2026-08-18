@@ -5,16 +5,23 @@ import {
   getBg,
   getColor,
   isBuild,
+  isBundled,
+  isBundledDev,
   page,
 } from '~utils'
 
+// bundled dev serves hashed asset URLs like build. But it writes them to the
+// default `assets/` folder, because build's custom assetFileNames setting
+// (other-assets/) is not applied here.
 const urlAssetMatch = isBuild
   ? /\/foo%20bar\/other-assets\/asset-[-\w]{8}\.png/
-  : '/nested/asset.png'
+  : isBundledDev
+    ? /\/foo%20bar\/assets\/asset-[-\w]{8}\.png/
+    : '/nested/asset.png'
 
 const iconMatch = '/icon.png'
 
-const absoluteIconMatch = isBuild
+const absoluteIconMatch = isBundled
   ? /\/foo%20bar\/.*\/icon-[-\w]{8}\.png/
   : '/nested/icon.png'
 
@@ -149,7 +156,9 @@ describe('image', () => {
       expect(s).toMatch(
         isBuild
           ? /\/foo%20bar\/other-assets\/asset-[-\w]{8}\.png \dx/
-          : /\/foo%20bar\/nested\/asset\.png \dx/,
+          : isBundledDev
+            ? /\/foo%20bar\/assets\/asset-[-\w]{8}\.png \dx/
+            : /\/foo%20bar\/nested\/asset\.png \dx/,
       )
     })
   })
@@ -157,12 +166,14 @@ describe('image', () => {
 
 describe('svg fragments', () => {
   // 404 is checked already, so here we just ensure the urls end with #fragment
-  test('img url', async () => {
+  // bundled dev drops the #fragment postfix from hashed asset URLs (vitejs/vite#23028)
+  test.skipIf(isBundledDev)('img url', async () => {
     const img = await page.$('.svg-frag-img')
     expect(await img.getAttribute('src')).toMatch(/svg#icon-clock-view$/)
   })
 
-  test('via css url()', async () => {
+  // bundled dev: #fragment dropped (see 'img url')
+  test.skipIf(isBundledDev)('via css url()', async () => {
     expect(await getBg('.icon')).toMatch(/svg#icon-clock-view"\)$/)
   })
 
@@ -178,7 +189,11 @@ test('?raw import', async () => {
 
 test('?url import', async () => {
   expect(await page.textContent('.url')).toMatch(
-    isBuild ? /\/foo%20bar\/other-assets\/foo-[-\w]{8}\.js/ : '/foo.js',
+    isBuild
+      ? /\/foo%20bar\/other-assets\/foo-[-\w]{8}\.js/
+      : isBundledDev
+        ? /\/foo%20bar\/assets\/foo-[-\w]{8}\.js/
+        : '/foo.js',
   )
 })
 
@@ -187,14 +202,18 @@ test('?url import on css', async () => {
   expect(txt).toMatch(
     isBuild
       ? /\/foo%20bar\/other-assets\/icons-[-\w]{8}\.css/
-      : '/css/icons.css',
+      : isBundledDev
+        ? /\/foo%20bar\/assets\/icons-[-\w]{8}\.css/
+        : '/css/icons.css',
   )
 })
 
 test('new URL(..., import.meta.url)', async () => {
   const urlImgMatch = isBuild
     ? /\/foo%20bar\/other-assets\/img-[-\w]{8}\.png/
-    : '/import-meta-url/img.png'
+    : isBundledDev
+      ? /\/foo%20bar\/assets\/img-[-\w]{8}\.png/
+      : '/import-meta-url/img.png'
   expect(await page.textContent('.import-meta-url')).toMatch(urlImgMatch)
 })
 

@@ -1,3 +1,17 @@
+## <small>[9.1.2](https://github.com/vitejs/vite/compare/create-vite%409.1.1...create-vite%409.1.2) (2026-07-30)</small>
+### Features
+
+* update rolldown-related dependencies and use client-side HMR in bundled-dev ([#22961](https://github.com/vitejs/vite/issues/22961)) ([960e9ef](https://github.com/vitejs/vite/commit/960e9efbc1372000caac46cc2f123cef4824e2bb))
+
+### Bug Fixes
+
+* **create-vite:** ignore --eslint for non-React templates instead of crashing ([#23015](https://github.com/vitejs/vite/issues/23015)) ([428d8af](https://github.com/vitejs/vite/commit/428d8af8135626d783f963e3ba9b2378b64f680b))
+* **deps:** update all non-major dependencies ([#22865](https://github.com/vitejs/vite/issues/22865)) ([d4295a9](https://github.com/vitejs/vite/commit/d4295a9ffce428c0e51892373e00c07fccc0498a))
+* **deps:** update all non-major dependencies ([#22921](https://github.com/vitejs/vite/issues/22921)) ([fef682d](https://github.com/vitejs/vite/commit/fef682d3f067d534a559faf6fd9baedda2e9f8f1))
+* **deps:** update all non-major dependencies ([#22985](https://github.com/vitejs/vite/issues/22985)) ([04f345b](https://github.com/vitejs/vite/commit/04f345b37064cd0bba6447eb5c32be5c22162f3d))
+* **deps:** update all non-major dependencies ([#23069](https://github.com/vitejs/vite/issues/23069)) ([4c07b74](https://github.com/vitejs/vite/commit/4c07b74416f859d7e8bdace13409ef2d080edf76))
+* **deps:** update rolldown-related dependencies ([#22922](https://github.com/vitejs/vite/issues/22922)) ([3c345e4](https://github.com/vitejs/vite/commit/3c345e475a5546a1cc6374682af89caebfe9c593))
+
 ## <small>[9.1.1](https://github.com/vitejs/vite/compare/create-vite@9.1.0...create-vite@9.1.1) (2026-06-30)</small>
 ### Bug Fixes
 

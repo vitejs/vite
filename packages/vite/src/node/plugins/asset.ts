@@ -42,6 +42,7 @@ import {
 } from '../../shared/utils'
 import type { Environment } from '../environment'
 import type { PartialEnvironment } from '../baseEnvironment'
+import { getImportMapFilename } from './html'
 
 // referenceId is base64url but replaces - with $
 export const assetUrlRE: RegExp = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
@@ -299,11 +300,17 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         config.command === 'build' &&
         !this.environment.config.build.emitAssets
       ) {
+        const chunkImportMapEnabled =
+          this.environment.config.build.chunkImportMap
         for (const file in bundle) {
           if (
             bundle[file].type === 'asset' &&
             !file.endsWith('ssr-manifest.json') &&
-            !jsSourceMapRE.test(file)
+            !jsSourceMapRE.test(file) &&
+            !(
+              chunkImportMapEnabled &&
+              file === getImportMapFilename(this.environment.config)
+            )
           ) {
             delete bundle[file]
           }

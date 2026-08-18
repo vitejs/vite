@@ -630,6 +630,12 @@ async function init() {
   // 5. Ask whether to use ESLint instead of Oxlint (React templates only)
   const isReactTemplate = template === 'react' || template === 'react-ts'
   let eslint = argEslint
+  if (!isReactTemplate && eslint) {
+    prompts.log.warn(
+      '`--eslint` is only supported for React templates and will be ignored',
+    )
+    eslint = false
+  }
   if (isReactTemplate && eslint === undefined) {
     if (interactive) {
       const eslintResult = await prompts.select({
@@ -852,15 +858,15 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@eslint/js
   const eslintJsVersion = '10.0.1'
   // renovate: datasource=npm depName=eslint
-  const eslintVersion = '10.7.0'
+  const eslintVersion = '10.8.1'
   // renovate: datasource=npm depName=eslint-plugin-react-hooks
   const eslintPluginReactHooksVersion = '7.1.1'
   // renovate: datasource=npm depName=eslint-plugin-react-refresh
-  const eslintPluginReactRefreshVersion = '0.5.3'
+  const eslintPluginReactRefreshVersion = '0.5.4'
   // renovate: datasource=npm depName=globals
-  const globalsVersion = '17.7.0'
+  const globalsVersion = '17.11.0'
   // renovate: datasource=npm depName=typescript-eslint
-  const typescriptEslintVersion = '8.64.0'
+  const typescriptEslintVersion = '8.67.0'
 
   const eslintConfigForTS = /* js */ `import js from '@eslint/js'
 import globals from 'globals'
@@ -1007,7 +1013,7 @@ If you are developing a production application, we recommend updating the config
 ${eslintTypeAwareConfig}
 \`\`\`
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
 
 \`\`\`js
 ${eslintReactConfig}

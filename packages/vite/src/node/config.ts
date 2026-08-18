@@ -89,6 +89,7 @@ import {
   createDebugger,
   createFilter,
   deepClone,
+  getFileStartIndex,
   hasBothRollupOptionsAndRolldownOptions,
   isExternalUrl,
   isFilePathESM,
@@ -97,6 +98,7 @@ import {
   isNodeLikeBuiltin,
   isObject,
   isParentDirectory,
+  lineTerminatorRE,
   mergeAlias,
   mergeConfig,
   mergeWithDefaults,
@@ -391,7 +393,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    * the performance. You can use `--force` flag or manually delete the directory
    * to regenerate the cache files. The value can be either an absolute file
    * system path or a path relative to project root.
-   * Default to `.vite` when no `package.json` is detected.
+   * Default to `.vite` when neither a `package.json` nor a `node_modules` directory is detected.
    * @default 'node_modules/.vite'
    */
   cacheDir?: string
@@ -923,27 +925,21 @@ const configDefaults = Object.freeze({
   appType: 'spa',
 } satisfies UserConfig)
 
-function resolveInput(
+function normalizeInput(
   input: InputOption | undefined,
-  root: string,
 ): InputOption | undefined {
   if (input === undefined) {
     return undefined
   }
   if (typeof input === 'string') {
-    const unescapedInput = unescapeGlobCharacters(input)
-    return normalizePath(path.resolve(root, unescapedInput))
+    return unescapeGlobCharacters(input)
   }
   if (Array.isArray(input)) {
-    return input.map((inp) => {
-      const unescapedInput = unescapeGlobCharacters(inp)
-      return normalizePath(path.resolve(root, unescapedInput))
-    })
+    return input.map(unescapeGlobCharacters)
   }
   const resolved: Record<string, string> = {}
   for (const key in input) {
-    const unescapedInput = unescapeGlobCharacters(input[key])
-    resolved[key] = normalizePath(path.resolve(root, unescapedInput))
+    resolved[key] = unescapeGlobCharacters(input[key])
   }
   return resolved
 }
@@ -996,7 +992,6 @@ function resolveEnvironmentOptions(
   options: EnvironmentOptions,
   alias: Alias[],
   preserveSymlinks: boolean,
-  root: string,
   forceOptimizeDeps: boolean | undefined,
   logger: Logger,
   environmentName: string,
@@ -1044,7 +1039,7 @@ function resolveEnvironmentOptions(
     isSsrTargetWebworkerEnvironment,
   )
   return {
-    input: resolveInput(options.input, root),
+    input: normalizeInput(options.input),
     define: options.define,
     resolve,
     keepProcessEnv:
@@ -1727,7 +1722,6 @@ export async function resolveConfig(
       config.environments[environmentName],
       resolvedDefaultResolve.alias,
       resolvedDefaultResolve.preserveSymlinks,
-      resolvedRoot,
       inlineConfig.forceOptimizeDeps,
       logger,
       environmentName,
@@ -1865,6 +1859,7 @@ export async function resolveConfig(
         )
       : ''
 
+  const input = normalizeInput(config.input)
   const server = await resolveServerOptions(resolvedRoot, config.server, logger)
 
   const builder = resolveBuilderOptions(config.builder)
@@ -2109,7 +2104,7 @@ export async function resolveConfig(
 
     ssr,
 
-    input: resolveInput(config.input, resolvedRoot),
+    input,
     optimizeDeps: backwardCompatibleOptimizeDeps,
     resolve: resolvedDefaultResolve,
     dev: resolvedDevEnvironmentOptions,
@@ -2526,6 +2521,7 @@ async function bundleConfigFile(
   const importMetaResolveVarName =
     '__vite_injected_original_import_meta_resolve'
   const importMetaResolveRegex = /import\.meta\s*\.\s*resolve/
+  const configFileRegex = /\.[cm]?[jt]s$/
 
   const nativeIncompatibilities: NativeConfigIncompatibility[] = []
 
@@ -2612,7 +2608,7 @@ async function bundleConfigFile(
       {
         name: 'inject-file-scope-variables',
         transform: {
-          filter: { id: /\.[cm]?[jt]s$/ },
+          filter: { id: configFileRegex },
           handler(code, id) {
             let injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(path.dirname(id))};` +
@@ -2634,13 +2630,13 @@ async function bundleConfigFile(
 
             let injectedContents: string
             if (code.startsWith('#!')) {
-              // hashbang
-              let firstLineEndIndex = code.indexOf('\n')
-              if (firstLineEndIndex < 0) firstLineEndIndex = code.length
+              const fileStartIndex = getFileStartIndex(code)
+              const hashbang = code.slice(0, fileStartIndex)
               injectedContents =
-                code.slice(0, firstLineEndIndex + 1) +
+                hashbang +
+                (lineTerminatorRE.test(hashbang) ? '' : '\n') +
                 injectValues +
-                code.slice(firstLineEndIndex + 1)
+                code.slice(fileStartIndex)
             } else {
               injectedContents = injectValues + code
             }

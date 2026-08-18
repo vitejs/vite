@@ -418,6 +418,9 @@ export const formatSourcemapForSnapshot = (
   if (m.names && m.names.length === 0) {
     delete m.names
   }
+  if (m.ignoreList && m.ignoreList.length === 0) {
+    delete m.ignoreList
+  }
   if (m.debugId) {
     m.debugId = '00000000-0000-0000-0000-000000000000'
   }
@@ -425,8 +428,14 @@ export const formatSourcemapForSnapshot = (
   if (m.sourceRoot) {
     m.sourceRoot = m.sourceRoot.replace(root, '/root')
   }
+  const normalized = Object.fromEntries(
+    Object.keys(m)
+      .filter((key) => m[key] !== null)
+      .sort()
+      .map((key) => [key, m[key]]),
+  )
   const c = removeComments(code.replace(/\?v=[\da-f]{8}/g, '?v=00000000'))
-  return { map: m, code: c, [sourcemapSnapshot]: { withoutContent } }
+  return { map: normalized, code: c, [sourcemapSnapshot]: { withoutContent } }
 }
 
 // helper function to kill process, uses taskkill on windows to ensure child process is killed too

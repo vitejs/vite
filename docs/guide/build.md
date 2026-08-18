@@ -6,7 +6,7 @@ When it is time to deploy your app for production, simply run the `vite build` c
 
 ## Browser Compatibility
 
-By default, the production bundle assumes a modern browser that is included in the [Baseline](https://web-platform-dx.github.io/web-features/) Widely Available targets. The default browser support range is:
+By default, the production bundle targets the minimum browser versions compatible with [Baseline](https://web-platform-dx.github.io/baseline/) Widely Available as of a date fixed for each major release. The default browser support range for this major is:
 
 <!-- Search for the `ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET` constant for more information -->
 
@@ -84,7 +84,7 @@ When a new deployment occurs, the hosting service may delete the assets from pre
 
 ## Rebuild on Files Changes
 
-You can enable rollup watcher with `vite build --watch`. Or, you can directly adjust the underlying [`WatcherOptions`](https://rolldown.rs/reference/InputOptions.watch) via `build.watch`:
+You can enable Rolldown watcher with `vite build --watch`. Or, you can directly adjust the underlying [`WatcherOptions`](https://rolldown.rs/reference/InputOptions.watch) via `build.watch`:
 
 ```js [vite.config.js]
 export default defineConfig({
@@ -117,7 +117,7 @@ During dev, simply navigate or link to `/nested/` - it works as expected, just l
 During build, all you need to do is to specify multiple `.html` files as entry points:
 
 ```js twoslash [vite.config.js]
-import { dirname, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
@@ -141,7 +141,7 @@ When it is time to bundle your library for distribution, use the [`build.lib` co
 ::: code-group
 
 ```js twoslash [vite.config.js (single entry)]
-import { dirname, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
@@ -169,7 +169,7 @@ export default defineConfig({
 ```
 
 ```js twoslash [vite.config.js (multiple entries)]
-import { dirname, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 
 export default defineConfig({

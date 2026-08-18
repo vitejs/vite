@@ -8,12 +8,10 @@ const BASE = '/base/'
 
 export default defineConfig({
   base: BASE,
+  input: {
+    main: path.resolve(import.meta.dirname, 'src/index.html'),
+  },
   build: {
-    rolldownOptions: {
-      input: {
-        main: path.resolve(import.meta.dirname, 'src/index.html'),
-      },
-    },
     outDir: 'dist/base',
   },
   server: {

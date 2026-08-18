@@ -82,13 +82,19 @@ jobs:
           persist-credentials: false
 
       - name: Install pnpm
-        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
 
-      - name: Set node version to ${{ matrix.node_version }}
+      - if: matrix.node_version != '20'
+        name: Set node version to ${{ matrix.node_version }}
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ matrix.node_version }}
           cache: "pnpm"
+      - if: matrix.node_version == '20' # use node 24 for builds
+        name: Set node version to 24 for builds
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
 
       - name: Install deps
         run: pnpm install
@@ -122,11 +128,21 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      - if: matrix.node_version == '20'
+        name: Set node version to ${{ matrix.node_version }}
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ matrix.node_version }}
+          cache: "pnpm"
+
       - name: Test unit
         run: pnpm run test-unit
 
       - name: Test serve
         run: pnpm run test-serve
+
+      - name: Test serve (bundled dev)
+        run: pnpm run test-serve-bundled
 
       - name: Test build
         run: pnpm run test-build
@@ -157,7 +173,7 @@ jobs:
           persist-credentials: false
 
       - name: Install pnpm
-        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
 
       - name: Set node version to 24
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7

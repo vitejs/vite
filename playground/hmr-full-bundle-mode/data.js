@@ -16,7 +16,7 @@ if (import.meta.hot) {
   import.meta.hot.accept()
 }
 
-// @hmr-bump
+globalThis.__hmrBump = 'initial'
 
 function text(el, value) {
   document.querySelector(el).textContent = String(value)

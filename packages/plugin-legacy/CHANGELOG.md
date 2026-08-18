@@ -1,3 +1,21 @@
+## <small>[8.2.3](https://github.com/vitejs/vite/compare/plugin-legacy%408.2.2...plugin-legacy%408.2.3) (2026-08-06)</small>
+### Bug Fixes
+
+* **build:** make client chunkImportMap work with `sharedPlugins: true` ([#23184](https://github.com/vitejs/vite/issues/23184)) ([15f0307](https://github.com/vitejs/vite/commit/15f03073c915d6ffb9a1fda447ef66b02bf5cde8))
+* **deps:** update all non-major dependencies ([#23069](https://github.com/vitejs/vite/issues/23069)) ([4c07b74](https://github.com/vitejs/vite/commit/4c07b74416f859d7e8bdace13409ef2d080edf76))
+* **deps:** update all non-major dependencies ([#23136](https://github.com/vitejs/vite/issues/23136)) ([14454fd](https://github.com/vitejs/vite/commit/14454fd8c9a399bc3fdc193e28465b6fcf001e4d))
+* **deps:** update rolldown-related dependencies ([#23070](https://github.com/vitejs/vite/issues/23070)) ([7ac6f7f](https://github.com/vitejs/vite/commit/7ac6f7f590747bbdab9958e2c016e3dd04f10542))
+
+## <small>[8.2.2](https://github.com/vitejs/vite/compare/plugin-legacy%408.2.1...plugin-legacy%408.2.2) (2026-07-23)</small>
+### Features
+
+* update rolldown-related dependencies and use client-side HMR in bundled-dev ([#22961](https://github.com/vitejs/vite/issues/22961)) ([960e9ef](https://github.com/vitejs/vite/commit/960e9efbc1372000caac46cc2f123cef4824e2bb))
+
+### Bug Fixes
+
+* **deps:** update dependency magic-string to v1 ([#22998](https://github.com/vitejs/vite/issues/22998)) ([c60b4d7](https://github.com/vitejs/vite/commit/c60b4d7cdb85b7d4f78671cdcfb863e5f8b66bb7))
+* **legacy:** don't use newer syntax when minifying legacy chunks ([#23013](https://github.com/vitejs/vite/issues/23013)) ([989a42e](https://github.com/vitejs/vite/commit/989a42ec52b527846bf43a8281fefd0a3aab7358))
+
 ## <small>[8.2.1](https://github.com/vitejs/vite/compare/plugin-legacy@8.2.0...plugin-legacy@8.2.1) (2026-07-16)</small>
 ### Bug Fixes
 

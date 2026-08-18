@@ -6,7 +6,12 @@ import type { SourceMap } from 'rolldown'
 import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
 import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
-import { combineSourcemaps, generateCodeFrame, numberToPos } from '../utils'
+import {
+  combineSourcemaps,
+  generateCodeFrame,
+  getFileStartIndex,
+  numberToPos,
+} from '../utils'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
@@ -352,8 +357,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
       let importMapMapping: Record<string, string> | undefined
       let importMapReverseMapping: Record<string, string> | undefined
-      if (config.build.chunkImportMap) {
-        const importMap = getImportMap(bundle, config)!
+      if (this.environment.config.build.chunkImportMap) {
+        const importMap = getImportMap(bundle, this.environment.config)!
         importMapMapping = importMap.mapping
         importMapReverseMapping = Object.fromEntries(
           Object.entries(importMapMapping).map(([k, v]) => [v, k]),
@@ -365,7 +370,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             fileName: 'importmap.legacy.json',
             source: importMap.asset.source,
           })
-          delete bundle[getImportMapFilename(config)]
+          delete bundle[getImportMapFilename(this.environment.config)]
         }
       }
 
@@ -570,7 +575,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
             // inject extra code at the top or next line of hashbang
             if (code.startsWith('#!')) {
-              s.prependLeft(code.indexOf('\n') + 1, mapDepsCode)
+              s.prependLeft(getFileStartIndex(code), mapDepsCode)
             } else {
               s.prepend(mapDepsCode)
             }
