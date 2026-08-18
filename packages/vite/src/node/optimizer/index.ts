@@ -1469,7 +1469,7 @@ export async function cleanupDepsCacheStaleDirs(
 
 // The ISC License
 // Copyright (c) 2011-2022 Isaac Z. Schlueter, Ben Noordhuis, and Contributors
-// https://github.com/isaacs/node-graceful-fs/blob/main/LICENSE
+// https://github.com/isaacs/node-graceful-fs/blob/234379906b7d2f4c9cfeb412d2516f42b0fb4953/LICENSE
 
 // On Windows, A/V software can lock the directory, causing this
 // to fail with an EACCES or EPERM if the directory contains newly
