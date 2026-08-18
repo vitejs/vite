@@ -15,13 +15,26 @@ import type { Page } from 'playwright-chromium'
 import WebSocket from 'ws'
 import testJSON from '../safe.json'
 import { getWindows83ShortNameForDotEnv as getWindows83ShortNameForDotEnv } from '../root/windows83Filename'
-import { browser, isServe, page, viteServer, viteTestUrl } from '~utils'
+import {
+  browser,
+  isBundledDev,
+  isServe,
+  page,
+  viteServer,
+  viteTestUrl,
+} from '~utils'
 
 const getViteTestIndexHtmlUrl = () => {
   const srcPrefix = viteTestUrl.endsWith('/') ? '' : '/'
   // NOTE: viteTestUrl is set lazily
   return viteTestUrl + srcPrefix + 'src/'
 }
+
+// `viteTestUrl` keeps its trailing slash when the playground sets a base, so
+// plain concatenation would produce `//`-prefixed paths, which the server
+// refuses to serve as files.
+const getViteTestUrl = (pathname: string) =>
+  viteTestUrl.replace(/\/$/, '') + pathname
 
 const safeJsonContent = fs.readFileSync(
   path.resolve(import.meta.dirname, '../safe.json'),
@@ -104,6 +117,10 @@ describe.runIf(isServe)('matrix', () => {
       content: safeJsonContent,
       status: '200',
       disableVariants: [''],
+      // bundled dev: an imported file outside `fs.allow` is exempted through
+      // the module graph (`safeModulesPath`), which stays empty under bundled
+      // dev even if the import is inlined into the bundle (vitejs/vite#23028)
+      skip: isBundledDev,
     },
     {
       name: 'safe fetch imported with query',
@@ -111,6 +128,8 @@ describe.runIf(isServe)('matrix', () => {
       content: safeJsonContent,
       status: '200',
       disableVariants: [''],
+      // bundled dev: same `safeModulesPath` exemption as 'safe fetch imported'
+      skip: isBundledDev,
     },
 
     {
@@ -131,6 +150,13 @@ describe.runIf(isServe)('matrix', () => {
       testId: 'unsafe-html',
       content: /403 Restricted/,
       status: '403',
+      // bundled dev: static serve middleware does not handle HTML files,
+      // so the request went through to the HTML middleware,
+      // which returns 404 for non-existent files (vitejs/vite#23028).
+      //
+      // In this case, only normal variant is affected,
+      // whereas `-fs` variant is handled by `serveRawFsMiddleware`, which checks every file type directly.
+      disableVariants: isBundledDev ? [''] : [],
     },
     {
       name: 'unsafe HTML fetch outside root',
@@ -332,7 +358,7 @@ describe.runIf(isServe)('matrix', () => {
 
 describe('fetch', () => {
   test('serve with configured headers', async () => {
-    const res = await fetch(viteTestUrl + '/src/')
+    const res = await fetch(getViteTestUrl('/src/'))
     expect(res.headers.get('x-served-by')).toBe('vite')
   })
 })
@@ -402,14 +428,14 @@ describe('cross origin', () => {
     })
 
     test('fetch HTML file', async () => {
-      const status = await fetchStatusFromPage(page, viteTestUrl + '/src/')
+      const status = await fetchStatusFromPage(page, getViteTestUrl('/src/'))
       expect(status).toBe(200)
     })
 
     test.runIf(isServe)('fetch JS file', async () => {
       const status = await fetchStatusFromPage(
         page,
-        viteTestUrl + '/src/code.js',
+        getViteTestUrl('/src/code.js'),
       )
       expect(status).toBe(200)
     })
@@ -425,7 +451,7 @@ describe('cross origin', () => {
 
     test('fetch with allowed hosts', async () => {
       const viteTestUrlUrl = new URL(viteTestUrl)
-      const res = await fetch(viteTestUrl + '/src/index.html', {
+      const res = await fetch(getViteTestUrl('/src/index.html'), {
         headers: { Host: viteTestUrlUrl.host },
       })
       expect(res.status).toBe(200)

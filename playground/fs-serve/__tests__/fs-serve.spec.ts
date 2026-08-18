@@ -1,7 +1,7 @@
 import net from 'node:net'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { isServe, isWindows, viteTestUrl } from '~utils'
+import { isBundledDev, isServe, isWindows, viteTestUrl } from '~utils'
 import './commonTests'
 
 describe.runIf(isServe)('invalid request', () => {
@@ -45,6 +45,7 @@ describe.runIf(isServe)('invalid request', () => {
     target: string
     status: string
     content?: string
+    skip?: boolean
   }> = [
     {
       name: 'basic request',
@@ -104,15 +105,23 @@ describe.runIf(isServe)('invalid request', () => {
         '/node_modules/.vite/deps/..\\..\\..\\unsafe.map',
       status: isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 200 OK',
       content: isWindows ? undefined : 'Cache-Control: no-cache',
+      // bundled dev: the 200 comes from the dep optimizer's sourcemap
+      // handler, and there is no dep optimizer under bundled dev
+      // (vitejs/vite#23028)
+      skip: isBundledDev,
     },
     {
       name: 'HTML outside root with relative path',
       target: '/../unsafe.html',
       status: 'HTTP/1.1 403 Forbidden',
+      // bundled dev: `.html` requests are not served from disk, so the fs
+      // checks never answer 403 for them — the request 404s instead
+      // (fail-closed, nothing is served) (vitejs/vite#23028)
+      skip: isBundledDev,
     },
   ]
-  for (const { name, target, status, content } of testCases) {
-    test(name, async () => {
+  for (const { name, target, status, content, skip } of testCases) {
+    test(name, { skip }, async () => {
       const response = await sendRawRequest(viteTestUrl, target)
       expect(response).toContain(status)
       if (content !== undefined) {

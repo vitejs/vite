@@ -1013,11 +1013,11 @@ export async function _createServer(
   } else {
     // main transform middleware
     middlewares.use(transformMiddleware(server))
-
-    // serve static files
-    middlewares.use(serveRawFsMiddleware(server))
-    middlewares.use(serveStaticMiddleware(server))
   }
+
+  // serve static files
+  middlewares.use(serveRawFsMiddleware(server))
+  middlewares.use(serveStaticMiddleware(server))
 
   // html fallback
   if (config.appType === 'spa' || config.appType === 'mpa') {
