@@ -143,6 +143,7 @@ describe(
 
       testGlobal.__vite_ssr_hmr_evaluated_import_race__ = {
         wait: () => Promise.resolve(),
+        importShared: () => false,
       }
       onTestFinished(() => {
         delete testGlobal.__vite_ssr_hmr_evaluated_import_race__
@@ -164,39 +165,70 @@ describe(
       const waitPromise = new Promise<void>((resolve) => {
         releaseWait = resolve
       })
+      let evaluatedWaitStarted!: () => void
+      const evaluatedWaitStartedPromise = new Promise<void>((resolve) => {
+        evaluatedWaitStarted = resolve
+      })
+      let releaseEvaluatedWait!: () => void
+      const evaluatedWaitPromise = new Promise<void>((resolve) => {
+        releaseEvaluatedWait = resolve
+      })
+      let evaluatedRequestCount = 0
 
       testGlobal.__vite_ssr_hmr_evaluated_import_race__ = {
         wait: () => {
           waitStarted()
           return waitPromise
         },
+        importShared: async () => {
+          if (evaluatedRequestCount++ === 0) {
+            evaluatedWaitStarted()
+            await evaluatedWaitPromise
+            return true
+          }
+          return false
+        },
       }
 
       runner.evaluatedModules.invalidateModule(sharedModule!)
 
-      const firstRequest = runner.import(sharedUrl)
+      const sharedRequest = runner.import(sharedUrl)
       await waitStartedPromise
+      expect(sharedModule!.imports.has(evaluatedModule!.id)).toBe(true)
 
-      let secondRequestSettled = false
-      // Simulate a concurrent caller whose callstack still contains a module
-      // that another request has finished evaluating in the meantime.
-      const secondRequest = (runner as any)
-        .cachedRequest(sharedUrl, sharedModule, [evaluatedModule!.id])
-        .then((result: any) => {
-          secondRequestSettled = true
+      // Start an evaluation that pauses before dynamically importing shared.
+      runner.evaluatedModules.invalidateModule(evaluatedModule!)
+
+      let staleEvaluatedRequestSettled = false
+      const staleEvaluatedRequest = runner
+        .import(evaluatedUrl)
+        .then((result) => {
+          staleEvaluatedRequestSettled = true
           return result
         })
+      await evaluatedWaitStartedPromise
+
+      // Simulate HMR restarting evaluated while the older evaluation is still
+      // paused. The newer evaluation completes without importing shared.
+      runner.evaluatedModules.invalidateModule(evaluatedModule!)
+      await runner.import(evaluatedUrl)
+      expect(evaluatedModule!.evaluated).toBe(true)
+
+      releaseEvaluatedWait()
+      while (!evaluatedModule!.imports.has(sharedModule!.id)) {
+        await new Promise((resolve) => setImmediate(resolve))
+      }
 
       await new Promise((resolve) => setImmediate(resolve))
-      expect(secondRequestSettled).toBe(false)
+      expect(staleEvaluatedRequestSettled).toBe(false)
 
       releaseWait()
-      const [firstResult, secondResult] = await Promise.all([
-        firstRequest,
-        secondRequest,
+      const [sharedResult, evaluatedResult] = await Promise.all([
+        sharedRequest,
+        staleEvaluatedRequest,
       ])
-      expect(firstResult.value).toBe('ready')
-      expect(secondResult.value).toBe('ready')
+      expect(sharedResult.value).toBe('ready')
+      expect(evaluatedResult.sharedValue).toBe('ready')
     })
   },
   process.env.CI ? 50_00 : 5_000,
