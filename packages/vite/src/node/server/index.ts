@@ -44,9 +44,9 @@ import {
   normalizePath,
   resolveHostname,
   resolveServerUrls,
+  setupExitListener,
   setupHmrWsOptionCompat,
-  setupSIGTERMListener,
-  teardownSIGTERMListener,
+  teardownExitListener,
 } from '../utils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
@@ -266,6 +266,20 @@ export type ServerHook = (
   server: ViteDevServer,
 ) => (() => void) | void | Promise<(() => void) | void>
 
+export interface CloseServerHookContext {
+  /**
+   * Whether the server is being restarted (e.g. a config change or
+   * `server.restart()`) or closed (e.g. the `q` shortcut, a forced exit signal
+   * such as SIGINT/SIGTERM, stdin ending, or `server.close()`).
+   */
+  reason: 'restart' | 'close'
+}
+
+export type CloseServerHook = (
+  this: MinimalPluginContextWithoutEnvironment,
+  context: CloseServerHookContext,
+) => void | Promise<void>
+
 export type HttpServer = http.Server | Http2SecureServer
 
 export async function resolveForwardConsoleOptions(
@@ -440,6 +454,13 @@ export interface ViteDevServer {
    */
   _setInternalServer(server: ViteDevServer): void
   /**
+   * Internal close implementation shared by `close()` and `restart()`. The
+   * `reason` is forwarded to `closeServer` plugin hooks so they can distinguish
+   * a restart from a real close.
+   * @internal
+   */
+  _closeServer(reason: 'restart' | 'close'): Promise<void>
+  /**
    * @internal
    */
   _restartPromise: Promise<void> | null
@@ -606,9 +627,9 @@ export async function _createServer(
 
   // Promise used by `server.close()` to ensure `closeServer()` is only called once
   let closeServerPromise: Promise<void> | undefined
-  const closeServer = async () => {
+  const closeServer = async (reason: 'restart' | 'close') => {
     if (!middlewareMode) {
-      teardownSIGTERMListener(closeServerAndExit)
+      teardownExitListener(closeServerAndExit)
     }
 
     await Promise.allSettled([
@@ -624,6 +645,17 @@ export async function _createServer(
     ])
     server.resolvedUrls = null
     server._ssrCompatModuleRunner = undefined
+
+    // Run `closeServer` plugin hooks after the server has been torn down.
+    const closeServerContext = new BasicMinimalPluginContext(
+      { ...basePluginContextMeta, watchMode: true },
+      config.logger,
+    )
+    await Promise.all(
+      config
+        .getSortedPluginHooks('closeServer')
+        .map((hook) => hook.call(closeServerContext, { reason })),
+    )
   }
 
   let hot = ws
@@ -782,10 +814,7 @@ export async function _createServer(
       }
     },
     async close() {
-      if (!closeServerPromise) {
-        closeServerPromise = closeServer()
-      }
-      return closeServerPromise
+      return server._closeServer('close')
     },
     printUrls() {
       if (server.resolvedUrls) {
@@ -825,6 +854,12 @@ export async function _createServer(
       // server instance after a restart
       server = _server
     },
+    _closeServer(reason: 'restart' | 'close') {
+      if (!closeServerPromise) {
+        closeServerPromise = closeServer(reason)
+      }
+      return closeServerPromise
+    },
     _restartPromise: options.previousRestartPromise ?? null,
     _forceOptimizeOnRestart: options.previousForceOptimizeOnRestart ?? false,
     _shortcutsState: options.previousShortcutsState,
@@ -841,17 +876,15 @@ export async function _createServer(
     },
   })
 
-  const closeServerAndExit = async (_: unknown, exitCode?: number) => {
-    try {
-      await server.close()
-    } finally {
-      process.exitCode ??= exitCode ? 128 + exitCode : undefined
-      process.exit()
-    }
+  // Dispose the server on exit (SIGINT/Ctrl+C, SIGTERM, stdin end, etc.). The
+  // shared exit handler in `setupExitListener` awaits this and owns the final
+  // process exit, so this callback only performs cleanup.
+  const closeServerAndExit = async () => {
+    await server.close()
   }
 
   if (!middlewareMode) {
-    setupSIGTERMListener(closeServerAndExit)
+    setupExitListener(closeServerAndExit)
   }
 
   const onHMRUpdate = async (
@@ -1380,7 +1413,9 @@ async function restartServer(server: ViteDevServer) {
     // Detach readline so close handler skips it. Reused to avoid stdin issues
     server._shortcutsState = undefined
 
-    await server.close()
+    // Close with reason 'restart' so `closeServer` hooks can distinguish a
+    // restart from a real close.
+    await server._closeServer('restart')
 
     // Assign new server props to existing server instance
     const middlewares = server.middlewares

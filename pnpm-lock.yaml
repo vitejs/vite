@@ -410,6 +410,9 @@ importers:
       sass-embedded:
         specifier: ^1.100.0
         version: 1.100.0(source-map-js@1.2.1)
+      signal-exit:
+        specifier: ^4.1.0
+        version: 4.1.0
       sirv:
         specifier: ^3.0.2
         version: 3.0.2(patch_hash=c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95)
