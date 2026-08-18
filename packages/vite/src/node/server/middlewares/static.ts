@@ -319,8 +319,10 @@ export function isFileLoadingAllowed(
 
   if (isWindows && looksLikeWindowsShortNamePath(filePath)) {
     // Windows 8.3 short names (e.g. `PROGRA~1`) can alias a different long
-    // path and bypass `safeModulePaths`/`fs.allow` prefix checks, so reject
-    // paths that look like one.
+    // path and can be used to bypass the check.
+    // While it is valid to have files named similar to automatically generated
+    // short names, it is unlikely that a user would create them, so we
+    // disallow them to be safe.
     return false
   }
 
