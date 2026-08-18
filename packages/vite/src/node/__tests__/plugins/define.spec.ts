@@ -55,7 +55,11 @@ async function createDefinePluginTransform(
           attachDebugInfo: 'none',
         },
       })
-      return (await bundler.generate()).output[0].code
+      try {
+        return (await bundler.generate()).output[0].code
+      } finally {
+        await bundler.close()
+      }
     }
   }
 }
@@ -84,6 +88,15 @@ describe('definePlugin (SSR dev)', () => {
     expect(
       await transform('export const version = import.meta.SOMETHING'),
     ).toBe(undefined)
+  })
+
+  test('replaces define keys containing `$`', async () => {
+    const transform = await createJsDefinePluginTransform({
+      $FOO: JSON.stringify('bar'),
+    })
+    expect(await transform('export const x = $FOO;')).toBe(
+      'export const x = "bar";\n',
+    )
   })
 
   test('replace import.meta.env when it is a invalid json', async () => {

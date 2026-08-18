@@ -858,15 +858,15 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@eslint/js
   const eslintJsVersion = '10.0.1'
   // renovate: datasource=npm depName=eslint
-  const eslintVersion = '10.8.0'
+  const eslintVersion = '10.8.1'
   // renovate: datasource=npm depName=eslint-plugin-react-hooks
   const eslintPluginReactHooksVersion = '7.1.1'
   // renovate: datasource=npm depName=eslint-plugin-react-refresh
-  const eslintPluginReactRefreshVersion = '0.5.3'
+  const eslintPluginReactRefreshVersion = '0.5.4'
   // renovate: datasource=npm depName=globals
-  const globalsVersion = '17.8.0'
+  const globalsVersion = '17.11.0'
   // renovate: datasource=npm depName=typescript-eslint
-  const typescriptEslintVersion = '8.65.0'
+  const typescriptEslintVersion = '8.67.0'
 
   const eslintConfigForTS = /* js */ `import js from '@eslint/js'
 import globals from 'globals'
@@ -1013,7 +1013,7 @@ If you are developing a production application, we recommend updating the config
 ${eslintTypeAwareConfig}
 \`\`\`
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
 
 \`\`\`js
 ${eslintReactConfig}

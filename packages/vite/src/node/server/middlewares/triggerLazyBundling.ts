@@ -26,7 +26,17 @@ export function triggerLazyBundlingMiddleware(
 
     const moduleId = params.get('id')
     const clientId = params.get('clientId')
-    const result = await bundledDev.triggerLazyBundling(moduleId, clientId)
+    let result: { code: string; filename: string } | undefined
+    try {
+      result = await bundledDev.triggerLazyBundling(moduleId, clientId)
+    } catch (e) {
+      server.config.logger.error(
+        `Failed to trigger lazy bundling for ${moduleId} (clientId: ${clientId}):` +
+          e,
+        { error: e },
+      )
+      return next(new Error(`Failed to trigger lazy bundling`))
+    }
     if (result == null) {
       return next()
     }

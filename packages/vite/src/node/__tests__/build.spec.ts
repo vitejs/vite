@@ -5,6 +5,7 @@ import colors from 'picocolors'
 import { afterEach, describe, expect, assert, test, vi } from 'vitest'
 import type {
   LogLevel,
+  OutputAsset,
   OutputChunk,
   OutputOptions,
   RolldownOptions,
@@ -1069,7 +1070,8 @@ test('chunkImportMap per environment with shared plugins', async () => {
     (output) => output.type === 'asset' && output.fileName.endsWith('.css'),
   )!
   const importMapAsset = client!.output.find(
-    (output) => output.type === 'asset' && output.fileName === 'importmap.json',
+    (output): output is OutputAsset =>
+      output.type === 'asset' && output.fileName === 'importmap.json',
   )!
   expect(
     ssr!.output.some(
