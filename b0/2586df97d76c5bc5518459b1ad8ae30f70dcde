@@ -1,0 +1,29 @@
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/hmr-evaluated-import-race/evaluated.js
+  s_e2c6c1e1d963f3::t_c30ce903786bce 1-6
+packages/vite/src/node/ssr/runtime/__tests__/server-hmr.spec.ts
+  s_cacd4eaa4d4061::t_b711ab14b526ce 146,168-176,183-190,195,197-200,202-206,209-220,223,226-228,230-231
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b02586df97d76c5bc5518459b1ad8ae30f70dcde",
+  "prompts": {},
+  "sessions": {
+    "s_cacd4eaa4d4061": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a014b3-d300-7730-a66f-da463f792496",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_e2c6c1e1d963f3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a014f1-dcda-7811-8d01-a24812f0a7a1",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
