@@ -1,0 +1,21 @@
+packages/vite/src/node/__tests__/fixtures/config/root-resolution/link
+  s_f3af541428ae4a::t_75aa57c459f93f 1
+packages/vite/src/node/__tests__/fixtures/config/root-resolution/real/.gitkeep
+  s_f3af541428ae4a::t_a15245a416a05f 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "21b471b710f7871959d68404882b6ce1be0d9b72",
+  "prompts": {},
+  "sessions": {
+    "s_f3af541428ae4a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a019d0-d5d1-79c1-8116-d88aff0c73f3",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
