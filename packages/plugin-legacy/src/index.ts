@@ -879,6 +879,45 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         return
       }
 
+      // Legacy chunks contain code that originated from ES modules, which
+      // are always strict-mode code. The SystemJS output instead runs in
+      // sloppy mode, which changes semantics in subtle ways (e.g. Annex B
+      // block-level function hoisting) and combined with names shadowed by
+      // the minifier this can produce runtime TypeErrors in old browsers.
+      // The minifier also strips `use strict` directives, so the directive
+      // is injected here after all transforms have run.
+      for (const name in bundle) {
+        const chunk = bundle[name]
+        if (
+          chunk.type === 'chunk' &&
+          name.endsWith('.js') &&
+          name.includes('-legacy') &&
+          !/^(['"])use strict\1;?/.test(chunk.code)
+        ) {
+          chunk.code = `"use strict";\n${chunk.code}`
+          if (chunk.map) {
+            // The directive occupies a new first line without any mapping,
+            // which is equivalent to shifting all existing mappings down
+            // one line: prepend an empty line to the mappings. The emitted
+            // map is a separate asset in the bundle and mutations on
+            // `chunk.map` alone are not written to disk, so update both.
+            const mapAsset = bundle[`${name}.map`]
+            if (
+              mapAsset?.type === 'asset' &&
+              typeof mapAsset.source === 'string'
+            ) {
+              const map = JSON.parse(mapAsset.source)
+              map.mappings = `;${map.mappings}`
+              mapAsset.source = JSON.stringify(map)
+            }
+            chunk.map = {
+              ...chunk.map,
+              mappings: `;${chunk.map.mappings}`,
+            }
+          }
+        }
+      }
+
       if (isLegacyBundle(bundle) && genModern) {
         const importMapFilename = getImportMapFilename(config)
         // avoid emitting duplicate assets

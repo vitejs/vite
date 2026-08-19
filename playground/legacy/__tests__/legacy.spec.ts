@@ -157,6 +157,21 @@ describe.runIf(isBuild)('build', () => {
     expect(mainLegacyChunk).not.toMatch(/\w\?\.\w/)
   })
 
+  test('should emit legacy chunks as strict mode code', () => {
+    // The legacy chunks originate from ES modules, which are always
+    // strict-mode code. The SystemJS output must not silently downgrade them
+    // to sloppy mode: combined with names shadowed by the minifier, Annex B
+    // block-level function hoisting in sloppy mode can cause runtime
+    // TypeErrors in browsers that execute the legacy chunks.
+    for (const pattern of [
+      /index-legacy/,
+      /polyfills-legacy/,
+      /chunk-async-legacy/,
+    ]) {
+      expect(findAssetFile(pattern).startsWith('"use strict";')).toBe(true)
+    }
+  })
+
   test('should emit css file', async () => {
     expect(
       listAssets().some((filename) => filename.endsWith('.css')),
