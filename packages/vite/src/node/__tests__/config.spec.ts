@@ -2,12 +2,16 @@ import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs'
-import fsp from 'node:fs/promises'
 import { stripVTControlCharacters } from 'node:util'
 import { afterEach, assert, describe, expect, test, vi } from 'vitest'
 import type { InlineConfig, PluginOption } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
-import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
+import {
+  bundleConfigFile,
+  defineConfig,
+  loadConfigFromFile,
+  resolveConfig,
+} from '../config'
 import { resolveServerOptions } from '../server'
 import { resolveEnvPrefix } from '../env'
 import {
@@ -1965,16 +1969,14 @@ describe('loadConfigFromFile', () => {
       fixtures,
       './nested/.nested/vite.config.mts',
     )
-    const writeFile = vi.spyOn(fsp, 'writeFile')
-    await loadConfigFromFile({} as any, configPath, path.dirname(configPath))
-    const code = writeFile.mock.calls[0][1] as string
-    writeFile.mockRestore()
-
+    const { code } = await bundleConfigFile(configPath, true)
     const [, base64Map] = code.match(
       /\/\/# sourceMappingURL=data:application\/json;charset=utf-8;base64,(.+)/,
     )!
     const map = JSON.parse(Buffer.from(base64Map, 'base64').toString())
-    expect(normalizePath(map.sources[0])).toBe(normalizePath(configPath))
+    expect(map.sources.map(normalizePath)).toStrictEqual([
+      normalizePath(configPath),
+    ])
   })
 
   describe('loadConfigFromFile with configLoader: native', () => {

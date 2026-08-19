@@ -2504,7 +2504,7 @@ async function bundleAndLoadConfigFile(
   }
 }
 
-async function bundleConfigFile(
+export async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
 ): Promise<{
