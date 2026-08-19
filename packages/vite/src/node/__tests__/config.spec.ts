@@ -6,7 +6,12 @@ import { stripVTControlCharacters } from 'node:util'
 import { afterEach, assert, describe, expect, test, vi } from 'vitest'
 import type { InlineConfig, PluginOption } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
-import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
+import {
+  bundleConfigFile,
+  defineConfig,
+  loadConfigFromFile,
+  resolveConfig,
+} from '../config'
 import { resolveServerOptions } from '../server'
 import { resolveEnvPrefix } from '../env'
 import {
@@ -1957,6 +1962,21 @@ describe('loadConfigFromFile', () => {
 
     const c = config as any
     expect(c.dirname).toContain('shebang-crlf')
+  })
+
+  test('sourcemap of a nested config file points to itself', async () => {
+    const configPath = path.resolve(
+      fixtures,
+      './nested/.nested/vite.config.mts',
+    )
+    const { code } = await bundleConfigFile(configPath, true)
+    const [, base64Map] = code.match(
+      /\/\/# sourceMappingURL=data:application\/json;charset=utf-8;base64,(.+)/,
+    )!
+    const map = JSON.parse(Buffer.from(base64Map, 'base64').toString())
+    expect(map.sources.map(normalizePath)).toStrictEqual([
+      normalizePath(configPath),
+    ])
   })
 
   describe('loadConfigFromFile with configLoader: native', () => {

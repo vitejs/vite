@@ -1,16 +1,15 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 import MagicString from 'magic-string'
 import type { Plugin } from 'rolldown'
 import { defineConfig } from 'rolldown'
 import { ImportType, init, parse } from 'es-module-lexer'
 import licensePlugin from './rollupLicensePlugin'
+import pkg from './package.json' with { type: 'json' }
 
 // eslint-disable-next-line n/no-unsupported-features/node-builtins
 const dirname = import.meta.dirname
-const pkg = JSON.parse(
-  readFileSync(new URL('./package.json', import.meta.url)).toString(),
-)
+
 const disableSourceMap = !!process.env.DEBUG_DISABLE_SOURCE_MAP
 
 const envConfig = defineConfig({

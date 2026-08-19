@@ -272,6 +272,17 @@ describe('module runner initialization', async () => {
     expect(action).toBeDefined()
   })
 
+  it('resolves circular imports between modules with top-level await', async ({
+    runner,
+  }) => {
+    const mod = await runner.import('/fixtures/tla-circular/index.js')
+
+    expect(mod.a).toBe('a')
+    expect(mod.b).toBe('b')
+    expect(mod.getA()).toBe('a')
+    expect(mod.getB()).toBe('b')
+  })
+
   it('this of the exported function should be undefined', async ({
     runner,
   }) => {

@@ -7,7 +7,7 @@ import { isHTMLRequest } from './html'
 
 const nonJsRe = /\.json(?:$|\?)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
-const escapedDotRE = /(?<!\\)\\./g
+const escapedDotRE = /(?<!\\)\\\./g
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
