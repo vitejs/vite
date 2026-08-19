@@ -1,11 +1,7 @@
 import path, { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { readFileSync } from 'node:fs'
+import { version } from '../../package.json' with { type: 'json' }
 import type { RollupPluginHooks } from './typeUtils'
-
-const { version } = JSON.parse(
-  readFileSync(new URL('../../package.json', import.meta.url)).toString(),
-)
 
 export const ROLLUP_HOOKS: RollupPluginHooks[] = [
   'options',
