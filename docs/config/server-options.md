@@ -162,7 +162,7 @@ export default defineConfig({
 
 ::: warning Origin check for WebSockets
 
-Vite does not check the origin of WebSocket requests before proxying. The proxy target is expected to check the `Origin` header or other checks. Note that the `rewriteWsOrigin` will rewrite the origin to the target origin and will cause the origin check to be bypassed.
+Vite does not check the origin of WebSocket requests before proxying. The proxy target is expected to check the `Origin` header or other checks. Note that the `rewriteWsOrigin` option will rewrite the origin to the target origin and will cause the origin check to be bypassed.
 
 :::
 
