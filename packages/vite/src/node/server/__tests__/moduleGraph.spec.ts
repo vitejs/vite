@@ -1,9 +1,115 @@
 import { describe, expect, it } from 'vitest'
+import { isWindows } from '../../../shared/utils'
 import { EnvironmentModuleGraph } from '../moduleGraph'
 import type { ModuleNode } from '../mixedModuleGraph'
 import { ModuleGraph } from '../mixedModuleGraph'
 
 describe('moduleGraph', () => {
+  describe('onFileChange', () => {
+    it('normalizes redundant slashes in path before lookup', () => {
+      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
+        id: url,
+      }))
+
+      // Module keyed with a normalized path
+      const normalizedPath = '/project/src/foo.ts'
+      const mod = moduleGraph.createFileOnlyEntry(normalizedPath)
+      expect(mod.lastInvalidationTimestamp).toBe(0)
+
+      // path.posix.normalize collapses double-slashes on all platforms —
+      // onFileChange must normalize before lookup or it would miss the module
+      moduleGraph.onFileChange('/project//src/foo.ts')
+
+      expect(mod.lastInvalidationTimestamp).toBeGreaterThan(0)
+    })
+
+    it(
+      'normalizes Windows backslash paths before lookup',
+      { skip: !isWindows },
+      () => {
+        const moduleGraph = new EnvironmentModuleGraph(
+          'client',
+          async (url) => ({ id: url }),
+        )
+
+        // Module stored under a forward-slash key (as normalizePath produces)
+        const forwardSlashPath = 'C:/project/src/foo.ts'
+        const mod = moduleGraph.createFileOnlyEntry(forwardSlashPath)
+        expect(mod.lastInvalidationTimestamp).toBe(0)
+
+        // Windows chokidar emits backslash paths — onFileChange must normalize before lookup
+        moduleGraph.onFileChange('C:\\project\\src\\foo.ts')
+
+        expect(mod.lastInvalidationTimestamp).toBeGreaterThan(0)
+      },
+    )
+  })
+
+  describe('getModulesByFile', () => {
+    it('normalizes redundant slashes in path before lookup', () => {
+      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
+        id: url,
+      }))
+
+      const normalizedPath = '/project/src/foo.ts'
+      moduleGraph.createFileOnlyEntry(normalizedPath)
+
+      expect(moduleGraph.getModulesByFile('/project//src/foo.ts')).toBeDefined()
+    })
+
+    it(
+      'normalizes Windows backslash paths before lookup',
+      { skip: !isWindows },
+      () => {
+        const moduleGraph = new EnvironmentModuleGraph(
+          'client',
+          async (url) => ({ id: url }),
+        )
+
+        const forwardSlashPath = 'C:/project/src/foo.ts'
+        moduleGraph.createFileOnlyEntry(forwardSlashPath)
+
+        expect(
+          moduleGraph.getModulesByFile('C:\\project\\src\\foo.ts'),
+        ).toBeDefined()
+      },
+    )
+  })
+
+  describe('onFileDelete', () => {
+    it('normalizes redundant slashes in path before lookup', () => {
+      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
+        id: url,
+      }))
+
+      const normalizedPath = '/project/src/foo.ts'
+      moduleGraph.createFileOnlyEntry(normalizedPath)
+
+      // Should not throw and should find the module via the un-normalized path
+      expect(() =>
+        moduleGraph.onFileDelete('/project//src/foo.ts'),
+      ).not.toThrow()
+    })
+
+    it(
+      'normalizes Windows backslash paths before lookup',
+      { skip: !isWindows },
+      () => {
+        const moduleGraph = new EnvironmentModuleGraph(
+          'client',
+          async (url) => ({ id: url }),
+        )
+
+        const forwardSlashPath = 'C:/project/src/foo.ts'
+        moduleGraph.createFileOnlyEntry(forwardSlashPath)
+
+        expect(() =>
+          moduleGraph.onFileDelete('C:\\project\\src\\foo.ts'),
+        ).not.toThrow()
+      },
+    )
+  })
+
   describe('invalidateModule', () => {
     it('removes an ssr error', async () => {
       const moduleGraph = new EnvironmentModuleGraph('ssr', async (url) => ({
