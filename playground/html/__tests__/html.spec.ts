@@ -175,6 +175,21 @@ describe.runIf(isBuild)('build', () => {
     })
   })
 
+  describe('link order', () => {
+    beforeAll(async () => {
+      await page.goto(viteTestUrl + '/link-order/')
+    })
+
+    // bundled.css sets color to red, and the publicDir stylesheet (which
+    // isn't bundled and keeps its position) sets it to blue and is authored
+    // after it. Blue should win only if the bundled stylesheet's <link> is
+    // reinserted where it originally was instead of always at the end of
+    // <head> (#8739).
+    test('preserves order against a publicDir stylesheet link', async () => {
+      expect(await getColor('#link-order')).toBe('blue')
+    })
+  })
+
   describe('zeroJS', () => {
     // Ensure that the modulePreload polyfill is discarded in this case
 

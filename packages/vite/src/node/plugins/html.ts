@@ -62,6 +62,12 @@ const htmlProxyRE =
 const isHtmlProxyRE = /[?&]html-proxy\b/
 
 const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
+// Marks where the first bundled stylesheet <link> was removed from the
+// authored HTML so its replacement can be reinserted in the same place
+// instead of always at the end of <head>, preserving relative order against
+// sibling <link> tags that aren't bundled (e.g. ones served from `publicDir`).
+// See #8739.
+const cssLinkInsertionMarker = '\0__VITE_CSS_LINK_INSERT__\0'
 // Do not allow preceding '.', but do allow preceding '...' for spread operations
 const inlineImportRE =
   /(?<!(?<!\.\.)\.)\bimport\s*\(("(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*')\)/dg
@@ -786,6 +792,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             resolved: await this.resolve(styleUrl.url, id),
           })),
         )
+        let cssLinkMarkerInserted = false
         for (const { start, end, url, resolved } of resolvedStyleUrls) {
           if (resolved == null) {
             config.logger.warnOnce(
@@ -794,6 +801,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const importExpression = `\nimport ${JSON.stringify(url)}`
             js = js.replace(importExpression, '')
           } else {
+            if (!cssLinkMarkerInserted) {
+              s.appendLeft(start, cssLinkInsertionMarker)
+              cssLinkMarkerInserted = true
+            }
             s.remove(start, end)
           }
         }
@@ -936,6 +947,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         let result = html
 
+        // stylesheet <link> tags to inject, collected from both the
+        // per-chunk (cssCodeSplit: true) and single-bundle (cssCodeSplit:
+        // false) cases below, then injected together once (see marker
+        // handling further down)
+        const cssTags: HtmlTagDescriptor[] = []
+
         // find corresponding entry chunk
         const chunk = Object.values(bundle).find(
           (chunk) =>
@@ -987,7 +1004,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               )
             }
           }
-          assetTags.push(...getCssTagsForChunk(chunk, toOutputAssetFilePath))
+          cssTags.push(...getCssTagsForChunk(chunk, toOutputAssetFilePath))
 
           result = injectToHead(result, assetTags)
         }
@@ -1026,17 +1043,32 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 chunk.type === 'asset' && chunk.names.includes(cssBundleName),
             ) as OutputAsset | undefined)
           if (cssChunk) {
-            result = injectToHead(result, [
-              {
-                tag: 'link',
-                attrs: {
-                  rel: 'stylesheet',
-                  crossorigin: true,
-                  href: toOutputAssetFilePath(cssChunk.fileName),
-                },
+            cssTags.push({
+              tag: 'link',
+              attrs: {
+                rel: 'stylesheet',
+                crossorigin: true,
+                href: toOutputAssetFilePath(cssChunk.fileName),
               },
-            ])
+            })
           }
+        }
+
+        // Reinsert the bundled stylesheet <link>(s) where the first
+        // authored <link rel="stylesheet"> used to be (see the removal
+        // loop above), instead of always appending to the end of <head>.
+        // This preserves relative order against sibling <link> tags that
+        // weren't bundled (e.g. ones served as-is from `publicDir`), which
+        // matters for CSS cascade order. Falls back to the end of <head>
+        // when no stylesheet <link> was removed from this HTML file (#8739).
+        const cssLinkMarkerIndex = result.indexOf(cssLinkInsertionMarker)
+        if (cssLinkMarkerIndex !== -1) {
+          result =
+            result.slice(0, cssLinkMarkerIndex) +
+            (cssTags.length ? serializeTags(cssTags) : '') +
+            result.slice(cssLinkMarkerIndex + cssLinkInsertionMarker.length)
+        } else if (cssTags.length) {
+          result = injectToHead(result, cssTags)
         }
 
         // no use assets plugin because it will emit file
