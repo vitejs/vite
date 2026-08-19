@@ -592,8 +592,16 @@ function walk(
                 return this.skip()
               }
               if (child.type !== 'Identifier') return
-              // do not record as scope variable if is a destructuring keyword
-              if (isStaticPropertyKey(child, parent)) return
+              // do not record as scope variable if this is a property key
+              // rather than the bound value. computed keys are expressions and
+              // must still be rewritten, so they are skipped here too
+              if (
+                parent?.type === 'Property' &&
+                parent.key === child &&
+                parent.value !== child
+              ) {
+                return
+              }
               // do not record if this is a default value
               // assignment of a destructuring variable
               if (

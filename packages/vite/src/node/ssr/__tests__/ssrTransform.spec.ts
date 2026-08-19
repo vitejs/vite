@@ -421,6 +421,42 @@ test('rewrite variables in default value of destructuring params', async () => {
   expect(result?.deps).toEqual(['vue'])
 })
 
+// #23232
+test('rewrite computed key in a defaulted destructuring param', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `import { KEY } from 'vue';function f({ [KEY]: v = null } = {}) { return v }`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["KEY"]});
+    function f({ [__vite_ssr_import_0__.KEY]: v = null } = {}) { return v }"
+  `)
+})
+
+// #23232
+test('rewrite computed key in nested and array defaulted destructuring params', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `import { KEY } from 'vue';function a({ x: { [KEY]: v } = {} } = {}) { return v };function b([{ [KEY]: v } = {}] = []) { return v }`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["KEY"]});
+    function a({ x: { [__vite_ssr_import_0__.KEY]: v } = {} } = {}) { return v };function b([{ [__vite_ssr_import_0__.KEY]: v } = {}] = []) { return v }"
+  `)
+})
+
+// #23232
+test('do not rewrite shorthand binding in a defaulted destructuring param', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `import { KEY } from 'vue';function f({ KEY } = {}) { return KEY }`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["KEY"]});
+    function f({ KEY } = {}) { return KEY }"
+  `)
+})
+
 test('do not rewrite when function declaration is in scope', async () => {
   const result = await ssrTransformSimple(
     `import { fn } from 'vue';function A(){ function fn() {}; return { fn }; }`,
