@@ -544,7 +544,6 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   appType?: AppType
   /**
    * Enable devtools integration. Ensure that `@vitejs/devtools` is installed as a dependency.
-   * This feature is currently supported only in build mode.
    * @experimental
    * @default false
    */
@@ -788,14 +787,17 @@ export async function resolveDevToolsConfig(
   host: string | boolean | undefined,
   logger: Logger,
 ): Promise<ResolvedDevToolsConfig> {
-  const isEnabled = config === true || !!(config && config.enabled)
+  const isEnabled =
+    config === true ||
+    (typeof config === 'object' && config != null && config.enabled !== false)
   const resolvedHostname = await resolveHostname(host)
   const fallbackHostname = resolvedHostname.host ?? 'localhost'
-  const fallbackConfig = {
+  const fallbackConfig: ResolvedDevToolsConfig = {
     config: {
       host: fallbackHostname,
     },
     enabled: false,
+    apply: typeof config === 'object' ? (config.apply ?? 'all') : 'all',
   }
   if (!isEnabled) {
     return fallbackConfig

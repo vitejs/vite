@@ -6,7 +6,11 @@ import {
   viteJsonPlugin as nativeJsonPlugin,
   oxcRuntimePlugin,
 } from 'rolldown/experimental'
-import type { PluginHookUtils, ResolvedConfig } from '../config'
+import {
+  type PluginHookUtils,
+  type ResolvedConfig,
+  sortUserPlugins,
+} from '../config'
 import {
   type HookHandler,
   type Plugin,
@@ -53,10 +57,15 @@ export async function resolvePlugins(
   const buildPlugins = anyEnvBundled
     ? resolveBuildPlugins(config)
     : { pre: [], post: [] }
-  const devtoolsIntegrationPlugin =
-    config.devtools.enabled && !isWorker
-      ? await loadDevToolsIntegrationPlugin(config)
-      : null
+  const isDevToolsPluginRegistered =
+    config.command === 'serve' &&
+    [...prePlugins, ...normalPlugins, ...postPlugins].some(
+      (plugin) => plugin.name === 'vite:devtools:server',
+    )
+  const devtoolsIntegrationPlugins =
+    config.devtools.enabled && !isWorker && !isDevToolsPluginRegistered
+      ? await loadDevToolsIntegrationPlugins(config)
+      : { pre: [], normal: [], post: [] }
   const { modulePreload } = config.build
 
   return [
@@ -88,6 +97,7 @@ export async function resolvePlugins(
     } as Plugin,
 
     ...prePlugins,
+    ...devtoolsIntegrationPlugins.pre,
 
     modulePreload !== false && modulePreload.polyfill
       ? modulePreloadPolyfillPlugin()
@@ -134,6 +144,7 @@ export async function resolvePlugins(
       forwardConsolePlugin({ environments: ['client'] }),
 
     ...normalPlugins,
+    ...devtoolsIntegrationPlugins.normal,
 
     definePlugin(config),
     cssPostPlugin(config),
@@ -145,9 +156,9 @@ export async function resolvePlugins(
     importGlobPlugin(config),
 
     ...postPlugins,
+    ...devtoolsIntegrationPlugins.post,
 
     ...buildPlugins.post,
-    devtoolsIntegrationPlugin,
 
     // internal server-only plugins are always applied after everything else
     clientInjectionsPlugin(config),
@@ -156,12 +167,14 @@ export async function resolvePlugins(
   ].filter(Boolean) as Plugin[]
 }
 
-async function loadDevToolsIntegrationPlugin(
+async function loadDevToolsIntegrationPlugins(
   config: ResolvedConfig,
-): Promise<Plugin | null> {
+): Promise<{ pre: Plugin[]; normal: Plugin[]; post: Plugin[] }> {
   try {
     const { DevToolsIntegration } = await import('@vitejs/devtools/integration')
-    return DevToolsIntegration({ config })
+    const plugins = (await DevToolsIntegration({ config })) as Plugin | Plugin[]
+    const [pre, normal, post] = sortUserPlugins([plugins])
+    return { pre, normal, post }
   } catch (error: any) {
     config.logger.error(
       colors.red(
@@ -169,7 +182,7 @@ async function loadDevToolsIntegrationPlugin(
       ),
       { error },
     )
-    return null
+    return { pre: [], normal: [], post: [] }
   }
 }
 

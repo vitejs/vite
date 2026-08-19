@@ -624,8 +624,8 @@ Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlew
 - **Type:** `boolean` | `DevToolsConfig`
 - **Default:** `false`
 
-Enable devtools integration for visualizing the internal state and build analysis.
-Ensure that `@vitejs/devtools` is installed as a dependency. This feature is currently supported only in build mode.
+Enable devtools integration for inspecting the dev server and analyzing builds.
+Ensure that `@vitejs/devtools` is installed as a dependency. Install `@vitejs/devtools-vite` to inspect the Vite dev server and `@vitejs/devtools-rolldown` to enable build analysis. DevTools runs for both `serve` and `build` by default; use `apply` to limit it to either command.
 
 See [Vite DevTools](https://github.com/vitejs/devtools) for more details.
 
