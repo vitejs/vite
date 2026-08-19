@@ -285,6 +285,9 @@ describe('convertTargets', () => {
     expect(convertTargets('esnext')).toBeUndefined()
     expect(convertTargets(['esnext'])).toBeUndefined()
     expect(convertTargets(false)).toBeUndefined()
+    expect(convertTargets(['esnext', 'chrome148'])).toStrictEqual({
+      chrome: 0x94_00_00,
+    })
   })
 })
 
