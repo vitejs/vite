@@ -881,6 +881,41 @@ const foo = {}
   `)
 })
 
+test('destructuring assignments', async () => {
+  expect(
+    await ssrTransformSimpleCode(`
+import { key } from 'foo'
+let value
+const object = {}
+;({ [key]: value = key } = object)
+;[value = key] = []
+
+function shadowed(key) {
+  ;({ key } = object)
+  ;({ alias: key } = object)
+  ;[key] = []
+  return key
+}
+`),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("foo", {"importedNames":["key"]});
+
+
+    let value;
+    const object = {}
+    ;({ [__vite_ssr_import_0__.key]: value = __vite_ssr_import_0__.key } = object)
+    ;[value = __vite_ssr_import_0__.key] = [];
+
+    function shadowed(key) {
+      ;({ key } = object)
+      ;({ alias: key } = object)
+      ;[key] = [];
+      return key
+    }
+    "
+  `)
+})
+
 test('nested object destructure alias', async () => {
   expect(
     await ssrTransformSimpleCode(
