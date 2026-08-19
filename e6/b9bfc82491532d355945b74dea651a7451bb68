@@ -1,0 +1,19 @@
+packages/vite/src/node/ssr/__tests__/ssrTransform.spec.ts
+  s_56425ea7f20b78::t_a5e2120646eb07 884-918
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e6b9bfc82491532d355945b74dea651a7451bb68",
+  "prompts": {},
+  "sessions": {
+    "s_56425ea7f20b78": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01945-7ad9-7000-91cd-c8e3c11e69c9",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
