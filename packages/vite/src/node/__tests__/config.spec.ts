@@ -2018,36 +2018,23 @@ describe('loadConfigFromFile', () => {
 })
 
 describe('root resolution', () => {
-  const tmpBase = path.join(os.tmpdir(), 'vite-root-test')
-
-  afterEach(() => {
-    if (fs.existsSync(tmpBase)) {
-      fs.rmSync(tmpBase, { recursive: true, force: true })
-    }
-  })
+  const fixtureRoot = path.resolve(
+    import.meta.dirname,
+    './fixtures/config/root-resolution',
+  )
+  const realDir = path.join(fixtureRoot, 'real')
+  const linkDir = path.join(fixtureRoot, 'link')
 
   test('resolves a symlinked root to its real path', async () => {
-    const realDir = path.join(tmpBase, 'realpath', 'real')
-    const linkDir = path.join(tmpBase, 'realpath', 'link')
-    fs.mkdirSync(realDir, { recursive: true })
-    fs.symlinkSync(realDir, linkDir, 'junction')
-
     const config = await resolveConfig({ root: linkDir }, 'serve')
-
     expect(config.root).toBe(normalizePath(fs.realpathSync.native(realDir)))
   })
 
   test('keeps a symlinked root when resolve.preserveSymlinks is true', async () => {
-    const realDir = path.join(tmpBase, 'preserve-symlinks', 'real')
-    const linkDir = path.join(tmpBase, 'preserve-symlinks', 'link')
-    fs.mkdirSync(realDir, { recursive: true })
-    fs.symlinkSync(realDir, linkDir, 'junction')
-
     const config = await resolveConfig(
       { root: linkDir, resolve: { preserveSymlinks: true } },
       'serve',
     )
-
     expect(config.root).toBe(normalizePath(linkDir))
   })
 })
