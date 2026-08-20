@@ -3,6 +3,7 @@ import path from 'node:path'
 import { describe, expect, onTestFinished, test } from 'vitest'
 import { createServer } from '../../../server'
 import { FS_PREFIX } from '../../../constants'
+import { unwrapId } from '../../../../shared/utils'
 
 const FIXTURE_DIR = path.resolve(import.meta.dirname, 'fixtures')
 const HTML_PATH = path.resolve(FIXTURE_DIR, 'root/index.html')
@@ -83,6 +84,31 @@ describe('indexHtml middleware — /@fs/ inline script proxy cache', () => {
       await server.environments.client.transformRequest(proxyModuleUrl)
 
     expect(result, 'proxy module should resolve without error').not.toBeNull()
+    expect(result!.code).toContain('module loaded')
+  })
+
+  test('inline <script type="module"> is loadable when transformIndexHtml is called with an empty url', async () => {
+    const server = await createTestServer()
+
+    // SSR integrations often derive the url with `req.originalUrl.replace(base, '')`,
+    // which produces '' for the root (#18228)
+    const transformed = await server.transformIndexHtml('', HTML_CONTENT)
+
+    const proxyUrlMatch = transformed.match(/src="([^"]*html-proxy[^"]*)"/)
+    expect(
+      proxyUrlMatch,
+      'devHtmlHook should rewrite the inline <script> to a ?html-proxy src',
+    ).toBeTruthy()
+
+    // the transform middleware unwraps /@id/ urls before transformRequest
+    const proxyModuleUrl = unwrapId(decodeURIComponent(proxyUrlMatch![1]))
+    const result =
+      await server.environments.client.transformRequest(proxyModuleUrl)
+
+    expect(
+      result,
+      'proxy module should resolve without a cache-miss error',
+    ).not.toBeNull()
     expect(result!.code).toContain('module loaded')
   })
 })
