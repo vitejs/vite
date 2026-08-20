@@ -430,7 +430,7 @@ export const formatSourcemapForSnapshot = (
   }
   const normalized = Object.fromEntries(
     Object.keys(m)
-      .filter((key) => m[key] !== null)
+      .filter((key) => m[key] != null)
       .sort()
       .map((key) => [key, m[key]]),
   )
