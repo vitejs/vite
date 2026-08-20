@@ -67,7 +67,6 @@ const inlineImportRE =
   /(?<!(?<!\.\.)\.)\bimport\s*\(("(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*')\)/dg
 const htmlLangRE = /\.(?:html|htm)$/
 const spaceRe = /[\t\n\f\r ]/
-
 const importMapRE =
   /[ \t]*<script[^>]*type\s*=\s*(?:"importmap"|'importmap'|importmap)[^>]*>.*?<\/script>/is
 const moduleScriptRE =
@@ -179,6 +178,14 @@ export function nodeIsElement(
   node: DefaultTreeAdapterMap['node'],
 ): node is DefaultTreeAdapterMap['element'] {
   return node.nodeName[0] !== '#'
+}
+
+function isAttrValue(
+  attr: Token.Attribute,
+  name: string,
+  value: string,
+): boolean {
+  return attr.name === name && attr.value.toLowerCase() === value
 }
 
 function traverseNodes(
@@ -1202,12 +1209,33 @@ export type IndexHtmlTransform =
 export function preImportMapHook(
   config: ResolvedConfig,
 ): IndexHtmlTransformHook {
-  return (html, ctx) => {
-    const importMapIndex = html.search(importMapRE)
-    if (importMapIndex < 0) return
+  return async (html, ctx) => {
+    if (!importMapRE.test(html)) return
+    if (!importMapAppendRE.test(html)) return
 
-    const importMapAppendIndex = html.search(importMapAppendRE)
-    if (importMapAppendIndex < 0) return
+    let importMapIndex = -1
+    let importMapAppendIndex = -1
+    await traverseHtml(html, ctx.path, config.logger.warn, (node) => {
+      if (!nodeIsElement(node)) {
+        return
+      }
+      const { nodeName, attrs } = node
+      if (
+        nodeName === 'script' &&
+        attrs.some((attr) => isAttrValue(attr, 'type', 'importmap'))
+      ) {
+        importMapIndex = node.sourceCodeLocation!.startTag!.startOffset
+      } else if (
+        importMapAppendIndex < 0 &&
+        ((nodeName === 'script' &&
+          attrs.some((attr) => isAttrValue(attr, 'type', 'module'))) ||
+          (nodeName === 'link' &&
+            attrs.some((attr) => isAttrValue(attr, 'rel', 'modulepreload'))))
+      ) {
+        importMapAppendIndex = node.sourceCodeLocation!.startTag!.startOffset
+      }
+    })
+    if (importMapIndex < 0 || importMapAppendIndex < 0) return
 
     if (importMapAppendIndex < importMapIndex) {
       const relativeHtml = normalizePath(
@@ -1231,58 +1259,94 @@ export function postImportMapHook(
   config: ResolvedConfig,
 ): IndexHtmlTransformHook {
   const decoder = new TextDecoder()
-  return function (html, { bundle }) {
-    const chunkImportMapEnabled =
-      config.command === 'build' &&
-      config.environments.client.build.chunkImportMap
+  const chunkImportMapEnabled =
+    config.command === 'build' &&
+    config.environments.client.build.chunkImportMap
 
+  function injectChunkImportMap(html: string, bundle: OutputBundle): string {
+    const nonce = config.html?.cspNonce
+    const importMap = bundle[
+      getImportMapFilename(config.environments.client)
+    ] as OutputAsset
+    const importMapHtml = serializeTag({
+      tag: 'script',
+      attrs: { type: 'importmap', ...(nonce ? { nonce } : {}) },
+      children:
+        typeof importMap.source === 'string'
+          ? importMap.source
+          : decoder.decode(importMap.source),
+    })
     if (importMapAppendRE.test(html)) {
-      let importMap: string | undefined
-      html = html.replace(importMapRE, (match) => {
-        importMap = match
-        return ''
-      })
+      return html.replace(
+        importMapAppendRE,
+        (match) => `${importMapHtml}\n${match}`,
+      )
+    }
+    return `${importMapHtml}\n${html}`
+  }
 
-      if (importMap) {
-        html = html.replace(
-          importMapAppendRE,
-          (match) => `${importMap}\n${match}`,
-        )
-        if (chunkImportMapEnabled) {
-          // https://caniuse.com/mdn-html_elements_script_type_importmap_multiple_import_maps
-          this.warn(
-            `The \`build.chunkImportMap\` option is enabled but an import map also exists in the input HTML file.` +
-              ` This leads to multiple import maps generated in the output HTML, which is not supported by older browsers and Firefox.`,
+  return async function (html, { path, bundle }) {
+    if (!importMapRE.test(html)) {
+      if (chunkImportMapEnabled && bundle) {
+        return injectChunkImportMap(html, bundle)
+      }
+      return
+    }
+
+    if (!importMapAppendRE.test(html)) {
+      if (chunkImportMapEnabled && bundle) {
+        return injectChunkImportMap(html, bundle)
+      }
+      return
+    }
+
+    let importMapAppendIndex = -1
+    let hasImportMap = false
+    const s = new MagicString(html)
+    await traverseHtml(html, path, config.logger.warn, (node) => {
+      if (!nodeIsElement(node)) {
+        return
+      }
+
+      const { nodeName, attrs, sourceCodeLocation } = node
+      if (
+        nodeName === 'script' &&
+        attrs.some((attr) => isAttrValue(attr, 'type', 'importmap'))
+      ) {
+        hasImportMap = true
+        if (importMapAppendIndex >= 0) {
+          s.move(
+            sourceCodeLocation!.startTag!.startOffset,
+            sourceCodeLocation!.endOffset,
+            importMapAppendIndex,
           )
         }
+      } else if (
+        importMapAppendIndex < 0 &&
+        ((nodeName === 'script' &&
+          attrs.some((attr) => isAttrValue(attr, 'type', 'module'))) ||
+          (nodeName === 'link' &&
+            attrs.some((attr) => isAttrValue(attr, 'rel', 'modulepreload'))))
+      ) {
+        importMapAppendIndex = node.sourceCodeLocation!.startTag!.startOffset
       }
+    })
+
+    if (chunkImportMapEnabled && hasImportMap) {
+      // https://caniuse.com/mdn-html_elements_script_type_importmap_multiple_import_maps
+      this.warn(
+        `The \`build.chunkImportMap\` option is enabled but an import map also exists in the input HTML file.` +
+          ` This leads to multiple import maps generated in the output HTML, which is not supported by older browsers and Firefox.`,
+      )
     }
 
-    if (chunkImportMapEnabled) {
-      const nonce = config.html?.cspNonce
-      const importMap = bundle![
-        getImportMapFilename(config.environments.client)
-      ] as OutputAsset
-      const importMapHtml = serializeTag({
-        tag: 'script',
-        attrs: { type: 'importmap', ...(nonce ? { nonce } : {}) },
-        children:
-          typeof importMap.source === 'string'
-            ? importMap.source
-            : decoder.decode(importMap.source),
-      })
-      if (importMapAppendRE.test(html)) {
-        // NOTE: insert before the existing import map so that our import map takes precedence
-        html = html.replace(
-          importMapAppendRE,
-          (match) => `${importMapHtml}\n${match}`,
-        )
-      } else {
-        html = `${importMapHtml}\n${html}`
-      }
+    let result = s.toString()
+
+    if (chunkImportMapEnabled && bundle) {
+      result = injectChunkImportMap(result, bundle)
     }
 
-    return html
+    return result
   }
 }
 
