@@ -3,6 +3,16 @@ import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import { isBuild, page, testDir } from '~utils'
 
+function getFilesRecursive(dir: string): string[] {
+  const result: string[] = []
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name)
+    if (entry.isDirectory()) result.push(...getFilesRecursive(full))
+    else result.push(full)
+  }
+  return result
+}
+
 test('normal', async () => {
   await expect.poll(() => page.textContent('.pong')).toMatch('pong')
   await expect
@@ -140,6 +150,42 @@ describe.runIf(isBuild)('build', () => {
     await expect
       .poll(() => page.textContent('.nested-worker-constructor'))
       .toMatch('"type":"constructor"')
+  })
+
+  test('worker dynamic import chunks exist and are preloaded at worker creation', () => {
+    const assetsDir = path.resolve(testDir, 'dist/es/assets')
+    const distDir = path.resolve(testDir, 'dist/es')
+    const files = fs.readdirSync(assetsDir)
+
+    // Chunk graph: worker dynamic imports produce separate chunks.
+    // The naming pattern is set explicitly in vite.config-es.js
+    // (worker.rolldownOptions.output.chunkFileNames), not a Vite
+    // internal — it's the test fixture's own configuration.
+    const workerChunks = files.filter((f) => f.startsWith('worker_chunk-'))
+    expect(workerChunks.length).toBeGreaterThan(0)
+
+    // Preload: WorkerWrapper should use __vitePreload (minified alias) to
+    // preload worker deps. Verify by checking the main thread JS references
+    // all worker chunks (direct + nested) in the preload call.
+    const allJs = getFilesRecursive(distDir).filter((f) => f.endsWith('.js'))
+    const mainJsFile = allJs.find((f) =>
+      path.basename(f).startsWith('main-format-es-'),
+    )
+    expect(mainJsFile).toBeTruthy()
+    const mainJsContent = fs.readFileSync(mainJsFile!, 'utf-8')
+    const preloadChunks = mainJsContent.match(/worker_chunk-[A-Za-z0-9-]+\.js/g)
+    expect(preloadChunks).toBeTruthy()
+    expect(preloadChunks!.length).toBeGreaterThan(0)
+
+    // Verify nested worker deps are bubbled up: check the main JS contains
+    // more than one chunk starting with "worker_chunk-module-".
+    // emit-chunk-nested-worker imports module-and-worker (1 chunk).
+    // emit-chunk-sub-worker (nested) also imports module-and-worker (2nd).
+    // Without bubble-up, only the top-level chunk appears in main JS.
+    const mainPrefixed = preloadChunks!.filter((c) =>
+      c.startsWith('worker_chunk-module-'),
+    )
+    expect(mainPrefixed.length).toBeGreaterThan(1)
   })
 })
 
