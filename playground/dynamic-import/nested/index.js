@@ -135,6 +135,13 @@ import(`../nested/${base}.js`).then((mod) => {
 import(`../nested/nested/${base}.js`).then((mod) => {
   text('.dynamic-import-nested-self', mod.self)
 })
+
+base = 'foo'
+// a constant (`${'views'}`) before the first variable must not be duplicated
+import(`../${'views'}/${base}.js`).then((mod) => {
+  text('.dynamic-import-with-vars-const-prefix', mod.msg)
+})
+
 ;(async function () {
   const { foo } = await import('./treeshaken/treeshaken.js')
   const { bar, default: tree } = await import('./treeshaken/treeshaken.js')
