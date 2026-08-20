@@ -6,6 +6,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
+  debug: npm:obug@^1.0.2
   rolldown: ~1.2.4
   vite: workspace:*
 
@@ -21,9 +22,6 @@ patchedDependencies:
   sirv@3.0.2:
     hash: c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95
     path: patches/sirv@3.0.2.patch
-  vitepress:
-    hash: f5a056d993c87f7881e7f489d7e4481d0e8b1ef4de8fff701c5b0123c86dfc27
-    path: patches/vitepress.patch
 
 importers:
 
@@ -135,8 +133,8 @@ importers:
         specifier: ^5.0.6
         version: 5.0.6
       '@voidzero-dev/vitepress-theme':
-        specifier: ^5.0.6
-        version: 5.0.6(focus-trap@8.2.2)(vite@packages+vite)(vitepress@2.0.0-alpha.19)(vue@3.5.41)
+        specifier: 5.0.4
+        version: 5.0.4(focus-trap@8.2.2)(vite@packages+vite)(vitepress@2.0.0-alpha.19)(vue@3.5.41)
       feed:
         specifier: ^6.0.0
         version: 6.0.0
@@ -10742,7 +10740,7 @@ snapshots:
 
   '@voidzero-dev/vite-task-client@0.2.0': {}
 
-  '@voidzero-dev/vitepress-theme@5.0.6(focus-trap@8.2.2)(vite@packages+vite)(vitepress@2.0.0-alpha.19)(vue@3.5.41)':
+  '@voidzero-dev/vitepress-theme@5.0.4(focus-trap@8.2.2)(vite@packages+vite)(vitepress@2.0.0-alpha.19)(vue@3.5.41)':
     dependencies:
       '@docsearch/css': 4.7.0
       '@docsearch/js': 4.7.0
