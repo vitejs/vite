@@ -1,5 +1,15 @@
 import { RUNTIME_MODULE_ID } from 'rolldown'
-import { exactRegex } from 'rolldown/filter'
+import {
+  and,
+  code as filterCode,
+  exactRegex,
+  exclude,
+  id as filterId,
+  importerId,
+  include,
+  moduleType,
+  or,
+} from 'rolldown/filter'
 import { afterAll, describe, expect, test, vi } from 'vitest'
 import { type InlineConfig, type Plugin, build, createServer } from '../..'
 
@@ -22,6 +32,9 @@ describe('hook filter with plugin container', async () => {
   const load = vi.fn()
   const transformWithId = vi.fn()
   const transformWithCode = vi.fn()
+  const composableResolveId = vi.fn()
+  const composableLoad = vi.fn()
+  const composableTransform = vi.fn()
   const any = expect.toSatisfy(() => true) // anything including undefined and null
   const config = getConfigWithPlugin([
     {
@@ -46,6 +59,28 @@ describe('hook filter with plugin container', async () => {
         handler: transformWithCode,
       },
     },
+    {
+      name: 'composable-filter',
+      resolveId: {
+        filter: [
+          exclude(importerId(/blocked/)),
+          include(or(importerId(/.+/), filterId(/^foo\.js$/))),
+        ],
+        handler: composableResolveId,
+      },
+      load: {
+        filter: [include(filterId(/\.js$/))],
+        handler: composableLoad,
+      },
+      transform: {
+        filter: [
+          include(
+            and(filterId(/\.js$/), filterCode('import_meta'), moduleType('js')),
+          ),
+        ],
+        handler: composableTransform,
+      },
+    },
   ])
   const server = await createServer(config)
   afterAll(async () => {
@@ -58,6 +93,10 @@ describe('hook filter with plugin container', async () => {
     await pluginContainer.resolveId('foo.ts')
     expect(resolveId).toHaveBeenCalledTimes(1)
     expect(resolveId).toHaveBeenCalledWith('foo.js', any, any)
+    expect(composableResolveId).toHaveBeenCalledTimes(2)
+
+    await pluginContainer.resolveId('foo.js', 'blocked.js')
+    expect(composableResolveId).toHaveBeenCalledTimes(2)
   })
 
   test('load', async () => {
@@ -65,6 +104,8 @@ describe('hook filter with plugin container', async () => {
     await pluginContainer.load('foo.ts')
     expect(load).toHaveBeenCalledTimes(1)
     expect(load).toHaveBeenCalledWith('foo.js', any)
+    expect(composableLoad).toHaveBeenCalledTimes(1)
+    expect(composableLoad).toHaveBeenCalledWith('foo.js', any)
   })
 
   test('transform', async () => {
@@ -85,6 +126,12 @@ describe('hook filter with plugin container', async () => {
       'foo.ts',
       any,
     )
+    expect(composableTransform).toHaveBeenCalledTimes(1)
+    expect(composableTransform).toHaveBeenCalledWith(
+      expect.stringContaining('import_meta'),
+      'foo.js',
+      any,
+    )
   })
 })
 
@@ -93,6 +140,9 @@ describe('hook filter with build', async () => {
   const load = vi.fn()
   const transformWithId = vi.fn()
   const transformWithCode = vi.fn()
+  const composableResolveId = vi.fn()
+  const composableLoad = vi.fn()
+  const composableTransform = vi.fn()
   const any = expect.anything()
   const config = getConfigWithPlugin(
     [
@@ -124,6 +174,32 @@ describe('hook filter with build', async () => {
         },
       },
       {
+        name: 'composable-filter',
+        resolveId: {
+          filter: [
+            exclude(importerId(/blocked/)),
+            include(or(importerId(/.+/), filterId(/^foo\.js$/))),
+          ],
+          handler: composableResolveId,
+        },
+        load: {
+          filter: [include(filterId(/\.js$/))],
+          handler: composableLoad,
+        },
+        transform: {
+          filter: [
+            include(
+              and(
+                filterId(/\.js$/),
+                filterCode('import_meta'),
+                moduleType('js'),
+              ),
+            ),
+          ],
+          handler: composableTransform,
+        },
+      },
+      {
         name: 'resolver',
         resolveId(id) {
           return id
@@ -145,11 +221,16 @@ describe('hook filter with build', async () => {
   test('resolveId', async () => {
     expect(resolveId).toHaveBeenCalledTimes(1)
     expect(resolveId).toHaveBeenCalledWith('foo.js', undefined, any)
+    expect(composableResolveId).toHaveBeenCalledTimes(2)
+    expect(composableResolveId).toHaveBeenCalledWith('foo.js', undefined, any)
+    expect(composableResolveId).toHaveBeenCalledWith('foo.ts', 'foo.js', any)
   })
 
   test('load', async () => {
     expect(load).toHaveBeenCalledTimes(1)
     expect(load).toHaveBeenCalledWith('foo.js', any)
+    expect(composableLoad).toHaveBeenCalledTimes(1)
+    expect(composableLoad).toHaveBeenCalledWith('foo.js', any)
   })
 
   test('transform', async () => {
@@ -163,6 +244,12 @@ describe('hook filter with build', async () => {
     expect(transformWithCode).toHaveBeenCalledWith(
       expect.stringContaining('import.meta'),
       'foo.ts',
+      any,
+    )
+    expect(composableTransform).toHaveBeenCalledTimes(1)
+    expect(composableTransform).toHaveBeenCalledWith(
+      expect.stringContaining('import_meta'),
+      'foo.js',
       any,
     )
   })

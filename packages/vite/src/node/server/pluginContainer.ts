@@ -402,7 +402,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       if (mergedSkip?.has(plugin)) continue
 
       const filter = getCachedFilterForPlugin(plugin, 'resolveId')
-      if (filter && !filter(rawId)) continue
+      if (filter && !filter(rawId, importer)) continue
 
       ctx._plugin = plugin
 
