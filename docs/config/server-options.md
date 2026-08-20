@@ -313,6 +313,31 @@ File system watcher options to pass on to [chokidar](https://github.com/paulmill
 
 The Vite server watcher watches the `root` and skips the `.git/`, `node_modules/`, `test-results/`, and Vite's `cacheDir` and `build.outDir` directories by default. When updating a watched file, Vite will apply HMR and update the page only if needed.
 
+In a monorepo, files outside the configured `root` are not watched automatically. If a package needs to react to changes in another workspace package, add the external source directories in a plugin:
+
+```js
+import path from 'node:path'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [
+    {
+      name: 'watch-workspace-package',
+      configureServer(server) {
+        server.watcher.add(
+          path.resolve(import.meta.dirname, '../shared-package/src'),
+        )
+      },
+    },
+  ],
+  server: {
+    watch: {
+      ignored: ['**/.yarn/**', '**/.wireit/**'],
+    },
+  },
+})
+```
+
 If set to `null`, no files will be watched. [`server.watcher`](/guide/api-javascript.html#vitedevserver) will provide a compatible event emitter, but calling `add` or `unwatch` will have no effect.
 
 ::: warning Watching files in `node_modules`
