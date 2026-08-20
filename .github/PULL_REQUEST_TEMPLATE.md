@@ -11,5 +11,12 @@ Also, please make sure you do the following:
 - Update the corresponding documentation if needed.
 - Include relevant tests that fail without this PR but pass with it. If the tests are not included, explain why.
 
+If you have used AI:
+
+- Read the AI Policy at https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md#ai-policy.
+- Keep the PR description and discussion concise. Use your own words, do not let AI write for you.
+- Disclose and describe how you have reviewed its code, e.g. the thought process and decisions that lead to the final code.
+- If there's already an existing PR that solves the same problem, link to it in the PR description and clarify what is different from it.
+
 Thank you for contributing to Vite!
 -->

@@ -221,6 +221,17 @@ In many test cases, we need to mock dependencies using `link:` and `file:` proto
 
 For a mock dependency, make sure you add a `@vitejs/test-` prefix to the package name. This will avoid possible issues like false-positive alerts.
 
+## AI Policy
+
+<!-- Adapted from https://github.com/nuxt/nuxt/blob/main/CONTRIBUTING.md#ai-assisted-contributions -->
+
+We welcome the thoughtful use of AI tools when contributing to Vite, but ask all contributors to follow [two core principles](https://roe.dev/blog/using-ai-in-open-source):
+
+1. **Never let an LLM speak for you** - all comments, issues, and PR descriptions should be written in your own words, reflecting your own understanding.
+2. **Never let an LLM think for you** - only submit contributions you fully understand and can explain.
+
+If we find that these principles were not followed, we may close the issue or pull request directly.
+
 ## Pull Request Guidelines
 
 > [!NOTE]
