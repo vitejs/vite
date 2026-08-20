@@ -629,13 +629,13 @@ describe('processSrcSetSync', () => {
     expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
   })
 
-  test('should not break a srcset separated by newlines only', async () => {
+  test('should convert newline-separated srcset candidates to space-separated', async () => {
     const source = 'asset.png\n1x,\nnested/asset.png\n2x'
     const result = 'asset.png 1x, nested/asset.png 2x'
     expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
   })
 
-  test('should not break a srcset separated by CRLF newlines only', async () => {
+  test('should convert CRLF-separated srcset candidates to space-separated', async () => {
     const source = 'asset.png\r\n1x,\r\nnested/asset.png\r\n2x'
     const result = 'asset.png 1x, nested/asset.png 2x'
     expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
