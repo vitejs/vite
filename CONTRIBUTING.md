@@ -343,15 +343,7 @@ All publishable packages in this repository use a pull-request-driven release fl
 1. Run the [Prepare Release](.github/workflows/prepare-release.yml) workflow from the `main` branch.
 2. Select `vite`, `create-vite`, or `plugin-legacy`.
 3. Select a `release` type. The default `next` creates the next patch for a stable version or advances an existing prerelease. Alternatively, select another supported release type or enter an exact `version`, which takes precedence over `release`.
-4. Wait for `vite-release-bot` to open the release PR. The PR contains the selected package's version bump and changelog entry. A `create-vite` release also updates template Vite dependency versions when appropriate.
-
-To preview the available release types and versions locally, run the following command from the repository root:
-
-```sh
-node scripts/prepare-release.ts vite patch
-```
-
-Replace `vite` with `create-vite` or `plugin-legacy` as needed.
+4. Wait for the action to open the release PR. The PR contains the selected package's version bump and changelog entry. A `create-vite` release also updates template Vite dependency versions when appropriate.
 
 #### Review and Publish
 
@@ -365,9 +357,6 @@ Replace `vite` with `create-vite` or `plugin-legacy` as needed.
 
 The release flow depends on configuration outside this repository:
 
-- The `vite-release-bot` GitHub App must be installed on `vitejs/vite` with Contents and Pull requests read/write permissions. Webhooks must be disabled.
-- `RELEASE_GITHUB_APP_CLIENT_ID` must be a repository variable containing the app client ID.
-- `RELEASE_GITHUB_APP_PRIVATE_KEY` must be a repository secret containing the app private key.
 - The `Release` environment must require maintainer approval before publishing.
 - The npm trusted publishers for `vite`, `create-vite`, and `@vitejs/plugin-legacy` must be restricted to `vitejs/vite`, `.github/workflows/publish.yml`, and the `Release` environment.
 

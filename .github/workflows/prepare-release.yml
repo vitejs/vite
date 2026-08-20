@@ -42,7 +42,8 @@ jobs:
     name: Prepare release PR
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -73,21 +74,10 @@ jobs:
         run: |
           node scripts/prepare-release.ts "$RELEASE_PACKAGE" "$RELEASE" >> "$GITHUB_OUTPUT"
 
-      - id: generate-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          client-id: ${{ vars.RELEASE_GITHUB_APP_CLIENT_ID }}
-          private-key: ${{ secrets.RELEASE_GITHUB_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-contents: write
-          permission-pull-requests: write
-
       - name: Open release PR
-        uses: vitejs/release-scripts/action/release-pr@bec07424241c85b28458756d0ef9edbb130dc63e # v1.9.1
+        uses: vitejs/release-scripts/action/release-pr@005dab4c647ff12519bfd076a595b2be33be8f6b # v1.9.2
         with:
-          app-slug: ${{ steps.generate-token.outputs.app-slug }}
-          token: ${{ steps.generate-token.outputs.token }}
+          token: ${{ github.token }}
           package-name: ${{ inputs.package }}
           package-path: packages/${{ inputs.package }}
           pr-body: ${{ steps.prepare.outputs.pr_body }}
