@@ -3616,9 +3616,10 @@ const convertTargetsCache = new Map<
 export const convertTargets = (
   esbuildTarget: string | string[] | false,
 ): LightningCSSOptions['targets'] => {
-  if (!esbuildTarget) return {}
-  const cached = convertTargetsCache.get(esbuildTarget)
-  if (cached) return cached
+  if (!esbuildTarget) return undefined
+  if (convertTargetsCache.has(esbuildTarget)) {
+    return convertTargetsCache.get(esbuildTarget)
+  }
   const targets: LightningCSSOptions['targets'] = {}
 
   const entriesWithoutES = arraify(esbuildTarget).flatMap((e) => {
@@ -3652,8 +3653,10 @@ export const convertTargets = (
     throw new Error(`Unsupported target "${entry}"`)
   }
 
-  convertTargetsCache.set(esbuildTarget, targets)
-  return targets
+  // an empty object means "no browser supports anything" to lightningcss
+  const result = Object.keys(targets).length > 0 ? targets : undefined
+  convertTargetsCache.set(esbuildTarget, result)
+  return result
 }
 
 export function resolveLibCssFilename(

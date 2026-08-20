@@ -14,7 +14,9 @@ import type {
 
 type EnvironmentPluginHooksContext = GetHookContextMap<Plugin>
 type EnvironmentPluginHooksContextMatched = {
-  [K in keyof EnvironmentPluginHooksContext]: EnvironmentPluginHooksContext[K] extends PluginContextExtension
+  [
+    K in keyof EnvironmentPluginHooksContext
+  ]: EnvironmentPluginHooksContext[K] extends PluginContextExtension
     ? never
     : false
 }
