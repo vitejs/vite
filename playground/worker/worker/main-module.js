@@ -200,3 +200,15 @@ depSelfReferenceUrlWorker.startWorker((e) => {
   document.querySelector('.self-reference-url-worker-dep').textContent +=
     `${e.data}\n`
 })
+
+// factory pattern with TypeScript worker — new URL() bypasses workerImportMetaUrlPlugin
+function createWorker(url) {
+  return new Worker(url, { type: 'module' })
+}
+const factoryTsWorker = createWorker(
+  new URL('../factory-ts-worker.ts', import.meta.url),
+)
+factoryTsWorker.addEventListener('message', (e) => {
+  text('.factory-ts-worker', e.data)
+})
+factoryTsWorker.postMessage('ping')
