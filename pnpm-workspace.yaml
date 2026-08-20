@@ -3,61 +3,61 @@ packages:
   - 'playground/**'
   - 'packages/**/__tests__/**'
   - docs
-allowBuilds:
-  "@parcel/watcher": true
-  "@tailwindcss/oxide": true
-  core-js: false
-  esbuild: true
-  playwright-chromium: true
-  sharp: true
-  simple-git-hooks: true
-  unrs-resolver: true
-  vue-demi: false
-  workerd: true
-autoInstallPeers: false
-blockExoticSubdeps: true
-dedupeInjectedDeps: false
-
-dedupePeers: true
 
 hoistPattern:
   - postcss # package/vite
   - pug # playground/tailwind: @vue/compiler-sfc
   - eslint-import-resolver-* # eslint-plugin-import-x
-
-minimumReleaseAge: 1440
-minimumReleaseAgeExclude:
-  - rolldown
-  - '@rolldown/binding-*'
-  - '@voidzero-dev/vitepress-theme@5.0.6'
+shellEmulator: true
+autoInstallPeers: false
+dedupeInjectedDeps: false
 overrides:
-  debug: 'npm:obug@^1.0.2'
   rolldown: $rolldown
   vite: 'workspace:*'
+  debug: 'npm:obug@^1.0.2'
+patchedDependencies:
+  "sirv@3.0.2": "patches/sirv@3.0.2.patch"
+  "chokidar@3.6.0": "patches/chokidar@3.6.0.patch"
+  "dotenv-expand@13.0.0": "patches/dotenv-expand@13.0.0.patch"
+peerDependencyRules:
+  allowedVersions:
+    vite: "*"
 packageExtensions:
-  '@rollup/plugin-dynamic-import-vars':
-    dependencies:
-      '@types/estree': ^1.0.0
-  '@volar/typescript':
-    dependencies:
-      '@volar/language-service': 2.4.28
   sass-embedded:
     peerDependencies:
       source-map-js: "*"
     peerDependenciesMeta:
       source-map-js:
         optional: true
-patchedDependencies:
-  "chokidar@3.6.0": "patches/chokidar@3.6.0.patch"
-  "dotenv-expand@13.0.0": "patches/dotenv-expand@13.0.0.patch"
-  "sirv@3.0.2": "patches/sirv@3.0.2.patch"
-peerDependencyRules:
-  allowedVersions:
-    vite: "*"
-shellEmulator: true
+  '@rollup/plugin-dynamic-import-vars':
+    dependencies:
+      '@types/estree': ^1.0.0
+  '@volar/typescript':
+    dependencies:
+      '@volar/language-service': 2.4.28
+allowBuilds:
+  core-js: false
+  vue-demi: false
+  "@parcel/watcher": true
+  "@tailwindcss/oxide": true
+  esbuild: true
+  playwright-chromium: true
+  sharp: true
+  simple-git-hooks: true
+  unrs-resolver: true
+  workerd: true
+
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - rolldown
+  - '@rolldown/binding-*'
+  - '@voidzero-dev/vitepress-theme@5.0.6'
+blockExoticSubdeps: true
 trustPolicy: no-downgrade
 trustPolicyExclude:
   - chokidar@4.0.3 # https://github.com/paulmillr/chokidar/issues/1440
   - semver@5.7.2 || 6.3.1
   - tailwindcss@3.4.18
   - undici-types@6.21.0 # https://github.com/nodejs/undici/issues/4666
+
+dedupePeers: true
