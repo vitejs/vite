@@ -13,6 +13,22 @@ import {
 
 const assetUrl = /asset-[\w-]+\.png/
 
+async function expectCssUrlAsset(cssUrl: string, assetName: string) {
+  const cssResponse = await page
+    .context()
+    .request.get(new URL(cssUrl, page.url()).href)
+  expect(cssResponse.status()).toBe(200)
+  const css = await cssResponse.text()
+  expect(css).toMatch(new RegExp(`/assets/${assetName}-[\\w-]+\\.png`))
+
+  const assetPath = /url\(["']?([^"')]+)/.exec(css)?.[1]
+  expect(assetPath).toBeDefined()
+  const assetResponse = await page
+    .context()
+    .request.get(new URL(assetPath!, cssResponse.url()).href)
+  expect(assetResponse.status()).toBe(200)
+}
+
 if (isBuild) {
   test('should render', async () => {
     expect(await page.textContent('h1')).toContain('HMR Full Bundle Mode')
@@ -61,6 +77,25 @@ if (isBuild) {
     )
     await expect.poll(() => page.textContent('.app')).toBe('hello')
     await expect.poll(() => page.textContent('.asset')).toMatch(assetUrl)
+  })
+
+  test('transforms assets in CSS ?url imports', async () => {
+    const cssUrl = await page.textContent('.css-url')
+    expect(cssUrl).toMatch(/\/assets\/url-import-[\w-]+\.css/)
+    await expectCssUrlAsset(cssUrl!, 'asset')
+
+    const source = readFile('url-import.css')
+    onTestFinished(async () => {
+      addFile('url-import.css', source)
+      await expect.poll(() => page.textContent('.css-url')).toBe(cssUrl)
+    })
+    editFile('url-import.css', (code) =>
+      code.replace('./asset.png', './hmr-asset.png'),
+    )
+    await expect.poll(() => page.textContent('.css-url')).not.toBe(cssUrl)
+    const updatedCssUrl = await page.textContent('.css-url')
+    expect(updatedCssUrl).toMatch(/\/assets\/url-import-[\w-]+\.css/)
+    await expectCssUrlAsset(updatedCssUrl!, 'hmr-asset')
   })
 
   // BUNDLED -> GENERATE_HMR_PATCH -> BUNDLING -> BUNDLING -> BUNDLED

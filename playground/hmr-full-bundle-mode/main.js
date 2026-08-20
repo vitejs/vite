@@ -7,10 +7,12 @@ import './worker-accept.js'
 import './worker-nested.js'
 import './data.js'
 import assetUrl from './asset.png'
+import cssUrl from './url-import.css?url'
 import WorkerQuery from './worker-query.js?worker'
 
 text('.app', 'hello')
 text('.asset', assetUrl)
+text('.css-url', cssUrl)
 
 const workerQuery = new WorkerQuery()
 workerQuery.postMessage('ping')
