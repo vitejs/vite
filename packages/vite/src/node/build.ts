@@ -40,6 +40,7 @@ import type {
   InlineConfig,
   ResolvedConfig,
   ResolvedEnvironmentOptions,
+  KnownEnvironmentNames,
 } from './config'
 import { resolveConfig } from './config'
 import type { PartialEnvironment } from './baseEnvironment'
@@ -1775,7 +1776,7 @@ export class BuildEnvironment extends BaseEnvironment {
 }
 
 export interface ViteBuilder {
-  environments: Record<string, BuildEnvironment>
+  environments: Record<KnownEnvironmentNames, BuildEnvironment>
   config: ResolvedConfig
   buildApp(): Promise<void>
   build(
@@ -1839,7 +1840,7 @@ export async function createBuilder(
     // remove the default values that shouldn't be used at all once the config is resolved
     const environmentName = resolved.build.ssr ? 'ssr' : 'client'
     ;(resolved.build as ResolvedBuildOptions) = {
-      ...resolved.environments[environmentName].build,
+      ...resolved.environments[environmentName]!.build,
     }
   }
   const config = await resolveConfigToBuild(inlineConfig, patchConfig)
@@ -1934,7 +1935,7 @@ export async function createBuilder(
           // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
           // remove the default values that shouldn't be used at all once the config is resolved
           ;(resolved.build as ResolvedBuildOptions) = {
-            ...resolved.environments[environmentName].build,
+            ...resolved.environments[environmentName]!.build,
           }
         }
         const patchPlugins = (resolvedPlugins: Plugin[]) => {

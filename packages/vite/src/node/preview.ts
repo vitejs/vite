@@ -139,7 +139,7 @@ export async function preview(
     true,
   )
 
-  const clientOutDir = config.environments.client.build.outDir
+  const clientOutDir = config.environments.client!.build.outDir
   const distDir = path.resolve(config.root, clientOutDir)
   if (
     !fs.existsSync(distDir) &&

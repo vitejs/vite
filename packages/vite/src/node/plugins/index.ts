@@ -49,7 +49,7 @@ export async function resolvePlugins(
   const isBuild = config.command === 'build'
   const isWorker = config.isWorker
   const anyEnvBundled =
-    isBuild || Object.values(config.environments).some((env) => env.isBundled)
+    isBuild || Object.values(config.environments).some((env) => env?.isBundled)
   const buildPlugins = anyEnvBundled
     ? resolveBuildPlugins(config)
     : { pre: [], post: [] }
