@@ -3,6 +3,11 @@ name: Bot
 on:
   issues:
     types: [labeled]
+  # zizmor: ignore[dangerous-triggers]
+  # SAFETY: pull_request_target is used here because:
+  # - The workflow does NOT check out PR code
+  # - No PR-supplied code is executed
+  # - We trust MatteoGabriele/agentscan-action to handle the permissions appriopriately
   pull_request_target:
     types: [opened, reopened, labeled]
 
