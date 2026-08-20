@@ -22,6 +22,9 @@ const serveNpmCodeDirectlyMiddleware = async (req, res, next) => {
 }
 
 export default defineConfig({
+  resolve: {
+    external: ['vue'],
+  },
   optimizeDeps: {
     include: ['dep-that-imports', 'dep-that-requires'],
     exclude: ['vue', 'slash5'],
