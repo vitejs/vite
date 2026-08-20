@@ -1154,6 +1154,30 @@ describe('resolveConfig', () => {
     expect(results2.clearScreen).toBe(false)
   })
 
+  test('resolves the configured tsconfig path', async () => {
+    const root = path.resolve(import.meta.dirname, 'fixtures')
+    const resolved = await resolveConfig(
+      { root, tsconfig: './custom.tsconfig.json' },
+      'build',
+    )
+
+    expect(resolved.tsconfig).toBe(
+      normalizePath(path.resolve(root, 'custom.tsconfig.json')),
+    )
+    const absoluteTsconfig = path.resolve(root, 'absolute.tsconfig.json')
+    expect(
+      (
+        await resolveConfig(
+          { root, tsconfig: absoluteTsconfig, configFile: false },
+          'build',
+        )
+      ).tsconfig,
+    ).toBe(normalizePath(absoluteTsconfig))
+    expect(
+      (await resolveConfig({ root, configFile: false }, 'build')).tsconfig,
+    ).toBeUndefined()
+  })
+
   test('resolveConfig with root path including "#" and "?" and "*" should warn ', async () => {
     expect.assertions(1)
 
