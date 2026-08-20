@@ -6,22 +6,37 @@ on:
   pull_request_target:
     types: [opened, reopened, labeled]
 
+# Supported labels:
+# - `bot: skip`   - Added manually before re-opening a PR if it's legit to skip AgentScan.
+# - `bot: maybe`  - Added by AgentScan. Indication only.
+# - `bot: likely` - Added by AgentScan or manually. Indicates that the issue or PR is likely to be
+#                   created by a bot, LLM, or agent. Will comment and close automatically.
+
 jobs:
   agentscan:
     if: >
       github.event_name == 'pull_request_target' &&
-      (github.event.action == 'opened' || github.event.action == 'reopened')
+      (github.event.action == 'opened' || github.event.action == 'reopened') &&
+      !contains(github.event.pull_request.labels.*.name, 'bot: skip')
     name: AgentScan
     runs-on: ubuntu-slim
     permissions:
       pull-requests: write
       contents: read
     steps:
+      - name: Cache AgentScan analysis
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: .agentscan-cache
+          key: agentscan-cache-${{ github.event.pull_request.user.login }}
+          restore-keys: agentscan-cache-
+
       - name: AgentScan
         id: agentscan
         uses: MatteoGabriele/agentscan-action@98202262c925c508d4c1424b1dfbe17ee35b0c02 # v2.4.0
         with:
           mode: labels
+          cache-path: .agentscan-cache
           trusted-author-associations: "member,owner,collaborator"
           label-mixed: "bot: maybe"
           label-automation: "bot: likely"
