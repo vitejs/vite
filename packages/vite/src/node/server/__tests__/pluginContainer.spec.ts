@@ -1,4 +1,5 @@
 import { stripVTControlCharacters } from 'node:util'
+import MagicString from 'magic-string'
 import { describe, expect, it, vi } from 'vitest'
 import type { UserConfig } from '../../config'
 import { resolveConfig } from '../../config'
@@ -319,6 +320,54 @@ describe('plugin container', () => {
           "message": "test",
           "plugin": "p1",
           "pos": 12,
+        }
+      `)
+    })
+  })
+
+  describe('transform', () => {
+    it('combines a plugin sourcemap with `sources: [""]` (#13657)', async () => {
+      const entryUrl = '/zoo.js'
+      const originalCode = `export const zoo = 'zoo'\n`
+
+      const plugin: Plugin = {
+        name: 'p1',
+        transform(code, id) {
+          if (id === entryUrl) {
+            const ms = new MagicString(code)
+            ms.append('// add comment')
+            return {
+              code: ms.toString(),
+              // NOTE: MagicString without `filename` option generates
+              //       a sourcemap with `sources: ['']` or `sources: [null]`
+              map: ms.generateMap({ hires: true }),
+            }
+          }
+        },
+      }
+
+      const environment = await getDevEnvironment({ plugins: [plugin] })
+      await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      const result = await environment.pluginContainer.transform(
+        originalCode,
+        entryUrl,
+      )
+
+      expect(result.code).toContain('// add comment')
+      // the empty source must be replaced with the module id + original code
+      expect(result.map).toMatchInlineSnapshot(`
+        {
+          "file": undefined,
+          "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;",
+          "names": [],
+          "sources": [
+            "/zoo.js",
+          ],
+          "sourcesContent": [
+            "export const zoo = 'zoo'
+        ",
+          ],
+          "version": 3,
         }
       `)
     })

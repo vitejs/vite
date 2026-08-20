@@ -1,3 +1,38 @@
+## <small>[8.2.1](https://github.com/vitejs/vite/compare/v8.2.0...v8.2.1) (2026-08-06)</small>
+### Bug Fixes
+
+* **build:** make client chunkImportMap work with `sharedPlugins: true` ([#23184](https://github.com/vitejs/vite/issues/23184)) ([15f0307](https://github.com/vitejs/vite/commit/15f03073c915d6ffb9a1fda447ef66b02bf5cde8))
+* **bundled-dev:** inject client script tag before chunk scripts ([#23161](https://github.com/vitejs/vite/issues/23161)) ([eac0cc8](https://github.com/vitejs/vite/commit/eac0cc84aa2472a85a19ee84561c1ba71e381a55))
+* **css:** don't re-run lightningcss visitor during minify (fix [#23146](https://github.com/vitejs/vite/issues/23146)) ([#23147](https://github.com/vitejs/vite/issues/23147)) ([de041a7](https://github.com/vitejs/vite/commit/de041a79b05a0be965c874592fe2c1505bcd48df))
+* **deps:** update all non-major dependencies ([#23136](https://github.com/vitejs/vite/issues/23136)) ([14454fd](https://github.com/vitejs/vite/commit/14454fd8c9a399bc3fdc193e28465b6fcf001e4d))
+* **deps:** update rolldown-related dependencies ([#23070](https://github.com/vitejs/vite/issues/23070)) ([7ac6f7f](https://github.com/vitejs/vite/commit/7ac6f7f590747bbdab9958e2c016e3dd04f10542))
+* don't mutate the user config when resolving the lib entry from the top-level `input` ([#23135](https://github.com/vitejs/vite/issues/23135)) ([b4bf596](https://github.com/vitejs/vite/commit/b4bf59686a7ac238929e91a6e1708c739b843a2f))
+* handle shebang ending with uncommon line terminators ([#23038](https://github.com/vitejs/vite/issues/23038)) ([17f7b2f](https://github.com/vitejs/vite/commit/17f7b2f193a110d0b47742ad296d182cb4666ce7))
+* **server:** use a random port when port is 0 ([#23158](https://github.com/vitejs/vite/issues/23158)) ([fddf4ea](https://github.com/vitejs/vite/commit/fddf4ea41de5f7889037a2f957438857ac12a260))
+
+### Performance Improvements
+
+* **css:** look up pure CSS chunks through a Set ([#23114](https://github.com/vitejs/vite/issues/23114)) ([1331b0b](https://github.com/vitejs/vite/commit/1331b0b438b1e7193effb7d2341660bccb9c3155))
+
+### Documentation
+
+* **build:** fix incomplete `@default` for build.minify ([#23177](https://github.com/vitejs/vite/issues/23177)) ([ef02435](https://github.com/vitejs/vite/commit/ef02435114c57d0422028f0e6987f3df8db72969))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency rolldown-plugin-dts to ^0.28.0 ([#23137](https://github.com/vitejs/vite/issues/23137)) ([4adc1e7](https://github.com/vitejs/vite/commit/4adc1e7931d4beceb4e236d9a271d057c858a06f))
+* **deps:** update dependency strip-literal to v4 ([#23140](https://github.com/vitejs/vite/issues/23140)) ([9db65ce](https://github.com/vitejs/vite/commit/9db65ce63488ea8f08a3c98dcdc4282b17bd33ff))
+
+### Code Refactoring
+
+* **bundled-dev:** avoid injecting server values in the bundle ([#22967](https://github.com/vitejs/vite/issues/22967)) ([23b8a08](https://github.com/vitejs/vite/commit/23b8a088dec9dcc3f1c1353f2074f8644b3cc21f))
+* **bundled-dev:** remove rolldown lazy stub module workaround ([#23129](https://github.com/vitejs/vite/issues/23129)) ([e72036e](https://github.com/vitejs/vite/commit/e72036eed2e28936ed824971b18aeaa3900857f6))
+
+### Tests
+
+* **bundled-dev:** enable sourcemap playgrounds ([#23080](https://github.com/vitejs/vite/issues/23080)) ([c2155fe](https://github.com/vitejs/vite/commit/c2155fe4d5c8d25fba3a7366d367e3296ae669fa))
+* reduce logs ([#23138](https://github.com/vitejs/vite/issues/23138)) ([7673c02](https://github.com/vitejs/vite/commit/7673c02e53343ae9356c1f496c1c1da2eb732ac1))
+
 ## [8.2.0](https://github.com/vitejs/vite/compare/v8.2.0-beta.0...v8.2.0) (2026-07-30)
 ### Features
 
