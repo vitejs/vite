@@ -491,15 +491,15 @@ async function handleModuleSoftInvalidation(
       }
 
       const urlWithoutTimestamp = removeTimestampQuery(rawUrl)
-      // hmrUrl must be derived the same way as importAnalysis
-      const hmrUrl = unwrapId(
+      // moduleUrl must be derived the same way as importAnalysis
+      const moduleUrl = unwrapId(
         stripBase(
           removeImportQuery(urlWithoutTimestamp),
           environment.config.base,
         ),
       )
       for (const importedMod of mod.importedModules) {
-        if (importedMod.url !== hmrUrl) continue
+        if (importedMod.url !== moduleUrl) continue
         if (importedMod.lastHMRTimestamp > 0) {
           const replacedUrl = injectQuery(
             urlWithoutTimestamp,
@@ -512,7 +512,7 @@ async function handleModuleSoftInvalidation(
 
         if (imp.d === -1 && environment.config.dev.preTransformRequests) {
           // pre-transform known direct imports
-          environment.warmupRequest(hmrUrl)
+          environment.warmupRequest(moduleUrl)
         }
 
         break

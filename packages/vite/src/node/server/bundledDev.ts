@@ -9,12 +9,9 @@ import colors from 'picocolors'
 import getEtag from 'etag'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
 import { convertToDevWatchOptions } from '../watch'
+import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
 import { getHmrImplementation } from '../plugins/clientInjections'
-import {
-  asyncFlatten,
-  createDebugger,
-  formatAndTruncateFileList,
-} from '../utils'
+import { createDebugger, formatAndTruncateFileList } from '../utils'
 import type { DevEnvironment } from './environment'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
 import { prepareError } from './middlewares/error'
@@ -63,6 +60,7 @@ export class MemoryFiles {
 
 export class BundledDev {
   private _devEngine!: DevEngine
+  private viteRuntime?: string
   private initialBuildCompleted = false
   private _closed = false
   private clients = new Clients()
@@ -107,6 +105,14 @@ export class BundledDev {
   }
 
   private pendingPayloadFilenames = new Set<string>()
+
+  get hasBuildOutput(): boolean {
+    return (
+      this.memoryFiles.size > 1 ||
+      (this.memoryFiles.size === 1 &&
+        !this.memoryFiles.has(BUNDLED_DEV_CLIENT_FILENAME))
+    )
+  }
 
   async listen(): Promise<void> {
     this._closed = false
@@ -253,6 +259,10 @@ export class BundledDev {
         debug?.('INITIAL: run error', e)
       },
     )
+    this.viteRuntime = await getHmrImplementation(
+      this.environment.getTopLevelConfig(),
+    )
+    this.storeOutputFiles([])
     this.waitForInitialBuildFinish().then(() => {
       if (this._closed) return
       debug?.('INITIAL: build done')
@@ -273,7 +283,7 @@ export class BundledDev {
     if (this._closed) return
 
     let state = await this.devEngine.getBundleState()
-    while (this.memoryFiles.size === 0 && !state.lastBuildErrored) {
+    while (!this.hasBuildOutput && !state.lastBuildErrored) {
       await setTimeout(10)
       if (this._closed) return
       await this.devEngine.ensureCurrentBuildFinish()
@@ -356,8 +366,14 @@ export class BundledDev {
     this.initialBuildCompleted = false
   }
 
-  private storeOutputFiles(output: RolldownOutput['output']): void {
+  private storeOutputFiles(output: RolldownOutput['output'][number][]): void {
     // NOTE: don't clear memoryFiles here as incremental build reuses the files
+    if (this.viteRuntime) {
+      this.memoryFiles.set(BUNDLED_DEV_CLIENT_FILENAME, {
+        source: this.viteRuntime,
+        etag: getEtag(Buffer.from(this.viteRuntime), { weak: true }),
+      })
+    }
     for (const outputFile of output) {
       this.memoryFiles.set(outputFile.fileName, () => {
         const source =
@@ -382,38 +398,14 @@ export class BundledDev {
       ...(typeof rolldownOptions.experimental.devMode === 'object'
         ? rolldownOptions.experimental.devMode
         : {}),
-      implement: await getHmrImplementation(
-        this.environment.getTopLevelConfig(),
-      ),
+      implement: '',
+      skipCommonRuntimeInjection: true,
     }
 
     // disable inlineConst optimization due to a bug in Rolldown
     // https://github.com/vitejs/vite/issues/21843
     rolldownOptions.optimization ??= {}
     rolldownOptions.optimization.inlineConst = false
-
-    // In bundledDev mode, Rolldown's DevEngine generates lazy-loading stub modules
-    // for dynamically imported files, appending `?rolldown-lazy=1` to the module ID.
-    // Skip all plugins for these stub modules as a workaround.
-    // https://github.com/vitejs/vite/issues/22651
-    const plugins = await asyncFlatten([rolldownOptions.plugins])
-    for (const plugin of plugins) {
-      const transform =
-        plugin && 'transform' in plugin ? plugin.transform : undefined
-      if (!transform) continue
-      const handler =
-        typeof transform === 'function' ? transform : transform.handler
-      const wrappedHandler: typeof handler = function (this, code, id, opts) {
-        if (id.includes('?rolldown-lazy=')) return null
-        return handler.call(this, code, id, opts)
-      }
-      if (typeof transform === 'function') {
-        ;(plugin as any).transform = wrappedHandler
-      } else {
-        transform.handler = wrappedHandler
-      }
-    }
-    rolldownOptions.plugins = plugins
 
     // set filenames to make output paths predictable so that `renderChunk` hook does not need to be used
     if (Array.isArray(rolldownOptions.output)) {

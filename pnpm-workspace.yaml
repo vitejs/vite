@@ -51,7 +51,8 @@ minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - rolldown
   - '@rolldown/binding-*'
-  - '@voidzero-dev/vitepress-theme@5.0.2'
+  - '@vitejs/release-scripts@1.9.2'
+  - '@voidzero-dev/vitepress-theme@5.0.6'
 blockExoticSubdeps: true
 trustPolicy: no-downgrade
 trustPolicyExclude:
