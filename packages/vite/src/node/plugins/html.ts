@@ -499,6 +499,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const s = new MagicString(html)
         const scriptUrls: ScriptAssetsUrl[] = []
         const styleUrls: ScriptAssetsUrl[] = []
+        // `<link rel="modulepreload" href="...">` with a plugin-resolvable
+        // href is routed through the module pipeline (fixes #22845). The
+        // entry is replaced by a transient `import <url>`; after the
+        // resolve pass the link node is stripped if resolution succeeded
+        // (the import-analysis plugin will re-emit the correct modulepreload
+        // for the resolved chunk URL), or the transient import is dropped
+        // and the original node is left intact if resolution failed.
+        const modulePreloadLinkUrls: ScriptAssetsUrl[] = []
         let inlineModuleIndex = -1
 
         let everyScriptIsAsync = true
@@ -653,6 +661,30 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               const url = decodeURIIfPossible(attr.value)
               if (url === undefined) {
                 // ignore it
+              } else if (
+                node.nodeName === 'link' &&
+                attr.attributes.rel &&
+                parseRelAttr(attr.attributes.rel).some(
+                  (v) => v === 'modulepreload',
+                ) &&
+                !isExcludedUrl(url) &&
+                !checkPublicFile(url, config)
+              ) {
+                // <link rel="modulepreload" href="..."> (fixes #22845):
+                // route the href through the module resolution pipeline so
+                // plugin-resolved (virtual) ids are bundled and
+                // build-import-analysis can re-emit the modulepreload link
+                // for the resolved chunk URL instead of leaving the
+                // unresolved href in the build output (404 in production).
+                // The `import URL` is emitted up-front; if resolution fails
+                // the post-pass below removes the import and keeps the
+                // original node intact (preserves runtime-handled URLs).
+                modulePreloadLinkUrls.push({
+                  url,
+                  start: nodeStartWithLeadingWhitespace(node),
+                  end: node.sourceCodeLocation!.endOffset,
+                })
+                js += `\nimport ${JSON.stringify(url)}`
               } else if (checkPublicFile(url, config)) {
                 overwriteAttrValue(
                   s,
@@ -795,6 +827,49 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             js = js.replace(importExpression, '')
           } else {
             s.remove(start, end)
+          }
+        }
+
+        // resolve `<link rel="modulepreload" href="...">` hrefs through the
+        // module pipeline (fixes #22845). If resolution succeeds, strip the
+        // original link — build-import-analysis will re-emit the modulepreload
+        // for the resolved chunk URL — and mark the resolved module as a side
+        // effect so it is not tree-shaken. If resolution fails, drop the
+        // transient `import` we emitted up-front and leave the original link
+        // intact so runtime-handled URLs still work.
+        const resolvedModulePreloadLinks = await Promise.all(
+          modulePreloadLinkUrls.map(async (entry) => ({
+            ...entry,
+            resolved: await this.resolve(entry.url, id),
+          })),
+        )
+        for (const {
+          start,
+          end,
+          url,
+          resolved,
+        } of resolvedModulePreloadLinks) {
+          if (resolved == null) {
+            config.logger.warnOnce(
+              `\n${url} doesn't exist at build time, it will remain unchanged to be resolved at runtime`,
+            )
+            const importExpression = `\nimport ${JSON.stringify(url)}`
+            js = js.replace(importExpression, '')
+          } else {
+            s.remove(start, end)
+            // set moduleSideEffects on the resolved module so it is not
+            // dropped by `treeshake.moduleSideEffects=false`
+            const moduleInfo = this.getModuleInfo(resolved.id)
+            if (moduleInfo) {
+              moduleInfo.moduleSideEffects = true
+            } else if (!resolved.external) {
+              setModuleSideEffectPromises.push(
+                this.load({
+                  ...resolved,
+                  moduleSideEffects: true,
+                }).then(() => {}),
+              )
+            }
           }
         }
 

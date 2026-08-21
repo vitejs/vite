@@ -35,6 +35,7 @@ const input = {
   write: resolve(dirname, 'write.html'),
   'transform-inline-js': resolve(dirname, 'transform-inline-js.html'),
   malformedUrl: resolve(dirname, 'malformed-url.html'),
+  modulepreloadResolved: resolve(dirname, 'modulepreloadResolved.html'),
   // resolved from `process.cwd()` by Rolldown (resolved from `root` by vite's resolver first)
   relativeInput: relative(
     process.cwd(),
@@ -271,6 +272,7 @@ ${
       },
     },
     serveExternalPathPlugin(),
+    virtualPluginScriptPlugin(),
   ],
 })
 
@@ -299,6 +301,36 @@ function serveExternalPathPlugin() {
     },
     configurePreviewServer(server) {
       server.middlewares.use(handler)
+    },
+  }
+}
+
+/**
+ * Plugin used by `modulepreloadResolved.html` to produce a virtual
+ * module id (`/@plugin-script`) for `<link rel="modulepreload">` and
+ * `<script type="module" src>` resolution tests (#22845).
+ *
+ * @returns {import('vite').Plugin}
+ */
+function virtualPluginScriptPlugin() {
+  const VIRTUAL_ID = '/@plugin-script'
+  const RESOLVED_ID = '\0virtual:plugin-script'
+  return {
+    name: 'virtual-plugin-script',
+    resolveId(id) {
+      if (id === VIRTUAL_ID) {
+        return RESOLVED_ID
+      }
+      return null
+    },
+    load(id) {
+      if (id === RESOLVED_ID) {
+        return [
+          `document.querySelector('.output').textContent = 'loaded'`,
+          `// virtual plugin script loaded (id=${id})`,
+        ].join('\n')
+      }
+      return null
     },
   }
 }
