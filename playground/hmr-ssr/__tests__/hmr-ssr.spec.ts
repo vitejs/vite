@@ -23,6 +23,7 @@ import {
   createInMemoryLogger,
   editFile,
   isBuild,
+  isBundledDev,
   promiseWithResolvers,
   readFile,
   removeFile,
@@ -1185,6 +1186,9 @@ async function setupModuleRunner(
       disabled: true,
       noDiscovery: true,
       include: [],
+    },
+    experimental: {
+      bundledDev: isBundledDev,
     },
     ...serverOptions,
   })

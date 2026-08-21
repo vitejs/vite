@@ -92,6 +92,10 @@ test.runIf(isBuild)('escapes closing style tags in inline CSS', () => {
   )
 })
 
+test.runIf(isBuild)('does not run the visitor again during minify', () => {
+  expect(readFile('dist/media-query-visits.txt')).toBe('2')
+})
+
 test('css with external url', async () => {
   const css = await page.$('.external')
   expect(await getBg(css)).toMatch('url("https://vite.dev/logo.svg")')
