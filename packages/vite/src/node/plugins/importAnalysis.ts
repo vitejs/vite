@@ -27,7 +27,6 @@ import {
   handlePrunedModules,
   lexAcceptedHmrDeps,
   lexAcceptedHmrExports,
-  normalizeHmrUrl,
 } from '../server/hmr'
 import {
   createDebugger,
@@ -682,10 +681,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
             // record for HMR import chain analysis
             // make sure to unwrap and normalize away base
-            const hmrUrl = unwrapId(stripBase(url, base))
-            const isLocalImport = !isExternalUrl(hmrUrl) && !isDataUrl(hmrUrl)
+            const moduleUrl = unwrapId(stripBase(url, base))
+            const isLocalImport =
+              !isExternalUrl(moduleUrl) && !isDataUrl(moduleUrl)
             if (isLocalImport) {
-              orderedImportedUrls[index] = hmrUrl
+              orderedImportedUrls[index] = moduleUrl
             }
 
             if (enablePartialAccept && importedBindings) {
@@ -705,7 +705,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               // pre-transform known direct imports
               // These requests will also be registered in transformRequest to be awaited
               // by the deps optimizer
-              const url = removeImportQuery(hmrUrl)
+              const url = removeImportQuery(moduleUrl)
               environment.warmupRequest(url)
             }
           } else if (!importer.startsWith(withTrailingSlash(clientDir))) {
@@ -789,7 +789,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         str().prepend(
           `import { createHotContext as __vite__createHotContext } from "${clientPublicPath}";` +
             `import.meta.hot = __vite__createHotContext(${JSON.stringify(
-              normalizeHmrUrl(importerModule.url),
+              importerModule.url,
             )});`,
         )
       }
@@ -827,8 +827,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           })
         }
         normalizedAcceptedUrls.add(normalized)
-        const hmrAccept = normalizeHmrUrl(normalized)
-        str().overwrite(start, end, JSON.stringify(hmrAccept), {
+        str().overwrite(start, end, JSON.stringify(normalized), {
           contentOnly: true,
         })
       }

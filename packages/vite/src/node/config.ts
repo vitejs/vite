@@ -20,6 +20,7 @@ import {
   type OutputChunk,
   type PluginContextMeta,
   type RolldownOptions,
+  type RolldownOutput,
   rolldown,
 } from 'rolldown'
 import { isDynamicPattern } from 'tinyglobby'
@@ -2652,16 +2653,20 @@ export async function bundleConfigFile(
       },
     ],
   })
-  const result = await bundle.generate({
-    format: isESM ? 'esm' : 'cjs',
-    sourcemap: 'inline',
-    sourcemapPathTransform(relative, sourcemapPath) {
-      return path.resolve(path.dirname(sourcemapPath), relative)
-    },
-    // we want to generate a single chunk like esbuild does with `splitting: false`
-    codeSplitting: false,
-  })
-  await bundle.close()
+  let result: RolldownOutput
+  try {
+    result = await bundle.generate({
+      format: isESM ? 'esm' : 'cjs',
+      sourcemap: 'inline',
+      sourcemapPathTransform(relative, sourcemapPath) {
+        return path.resolve(path.dirname(sourcemapPath), relative)
+      },
+      // we want to generate a single chunk like esbuild does with `splitting: false`
+      codeSplitting: false,
+    })
+  } finally {
+    await bundle.close()
+  }
 
   const entryChunk = result.output.find(
     (chunk): chunk is OutputChunk => chunk.type === 'chunk' && chunk.isEntry,
