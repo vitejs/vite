@@ -381,9 +381,9 @@ test('URL separation', async () => {
     if (i > 0)
       editFile('imported.css', (code) => code.replace(cases[i - 1], c) + '\n')
 
-    expect(await getBg(urlSeparated)).toMatch(
-      /^url\(.+\)(?:\s*,\s*url\(.+\))*$/,
-    )
+    await expect
+      .poll(() => getBg(urlSeparated))
+      .toMatch(/^url\(.+\)(?:\s*,\s*url\(.+\))*$/)
   }
 })
 

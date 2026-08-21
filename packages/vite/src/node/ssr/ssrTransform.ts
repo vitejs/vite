@@ -575,38 +575,8 @@ function walk(
         if (node.type === 'FunctionExpression' && node.id) {
           setScope(node, node.id.name)
         }
-        // walk function expressions and add its arguments to known identifiers
-        // so that we don't prefix them
-        node.params.forEach((p) => {
-          if (p.type === 'ObjectPattern' || p.type === 'ArrayPattern') {
-            handlePattern(p, node)
-            return
-          }
-          ;(eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
-            enter(child: ESTree.Node, parent: ESTree.Node | undefined) {
-              // skip params default value of destructure
-              if (
-                parent?.type === 'AssignmentPattern' &&
-                parent.right === child
-              ) {
-                return this.skip()
-              }
-              if (child.type !== 'Identifier') return
-              // do not record as scope variable if is a destructuring keyword
-              if (isStaticPropertyKey(child, parent)) return
-              // do not record if this is a default value
-              // assignment of a destructuring variable
-              if (
-                (parent?.type === 'TemplateLiteral' &&
-                  parent.expressions.includes(child as ESTree.Expression)) ||
-                (parent?.type === 'CallExpression' && parent.callee === child)
-              ) {
-                return
-              }
-              setScope(node, child.name)
-            },
-          })
-        })
+        // add function arguments to known identifiers so that we don't prefix them
+        node.params.forEach((p) => handlePattern(p, node))
       } else if (node.type === 'ClassDeclaration') {
         // A class declaration name could shadow an import, so add its name to the parent scope
         const parentScope = findParentScope(parentStack)

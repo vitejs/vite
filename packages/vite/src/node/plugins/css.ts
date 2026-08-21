@@ -1074,11 +1074,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       // With `cssCodeSplit: false`, CSS is emitted as a single stylesheet in the HTML,
       // so this per-chunk import map handling is irrelevant.
-      if (config.build.chunkImportMap && chunkCssReferences.size) {
+      if (
+        this.environment.config.build.chunkImportMap &&
+        chunkCssReferences.size
+      ) {
         // The import map hash identifies the JS chunk independently of its content.
         // Since each chunk has at most one extracted CSS sidecar, we can reuse that
         // stable identity with a `.css` extension while mapping it to the CSS content hash.
-        const importMap = getImportMap(bundle, config)!
+        const importMap = getImportMap(bundle, this.environment.config)!
         const importMapReverseMapping = Object.fromEntries(
           Object.entries(importMap.mapping).map(([k, v]) => [v, k]),
         )
@@ -1126,8 +1129,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const pureCssChunkNameSet = new Set(pureCssChunkNames)
 
         let importMapReverseMapping: Record<string, string> | undefined
-        if (config.build.chunkImportMap) {
-          const importMap = getImportMap(bundle, config)!
+        if (this.environment.config.build.chunkImportMap) {
+          const importMap = getImportMap(bundle, this.environment.config)!
           importMapReverseMapping = Object.fromEntries(
             Object.entries(importMap.mapping).map(([k, v]) => [v, k]),
           )
@@ -2323,10 +2326,13 @@ async function minifyCSS(
     const { code, warnings } = (await importLightningCSS()).transform({
       ...config.css.lightningcss,
       targets: convertTargets(config.build.cssTarget),
-      cssModules: undefined,
       filename,
       code: Buffer.from(css),
       minify: true,
+      // the transforms should run in `compileLightningCSS` step
+      cssModules: undefined,
+      visitor: undefined,
+      customAtRules: undefined,
     })
 
     for (const warning of warnings) {
@@ -3610,9 +3616,10 @@ const convertTargetsCache = new Map<
 export const convertTargets = (
   esbuildTarget: string | string[] | false,
 ): LightningCSSOptions['targets'] => {
-  if (!esbuildTarget) return {}
-  const cached = convertTargetsCache.get(esbuildTarget)
-  if (cached) return cached
+  if (!esbuildTarget) return undefined
+  if (convertTargetsCache.has(esbuildTarget)) {
+    return convertTargetsCache.get(esbuildTarget)
+  }
   const targets: LightningCSSOptions['targets'] = {}
 
   const entriesWithoutES = arraify(esbuildTarget).flatMap((e) => {
@@ -3646,8 +3653,10 @@ export const convertTargets = (
     throw new Error(`Unsupported target "${entry}"`)
   }
 
-  convertTargetsCache.set(esbuildTarget, targets)
-  return targets
+  // an empty object means "no browser supports anything" to lightningcss
+  const result = Object.keys(targets).length > 0 ? targets : undefined
+  convertTargetsCache.set(esbuildTarget, result)
+  return result
 }
 
 export function resolveLibCssFilename(

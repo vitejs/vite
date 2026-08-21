@@ -1,3 +1,11 @@
+## <small>[8.2.3](https://github.com/vitejs/vite/compare/plugin-legacy%408.2.2...plugin-legacy%408.2.3) (2026-08-06)</small>
+### Bug Fixes
+
+* **build:** make client chunkImportMap work with `sharedPlugins: true` ([#23184](https://github.com/vitejs/vite/issues/23184)) ([15f0307](https://github.com/vitejs/vite/commit/15f03073c915d6ffb9a1fda447ef66b02bf5cde8))
+* **deps:** update all non-major dependencies ([#23069](https://github.com/vitejs/vite/issues/23069)) ([4c07b74](https://github.com/vitejs/vite/commit/4c07b74416f859d7e8bdace13409ef2d080edf76))
+* **deps:** update all non-major dependencies ([#23136](https://github.com/vitejs/vite/issues/23136)) ([14454fd](https://github.com/vitejs/vite/commit/14454fd8c9a399bc3fdc193e28465b6fcf001e4d))
+* **deps:** update rolldown-related dependencies ([#23070](https://github.com/vitejs/vite/issues/23070)) ([7ac6f7f](https://github.com/vitejs/vite/commit/7ac6f7f590747bbdab9958e2c016e3dd04f10542))
+
 ## <small>[8.2.2](https://github.com/vitejs/vite/compare/plugin-legacy%408.2.1...plugin-legacy%408.2.2) (2026-07-23)</small>
 ### Features
 

@@ -646,20 +646,28 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     this._closed = true
     await Promise.allSettled(Array.from(this._processesing))
     const config = this.environment.getTopLevelConfig()
-    await this.hookParallel(
-      'buildEnd',
-      (plugin) => this._getPluginContext(plugin),
-      () => [],
-      (plugin) =>
-        this.environment.name === 'client' ||
-        config.server.perEnvironmentStartEndDuringDev ||
-        plugin.perEnvironmentStartEndDuringDev,
-    )
+    let buildEndError: Error | undefined
+    try {
+      await this.hookParallel(
+        'buildEnd',
+        (plugin) => this._getPluginContext(plugin),
+        () => [],
+        (plugin) =>
+          this.environment.name === 'client' ||
+          config.server.perEnvironmentStartEndDuringDev ||
+          plugin.perEnvironmentStartEndDuringDev,
+      )
+    } catch (error) {
+      buildEndError = error as Error
+    }
     await this.hookParallel(
       'closeBundle',
       (plugin) => this._getPluginContext(plugin),
-      () => [],
+      () => [buildEndError],
     )
+    if (buildEndError) {
+      throw buildEndError
+    }
   }
 }
 
