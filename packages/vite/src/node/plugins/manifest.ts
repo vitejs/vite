@@ -5,6 +5,7 @@ import type { Plugin } from '../plugin'
 import { normalizePath } from '../utils'
 import { perEnvironmentState } from '../environment'
 import { type Environment, perEnvironmentPlugin } from '..'
+import type { BuildEnvironment } from '../build'
 import { cssEntriesMap } from './asset'
 
 const endsWithJSRE = /\.[cm]?js$/
@@ -70,13 +71,11 @@ export function manifestPlugin(): Plugin {
   })
 
   return perEnvironmentPlugin('native:manifest', (environment) => {
-    if (!environment.config.build.manifest) return false
-
     const root = environment.config.root
     const outPath =
-      environment.config.build.manifest === true
-        ? '.vite/manifest.json'
-        : environment.config.build.manifest
+      typeof environment.config.build.manifest === 'string'
+        ? environment.config.build.manifest
+        : '.vite/manifest.json'
 
     const envs: Record<string, Environment> = {}
     function getChunkName(chunk: OutputChunk) {
@@ -149,10 +148,24 @@ export function manifestPlugin(): Plugin {
                 }
               }
             }
+            const environment = this.environment as BuildEnvironment
+            // The manifest is always computed and stored on
+            // `environment.manifest`. The `build.manifest` option only controls
+            // whether the manifest file is written to disk.
+            const emitManifestFile = !!environment.config.build.manifest
+            const finalize = (finalManifest: Manifest) => {
+              environment.manifest = finalManifest
+              if (emitManifestFile) {
+                asset.source = JSON.stringify(finalManifest, undefined, 2)
+              } else {
+                delete bundle[outPath]
+              }
+            }
+
             const output = this.environment.config.build.rolldownOptions.output
             const outputLength = Array.isArray(output) ? output.length : 1
-            if (manifest && outputLength === 1) {
-              asset.source = JSON.stringify(manifest, undefined, 2)
+            if (outputLength === 1) {
+              finalize(manifest ?? JSON.parse(asset.source.toString()))
               return
             }
 
@@ -163,7 +176,7 @@ export function manifestPlugin(): Plugin {
               manifest ?? JSON.parse(asset.source.toString()),
             )
             if (state.outputCount >= outputLength) {
-              asset.source = JSON.stringify(state.manifest, undefined, 2)
+              finalize(state.manifest)
               state.reset()
             } else {
               delete bundle[outPath]
