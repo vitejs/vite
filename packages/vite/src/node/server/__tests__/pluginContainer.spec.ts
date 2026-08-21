@@ -373,6 +373,45 @@ describe('plugin container', () => {
     })
   })
 
+  describe('addWatchFile', () => {
+    it('does not register files with the watcher after close', async () => {
+      const root = fileURLToPath(
+        new URL('./fixtures/watcher/nested-root', import.meta.url),
+      )
+      const outside = fileURLToPath(
+        new URL('./fixtures/watcher/config-deps/foo.js', import.meta.url),
+      )
+      const add = vi.fn()
+      const watcher = {
+        add,
+      } as unknown as import('#dep-types/chokidar').FSWatcher
+
+      const plugin: Plugin = {
+        name: 'add-watch-after-close',
+        transform(_code, id) {
+          if (id.endsWith('entry.js')) {
+            this.addWatchFile(outside)
+          }
+        },
+      }
+
+      const environment = await getDevEnvironment(
+        {
+          root,
+          plugins: [plugin],
+        },
+        { watcher },
+      )
+      await environment.pluginContainer.close()
+
+      const entry = '/entry.js'
+      await environment.moduleGraph.ensureEntryFromUrl(entry, false)
+      await environment.pluginContainer.transform('export {}', entry)
+
+      expect(add).not.toHaveBeenCalled()
+    })
+  })
+
   describe('resolveId', () => {
     describe('skipSelf', () => {
       it('should skip the plugin itself when skipSelf is true', async () => {
@@ -481,6 +520,7 @@ describe('plugin container', () => {
 
 async function getDevEnvironment(
   inlineConfig?: UserConfig,
+  initOptions?: { watcher?: import('#dep-types/chokidar').FSWatcher },
 ): Promise<DevEnvironment> {
   const config = await resolveConfig(
     { configFile: false, ...inlineConfig },
@@ -491,7 +531,7 @@ async function getDevEnvironment(
   config.plugins = config.plugins.filter((p) => !p.name.includes('pre-alias'))
 
   const environment = new DevEnvironment('client', config, { hot: true })
-  await environment.init()
+  await environment.init(initOptions)
 
   return environment
 }

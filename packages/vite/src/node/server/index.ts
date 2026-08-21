@@ -611,14 +611,14 @@ export async function _createServer(
       teardownSIGTERMListener(closeServerAndExit)
     }
 
+    await Promise.allSettled(
+      Object.values(server.environments).map((environment) =>
+        environment.close(),
+      ),
+    )
     await Promise.allSettled([
       watcher.close(),
       ws.close(),
-      Promise.allSettled(
-        Object.values(server.environments).map((environment) =>
-          environment.close(),
-        ),
-      ),
       closeHttpServer(),
       server._ssrCompatModuleRunner?.close(),
     ])
