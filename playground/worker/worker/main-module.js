@@ -201,7 +201,7 @@ depSelfReferenceUrlWorker.startWorker((e) => {
     `${e.data}\n`
 })
 
-// factory pattern with TypeScript worker — new URL() bypasses workerImportMetaUrlPlugin
+// factory pattern with TypeScript worker: new URL() bypasses workerImportMetaUrlPlugin
 function createWorker(url) {
   return new Worker(url, { type: 'module' })
 }
