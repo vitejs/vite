@@ -19,6 +19,7 @@ import {
   injectQuery,
   normalizePath,
   prettifyUrl,
+  trailingSeparatorRE,
   urlRE,
 } from '../utils'
 import {
@@ -238,22 +239,15 @@ export const workerOrSharedWorkerRE: RegExp =
   /(?:\?|&)(worker|sharedworker)(?:&|$)/
 const workerFileRE = /(?:\?|&)worker_file&type=(\w+)(?:&|$)/
 const inlineRE = /[?&]inline\b/
+const workerQueriesRE =
+  /(\?|&)(?:(?:worker|sharedworker|inline|url)=?(?:&|$))+/g
 
-function getWorkerRequestPostfix(id: string): string {
+export function getWorkerRequestPostfix(id: string): string {
   const { postfix } = splitFileAndPostfix(id)
   if (!postfix || postfix[0] !== '?') {
     return ''
   }
-
-  const queryParams = new URLSearchParams(postfix.slice(1))
-
-  queryParams.delete('worker')
-  queryParams.delete('sharedworker')
-  queryParams.delete('inline')
-  queryParams.delete('url')
-
-  const customQuery = queryParams.toString()
-  return customQuery ? `?${customQuery}` : ''
+  return postfix.replace(workerQueriesRE, '$1').replace(trailingSeparatorRE, '')
 }
 
 export const WORKER_FILE_ID = 'worker_file'
