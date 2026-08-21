@@ -1,9 +1,9 @@
 import path from 'node:path'
+import { walk as eswalk } from 'estree-walker'
+import { analyze } from 'periscopic'
 import colors from 'picocolors'
 import type { Plugin } from 'rolldown'
-import { walk as eswalk } from 'estree-walker'
 import { parseSync, type ESTree } from 'rolldown/utils'
-import { analyze } from 'periscopic'
 import { isFilePathESM, normalizePath, numberToPos } from './utils'
 
 export type NativeConfigIncompatibilityType =

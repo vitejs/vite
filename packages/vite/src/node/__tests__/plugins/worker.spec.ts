@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
-import { describe, expect, test } from 'vitest'
 import type { OutputChunk, RolldownOutput } from 'rolldown'
+import { describe, expect, test } from 'vitest'
 import { build } from '../../build'
 import { splitWorkerRequest } from '../../plugins/worker'
 

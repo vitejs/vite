@@ -1,8 +1,7 @@
+import fsp from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
-import fsp from 'node:fs/promises'
 import colors from 'picocolors'
-import { afterEach, describe, expect, assert, test, vi } from 'vitest'
 import type {
   LogLevel,
   OutputAsset,
@@ -12,6 +11,8 @@ import type {
   RolldownOutput,
   RollupLog,
 } from 'rolldown'
+import { afterEach, describe, expect, assert, test, vi } from 'vitest'
+import { BuildEnvironment, resolveConfig } from '..'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import {
   ChunkMetadataMap,
@@ -24,7 +25,6 @@ import {
 } from '../build'
 import type { Logger } from '../logger'
 import { createLogger } from '../logger'
-import { BuildEnvironment, resolveConfig } from '..'
 
 const dirname = import.meta.dirname
 

@@ -1,6 +1,6 @@
-import { version } from 'vue'
-import slash5 from 'slash5'
 import slash3 from 'slash3'
+import slash5 from 'slash5'
+import { version } from 'vue'
 
 document.querySelector('#imported-vue-version').textContent = version
 document.querySelector('#imported-slash5-exists').textContent =

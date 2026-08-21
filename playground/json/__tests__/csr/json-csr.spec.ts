@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
 import deepJson from 'vue/package.json'
-import testJson from '../../test.json'
-import hmrJson from '../../hmr.json'
 import { editFile, isBundled, isBundledDev, isServe, page } from '~utils'
+import hmrJson from '../../hmr.json'
+import testJson from '../../test.json'
 
 const stringified = JSON.stringify(testJson)
 const deepStringified = JSON.stringify(deepJson)

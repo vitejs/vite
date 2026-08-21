@@ -1,11 +1,11 @@
 import { writeFileSync } from 'node:fs'
 import path from 'node:path'
+import { ImportType, init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import type { Plugin } from 'rolldown'
 import { defineConfig } from 'rolldown'
-import { ImportType, init, parse } from 'es-module-lexer'
-import licensePlugin from './rollupLicensePlugin'
 import pkg from './package.json' with { type: 'json' }
+import licensePlugin from './rollupLicensePlugin'
 
 // eslint-disable-next-line n/no-unsupported-features/node-builtins
 const dirname = import.meta.dirname

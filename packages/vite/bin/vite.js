@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { performance } from 'node:perf_hooks'
 import module from 'node:module'
+import { performance } from 'node:perf_hooks'
 
 if (!import.meta.url.includes('node_modules')) {
   if (!process.env.DEBUG_DISABLE_SOURCE_MAP) {

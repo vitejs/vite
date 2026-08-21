@@ -2,14 +2,18 @@ import path from 'node:path'
 import MagicString from 'magic-string'
 import type { RollupError } from 'rolldown'
 import { parseAstAsync } from 'rolldown/parseAst'
-import { stripLiteral } from 'strip-literal'
 import type { ESTree } from 'rolldown/utils'
+import { stripLiteral } from 'strip-literal'
+import { cleanUrl, slash, splitFileAndPostfix } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
-import type { Plugin } from '../plugin'
-import { evalValue, injectQuery, transformStableResult } from '../utils'
 import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
-import { cleanUrl, slash, splitFileAndPostfix } from '../../shared/utils'
+import type { Plugin } from '../plugin'
+import { evalValue, injectQuery, transformStableResult } from '../utils'
+import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
+import { hasViteIgnoreRE } from './importAnalysis'
+import type { InternalResolveOptions } from './resolve'
+import { tryFsResolve } from './resolve'
 import type { WorkerType } from './worker'
 import {
   WORKER_FILE_ID,
@@ -18,10 +22,6 @@ import {
   generateWorkerEntryUrlExpr,
   workerFileToUrl,
 } from './worker'
-import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
-import type { InternalResolveOptions } from './resolve'
-import { tryFsResolve } from './resolve'
-import { hasViteIgnoreRE } from './importAnalysis'
 
 interface WorkerOptions {
   type?: WorkerType

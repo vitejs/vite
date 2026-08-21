@@ -33,8 +33,10 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import { join } from 'node:path'
 import { performance } from 'node:perf_hooks'
-import { parseAst as rolldownParseAst } from 'rolldown/parseAst'
-import type { ESTree } from 'rolldown/utils'
+import type { RawSourceMap } from '@jridgewell/remapping'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
+import MagicString from 'magic-string'
+import colors from 'picocolors'
 import type {
   AsyncPluginHooks,
   CustomPluginOptions,
@@ -63,12 +65,24 @@ import type {
   SourceMap,
   TransformResult,
 } from 'rolldown'
-import type { RawSourceMap } from '@jridgewell/remapping'
-import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
-import MagicString from 'magic-string'
-import colors from 'picocolors'
+import { parseAst as rolldownParseAst } from 'rolldown/parseAst'
+import type { ESTree } from 'rolldown/utils'
 import type { FSWatcher } from '#dep-types/chokidar'
+import { cleanUrl, unwrapId } from '../../shared/utils'
+import type { PluginHookUtils } from '../config'
+import { FS_PREFIX, VERSION as viteVersion } from '../constants'
+import {
+  isFutureDeprecationEnabled,
+  warnFutureDeprecation,
+} from '../deprecations'
+import type { Environment } from '../environment'
+import type { Logger } from '../logger'
 import type { Plugin } from '../plugin'
+import {
+  createPluginHookUtils,
+  getCachedFilterForPlugin,
+  getHookHandler,
+} from '../plugins'
 import {
   combineSourcemaps,
   createDebugger,
@@ -83,20 +97,6 @@ import {
   rollupVersion,
   timeFrom,
 } from '../utils'
-import { FS_PREFIX, VERSION as viteVersion } from '../constants'
-import {
-  createPluginHookUtils,
-  getCachedFilterForPlugin,
-  getHookHandler,
-} from '../plugins'
-import { cleanUrl, unwrapId } from '../../shared/utils'
-import type { PluginHookUtils } from '../config'
-import type { Environment } from '../environment'
-import type { Logger } from '../logger'
-import {
-  isFutureDeprecationEnabled,
-  warnFutureDeprecation,
-} from '../deprecations'
 import type { DevEnvironment } from './environment'
 import { buildErrorMessage } from './middlewares/error'
 import type {

@@ -1,5 +1,5 @@
-import path from 'node:path'
 import fs from 'node:fs'
+import path from 'node:path'
 import type {
   Alias,
   AliasOptions,
@@ -7,6 +7,8 @@ import type {
   DevEnvironment,
   ResolvedConfig,
 } from '..'
+import { cleanUrl, withTrailingSlash } from '../../shared/utils'
+import { isDepOptimizationDisabled } from '../optimizer'
 import type { Plugin } from '../plugin'
 import {
   bareImportRE,
@@ -14,8 +16,6 @@ import {
   isOptimizable,
   moduleListContains,
 } from '../utils'
-import { cleanUrl, withTrailingSlash } from '../../shared/utils'
-import { isDepOptimizationDisabled } from '../optimizer'
 import { tryOptimizedResolve } from './resolve'
 
 /**

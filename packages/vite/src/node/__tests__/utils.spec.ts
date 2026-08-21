@@ -1,9 +1,11 @@
-import fs from 'node:fs'
-import path from 'node:path'
 import crypto from 'node:crypto'
+import fs from 'node:fs'
 import os, { type NetworkInterfaceInfoIPv4 } from 'node:os'
-import { describe, expect, test, vi, onTestFinished } from 'vitest'
+import path from 'node:path'
 import { fileURLToPath } from 'mlly'
+import { describe, expect, test, vi, onTestFinished } from 'vitest'
+import type { CommonServerOptions, ResolvedServerUrls } from '..'
+import { isWindows } from '../../shared/utils'
 import {
   asyncFlatten,
   bareImportRE,
@@ -27,8 +29,6 @@ import {
   resolveHostname,
   resolveServerUrls,
 } from '../utils'
-import { isWindows } from '../../shared/utils'
-import type { CommonServerOptions, ResolvedServerUrls } from '..'
 
 // Test certificate for SAN parsing (localhost, foo.localhost, *.vite.localhost)
 // Generate once:

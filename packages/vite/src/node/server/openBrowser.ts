@@ -8,15 +8,15 @@
  *
  */
 
-import { join } from 'node:path'
 import { exec } from 'node:child_process'
 import type { ExecOptions } from 'node:child_process'
+import { join } from 'node:path'
+import spawn from 'cross-spawn'
 import open from 'open'
 import type { Options } from 'open'
-import spawn from 'cross-spawn'
 import colors from 'picocolors'
-import type { Logger } from '../logger'
 import { VITE_PACKAGE_DIR } from '../constants'
+import type { Logger } from '../logger'
 
 /**
  * Reads the BROWSER environment variable and decides what to do with it.

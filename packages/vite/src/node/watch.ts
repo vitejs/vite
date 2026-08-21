@@ -1,13 +1,13 @@
 import { EventEmitter } from 'node:events'
 import path from 'node:path'
+import colors from 'picocolors'
 import type { OutputOptions, WatcherOptions } from 'rolldown'
 import type { DevWatchOptions } from 'rolldown/experimental'
-import colors from 'picocolors'
 import { escapePath } from 'tinyglobby'
 import type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
 import { withTrailingSlash } from '../shared/utils'
-import { arraify, normalizePath } from './utils'
 import type { Logger } from './logger'
+import { arraify, normalizePath } from './utils'
 
 export function getResolvedOutDirs(
   root: string,

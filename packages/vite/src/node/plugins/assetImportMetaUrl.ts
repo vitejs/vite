@@ -1,9 +1,13 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import { stripLiteral } from 'strip-literal'
 import { exactRegex } from 'rolldown/filter'
-import type { Plugin } from '../plugin'
+import { stripLiteral } from 'strip-literal'
+import { slash } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
+import { CLIENT_ENTRY } from '../constants'
+import { createBackCompatIdResolver } from '../idResolver'
+import type { ResolveIdFn } from '../idResolver'
+import type { Plugin } from '../plugin'
 import {
   injectQuery,
   isDataUrl,
@@ -11,15 +15,11 @@ import {
   transformStableResult,
   tryStatSync,
 } from '../utils'
-import { CLIENT_ENTRY } from '../constants'
-import { slash } from '../../shared/utils'
-import { createBackCompatIdResolver } from '../idResolver'
-import type { ResolveIdFn } from '../idResolver'
 import { fileToUrl } from './asset'
+import { hasViteIgnoreRE } from './importAnalysis'
 import { preloadHelperId } from './importAnalysisBuild'
 import type { InternalResolveOptions } from './resolve'
 import { tryFsResolve } from './resolve'
-import { hasViteIgnoreRE } from './importAnalysis'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL

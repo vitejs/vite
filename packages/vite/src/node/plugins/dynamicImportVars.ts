@@ -1,15 +1,18 @@
 import path, { posix } from 'node:path'
-import MagicString from 'magic-string'
+import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
-import { parseAst } from 'rolldown/parseAst'
-import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
+import MagicString from 'magic-string'
 import { viteDynamicImportVarsPlugin as nativeDynamicImportVarsPlugin } from 'rolldown/experimental'
 import { exactRegex } from 'rolldown/filter'
-import type { Plugin } from '../plugin'
+import { parseAst } from 'rolldown/parseAst'
+import type { PartialEnvironment } from '../baseEnvironment'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
+import type { Environment } from '../environment'
+import { perEnvironmentState } from '../environment'
 import { createBackCompatIdResolver } from '../idResolver'
+import type { Plugin } from '../plugin'
 import {
   createFilter,
   normalizePath,
@@ -19,9 +22,6 @@ import {
   transformStableResult,
   urlRE,
 } from '../utils'
-import type { Environment } from '../environment'
-import { perEnvironmentState } from '../environment'
-import type { PartialEnvironment } from '../baseEnvironment'
 import { hasViteIgnoreRE } from './importAnalysis'
 import { resolveSubpathImports } from './resolve'
 import { workerOrSharedWorkerRE } from './worker'

@@ -1,36 +1,54 @@
-import path from 'node:path'
-import fs from 'node:fs'
 import { execSync } from 'node:child_process'
-import type * as net from 'node:net'
+import fs from 'node:fs'
 import { get as httpGet } from 'node:http'
-import { get as httpsGet } from 'node:https'
 import type * as http from 'node:http'
-import { performance } from 'node:perf_hooks'
 import type { Http2SecureServer } from 'node:http2'
-import connect from 'connect'
-import corsMiddleware from 'cors'
-import colors from 'picocolors'
-import chokidar from 'chokidar'
-import launchEditorMiddleware from 'launch-editor-middleware'
+import { get as httpsGet } from 'node:https'
+import type * as net from 'node:net'
+import path from 'node:path'
+import { performance } from 'node:perf_hooks'
 import { determineAgent } from '@vercel/detect-agent'
 import { disableCache } from '@voidzero-dev/vite-task-client'
+import chokidar from 'chokidar'
+import connect from 'connect'
+import corsMiddleware from 'cors'
+import launchEditorMiddleware from 'launch-editor-middleware'
+import colors from 'picocolors'
 import type { SourceMap } from 'rolldown'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { FSWatcher } from '#dep-types/chokidar'
 import type { Connect } from '#dep-types/connect'
-import type { CommonServerOptions } from '../http'
 import type {
   ForwardConsoleOptions,
   ResolvedForwardConsoleOptions,
 } from '../../shared/forwardConsole'
+import type { InlineConfig, ResolvedConfig } from '../config'
+import { isResolvedConfig, resolveConfig } from '../config'
+import {
+  CLIENT_DIR,
+  DEFAULT_DEV_PORT,
+  defaultAllowedOrigins,
+} from '../constants'
+import { warnFutureDeprecation } from '../deprecations'
+import { getEnvFilesForMode } from '../env'
+import type { CommonServerOptions } from '../http'
 import {
   httpServerStart,
   resolveHttpServer,
   resolveHttpsConfig,
   setClientErrorHandler,
 } from '../http'
-import type { InlineConfig, ResolvedConfig } from '../config'
-import { isResolvedConfig, resolveConfig } from '../config'
+import type { Logger } from '../logger'
+import { printServerUrls } from '../logger'
+import type { MinimalPluginContextWithoutEnvironment } from '../plugin'
+import { reloadOnTsconfigChange } from '../plugins/esbuild'
+import { initPublicFiles } from '../publicDir'
+import { bindCLIShortcuts } from '../shortcuts'
+import type { BindCLIShortcutsOptions, ShortcutsState } from '../shortcuts'
+import { ssrLoadModule } from '../ssr/ssrModuleLoader'
+import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
+import { ssrTransform } from '../ssr/ssrTransform'
+import type { RequiredExceptFor } from '../typeUtils'
 import {
   type Hostname,
   diffDnsOrderChange,
@@ -48,20 +66,6 @@ import {
   setupSIGTERMListener,
   teardownSIGTERMListener,
 } from '../utils'
-import { ssrLoadModule } from '../ssr/ssrModuleLoader'
-import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
-import { ssrTransform } from '../ssr/ssrTransform'
-import { reloadOnTsconfigChange } from '../plugins/esbuild'
-import { bindCLIShortcuts } from '../shortcuts'
-import type { BindCLIShortcutsOptions, ShortcutsState } from '../shortcuts'
-import {
-  CLIENT_DIR,
-  DEFAULT_DEV_PORT,
-  defaultAllowedOrigins,
-} from '../constants'
-import type { Logger } from '../logger'
-import { printServerUrls } from '../logger'
-import { warnFutureDeprecation } from '../deprecations'
 import {
   createNoopWatcher,
   getResolvedOutDirs,
@@ -69,49 +73,45 @@ import {
   resolveEmptyOutDir,
 } from '../watch'
 import type { ServerWatchOptions } from '../watch'
-import { initPublicFiles } from '../publicDir'
-import { getEnvFilesForMode } from '../env'
-import type { RequiredExceptFor } from '../typeUtils'
-import type { MinimalPluginContextWithoutEnvironment } from '../plugin'
-import type { PluginContainer } from './pluginContainer'
-import {
-  BasicMinimalPluginContext,
-  basePluginContextMeta,
-  createPluginContainer,
-} from './pluginContainer'
-import type { WebSocketServer } from './ws'
-import { createWebSocketServer } from './ws'
+import type { DevEnvironment } from './environment'
+import type { HmrOptions, NormalizedHotChannel, WsOptions } from './hmr'
+import { handleHMRUpdate, updateModules } from './hmr'
 import { baseMiddleware } from './middlewares/base'
-import { proxyMiddleware } from './middlewares/proxy'
+import { errorMiddleware } from './middlewares/error'
+import { hostValidationMiddleware } from './middlewares/hostCheck'
 import { htmlFallbackMiddleware } from './middlewares/htmlFallback'
-import {
-  cachedTransformMiddleware,
-  transformMiddleware,
-} from './middlewares/transform'
 import {
   createDevHtmlTransformFn,
   indexHtmlMiddleware,
 } from './middlewares/indexHtml'
+import { memoryFilesMiddleware } from './middlewares/memoryFiles'
+import { notFoundMiddleware } from './middlewares/notFound'
+import { proxyMiddleware } from './middlewares/proxy'
+import { rejectInvalidRequestMiddleware } from './middlewares/rejectInvalidRequest'
 import {
   servePublicMiddleware,
   serveRawFsMiddleware,
   serveStaticMiddleware,
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
+import {
+  cachedTransformMiddleware,
+  transformMiddleware,
+} from './middlewares/transform'
+import { triggerLazyBundlingMiddleware } from './middlewares/triggerLazyBundling'
 import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
-import { notFoundMiddleware } from './middlewares/notFound'
-import { errorMiddleware } from './middlewares/error'
-import type { HmrOptions, NormalizedHotChannel, WsOptions } from './hmr'
-import { handleHMRUpdate, updateModules } from './hmr'
 import { openBrowser as _openBrowser } from './openBrowser'
-import type { TransformOptions, TransformResult } from './transformRequest'
+import type { PluginContainer } from './pluginContainer'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+  createPluginContainer,
+} from './pluginContainer'
 import { searchForPackageRoot, searchForWorkspaceRoot } from './searchRoot'
-import type { DevEnvironment } from './environment'
-import { hostValidationMiddleware } from './middlewares/hostCheck'
-import { rejectInvalidRequestMiddleware } from './middlewares/rejectInvalidRequest'
-import { memoryFilesMiddleware } from './middlewares/memoryFiles'
-import { triggerLazyBundlingMiddleware } from './middlewares/triggerLazyBundling'
+import type { TransformOptions, TransformResult } from './transformRequest'
+import type { WebSocketServer } from './ws'
+import { createWebSocketServer } from './ws'
 
 const usedConfigs = new WeakSet<ResolvedConfig>()
 
