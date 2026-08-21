@@ -5,13 +5,44 @@ import colors from 'picocolors'
 import type { Plugin } from '../plugin'
 import { getResolvedOutDirs, resolveEmptyOutDir } from '../watch'
 import type { Environment } from '../environment'
-import { copyDir, emptyDir, normalizePath } from '../utils'
+import {
+  ERR_SYMLINK_IN_RECURSIVE_READDIR,
+  copyDir,
+  emptyDir,
+  normalizePath,
+  recursiveReaddir,
+} from '../utils'
 import { withTrailingSlash } from '../../shared/utils'
 
 export function prepareOutDirPlugin(): Plugin {
   const rendered = new Set<Environment>()
   return {
     name: 'vite:prepare-out-dir',
+    async buildStart() {
+      const { build: options, publicDir } = this.environment.config
+      if (
+        !options.watch ||
+        !options.write ||
+        !options.copyPublicDir ||
+        !publicDir
+      ) {
+        return
+      }
+      // Public files bypass the bundler, so nothing else adds them to the
+      // watch set. A rebuild re-copies them in `renderStart` below.
+      let publicFiles: string[]
+      try {
+        publicFiles = await recursiveReaddir(publicDir)
+      } catch (e) {
+        if (e.code === ERR_SYMLINK_IN_RECURSIVE_READDIR) {
+          return
+        }
+        throw e
+      }
+      for (const file of publicFiles) {
+        this.addWatchFile(file)
+      }
+    },
     watchChange() {
       rendered.delete(this.environment)
     },

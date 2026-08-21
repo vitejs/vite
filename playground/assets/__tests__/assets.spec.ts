@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import {
@@ -15,7 +16,9 @@ import {
   page,
   readFile,
   readManifest,
+  removeFile,
   serverLogs,
+  testDir,
   viteTestUrl,
   watcher,
 } from '~utils'
@@ -814,6 +817,21 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
     await notifyRebuildComplete(watcher)
     await page.reload()
     expect(await page.textContent('.raw-query')).toBe('zoo2')
+  })
+
+  // `static/bar` is not imported anywhere, so it only reaches outDir if
+  // publicDir itself is watched
+  test('editing a file in publicDir updates outDir', async () => {
+    expect(readFile('dist/foo/bar')).toBe('bar\n')
+    editFile('static/bar', (code) => code.replace('bar', 'bar2'))
+    await notifyRebuildComplete(watcher)
+    expect(readFile('dist/foo/bar')).toBe('bar2\n')
+  })
+
+  test('removing a file from publicDir updates outDir', async () => {
+    removeFile('static/bar')
+    await notifyRebuildComplete(watcher)
+    expect(existsSync(path.resolve(testDir, 'dist/foo/bar'))).toBe(false)
   })
 })
 
