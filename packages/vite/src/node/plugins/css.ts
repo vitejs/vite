@@ -248,6 +248,7 @@ const commonjsProxyRE = /[?&]commonjs-proxy/
 const inlineRE = /[?&]inline\b/
 const inlineCSSRE = /[?&]inline-css\b/
 const styleAttrRE = /[?&]style-attr\b/
+const styleTagCloseRE = /<\/style(?=[\t\n\f\r />])/gi
 const functionCallRE = /^[A-Z_][.\w-]*\(/i
 const transformOnlyRE = /[?&]transform-only\b/
 const nonEscapedDoubleQuoteRe = /(?<!\\)"/g
@@ -563,6 +564,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (inlineCSS && isHTMLProxy) {
           if (styleAttrRE.test(id)) {
             css = css.replace(/"/g, '&quot;')
+          } else {
+            if (config.command !== 'serve' && config.build.cssMinify) {
+              css = await minifyCSS(css, config, true, id)
+            }
+            css = css.replace(styleTagCloseRE, '<\\/style')
           }
           const index = htmlProxyIndexRE.exec(id)?.[1]
           if (index == null) {
@@ -3392,7 +3398,7 @@ async function compileLightningCSS(
               return id
             },
           },
-          minify: config.isProduction && !!config.build.cssMinify,
+          minify: false,
           sourceMap:
             config.command === 'build'
               ? !!config.build.sourcemap
