@@ -121,6 +121,10 @@ export type PreviewServerHook = (
   server: PreviewServer,
 ) => (() => void) | void | Promise<(() => void) | void>
 
+export type ClosePreviewServerHook = (
+  this: MinimalPluginContextWithoutEnvironment,
+) => void | Promise<void>
+
 /**
  * Starts the Vite server in preview mode, to simulate a production deployment
  */
@@ -169,8 +173,20 @@ export async function preview(
   let closeServerPromise: Promise<void> | undefined
   const closeServer = async () => {
     teardownSIGTERMListener(closeServerAndExit)
+
     await closeHttpServer()
     server.resolvedUrls = null
+
+    // Run `closePreviewServer` plugin hooks after the server has been torn down.
+    const closePreviewServerContext = new BasicMinimalPluginContext(
+      { ...basePluginContextMeta, watchMode: false },
+      config.logger,
+    )
+    await Promise.all(
+      config
+        .getSortedPluginHooks('closePreviewServer')
+        .map((hook) => hook.call(closePreviewServerContext)),
+    )
   }
 
   const server: PreviewServer = {

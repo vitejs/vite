@@ -14,6 +14,7 @@ import type { WorkerType } from './worker'
 import {
   WORKER_FILE_ID,
   emitWorkerAssetsForBundledDev,
+  recordWorkerReference,
   workerFileToUrl,
 } from './worker'
 import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
@@ -259,6 +260,12 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           } else {
             let builtUrl: string
             if (isBundled) {
+              recordWorkerReference(
+                config,
+                config.bundleChain.at(-1),
+                cleanUrl(file),
+                id,
+              )
               const result = await workerFileToUrl(config, file)
               if (this.environment.config.command === 'serve') {
                 emitWorkerAssetsForBundledDev(this, config)
