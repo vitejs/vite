@@ -36,7 +36,6 @@
     "docs-serve": "pnpm --filter=./docs run docs-serve",
     "build": "pnpm -r --filter='./packages/*' run build",
     "dev": "pnpm -r --parallel --filter='./packages/*' run dev",
-    "release": "tsx scripts/release.ts",
     "ci-publish": "tsx scripts/publishCI.ts",
     "ci-docs": "pnpm build && pnpm docs-build",
     "merge-changelog": "tsx scripts/mergeChangelog.ts"
@@ -54,7 +53,7 @@
     "@types/picomatch": "^4.0.3",
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.18.1",
-    "@vitejs/release-scripts": "^1.9.1",
+    "@vitejs/release-scripts": "^1.9.2",
     "eslint": "^9.39.5",
     "eslint-plugin-import-x": "^4.17.1",
     "eslint-plugin-n": "^18.3.0",
