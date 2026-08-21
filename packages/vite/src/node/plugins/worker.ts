@@ -242,12 +242,20 @@ const inlineRE = /[?&]inline\b/
 const workerQueriesRE =
   /(\?|&)(?:(?:worker|sharedworker|inline|url)=?(?:&|$))+/g
 
-export function getWorkerRequestPostfix(id: string): string {
-  const { postfix } = splitFileAndPostfix(id)
+export function splitWorkerRequest(id: string): {
+  file: string
+  postfix: string
+} {
+  const { file, postfix } = splitFileAndPostfix(id)
   if (!postfix || postfix[0] !== '?') {
-    return ''
+    return { file, postfix: '' }
   }
-  return postfix.replace(workerQueriesRE, '$1').replace(trailingSeparatorRE, '')
+  return {
+    file,
+    postfix: postfix
+      .replace(workerQueriesRE, '$1')
+      .replace(trailingSeparatorRE, ''),
+  }
 }
 
 export const WORKER_FILE_ID = 'worker_file'
@@ -642,10 +650,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             }
           }
         } else {
-          const workerRequestPostfix = getWorkerRequestPostfix(id)
-          let url = await fileToUrl(this, cleanUrl(id))
+          const { file, postfix } = splitWorkerRequest(id)
+          let url = await fileToUrl(this, file)
           url = injectQuery(
-            `${url}${workerRequestPostfix}`,
+            `${url}${postfix}`,
             `${WORKER_FILE_ID}&type=${workerType}`,
           )
           urlCode = JSON.stringify(url)

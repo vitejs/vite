@@ -2,12 +2,12 @@ import { resolve } from 'node:path'
 import { describe, expect, test } from 'vitest'
 import type { OutputChunk, RolldownOutput } from 'rolldown'
 import { build } from '../../build'
-import { getWorkerRequestPostfix } from '../../plugins/worker'
+import { splitWorkerRequest } from '../../plugins/worker'
 
 const fixturesDir = resolve(import.meta.dirname, 'fixtures')
 
-describe('getWorkerRequestPostfix', () => {
-  for (const [id, expected] of [
+describe('splitWorkerRequest', () => {
+  for (const [id, postfix] of [
     ['/worker.js', ''],
     ['/worker.js#hash', ''],
     ['/worker.js?worker', ''],
@@ -22,8 +22,8 @@ describe('getWorkerRequestPostfix', () => {
     ['/worker.js?foo=foo&worker&bar=bar', '?foo=foo&bar=bar'],
     ['/worker.js?foo&bar&worker', '?foo&bar'],
   ]) {
-    test(`${id} returns ${expected}`, () => {
-      expect(getWorkerRequestPostfix(id)).toBe(expected)
+    test(`splits ${id}`, () => {
+      expect(splitWorkerRequest(id)).toEqual({ file: '/worker.js', postfix })
     })
   }
 })
