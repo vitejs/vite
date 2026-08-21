@@ -1326,14 +1326,6 @@ export function injectEnvironmentToHooks(
           plugin.name,
         )
         break
-      case 'hotUpdate':
-        clone[hook] = wrapEnvironmentHook(
-          environment,
-          chunkMetadataMap,
-          plugin,
-          hook,
-        )
-        break
       default:
         if (ROLLUP_HOOKS.includes(hook)) {
           ;(clone as any)[hook] = wrapEnvironmentHook(
@@ -1345,6 +1337,15 @@ export function injectEnvironmentToHooks(
         }
         break
     }
+  }
+
+  if (plugin.hotUpdate) {
+    clone.hotUpdate = wrapEnvironmentHook(
+      environment,
+      chunkMetadataMap,
+      plugin,
+      'hotUpdate',
+    )
   }
 
   return clone
