@@ -330,6 +330,22 @@ export interface SharedEnvironmentOptions {
    * @experimental
    */
   isBundled?: boolean
+  /**
+   * Whether this environment's bundled output is executed with a
+   * `NativeModuleRunner` during dev: the output is written to disk for a
+   * native dynamic `import()` — no module runner transform is involved.
+   * Only applies when `isBundled` is enabled, and only for server
+   * environments.
+   *
+   * This only configures the server side (on-disk output, url resolution,
+   * HMR patch delivery). The environment itself is expected to wire a
+   * `NativeModuleRunner` (from `vite/module-runner`), e.g. via
+   * `createRunnableDevEnvironment`'s `runner` factory.
+   *
+   * @default false
+   * @experimental
+   */
+  nativeModuleRunner?: boolean
 }
 
 export interface EnvironmentOptions extends SharedEnvironmentOptions {
@@ -355,6 +371,7 @@ export type ResolvedEnvironmentOptions = {
   dev: ResolvedDevEnvironmentOptions
   build: ResolvedBuildEnvironmentOptions
   isBundled: boolean
+  nativeModuleRunner: boolean
   plugins: readonly Plugin[]
   /** @internal */
   optimizeDepsPluginNames: string[]
@@ -1011,6 +1028,14 @@ function resolveEnvironmentOptions(
   const isBundled =
     options.isBundled ?? (isBuild || (isClientEnvironment && isBundledDev))
 
+  const nativeModuleRunner = !!options.nativeModuleRunner
+  if (nativeModuleRunner && consumer !== 'server') {
+    throw new Error(
+      `\`nativeModuleRunner\` is only available for server environments, ` +
+        `but environment "${environmentName}" has consumer "${consumer}"`,
+    )
+  }
+
   if (options.define?.['process.env']) {
     const processEnvDefine = options.define['process.env']
     if (typeof processEnvDefine === 'object') {
@@ -1069,6 +1094,7 @@ function resolveEnvironmentOptions(
       isSsrTargetWebworkerEnvironment,
     ),
     isBundled,
+    nativeModuleRunner,
     plugins: undefined!, // to be resolved later
     // will be set by `setOptimizeDepsPluginNames` later
     optimizeDepsPluginNames: undefined!,
