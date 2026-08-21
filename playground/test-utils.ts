@@ -191,6 +191,16 @@ export function editFile(
   const modified = (replacer as (content: string | Buffer) => string | Buffer)(
     content,
   )
+  if (Buffer.byteLength(modified) === Buffer.byteLength(content)) {
+    const e = new Error(
+      `editFile("${filename}") did not change the file size. The polling ` +
+        `watcher used in tests may miss same-length edits and cause flaky ` +
+        `failures; change the edit so the file's byte length changes. See ` +
+        `https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md#test-env-and-helpers`,
+    )
+    Error.captureStackTrace(e, editFile)
+    throw e
+  }
   fs.writeFileSync(filename, modified)
 }
 
@@ -408,6 +418,9 @@ export const formatSourcemapForSnapshot = (
   if (m.names && m.names.length === 0) {
     delete m.names
   }
+  if (m.ignoreList && m.ignoreList.length === 0) {
+    delete m.ignoreList
+  }
   if (m.debugId) {
     m.debugId = '00000000-0000-0000-0000-000000000000'
   }
@@ -415,8 +428,14 @@ export const formatSourcemapForSnapshot = (
   if (m.sourceRoot) {
     m.sourceRoot = m.sourceRoot.replace(root, '/root')
   }
+  const normalized = Object.fromEntries(
+    Object.keys(m)
+      .filter((key) => m[key] != null)
+      .sort()
+      .map((key) => [key, m[key]]),
+  )
   const c = removeComments(code.replace(/\?v=[\da-f]{8}/g, '?v=00000000'))
-  return { map: m, code: c, [sourcemapSnapshot]: { withoutContent } }
+  return { map: normalized, code: c, [sourcemapSnapshot]: { withoutContent } }
 }
 
 // helper function to kill process, uses taskkill on windows to ensure child process is killed too

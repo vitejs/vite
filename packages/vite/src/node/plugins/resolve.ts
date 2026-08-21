@@ -112,7 +112,6 @@ export interface ResolveOptions extends EnvironmentResolveOptions {
    * Enable tsconfig paths resolution
    *
    * @default false
-   * @experimental
    */
   tsconfigPaths?: boolean
 }
@@ -223,6 +222,7 @@ const perEnvironmentOrWorkerPlugin = (
 export function oxcResolvePlugin(
   resolveOptions: ResolvePluginOptionsWithOverrides,
   overrideEnvConfig: (ResolvedConfig & ResolvedEnvironmentOptions) | undefined,
+  isJsPluginContainer = false,
 ): Plugin[] {
   return [
     ...(resolveOptions.optimizeDeps && !resolveOptions.isBuild
@@ -237,7 +237,7 @@ export function oxcResolvePlugin(
         const depsOptimizerEnabled =
           resolveOptions.optimizeDeps &&
           !resolveOptions.isBuild &&
-          !partialEnv.config.experimental.bundledDev &&
+          !partialEnv.config.isBundled &&
           !isDepOptimizationDisabled(partialEnv.config.optimizeDeps)
         const getDepsOptimizer = () => {
           const env = getEnv()
@@ -350,18 +350,19 @@ export function oxcResolvePlugin(
                 )
                 return newResolvedId === resolvedId ? undefined : newResolvedId
               },
-          resolveSubpathImports(id, importer, isRequire, scan) {
+          resolveSubpathImports(id, importer, isRequire) {
             return resolveSubpathImports(id, importer, {
               ...options,
               isRequire: resolveOptions.isRequire ?? isRequire,
-              scan,
             })
           },
 
-          ...(partialEnv.config.command === 'serve'
+          ...(partialEnv.config.command === 'serve' || isJsPluginContainer
             ? {
                 async onWarn(msg) {
-                  getEnv().logger.warn(`warning: ${msg}`, {
+                  // use `partialEnv` instead of `getEnv()` because `buildStart` is
+                  // not called for plugin container used by `createIdResolver`
+                  partialEnv.config.logger.warn(`warning: ${msg}`, {
                     clear: true,
                     timestamp: true,
                   })
@@ -392,7 +393,7 @@ function optimizerResolvePlugin(
     name: 'vite:resolve-dev',
     applyToEnvironment(environment) {
       return (
-        !environment.config.experimental.bundledDev &&
+        !environment.config.isBundled &&
         !isDepOptimizationDisabled(environment.config.optimizeDeps)
       )
     },
@@ -487,11 +488,18 @@ function optimizerResolvePlugin(
   }
 }
 
-function resolveSubpathImports(
+export function resolveSubpathImports(
   id: string,
   importer: string | undefined,
-  options: InternalResolveOptions,
-) {
+  options: Pick<
+    InternalResolveOptions,
+    | 'packageCache'
+    | 'conditions'
+    | 'externalConditions'
+    | 'isProduction'
+    | 'isRequire'
+  >,
+): string | undefined {
   if (!importer || !id.startsWith(subpathImportsPrefix)) return
   const basedir = path.dirname(importer)
   const pkgData = findNearestPackageData(basedir, options.packageCache)
@@ -1025,7 +1033,10 @@ function getConditions(
 function resolveExportsOrImports(
   pkg: PackageData['data'],
   key: string,
-  options: InternalResolveOptions,
+  options: Pick<
+    InternalResolveOptions,
+    'conditions' | 'externalConditions' | 'isProduction' | 'isRequire'
+  >,
   type: 'imports' | 'exports',
   externalize?: boolean,
 ) {

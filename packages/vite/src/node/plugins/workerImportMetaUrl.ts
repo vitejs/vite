@@ -11,7 +11,12 @@ import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
 import { cleanUrl, slash, splitFileAndPostfix } from '../../shared/utils'
 import type { WorkerType } from './worker'
-import { WORKER_FILE_ID, workerFileToUrl } from './worker'
+import {
+  WORKER_FILE_ID,
+  emitWorkerAssetsForBundledDev,
+  recordWorkerReference,
+  workerFileToUrl,
+} from './worker'
 import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
 import type { InternalResolveOptions } from './resolve'
 import { tryFsResolve } from './resolve'
@@ -185,7 +190,6 @@ export const workerImportMetaUrlRE: RegExp =
   /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\))/dg
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
-  const isBundled = config.isBundled
   let workerResolver: ResolveIdFn
 
   const fsResolveOptions: InternalResolveOptions = {
@@ -207,6 +211,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     transform: {
       filter: { code: workerImportMetaUrlRE },
       async handler(code, id) {
+        const isBundled = this.environment.config.isBundled
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
         const re = new RegExp(workerImportMetaUrlRE)
@@ -257,11 +262,15 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           } else {
             let builtUrl: string
             if (isBundled) {
+              recordWorkerReference(
+                config,
+                config.bundleChain.at(-1),
+                cleanUrl(file),
+                id,
+              )
               const result = await workerFileToUrl(config, file)
-              if (
-                this.environment.config.command === 'serve' &&
-                this.environment.config.experimental.bundledDev
-              ) {
+              if (this.environment.config.command === 'serve') {
+                emitWorkerAssetsForBundledDev(this, config)
                 builtUrl = toOutputFilePathInJSForBundledDev(
                   this.environment,
                   result.entryFilename,

@@ -1,5 +1,8 @@
 import type { ForwardConsolePayload } from '#types/customEvent'
-import type { NormalizedModuleRunnerTransport } from './moduleRunnerTransport'
+import {
+  type NormalizedModuleRunnerTransport,
+  SendBeforeConnectError,
+} from './moduleRunnerTransport'
 
 export type ForwardConsoleLogLevel =
   | 'error'
@@ -23,13 +26,14 @@ export interface ResolvedForwardConsoleOptions {
 export function setupForwardConsoleHandler(
   transport: NormalizedModuleRunnerTransport,
   options: ResolvedForwardConsoleOptions,
+  console: Console = globalThis.console,
 ): void {
   if (!options.enabled) {
     return
   }
 
-  function sendError(type: 'error' | 'unhandled-rejection', error: any) {
-    transport.send({
+  async function sendError(type: 'error' | 'unhandled-rejection', error: any) {
+    await transport.send({
       type: 'custom',
       event: 'vite:forward-console',
       data: {
@@ -43,19 +47,31 @@ export function setupForwardConsoleHandler(
     })
   }
 
-  function sendLog(level: ForwardConsoleLogLevel, args: unknown[]) {
-    transport.send({
-      type: 'custom',
-      event: 'vite:forward-console',
-      data: {
-        type: 'log',
+  async function sendLog(level: ForwardConsoleLogLevel, args: unknown[]) {
+    try {
+      await transport.send({
+        type: 'custom',
+        event: 'vite:forward-console',
         data: {
-          level,
-          message: formatConsoleArgs(args),
-        },
-      } satisfies ForwardConsolePayload,
-    })
+          type: 'log',
+          data: {
+            level,
+            message: formatConsoleArgs(args),
+          },
+        } satisfies ForwardConsolePayload,
+      })
+    } catch (err) {
+      try {
+        await sendError('unhandled-rejection', err)
+      } catch (err) {
+        if (!(err instanceof SendBeforeConnectError)) {
+          originalConsoleError('Failed to send error to Vite server:', err)
+        }
+      }
+    }
   }
+
+  const originalConsoleError = console.error
 
   for (const level of options.logLevels) {
     const original = (console as any)[level]
@@ -69,18 +85,30 @@ export function setupForwardConsoleHandler(
   }
 
   if (options.unhandledErrors && typeof window !== 'undefined') {
-    window.addEventListener('error', (event) => {
+    window.addEventListener('error', async (event) => {
       // `ErrorEvent` doesn't necessarily have `ErrorEvent.error`.
       // Use `ErrorEvent.message` as fallback e.g. for ResizeObserver error.
       // https://developer.mozilla.org/en-US/docs/Web/API/ErrorEvent/error
       // https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver#observation_errors
       const error =
         event.error ?? (event.message ? new Error(event.message) : event)
-      sendError('error', error)
+      try {
+        await sendError('error', error)
+      } catch (err) {
+        if (!(err instanceof SendBeforeConnectError)) {
+          originalConsoleError('Failed to send error to Vite server:', err)
+        }
+      }
     })
 
-    window.addEventListener('unhandledrejection', (event) => {
-      sendError('unhandled-rejection', event.reason)
+    window.addEventListener('unhandledrejection', async (event) => {
+      try {
+        await sendError('unhandled-rejection', event.reason)
+      } catch (err) {
+        if (!(err instanceof SendBeforeConnectError)) {
+          originalConsoleError('Failed to send error to Vite server:', err)
+        }
+      }
     })
   }
 }

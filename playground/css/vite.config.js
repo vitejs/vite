@@ -13,6 +13,11 @@ globalThis.location = new URL('http://localhost/')
 const dirname = import.meta.dirname
 
 export default defineConfig({
+  input: {
+    index: path.resolve(dirname, './index.html'),
+    treeshakeScoped: path.resolve(dirname, './treeshake-scoped/index.html'),
+    empty: path.resolve(dirname, './empty.css'),
+  },
   plugins: [
     {
       // Emulate a UI framework component where a framework module would import
@@ -41,12 +46,7 @@ export default defineConfig({
   ],
   build: {
     cssTarget: 'chrome61',
-    rollupOptions: {
-      input: {
-        index: path.resolve(dirname, './index.html'),
-        treeshakeScoped: path.resolve(dirname, './treeshake-scoped/index.html'),
-        empty: path.resolve(dirname, './empty.css'),
-      },
+    rolldownOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('manual-chunk.css')) {

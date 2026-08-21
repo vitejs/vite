@@ -161,7 +161,7 @@ export async function createEnvironmentPluginContainer<
     watcher,
     autoStart,
   )
-  await container.resolveRollupOptions()
+  await container.resolveRolldownOptions()
   return container
 }
 
@@ -174,7 +174,7 @@ export type SkipInformation = {
 
 class EnvironmentPluginContainer<Env extends Environment = Environment> {
   private _pluginContextMap = new Map<Plugin, PluginContext>()
-  private _resolvedRollupOptions?: InputOptions
+  private _resolvedRolldownOptions?: InputOptions
   private _processesing = new Set<Promise<any>>()
   private _seenResolves: Record<string, true | undefined> = {}
 
@@ -273,12 +273,12 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   }
 
   get options(): InputOptions {
-    return this._resolvedRollupOptions!
+    return this._resolvedRolldownOptions!
   }
 
-  async resolveRollupOptions(): Promise<InputOptions> {
-    if (!this._resolvedRollupOptions) {
-      let options = this.environment.config.build.rollupOptions
+  async resolveRolldownOptions(): Promise<InputOptions> {
+    if (!this._resolvedRolldownOptions) {
+      let options = this.environment.config.build.rolldownOptions
       for (const optionsHook of this.getSortedPluginHooks('options')) {
         if (this._closed) {
           throwClosedServerError()
@@ -288,9 +288,9 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
             optionsHook.call(this.minimalContext, options),
           )) || options
       }
-      this._resolvedRollupOptions = options
+      this._resolvedRolldownOptions = options
     }
-    return this._resolvedRollupOptions
+    return this._resolvedRolldownOptions
   }
 
   private _getPluginContext(plugin: Plugin) {
@@ -334,7 +334,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     }
     this._started = true
     const config = this.environment.getTopLevelConfig()
-    this._buildStartPromise = this.handleHookPromise(
+    const hookPromise = this.handleHookPromise(
       this.hookParallel(
         'buildStart',
         (plugin) => this._getPluginContext(plugin),
@@ -345,6 +345,12 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
           plugin.perEnvironmentStartEndDuringDev,
       ),
     ) as Promise<void>
+    this._buildStartPromise = (async () => {
+      await hookPromise
+      if (this.environment.mode === 'dev') {
+        await this.environment._registerInputsAsSafeModules()
+      }
+    })()
     await this._buildStartPromise
     this._buildStartPromise = undefined
   }
@@ -640,20 +646,28 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     this._closed = true
     await Promise.allSettled(Array.from(this._processesing))
     const config = this.environment.getTopLevelConfig()
-    await this.hookParallel(
-      'buildEnd',
-      (plugin) => this._getPluginContext(plugin),
-      () => [],
-      (plugin) =>
-        this.environment.name === 'client' ||
-        config.server.perEnvironmentStartEndDuringDev ||
-        plugin.perEnvironmentStartEndDuringDev,
-    )
+    let buildEndError: Error | undefined
+    try {
+      await this.hookParallel(
+        'buildEnd',
+        (plugin) => this._getPluginContext(plugin),
+        () => [],
+        (plugin) =>
+          this.environment.name === 'client' ||
+          config.server.perEnvironmentStartEndDuringDev ||
+          plugin.perEnvironmentStartEndDuringDev,
+      )
+    } catch (error) {
+      buildEndError = error as Error
+    }
     await this.hookParallel(
       'closeBundle',
       (plugin) => this._getPluginContext(plugin),
-      () => [],
+      () => [buildEndError],
     )
+    if (buildEndError) {
+      throw buildEndError
+    }
   }
 }
 

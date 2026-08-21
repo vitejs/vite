@@ -1,25 +1,21 @@
 import { exactRegex } from 'rolldown/filter'
 import { viteModulePreloadPolyfillPlugin as nativeModulePreloadPolyfillPlugin } from 'rolldown/experimental'
-import { type ResolvedConfig, perEnvironmentPlugin } from '..'
 import type { Plugin } from '../plugin'
 
 export const modulePreloadPolyfillId = 'vite/modulepreload-polyfill'
 const resolvedModulePreloadPolyfillId = '\0' + modulePreloadPolyfillId + '.js'
 
-export function modulePreloadPolyfillPlugin(config: ResolvedConfig): Plugin {
-  if (config.isBundled) {
-    return perEnvironmentPlugin(
-      'native:modulepreload-polyfill',
-      (environment) => {
+export function modulePreloadPolyfillPlugin(): Plugin {
+  return {
+    name: 'vite:modulepreload-polyfill',
+    applyToEnvironment(environment) {
+      if (environment.config.isBundled) {
         return nativeModulePreloadPolyfillPlugin({
           isServer: environment.config.consumer !== 'client',
         })
-      },
-    )
-  }
-
-  return {
-    name: 'vite:modulepreload-polyfill',
+      }
+      return true
+    },
     resolveId: {
       filter: { id: exactRegex(modulePreloadPolyfillId) },
       handler(_id) {

@@ -29,6 +29,7 @@ function BackendIntegrationExample() {
       ])
 
       return {
+        input: Object.fromEntries(entrypoints),
         server: {
           // same port in playground/test-utils.ts
           port: 5009,
@@ -41,9 +42,6 @@ function BackendIntegrationExample() {
         build: {
           manifest: true,
           outDir,
-          rollupOptions: {
-            input: Object.fromEntries(entrypoints),
-          },
         },
         root,
         resolve: {

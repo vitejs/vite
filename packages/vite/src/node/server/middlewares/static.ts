@@ -286,6 +286,26 @@ export function isFileInTargetPath(
   )
 }
 
+const windowsDriveRE = /^[A-Z]:/i
+// A Windows 8.3 "short name" segment looks like `NAME~1` or `NAME~1.EXT`: at
+// most 6 non-`~`/`.` characters, a `~`, then digits, within a single path
+// segment. Matching only this shape (rather than any `~`) still blocks the
+// short-name aliasing bypass while allowing filenames that merely contain a
+// tilde, e.g. `0~rslib-runtime.js`.
+const windowsShortNameSegmentRE = /^[^~.]{1,6}~\d+(?:\.[^~.]{0,3})?$/
+
+/**
+ * Warning: parameters are not validated, only works with normalized absolute paths
+ */
+export function looksLikeWindowsShortNamePath(filePath: string): boolean {
+  return (
+    filePath.includes('~') &&
+    filePath
+      .split('/')
+      .some((segment) => windowsShortNameSegmentRE.test(segment))
+  )
+}
+
 /**
  * Warning: parameters are not validated, only works with normalized absolute paths
  */
@@ -296,6 +316,22 @@ export function isFileLoadingAllowed(
   const { fs } = config.server
 
   if (!fs.strict) return true
+
+  if (isWindows && looksLikeWindowsShortNamePath(filePath)) {
+    // Windows 8.3 short names (e.g. `PROGRA~1`) can alias a different long
+    // path and can be used to bypass the check.
+    // While it is valid to have files named similar to automatically generated
+    // short names, it is unlikely that a user would create them, so we
+    // disallow them to be safe.
+    return false
+  }
+
+  const hasDriveLetter = isWindows && windowsDriveRE.test(filePath)
+  const hasColon = (hasDriveLetter ? filePath.slice(2) : filePath).includes(':')
+  if (hasColon) {
+    // the `:` is included in the path which may be used for NTFS ADS
+    return false
+  }
 
   // NOTE: `fs.readFile('/foo.png/')` tries to load `'/foo.png'`
   // so we should check the path without trailing slash

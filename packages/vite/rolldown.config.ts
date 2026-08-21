@@ -1,16 +1,15 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 import MagicString from 'magic-string'
 import type { Plugin } from 'rolldown'
 import { defineConfig } from 'rolldown'
 import { ImportType, init, parse } from 'es-module-lexer'
 import licensePlugin from './rollupLicensePlugin'
+import pkg from './package.json' with { type: 'json' }
 
 // eslint-disable-next-line n/no-unsupported-features/node-builtins
 const dirname = import.meta.dirname
-const pkg = JSON.parse(
-  readFileSync(new URL('./package.json', import.meta.url)).toString(),
-)
+
 const disableSourceMap = !!process.env.DEBUG_DISABLE_SOURCE_MAP
 
 const envConfig = defineConfig({
@@ -26,7 +25,7 @@ const envConfig = defineConfig({
 })
 
 const clientConfig = defineConfig({
-  input: path.resolve(dirname, 'src/client/client.ts'),
+  input: path.resolve(dirname, 'src/client/clientEntry.ts'),
   platform: 'browser',
   transform: {
     target: 'es2020',
@@ -35,6 +34,20 @@ const clientConfig = defineConfig({
   output: {
     dir: path.resolve(dirname, 'dist'),
     entryFileNames: 'client/client.mjs',
+  },
+})
+
+// separate entry so the full-bundle-mode HMR code is never bundled into `client.mjs`
+const bundledDevClientConfig = defineConfig({
+  input: path.resolve(dirname, 'src/client/bundledDevClient.ts'),
+  platform: 'browser',
+  transform: {
+    target: 'es2020',
+  },
+  external: ['@vite/env'],
+  output: {
+    dir: path.resolve(dirname, 'dist'),
+    entryFileNames: 'client/bundledDevClient.mjs',
   },
 })
 
@@ -60,12 +73,6 @@ const sharedNodeOptions = defineConfig({
     exports: 'named',
     format: 'esm',
     externalLiveBindings: false,
-  },
-  onwarn(warning, warn) {
-    if (warning.message.includes('Circular dependency')) {
-      return
-    }
-    warn(warning)
   },
 })
 
@@ -161,6 +168,7 @@ const moduleRunnerConfig = defineConfig({
 export default defineConfig([
   envConfig,
   clientConfig,
+  bundledDevClientConfig,
   nodeConfig,
   moduleRunnerConfig,
 ])
@@ -181,7 +189,7 @@ function enableSourceMapsInWatchModePlugin(): Plugin {
 function writeTypesPlugin(): Plugin {
   return {
     name: 'write-types',
-    async writeBundle() {
+    writeBundle() {
       if (this.meta.watchMode) {
         writeFileSync(
           'dist/node/index.d.ts',

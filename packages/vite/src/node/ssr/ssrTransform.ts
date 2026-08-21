@@ -43,10 +43,10 @@ export async function ssrTransform(
   return ssrTransformScript(code, inMap, url, originalCode)
 }
 
-async function ssrTransformJSON(
+function ssrTransformJSON(
   code: string,
   inMap: SourceMap | { mappings: '' } | null,
-): Promise<TransformResult> {
+): TransformResult {
   return {
     code: code.replace('export default', `${ssrModuleExportsKey}.default =`),
     map: inMap,
@@ -369,11 +369,29 @@ async function ssrTransformScript(
           s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
         }
       } else if (parent.type === 'CallExpression') {
-        s.update(id.start, id.end, binding)
         // wrap with (0, ...) to avoid method binding `this`
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Property_accessors#method_binding
-        s.prependRight(id.start, `(0,`)
-        s.appendLeft(id.end, `)`)
+        if (id === parent.callee && !parent.optional) {
+          // V8 anchors the call-site stack frame of a parenthesized callee to
+          // the argument list `(`. Absorb everything from the callee up to the
+          // first argument (or the call's end for an empty argument list) into
+          // the replaced chunk so that `(` maps back to the start of the callee,
+          // keeping stack trace columns aligned with Node (which points to the
+          // callee). Optional calls (`?.()`) are excluded because Node itself
+          // anchors them to the `(`. See #19625.
+          const argsStart = parent.arguments.length
+            ? parent.arguments[0].start
+            : parent.end
+          s.update(
+            id.start,
+            argsStart,
+            `(0,${binding})${code.slice(id.end, argsStart)}`,
+          )
+        } else {
+          s.update(id.start, id.end, binding)
+          s.prependRight(id.start, `(0,`)
+          s.appendLeft(id.end, `)`)
+        }
       } else if (
         // don't transform class name identifier
         !(parent.type === 'ClassExpression' && id === parent.id)
@@ -519,12 +537,8 @@ function walk(
         onStatements(node.consequent)
       }
 
-      // track parent stack, skip for "else-if"/"else" branches as acorn nests
-      // the ast within "if" nodes instead of flattening them
-      if (
-        parent &&
-        !(parent.type === 'IfStatement' && node === parent.alternate)
-      ) {
+      // track parent stack
+      if (parent && !isSkippedParent(node, parent)) {
         parentStack.unshift(parent)
       }
 
@@ -561,38 +575,8 @@ function walk(
         if (node.type === 'FunctionExpression' && node.id) {
           setScope(node, node.id.name)
         }
-        // walk function expressions and add its arguments to known identifiers
-        // so that we don't prefix them
-        node.params.forEach((p) => {
-          if (p.type === 'ObjectPattern' || p.type === 'ArrayPattern') {
-            handlePattern(p, node)
-            return
-          }
-          ;(eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
-            enter(child: ESTree.Node, parent: ESTree.Node | undefined) {
-              // skip params default value of destructure
-              if (
-                parent?.type === 'AssignmentPattern' &&
-                parent.right === child
-              ) {
-                return this.skip()
-              }
-              if (child.type !== 'Identifier') return
-              // do not record as scope variable if is a destructuring keyword
-              if (isStaticPropertyKey(child, parent)) return
-              // do not record if this is a default value
-              // assignment of a destructuring variable
-              if (
-                (parent?.type === 'TemplateLiteral' &&
-                  parent.expressions.includes(child as ESTree.Expression)) ||
-                (parent?.type === 'CallExpression' && parent.callee === child)
-              ) {
-                return
-              }
-              setScope(node, child.name)
-            },
-          })
-        })
+        // add function arguments to known identifiers so that we don't prefix them
+        node.params.forEach((p) => handlePattern(p, node))
       } else if (node.type === 'ClassDeclaration') {
         // A class declaration name could shadow an import, so add its name to the parent scope
         const parentScope = findParentScope(parentStack)
@@ -620,10 +604,7 @@ function walk(
 
     leave(node: ESTree.Node, parent: ESTree.Node | null) {
       // untrack parent stack from above
-      if (
-        parent &&
-        !(parent.type === 'IfStatement' && node === parent.alternate)
-      ) {
+      if (parent && !isSkippedParent(node, parent)) {
         parentStack.shift()
       }
 
@@ -712,6 +693,16 @@ function isRefIdentifier(
     return false
   }
 
+  // label declaration or break/continue target
+  if (
+    (parent.type === 'LabeledStatement' ||
+      parent.type === 'BreakStatement' ||
+      parent.type === 'ContinueStatement') &&
+    parent.label === id
+  ) {
+    return false
+  }
+
   // meta property (e.g. import.meta)
   if (parent.type === 'MetaProperty') {
     return false
@@ -751,11 +742,26 @@ type FunctionNodes = ESTree.Node & {
     | `${string}Function${'Expression' | 'Declaration'}`
     | `${string}Method`
 }
+/**
+ * Children that must not see `parent` as an enclosing scope:
+ * - "else-if"/"else" branches, as acorn nests the ast within "if" nodes
+ *   instead of flattening them.
+ * - a `switch` discriminant, which is evaluated outside the case block:
+ *   in `switch (x) { case 1: let x }`, `x` is the outer binding.
+ */
+function isSkippedParent(node: ESTree.Node, parent: ESTree.Node) {
+  return (
+    (parent.type === 'IfStatement' && node === parent.alternate) ||
+    (parent.type === 'SwitchStatement' && node === parent.discriminant)
+  )
+}
+
 function isFunction(node: ESTree.Node): node is FunctionNodes {
   return functionNodeTypeRE.test(node.type)
 }
 
-const blockNodeTypeRE = /^BlockStatement$|^For(?:In|Of)?Statement$/
+const blockNodeTypeRE =
+  /^BlockStatement$|^SwitchStatement$|^For(?:In|Of)?Statement$/
 function isBlock(node: ESTree.Node) {
   return blockNodeTypeRE.test(node.type)
 }

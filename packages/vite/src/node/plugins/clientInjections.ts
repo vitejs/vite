@@ -2,7 +2,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
+import { CLIENT_ENTRY, ENV_ENTRY, BUNDLED_DEV_CLIENT_ENTRY } from '../constants'
 import { isObject, normalizePath, resolveHostname } from '../utils'
 import { cleanUrl } from '../../shared/utils'
 import { perEnvironmentState } from '../environment'
@@ -10,6 +10,7 @@ import { replaceDefine, serializeDefine } from './define'
 
 // ids in transform are normalized to unix style
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
+const normalizedBundledDevClientEntry = normalizePath(BUNDLED_DEV_CLIENT_ENTRY)
 const normalizedEnvEntry = normalizePath(ENV_ENTRY)
 
 /**
@@ -34,10 +35,13 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:client-inject',
+    applyToEnvironment(environment) {
+      return !environment.config.isBundled
+    },
     async buildStart() {
       injectConfigValues = await createClientConfigValueReplacer(config)
     },
-    async transform(code, id) {
+    transform(code, id) {
       const ssr = this.environment.config.consumer === 'server'
       const cleanId = cleanUrl(id)
       if (cleanId === normalizedClientEntry || cleanId === normalizedEnvEntry) {
@@ -50,7 +54,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         const nodeEnv =
           this.environment.config.define?.['process.env.NODE_ENV'] ||
           JSON.stringify(process.env.NODE_ENV || config.mode)
-        return await replaceDefine(this.environment, code, id, {
+        return replaceDefine(this.environment, code, id, {
           'process.env.NODE_ENV': nodeEnv,
           'global.process.env.NODE_ENV': nodeEnv,
           'globalThis.process.env.NODE_ENV': nodeEnv,
@@ -75,29 +79,30 @@ async function createClientConfigValueReplacer(
 
   const serverHost = `${resolvedServerHostname}:${resolvedServerPort}${devBase}`
 
-  let hmrConfig = config.server.hmr
-  hmrConfig = isObject(hmrConfig) ? hmrConfig : undefined
-  const host = hmrConfig?.host || null
-  const protocol = hmrConfig?.protocol || null
-  const timeout = hmrConfig?.timeout || 30000
-  const overlay = hmrConfig?.overlay !== false
-  const isHmrServerSpecified = !!hmrConfig?.server
+  const wsConfig = isObject(config.server.ws) ? config.server.ws : undefined
+  const host = wsConfig?.host || null
+  const protocol = wsConfig?.protocol || null
+  const timeout = wsConfig?.timeout || 30000
+  const isWsServerSpecified = !!wsConfig?.server
   const hmrConfigName = path.basename(config.configFile || 'vite.config.js')
 
-  // hmr.clientPort -> hmr.port
-  // -> (24678 if middleware mode and HMR server is not specified) -> new URL(import.meta.url).port
-  let port = hmrConfig?.clientPort || hmrConfig?.port || null
-  if (config.server.middlewareMode && !isHmrServerSpecified) {
+  const hmrConfig = isObject(config.server.hmr) ? config.server.hmr : undefined
+  const overlay = hmrConfig?.overlay !== false
+
+  // ws.clientPort -> ws.port
+  // -> (24678 if middleware mode and WS server is not specified) -> new URL(import.meta.url).port
+  let port = wsConfig?.clientPort || wsConfig?.port || null
+  if (config.server.middlewareMode && !isWsServerSpecified) {
     port ||= 24678
   }
 
-  let directTarget = hmrConfig?.host || resolvedServerHostname
-  directTarget += `:${hmrConfig?.port || resolvedServerPort}`
+  let directTarget = wsConfig?.host || resolvedServerHostname
+  directTarget += `:${wsConfig?.port || resolvedServerPort}`
   directTarget += devBase
 
   let hmrBase = devBase
-  if (hmrConfig?.path) {
-    hmrBase = path.posix.join(hmrBase, hmrConfig.path)
+  if (wsConfig?.path) {
+    hmrBase = path.posix.join(hmrBase, wsConfig.path)
   }
 
   const modeReplacement = escapeReplacement(config.mode)
@@ -115,9 +120,6 @@ async function createClientConfigValueReplacer(
   const serverForwardConsoleReplacement = escapeReplacement(
     config.server.forwardConsole as any,
   )
-  const bundleDevReplacement = escapeReplacement(
-    config.experimental.bundledDev || false,
-  )
 
   return (code) =>
     code
@@ -134,13 +136,12 @@ async function createClientConfigValueReplacer(
       .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
       .replace(`__WS_TOKEN__`, wsTokenReplacement)
       .replace(`__SERVER_FORWARD_CONSOLE__`, serverForwardConsoleReplacement)
-      .replaceAll(`__BUNDLED_DEV__`, bundleDevReplacement)
 }
 
 export async function getHmrImplementation(
   config: ResolvedConfig,
 ): Promise<string> {
-  const content = fs.readFileSync(normalizedClientEntry, 'utf-8')
+  const content = fs.readFileSync(normalizedBundledDevClientEntry, 'utf-8')
   const replacer = await createClientConfigValueReplacer(config)
   return (
     replacer(content)

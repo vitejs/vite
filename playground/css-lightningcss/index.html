@@ -1,5 +1,17 @@
 <link rel="stylesheet" href="./linked.css" />
 
+<style>
+  .inline-style {
+    color: red;
+  }
+</style>
+
+<style>
+  .escaped-closing-style {
+    content: '<\/style>';
+  }
+</style>
+
 <div class="wrapper">
   <h1>Lightning CSS</h1>
 
@@ -9,6 +21,11 @@
   <p class="imported">import from js: This should be green</p>
   <p class="imported-at-import">
     @import in import from js: This should be purple
+  </p>
+
+  <p>
+    External CSS:
+    <span class="icon--mdi-light icon--mdi-light--help-circle"></span>
   </p>
 
   <p class="modules">CSS modules: this should be turquoise</p>

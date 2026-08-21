@@ -27,7 +27,6 @@ import {
   handlePrunedModules,
   lexAcceptedHmrDeps,
   lexAcceptedHmrExports,
-  normalizeHmrUrl,
 } from '../server/hmr'
 import {
   createDebugger,
@@ -42,6 +41,7 @@ import {
   isDefined,
   isExternalUrl,
   isFilePathESM,
+  isFilePathFormatExplicit,
   isInNodeModules,
   isJSRequest,
   joinUrlSegments,
@@ -257,6 +257,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:import-analysis',
 
+    applyToEnvironment(environment) {
+      return !environment.config.isBundled
+    },
+
     async transform(source, importer) {
       const environment = this.environment as DevEnvironment
       const ssr = environment.config.consumer === 'server'
@@ -455,6 +459,17 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         _isNodeModeResult ??= isFilePathESM(importer, config.packageCache)
         return _isNodeModeResult
       }
+      let _isNodeModeForDynamicImportResult = config.legacy
+        ?.inconsistentCjsInterop
+        ? false
+        : undefined
+      const isNodeModeForDynamicImport = () => {
+        _isNodeModeForDynamicImportResult ??= isFilePathFormatExplicit(
+          importer,
+          config.packageCache,
+        )
+        return _isNodeModeForDynamicImportResult
+      }
 
       await Promise.all(
         imports.map(async (importSpecifier, index) => {
@@ -581,8 +596,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
             if (url !== specifier) {
               let rewriteDone = false
+              // optimizer-emitted imports resolve to the sibling file they
+              // name; imports injected by plugins (e.g. @rollup/plugin-inject)
+              // still need interop
+              const isOptimizerEmittedImport =
+                depsOptimizer?.isOptimizedDepFile(importer) &&
+                specifier[0] === '.'
               if (
-                !depsOptimizer?.isOptimizedDepFile(importer) &&
+                !isOptimizerEmittedImport &&
                 depsOptimizer?.isOptimizedDepFile(resolvedId) &&
                 !optimizedDepChunkRE.test(resolvedId)
               ) {
@@ -622,7 +643,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                     url,
                     index,
                     importer,
-                    isNodeMode(),
+                    isDynamicImport
+                      ? isNodeModeForDynamicImport()
+                      : isNodeMode(),
                     config,
                   )
                   rewriteDone = true
@@ -658,10 +681,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
             // record for HMR import chain analysis
             // make sure to unwrap and normalize away base
-            const hmrUrl = unwrapId(stripBase(url, base))
-            const isLocalImport = !isExternalUrl(hmrUrl) && !isDataUrl(hmrUrl)
+            const moduleUrl = unwrapId(stripBase(url, base))
+            const isLocalImport =
+              !isExternalUrl(moduleUrl) && !isDataUrl(moduleUrl)
             if (isLocalImport) {
-              orderedImportedUrls[index] = hmrUrl
+              orderedImportedUrls[index] = moduleUrl
             }
 
             if (enablePartialAccept && importedBindings) {
@@ -681,7 +705,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               // pre-transform known direct imports
               // These requests will also be registered in transformRequest to be awaited
               // by the deps optimizer
-              const url = removeImportQuery(hmrUrl)
+              const url = removeImportQuery(moduleUrl)
               environment.warmupRequest(url)
             }
           } else if (!importer.startsWith(withTrailingSlash(clientDir))) {
@@ -700,7 +724,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                     colors.yellow(
                       `\nThe above dynamic import cannot be analyzed by Vite.\n` +
                         `See ${colors.blue(
-                          `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`,
+                          `https://vite.dev/guide/features#dynamic-import`,
                         )} ` +
                         `for supported dynamic import formats. ` +
                         `If this is intended to be left as-is, you can use the ` +
@@ -765,7 +789,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         str().prepend(
           `import { createHotContext as __vite__createHotContext } from "${clientPublicPath}";` +
             `import.meta.hot = __vite__createHotContext(${JSON.stringify(
-              normalizeHmrUrl(importerModule.url),
+              importerModule.url,
             )});`,
         )
       }
@@ -803,8 +827,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           })
         }
         normalizedAcceptedUrls.add(normalized)
-        const hmrAccept = normalizeHmrUrl(normalized)
-        str().overwrite(start, end, JSON.stringify(hmrAccept), {
+        str().overwrite(start, end, JSON.stringify(normalized), {
           contentOnly: true,
         })
       }
@@ -944,12 +967,11 @@ export function interopNamedImports(
   } = importSpecifier
   const exp = source.slice(expStart, expEnd)
   if (dynamicIndex > -1) {
-    const inconsistentCjsInterop = !!config.legacy?.inconsistentCjsInterop
     // rewrite `import('package')` to expose the default directly
     str.overwrite(
       expStart,
       expEnd,
-      `import('${rewrittenUrl}').then(m => (${interopHelperStr})(m.default, ${inconsistentCjsInterop ? 0 : 1}))` +
+      `import('${rewrittenUrl}').then(m => (${interopHelperStr})(m.default, ${+isNodeMode}))` +
         getLineBreaks(exp),
       { contentOnly: true },
     )

@@ -2,9 +2,10 @@ import { basename, resolve } from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
 import fsp from 'node:fs/promises'
 import colors from 'picocolors'
-import { afterEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, describe, expect, assert, test, vi } from 'vitest'
 import type {
   LogLevel,
+  OutputAsset,
   OutputChunk,
   OutputOptions,
   RolldownOptions,
@@ -13,11 +14,13 @@ import type {
 } from 'rolldown'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import {
+  ChunkMetadataMap,
   build,
   createBuilder,
   onRollupLog,
   resolveBuildOutputs,
   resolveLibFilename,
+  resolveRolldownOptions,
 } from '../build'
 import type { Logger } from '../logger'
 import { createLogger } from '../logger'
@@ -79,6 +82,65 @@ describe('build', () => {
       }
     `)
     assertOutputHashContentChange(result[0], result[1])
+  })
+
+  test('top-level input is used as the default build entry', async () => {
+    const result = (await build({
+      root: resolve(dirname, 'packages/build-project'),
+      logLevel: 'silent',
+      input: 'top-level-entry.js',
+      build: {
+        write: false,
+      },
+      plugins: [
+        {
+          name: 'test',
+          resolveId(id) {
+            if (id.replace(/\\/g, '/').endsWith('top-level-entry.js')) {
+              return '\0top-level-entry.js'
+            }
+          },
+          load(id) {
+            if (id === '\0top-level-entry.js') {
+              return `console.log('from-top-level-input')`
+            }
+          },
+        },
+      ],
+    })) as RolldownOutput
+    const chunk = result.output.find((o) => o.type === 'chunk')
+    expect(chunk?.fileName).toContain('top-level-entry')
+    expect(chunk?.code).toContain('from-top-level-input')
+  })
+
+  test('top-level input can be a virtual module for build', async () => {
+    const input = 'virtual:entry'
+    const resolvedInput = `\0${input}`
+    const result = (await build({
+      root: resolve(dirname, 'packages/build-project'),
+      logLevel: 'silent',
+      input,
+      build: {
+        write: false,
+      },
+      plugins: [
+        {
+          name: 'virtual-entry',
+          resolveId(id) {
+            if (id === input) {
+              return resolvedInput
+            }
+          },
+          load(id) {
+            if (id === resolvedInput) {
+              return `console.log('from-virtual-top-level-input')`
+            }
+          },
+        },
+      ],
+    })) as RolldownOutput
+    const chunk = result.output.find((o) => o.type === 'chunk')
+    expect(chunk?.code).toContain('from-virtual-top-level-input')
   })
 
   test('file hash should change when pure css chunk changes', async () => {
@@ -153,7 +215,7 @@ describe('build', () => {
         write: false,
         manifest: true,
         assetsInlineLimit: 0,
-        rollupOptions: {
+        rolldownOptions: {
           input: [resolve(root, 'a/index.css'), resolve(root, 'b/index.css')],
         },
       },
@@ -242,7 +304,7 @@ describe('build', () => {
           entry: ['foo.js', 'bar.js'],
           formats: ['es'],
         },
-        rollupOptions: {
+        rolldownOptions: {
           external: 'external',
         },
         write: false,
@@ -364,7 +426,7 @@ describe('resolveBuildOutputs', () => {
     const resolveBuild = () => resolveBuildOutputs(outputs, libOptions, logger)
 
     expect(resolveBuild).toThrowError(
-      /Entries in "build\.rollupOptions\.output" must specify "name"/,
+      /Entries in "build\.rolldownOptions\.output" must specify "name"/,
     )
   })
 
@@ -375,8 +437,76 @@ describe('resolveBuildOutputs', () => {
     const resolveBuild = () => resolveBuildOutputs(outputs, libOptions, logger)
 
     expect(resolveBuild).toThrowError(
-      /Entries in "build\.rollupOptions\.output" must specify "name"/,
+      /Entries in "build\.rolldownOptions\.output" must specify "name"/,
     )
+  })
+
+  describe('input resolution in resolveRolldownOptions', () => {
+    const buildProjectRoot = resolve(dirname, 'packages/build-project')
+
+    test('build.rolldownOptions.input takes precedence over top-level input', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+        input: 'top-level-entry.js',
+        build: {
+          rolldownOptions: { input: 'explicit-entry.js' },
+        },
+      })
+      const options = resolveRolldownOptions(
+        builder.environments.client,
+        new ChunkMetadataMap(),
+      )
+      expect(options.input).toBe('explicit-entry.js')
+    })
+
+    test('falls back to index.html when no input is set', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+      })
+      const options = resolveRolldownOptions(
+        builder.environments.client,
+        new ChunkMetadataMap(),
+      )
+      expect(options.input).toBe(resolve(buildProjectRoot, 'index.html'))
+    })
+
+    test('build.ssr string entry takes precedence over input', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+        environments: {
+          ssr: {
+            input: 'env-input.js',
+            build: { ssr: 'ssr-entry.js' },
+          },
+        },
+      })
+      const options = resolveRolldownOptions(
+        builder.environments.ssr,
+        new ChunkMetadataMap(),
+      )
+      expect(options.input).toBe(resolve(buildProjectRoot, 'ssr-entry.js'))
+    })
+
+    test('throws when build.lib is set without entry or top-level input', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+        build: {
+          lib: { name: 'MyLib', formats: ['es'] },
+        },
+      })
+      expect(() =>
+        resolveRolldownOptions(
+          builder.environments.client,
+          new ChunkMetadataMap(),
+        ),
+      ).toThrow(
+        /Either "build\.lib\.entry" or the top-level "input" option is required/,
+      )
+    })
   })
 })
 
@@ -702,7 +832,7 @@ describe('resolveBuildOutputs', () => {
     ).toEqual([{ name: 'A' }])
     expect(log.warn).toHaveBeenLastCalledWith(
       colors.yellow(
-        `"build.lib.formats" will be ignored because "build.rollupOptions.output" is already an array format.`,
+        `"build.lib.formats" will be ignored because "build.rolldownOptions.output" is already an array format.`,
       ),
     )
   })
@@ -714,7 +844,7 @@ describe('resolveBuildOutputs', () => {
       build: {
         ssr: true,
         ssrEmitAssets: true,
-        rollupOptions: {
+        rolldownOptions: {
           input: {
             index: '/entry',
           },
@@ -742,7 +872,7 @@ describe('resolveBuildOutputs', () => {
           build: {
             ssr: true,
             emitAssets: true,
-            rollupOptions: {
+            rolldownOptions: {
               input: {
                 index: '/entry',
               },
@@ -772,7 +902,7 @@ describe('resolveBuildOutputs', () => {
         ssr: {
           build: {
             ssr: true,
-            rollupOptions: {
+            rolldownOptions: {
               input: {
                 index: '/entry',
               },
@@ -793,7 +923,7 @@ describe('resolveBuildOutputs', () => {
         custom: {
           build: {
             ssr: true,
-            rollupOptions: {
+            rolldownOptions: {
               input: {
                 index: '/entry',
               },
@@ -814,7 +944,7 @@ test('default sharedConfigBuild true on build api', async () => {
     logLevel: 'warn',
     build: {
       ssr: true,
-      rollupOptions: {
+      rolldownOptions: {
         input: {
           index: '/entry',
         },
@@ -843,7 +973,7 @@ test.for([true, false])(
         client: {
           build: {
             outDir: './dist/client',
-            rollupOptions: {
+            rolldownOptions: {
               input: '/entry.js',
             },
           },
@@ -851,7 +981,7 @@ test.for([true, false])(
         ssr: {
           build: {
             outDir: './dist/server',
-            rollupOptions: {
+            rolldownOptions: {
               input: '/entry.js',
             },
           },
@@ -860,7 +990,7 @@ test.for([true, false])(
           build: {
             minify: true,
             outDir: './dist/custom1',
-            rollupOptions: {
+            rolldownOptions: {
               input: '/entry.js',
             },
           },
@@ -869,7 +999,7 @@ test.for([true, false])(
           build: {
             minify: false,
             outDir: './dist/custom2',
-            rollupOptions: {
+            rolldownOptions: {
               input: '/entry.js',
             },
           },
@@ -891,6 +1021,183 @@ test.for([true, false])(
   },
 )
 
+test('chunkImportMap per environment with shared plugins', async () => {
+  const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
+  let client: RolldownOutput | undefined
+  let ssr: RolldownOutput | undefined
+  const builder = await createBuilder({
+    root,
+    logLevel: 'warn',
+    environments: {
+      client: {
+        build: {
+          chunkImportMap: true,
+          write: false,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+      ssr: {
+        build: {
+          chunkImportMap: false,
+          ssr: true,
+          write: false,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    builder: {
+      sharedPlugins: true,
+      async buildApp(builder) {
+        client = (await builder.build(
+          builder.environments.client,
+        )) as RolldownOutput
+        ssr = (await builder.build(builder.environments.ssr)) as RolldownOutput
+      },
+    },
+  })
+
+  await builder.buildApp()
+
+  const entry = client!.output.find(
+    (output): output is OutputChunk =>
+      output.type === 'chunk' && output.isEntry,
+  )!
+  const css = client!.output.find(
+    (output) => output.type === 'asset' && output.fileName.endsWith('.css'),
+  )!
+  const importMapAsset = client!.output.find(
+    (output): output is OutputAsset =>
+      output.type === 'asset' && output.fileName === 'importmap.json',
+  )!
+  expect(
+    ssr!.output.some(
+      (output) =>
+        output.type === 'asset' && output.fileName === 'importmap.json',
+    ),
+  ).toBe(false)
+  const importMap = JSON.parse(importMapAsset.source.toString())
+    .imports as Record<string, string>
+  const cssSpecifier = Object.entries(importMap).find(
+    ([, fileName]) => fileName === `/${css.fileName}`,
+  )![0]
+  expect(entry.code).toContain(JSON.stringify(cssSpecifier.slice(1)))
+})
+
+test('chunkImportMap is emitted when emitAssets is false', async () => {
+  const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'warn',
+    environments: {
+      ssr: {
+        build: {
+          ssr: true,
+          emitAssets: false,
+          write: false,
+          chunkImportMap: true,
+          rolldownOptions: {
+            input: '/entry.js',
+            experimental: {
+              chunkImportMap: {
+                fileName: 'custom-importmap.json',
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const result = (await builder.build(
+    builder.environments.ssr,
+  )) as RolldownOutput
+
+  expect(result.output).toContainEqual(
+    expect.objectContaining({
+      type: 'asset',
+      fileName: 'custom-importmap.json',
+    }),
+  )
+})
+
+test('chunkImportMap is emitted for SSR when enabled', async () => {
+  const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'warn',
+    environments: {
+      ssr: {
+        build: {
+          ssr: true,
+          chunkImportMap: true,
+          write: false,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+  })
+
+  const result = (await builder.build(
+    builder.environments.ssr,
+  )) as RolldownOutput
+
+  expect(result.output).toContainEqual(
+    expect.objectContaining({
+      type: 'asset',
+      fileName: 'importmap.json',
+    }),
+  )
+})
+
+test('importmap named asset is not emitted when chunkImportMap is false', async () => {
+  const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'warn',
+    plugins: [
+      {
+        name: 'emit-importmap-named-asset',
+        buildStart() {
+          this.emitFile({
+            type: 'asset',
+            fileName: 'importmap.json',
+            source: '{}',
+          })
+        },
+      },
+    ],
+    environments: {
+      ssr: {
+        build: {
+          ssr: true,
+          emitAssets: false,
+          write: false,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+  })
+
+  const result = (await builder.build(
+    builder.environments.ssr,
+  )) as RolldownOutput
+
+  expect(result.output).not.toContainEqual(
+    expect.objectContaining({
+      type: 'asset',
+      fileName: 'importmap.json',
+    }),
+  )
+})
+
 test('sharedConfigBuild and emitAssets', async () => {
   const root = resolve(dirname, 'fixtures/shared-config-build/emitAssets')
   const builder = await createBuilder({
@@ -902,7 +1209,7 @@ test('sharedConfigBuild and emitAssets', async () => {
         build: {
           outDir: './dist/client',
           emitAssets: true,
-          rollupOptions: {
+          rolldownOptions: {
             input: '/entry.js',
           },
         },
@@ -911,7 +1218,7 @@ test('sharedConfigBuild and emitAssets', async () => {
         build: {
           outDir: './dist/ssr',
           emitAssets: true,
-          rollupOptions: {
+          rolldownOptions: {
             input: '/entry.js',
           },
         },
@@ -920,7 +1227,7 @@ test('sharedConfigBuild and emitAssets', async () => {
         build: {
           outDir: './dist/custom',
           emitAssets: true,
-          rollupOptions: {
+          rolldownOptions: {
             input: '/entry.js',
           },
         },
@@ -958,25 +1265,20 @@ test('sharedConfigBuild and emitAssets', async () => {
   ])
 })
 
-test.skip('adjust worker build error for worker.format', async () => {
-  try {
-    await build({
-      root: resolve(dirname, 'fixtures/worker-dynamic'),
-      build: {
-        rollupOptions: {
-          input: {
-            index: '/main.js',
-          },
-        },
-      },
-      logLevel: 'silent',
-    })
-  } catch (e) {
-    expect(e.message).toContain('worker.format')
-    expect(e.message).not.toContain('output.format')
-    return
-  }
-  expect.unreachable()
+test('resolving lib entry from the top-level input does not mutate the user config', async () => {
+  const userLib: LibraryOptions = { formats: ['es'] }
+  const config = await resolveConfig(
+    {
+      configFile: false,
+      input: 'src/main.ts',
+      build: { lib: userLib },
+    },
+    'build',
+  )
+  const resolvedLib = config.environments.client.build.lib
+  assert(resolvedLib !== false)
+  expect(resolvedLib.entry).toBe('src/main.ts')
+  expect(userLib.entry).toBeUndefined()
 })
 
 describe('onRollupLog', () => {
@@ -994,7 +1296,7 @@ describe('onRollupLog', () => {
       logLevel: 'info',
       build: {
         write: false,
-        rollupOptions: {
+        rolldownOptions: {
           ...options,
           logLevel: 'debug',
         },
@@ -1141,7 +1443,7 @@ test('watch rebuild manifest', async (ctx) => {
     environments: {
       client: {
         build: {
-          rollupOptions: {
+          rolldownOptions: {
             input: '/entry.js',
           },
         },
@@ -1185,6 +1487,29 @@ test('watch rebuild manifest', async (ctx) => {
       "entry.js",
     ]
   `)
+})
+
+test('copies public directory after building same environment with write false first', async (ctx) => {
+  const root = resolve(dirname, 'fixtures/public-dir-write-false')
+  ctx.onTestFinished(() =>
+    fsp.rm(resolve(root, 'dist'), { recursive: true, force: true }),
+  )
+
+  const builder = await createBuilder({
+    root,
+    configFile: false,
+    logLevel: 'silent',
+  })
+
+  builder.environments.client.config.build.write = false
+  await builder.build(builder.environments.client)
+
+  builder.environments.client.config.build.write = true
+  await builder.build(builder.environments.client)
+
+  await expect(
+    fsp.readFile(resolve(root, 'dist/favicon.svg'), 'utf-8'),
+  ).resolves.toBe('<svg></svg>')
 })
 
 /**

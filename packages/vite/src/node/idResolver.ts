@@ -74,6 +74,7 @@ export function createIdResolver(
               idOnly: true,
             },
             environment.config,
+            true,
           ),
         ],
         undefined,

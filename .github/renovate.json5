@@ -13,7 +13,10 @@
     {
       "matchDepTypes": ["action"],
       "pinDigests": true,
-      "matchPackageNames": ["!actions/{/,}**", "!github/{/,}**"],
+    },
+    {
+      "matchDatasources": ["npm"],
+      "minimumReleaseAge": "1440 minutes",
     },
     {
       "groupName": "rolldown-related dependencies",

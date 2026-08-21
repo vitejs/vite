@@ -1,4 +1,4 @@
-import { posix } from 'node:path'
+import path, { posix } from 'node:path'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
@@ -6,7 +6,7 @@ import { parseAst } from 'rolldown/parseAst'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import { viteDynamicImportVarsPlugin as nativeDynamicImportVarsPlugin } from 'rolldown/experimental'
 import { exactRegex } from 'rolldown/filter'
-import { type Plugin, perEnvironmentPlugin } from '../plugin'
+import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
 import { createBackCompatIdResolver } from '../idResolver'
@@ -21,7 +21,9 @@ import {
 } from '../utils'
 import type { Environment } from '../environment'
 import { perEnvironmentState } from '../environment'
+import type { PartialEnvironment } from '../baseEnvironment'
 import { hasViteIgnoreRE } from './importAnalysis'
+import { resolveSubpathImports } from './resolve'
 import { workerOrSharedWorkerRE } from './worker'
 
 export const dynamicImportHelperId = '\0vite/dynamic-import-helper.js'
@@ -172,21 +174,21 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     tryIndex: false,
     extensions: [],
   })
-
-  if (config.isBundled) {
-    return perEnvironmentPlugin('native:dynamic-import-vars', (environment) => {
-      const { include, exclude } =
-        environment.config.build.dynamicImportVarsOptions
-
-      return nativeDynamicImportVarsPlugin({
-        include,
-        exclude,
-        resolver(id, importer) {
-          return resolve(environment, id, importer)
-        },
-        sourcemap: !!environment.config.build.sourcemap,
-      })
+  const resolveDynamicImport = (
+    environment: PartialEnvironment,
+    id: string,
+    importer?: string,
+  ) => {
+    const subpathImports = resolveSubpathImports(id, importer, {
+      ...environment.config.resolve,
+      packageCache: config.packageCache,
+      isProduction: config.isProduction,
+      isRequire: false,
     })
+    if (subpathImports && importer) {
+      return normalizePath(path.resolve(path.dirname(importer), subpathImports))
+    }
+    return resolve(environment, id, importer)
   }
 
   const getFilter = perEnvironmentState((environment: Environment) => {
@@ -197,6 +199,23 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:dynamic-import-vars',
+
+    applyToEnvironment(environment) {
+      if (environment.config.isBundled) {
+        const { include, exclude } =
+          environment.config.build.dynamicImportVarsOptions
+
+        return nativeDynamicImportVarsPlugin({
+          include,
+          exclude,
+          resolver(id, importer) {
+            return resolveDynamicImport(environment, id, importer)
+          },
+          sourcemap: !!environment.config.build.sourcemap,
+        })
+      }
+      return true
+    },
 
     resolveId: {
       filter: { id: exactRegex(dynamicImportHelperId) },
@@ -263,7 +282,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
             result = await transformDynamicImport(
               source.slice(start, end),
               importer,
-              (id, importer) => resolve(environment, id, importer),
+              (id, importer) => resolveDynamicImport(environment, id, importer),
               config.root,
             )
           } catch (error) {

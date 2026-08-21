@@ -2,7 +2,7 @@ import { resolve } from 'node:path'
 import { promises as fs } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { transformGlobImport } from '../../../plugins/importMetaGlob'
-import { transformWithEsbuild } from '../../../plugins/esbuild'
+import { transformWithOxc } from '../../../plugins/oxc'
 
 describe('fixture', async () => {
   const resolveId = (id: string) => id
@@ -10,9 +10,8 @@ describe('fixture', async () => {
 
   it('transform', async () => {
     const id = resolve(import.meta.dirname, './fixture-a/index.ts')
-    const code = (
-      await transformWithEsbuild(await fs.readFile(id, 'utf-8'), id)
-    ).code
+    const code = (await transformWithOxc(await fs.readFile(id, 'utf-8'), id))
+      .code
 
     expect(
       (await transformGlobImport(code, id, root, resolveId))?.s.toString(),
@@ -25,12 +24,12 @@ describe('fixture', async () => {
         .toString()
         .split('\n').length
 
-    expect(await getTransformedLineCount("import.meta.glob('./*.js')")).toBe(1)
+    expect(await getTransformedLineCount("import.meta.glob('/*.js')")).toBe(1)
     expect(
       await getTransformedLineCount(
         `
           import.meta.glob(
-            './*.js'
+            '/*.js'
           )
         `.trim(),
       ),
@@ -63,13 +62,26 @@ describe('fixture', async () => {
         "[Error: In virtual modules, all globs must start with '/']",
       )
     }
+
+    // Regression test for vitejs/vite#22345: even when the relative glob
+    // matches zero files, virtual modules must still surface the error
+    // instead of silently returning `{}`.
+    await expect(async () => {
+      await transformGlobImport(
+        "import.meta.glob('./no-such-dir/*.ts')",
+        'virtual:module',
+        root,
+        resolveId,
+      )
+    }).rejects.toMatchInlineSnapshot(
+      `[Error: In virtual modules, all globs must start with '/']`,
+    )
   })
 
   it('transform with restoreQueryExtension', async () => {
     const id = resolve(import.meta.dirname, './fixture-a/index.ts')
-    const code = (
-      await transformWithEsbuild(await fs.readFile(id, 'utf-8'), id)
-    ).code
+    const code = (await transformWithOxc(await fs.readFile(id, 'utf-8'), id))
+      .code
 
     expect(
       (
