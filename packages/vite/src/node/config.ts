@@ -552,13 +552,51 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   devtools?: boolean | DevToolsConfig
 }
 
+export interface SplitCSPNonce {
+  /**
+   * A nonce value placeholder used for `<script>` tags and for `<link>` tags
+   * that load scripts (`rel="modulepreload"`, `rel="preload"` with `as="script"`).
+   *
+   * When omitted, no nonce is added to those tags.
+   */
+  script?: string
+  /**
+   * A nonce value placeholder used for `<style>` tags and for `<link>` tags
+   * that load styles (`rel="stylesheet"`, `rel="preload"` with `as="style"`).
+   *
+   * When omitted, no nonce is added to those tags.
+   */
+  style?: string
+}
+
+export type CSPNonce = string | SplitCSPNonce
+
+/**
+ * Pick the nonce that applies to a given destination.
+ *
+ * Use this instead of reading {@link HTMLOptions.cspNonce} directly, so that both
+ * the shared (string) and the split (object) form are handled.
+ */
+export function resolveCspNonce(
+  cspNonce: CSPNonce | undefined,
+  destination: 'script' | 'style',
+): string | undefined {
+  if (!cspNonce) return undefined
+  if (typeof cspNonce === 'string') return cspNonce
+  return cspNonce[destination] || undefined
+}
+
 export interface HTMLOptions {
   /**
-   * A nonce value placeholder that will be used when generating script/style tags.
+   * A nonce value placeholder that will be used when generating script/style
+   * related tags.
+   *
+   * Pass a string to share the same nonce between scripts and styles, or an
+   * object to use a separate nonce for each.
    *
    * Make sure that this placeholder will be replaced with a unique value for each request by the server.
    */
-  cspNonce?: string
+  cspNonce?: CSPNonce
   /**
    * Define additional HTML elements and attributes to be treated as asset sources.
    * This extends the built-in list that includes standard elements like `<img src>`, `<video src>`, etc.

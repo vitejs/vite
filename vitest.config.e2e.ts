@@ -13,6 +13,7 @@ const bundledDevExclude = [
   './playground/backend-integration/__tests__/backend-integration.spec.ts',
   './playground/chunk-importmap/__tests__/chunk-importmap.spec.ts',
   './playground/csp/__tests__/csp.spec.ts',
+  './playground/csp/__tests__/split/csp.spec.ts',
   './playground/css-codesplit/__tests__/css-codesplit.spec.ts',
   './playground/css-no-codesplit/__tests__/css-no-codesplit.spec.ts',
   './playground/forward-console/__test__/forward-console.spec.ts',

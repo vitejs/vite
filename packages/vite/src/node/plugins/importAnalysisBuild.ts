@@ -15,6 +15,11 @@ import {
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
+import {
+  type CSPNonceDestination,
+  // aliased: `readCspNonce` below is the name the generated prelude binds it to
+  readCspNonce as readCspNonceSource,
+} from '../../shared/cspNonce'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { PartialEnvironment } from '../baseEnvironment'
 import { removedPureCssFilesCache } from './css'
@@ -114,6 +119,9 @@ function detectScriptRel() {
 
 declare const scriptRel: string
 declare const seen: Record<string, boolean>
+declare const readCspNonce: (
+  destination: CSPNonceDestination,
+) => string | undefined
 function preload(
   baseModule: () => Promise<unknown>,
   deps?: string[],
@@ -124,13 +132,8 @@ function preload(
   // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
   if (__VITE_IS_MODERN__ && deps && deps.length > 0) {
     const links = document.getElementsByTagName('link')
-    const cspNonceMeta = document.querySelector<HTMLMetaElement>(
-      'meta[property=csp-nonce]',
-    )
-    // `.nonce` should be used to get along with nonce hiding (https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/nonce#accessing_nonces_and_nonce_hiding)
-    // Firefox 67-74 uses modern chunks and supports CSP nonce, but does not support `.nonce`
-    // in that case fallback to getAttribute
-    const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute('nonce')
+    const cspScriptNonce = readCspNonce('script')
+    const cspStyleNonce = readCspNonce('style')
 
     // Promise.allSettled is not supported by Chrome 64-75, Firefox 67-70, Safari 11.1-12.1
     function allSettled<T>(
@@ -183,6 +186,7 @@ function preload(
         }
         link.crossOrigin = ''
         link.href = dep
+        const cspNonce = isCss ? cspStyleNonce : cspScriptNonce
         if (cspNonce) {
           link.setAttribute('nonce', cspNonce)
         }
@@ -249,7 +253,11 @@ function getPreloadCode(
         `function(dep) { return ${JSON.stringify(environment.config.base)}+dep }`
   // replace `import` as a workaround for stackblitz: https://stackblitz.com/edit/node-vqfvv8dy?file=index.js
   const preloadMethodCode = preload.toString().replaceAll('𝐢𝐦𝐩𝐨𝐫𝐭', 'import')
-  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preloadMethodCode}`
+  // only declared here — `preload` calls it, so it never touches the DOM while the
+  // chunk is loading, and it is dropped from legacy chunks along with the rest of
+  // the preload logic once `__VITE_IS_MODERN__` becomes `false`
+  const readCspNonceCode = `const readCspNonce = ${readCspNonceSource.toString()};`
+  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};${readCspNonceCode}export const ${preloadMethod} = ${preloadMethodCode}`
   return preloadCode
 }
 

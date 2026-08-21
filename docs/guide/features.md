@@ -805,12 +805,26 @@ To deploy CSP, certain directives or configs must be set due to Vite's internals
 
 ### [`'nonce-{RANDOM}'`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/Sources#nonce-base64-value)
 
-When [`html.cspNonce`](/config/shared-options#html-cspnonce) is set, Vite adds a nonce attribute with the specified value to any `<script>` and `<style>` tags, as well as `<link>` tags for stylesheets and module preloading. Additionally, when this option is set, Vite will inject a meta tag (`<meta property="csp-nonce" nonce="PLACEHOLDER" />`).
+When [`html.cspNonce`](/config/shared-options#html-cspnonce) is set, Vite adds a nonce attribute with the specified value to any `<script>` and `<style>` tags, as well as to `<link>` tags that load scripts or styles — `rel="stylesheet"`, `rel="modulepreload"`, and `rel="preload"` with `as="script"` or `as="style"`. Additionally, when this option is set to a string, Vite will inject a meta tag (`<meta property="csp-nonce" nonce="PLACEHOLDER" />`).
 
-The nonce value of a meta tag with `property="csp-nonce"` will be used by Vite whenever necessary during both dev and after build.
+If `html.cspNonce` is an object, Vite gives each tag the nonce of the directive that governs it, and injects `<meta property="csp-script-nonce" />` and `<meta property="csp-style-nonce" />` instead of the shared tag — a single `csp-nonce` could not describe two different values. A key you leave out gets no nonce and no meta tag at all, which is how you say "this directive is not nonce-based".
+
+Whenever Vite needs a nonce at runtime — during both dev and after build — it reads it back from these meta tags: `csp-script-nonce` / `csp-style-nonce` first, then `csp-nonce`. A server may therefore emit either form, and one that emits only `csp-nonce` is understood as "the same nonce for both".
+
+To pick the right nonce from a plugin, use `resolveCspNonce` rather than reading the option directly, so that both forms are handled:
+
+```js
+import { resolveCspNonce } from 'vite'
+
+const nonce = resolveCspNonce(config.html?.cspNonce, 'script')
+```
 
 :::warning
 Ensure that you replace the placeholder with a unique value for each request. This is important to prevent bypassing a resource's policy, which can otherwise be easily done.
+:::
+
+:::tip
+In split mode Vite does not emit `<meta property="csp-nonce" />` at all, since no single value would be correct for both destinations. Third-party runtimes that read that meta tag to nonce their own elements will find nothing — check them before switching.
 :::
 
 ### [`data:`](<https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/Sources#scheme-source:~:text=schemes%20(not%20recommended).-,data%3A,-Allows%20data%3A>)
