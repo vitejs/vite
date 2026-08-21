@@ -6,9 +6,9 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
+  debug: npm:obug@^1.0.2
   rolldown: ~1.2.4
   vite: workspace:*
-  debug: npm:obug@^1.0.2
 
 packageExtensionsChecksum: sha256-TN34VxQ4aEf/0bmMCAf/tyq2fur66+GWTFoIOcaYREE=
 

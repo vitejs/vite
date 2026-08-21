@@ -22,6 +22,14 @@ export default {
   enhanceApp(ctx: any) {
     const { app } = ctx
 
+    // Fail the docs build on SSR errors instead of silently shipping
+    // broken pages. Vue's SSR renderer only logs unhandled errors by
+    // default; this makes renderToString throw instead.
+    // https://github.com/vitejs/vite/pull/23201
+    if (import.meta.env.SSR) {
+      app.config.throwUnhandledErrorInProduction = true
+    }
+
     app.component('SvgImage', SvgImage)
     app.component('YouTubeVideo', YouTubeVideo)
     app.component('NonInheritBadge', NonInheritBadge)
