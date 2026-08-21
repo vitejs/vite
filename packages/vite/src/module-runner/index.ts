@@ -6,6 +6,10 @@ export {
   type EvaluatedModuleNode,
 } from './evaluatedModules'
 export { ModuleRunner } from './runner'
+export {
+  NativeModuleRunner,
+  type NativeModuleRunnerOptions,
+} from './nativeRunner'
 export { ESModulesEvaluator } from './esmEvaluator'
 export {
   createDefaultImportMeta,

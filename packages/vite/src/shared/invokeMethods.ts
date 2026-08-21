@@ -89,4 +89,8 @@ export type InvokeMethods = {
       | { type: 'RegExp'; source: string; flags: string }
     >
   >
+
+  resolveBundledModuleUrl: (
+    url: string,
+  ) => Promise<{ url: string; moduleId: string }>
 }
