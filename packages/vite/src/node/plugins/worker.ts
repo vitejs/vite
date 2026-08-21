@@ -19,6 +19,7 @@ import {
   injectQuery,
   normalizePath,
   prettifyUrl,
+  trailingSeparatorRE,
   urlRE,
 } from '../utils'
 import {
@@ -29,7 +30,7 @@ import {
   onRollupLog,
   toOutputFilePathInJS,
 } from '../build'
-import { cleanUrl } from '../../shared/utils'
+import { cleanUrl, splitFileAndPostfix } from '../../shared/utils'
 import type { Logger } from '../logger'
 import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
 
@@ -238,6 +239,24 @@ export const workerOrSharedWorkerRE: RegExp =
   /(?:\?|&)(worker|sharedworker)(?:&|$)/
 const workerFileRE = /(?:\?|&)worker_file&type=(\w+)(?:&|$)/
 const inlineRE = /[?&]inline\b/
+const workerQueriesRE =
+  /(\?|&)(?:(?:worker|sharedworker|inline|url)=?(?:&|$))+/g
+
+export function splitWorkerRequest(id: string): {
+  file: string
+  postfix: string
+} {
+  const { file, postfix } = splitFileAndPostfix(id)
+  if (!postfix || postfix[0] !== '?') {
+    return { file, postfix: '' }
+  }
+  return {
+    file,
+    postfix: postfix
+      .replace(workerQueriesRE, '$1')
+      .replace(trailingSeparatorRE, ''),
+  }
+}
 
 export const WORKER_FILE_ID = 'worker_file'
 const workerOutputCaches = new WeakMap<ResolvedConfig, WorkerOutputCache>()
@@ -631,8 +650,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             }
           }
         } else {
-          let url = await fileToUrl(this, cleanUrl(id))
-          url = injectQuery(url, `${WORKER_FILE_ID}&type=${workerType}`)
+          const { file, postfix } = splitWorkerRequest(id)
+          let url = await fileToUrl(this, file)
+          url = injectQuery(
+            `${url}${postfix}`,
+            `${WORKER_FILE_ID}&type=${workerType}`,
+          )
           urlCode = JSON.stringify(url)
         }
 
