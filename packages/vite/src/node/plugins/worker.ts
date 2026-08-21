@@ -209,6 +209,31 @@ class WorkerOutputCache {
     return liveFileNames
   }
 
+  getDeadDirectlyReferencedBundles(
+    bundleId: BundleId,
+    liveModuleIds: Set<string>,
+  ): WorkerBundle[] {
+    const referencesByModule = this.bundleReferences.get(bundleId)
+    if (!referencesByModule) return []
+    const deadBundleIds = new Set<WorkerBundleId>()
+    for (const references of referencesByModule.values()) {
+      for (const childBundleId of references) {
+        deadBundleIds.add(childBundleId)
+      }
+    }
+    for (const moduleId of liveModuleIds) {
+      for (const childBundleId of referencesByModule.get(moduleId) || []) {
+        deadBundleIds.delete(childBundleId)
+      }
+    }
+    const deadBundles: WorkerBundle[] = []
+    for (const childBundleId of deadBundleIds) {
+      const bundle = this.bundles.get(childBundleId)
+      if (bundle) deadBundles.push(bundle)
+    }
+    return deadBundles
+  }
+
   getWorkerBundle(file: string) {
     return this.bundles.get(file)
   }
@@ -752,20 +777,39 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
     generateBundle(opts, bundle) {
       // to avoid emitting duplicate assets for modern build and legacy build
-      if (
-        this.environment.config.isOutputOptionsForLegacyChunks?.(opts) ||
-        isWorker
-      ) {
+      if (this.environment.config.isOutputOptionsForLegacyChunks?.(opts)) {
         return
       }
-      const cache = workerOutputCaches.get(config)!
+      const cache = workerOutputCaches.get(config.mainConfig || config)!
       const liveModuleIds = collectIncludedModuleIds(Object.values(bundle))
       // Reference tracking relies on hooks running for every module, which is
       // not guaranteed when an incremental build reuses cached modules.
-      const liveFileNames =
+      const shouldFilter =
         this.environment.config.command === 'build' && !config.build.watch
-          ? cache.getLiveAssetFileNames(liveModuleIds)
-          : undefined
+
+      // `import.meta.ROLLDOWN_FILE_URL_*` requires calling `emitFile` while the
+      // referencing module is loaded. Remove those eagerly emitted assets when
+      // Rolldown later tree-shakes the module that referenced them. This also
+      // needs to run for worker sub-builds so dead nested workers don't become
+      // referenced assets of their parent worker bundle.
+      if (shouldFilter) {
+        const rootBundleId = isWorker ? config.bundleChain.at(-1) : undefined
+        for (const workerBundle of cache.getDeadDirectlyReferencedBundles(
+          rootBundleId,
+          liveModuleIds,
+        )) {
+          const emittedAsset = bundle[workerBundle.entryFilename]
+          if (emittedAsset?.type === 'asset') {
+            delete bundle[workerBundle.entryFilename]
+          }
+        }
+      }
+
+      if (isWorker) return
+
+      const liveFileNames = shouldFilter
+        ? cache.getLiveAssetFileNames(liveModuleIds)
+        : undefined
       for (const asset of cache.getAssets()) {
         if (liveFileNames && !liveFileNames.has(asset.fileName)) continue
         if (emittedAssets.has(asset.fileName)) continue
