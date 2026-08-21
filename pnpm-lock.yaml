@@ -1403,6 +1403,8 @@ importers:
 
   playground/proxy-bypass: {}
 
+  playground/proxy-dynamic-target: {}
+
   playground/proxy-hmr: {}
 
   playground/proxy-hmr/other-app: {}
