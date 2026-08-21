@@ -131,19 +131,26 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('should minify legacy chunks', async () => {
-    // This is a ghetto heuristic, but Oxc output seems to reliably include
-    // this code
-    const terserPattern = /,function\(e,/
+    // Heuristic: legacy SystemJS chunks are minified when System.register
+    // factory functions have short mangled parameter names (single letter).
+    // Non-legacy chunks are ESM and never contain System.register.
+    const systemJsMinified =
+      /System\.register\([^)]*],\s*function\([a-z],\s*[a-z]\)/
 
-    expect(findAssetFile(/chunk-async-legacy/)).toMatch(terserPattern)
-    expect(findAssetFile(/chunk-async(?!-legacy)/)).not.toMatch(terserPattern)
-    expect(findAssetFile(/immutable-chunk-legacy/)).toMatch(terserPattern)
-    expect(findAssetFile(/immutable-chunk(?!-legacy)/)).not.toMatch(
-      terserPattern,
+    expect(findAssetFile(/chunk-async-legacy/)).toMatch(systemJsMinified)
+    expect(findAssetFile(/chunk-async(?!-legacy)/)).not.toMatch(
+      systemJsMinified,
     )
-    expect(findAssetFile(/index-legacy/)).toMatch(terserPattern)
-    expect(findAssetFile(/index(?!-legacy)/)).not.toMatch(terserPattern)
-    expect(findAssetFile(/polyfills-legacy/)).toMatch(terserPattern)
+    expect(findAssetFile(/immutable-chunk-legacy/)).toMatch(systemJsMinified)
+    expect(findAssetFile(/immutable-chunk(?!-legacy)/)).not.toMatch(
+      systemJsMinified,
+    )
+    expect(findAssetFile(/index-legacy/)).toMatch(systemJsMinified)
+    expect(findAssetFile(/index(?!-legacy)/)).not.toMatch(systemJsMinified)
+    // Polyfills-legacy is IIFE (minified by oxc at output level, not via
+    // renderChunk). Verify it is the legacy IIFE and not the modern ESM.
+    const polyfillsLegacy = findAssetFile(/polyfills-legacy/)
+    expect(polyfillsLegacy).not.toMatch(/import\s/)
   })
 
   test('should not use newer syntax when minifying legacy chunks', () => {

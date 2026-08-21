@@ -198,6 +198,35 @@ function resolveLegacyOutputMinify(
   return { compress: { target } }
 }
 
+/**
+ * For legacy chunks that are converted from ESM to SystemJS in renderChunk,
+ * rolldown's built-in oxc minifier cannot be used because it derives the
+ * `module` flag from output.format (which is 'esm'). Since the code is
+ * actually SystemJS (non-module, sloppy mode), the minifier must be
+ * invoked directly with `module: false` to produce correct output.
+ * We disable rolldown's built-in minification and handle it in renderChunk.
+ */
+function resolveLegacyChunkOutputMinify(
+  minify: BuildOptions['minify'],
+  supportsOxc: boolean | undefined,
+): Rollup.OutputOptions['minify'] {
+  const usesOxc = supportsOxc && (minify === 'oxc' || minify === true)
+  if (!usesOxc) return false
+  // Disable rolldown's built-in minification entirely. DCE-only cannot be
+  // used here because rolldown derives `module: true` from output.format
+  // (which is 'esm') and would eliminate block-scoped function declarations
+  // under strict-mode semantics before renderChunk converts to SystemJS.
+  // Actual minification is handled in renderChunk with module: false.
+  return false
+}
+
+function usesLegacyOxcMinification(
+  minify: BuildOptions['minify'],
+  supportsOxc: boolean | undefined,
+): boolean {
+  return !!supportsOxc && (minify === 'oxc' || minify === true)
+}
+
 function resolveLegacyBuildMinify(
   minify: BuildOptions['minify'],
   supportsOxc: boolean | undefined,
@@ -535,11 +564,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           format: 'esm',
           entryFileNames: getLegacyOutputFileName(options.entryFileNames),
           chunkFileNames: getLegacyOutputFileName(options.chunkFileNames),
-          minify: resolveLegacyOutputMinify(
+          minify: resolveLegacyChunkOutputMinify(
             config.build.minify,
             supportsLegacyOxcMinification,
-            // Don't use newer syntax for legacy chunks
-            'es2015',
           ),
         }
       }
@@ -712,7 +739,37 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       } else {
         result = babel.transform(raw, babelTransformOptions)
       }
-      if (result) return { code: result.code!, map: result.map }
+      if (result) {
+        let code: string = result.code!
+        let map = result.map
+
+        if (
+          usesLegacyOxcMinification(
+            config.build.minify,
+            supportsLegacyOxcMinification,
+          )
+        ) {
+          // Resolve rolldown through vite's dependency tree — rolldown is
+          // not a direct dependency of plugin-legacy, but vite >= 8.1.4
+          // (guaranteed by supportsLegacyOxcMinification) bundles it.
+          const vitePkgDir = path.dirname(_require.resolve('vite/package.json'))
+          const rolldownPath = _require.resolve('rolldown/experimental', {
+            paths: [vitePkgDir],
+          })
+          const { minifySync } = await import(rolldownPath)
+          const minifyResult = minifySync(chunk.fileName, code, {
+            module: false,
+            compress: { target: 'es2015' },
+            mangle: true,
+            sourcemap: !!config.build.sourcemap,
+            ...(config.build.sourcemap && map ? { inputMap: map } : {}),
+          })
+          code = minifyResult.code
+          map = minifyResult.map as typeof result.map
+        }
+
+        return { code, map }
+      }
       return null
     },
 
