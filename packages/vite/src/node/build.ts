@@ -34,6 +34,7 @@ import {
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
   ROLLUP_HOOKS,
   VERSION,
+  CSS_LANGS_RE,
 } from './constants'
 import type {
   EnvironmentOptions,
@@ -640,7 +641,7 @@ export function resolveRolldownOptions(
         : Array.isArray(input)
           ? input
           : Object.values(input)
-    if (inputs.some((input) => input.endsWith('.css'))) {
+    if (inputs.some((input) => CSS_LANGS_RE.test(input))) {
       throw new Error(
         `When "build.cssCodeSplit: false" is set, "rolldownOptions.input" should not include CSS files.`,
       )
