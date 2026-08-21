@@ -13,6 +13,7 @@ import { cleanUrl, slash } from '../../shared/utils'
 import type { WorkerType } from './worker'
 import {
   WORKER_FILE_ID,
+  emitWorkerAssetsForBundledDev,
   recordWorkerReference,
   workerFileToUrl,
 } from './worker'
@@ -267,6 +268,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               )
               const result = await workerFileToUrl(config, file)
               if (this.environment.config.command === 'serve') {
+                emitWorkerAssetsForBundledDev(this, config)
                 builtUrl = toOutputFilePathInJSForBundledDev(
                   this.environment,
                   result.entryFilename,

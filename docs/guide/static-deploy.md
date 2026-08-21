@@ -8,6 +8,8 @@
   2. Free tier offerings should host the site indefinitely and are not time-bound.
      Offering a limited number of computation resource or site counts in exchange is fine.
   3. The linked guides should not contain any malicious content.
+  4. The platform must be in operation for at least 1 year. Please show some evidence of
+     this in your PR description.
 
   New sections should be added last in the file. Please reference the existing sections at
   the bottom of this file for examples of how to format the new section.
@@ -295,10 +297,6 @@ You can also add a [custom domain](https://render.com/docs/custom-domains) to yo
 ## Flightcontrol
 
 Deploy your static site using [Flightcontrol](https://www.flightcontrol.dev/?ref=docs-vite) by following these [instructions](https://www.flightcontrol.dev/docs/reference/examples/vite?ref=docs-vite).
-
-## Kinsta Static Site Hosting
-
-Deploy your static site using [Kinsta](https://kinsta.com/static-site-hosting/) by following these [instructions](https://kinsta.com/docs/static-site-hosting/static-site-quick-start/react-static-site-examples/#react-with-vite).
 
 ## xmit Static Site Hosting
 

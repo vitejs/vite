@@ -14,7 +14,7 @@ import chokidar from 'chokidar'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import { determineAgent } from '@vercel/detect-agent'
 import { disableCache } from '@voidzero-dev/vite-task-client'
-import type { InputOption, SourceMap } from 'rolldown'
+import type { SourceMap } from 'rolldown'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
 import type { Connect } from '#dep-types/connect'
@@ -1110,11 +1110,11 @@ async function startServer(
   const configPort = inlinePort ?? options.port
   // When using non strict port for the dev server, the running port can be different from the config one.
   // When restarting, the original port may be available but to avoid a switch of URL for the running
-  // browser tabs, we enforce the previously used port, expect if the config port changed.
+  // browser tabs, we enforce the previously used port, except if the config port changed.
   const port =
-    (!configPort || configPort === server._configServerPort
-      ? server._currentServerPort
-      : configPort) ?? DEFAULT_DEV_PORT
+    configPort === server._configServerPort
+      ? (server._currentServerPort ?? configPort)
+      : configPort
   server._configServerPort = configPort
 
   const serverPort = await httpServerStart(httpServer, {
@@ -1214,7 +1214,6 @@ const RESERVED_ALLOWED_HOSTS_CHARACTERS_RE = /[\\"']/
 export async function resolveServerOptions(
   root: string,
   raw: ServerOptions | undefined,
-  input: InputOption | undefined,
   logger: Logger,
 ): Promise<ResolvedServerOptions> {
   const _server = mergeWithDefaults(
@@ -1244,7 +1243,6 @@ export async function resolveServerOptions(
   }
 
   let allowDirs = server.fs.allow
-  allowDirs.push(...getInputPaths(root, input))
 
   const cwd = searchForPackageRoot(root)
   if (process.versions.pnp) {
@@ -1343,12 +1341,6 @@ export async function resolveServerOptions(
   }
 
   return server
-}
-
-function getInputPaths(root: string, input: ResolvedConfig['input']): string[] {
-  if (input == null) return [path.resolve(root, 'index.html')]
-  if (typeof input === 'string') return [input]
-  return Array.isArray(input) ? input : Object.values(input)
 }
 
 async function restartServer(server: ViteDevServer) {

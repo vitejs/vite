@@ -723,7 +723,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         // The legacy bundle is built first, and its index.html isn't actually emitted if
         // modern bundle will be generated. Here we simply record its corresponding legacy chunk.
         facadeToLegacyChunkMap.set(chunk.facadeModuleId, chunk.fileName)
-        if (config.build.chunkImportMap) {
+        if (config.environments.client.build.chunkImportMap) {
           facadeToLegacyImportMap.set(
             chunk.facadeModuleId,
             bundle![getImportMapFilename(config)]! as Rollup.OutputAsset,
@@ -773,7 +773,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       // 2. inject importmaps
-      if (config.build.chunkImportMap) {
+      if (config.environments.client.build.chunkImportMap) {
         const importMap = facadeToLegacyImportMap.get(chunk.facadeModuleId)!
         const decoder = new TextDecoder()
         tags.push({

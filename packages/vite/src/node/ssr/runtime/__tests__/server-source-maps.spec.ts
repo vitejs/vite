@@ -92,6 +92,41 @@ describe('module runner initialization', async () => {
     )
   })
 
+  it('stack traces work when Object.prototype is frozen', async ({
+    runner,
+    server,
+  }) => {
+    const methodError = await getError(async () => {
+      const mod = await runner.import('/fixtures/throws-error-method.ts')
+      mod.throwError()
+    })
+
+    // simulate `Object.freeze(Object.prototype)` in user code without
+    // permanently freezing it for the other tests in this worker: assigning
+    // an inherited `constructor` throws exactly like it does when frozen
+    const original = Object.getOwnPropertyDescriptor(
+      Object.prototype,
+      'constructor',
+    )!
+    Object.defineProperty(Object.prototype, 'constructor', {
+      configurable: true,
+      get: () => original.value,
+      set: () => {
+        throw new TypeError(
+          `Cannot assign to read only property 'constructor' of object '#<Object>'`,
+        )
+      },
+    })
+    try {
+      // reading `.stack` for the first time invokes `prepareStackTrace`
+      expect(serializeStack(server, methodError)).toBe(
+        '    at Module.throwError (<root>/fixtures/throws-error-method.ts:6:9)',
+      )
+    } finally {
+      Object.defineProperty(Object.prototype, 'constructor', original)
+    }
+  })
+
   it('deep stacktrace', async ({ runner, server }) => {
     const methodError = await getError(async () => {
       const mod = await runner.import('/fixtures/has-error-deep.ts')

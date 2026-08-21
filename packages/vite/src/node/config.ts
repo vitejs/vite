@@ -20,6 +20,7 @@ import {
   type OutputChunk,
   type PluginContextMeta,
   type RolldownOptions,
+  type RolldownOutput,
   rolldown,
 } from 'rolldown'
 import { isDynamicPattern } from 'tinyglobby'
@@ -89,6 +90,7 @@ import {
   createDebugger,
   createFilter,
   deepClone,
+  getFileStartIndex,
   hasBothRollupOptionsAndRolldownOptions,
   isExternalUrl,
   isFilePathESM,
@@ -97,6 +99,7 @@ import {
   isNodeLikeBuiltin,
   isObject,
   isParentDirectory,
+  lineTerminatorRE,
   mergeAlias,
   mergeConfig,
   mergeWithDefaults,
@@ -391,7 +394,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    * the performance. You can use `--force` flag or manually delete the directory
    * to regenerate the cache files. The value can be either an absolute file
    * system path or a path relative to project root.
-   * Default to `.vite` when no `package.json` is detected.
+   * Default to `.vite` when neither a `package.json` nor a `node_modules` directory is detected.
    * @default 'node_modules/.vite'
    */
   cacheDir?: string
@@ -923,27 +926,21 @@ const configDefaults = Object.freeze({
   appType: 'spa',
 } satisfies UserConfig)
 
-function resolveInput(
+function normalizeInput(
   input: InputOption | undefined,
-  root: string,
 ): InputOption | undefined {
   if (input === undefined) {
     return undefined
   }
   if (typeof input === 'string') {
-    const unescapedInput = unescapeGlobCharacters(input)
-    return normalizePath(path.resolve(root, unescapedInput))
+    return unescapeGlobCharacters(input)
   }
   if (Array.isArray(input)) {
-    return input.map((inp) => {
-      const unescapedInput = unescapeGlobCharacters(inp)
-      return normalizePath(path.resolve(root, unescapedInput))
-    })
+    return input.map(unescapeGlobCharacters)
   }
   const resolved: Record<string, string> = {}
   for (const key in input) {
-    const unescapedInput = unescapeGlobCharacters(input[key])
-    resolved[key] = normalizePath(path.resolve(root, unescapedInput))
+    resolved[key] = unescapeGlobCharacters(input[key])
   }
   return resolved
 }
@@ -996,7 +993,6 @@ function resolveEnvironmentOptions(
   options: EnvironmentOptions,
   alias: Alias[],
   preserveSymlinks: boolean,
-  root: string,
   forceOptimizeDeps: boolean | undefined,
   logger: Logger,
   environmentName: string,
@@ -1044,7 +1040,7 @@ function resolveEnvironmentOptions(
     isSsrTargetWebworkerEnvironment,
   )
   return {
-    input: resolveInput(options.input, root),
+    input: normalizeInput(options.input),
     define: options.define,
     resolve,
     keepProcessEnv:
@@ -1605,9 +1601,11 @@ export async function resolveConfig(
   let nonNormalizedResolvedRoot = config.root
     ? path.resolve(config.root)
     : process.cwd()
-  try {
-    nonNormalizedResolvedRoot = safeRealpathSync(nonNormalizedResolvedRoot)
-  } catch {}
+  if (!config.resolve?.preserveSymlinks) {
+    try {
+      nonNormalizedResolvedRoot = safeRealpathSync(nonNormalizedResolvedRoot)
+    } catch {}
+  }
   const resolvedRoot = normalizePath(nonNormalizedResolvedRoot)
 
   checkBadCharactersInPath(
@@ -1727,7 +1725,6 @@ export async function resolveConfig(
       config.environments[environmentName],
       resolvedDefaultResolve.alias,
       resolvedDefaultResolve.preserveSymlinks,
-      resolvedRoot,
       inlineConfig.forceOptimizeDeps,
       logger,
       environmentName,
@@ -1865,13 +1862,8 @@ export async function resolveConfig(
         )
       : ''
 
-  const input = resolveInput(config.input, resolvedRoot)
-  const server = await resolveServerOptions(
-    resolvedRoot,
-    config.server,
-    input,
-    logger,
-  )
+  const input = normalizeInput(config.input)
+  const server = await resolveServerOptions(resolvedRoot, config.server, logger)
 
   const builder = resolveBuilderOptions(config.builder)
 
@@ -2515,7 +2507,7 @@ async function bundleAndLoadConfigFile(
   }
 }
 
-async function bundleConfigFile(
+export async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
 ): Promise<{
@@ -2532,6 +2524,7 @@ async function bundleConfigFile(
   const importMetaResolveVarName =
     '__vite_injected_original_import_meta_resolve'
   const importMetaResolveRegex = /import\.meta\s*\.\s*resolve/
+  const configFileRegex = /\.[cm]?[jt]s$/
 
   const nativeIncompatibilities: NativeConfigIncompatibility[] = []
 
@@ -2618,7 +2611,7 @@ async function bundleConfigFile(
       {
         name: 'inject-file-scope-variables',
         transform: {
-          filter: { id: /\.[cm]?[jt]s$/ },
+          filter: { id: configFileRegex },
           handler(code, id) {
             let injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(path.dirname(id))};` +
@@ -2640,13 +2633,13 @@ async function bundleConfigFile(
 
             let injectedContents: string
             if (code.startsWith('#!')) {
-              // hashbang
-              let firstLineEndIndex = code.indexOf('\n')
-              if (firstLineEndIndex < 0) firstLineEndIndex = code.length
+              const fileStartIndex = getFileStartIndex(code)
+              const hashbang = code.slice(0, fileStartIndex)
               injectedContents =
-                code.slice(0, firstLineEndIndex + 1) +
+                hashbang +
+                (lineTerminatorRE.test(hashbang) ? '' : '\n') +
                 injectValues +
-                code.slice(firstLineEndIndex + 1)
+                code.slice(fileStartIndex)
             } else {
               injectedContents = injectValues + code
             }
@@ -2660,16 +2653,20 @@ async function bundleConfigFile(
       },
     ],
   })
-  const result = await bundle.generate({
-    format: isESM ? 'esm' : 'cjs',
-    sourcemap: 'inline',
-    sourcemapPathTransform(relative) {
-      return path.resolve(fileName, relative)
-    },
-    // we want to generate a single chunk like esbuild does with `splitting: false`
-    codeSplitting: false,
-  })
-  await bundle.close()
+  let result: RolldownOutput
+  try {
+    result = await bundle.generate({
+      format: isESM ? 'esm' : 'cjs',
+      sourcemap: 'inline',
+      sourcemapPathTransform(relative, sourcemapPath) {
+        return path.resolve(path.dirname(sourcemapPath), relative)
+      },
+      // we want to generate a single chunk like esbuild does with `splitting: false`
+      codeSplitting: false,
+    })
+  } finally {
+    await bundle.close()
+  }
 
   const entryChunk = result.output.find(
     (chunk): chunk is OutputChunk => chunk.type === 'chunk' && chunk.isEntry,

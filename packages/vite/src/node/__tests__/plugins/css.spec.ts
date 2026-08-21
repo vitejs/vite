@@ -280,6 +280,15 @@ describe('convertTargets', () => {
   test('supports es6 as an alias of es2015', () => {
     expect(convertTargets('es6')).toStrictEqual(convertTargets('es2015'))
   })
+
+  test('returns undefined when there is no constraint', () => {
+    expect(convertTargets('esnext')).toBeUndefined()
+    expect(convertTargets(['esnext'])).toBeUndefined()
+    expect(convertTargets(false)).toBeUndefined()
+    expect(convertTargets(['esnext', 'chrome148'])).toStrictEqual({
+      chrome: 0x94_00_00,
+    })
+  })
 })
 
 describe('getEmptyChunkReplacer', () => {

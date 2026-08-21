@@ -181,18 +181,18 @@ Some common test helpers (e.g. `testDir`, `isBuild`, or `editFile`) are also ava
 > [!NOTE]
 > The dev server's file watcher runs in polling mode during tests. Polling (chokidar) only registers a file as changed when its size differs or its mtime strictly increases. On some platforms a quick in-place rewrite may not report an advanced mtime, so an edit that keeps the exact same byte length can be missed, and the expected HMR update or rebuild never fires (causing flaky timeouts). To enforce this, `editFile` throws if your replacement leaves the file's byte length unchanged; make the edit change the size (for example by adding a trailing space or an extra character that doesn't affect the test's semantics). If you trigger a watched change by some other means, make sure the edit changes the file's byte length.
 
-Note: The test build environment uses a [different default set of Vite config](https://github.com/vitejs/vite/blob/main/playground/vitestSetup.ts#L207-L227) to skip transpilation during tests to make it faster. This may produce a different result compared to the default production build.
+Note: The test build environment uses a [different default set of Vite config](https://github.com/vitejs/vite/blob/v8.1.5/playground/vitestSetup.ts#L264-L268) to skip transpilation during tests to make it faster. This may produce a different result compared to the default production build.
 
 ### Extending the Test Suite
 
-To add new tests, you should find a related playground to the fix or feature (or create a new one). As an example, static assets loading is tested in the [assets playground](https://github.com/vitejs/vite/tree/main/playground/assets). In this Vite app, there is a test for `?raw` imports with [a section defined in the `index.html` for it](https://github.com/vitejs/vite/blob/v6.3.1/playground/assets/index.html#L266-L267):
+To add new tests, you should find a related playground to the fix or feature (or create a new one). As an example, static assets loading is tested in the [assets playground](https://github.com/vitejs/vite/tree/main/playground/assets). In this Vite app, there is a test for `?raw` imports with [a section defined in the `index.html` for it](https://github.com/vitejs/vite/blob/v8.1.5/playground/assets/index.html#L270-L271):
 
 ```html
 <h2>?raw import</h2>
 <code class="raw"></code>
 ```
 
-This will be modified [with the result of a file import](https://github.com/vitejs/vite/blob/v6.3.1/playground/assets/index.html#L543-L544):
+This will be modified [with the result of a file import](https://github.com/vitejs/vite/blob/v8.1.5/playground/assets/index.html#L557-L558):
 
 ```js
 import rawSvg from './nested/fragment.svg?raw'
@@ -207,7 +207,7 @@ function text(el, text) {
 }
 ```
 
-In the [spec tests](https://github.com/vitejs/vite/blob/v6.3.1/playground/assets/__tests__/assets.spec.ts#L469-L471), the modifications to the DOM listed above are used to test this feature:
+In the [spec tests](https://github.com/vitejs/vite/blob/v8.1.5/playground/assets/__tests__/assets.spec.ts#L483-L485), the modifications to the DOM listed above are used to test this feature:
 
 ```js
 test('?raw import', async () => {
@@ -336,22 +336,35 @@ flowchart TD
 
 ### Release
 
-If you have publish access, the steps below explain how to cut a release for a package. There are two phases for the release step: "Release" and "Publish".
+All publishable packages in this repository use a pull-request-driven release flow. GitHub Actions prepares a release PR containing the version bump and changelog, and merging that PR triggers publishing.
 
-"Release" is done locally to generate the changelogs and git tags:
+#### Prepare a Release
 
-1. Make sure the git remote for https://github.com/vitejs/vite is set as `origin`.
-2. In the `vite` project root `main` branch, run `git pull` and `pnpm i` to get it up-to-date. Then run `pnpm build`.
-3. Run `pnpm release` and follow the prompts to cut a release for a package. It will generate the changelog, a git release tag, and push them to `origin`. You can run with the `--dry` flag to test it out.
-4. When the command finishes, it will provide a link to https://github.com/vitejs/vite/actions/workflows/publish.yml.
-5. Click the link to visit the page, and follow the next steps below.
+1. Run the [Prepare Release](.github/workflows/prepare-release.yml) workflow from the `main` branch.
+2. Select `vite`, `create-vite`, or `plugin-legacy`.
+3. Select a `release` type. The default `next` creates the next patch for a stable version or advances an existing prerelease. Alternatively, select another supported release type or enter an exact `version`, which takes precedence over `release`.
+4. Wait for the action to open the release PR. The PR contains the selected package's version bump and changelog entry. A `create-vite` release also updates template Vite dependency versions when appropriate.
 
-"Publish" is done on GitHub Actions to publish the package to npm:
+#### Review and Publish
 
-1. Shortly in the workflows page, a new workflow will appear for the released package and is waiting for approval to publish to npm.
-2. Click on the workflow to open its page.
-3. Click on the "Review deployments" button in the yellow box, a popup will appear.
-4. Check "Release" and click "Approve and deploy".
-5. The package will start publishing to npm.
+1. Review the generated version and changelog, and wait for the release PR checks to pass.
+2. Merge the PR while retaining its `release: <tag>` commit subject. Vite uses `release: v<version>`; other packages use `release: <package>@<version>`. A matching commit at the tip of `main` triggers the publish job.
+3. Open the [Publish Package](.github/workflows/publish.yml) run and approve its `Release` environment deployment.
+4. Wait for the workflow to publish the package, create its tag, and create the corresponding GitHub release.
+5. Verify the new version on npm.
+
+#### Repository Configuration
+
+The release flow depends on configuration outside this repository:
+
+- The `Release` environment must require maintainer approval before publishing.
+- The npm trusted publishers for `vite`, `create-vite`, and `@vitejs/plugin-legacy` must be restricted to `vitejs/vite`, `.github/workflows/publish.yml`, and the `Release` environment.
+
+#### Recovery
+
+- If release preparation fails, fix the cause and rerun the preparation workflow. Each run creates a uniquely named branch.
+- If publishing fails before npm accepts the package, fix the cause and rerun the failed workflow.
+- If npm publishing succeeds but tag or GitHub release creation fails, do not rerun the entire publish job blindly because npm versions are immutable. Confirm the package state first, then manually create the tag at the original release commit and create the GitHub release from the corresponding changelog entry.
+- If the release tag already exists, investigate whether the package was previously published before retrying or changing any release state.
 
 To learn more about how and when Vite does releases, check out the [Releases](https://vite.dev/releases) documentation.

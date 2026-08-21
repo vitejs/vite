@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { assert, expect, test } from 'vitest'
 import type { SourceMap } from 'rolldown'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
-import { transformWithEsbuild } from '../../plugins/esbuild'
+import { transformWithOxc } from '../../plugins/oxc'
 import { ssrTransform } from '../ssrTransform'
 import { createServer } from '../..'
 
@@ -777,6 +777,63 @@ function c({ _ = bar() + foo() }) {}
   `)
 })
 
+// #23232
+test('function argument destructure with a default parameter', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `
+import { key } from 'foo'
+function noParameterDefault({ [key]: value = null }) {}
+function declaration({ [key]: value = null } = {}) {}
+function compound({ [key.name]: value } = {}) {}
+const arrow = ({ [key]: value = null } = {}) => {}
+function nested({ a: { [key]: value } = {} } = {}) {}
+function array([{ [key]: value } = {}] = []) {}
+class Foo { method({ [key]: value } = {}) {} }
+`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("foo", {"importedNames":["key"]});
+
+
+    function noParameterDefault({ [__vite_ssr_import_0__.key]: value = null }) {}
+    function declaration({ [__vite_ssr_import_0__.key]: value = null } = {}) {}
+    function compound({ [__vite_ssr_import_0__.key.name]: value } = {}) {}
+    const arrow = ({ [__vite_ssr_import_0__.key]: value = null } = {}) => {};
+    function nested({ a: { [__vite_ssr_import_0__.key]: value } = {} } = {}) {}
+    function array([{ [__vite_ssr_import_0__.key]: value } = {}] = []) {}
+    class Foo { method({ [__vite_ssr_import_0__.key]: value } = {}) {} }
+    "
+  `)
+})
+
+test('function argument destructure with a default parameter preserves shadowing', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `
+import { key } from 'foo'
+function shorthand({ key } = {}) { return key }
+function aliased({ prop: key } = {}) { return key }
+function defaulted({ key = 'default' } = {}) { return key }
+function array([key] = []) { return key }
+function plain(key) { return key }
+console.log(key)
+`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("foo", {"importedNames":["key"]});
+
+
+    function shorthand({ key } = {}) { return key }
+    function aliased({ prop: key } = {}) { return key }
+    function defaulted({ key = 'default' } = {}) { return key }
+    function array([key] = []) { return key }
+    function plain(key) { return key }
+    console.log((0,__vite_ssr_import_0__.key))
+    "
+  `)
+})
+
 test('object destructure alias', async () => {
   expect(
     await ssrTransformSimpleCode(
@@ -819,6 +876,41 @@ const foo = {}
 
     {
       const { [__vite_ssr_import_0__.n]: m } = foo
+    }
+    "
+  `)
+})
+
+test('destructuring assignments', async () => {
+  expect(
+    await ssrTransformSimpleCode(`
+import { key } from 'foo'
+let value
+const object = {}
+;({ [key]: value = key } = object)
+;[value = key] = []
+
+function shadowed(key) {
+  ;({ key } = object)
+  ;({ alias: key } = object)
+  ;[key] = []
+  return key
+}
+`),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("foo", {"importedNames":["key"]});
+
+
+    let value;
+    const object = {}
+    ;({ [__vite_ssr_import_0__.key]: value = __vite_ssr_import_0__.key } = object)
+    ;[value = __vite_ssr_import_0__.key] = [];
+
+    function shadowed(key) {
+      ;({ key } = object)
+      ;({ alias: key } = object)
+      ;[key] = [];
+      return key
     }
     "
   `)
@@ -1067,15 +1159,17 @@ test('jsx', async () => {
   }
   `
   const id = '/foo.jsx'
-  const result = await transformWithEsbuild(code, id)
+  const result = await transformWithOxc(code, id, {
+    jsx: { runtime: 'classic' },
+  })
   expect(await ssrTransformSimpleCode(result.code, '/foo.jsx'))
     .toMatchInlineSnapshot(`
       "const __vite_ssr_import_0__ = await __vite_ssr_import__("react", {"importedNames":["default"]});
       const __vite_ssr_import_1__ = await __vite_ssr_import__("foo", {"importedNames":["Foo","Slot"]});
 
 
-      function Bar({ Slot: Slot2 = /* @__PURE__ */ __vite_ssr_import_0__.default.createElement((0,__vite_ssr_import_1__.Foo), null) }) {
-        return /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(__vite_ssr_import_0__.default.Fragment, null, /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(Slot2, null));
+      function Bar({ Slot = /* @__PURE__ */ __vite_ssr_import_0__.default.createElement((0,__vite_ssr_import_1__.Foo), null) }) {
+      	return /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(__vite_ssr_import_0__.default.Fragment, null, /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(Slot, null));
       }
       "
     `)
@@ -1103,7 +1197,7 @@ export function fn1() {
 
 // https://github.com/vitest-dev/vitest/issues/1141
 test('export default expression', async () => {
-  // esbuild transform result of following TS code
+  // Oxc transform result of following TS code
   // export default <MyFn> function getRandom() {
   //   return Math.random()
   // }
@@ -1146,6 +1240,19 @@ test('import hoisted after hashbang', async () => {
       `#!/usr/bin/env node
 console.log(foo);
 import foo from "foo"`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "#!/usr/bin/env node
+    const __vite_ssr_import_0__ = await __vite_ssr_import__("foo", {"importedNames":["default"]});
+    console.log((0,__vite_ssr_import_0__.default));
+    "
+  `)
+})
+
+test('import hoisted after CRLF hashbang', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      '#!/usr/bin/env node\r\nconsole.log(foo);\r\nimport foo from "foo"',
     ),
   ).toMatchInlineSnapshot(`
     "#!/usr/bin/env node

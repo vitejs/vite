@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import VersionsList from './VersionsList.vue'
 
 declare const __VITE_VERSION__: string
 
@@ -86,15 +87,6 @@ function computeSupportInfo(
   }
 }
 
-function versionsToText(versions: string[]) {
-  versions = versions.map((v) => `<code>vite@${v}</code>`)
-  if (versions.length === 0) return ''
-  if (versions.length === 1) return versions[0]
-  return (
-    versions.slice(0, -1).join(', ') + ' and ' + versions[versions.length - 1]
-  )
-}
-
 function isValidViteVersion(version: string) {
   if (version.length === 1) version += '.'
   // Vite 0.x shouldn't be mentioned, and Vite 1.x was never released
@@ -108,15 +100,15 @@ function isValidViteVersion(version: string) {
     <ul>
       <li v-if="supportInfo.regularPatches.length">
         Regular patches are released for
-        <span v-html="versionsToText(supportInfo.regularPatches)"></span>.
+        <VersionsList :versions="supportInfo.regularPatches" />.
       </li>
       <li v-if="supportInfo.importantFixes.length">
         Important fixes and security patches are backported to
-        <span v-html="versionsToText(supportInfo.importantFixes)"></span>.
+        <VersionsList :versions="supportInfo.importantFixes" />.
       </li>
       <li v-if="supportInfo.securityPatches.length">
         Security patches are also backported to
-        <span v-html="versionsToText(supportInfo.securityPatches)"></span>.
+        <VersionsList :versions="supportInfo.securityPatches" />.
       </li>
       <li>
         All versions before these are no longer supported. Users should upgrade

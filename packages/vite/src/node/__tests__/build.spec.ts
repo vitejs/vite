@@ -2,9 +2,10 @@ import { basename, resolve } from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
 import fsp from 'node:fs/promises'
 import colors from 'picocolors'
-import { afterEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, describe, expect, assert, test, vi } from 'vitest'
 import type {
   LogLevel,
+  OutputAsset,
   OutputChunk,
   OutputOptions,
   RolldownOptions,
@@ -110,6 +111,36 @@ describe('build', () => {
     const chunk = result.output.find((o) => o.type === 'chunk')
     expect(chunk?.fileName).toContain('top-level-entry')
     expect(chunk?.code).toContain('from-top-level-input')
+  })
+
+  test('top-level input can be a virtual module for build', async () => {
+    const input = 'virtual:entry'
+    const resolvedInput = `\0${input}`
+    const result = (await build({
+      root: resolve(dirname, 'packages/build-project'),
+      logLevel: 'silent',
+      input,
+      build: {
+        write: false,
+      },
+      plugins: [
+        {
+          name: 'virtual-entry',
+          resolveId(id) {
+            if (id === input) {
+              return resolvedInput
+            }
+          },
+          load(id) {
+            if (id === resolvedInput) {
+              return `console.log('from-virtual-top-level-input')`
+            }
+          },
+        },
+      ],
+    })) as RolldownOutput
+    const chunk = result.output.find((o) => o.type === 'chunk')
+    expect(chunk?.code).toContain('from-virtual-top-level-input')
   })
 
   test('file hash should change when pure css chunk changes', async () => {
@@ -990,6 +1021,183 @@ test.for([true, false])(
   },
 )
 
+test('chunkImportMap per environment with shared plugins', async () => {
+  const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
+  let client: RolldownOutput | undefined
+  let ssr: RolldownOutput | undefined
+  const builder = await createBuilder({
+    root,
+    logLevel: 'warn',
+    environments: {
+      client: {
+        build: {
+          chunkImportMap: true,
+          write: false,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+      ssr: {
+        build: {
+          chunkImportMap: false,
+          ssr: true,
+          write: false,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    builder: {
+      sharedPlugins: true,
+      async buildApp(builder) {
+        client = (await builder.build(
+          builder.environments.client,
+        )) as RolldownOutput
+        ssr = (await builder.build(builder.environments.ssr)) as RolldownOutput
+      },
+    },
+  })
+
+  await builder.buildApp()
+
+  const entry = client!.output.find(
+    (output): output is OutputChunk =>
+      output.type === 'chunk' && output.isEntry,
+  )!
+  const css = client!.output.find(
+    (output) => output.type === 'asset' && output.fileName.endsWith('.css'),
+  )!
+  const importMapAsset = client!.output.find(
+    (output): output is OutputAsset =>
+      output.type === 'asset' && output.fileName === 'importmap.json',
+  )!
+  expect(
+    ssr!.output.some(
+      (output) =>
+        output.type === 'asset' && output.fileName === 'importmap.json',
+    ),
+  ).toBe(false)
+  const importMap = JSON.parse(importMapAsset.source.toString())
+    .imports as Record<string, string>
+  const cssSpecifier = Object.entries(importMap).find(
+    ([, fileName]) => fileName === `/${css.fileName}`,
+  )![0]
+  expect(entry.code).toContain(JSON.stringify(cssSpecifier.slice(1)))
+})
+
+test('chunkImportMap is emitted when emitAssets is false', async () => {
+  const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'warn',
+    environments: {
+      ssr: {
+        build: {
+          ssr: true,
+          emitAssets: false,
+          write: false,
+          chunkImportMap: true,
+          rolldownOptions: {
+            input: '/entry.js',
+            experimental: {
+              chunkImportMap: {
+                fileName: 'custom-importmap.json',
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const result = (await builder.build(
+    builder.environments.ssr,
+  )) as RolldownOutput
+
+  expect(result.output).toContainEqual(
+    expect.objectContaining({
+      type: 'asset',
+      fileName: 'custom-importmap.json',
+    }),
+  )
+})
+
+test('chunkImportMap is emitted for SSR when enabled', async () => {
+  const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'warn',
+    environments: {
+      ssr: {
+        build: {
+          ssr: true,
+          chunkImportMap: true,
+          write: false,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+  })
+
+  const result = (await builder.build(
+    builder.environments.ssr,
+  )) as RolldownOutput
+
+  expect(result.output).toContainEqual(
+    expect.objectContaining({
+      type: 'asset',
+      fileName: 'importmap.json',
+    }),
+  )
+})
+
+test('importmap named asset is not emitted when chunkImportMap is false', async () => {
+  const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'warn',
+    plugins: [
+      {
+        name: 'emit-importmap-named-asset',
+        buildStart() {
+          this.emitFile({
+            type: 'asset',
+            fileName: 'importmap.json',
+            source: '{}',
+          })
+        },
+      },
+    ],
+    environments: {
+      ssr: {
+        build: {
+          ssr: true,
+          emitAssets: false,
+          write: false,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+  })
+
+  const result = (await builder.build(
+    builder.environments.ssr,
+  )) as RolldownOutput
+
+  expect(result.output).not.toContainEqual(
+    expect.objectContaining({
+      type: 'asset',
+      fileName: 'importmap.json',
+    }),
+  )
+})
+
 test('sharedConfigBuild and emitAssets', async () => {
   const root = resolve(dirname, 'fixtures/shared-config-build/emitAssets')
   const builder = await createBuilder({
@@ -1055,6 +1263,22 @@ test('sharedConfigBuild and emitAssets', async () => {
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
   ])
+})
+
+test('resolving lib entry from the top-level input does not mutate the user config', async () => {
+  const userLib: LibraryOptions = { formats: ['es'] }
+  const config = await resolveConfig(
+    {
+      configFile: false,
+      input: 'src/main.ts',
+      build: { lib: userLib },
+    },
+    'build',
+  )
+  const resolvedLib = config.environments.client.build.lib
+  assert(resolvedLib !== false)
+  expect(resolvedLib.entry).toBe('src/main.ts')
+  expect(userLib.entry).toBeUndefined()
 })
 
 describe('onRollupLog', () => {

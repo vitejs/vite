@@ -25,7 +25,7 @@ import type {
   RolldownWatcherEvent,
   RollupError,
 } from 'rolldown'
-import { beforeAll, expect, inject } from 'vitest'
+import { beforeAll, expect, inject, vi } from 'vitest'
 
 // #region serializer
 
@@ -72,6 +72,7 @@ export const isServe = !isBuild
  * don't pass under bundled dev yet.
  */
 export const isBundledDev = isServe && !!process.env.VITE_TEST_BUNDLED_DEV
+export const isBundled = isBuild || isBundledDev
 export const isWindows = process.platform === 'win32'
 export const viteBinPath = path.posix.join(
   workspaceRoot,
@@ -299,17 +300,52 @@ export async function startDefaultServe(): Promise<void> {
     await page.goto(viteTestUrl)
     // bundled dev serves a self-reloading fallback page until the first
     // bundle completes; tests must not assert against that placeholder.
-    // Bounded: a playground whose first bundle fails keeps the fallback
-    // forever, and its tests are expected to handle that state themselves.
+    // Wait server-side for the first build to settle (success or error) so
+    // slow builds (e.g. many HTML inputs) don't race a fixed page timeout.
+    // A playground whose first bundle fails keeps the fallback page, and its
+    // tests are expected to handle that state themselves.
     // hmr-full-bundle-mode is exempt — it asserts the fallback page itself.
     if (isBundledDev && testName !== 'hmr-full-bundle-mode') {
-      await page
-        .waitForFunction(
-          () => !(globalThis as any).__vite_is_fallback_page__,
-          undefined,
-          { timeout: 15_000 },
+      // `initialBuildCompleted` / `lastBuildError` are private — the harness
+      // reaches in rather than widening the public API for tests only.
+      const bundledDev = server.environments.client.bundledDev as any
+      if (bundledDev) {
+        await vi.waitUntil(
+          () => bundledDev.initialBuildCompleted || bundledDev.lastBuildError,
+          { timeout: 40_000 },
         )
-        .catch(() => {})
+      }
+      if (bundledDev?.initialBuildCompleted) {
+        await page
+          .waitForFunction(
+            () => !(globalThis as any).__vite_is_fallback_page__,
+            undefined,
+            { timeout: 15_000 },
+          )
+          .catch(() => {})
+        // TODO: workaround — an edit fired while no client is connected is
+        // dropped (vitejs/vite#23028). Remove this wait once the server
+        // buffers updates for clients that connect later. A page that never
+        // loads the client runtime (e.g. SSR-rendered pages) cannot register
+        // a client; a fully loaded page with no runtime counts as settled.
+        await vi.waitUntil(
+          async () => {
+            const state = await page
+              .evaluate(() => ({
+                loaded: document.readyState === 'complete',
+                hasRuntime: !!(globalThis as any).__rolldown_runtime__,
+                clientId: (globalThis as any).__rolldown_runtime__?.clientId,
+              }))
+              .catch(() => undefined)
+            if (!state) return false
+            if (state.clientId && bundledDev.clients?.get(state.clientId)) {
+              return true
+            }
+            return state.loaded && !state.hasRuntime
+          },
+          { timeout: 10_000 },
+        )
+      }
     }
   } else {
     process.env.VITE_INLINE = 'inline-build'

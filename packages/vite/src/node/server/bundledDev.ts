@@ -8,12 +8,9 @@ import type { RolldownOutput } from 'rolldown'
 import colors from 'picocolors'
 import getEtag from 'etag'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
+import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
 import { getHmrImplementation } from '../plugins/clientInjections'
-import {
-  asyncFlatten,
-  createDebugger,
-  formatAndTruncateFileList,
-} from '../utils'
+import { createDebugger, formatAndTruncateFileList } from '../utils'
 import type { DevEnvironment } from './environment'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
 import { prepareError } from './middlewares/error'
@@ -62,6 +59,7 @@ export class MemoryFiles {
 
 export class BundledDev {
   private _devEngine!: DevEngine
+  private viteRuntime?: string
   private initialBuildCompleted = false
   private _closed = false
   private clients = new Clients()
@@ -73,6 +71,18 @@ export class BundledDev {
   })
 
   private fullReloadPending = false
+
+  private reloadNeededClientIds = new Set<string>()
+  private debouncedReloadNeededFlush = debounce(20, () => {
+    if (this.lastBuildError || this.reloadNeededClientIds.size === 0) return
+    for (const clientId of this.reloadNeededClientIds) {
+      this.clients.get(clientId)?.send({ type: 'full-reload', path: '*' })
+    }
+    this.reloadNeededClientIds.clear()
+    this.environment.logger.info(colors.green(`page reload`), {
+      timestamp: true,
+    })
+  })
 
   private lastBuildError: Error | null = null
 
@@ -94,6 +104,14 @@ export class BundledDev {
   }
 
   private pendingPayloadFilenames = new Set<string>()
+
+  get hasBuildOutput(): boolean {
+    return (
+      this.memoryFiles.size > 1 ||
+      (this.memoryFiles.size === 1 &&
+        !this.memoryFiles.has(BUNDLED_DEV_CLIENT_FILENAME))
+    )
+  }
 
   async listen(): Promise<void> {
     this._closed = false
@@ -134,8 +152,26 @@ export class BundledDev {
       const clientId = this.clients.delete(client)
       if (clientId) {
         this.devEngine.removeClient(clientId)
+        this.reloadNeededClientIds.delete(clientId)
       }
     })
+    this.environment.hot.on(
+      'vite:bundled-dev:reload-needed',
+      (payload, client) => {
+        const clientId = this.clients.getId(client)
+        if (!clientId) return
+        debug?.(
+          `TRIGGER: client ${clientId} requested a page reload (${payload.reason})`,
+        )
+        this.environment.logger.info(
+          colors.green(`bundling for page reload `) +
+            colors.dim(payload.reason),
+          { clear: true, timestamp: true },
+        )
+        this.reloadNeededClientIds.add(clientId)
+        this.ensureOutputAndFlushReloadNeeded()
+      },
+    )
 
     this._devEngine = await dev(rolldownOptions, outputOptions, {
       onHmrUpdates: (result) => {
@@ -169,6 +205,12 @@ export class BundledDev {
             this.handleHmrOutput(client, changedFiles, update)
           }
         }
+        // an edit requested a reload but its rebuild failed, leaving the page
+        // waiting behind the error overlay. The fix produced this successful
+        // build — regenerate output now, or the page would never reload.
+        if (this.reloadNeededClientIds.size) {
+          this.ensureOutputAndFlushReloadNeeded()
+        }
       },
       onOutput: (result) => {
         if (result instanceof Error) {
@@ -195,6 +237,9 @@ export class BundledDev {
           this.fullReloadPending = false
           this.debouncedFullReload()
         }
+        if (this.reloadNeededClientIds.size) {
+          this.debouncedReloadNeededFlush()
+        }
       },
       onAdditionalAssets: (result) => {
         this.storeOutputFiles(result.output)
@@ -212,6 +257,10 @@ export class BundledDev {
         debug?.('INITIAL: run error', e)
       },
     )
+    this.viteRuntime = await getHmrImplementation(
+      this.environment.getTopLevelConfig(),
+    )
+    this.storeOutputFiles([])
     this.waitForInitialBuildFinish().then(() => {
       if (this._closed) return
       debug?.('INITIAL: build done')
@@ -232,13 +281,20 @@ export class BundledDev {
     if (this._closed) return
 
     let state = await this.devEngine.getBundleState()
-    while (this.memoryFiles.size === 0 && !state.lastBuildErrored) {
+    while (!this.hasBuildOutput && !state.lastBuildErrored) {
       await setTimeout(10)
       if (this._closed) return
       await this.devEngine.ensureCurrentBuildFinish()
       if (this._closed) return
       state = await this.devEngine.getBundleState()
     }
+  }
+
+  private ensureOutputAndFlushReloadNeeded(): void {
+    this.devEngine.ensureLatestBuildOutput().then(
+      () => this.debouncedReloadNeededFlush(),
+      () => {},
+    )
   }
 
   async triggerBundleRegenerationIfStale(): Promise<boolean> {
@@ -308,8 +364,14 @@ export class BundledDev {
     this.initialBuildCompleted = false
   }
 
-  private storeOutputFiles(output: RolldownOutput['output']): void {
+  private storeOutputFiles(output: RolldownOutput['output'][number][]): void {
     // NOTE: don't clear memoryFiles here as incremental build reuses the files
+    if (this.viteRuntime) {
+      this.memoryFiles.set(BUNDLED_DEV_CLIENT_FILENAME, {
+        source: this.viteRuntime,
+        etag: getEtag(Buffer.from(this.viteRuntime), { weak: true }),
+      })
+    }
     for (const outputFile of output) {
       this.memoryFiles.set(outputFile.fileName, () => {
         const source =
@@ -334,38 +396,14 @@ export class BundledDev {
       ...(typeof rolldownOptions.experimental.devMode === 'object'
         ? rolldownOptions.experimental.devMode
         : {}),
-      implement: await getHmrImplementation(
-        this.environment.getTopLevelConfig(),
-      ),
+      implement: '',
+      skipCommonRuntimeInjection: true,
     }
 
     // disable inlineConst optimization due to a bug in Rolldown
     // https://github.com/vitejs/vite/issues/21843
     rolldownOptions.optimization ??= {}
     rolldownOptions.optimization.inlineConst = false
-
-    // In bundledDev mode, Rolldown's DevEngine generates lazy-loading stub modules
-    // for dynamically imported files, appending `?rolldown-lazy=1` to the module ID.
-    // Skip all plugins for these stub modules as a workaround.
-    // https://github.com/vitejs/vite/issues/22651
-    const plugins = await asyncFlatten([rolldownOptions.plugins])
-    for (const plugin of plugins) {
-      const transform =
-        plugin && 'transform' in plugin ? plugin.transform : undefined
-      if (!transform) continue
-      const handler =
-        typeof transform === 'function' ? transform : transform.handler
-      const wrappedHandler: typeof handler = function (this, code, id, opts) {
-        if (id.includes('?rolldown-lazy=')) return null
-        return handler.call(this, code, id, opts)
-      }
-      if (typeof transform === 'function') {
-        ;(plugin as any).transform = wrappedHandler
-      } else {
-        transform.handler = wrappedHandler
-      }
-    }
-    rolldownOptions.plugins = plugins
 
     // set filenames to make output paths predictable so that `renderChunk` hook does not need to be used
     if (Array.isArray(rolldownOptions.output)) {
@@ -471,6 +509,10 @@ class Clients {
 
   get(id: string): NormalizedHotChannelClient | undefined {
     return this.idToClient.get(id)
+  }
+
+  getId(client: NormalizedHotChannelClient): string | undefined {
+    return this.clientToId.get(client)
   }
 
   getAll(): NormalizedHotChannelClient[] {
