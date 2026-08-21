@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import { stripVTControlCharacters } from 'node:util'
 import MagicString from 'magic-string'
 import { describe, expect, it, vi } from 'vitest'
