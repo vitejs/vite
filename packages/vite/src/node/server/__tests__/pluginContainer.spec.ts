@@ -387,12 +387,11 @@ describe('plugin container', () => {
         add,
       } as unknown as import('#dep-types/chokidar').FSWatcher
 
+      let addWatch: ((id: string) => void) | undefined
       const plugin: Plugin = {
         name: 'add-watch-after-close',
-        transform(_code, id) {
-          if (id.endsWith('entry.js')) {
-            this.addWatchFile(outside)
-          }
+        buildStart() {
+          addWatch = (id: string) => this.addWatchFile(id)
         },
       }
 
@@ -403,11 +402,9 @@ describe('plugin container', () => {
         },
         { watcher },
       )
+      await environment.pluginContainer.buildStart()
       await environment.pluginContainer.close()
-
-      const entry = '/entry.js'
-      await environment.moduleGraph.ensureEntryFromUrl(entry, false)
-      await environment.pluginContainer.transform('export {}', entry)
+      addWatch!(outside)
 
       expect(add).not.toHaveBeenCalled()
     })
