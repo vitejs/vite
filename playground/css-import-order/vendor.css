@@ -1,0 +1,9 @@
+/*
+ * Baseline that the app override must beat in the cascade. If the
+ * `<link>` tags end up in the wrong order (override before this), the
+ * red background wins and the regression test fails.
+ */
+.box {
+  background: rgb(255, 0, 0);
+  padding: 20px;
+}
