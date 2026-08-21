@@ -15,6 +15,7 @@ import {
   WORKER_FILE_ID,
   emitWorkerAssetsForBundledDev,
   recordWorkerReference,
+  generateWorkerEntryUrlExpr,
   workerFileToUrl,
 } from './worker'
 import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
@@ -260,7 +261,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           ) {
             s.update(expStart, expEnd, 'self.location.href')
           } else {
-            let builtUrl: string
+            let builtUrlExpr: string
             if (isBundled) {
               recordWorkerReference(
                 config,
@@ -271,28 +272,31 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               const result = await workerFileToUrl(config, file)
               if (this.environment.config.command === 'serve') {
                 emitWorkerAssetsForBundledDev(this, config)
-                builtUrl = toOutputFilePathInJSForBundledDev(
-                  this.environment,
-                  result.entryFilename,
+                builtUrlExpr = JSON.stringify(
+                  toOutputFilePathInJSForBundledDev(
+                    this.environment,
+                    result.entryFilename,
+                  ),
                 )
               } else {
-                builtUrl = result.entryUrlPlaceholder
+                builtUrlExpr = generateWorkerEntryUrlExpr(this, config, result)
               }
               for (const file of result.watchedFiles) {
                 this.addWatchFile(file)
               }
             } else {
-              builtUrl = await fileToUrl(this, cleanUrl(file))
-              builtUrl = injectQuery(
-                `${builtUrl}${queryPostfix}`,
+              builtUrlExpr = await fileToUrl(this, cleanUrl(file), 'string')
+              builtUrlExpr = injectQuery(
+                `${builtUrlExpr}${queryPostfix}`,
                 `${WORKER_FILE_ID}&type=${workerType}`,
               )
+              builtUrlExpr = JSON.stringify(builtUrlExpr)
             }
             s.update(
               expStart,
               expEnd,
               // NOTE: add `'' +` to opt-out rolldown's transform: https://github.com/rolldown/rolldown/issues/2745
-              `new URL(/* @vite-ignore */ ${JSON.stringify(builtUrl)}, '' + import.meta.url)`,
+              `new URL(/* @vite-ignore */ ${builtUrlExpr}, '' + import.meta.url)`,
             )
           }
         }
