@@ -1,5 +1,5 @@
-import { runInThisContext } from 'node:vm'
 import { resolve } from 'node:path'
+import { runInThisContext } from 'node:vm'
 import { describe, expect } from 'vitest'
 import type { ViteDevServer } from '../../..'
 import type { ModuleRunnerContext } from '../../../../module-runner'

@@ -3,7 +3,13 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import {
+  fromComment,
+  fromMapFileComment,
+  removeComments,
+} from 'convert-source-map'
 import colors from 'css-color-names'
+import type { ResultPromise as ExecaResultPromise } from 'execa'
 import type {
   ConsoleMessage,
   ElementHandle,
@@ -11,13 +17,7 @@ import type {
 } from 'playwright-chromium'
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
-import {
-  fromComment,
-  fromMapFileComment,
-  removeComments,
-} from 'convert-source-map'
 import { expect } from 'vitest'
-import type { ResultPromise as ExecaResultPromise } from 'execa'
 import { isWindows, page, sourcemapSnapshot, testDir } from './vitestSetup'
 
 export * from './vitestSetup'

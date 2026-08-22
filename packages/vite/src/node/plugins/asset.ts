@@ -1,24 +1,36 @@
-import path from 'node:path'
-import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
 import { randomBytes } from 'node:crypto'
+import fsp from 'node:fs/promises'
+import path from 'node:path'
 import { pathToFileURL } from 'node:url'
+import MagicString from 'magic-string'
 import * as mrmime from 'mrmime'
+import colors from 'picocolors'
+import picomatch from 'picomatch'
 import type {
   NormalizedOutputOptions,
   PluginContext,
   RenderedChunk,
 } from 'rolldown'
-import MagicString from 'magic-string'
-import colors from 'picocolors'
-import picomatch from 'picomatch'
 import { makeIdFiltersToMatchWithQuery } from 'rolldown/filter'
+import {
+  cleanUrl,
+  splitFileAndPostfix,
+  withTrailingSlash,
+} from '../../shared/utils'
+import type { PartialEnvironment } from '../baseEnvironment'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   toOutputFilePathInJS,
 } from '../build'
-import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
+import {
+  DEFAULT_ASSETS_INLINE_LIMIT,
+  DEFAULT_ASSETS_RE,
+  FS_PREFIX,
+} from '../constants'
+import type { Environment } from '../environment'
+import type { Plugin } from '../plugin'
 import { checkPublicFile } from '../publicDir'
 import {
   encodeURIPath,
@@ -31,18 +43,6 @@ import {
   removeUrlQuery,
   urlRE,
 } from '../utils'
-import {
-  DEFAULT_ASSETS_INLINE_LIMIT,
-  DEFAULT_ASSETS_RE,
-  FS_PREFIX,
-} from '../constants'
-import {
-  cleanUrl,
-  splitFileAndPostfix,
-  withTrailingSlash,
-} from '../../shared/utils'
-import type { Environment } from '../environment'
-import type { PartialEnvironment } from '../baseEnvironment'
 import { getImportMapFilename } from './html'
 
 // referenceId is base64url but replaces - with $

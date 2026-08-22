@@ -1,20 +1,27 @@
-import path from 'node:path'
 import fs from 'node:fs'
+import path from 'node:path'
 import { performance } from 'node:perf_hooks'
-import colors from 'picocolors'
-import MagicString from 'magic-string'
+import { makeLegalIdentifier } from '@rollup/pluginutils'
 import type {
   ParseError as EsModuleLexerParseError,
   ExportSpecifier,
   ImportSpecifier,
 } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import { parseAst } from 'rolldown/parseAst'
+import MagicString from 'magic-string'
 import type { StaticImport } from 'mlly'
 import { ESM_STATIC_IMPORT_RE, parseStaticImport } from 'mlly'
-import { makeLegalIdentifier } from '@rollup/pluginutils'
+import colors from 'picocolors'
 import type { PartialResolvedId, RollupError } from 'rolldown'
+import { parseAst } from 'rolldown/parseAst'
 import type { ESTree } from 'rolldown/utils'
+import {
+  cleanUrl,
+  unwrapId,
+  withTrailingSlash,
+  wrapId,
+} from '../../shared/utils'
+import type { ResolvedConfig } from '../config'
 import {
   CLIENT_DIR,
   CLIENT_PUBLIC_PATH,
@@ -22,12 +29,21 @@ import {
   FS_PREFIX,
   SPECIAL_QUERY_RE,
 } from '../constants'
+import { shouldExternalize } from '../external'
+import {
+  optimizedDepInfoFromFile,
+  optimizedDepNeedsInterop,
+} from '../optimizer'
+import type { Plugin } from '../plugin'
+import { checkPublicFile } from '../publicDir'
+import type { DevEnvironment } from '../server/environment'
 import {
   debugHmr,
   handlePrunedModules,
   lexAcceptedHmrDeps,
   lexAcceptedHmrExports,
 } from '../server/hmr'
+import type { TransformPluginContext } from '../server/pluginContainer'
 import {
   createDebugger,
   fsPathFromUrl,
@@ -56,28 +72,12 @@ import {
   transformStableResult,
   urlRE,
 } from '../utils'
-import { checkPublicFile } from '../publicDir'
-import type { ResolvedConfig } from '../config'
-import type { Plugin } from '../plugin'
-import type { DevEnvironment } from '../server/environment'
-import { shouldExternalize } from '../external'
-import {
-  optimizedDepInfoFromFile,
-  optimizedDepNeedsInterop,
-} from '../optimizer'
-import {
-  cleanUrl,
-  unwrapId,
-  withTrailingSlash,
-  wrapId,
-} from '../../shared/utils'
-import type { TransformPluginContext } from '../server/pluginContainer'
-import { throwOutdatedRequest } from './optimizedDeps'
 import { isDirectCSSRequest } from './css'
-import { browserExternalId } from './resolve'
 import { serializeDefine } from './define'
-import { WORKER_FILE_ID } from './worker'
+import { throwOutdatedRequest } from './optimizedDeps'
 import { getAliasPatternMatcher } from './preAlias'
+import { browserExternalId } from './resolve'
+import { WORKER_FILE_ID } from './worker'
 
 const debug = createDebugger('vite:import-analysis')
 

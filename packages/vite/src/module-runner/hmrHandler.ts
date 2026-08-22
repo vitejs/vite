@@ -1,7 +1,7 @@
 import type { HotPayload } from '#types/hmrPayload'
-import { slash } from '../shared/utils'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../shared/constants'
 import { createHMRHandler } from '../shared/hmrHandler'
+import { slash } from '../shared/utils'
 import type { ModuleRunner } from './runner'
 
 export function createHMRHandlerForRunner(

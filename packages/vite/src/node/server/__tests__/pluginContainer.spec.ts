@@ -3,9 +3,9 @@ import MagicString from 'magic-string'
 import { describe, expect, it, vi } from 'vitest'
 import type { UserConfig } from '../../config'
 import { resolveConfig } from '../../config'
+import { createLogger } from '../../logger'
 import type { Plugin } from '../../plugin'
 import { DevEnvironment } from '../environment'
-import { createLogger } from '../../logger'
 
 describe('plugin container', () => {
   describe('getModuleInfo', () => {

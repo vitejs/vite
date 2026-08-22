@@ -1,12 +1,12 @@
 import path from 'node:path'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
-import { build } from '../../build'
-import type { Plugin } from '../../plugin'
-import { resolveConfig } from '../../config'
-import { createServer } from '../../server'
-import { preview } from '../../preview'
 import { promiseWithResolvers } from '../../../shared/utils'
+import { build } from '../../build'
+import { resolveConfig } from '../../config'
 import { type Logger, createLogger } from '../../logger'
+import type { Plugin } from '../../plugin'
+import { preview } from '../../preview'
+import { createServer } from '../../server'
 
 const resolveConfigWithPlugin = (
   plugin: Plugin,

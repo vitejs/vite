@@ -1,7 +1,7 @@
 import fsp from 'node:fs/promises'
 import { exactRegex } from 'rolldown/filter'
-import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import { cleanUrl } from '../../shared/utils'
+import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import { fileToUrl } from './asset'
 
 const wasmHelperId = '\0vite/wasm-helper.js'

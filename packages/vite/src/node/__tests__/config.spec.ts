@@ -1,10 +1,11 @@
+import fs from 'node:fs'
 import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
-import fs from 'node:fs'
 import { stripVTControlCharacters } from 'node:util'
 import { afterEach, assert, describe, expect, test, vi } from 'vitest'
 import type { InlineConfig, PluginOption } from '..'
+import { isWindows } from '../../shared/utils'
 import type { UserConfig, UserConfigExport } from '../config'
 import {
   bundleConfigFile,
@@ -12,16 +13,15 @@ import {
   loadConfigFromFile,
   resolveConfig,
 } from '../config'
-import { resolveServerOptions } from '../server'
 import { resolveEnvPrefix } from '../env'
+import { createLogger } from '../logger'
+import type { Logger } from '../logger'
+import { resolveServerOptions } from '../server'
 import {
   hasBothRollupOptionsAndRolldownOptions,
   mergeConfig,
   normalizePath,
 } from '../utils'
-import { createLogger } from '../logger'
-import type { Logger } from '../logger'
-import { isWindows } from '../../shared/utils'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {

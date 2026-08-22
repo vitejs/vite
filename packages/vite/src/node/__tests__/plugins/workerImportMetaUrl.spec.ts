@@ -1,8 +1,8 @@
-import { describe, expect, test } from 'vitest'
 import { parseAst } from 'rollup/parseAst'
-import { workerImportMetaUrlPlugin } from '../../plugins/workerImportMetaUrl'
-import { resolveConfig } from '../../config'
+import { describe, expect, test } from 'vitest'
 import { PartialEnvironment } from '../../baseEnvironment'
+import { resolveConfig } from '../../config'
+import { workerImportMetaUrlPlugin } from '../../plugins/workerImportMetaUrl'
 
 async function createWorkerImportMetaUrlPluginTransform() {
   const config = await resolveConfig({ configFile: false }, 'serve')

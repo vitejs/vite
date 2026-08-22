@@ -1,36 +1,36 @@
+import { EventEmitter } from 'node:events'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
-import { EventEmitter } from 'node:events'
 import colors from 'picocolors'
 import type { RollupError } from 'rolldown'
 import type { CustomPayload, HotPayload, Update } from '#types/hmrPayload'
+import type { InferCustomEventPayload, ViteDevServer } from '..'
 import type {
   InvokeMethods,
   InvokeResponseData,
   InvokeSendData,
 } from '../../shared/invokeMethods'
+import { withTrailingSlash } from '../../shared/utils'
 import { CLIENT_DIR } from '../constants'
+import {
+  ignoreDeprecationWarnings,
+  warnFutureDeprecation,
+} from '../deprecations'
+import { getEnvFilesForMode } from '../env'
+import type { Environment } from '../environment'
+import type { Plugin } from '../plugin'
+import { getHookHandler } from '../plugins'
+import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import {
   createDebugger,
   formatAndTruncateFileList,
   monotonicDateNow,
   normalizePath,
 } from '../utils'
-import type { InferCustomEventPayload, ViteDevServer } from '..'
-import { getHookHandler } from '../plugins'
-import { isExplicitImportRequired } from '../plugins/importAnalysis'
-import { getEnvFilesForMode } from '../env'
-import type { Environment } from '../environment'
-import { withTrailingSlash } from '../../shared/utils'
-import type { Plugin } from '../plugin'
-import {
-  ignoreDeprecationWarnings,
-  warnFutureDeprecation,
-} from '../deprecations'
-import type { EnvironmentModuleNode } from './moduleGraph'
-import type { ModuleNode } from './mixedModuleGraph'
 import type { DevEnvironment } from './environment'
 import { prepareError } from './middlewares/error'
+import type { ModuleNode } from './mixedModuleGraph'
+import type { EnvironmentModuleNode } from './moduleGraph'
 import {
   BasicMinimalPluginContext,
   basePluginContextMeta,

@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'vitest'
-import { clearServeError, serveError } from './serve'
 import {
   browserLogs,
   editFile,
@@ -9,6 +8,7 @@ import {
   page,
   readFile,
 } from '~utils'
+import { clearServeError, serveError } from './serve'
 
 const tsconfigLoadErrorRE =
   /(\[TSCONFIG_ERROR\] )*Failed to load tsconfig|JSONError/

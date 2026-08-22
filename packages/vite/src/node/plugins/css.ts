@@ -2,6 +2,17 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import type { RawSourceMap } from '@jridgewell/remapping'
+import { dataToEsm } from '@rollup/pluginutils'
+import { WorkerWithFallback } from 'artichokie'
+import type Less from 'less'
+import type {
+  TransformAttributeResult as LightningCssTransformAttributeResult,
+  TransformResult as LightningCssTransformResult,
+} from 'lightningcss'
+import MagicString from 'magic-string'
+import colors from 'picocolors'
+import type * as PostCSS from 'postcss'
 import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
@@ -14,30 +25,21 @@ import type {
   RollupError,
   SourceMapInput,
 } from 'rolldown'
-import { dataToEsm } from '@rollup/pluginutils'
-import colors from 'picocolors'
-import MagicString from 'magic-string'
-import type * as PostCSS from 'postcss'
 import type Sass from 'sass'
 import type Stylus from 'stylus'
-import type Less from 'less'
-import type { RawSourceMap } from '@jridgewell/remapping'
-import { WorkerWithFallback } from 'artichokie'
 import { globSync } from 'tinyglobby'
-import type {
-  TransformAttributeResult as LightningCssTransformAttributeResult,
-  TransformResult as LightningCssTransformResult,
-} from 'lightningcss'
-import type { LightningCSSOptions } from '#types/internal/lightningcssOptions'
 import type {
   LessPreprocessorBaseOptions,
   SassModernPreprocessBaseOptions,
   StylusPreprocessorBaseOptions,
 } from '#types/internal/cssPreprocessorOptions'
 import type { EsbuildTransformOptions } from '#types/internal/esbuildOptions'
+import type { LightningCSSOptions } from '#types/internal/lightningcssOptions'
 import type { CustomPluginOptionsVite } from '#types/metadata'
-import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
-import type { EnvironmentModuleNode } from '../server/moduleGraph'
+import { type DevEnvironment } from '..'
+import { NULL_BYTE_PLACEHOLDER } from '../../shared/constants'
+import { cleanUrl, isWindows, slash } from '../../shared/utils'
+import { PartialEnvironment } from '../baseEnvironment'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   resolveUserExternal,
@@ -45,6 +47,7 @@ import {
   toOutputFilePathInJS,
 } from '../build'
 import type { LibraryOptions } from '../build'
+import type { ResolvedConfig } from '../config'
 import {
   CLIENT_PUBLIC_PATH,
   CSS_LANGS_RE,
@@ -52,9 +55,18 @@ import {
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
   SPECIAL_QUERY_RE,
 } from '../constants'
-import type { ResolvedConfig } from '../config'
+import { createBackCompatIdResolver } from '../idResolver'
+import type { ResolveIdFn } from '../idResolver'
+import type { Logger } from '../logger'
+import { nodeResolveWithVite } from '../nodeResolve'
+import type { PackageCache } from '../packages'
+import { findNearestMainPackageData } from '../packages'
 import type { Plugin } from '../plugin'
 import { checkPublicFile } from '../publicDir'
+import type { EnvironmentModuleNode } from '../server/moduleGraph'
+import type { TransformPluginContext } from '../server/pluginContainer'
+import { searchForWorkspaceRoot } from '../server/searchRoot'
+import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import {
   _dirname,
   arraify,
@@ -84,19 +96,6 @@ import {
   stripBomTag,
   urlRE,
 } from '../utils'
-import type { Logger } from '../logger'
-import { cleanUrl, isWindows, slash } from '../../shared/utils'
-import { NULL_BYTE_PLACEHOLDER } from '../../shared/constants'
-import { createBackCompatIdResolver } from '../idResolver'
-import type { ResolveIdFn } from '../idResolver'
-import { PartialEnvironment } from '../baseEnvironment'
-import type { TransformPluginContext } from '../server/pluginContainer'
-import { searchForWorkspaceRoot } from '../server/searchRoot'
-import { type DevEnvironment } from '..'
-import type { PackageCache } from '../packages'
-import { findNearestMainPackageData } from '../packages'
-import { nodeResolveWithVite } from '../nodeResolve'
-import { addToHTMLProxyTransformResult, getImportMap } from './html'
 import {
   assetUrlRE,
   cssEntriesMap,
@@ -107,6 +106,7 @@ import {
   renderAssetUrlInJS,
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
+import { addToHTMLProxyTransformResult, getImportMap } from './html'
 import { getChunkOriginalFileName } from './manifest'
 import { IIFE_BEGIN_RE, UMD_BEGIN_RE } from './oxc'
 

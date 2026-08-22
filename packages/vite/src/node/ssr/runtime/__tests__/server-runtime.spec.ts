@@ -1,16 +1,16 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { posix, resolve, win32 } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it, vi } from 'vitest'
-import { isWindows } from '../../../../shared/utils'
+import type { HMRLogger } from '../../../../../dist/node/module-runner'
 import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
+import { isWindows } from '../../../../shared/utils'
 import { createServer } from '../../../server'
 import {
   createRunnableDevEnvironment,
   isRunnableDevEnvironment,
 } from '../../../server/environments/runnableEnvironment'
-import type { HMRLogger } from '../../../../../dist/node/module-runner'
 import { createModuleRunnerTester } from './utils'
 
 const _URL = URL

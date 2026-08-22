@@ -2,11 +2,11 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { ignoreInput } from '@voidzero-dev/vite-task-client'
 import colors from 'picocolors'
-import type { Plugin } from '../plugin'
-import { getResolvedOutDirs, resolveEmptyOutDir } from '../watch'
-import type { Environment } from '../environment'
-import { copyDir, emptyDir, normalizePath } from '../utils'
 import { withTrailingSlash } from '../../shared/utils'
+import type { Environment } from '../environment'
+import type { Plugin } from '../plugin'
+import { copyDir, emptyDir, normalizePath } from '../utils'
+import { getResolvedOutDirs, resolveEmptyOutDir } from '../watch'
 
 export function prepareOutDirPlugin(): Plugin {
   const rendered = new Set<Environment>()
