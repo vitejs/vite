@@ -26,8 +26,8 @@ import {
 } from '../build'
 import type { Logger } from '../logger'
 import { createLogger } from '../logger'
-import { getHookHandler } from '../plugins'
 import type { Plugin } from '../plugin'
+import { getHookHandler } from '../plugins'
 
 const dirname = import.meta.dirname
 
