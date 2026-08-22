@@ -175,6 +175,25 @@ export const isAsyncScriptMap: WeakMap<
   Map<string, boolean>
 > = new WeakMap()
 
+// Custom attributes (e.g. `fetchpriority`, `nonce`, `data-*`) found on the
+// original entry `<script type="module">` tags of an HTML file, collected
+// so they can be re-applied to the `<script>` tag(s) Vite injects for the
+// built entry.
+//
+// Keyed by config -> module id, where the module id is either:
+//  - the HTML file's own id, used when the HTML's synthesized entry chunk
+//    survives the build as-is (e.g. legacy builds, or a page with real
+//    inline module code) - see the non-`canInlineEntry` path below, or
+//  - the resolved id of a `<script type="module" src="...">`'s target,
+//    used when that wrapper chunk gets discarded and the referenced file's
+//    own chunk is injected directly instead (`canInlineEntry`), which is
+//    what a plain `<script type="module" src="/main.js"></script>` with no
+//    other content on the page normally hits.
+export const extraScriptAttrsMap: WeakMap<
+  ResolvedConfig,
+  Map<string, Record<string, string | boolean>>
+> = new WeakMap()
+
 export function nodeIsElement(
   node: DefaultTreeAdapterMap['node'],
 ): node is DefaultTreeAdapterMap['element'] {
@@ -223,18 +242,32 @@ export async function traverseHtml(
   }
 }
 
+// Attributes Vite itself decides the value of when it re-emits the built
+// `<script>` tag. Anything else on the original tag is user-authored
+// (e.g. `fetchpriority`, `nonce`, `integrity`, `data-*`) and should survive
+// the build untouched instead of being silently dropped.
+const viteManagedScriptAttrs = new Set([
+  'src',
+  'type',
+  'async',
+  'crossorigin',
+  'vite-ignore',
+])
+
 export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
   src: Token.Attribute | undefined
   srcSourceCodeLocation: Token.Location | undefined
   isModule: boolean
   isAsync: boolean
   isIgnored: boolean
+  extraAttrs: Record<string, string | boolean>
 } {
   let src: Token.Attribute | undefined
   let srcSourceCodeLocation: Token.Location | undefined
   let isModule = false
   let isAsync = false
   let isIgnored = false
+  const extraAttrs: Record<string, string | boolean> = {}
   for (const p of node.attrs) {
     if (p.prefix !== undefined) continue
     if (p.name === 'src') {
@@ -248,9 +281,21 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
       isAsync = true
     } else if (p.name === 'vite-ignore') {
       isIgnored = true
+    } else if (!viteManagedScriptAttrs.has(p.name)) {
+      // parse5 reports a boolean attribute (e.g. `<script defer>`) with an
+      // empty string value; keep it boolean so serializeAttrs re-emits it
+      // the same way instead of as `defer=""`.
+      extraAttrs[p.name] = p.value === '' ? true : p.value
     }
   }
-  return { src, srcSourceCodeLocation, isModule, isAsync, isIgnored }
+  return {
+    src,
+    srcSourceCodeLocation,
+    isModule,
+    isAsync,
+    isIgnored,
+    extraAttrs,
+  }
 }
 
 const attrValueStartRE = /=\s*(.)/
@@ -427,6 +472,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
+  extraScriptAttrsMap.set(config, new Map())
 
   return {
     name: 'vite:build-html',
@@ -504,6 +550,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         let everyScriptIsAsync = true
         let someScriptsAreAsync = false
         let someScriptsAreDefer = false
+        let extraScriptAttrs: Record<string, string | boolean> = {}
 
         const assetUrlsPromises: Promise<void>[] = []
 
@@ -540,8 +587,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // script tags
           if (node.nodeName === 'script') {
-            const { src, srcSourceCodeLocation, isModule, isAsync, isIgnored } =
-              getScriptInfo(node)
+            const {
+              src,
+              srcSourceCodeLocation,
+              isModule,
+              isAsync,
+              isIgnored,
+              extraAttrs,
+            } = getScriptInfo(node)
 
             if (isIgnored) {
               removeViteIgnoreAttr(s, node.sourceCodeLocation!)
@@ -566,6 +619,15 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                         return Promise.reject(
                           new Error(`Failed to resolve ${url} from ${id}`),
                         )
+                      }
+                      // Remember this tag's extra attrs against the file it
+                      // points to, in case the wrapper chunk for this HTML
+                      // entry gets discarded and this file's own chunk is
+                      // injected in its place (see extraScriptAttrsMap).
+                      if (Object.keys(extraAttrs).length > 0) {
+                        extraScriptAttrsMap
+                          .get(config)!
+                          .set(normalizePath(resolved.id), extraAttrs)
                       }
                       // set moduleSideEffects to keep the module even if `treeshake.moduleSideEffects=false` is set
                       const moduleInfo = this.getModuleInfo(resolved.id)
@@ -599,6 +661,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 everyScriptIsAsync &&= isAsync
                 someScriptsAreAsync ||= isAsync
                 someScriptsAreDefer ||= !isAsync
+                extraScriptAttrs = { ...extraScriptAttrs, ...extraAttrs }
               } else if (url && !isPublicFile) {
                 if (!isExcludedUrl(url)) {
                   config.logger.warn(
@@ -753,6 +816,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         })
 
         isAsyncScriptMap.get(config)!.set(id, everyScriptIsAsync)
+        extraScriptAttrsMap.get(config)!.set(id, extraScriptAttrs)
 
         if (someScriptsAreAsync && someScriptsAreDefer) {
           config.logger.warn(
@@ -852,9 +916,15 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         chunkOrUrl: OutputChunk | string,
         toOutputPath: (filename: string) => string,
         isAsync: boolean,
+        extraAttrs: Record<string, string | boolean> = {},
       ): HtmlTagDescriptor => ({
         tag: 'script',
         attrs: {
+          // extraAttrs comes first: it carries whatever the user wrote on the
+          // original entry tag (e.g. fetchpriority), and none of Vite's own
+          // managed attributes below can end up in it (see getScriptInfo),
+          // but keeping this order means Vite's choices always win regardless.
+          ...extraAttrs,
           ...(isAsync ? { async: true } : {}),
           type: 'module',
           // crossorigin must be set not only for serving assets in a different origin
@@ -933,6 +1003,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           toOutputFilePath(filename, 'public')
 
         const isAsync = isAsyncScriptMap.get(config)!.get(normalizedId)!
+        const extraScriptAttrs = extraScriptAttrsMap
+          .get(config)!
+          .get(normalizedId)!
 
         let result = html
 
@@ -961,12 +1034,40 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           const imports = getImportedChunks(chunk)
           let assetTags: HtmlTagDescriptor[]
           if (canInlineEntry) {
-            assetTags = imports.map((chunk) =>
-              toScriptTag(chunk, toOutputAssetFilePath, isAsync),
-            )
+            // The entry chunk itself had no real code and was discarded: each
+            // of its imports is injected as its own <script> instead (e.g. a
+            // shared chunk, then the file the original tag's src pointed to).
+            // Only tag the one(s) whose bundled modules include that
+            // original src, so attrs like fetchpriority don't leak onto
+            // unrelated shared chunks. facadeModuleId isn't used here since
+            // it's null once a module ends up shared across multiple HTML
+            // entries (as in this very playground), unlike moduleIds.
+            const attrsForConfig = extraScriptAttrsMap.get(config)!
+            assetTags = imports.map((chunk) => {
+              let chunkExtraAttrs: Record<string, string | boolean> = {}
+              if (typeof chunk !== 'string') {
+                for (const moduleId of chunk.moduleIds) {
+                  const attrs = attrsForConfig.get(normalizePath(moduleId))
+                  if (attrs) chunkExtraAttrs = { ...chunkExtraAttrs, ...attrs }
+                }
+              }
+              return toScriptTag(
+                chunk,
+                toOutputAssetFilePath,
+                isAsync,
+                chunkExtraAttrs,
+              )
+            })
           } else {
             const { modulePreload } = this.environment.config.build
-            assetTags = [toScriptTag(chunk, toOutputAssetFilePath, isAsync)]
+            assetTags = [
+              toScriptTag(
+                chunk,
+                toOutputAssetFilePath,
+                isAsync,
+                extraScriptAttrs,
+              ),
+            ]
             if (modulePreload !== false) {
               const resolveDependencies =
                 typeof modulePreload === 'object' &&
