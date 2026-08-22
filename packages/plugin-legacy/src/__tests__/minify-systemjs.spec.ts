@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vitest'
 import { minifySync } from 'rolldown/experimental'
+import { describe, expect, test } from 'vitest'
 
 // Regression tests for https://github.com/vitejs/vite/issues/23296
 //
