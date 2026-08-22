@@ -239,8 +239,10 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       return null
     }
     if (!module.info) {
+      const code = (module as any)._code
+      delete (module as any)._code
       module.info = new Proxy(
-        { id, meta: module.meta || EMPTY_OBJECT } as ModuleInfo,
+        { id, meta: module.meta || EMPTY_OBJECT, code } as ModuleInfo,
         // throw when an unsupported ModuleInfo property is accessed,
         // so that incompatible plugins fail in a non-cryptic way.
         {
