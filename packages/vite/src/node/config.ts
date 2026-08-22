@@ -2370,19 +2370,16 @@ export async function loadConfigFromFile(
   configRoot: string = process.cwd(),
   logLevel?: LogLevel,
   customLogger?: Logger,
-  configLoader: 'bundle' | 'runner' | 'native' = 'bundle',
+  configLoader?: 'bundle' | 'runner' | 'native',
 ): Promise<{
   path: string
   config: UserConfig
   dependencies: string[]
 } | null> {
-  if (
-    configLoader !== 'bundle' &&
-    configLoader !== 'runner' &&
-    configLoader !== 'native'
-  ) {
+  const loader = configLoader ?? 'bundle'
+  if (loader !== 'bundle' && loader !== 'runner' && loader !== 'native') {
     throw new Error(
-      `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle', 'runner', and 'native'.`,
+      `Unsupported configLoader: ${loader}. Accepted values are 'bundle', 'runner', and 'native'.`,
     )
   }
 
@@ -2412,14 +2409,15 @@ export async function loadConfigFromFile(
   }
 
   try {
-    const { configExport, dependencies } = await (configLoader === 'bundle'
+    const { configExport, dependencies } = await (loader === 'bundle'
       ? bundleAndLoadConfigFile(
           resolvedPath,
           configRoot,
           logLevel,
           customLogger,
+          configLoader == null,
         )
-      : configLoader === 'runner'
+      : loader === 'runner'
         ? runnerImportConfigFile(resolvedPath)
         : nativeImportConfigFile(resolvedPath))
     debug?.(`config file loaded in ${getTime()}`)
@@ -2480,18 +2478,26 @@ async function bundleAndLoadConfigFile(
   configRoot: string,
   logLevel: LogLevel | undefined,
   customLogger: Logger | undefined,
+  warnNativeIncompatibilities: boolean,
 ) {
   const isESM =
     typeof process.versions.deno === 'string' || isFilePathESM(resolvedPath)
 
-  const bundled = await bundleConfigFile(resolvedPath, isESM)
+  const bundled = await bundleConfigFile(
+    resolvedPath,
+    isESM,
+    warnNativeIncompatibilities,
+  )
   const userConfig = await loadConfigFromBundledFile(
     resolvedPath,
     bundled.code,
     isESM,
   )
 
-  if (bundled.nativeIncompatibilities.length > 0) {
+  if (
+    warnNativeIncompatibilities &&
+    bundled.nativeIncompatibilities.length > 0
+  ) {
     const logger = createLogger(logLevel, { customLogger })
     logger.warn(
       formatNativeConfigIncompatWarning(
@@ -2510,6 +2516,7 @@ async function bundleAndLoadConfigFile(
 export async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
+  warnNativeIncompatibilities: boolean,
 ): Promise<{
   code: string
   dependencies: string[]
@@ -2553,6 +2560,7 @@ export async function bundleConfigFile(
     tsconfig: false,
     plugins: [
       !process.env.VITE_CONFIG_NATIVE_IGNORE_WARNING &&
+        warnNativeIncompatibilities &&
         createNativeConfigCompatPlugin(nativeIncompatibilities),
       {
         name: 'externalize-deps',
