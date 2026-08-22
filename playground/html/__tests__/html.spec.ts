@@ -7,6 +7,7 @@ import {
   isBundled,
   isServe,
   page,
+  readFile,
   serverLogs,
   untilBrowserLogAfter,
   viteServer,
@@ -544,3 +545,34 @@ test.runIf(isServe)(
     )
   },
 )
+
+describe('modulepreload resolved (issue #22845)', () => {
+  test('the plugin-resolved modulepreload href is bundled and re-emitted as a resolved chunk URL', async () => {
+    if (isBuild) {
+      const html = readFile('dist/modulepreloadResolved.html')
+      // the unresolved `/@plugin-script` should NOT survive in href/src in build output
+      // (it would 404; the script src is rewritten by import-analysis, but the link was
+      // previously untouched — see #22845)
+      const unresolvedRefs = html.match(
+        /href="\/@plugin-script"|src="\/@plugin-script"/g,
+      )
+      expect(unresolvedRefs).toBeNull()
+      // at least one modulepreload link should exist pointing at a hashed bundled asset
+      const preloads = [
+        ...html.matchAll(/<link\s+rel="modulepreload"[^>]*href="([^"]+)"/g),
+      ].map((m) => m[1])
+      expect(preloads.length).toBeGreaterThan(0)
+      for (const href of preloads) {
+        expect(href).not.toBe('/@plugin-script')
+        // built assets live under the bundled assets directory
+        expect(href).toMatch(/^(?:\.?\/)?(?:assets\/|\/assets\/)/)
+      }
+    } else {
+      // issue #22845 is build-only: in dev the script src still resolves and
+      // the virtual module loads, but the html transform for modulepreload
+      // happens only at build time. Verify the script-driven path works.
+      await page.goto(`${viteTestUrl}/modulepreloadResolved.html`)
+      await expect.poll(() => page.textContent('.output')).toBe('loaded')
+    }
+  })
+})
