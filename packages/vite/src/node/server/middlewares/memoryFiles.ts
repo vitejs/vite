@@ -15,7 +15,7 @@ export function memoryFilesMiddleware(
 
   return function viteMemoryFilesMiddleware(req, res, next) {
     const cleanedUrl = cleanUrl(req.url!)
-    if (cleanedUrl.endsWith('.html')) {
+    if (cleanedUrl.endsWith('.html') || cleanedUrl.endsWith('.htm')) {
       return next()
     }
 

@@ -463,7 +463,10 @@ export function indexHtmlMiddleware(
 
     const url = req.url && cleanUrl(req.url)
     // htmlFallbackMiddleware appends '.html' to URLs
-    if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
+    if (
+      (url?.endsWith('.html') || url?.endsWith('.htm')) &&
+      req.headers['sec-fetch-dest'] !== 'script'
+    ) {
       if (fullBundle) {
         let pathname
         try {

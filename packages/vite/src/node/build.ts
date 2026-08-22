@@ -627,7 +627,11 @@ export function resolveRolldownOptions(
       : options.rolldownOptions.input ||
         (topLevelInput ?? resolve('index.html'))
 
-  if (ssr && typeof input === 'string' && input.endsWith('.html')) {
+  if (
+    ssr &&
+    typeof input === 'string' &&
+    (input.endsWith('.html') || input.endsWith('.htm'))
+  ) {
     throw new Error(
       `rolldownOptions.input should not be an html file when building for SSR. ` +
         `Please specify a dedicated SSR entry.`,
