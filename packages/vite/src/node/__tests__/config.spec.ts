@@ -1167,6 +1167,43 @@ describe('resolveConfig', () => {
     await resolveConfig({ root: './inc?ud#s*', customLogger: logger }, 'build')
   })
 
+  test('warns about ignored hooks returned from applyToEnvironment', async () => {
+    const warn = vi.fn()
+    const logger = createLogger('info', {
+      console: { warn } as unknown as Console,
+    })
+
+    await resolveConfig(
+      {
+        configFile: false,
+        customLogger: logger,
+        plugins: [
+          {
+            name: 'parent-plugin',
+            applyToEnvironment() {
+              return {
+                name: 'environment-plugin',
+                config: () => undefined,
+                configEnvironment: () => undefined,
+                configureServer: () => undefined,
+                configResolved: () => undefined,
+                resolveId: () => undefined,
+              }
+            },
+          },
+        ],
+      },
+      'serve',
+    )
+
+    expect(warn).toHaveBeenCalledOnce()
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Plugin "environment-plugin" defines Vite-specific hooks (config, configEnvironment, configureServer, configResolved) in a plugin returned from applyToEnvironment. These hooks will be ignored.',
+      ),
+    )
+  })
+
   test('syncs `build.rollupOptions` and `build.rolldownOptions`', async () => {
     const resolved = await resolveConfig({}, 'build')
     expect(resolved.build!.rollupOptions).toStrictEqual(
