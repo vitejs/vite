@@ -394,7 +394,8 @@ async function loadAndTransform(
     )
 
     if (path.isAbsolute(mod.file)) {
-      let modDirname
+      const modDirname = path.dirname(mod.file)
+      const projectRoot = config.root
       for (
         let sourcesIndex = 0;
         sourcesIndex < normalizedMap.sources.length;
@@ -405,13 +406,15 @@ async function loadAndTransform(
           // Rewrite sources to relative paths to give debuggers the chance
           // to resolve and display them in a meaningful way (rather than
           // with absolute paths).
-          if (path.isAbsolute(sourcePath)) {
-            modDirname ??= path.dirname(mod.file)
-            normalizedMap.sources[sourcesIndex] = path.relative(
-              modDirname,
-              sourcePath,
-            )
-          }
+          const absoluteSourcePath = resolveSourcemapSourcePath(
+            modDirname,
+            projectRoot,
+            sourcePath,
+          )
+          normalizedMap.sources[sourcesIndex] = path.relative(
+            modDirname,
+            absoluteSourcePath,
+          )
         }
       }
     }
@@ -535,6 +538,33 @@ async function handleModuleSoftInvalidation(
     environment.moduleGraph.updateModuleTransformResult(mod, result)
 
   return result
+}
+
+function resolveSourcemapSourcePath(
+  modDirname: string,
+  projectRoot: string,
+  sourcePath: string,
+): string {
+  if (path.isAbsolute(sourcePath)) {
+    return sourcePath
+  }
+
+  const fromMod = path.resolve(modDirname, sourcePath)
+  const fromRoot = path.resolve(projectRoot, sourcePath)
+  if (fromMod === fromRoot) {
+    return fromMod
+  }
+
+  const relFromMod = path.relative(modDirname, fromMod)
+  const relFromRoot = path.relative(modDirname, fromRoot)
+  const escapesModDir = (rel: string) =>
+    rel === '' || rel.startsWith('..') || path.isAbsolute(rel)
+  const modEscapes = escapesModDir(relFromMod)
+  const rootEscapes = escapesModDir(relFromRoot)
+  if (modEscapes !== rootEscapes) {
+    return modEscapes ? fromRoot : fromMod
+  }
+  return relFromMod.length <= relFromRoot.length ? fromMod : fromRoot
 }
 
 // https://github.com/rolldown/rolldown/blob/cc66f4b7189dfb3a248608d02f5962edb09b11f8/crates/rolldown/src/utils/normalize_options.rs#L95-L111
