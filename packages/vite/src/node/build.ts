@@ -1339,6 +1339,15 @@ export function injectEnvironmentToHooks(
     }
   }
 
+  if (plugin.hotUpdate) {
+    clone.hotUpdate = wrapEnvironmentHook(
+      environment,
+      chunkMetadataMap,
+      plugin,
+      'hotUpdate',
+    )
+  }
+
   return clone
 }
 

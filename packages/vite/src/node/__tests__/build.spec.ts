@@ -18,6 +18,7 @@ import {
   ChunkMetadataMap,
   build,
   createBuilder,
+  injectEnvironmentToHooks,
   onRollupLog,
   resolveBuildOutputs,
   resolveLibFilename,
@@ -25,6 +26,8 @@ import {
 } from '../build'
 import type { Logger } from '../logger'
 import { createLogger } from '../logger'
+import type { Plugin } from '../plugin'
+import { getHookHandler } from '../plugins'
 
 const dirname = import.meta.dirname
 
@@ -1577,6 +1580,34 @@ async function buildProjectWithRenderBuiltUrl(
     ],
   })) as RolldownOutput
 }
+
+describe('injectEnvironmentToHooks', () => {
+  test('binds environment to hotUpdate hook', async () => {
+    const config = await resolveConfig(
+      { configFile: false, logLevel: 'error' },
+      'serve',
+    )
+    const environment = new BuildEnvironment('client', config)
+    const chunkMetadataMap = new ChunkMetadataMap()
+    let name: string | undefined
+    const plugin: Plugin = {
+      name: 'test-hot-update-env',
+      hotUpdate() {
+        name = this.environment.name
+      },
+    }
+
+    const wrapped = injectEnvironmentToHooks(
+      environment,
+      chunkMetadataMap,
+      plugin,
+    )
+    const context = { meta: {} } as import('rolldown').PluginContext
+
+    await getHookHandler(wrapped.hotUpdate!).call(context, {} as any)
+    expect(name).toBe('client')
+  })
+})
 
 /**
  * for each chunks in output1, if there's a chunk in output2 with the same fileName,
