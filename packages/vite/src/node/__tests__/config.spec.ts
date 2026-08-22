@@ -1654,7 +1654,7 @@ describe('loadConfigFromFile', () => {
         root,
         undefined,
         logger,
-        'bundle',
+        undefined,
       )
       const messages = warn.mock.calls.map((c) =>
         stripVTControlCharacters(c[0]),
@@ -1745,6 +1745,22 @@ describe('loadConfigFromFile', () => {
 
     test('does not warn for a CJS config using __dirname', async () => {
       expect(await loadWithWarnings('cjs', 'vite.config.cjs')).toHaveLength(0)
+    })
+
+    test('does not warn when configLoader is explicitly set to bundle', async () => {
+      const logger = createLogger('info')
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+      const root = path.resolve(compatRoot, 'dirname')
+      await loadConfigFromFile(
+        {} as any,
+        path.resolve(root, 'vite.config.js'),
+        root,
+        undefined,
+        logger,
+        'bundle',
+      )
+      expect(warn.mock.calls).toHaveLength(0)
+      warn.mockRestore()
     })
 
     test('warns for an ESM file imported by a CJS config', async () => {
