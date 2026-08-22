@@ -44,6 +44,7 @@ import {
   isBuiltin,
   isDataUrl,
   isExternalUrl,
+  isHTMLRequest,
   isInNodeModules,
   isObject,
   isOptimizable,
@@ -426,7 +427,7 @@ function optimizerResolvePlugin(
           ...resolveOptions,
           scan: resolveOpts.scan ?? resolveOptions.scan,
         }
-        options.preferRelative ||= importer?.endsWith('.html')
+        options.preferRelative ||= !!importer && isHTMLRequest(importer)
 
         // resolve pre-bundled deps requests, these could be resolved by
         // tryFileResolve or /fs/ resolution but these files may not yet
