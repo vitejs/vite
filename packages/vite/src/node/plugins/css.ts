@@ -2326,6 +2326,7 @@ async function minifyCSS(
   }
 
   try {
+    const layerOrderStatements = await extractLayerOrderStatements(css)
     const { code, warnings } = (await importLightningCSS()).transform({
       ...config.css.lightningcss,
       targets: convertTargets(config.build.cssTarget),
@@ -2351,7 +2352,10 @@ async function minifyCSS(
     // Deno res.code = Uint8Array
     // For correct decode compiled css need to use TextDecoder
     // LightningCSS output does not return a linebreak at the end
-    return decoder.decode(code) + (inlined ? '' : '\n')
+    return await preserveLayerOrderStatements(
+      decoder.decode(code) + (inlined ? '' : '\n'),
+      layerOrderStatements,
+    )
   } catch (e) {
     e.message = `[lightningcss minify] ${e.message}`
     const friendlyMessage = getLightningCssErrorMessageForIeSyntaxes(css)
@@ -2368,6 +2372,58 @@ async function minifyCSS(
     }
     throw e
   }
+}
+
+const normalizeLayerOrderParams = (params: string) =>
+  params.trim().replace(/\s*,\s*/g, ',')
+
+async function extractLayerOrderStatements(css: string): Promise<string[]> {
+  if (!css.includes('@layer')) return []
+
+  const postcss = (await importPostcss()).default
+  const statements = new Set<string>()
+  for (const node of postcss.parse(css).nodes) {
+    if (node.type === 'atrule' && node.name === 'layer' && !node.nodes) {
+      statements.add(normalizeLayerOrderParams(node.params))
+    }
+  }
+  return [...statements]
+}
+
+async function preserveLayerOrderStatements(
+  css: string,
+  statements: string[],
+): Promise<string> {
+  if (!statements.length) return css
+
+  const postcss = (await importPostcss()).default
+  const root = postcss.parse(css)
+  const existing = new Set<string>()
+  for (const node of root.nodes) {
+    if (node.type === 'atrule' && node.name === 'layer' && !node.nodes) {
+      existing.add(normalizeLayerOrderParams(node.params))
+    }
+  }
+
+  const missing = statements.filter((params) => !existing.has(params))
+  if (!missing.length) return css
+
+  const nodes = missing.map((params) => {
+    const node = postcss.atRule({ name: 'layer', params })
+    node.raws.before = ''
+    return node
+  })
+  const firstNonPrelude = root.nodes.find(
+    (node) =>
+      node.type !== 'atrule' ||
+      !['charset', 'import', 'namespace'].includes(node.name),
+  )
+  if (firstNonPrelude) {
+    root.insertBefore(firstNonPrelude, nodes)
+  } else {
+    root.append(nodes)
+  }
+  return root.toString()
 }
 
 function resolveMinifyCssEsbuildOptions(

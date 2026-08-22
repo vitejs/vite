@@ -1,0 +1,13 @@
+@layer vite-layer-order-reset, vite-layer-order-main;
+
+@layer vite-layer-order-reset {
+  .vite-layer-order-reset {
+    color: red;
+  }
+}
+
+@layer vite-layer-order-main {
+  .vite-layer-order-main {
+    color: blue;
+  }
+}
