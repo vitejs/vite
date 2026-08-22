@@ -1,7 +1,7 @@
 import crypto from 'node:crypto'
 import { createRequire } from 'node:module'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import type {
   PluginItem as BabelPlugin,
   types as BabelTypes,
@@ -756,7 +756,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           const rolldownPath = _require.resolve('rolldown/experimental', {
             paths: [vitePkgDir],
           })
-          const { minifySync } = await import(rolldownPath)
+          const { minifySync } = await import(
+            /* @vite-ignore */ pathToFileURL(rolldownPath).href
+          )
           const minifyResult = minifySync(chunk.fileName, code, {
             module: false,
             compress: { target: 'es2015' },

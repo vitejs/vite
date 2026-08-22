@@ -135,7 +135,7 @@ describe.runIf(isBuild)('build', () => {
     // factory functions have short mangled parameter names (single letter).
     // Non-legacy chunks are ESM and never contain System.register.
     const systemJsMinified =
-      /System\.register\([^)]*],\s*function\([a-z],\s*[a-z]\)/
+      /System\.register\(\[[^\]]*\]\s*,\s*function\([a-z],\s*[a-z]\)/
 
     expect(findAssetFile(/chunk-async-legacy/)).toMatch(systemJsMinified)
     expect(findAssetFile(/chunk-async(?!-legacy)/)).not.toMatch(
