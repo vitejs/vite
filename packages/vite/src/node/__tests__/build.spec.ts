@@ -488,6 +488,29 @@ describe('resolveBuildOutputs', () => {
       expect(options.input).toBe('explicit-entry.js')
     })
 
+    test('top-level tsconfig applies to Rolldown options', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+        tsconfig: './custom.tsconfig.json',
+        build: {
+          rolldownOptions: {
+            tsconfig: './other.tsconfig.json',
+            resolve: { tsconfigFilename: './legacy.tsconfig.json' },
+          },
+        },
+      })
+      const options = resolveRolldownOptions(
+        builder.environments.client,
+        new ChunkMetadataMap(),
+      )
+
+      expect(options.tsconfig).toBe(
+        resolve(buildProjectRoot, 'custom.tsconfig.json'),
+      )
+      expect(options.resolve?.tsconfigFilename).toBeUndefined()
+    })
+
     test('falls back to index.html when no input is set', async () => {
       const builder = await createBuilder({
         root: buildProjectRoot,

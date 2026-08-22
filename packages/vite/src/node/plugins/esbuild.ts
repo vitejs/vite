@@ -531,7 +531,7 @@ export function getTSConfigResolutionCache(
   }
   let cache = tsconfigResolutionCacheMap.get(config)
   if (!cache) {
-    cache = new TsconfigCache()
+    cache = new TsconfigCache(config.tsconfig)
     tsconfigResolutionCacheMap.set(config, cache)
   }
   return cache
