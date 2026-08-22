@@ -629,6 +629,18 @@ describe('processSrcSetSync', () => {
     expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
   })
 
+  test('should convert newline-separated srcset candidates to space-separated', async () => {
+    const source = 'asset.png\n1x,\nnested/asset.png\n2x'
+    const result = 'asset.png 1x, nested/asset.png 2x'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should convert CRLF-separated srcset candidates to space-separated', async () => {
+    const source = 'asset.png\r\n1x,\r\nnested/asset.png\r\n2x'
+    const result = 'asset.png 1x, nested/asset.png 2x'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
   test('should not break URLs with commas in image-set-options', async () => {
     const source = `url(https://example.com/dpr_1,f_auto,fl_progressive,q_auto,w_100/v1/img)   1x,
       url("https://example.com/dpr_2,f_auto,fl_progressive,q_auto,w_100/v1/img")\t\t2x
