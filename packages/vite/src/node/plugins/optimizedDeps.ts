@@ -53,13 +53,6 @@ export function optimizedDepsPlugin(): Plugin {
         // Search in both the currently optimized and newly discovered deps
         const info = optimizedDepInfoFromFile(metadata, file)
         if (info) {
-          if (
-            browserHash &&
-            info.browserHash !== browserHash &&
-            !environment.config.optimizeDeps.ignoreOutdatedRequests
-          ) {
-            throwOutdatedRequest(id)
-          }
           try {
             // This is an entry point, it may still not be bundled
             await info.processing
@@ -69,17 +62,15 @@ export function optimizedDepsPlugin(): Plugin {
             // returns an empty response that will error.
             throwProcessingError(id)
           }
-          const newMetadata = depsOptimizer.metadata
-          if (metadata !== newMetadata) {
-            const currentInfo = optimizedDepInfoFromFile(newMetadata!, file)
-            if (
-              info.browserHash !== currentInfo?.browserHash &&
-              !environment.config.optimizeDeps.ignoreOutdatedRequests
-            ) {
-              throwOutdatedRequest(id)
-            }
-          }
         }
+        // We do not throw on `?v=` mismatch here. The browser may have started
+        // a dynamic import for an optimized dep using the browserHash that was
+        // baked into the wrapper when it was transformed, before the optimizer
+        // had a chance to commit a new batch with a different hash. Throwing
+        // 504 in that case breaks the in-flight import with
+        // `Failed to fetch dynamically imported module`. Instead, serve the
+        // current chunk: the optimizer triggers a full reload when its output
+        // actually changes, which re-issues the request with the new hash.
         debug?.(`load ${colors.cyan(file)}`)
         // Load the file from the cache instead of waiting for other plugin
         // load hooks to avoid race conditions, once processing is resolved,
