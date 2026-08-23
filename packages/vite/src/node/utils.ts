@@ -1888,7 +1888,12 @@ export function encodeURIPath(uri: string): string {
   if (uri.startsWith('data:')) return uri
   const filePath = cleanUrl(uri)
   const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
-  return encodeURI(filePath) + postfix
+  const encoded = encodeURI(filePath)
+  return (
+    encoded.replace(/^([a-zA-Z]+:\/\/[^/]+)/, (match) =>
+      match.replace(/%5B/g, '[').replace(/%5D/g, ']'),
+    ) + postfix
+  )
 }
 
 /**

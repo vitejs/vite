@@ -18,6 +18,7 @@ import {
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
   getServerUrlByHost,
+  encodeURIPath,
   injectQuery,
   isFileReadable,
   isParentDirectory,
@@ -1255,5 +1256,18 @@ describe('resolveServerUrls', () => {
 
     expect(result.network).toStrictEqual(['http://10.0.0.5:3000/'])
     expect(result.networkInterfaceNames).toStrictEqual([undefined])
+  })
+})
+
+
+describe('encodeURIPath', () => {
+  test('encodes path correctly', () => {
+    expect(encodeURIPath('/foo/bar.txt')).toBe('/foo/bar.txt')
+    expect(encodeURIPath('/foo/[bar].txt')).toBe('/foo/%5Bbar%5D.txt')
+  })
+
+  test('does not encode IPv6 brackets in host', () => {
+    expect(encodeURIPath('http://[::1]:5173/foo/bar.txt')).toBe('http://[::1]:5173/foo/bar.txt')
+    expect(encodeURIPath('http://[::1]:5173/foo/[bar].txt')).toBe('http://[::1]:5173/foo/%5Bbar%5D.txt')
   })
 })
