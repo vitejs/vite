@@ -58,8 +58,8 @@ Instead, use `(await import('somedep')).default`.
 Most deps should be added to `devDependencies` even if they are needed at runtime. Some exceptions are:
 
 - Type packages. Example: `@types/*`.
-- Deps that cannot be properly bundled due to binary files. Example: `esbuild`.
-- Deps that ship their own types that are used in Vite's own public types. Example: `rollup`.
+- Deps that cannot be properly bundled due to binary files. Example: `rolldown`, `lightningcss`.
+- Deps that ship their own types that are used in Vite's own public types. Example: `rolldown`.
 
 Avoid deps with large transitive dependencies that result in bloated size compared to the functionality it provides. For example, `http-proxy` itself is around 380kB in size, but `http-proxy-middleware` pulls in a ton of dependencies that make it 3MB(!) when a minimal custom middleware on top of `http-proxy` only requires a couple of lines of code.
 
