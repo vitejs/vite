@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "8.2.1",
+  "version": "8.2.2",
   "description": "Native-ESM powered web dev build tool",
   "keywords": [
     "build-tool",
@@ -86,7 +86,7 @@
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
     "@vercel/detect-agent": "^1.2.5",
-    "@vitejs/devtools": "^0.5.0",
+    "@vitejs/devtools": "^0.6.0",
     "@vitest/utils": "4.1.10",
     "@voidzero-dev/vite-task-client": "^0.2.0",
     "artichokie": "^0.4.4",
@@ -135,7 +135,7 @@
   },
   "peerDependencies": {
     "@types/node": "^20.19.0 || >=22.12.0",
-    "@vitejs/devtools": "^0.5.0",
+    "@vitejs/devtools": "^0.6.0",
     "esbuild": "^0.27.0 || ^0.28.0",
     "jiti": ">=1.21.0",
     "less": "^4.0.0",

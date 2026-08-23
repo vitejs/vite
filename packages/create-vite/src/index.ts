@@ -1,12 +1,12 @@
+import type { SpawnOptions } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import util from 'node:util'
-import type { SpawnOptions } from 'node:child_process'
-import spawn from 'cross-spawn'
-import mri from 'mri'
 import * as prompts from '@clack/prompts'
 import { determineAgent } from '@vercel/detect-agent'
+import spawn from 'cross-spawn'
+import mri from 'mri'
 
 const {
   blue,
@@ -36,7 +36,7 @@ const argv = mri<{
 })
 const cwd = process.cwd()
 
-// prettier-ignore
+// oxfmt-ignore
 const helpMessage = `\
 Usage: create-vite [OPTION]... [DIRECTORY]
 
@@ -850,7 +850,9 @@ import babel from '@rolldown/plugin-babel'`,
   )
   updateReactCompilerReadme(
     root,
-    'The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.\n\nNote: This will impact Vite dev & build performances.',
+    'The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.\n\n' +
+      'Note: This will impact Vite dev & build performances.\n' +
+      'You can also try [the experimental native React Compiler support in plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md#rust-react-compiler) by using `compiler: true` in the plugin options instead of using the Babel plugin.',
   )
 }
 
