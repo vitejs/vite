@@ -79,7 +79,7 @@ We already have many config options, and we should avoid fixing an issue by addi
 
 - is really worth addressing
 - can be fixed with a smarter default
-- has workaround using existing options
+- has a workaround using existing options
 - can be addressed with a plugin instead
 
 ## Debugging
