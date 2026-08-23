@@ -195,6 +195,10 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   private _buildStartPromise: Promise<void> | undefined
   private _closed = false
 
+  get closed(): boolean {
+    return this._closed
+  }
+
   /**
    * @internal use `createEnvironmentPluginContainer` instead
    */
@@ -874,7 +878,7 @@ class PluginContext
 
   addWatchFile(id: string): void {
     this._container.watchFiles.add(id)
-    if (this._container.watcher)
+    if (this._container.watcher && !this._container.closed)
       ensureWatchedFile(
         this._container.watcher,
         id,
