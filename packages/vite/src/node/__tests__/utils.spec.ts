@@ -361,6 +361,11 @@ foo()
     expectSnapshot(generateCodeFrame(sourceCrLf, { line: 2, column: 0 }))
   })
 
+  test('end with CRLF', () => {
+    expectSnapshot(generateCodeFrame(sourceCrLf, 0, sourceCrLf.length))
+    expectSnapshot(generateCodeFrame(sourceCrLf, 0, sourceCrLf.length + 100))
+  })
+
   test('end', () => {
     expectSnapshot(generateCodeFrame(source, 0, 0))
     expectSnapshot(generateCodeFrame(source, 0, 23))

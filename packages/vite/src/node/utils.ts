@@ -543,7 +543,17 @@ export function generateCodeFrame(
   for (let i = 0; i < lines.length; i++) {
     count += lines[i].length
     if (count >= start) {
-      for (let j = i - range; j <= i + range || end > count; j++) {
+      // `j < lines.length` bounds the second disjunct. Without it, once `j`
+      // runs past the last line the `continue` below skips the `count`
+      // update, so `count` freezes while `end` stays larger and the loop
+      // never terminates. `count` advances by one per line break, but `end`
+      // is clamped to `source.length`, which counts two characters per CRLF
+      // -- so on a CRLF source `end` can exceed anything `count` reaches.
+      for (
+        let j = i - range;
+        j <= i + range || (end > count && j < lines.length);
+        j++
+      ) {
         if (j < 0 || j >= lines.length) continue
         const line = j + 1
         const lineLength = lines[j].length

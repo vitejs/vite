@@ -52,6 +52,24 @@ exports[`generateCodeFrames > end 6`] = `
 "
 `;
 
+exports[`generateCodeFrames > end with CRLF 1`] = `
+"
+1  |  import foo from './foo'
+   |  ^^^^^^^^^^^^^^^^^^^^^^^
+2  |  foo()
+   |  ^^^^^
+"
+`;
+
+exports[`generateCodeFrames > end with CRLF 2`] = `
+"
+1  |  import foo from './foo'
+   |  ^^^^^^^^^^^^^^^^^^^^^^^
+2  |  foo()
+   |  ^^^^^
+"
+`;
+
 exports[`generateCodeFrames > invalid start > end 1`] = `
 "
 1  |  import foo from './foo'
