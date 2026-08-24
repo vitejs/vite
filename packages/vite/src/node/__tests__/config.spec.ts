@@ -1654,7 +1654,6 @@ describe('loadConfigFromFile', () => {
         root,
         undefined,
         logger,
-        'bundle',
       )
       const messages = warn.mock.calls.map((c) =>
         stripVTControlCharacters(c[0]),
@@ -1673,6 +1672,24 @@ describe('loadConfigFromFile', () => {
         Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
         ]
       `)
+    })
+
+    test('does not warn when an explicit non-native loader is used', async () => {
+      const logger = createLogger('info')
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+      const root = path.resolve(compatRoot, 'dirname')
+      await loadConfigFromFile(
+        {} as any,
+        path.resolve(root, 'vite.config.js'),
+        root,
+        undefined,
+        logger,
+        'bundle',
+      )
+      const messages = warn.mock.calls.map((c) =>
+        stripVTControlCharacters(c[0]),
+      )
+      expect(messages).toEqual([])
     })
 
     // uses a `.ts` config with TypeScript-only syntax; skipped on Node

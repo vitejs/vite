@@ -2370,21 +2370,27 @@ export async function loadConfigFromFile(
   configRoot: string = process.cwd(),
   logLevel?: LogLevel,
   customLogger?: Logger,
-  configLoader: 'bundle' | 'runner' | 'native' = 'bundle',
+  configLoader?: 'bundle' | 'runner' | 'native',
 ): Promise<{
   path: string
   config: UserConfig
   dependencies: string[]
 } | null> {
+  // Only surface native-loader compatibility warnings when the loader was not
+  // chosen explicitly: users who deliberately picked a bundler have already
+  // opted out of the native loader.
+  const resolvedConfigLoader = configLoader ?? 'bundle'
+
   if (
-    configLoader !== 'bundle' &&
-    configLoader !== 'runner' &&
-    configLoader !== 'native'
+    resolvedConfigLoader !== 'bundle' &&
+    resolvedConfigLoader !== 'runner' &&
+    resolvedConfigLoader !== 'native'
   ) {
     throw new Error(
-      `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle', 'runner', and 'native'.`,
+      `Unsupported configLoader: ${resolvedConfigLoader}. Accepted values are 'bundle', 'runner', and 'native'.`,
     )
   }
+  const warnNativeCompat = configLoader === undefined
 
   const start = performance.now()
   const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
@@ -2412,14 +2418,16 @@ export async function loadConfigFromFile(
   }
 
   try {
-    const { configExport, dependencies } = await (configLoader === 'bundle'
+    const { configExport, dependencies } = await (resolvedConfigLoader ===
+    'bundle'
       ? bundleAndLoadConfigFile(
           resolvedPath,
           configRoot,
           logLevel,
           customLogger,
+          warnNativeCompat,
         )
-      : configLoader === 'runner'
+      : resolvedConfigLoader === 'runner'
         ? runnerImportConfigFile(resolvedPath)
         : nativeImportConfigFile(resolvedPath))
     debug?.(`config file loaded in ${getTime()}`)
@@ -2480,6 +2488,7 @@ async function bundleAndLoadConfigFile(
   configRoot: string,
   logLevel: LogLevel | undefined,
   customLogger: Logger | undefined,
+  warnNativeCompat: boolean,
 ) {
   const isESM =
     typeof process.versions.deno === 'string' || isFilePathESM(resolvedPath)
@@ -2491,7 +2500,7 @@ async function bundleAndLoadConfigFile(
     isESM,
   )
 
-  if (bundled.nativeIncompatibilities.length > 0) {
+  if (warnNativeCompat && bundled.nativeIncompatibilities.length > 0) {
     const logger = createLogger(logLevel, { customLogger })
     logger.warn(
       formatNativeConfigIncompatWarning(
