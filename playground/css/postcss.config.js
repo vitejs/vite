@@ -11,6 +11,7 @@ export default {
     testSourceInput,
     testInjectUrl,
     testInjectUrlOnceExit,
+    testReplaceRootOnceExit,
   ],
 }
 
@@ -116,3 +117,26 @@ function testInjectUrlOnceExit() {
   }
 }
 testInjectUrlOnceExit.postcss = true
+
+/**
+ * A plugin for testing url() rewriting when a plugin reassigns `result.root`
+ * to a freshly parsed tree at OnceExit instead of mutating the existing root
+ * in place (this is what postcss-lightningcss does)
+ */
+function testReplaceRootOnceExit() {
+  return {
+    postcssPlugin: 'replace-root-once-exit',
+    OnceExit(root, { result, postcss }) {
+      if (!root.source?.input.file?.endsWith('replace-root.css')) return
+      root.walkAtRules('replace-root-once-exit', (atRule) => {
+        atRule.replaceWith(
+          '.replace-root-once-exit { background: url("./injected-source/injected-bg.png") }',
+        )
+      })
+      result.root = postcss.parse(root.toString(), {
+        from: root.source.input.file,
+      })
+    },
+  }
+}
+testReplaceRootOnceExit.postcss = true

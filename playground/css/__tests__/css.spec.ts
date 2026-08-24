@@ -12,3 +12,13 @@ test('postcss plugin that injects url() at OnceExit', async () => {
     isBundled ? /base64/ : '/injected-source/injected-bg.png',
   )
 })
+
+// a plugin that reassigns `result.root` at OnceExit (like postcss-lightningcss
+// does) instead of mutating the existing root in place
+test('postcss plugin that reassigns result.root at OnceExit', async () => {
+  await page.goto(viteTestUrl)
+  const imported = await page.waitForSelector('.replace-root-once-exit')
+  expect(await getBg(imported)).toMatch(
+    isBundled ? /base64/ : '/injected-source/injected-bg.png',
+  )
+})

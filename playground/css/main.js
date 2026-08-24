@@ -7,6 +7,7 @@ import './less-plugin.less'
 import './stylus.styl'
 import './manual-chunk.css'
 import './postcss-inject-url.css'
+import './replace-root.css'
 
 import urlCss from './url-imported.css?url'
 appendLinkStylesheet(urlCss)

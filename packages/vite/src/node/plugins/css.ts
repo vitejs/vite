@@ -2104,7 +2104,13 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
 
   return {
     postcssPlugin: 'vite-url-rewrite',
-    OnceExit(root) {
+    OnceExit(root, { result }) {
+      // a plugin earlier in the pipeline (e.g. postcss-lightningcss) may
+      // reassign `result.root` to a freshly parsed tree from its own
+      // OnceExit hook. PostCSS keeps passing the pre-reassignment `root` to
+      // subsequently run OnceExit hooks, so read the live root off `result`
+      // instead of trusting the argument.
+      root = result.root
       const promises: Promise<void>[] = []
       root.walkDecls((declaration) => {
         const importer = declaration.source?.input.file
