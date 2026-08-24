@@ -1062,6 +1062,10 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         if (pkgManager === 'bun') {
           return 'bun x create-'
         }
+        // nub has no `create` verb; `nubx` runs the create- package directly
+        if (pkgManager === 'nub') {
+          return 'nubx create-'
+        }
         // Deno uses `run -A npm:create-` instead of `create` or `init` to also provide needed perms
         if (pkgManager === 'deno') {
           return 'deno run -A npm:create-'
@@ -1088,6 +1092,9 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         }
         if (pkgManager === 'bun') {
           return 'bun x '
+        }
+        if (pkgManager === 'nub') {
+          return 'nubx '
         }
         if (pkgManager === 'deno') {
           return 'deno run -A npm:'
