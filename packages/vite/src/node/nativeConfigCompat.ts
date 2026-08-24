@@ -1,9 +1,9 @@
 import path from 'node:path'
+import { walk as eswalk } from 'estree-walker'
+import { analyze } from 'periscopic'
 import colors from 'picocolors'
 import type { Plugin } from 'rolldown'
-import { walk as eswalk } from 'estree-walker'
 import { parseSync, type ESTree } from 'rolldown/utils'
-import { analyze } from 'periscopic'
 import { isFilePathESM, normalizePath, numberToPos } from './utils'
 
 export type NativeConfigIncompatibilityType =
@@ -179,7 +179,8 @@ function describeIncompatibility(
   item: NativeConfigIncompatibility,
   root: string,
 ): string {
-  const loc = `${normalizePath(path.relative(root, item.file))}:${item.line}`
+  // 1-based column so terminals can link `file:line:column` to the exact position
+  const loc = `${normalizePath(path.relative(root, item.file))}:${item.line}:${item.column + 1}`
   switch (item.type) {
     case 'dirname':
       return `\`__dirname\` (${loc}). Use \`import.meta.dirname\` instead`
@@ -219,7 +220,7 @@ export function createNativeConfigCompatPlugin(
     transform: {
       filter: {
         id: {
-          include: /\.[cm]?[jt]sx?$/,
+          include: jsTsExtRE,
           // exclude rolldown runtime
           exclude: /^\0/,
         },

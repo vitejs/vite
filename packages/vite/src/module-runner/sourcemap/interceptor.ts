@@ -1,8 +1,8 @@
 import type { OriginalMapping } from '@jridgewell/trace-mapping'
+import { slash } from '../../shared/utils'
+import type { EvaluatedModules } from '../evaluatedModules'
 import type { ModuleRunner } from '../runner'
 import { decodeBase64, posixDirname, posixResolve } from '../utils'
-import type { EvaluatedModules } from '../evaluatedModules'
-import { slash } from '../../shared/utils'
 import { DecodedMap, getOriginalPosition } from './decoder'
 
 interface RetrieveFileHandler {
@@ -330,7 +330,9 @@ function CallSiteToString(this: CallSite) {
 }
 
 function cloneCallSite(frame: CallSite) {
-  const object = {} as CallSite
+  // null prototype so assigning `constructor` below doesn't throw
+  // when user code has frozen `Object.prototype`
+  const object = Object.create(null) as CallSite
   Object.getOwnPropertyNames(Object.getPrototypeOf(frame)).forEach((name) => {
     const key = name as keyof CallSite
     // @ts-expect-error difficult to type

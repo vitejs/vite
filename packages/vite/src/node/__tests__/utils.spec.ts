@@ -1,9 +1,11 @@
-import fs from 'node:fs'
-import path from 'node:path'
 import crypto from 'node:crypto'
+import fs from 'node:fs'
 import os, { type NetworkInterfaceInfoIPv4 } from 'node:os'
-import { describe, expect, test, vi, onTestFinished } from 'vitest'
+import path from 'node:path'
 import { fileURLToPath } from 'mlly'
+import { describe, expect, test, vi, onTestFinished } from 'vitest'
+import type { CommonServerOptions, ResolvedServerUrls } from '..'
+import { isWindows } from '../../shared/utils'
 import {
   asyncFlatten,
   bareImportRE,
@@ -12,6 +14,7 @@ import {
   extractHostnamesFromSubjectAltName,
   flattenId,
   generateCodeFrame,
+  getFileStartIndex,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
   getServerUrlByHost,
@@ -26,8 +29,6 @@ import {
   resolveHostname,
   resolveServerUrls,
 } from '../utils'
-import { isWindows } from '../../shared/utils'
-import type { CommonServerOptions, ResolvedServerUrls } from '..'
 
 // Test certificate for SAN parsing (localhost, foo.localhost, *.vite.localhost)
 // Generate once:
@@ -455,6 +456,33 @@ foo()
   })
 })
 
+describe('getFileStartIndex', () => {
+  const LINE_TERMINATORS = {
+    LF: '\n',
+    CRLF: '\r\n',
+    CR: '\r',
+    'LINE SEPARATOR': '\u2028',
+    'PARAGRAPH SEPARATOR': '\u2029',
+  }
+  for (const [terminatorName, terminator] of Object.entries(LINE_TERMINATORS)) {
+    test(`returns the index after a hashbang ending in ${terminatorName}`, () => {
+      const hashbang = `#!/usr/bin/env node${terminator}`
+      expect(getFileStartIndex(`${hashbang}console.log(1)`)).toBe(
+        hashbang.length,
+      )
+    })
+  }
+
+  test('returns the end of an unterminated hashbang', () => {
+    const code = '#!/usr/bin/env node'
+    expect(getFileStartIndex(code)).toBe(code.length)
+  })
+
+  test('returns zero without a hashbang', () => {
+    expect(getFileStartIndex('console.log(1)')).toBe(0)
+  })
+})
+
 describe('getHash', () => {
   test('8-digit hex', () => {
     const hash = getHash(Buffer.alloc(0))
@@ -598,6 +626,18 @@ describe('processSrcSetSync', () => {
     `
     const result =
       'https://example.com/dpr_1,f_auto,fl_progressive,q_auto,w_100/v1/img 1x, https://example.com/dpr_2,f_auto,fl_progressive,q_auto,w_100/v1/img 2x'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should convert newline-separated srcset candidates to space-separated', async () => {
+    const source = 'asset.png\n1x,\nnested/asset.png\n2x'
+    const result = 'asset.png 1x, nested/asset.png 2x'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should convert CRLF-separated srcset candidates to space-separated', async () => {
+    const source = 'asset.png\r\n1x,\r\nnested/asset.png\r\n2x'
+    const result = 'asset.png 1x, nested/asset.png 2x'
     expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
   })
 
@@ -1152,6 +1192,68 @@ describe('resolveServerUrls', () => {
     )
 
     expect(result.network).toStrictEqual(['http://example.com:3000/'])
+    expect(result.networkInterfaceNames).toStrictEqual([undefined])
+  })
+
+  test('resolves interface name for an explicit host IP that matches a network interface', () => {
+    const mockServer = createMockServer('IPv4', '0.0.0.0')
+    const networkInterfacesSpy = vi
+      .spyOn(os, 'networkInterfaces')
+      .mockReturnValue({
+        lo: [
+          { address: '127.0.0.1', family: 'IPv4' } as NetworkInterfaceInfoIPv4,
+        ],
+        eth0: [
+          {
+            address: '192.168.1.10',
+            family: 'IPv4',
+          } as NetworkInterfaceInfoIPv4,
+        ],
+      })
+    onTestFinished(() => {
+      networkInterfacesSpy.mockRestore()
+    })
+
+    const result = resolveServerUrls(
+      mockServer,
+      { https: false } as any,
+      { host: '192.168.1.10', name: '192.168.1.10' } as any,
+      {},
+      { rawBase: '/' } as any,
+    )
+
+    expect(result.network).toStrictEqual(['http://192.168.1.10:3000/'])
+    expect(result.networkInterfaceNames).toStrictEqual(['eth0'])
+  })
+
+  test('uses undefined interface name when explicit host IP does not match any interface', () => {
+    const mockServer = createMockServer('IPv4', '0.0.0.0')
+    const networkInterfacesSpy = vi
+      .spyOn(os, 'networkInterfaces')
+      .mockReturnValue({
+        lo: [
+          { address: '127.0.0.1', family: 'IPv4' } as NetworkInterfaceInfoIPv4,
+        ],
+        eth0: [
+          {
+            address: '192.168.1.10',
+            family: 'IPv4',
+          } as NetworkInterfaceInfoIPv4,
+        ],
+      })
+    onTestFinished(() => {
+      networkInterfacesSpy.mockRestore()
+    })
+
+    const result = resolveServerUrls(
+      mockServer,
+      { https: false } as any,
+      { host: '10.0.0.5', name: '10.0.0.5' } as any,
+      {},
+      { rawBase: '/' } as any,
+    )
+
+    expect(result.network).toStrictEqual(['http://10.0.0.5:3000/'])
     expect(result.networkInterfaceNames).toStrictEqual([undefined])
   })
 })

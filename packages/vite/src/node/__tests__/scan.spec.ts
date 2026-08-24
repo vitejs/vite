@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
+import { createServer, createServerModuleRunner } from '..'
 import {
   commentRE,
   devToScanEnvironment,
@@ -7,8 +8,11 @@ import {
   scanImports,
   scriptRE,
 } from '../optimizer/scan'
-import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
-import { createServer, createServerModuleRunner } from '..'
+import {
+  multilineCommentsRE,
+  normalizePath,
+  singlelineCommentsRE,
+} from '../utils'
 
 describe('optimizer-scan:script-test', () => {
   const scriptContent = `import { defineComponent } from 'vue'
@@ -156,14 +160,17 @@ test('scan jsx-runtime', async (ctx) => {
       },
     },
   })
+  ctx.onTestFinished(() => server.close())
 
   // start server to ensure optimizer run
   await server.listen()
-  ctx.onTestFinished(() => server.close())
 
   const runner = createServerModuleRunner(server.environments.ssr, {
     hmr: { logger: false },
   })
+
+  // The dependency scan should be able to finish before the first request.
+  await server.environments.ssr.depsOptimizer?.scanProcessing
 
   // flush initial optimizer by importing any file
   await runner.import('./entry-no-jsx.js')
@@ -224,6 +231,41 @@ test('top-level input is used as the entry for dep scanning', async (ctx) => {
     logLevel: 'error',
     root: path.join(import.meta.dirname, 'fixtures', 'input-option'),
     input: 'entry.js',
+    optimizeDeps: {
+      force: true,
+      noDiscovery: false,
+    },
+  })
+  ctx.onTestFinished(() => server.close())
+
+  const { cancel, result } = scanImports(
+    devToScanEnvironment(server.environments.client),
+  )
+  ctx.onTestFinished(cancel)
+
+  const scanResult = await result
+  expect(scanResult.deps).toHaveProperty('vue')
+})
+
+test('top-level input can be resolved by a plugin for dep scanning', async (ctx) => {
+  const root = path.join(import.meta.dirname, 'fixtures', 'input-option')
+  const input = 'virtual:entry'
+  const server = await createServer({
+    configFile: false,
+    logLevel: 'error',
+    root,
+    input,
+    plugins: [
+      {
+        name: 'virtual-entry',
+        enforce: 'pre',
+        resolveId(id, _importer) {
+          if (id === input) {
+            return normalizePath(path.resolve(root, 'entry.js'))
+          }
+        },
+      },
+    ],
     optimizeDeps: {
       force: true,
       noDiscovery: false,

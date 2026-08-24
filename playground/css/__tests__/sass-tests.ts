@@ -1,5 +1,13 @@
 import { expect, test } from 'vitest'
-import { editFile, getBg, getColor, isBuild, page, viteTestUrl } from '~utils'
+import {
+  editFile,
+  getBg,
+  getColor,
+  isBuild,
+  isBundled,
+  page,
+  viteTestUrl,
+} from '~utils'
 
 export const sassTest = () => {
   test('sass', async () => {
@@ -28,31 +36,31 @@ export const sassTest = () => {
     expect(await getColor(imported)).toBe('orange')
     expect(await getColor(atImport)).toBe('olive')
     expect(await getBg(atImport)).toMatch(
-      isBuild ? /base64/ : '/nested/icon.png',
+      isBundled ? /base64/ : '/nested/icon.png',
     )
     expect(await getColor(atImportAlias)).toBe('olive')
     expect(await getBg(atImportAlias)).toMatch(
-      isBuild ? /base64/ : '/nested/icon.png',
+      isBundled ? /base64/ : '/nested/icon.png',
     )
     expect(await getColor(atImportRelative)).toBe('olive')
     expect(await getBg(atImportRelative)).toMatch(
-      isBuild ? /base64/ : '/nested/icon.png',
+      isBundled ? /base64/ : '/nested/icon.png',
     )
     expect(await getColor(atImportReplacementAlias)).toBe('olive')
     expect(await getBg(urlStartsWithVariable)).toMatch(
-      isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+      isBundled ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
     )
     expect(await getBg(urlStartsWithVariableInterpolation1)).toMatch(
-      isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+      isBundled ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
     )
     expect(await getBg(urlStartsWithVariableInterpolation2)).toMatch(
-      isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+      isBundled ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
     )
     expect(await getBg(urlStartsWithVariableConcat)).toMatch(
-      isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+      isBundled ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
     )
     expect(await getBg(urlStartsWithFunctionCall)).toMatch(
-      isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+      isBundled ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
     )
     expect(await getColor(partialImport)).toBe('orchid')
     expect(await getColor(await page.$('.sass-file-absolute'))).toBe('orange')

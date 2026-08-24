@@ -1,9 +1,15 @@
-import path from 'node:path'
 import crypto from 'node:crypto'
 import { createRequire } from 'node:module'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { build, normalizePath } from 'vite'
+import type {
+  PluginItem as BabelPlugin,
+  types as BabelTypes,
+} from '@babel/core'
+import browserslist from 'browserslist'
 import MagicString from 'magic-string'
+import colors from 'picocolors'
+import { build, normalizePath } from 'vite'
 import type {
   BuildOptions,
   HtmlTagDescriptor,
@@ -11,13 +17,6 @@ import type {
   ResolvedConfig,
   Rollup,
 } from 'vite'
-import type {
-  PluginItem as BabelPlugin,
-  types as BabelTypes,
-} from '@babel/core'
-import colors from 'picocolors'
-import browserslist from 'browserslist'
-import type { Options } from './types'
 import {
   createModernChunkLegacyGuard,
   detectModernBrowserCode,
@@ -27,6 +26,7 @@ import {
   safari10NoModuleFix,
   systemJSInlineCode,
 } from './snippets'
+import type { Options } from './types'
 
 // lazy load babel since it's not used during dev
 let babel: Promise<typeof import('@babel/core')> | undefined
@@ -538,6 +538,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           minify: resolveLegacyOutputMinify(
             config.build.minify,
             supportsLegacyOxcMinification,
+            // Don't use newer syntax for legacy chunks
+            'es2015',
           ),
         }
       }
@@ -721,7 +723,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         // The legacy bundle is built first, and its index.html isn't actually emitted if
         // modern bundle will be generated. Here we simply record its corresponding legacy chunk.
         facadeToLegacyChunkMap.set(chunk.facadeModuleId, chunk.fileName)
-        if (config.build.chunkImportMap) {
+        if (config.environments.client.build.chunkImportMap) {
           facadeToLegacyImportMap.set(
             chunk.facadeModuleId,
             bundle![getImportMapFilename(config)]! as Rollup.OutputAsset,
@@ -771,7 +773,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       // 2. inject importmaps
-      if (config.build.chunkImportMap) {
+      if (config.environments.client.build.chunkImportMap) {
         const importMap = facadeToLegacyImportMap.get(chunk.facadeModuleId)!
         const decoder = new TextDecoder()
         tags.push({

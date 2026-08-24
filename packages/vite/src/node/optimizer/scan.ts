@@ -2,18 +2,28 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
+import colors from 'picocolors'
+import type { PartialResolvedId, Plugin } from 'rolldown'
 import { scan } from 'rolldown/experimental'
 import type { TransformOptions as OxcTransformOptions } from 'rolldown/utils'
 import { transformSync } from 'rolldown/utils'
-import type { PartialResolvedId, Plugin } from 'rolldown'
-import colors from 'picocolors'
 import { glob } from 'tinyglobby'
+import { cleanUrl } from '../../shared/utils'
+import { BaseEnvironment } from '../baseEnvironment'
 import {
   CSS_LANGS_RE,
   JS_TYPES_RE,
   KNOWN_ASSET_TYPES,
   SPECIAL_QUERY_RE,
 } from '../constants'
+import { transformGlobImport } from '../plugins/importMetaGlob'
+import { getRollupJsxPresets } from '../plugins/oxc'
+import type { DevEnvironment } from '../server/environment'
+import type { EnvironmentPluginContainer } from '../server/pluginContainer'
+import {
+  ERR_CLOSED_SERVER,
+  createEnvironmentPluginContainer,
+} from '../server/pluginContainer'
 import {
   arraify,
   asyncFlatten,
@@ -31,16 +41,6 @@ import {
   virtualModulePrefix,
   virtualModuleRE,
 } from '../utils'
-import type { EnvironmentPluginContainer } from '../server/pluginContainer'
-import {
-  ERR_CLOSED_SERVER,
-  createEnvironmentPluginContainer,
-} from '../server/pluginContainer'
-import { BaseEnvironment } from '../baseEnvironment'
-import type { DevEnvironment } from '../server/environment'
-import { transformGlobImport } from '../plugins/importMetaGlob'
-import { cleanUrl } from '../../shared/utils'
-import { getRollupJsxPresets } from '../plugins/oxc'
 
 export class ScanEnvironment extends BaseEnvironment {
   mode = 'scan' as const
@@ -214,19 +214,13 @@ async function computeEntries(environment: ScanEnvironment) {
   let entries: string[] = []
 
   const explicitEntryPatterns = environment.config.optimizeDeps.entries
-  const buildInput =
+  const input =
     environment.config.input ?? environment.config.build.rolldownOptions.input
 
   if (explicitEntryPatterns) {
     entries = await globEntries(explicitEntryPatterns, environment)
-  } else if (buildInput) {
+  } else if (input) {
     const resolvePath = async (p: string) => {
-      if (environment.config.input) {
-        // input is already resolved in resolveConfig
-        return p
-      }
-      // `build.rollupOptions.input` is resolved from the root (not `process.cwd()`)
-      // by the build, so resolve it from the root here too by not passing an importer.
       const id = (
         await environment.pluginContainer.resolveId(p, undefined, {
           isEntry: true,
@@ -240,12 +234,12 @@ async function computeEntries(environment: ScanEnvironment) {
       }
       return id
     }
-    if (typeof buildInput === 'string') {
-      entries = [await resolvePath(buildInput)]
-    } else if (Array.isArray(buildInput)) {
-      entries = await Promise.all(buildInput.map(resolvePath))
-    } else if (isObject(buildInput)) {
-      entries = await Promise.all(Object.values(buildInput).map(resolvePath))
+    if (typeof input === 'string') {
+      entries = [await resolvePath(input)]
+    } else if (Array.isArray(input)) {
+      entries = await Promise.all(input.map(resolvePath))
+    } else if (isObject(input)) {
+      entries = await Promise.all(Object.values(input).map(resolvePath))
     } else {
       throw new Error('invalid rolldownOptions.input value.')
     }

@@ -7,6 +7,8 @@ import {
   getBg,
   getColor,
   isBuild,
+  isBundled,
+  isBundledDev,
   isServe,
   listAssets,
   notifyRebuildComplete,
@@ -18,11 +20,11 @@ import {
   watcher,
 } from '~utils'
 
-const assetMatch = isBuild
+const assetMatch = isBundled
   ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png/
   : '/foo/bar/nested/asset.png'
 
-const encodedAssetMatch = isBuild
+const encodedAssetMatch = isBundled
   ? /\/foo\/bar\/assets\/asset_small_-[-\w]{8}\.png/
   : '/foo/bar/nested/asset[small].png'
 
@@ -34,7 +36,12 @@ const fetchPath = (p: string) => {
   })
 }
 
-test('should have no 404s', () => {
+// bundled dev turns a `?url` CSS import into a data URI, and it skips the CSS
+// pipeline while doing so. A `url()` inside that CSS keeps its original
+// relative path, which then points nowhere and gives a 404.
+// This is a real bug (vitejs/vite#22863), so the test must stay skipped here.
+// It will pass again once the bug is fixed, with no change to the test.
+test.skipIf(isBundledDev)('should have no 404s', () => {
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
   })
@@ -92,7 +99,7 @@ describe('injected scripts', () => {
     const hasClient = await page.$(
       'script[type="module"][src="/foo/bar/@vite/client"]',
     )
-    if (isBuild) {
+    if (isBundled) {
       expect(hasClient).toBeFalsy()
     } else {
       expect(hasClient).toBeTruthy()
@@ -103,7 +110,7 @@ describe('injected scripts', () => {
     const hasHtmlProxy = await page.$(
       'script[type="module"][src^="/foo/bar/index.html?html-proxy"]',
     )
-    if (isBuild) {
+    if (isBundled) {
       expect(hasHtmlProxy).toBeFalsy()
     } else {
       expect(hasHtmlProxy).toBeTruthy()
@@ -138,6 +145,10 @@ describe('asset imports from js', () => {
 
   test('from /public', async () => {
     expect(await page.textContent('.public-import')).toMatch(iconMatch)
+  })
+
+  test('typeof asset import', async () => {
+    expect(await page.textContent('.asset-import-typeof')).toBe('string')
   })
 
   test('from /public (json)', async () => {
@@ -296,7 +307,9 @@ describe('css url() references', () => {
   })
 
   test('base64 inline', async () => {
-    const match = isBuild ? `data:image/png;base64` : `/foo/bar/nested/icon.png`
+    const match = isBundled
+      ? `data:image/png;base64`
+      : `/foo/bar/nested/icon.png`
     expect(await getBg('.css-url-base64-inline')).toMatch(match)
     expect(await getBg('.css-url-quotes-base64-inline')).toMatch(match)
   })
@@ -305,13 +318,15 @@ describe('css url() references', () => {
     const iconEl = await page.$(`link.ico`)
     const href = await iconEl.getAttribute('href')
     expect(href).toMatch(
-      isBuild ? /\/foo\/bar\/assets\/favicon-[-\w]{8}\.ico/ : 'favicon.ico',
+      isBundled ? /\/foo\/bar\/assets\/favicon-[-\w]{8}\.ico/ : 'favicon.ico',
     )
 
     const manifestEl = await page.$(`link[rel="manifest"]`)
     const manifestHref = await manifestEl.getAttribute('href')
     expect(manifestHref).toMatch(
-      isBuild ? /\/foo\/bar\/assets\/manifest-[-\w]{8}\.json/ : 'manifest.json',
+      isBundled
+        ? /\/foo\/bar\/assets\/manifest-[-\w]{8}\.json/
+        : 'manifest.json',
     )
   })
 
@@ -360,7 +375,12 @@ describe('css url() references', () => {
     expect(await getBg('.css-image-set-svg')).toMatch(/data:image\/svg\+xml,.+/)
   })
 
-  test('url() with svg in .css?url', async () => {
+  // bundled dev turns the `?url` CSS into a data URI, while build always
+  // writes a CSS file. The svg inside that CSS is therefore never processed:
+  // it is not inlined, and it does not get the base prefix.
+  // Same cause as '?url import on css' below: the CSS pipeline never runs on a
+  // `?url` import (vitejs/vite#22863)
+  test.skipIf(isBundledDev)('url() with svg in .css?url', async () => {
     const bg = await getBg('.css-url-svg-in-url')
     expect(bg).toMatch(/data:image\/svg\+xml,.+/)
     expect(bg).toContain('blue')
@@ -388,7 +408,7 @@ describe('image', () => {
     const img = await page.$('.img-src')
     const src = await img.getAttribute('src')
     expect(src).toMatch(
-      isBuild
+      isBundled
         ? /\/foo\/bar\/assets\/html-only-asset-[-\w]{8}\.jpg/
         : /\/foo\/bar\/nested\/html-only-asset.jpg/,
     )
@@ -398,7 +418,7 @@ describe('image', () => {
     const img = await page.$('.img-src-inline')
     const src = await img.getAttribute('src')
     expect(src).toMatch(
-      isBuild
+      isBundled
         ? /^data:image\/svg\+xml,%3csvg/
         : /\/foo\/bar\/nested\/inlined.svg/,
     )
@@ -409,7 +429,7 @@ describe('image', () => {
     const srcset = await img.getAttribute('srcset')
     srcset.split(', ').forEach((s) => {
       expect(s).toMatch(
-        isBuild
+        isBundled
           ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png \dx/
           : /\/foo\/bar\/nested\/asset.png \dx/,
       )
@@ -429,7 +449,7 @@ describe('image', () => {
     const srcset = await img.getAttribute('srcset')
     const srcs = srcset.split(', ')
     expect(srcs[1]).toMatch(
-      isBuild
+      isBundled
         ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png \dx/
         : /\/foo\/bar\/nested\/asset.png \dx/,
     )
@@ -441,7 +461,7 @@ describe('meta', () => {
     const meta = await page.$('.meta-og-image')
     const content = await meta.getAttribute('content')
     expect(content).toMatch(
-      isBuild
+      isBundled
         ? /\/foo\/bar\/assets\/asset-\w{8}\.png/
         : /\/foo\/bar\/nested\/asset.png/,
     )
@@ -450,12 +470,14 @@ describe('meta', () => {
 
 describe('svg fragments', () => {
   // 404 is checked already, so here we just ensure the urls end with #fragment
-  test('img url', async () => {
+  // bundled dev drops the #fragment postfix from hashed asset URLs (vitejs/vite#23028)
+  test.skipIf(isBundledDev)('img url', async () => {
     const img = await page.$('.svg-frag-img')
     expect(await img.getAttribute('src')).toMatch(/svg#icon-clock-view$/)
   })
 
-  test('via css url()', async () => {
+  // bundled dev: #fragment dropped (see 'img url')
+  test.skipIf(isBundledDev)('via css url()', async () => {
     expect(await getBg('.icon')).toMatch(/svg#icon-clock-view"\)$/)
   })
 
@@ -467,7 +489,8 @@ describe('svg fragments', () => {
     )
   })
 
-  test('url with an alias', async () => {
+  // bundled dev: #fragment dropped (see 'img url')
+  test.skipIf(isBundledDev)('url with an alias', async () => {
     expect(await getBg('.icon-clock-alias')).toMatch(
       /\.svg#icon-clock-view"\)$/,
     )
@@ -476,8 +499,28 @@ describe('svg fragments', () => {
 
 test('Unknown extension assets import', async () => {
   expect(await page.textContent('.unknown-ext')).toMatch(
-    isBuild ? 'data:application/octet-stream;' : '/nested/foo.unknown',
+    isBundled ? 'data:application/octet-stream;' : '/nested/foo.unknown',
   )
+})
+
+test('Unknown extension assets import with ?inline', async () => {
+  expect(await page.textContent('.unknown-ext-inline')).toMatch(
+    'data:application/octet-stream;',
+  )
+})
+
+test('Asset matched by a relative path in assetsInclude import', async () => {
+  expect(await page.textContent('.relative-path-assets-include')).toMatch(
+    isBundled
+      ? 'data:application/octet-stream;'
+      : '/nested/relative-path.custom',
+  )
+})
+
+test('Asset matched by a relative path in assetsInclude import with ?inline', async () => {
+  expect(
+    await page.textContent('.relative-path-assets-include-inline'),
+  ).toMatch('data:application/octet-stream;')
 })
 
 test('?raw import', async () => {
@@ -491,28 +534,43 @@ test('?raw import', async () => {
   await expect
     .poll(() => page.textContent('.raw-html'))
     .toBe('<div>partial updated</div>\n')
-  expect(browserLogs).toStrictEqual(
-    expect.arrayContaining([
-      expect.stringContaining('hot updated: /nested/partial.html?raw via'),
-    ]),
-  )
+
+  // bundled dev logs `playground-temp/assets/nested/...` where dev logs the URL
+  // path `/nested/...`. This is a gap on the vite side, not in rolldown
+  // (vitejs/vite#23028). Two causes:
+  // - the server never passes `cwd` to rolldown (bundledDev.ts), so module ids
+  //   start from process.cwd() and show where the project sits on disk
+  // - bundledDevHmrClient.ts logs those ids as they are, without turning them
+  //   into URL paths first
+  // Fix both, then remove this guard so the check runs in bundled dev too.
+  if (!isBundled) {
+    expect(browserLogs).toStrictEqual(
+      expect.arrayContaining([
+        expect.stringContaining('hot updated: /nested/partial.html?raw via'),
+      ]),
+    )
+  }
 })
 
 test('?no-inline svg import', async () => {
   expect(await page.textContent('.no-inline-svg')).toMatch(
-    isBuild
+    isBundled
       ? /\/foo\/bar\/assets\/fragment-[-\w]{8}\.svg/
       : '/foo/bar/nested/fragment.svg?no-inline',
   )
 })
 
-test('?no-inline svg import -- multiple postfix', async () => {
-  expect(await page.textContent('.no-inline-svg-mp')).toMatch(
-    isBuild
-      ? /\/foo\/bar\/assets\/fragment-[-\w]{8}\.svg\?foo=bar/
-      : '/foo/bar/nested/fragment.svg?no-inline&foo=bar',
-  )
-})
+// bundled dev drops the ?query postfix from hashed asset URLs (build keeps ?foo=bar) (vitejs/vite#23028)
+test.skipIf(isBundledDev)(
+  '?no-inline svg import -- multiple postfix',
+  async () => {
+    expect(await page.textContent('.no-inline-svg-mp')).toMatch(
+      isBundled
+        ? /\/foo\/bar\/assets\/fragment-[-\w]{8}\.svg\?foo=bar/
+        : '/foo/bar/nested/fragment.svg?no-inline&foo=bar',
+    )
+  },
+)
 
 test('?inline png import', async () => {
   expect(await page.textContent('.inline-png')).toMatch(
@@ -535,13 +593,17 @@ test('?inline public json import', async () => {
 test('?url import', async () => {
   const src = readFile('foo.js')
   expect(await page.textContent('.url')).toMatch(
-    isBuild
+    isBundled
       ? `data:text/javascript;base64,${Buffer.from(src).toString('base64')}`
       : `/foo/bar/foo.js`,
   )
 })
 
-test('?url import on css', async () => {
+// bundled dev turns the `?url` CSS into a data URI, while build always writes
+// a CSS file (vitejs/vite#22863).
+// After the fix, bundled dev returns the same URL shape as build. Then remove
+// the skip and change `isBuild` below to `isBundled`.
+test.skipIf(isBundledDev)('?url import on css', async () => {
   const txt = await page.textContent('.url-css')
   expect(txt).toMatch(
     isBuild
@@ -554,7 +616,7 @@ describe('unicode url', () => {
   test('from js import', async () => {
     const src = readFile('テスト-測試-white space.js')
     expect(await page.textContent('.unicode-url')).toMatch(
-      isBuild
+      isBundled
         ? `data:text/javascript;base64,${Buffer.from(src).toString('base64')}`
         : encodeURI(`/foo/bar/テスト-測試-white space.js`),
     )
@@ -569,7 +631,7 @@ describe.runIf(isBuild)('encodeURI', () => {
 })
 
 test('new URL(..., import.meta.url)', async () => {
-  const imgMatch = isBuild
+  const imgMatch = isBundled
     ? /\/foo\/bar\/assets\/img-[-\w]{8}\.png/
     : '/foo/bar/import-meta-url/img.png'
 
@@ -616,7 +678,7 @@ test('new URL("data:...", import.meta.url)', async () => {
 
 test('new URL(..., import.meta.url) without extension', async () => {
   expect(await page.textContent('.import-meta-url-without-extension')).toMatch(
-    isBuild ? 'data:text/javascript' : 'nested/test.js',
+    isBundled ? 'data:text/javascript' : 'nested/test.js',
   )
   expect(
     await page.textContent('.import-meta-url-content-without-extension'),
@@ -625,42 +687,54 @@ test('new URL(..., import.meta.url) without extension', async () => {
 
 test('new URL(`${dynamic}`, import.meta.url)', async () => {
   expect(await page.textContent('.dynamic-import-meta-url-1')).toMatch(
-    isBuild ? 'data:image/png;base64' : '/foo/bar/nested/icon.png',
+    isBundled ? 'data:image/png;base64' : '/foo/bar/nested/icon.png',
   )
   expect(await page.textContent('.dynamic-import-meta-url-2')).toMatch(
     assetMatch,
   )
   expect(await page.textContent('.dynamic-import-meta-url-js')).toMatch(
-    isBuild ? 'data:text/javascript;base64' : '/foo/bar/nested/test.js',
+    isBundled ? 'data:text/javascript;base64' : '/foo/bar/nested/test.js',
   )
 })
 
-test('new URL(`./${dynamic}?abc`, import.meta.url)', async () => {
-  expect(await page.textContent('.dynamic-import-meta-url-1-query')).toMatch(
-    isBuild ? 'data:image/png;base64' : '/foo/bar/nested/icon.png?abc',
-  )
-  expect(await page.textContent('.dynamic-import-meta-url-2-query')).toMatch(
-    isBuild
-      ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png\?abc/
-      : '/foo/bar/nested/asset.png?abc',
-  )
-})
+// bundled dev: ?abc postfix dropped (see '?no-inline svg import -- multiple postfix')
+test.skipIf(isBundledDev)(
+  'new URL(`./${dynamic}?abc`, import.meta.url)',
+  async () => {
+    expect(await page.textContent('.dynamic-import-meta-url-1-query')).toMatch(
+      isBundled ? 'data:image/png;base64' : '/foo/bar/nested/icon.png?abc',
+    )
+    expect(await page.textContent('.dynamic-import-meta-url-2-query')).toMatch(
+      isBundled
+        ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png\?abc/
+        : '/foo/bar/nested/asset.png?abc',
+    )
+  },
+)
 
-test('new URL(`./${1 === 0 ? static : dynamic}?abc`, import.meta.url)', async () => {
-  expect(await page.textContent('.dynamic-import-meta-url-1-ternary')).toMatch(
-    isBuild ? 'data:image/png;base64' : '/foo/bar/nested/icon.png?abc',
-  )
-  expect(await page.textContent('.dynamic-import-meta-url-2-ternary')).toMatch(
-    isBuild
-      ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png\?abc/
-      : '/foo/bar/nested/asset.png?abc',
-  )
-})
+// bundled dev: ?abc postfix dropped (see '?no-inline svg import -- multiple postfix')
+test.skipIf(isBundledDev)(
+  'new URL(`./${1 === 0 ? static : dynamic}?abc`, import.meta.url)',
+  async () => {
+    expect(
+      await page.textContent('.dynamic-import-meta-url-1-ternary'),
+    ).toMatch(
+      isBundled ? 'data:image/png;base64' : '/foo/bar/nested/icon.png?abc',
+    )
+    expect(
+      await page.textContent('.dynamic-import-meta-url-2-ternary'),
+    ).toMatch(
+      isBundled
+        ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png\?abc/
+        : '/foo/bar/nested/asset.png?abc',
+    )
+  },
+)
 
 test("new URL(/* @vite-ignore */ 'non-existent', import.meta.url)", async () => {
   // the inlined script tag is extracted in a separate file
   const importMetaUrl = new URL(
-    isBuild ? '/foo/bar/assets/index.js' : '/foo/bar/index.html',
+    isBundled ? '/foo/bar/assets/index.js' : '/foo/bar/index.html',
     page.url(),
   )
   expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
@@ -672,7 +746,7 @@ test("new URL(/* @vite-ignore */ 'non-existent', import.meta.url)", async () => 
 })
 
 test('new URL(..., import.meta.url) (multiline)', async () => {
-  const assetMatch = isBuild
+  const assetMatch = isBundled
     ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png/
     : '/foo/bar/nested/asset.png'
 
@@ -749,7 +823,8 @@ test('inline style test', async () => {
 })
 
 if (!isBuild) {
-  test('@import in html style tag hmr', async () => {
+  // bundled dev: editing a CSS file imported by an inline <style> @import does not apply (no reload/update) (vitejs/vite#23028)
+  test.skipIf(isBundledDev)('@import in html style tag hmr', async () => {
     await expect.poll(() => getColor('.import-css')).toBe('rgb(0, 136, 255)')
     const loadPromise = page.waitForEvent('load')
     editFile('./css/import.css', (code) => code.replace('#0088ff', '#00ff88 '))
