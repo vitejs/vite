@@ -1,17 +1,12 @@
 <!doctype html>
 <html>
   <body>
-    <div class="non-optimized-module"></div>
     <script
       type="module"
-      src="/node_modules/@vitejs/test-dep-non-optimized/entry.js"
+      src="/node_modules/test-browserhash-repro/index.js"
     ></script>
     <script type="module">
-      import '/node_modules/@vitejs/test-dep-non-optimized/entry.js'
-      import { get } from '/node_modules/@vitejs/test-dep-non-optimized/index.js'
-
-      document.querySelector('.non-optimized-module').textContent =
-        get().join(', ')
+      import 'test-browserhash-repro'
     </script>
   </body>
 </html>
