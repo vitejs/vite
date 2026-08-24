@@ -2,7 +2,6 @@ import path from 'node:path'
 import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import type { FooterLink } from '@voidzero-dev/vitepress-theme'
 import { extendConfig } from '@voidzero-dev/vitepress-theme/config'
-import { markdownItImageSize } from 'markdown-it-image-size'
 import type { HeadConfig } from 'vitepress'
 import { defineConfig } from 'vitepress'
 import { graphvizMarkdownPlugin } from 'vitepress-plugin-graphviz'
@@ -542,9 +541,6 @@ const config = defineConfig({
         titleBar: {
           includeSnippet: true,
         },
-      })
-      md.use(markdownItImageSize, {
-        publicDir: path.resolve(import.meta.dirname, '../public'),
       })
       await graphvizMarkdownPlugin(md)
     },
