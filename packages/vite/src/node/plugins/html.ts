@@ -1700,13 +1700,10 @@ export function getImportMapFilename(
   return 'importmap.json'
 }
 
-function getImportMapBaseUrl(options: ResolvedEnvironmentOptions): string {
-  const chunkImportMap =
-    options.build.rolldownOptions.experimental?.chunkImportMap
-  if (typeof chunkImportMap === 'object' && chunkImportMap.baseUrl) {
-    return chunkImportMap.baseUrl
-  }
-  return '/'
+function getImportMapBaseUrl(
+  options: ResolvedEnvironmentOptions & ResolvedConfig,
+): string {
+  return options.base ?? '/'
 }
 
 /**
