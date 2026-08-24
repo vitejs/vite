@@ -1,59 +1,42 @@
+import crypto from 'node:crypto'
 import fs from 'node:fs'
-import path from 'node:path'
 import fsp from 'node:fs/promises'
+import { createRequire } from 'node:module'
+import path from 'node:path'
+import { performance } from 'node:perf_hooks'
 import { pathToFileURL } from 'node:url'
 import { inspect, promisify } from 'node:util'
-import { performance } from 'node:perf_hooks'
-import { createRequire } from 'node:module'
-import crypto from 'node:crypto'
+import type {
+  DevToolsConfig,
+  ResolvedDevToolsConfig,
+} from '@vitejs/devtools/config'
 import {
   getEnv,
   ignoreInput,
   ignoreOutput,
 } from '@voidzero-dev/vite-task-client'
+import { freshImport } from 'fresh-import'
 import colors from 'picocolors'
 import picomatch from 'picomatch'
-import { freshImport } from 'fresh-import'
 import {
+  type InputOption,
   type NormalizedOutputOptions,
   type OutputChunk,
   type PluginContextMeta,
   type RolldownOptions,
+  type RolldownOutput,
   rolldown,
 } from 'rolldown'
-import type {
-  DevToolsConfig,
-  ResolvedDevToolsConfig,
-} from '@vitejs/devtools/config'
+import { isDynamicPattern } from 'tinyglobby'
 import type { Alias, AliasOptions } from '#dep-types/alias'
-import type { AnymatchFn } from '../types/anymatch'
-import { withTrailingSlash } from '../shared/utils'
 import {
   createImportMetaResolver,
   importMetaResolveWithCustomHookString,
 } from '../module-runner/importMetaResolver'
-import {
-  CLIENT_ENTRY,
-  DEFAULT_ASSETS_RE,
-  DEFAULT_CLIENT_CONDITIONS,
-  DEFAULT_CLIENT_MAIN_FIELDS,
-  DEFAULT_CONFIG_FILES,
-  DEFAULT_EXTENSIONS,
-  DEFAULT_EXTERNAL_CONDITIONS,
-  DEFAULT_PREVIEW_PORT,
-  DEFAULT_SERVER_CONDITIONS,
-  DEFAULT_SERVER_MAIN_FIELDS,
-  ENV_ENTRY,
-  FS_PREFIX,
-} from './constants'
-import { resolveEnvironmentPlugins } from './plugin'
-import type {
-  FalsyPlugin,
-  HookHandler,
-  Plugin,
-  PluginOption,
-  PluginWithRequiredHook,
-} from './plugin'
+import { withTrailingSlash } from '../shared/utils'
+import type { AnymatchFn } from '../types/anymatch'
+import type { HtmlAssetSource } from './assetSource'
+import { PartialEnvironment } from './baseEnvironment'
 import type {
   BuildEnvironmentOptions,
   BuilderOptions,
@@ -68,25 +51,85 @@ import {
   resolveBuildEnvironmentOptions,
   resolveBuilderOptions,
 } from './build'
-import type { ResolvedServerOptions, ServerOptions } from './server'
-import { resolveServerOptions, serverConfigDefaults } from './server'
-import { DevEnvironment } from './server/environment'
-import { createRunnableDevEnvironment } from './server/environments/runnableEnvironment'
-import type { WebSocketServer } from './server/ws'
-import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
-import { resolvePreviewOptions } from './preview'
+import {
+  CLIENT_ENTRY,
+  DEFAULT_ASSETS_RE,
+  DEFAULT_CLIENT_CONDITIONS,
+  DEFAULT_CLIENT_MAIN_FIELDS,
+  DEFAULT_CONFIG_FILES,
+  DEFAULT_EXTENSIONS,
+  DEFAULT_EXTERNAL_CONDITIONS,
+  DEFAULT_PREVIEW_PORT,
+  DEFAULT_SERVER_CONDITIONS,
+  DEFAULT_SERVER_MAIN_FIELDS,
+  ENV_ENTRY,
+  FS_PREFIX,
+} from './constants'
+import { loadEnv, resolveEnvPrefix } from './env'
+import { createIdResolver } from './idResolver'
+import type { LogLevel, Logger } from './logger'
+import { createLogger } from './logger'
+import {
+  createNativeConfigCompatPlugin,
+  formatNativeConfigIncompatWarning,
+  type NativeConfigIncompatibility,
+} from './nativeConfigCompat'
+import { nodeResolveWithVite } from './nodeResolve'
+import type { DepOptimizationOptions } from './optimizer'
+import { convertEsbuildPluginToRolldownPlugin } from './optimizer/pluginConverter'
+import type { PackageCache } from './packages'
+import { findNearestNodeModules, findNearestPackageData } from './packages'
+import { resolveEnvironmentPlugins } from './plugin'
+import type {
+  FalsyPlugin,
+  HookHandler,
+  Plugin,
+  PluginOption,
+  PluginWithRequiredHook,
+} from './plugin'
+import {
+  createPluginHookUtils,
+  getHookHandler,
+  getSortedPluginsByHook,
+  resolvePlugins,
+} from './plugins'
 import {
   type CSSOptions,
   type ResolvedCSSOptions,
   cssConfigDefaults,
   resolveCSSOptions,
 } from './plugins/css'
+import type { ESBuildOptions } from './plugins/esbuild'
+import type { JsonOptions } from './plugins/json'
+import { type OxcOptions, convertEsbuildConfigToOxcConfig } from './plugins/oxc'
+import {
+  type EnvironmentResolveOptions,
+  type InternalResolveOptions,
+  type ResolveOptions,
+} from './plugins/resolve'
+import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
+import { resolvePreviewOptions } from './preview'
+import type { ResolvedServerOptions, ServerOptions } from './server'
+import { resolveServerOptions, serverConfigDefaults } from './server'
+import { DevEnvironment } from './server/environment'
+import { createRunnableDevEnvironment } from './server/environments/runnableEnvironment'
+import { getAdditionalAllowedHosts } from './server/middlewares/hostCheck'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from './server/pluginContainer'
+import type { WebSocketServer } from './server/ws'
+import type { ResolvedSSROptions, SSROptions } from './ssr'
+import { resolveSSROptions, ssrConfigDefaults } from './ssr'
+import { runnerImport } from './ssr/runnerImport'
+import type { RequiredExceptFor } from './typeUtils'
 import {
   arraify,
   asyncFlatten,
   createDebugger,
   createFilter,
   deepClone,
+  getFileStartIndex,
   hasBothRollupOptionsAndRolldownOptions,
   isExternalUrl,
   isFilePathESM,
@@ -95,6 +138,7 @@ import {
   isNodeLikeBuiltin,
   isObject,
   isParentDirectory,
+  lineTerminatorRE,
   mergeAlias,
   mergeConfig,
   mergeWithDefaults,
@@ -102,42 +146,9 @@ import {
   normalizeAlias,
   normalizePath,
   resolveHostname,
+  safeRealpathSync,
   setupRollupOptionCompat,
 } from './utils'
-import {
-  createPluginHookUtils,
-  getHookHandler,
-  getSortedPluginsByHook,
-  resolvePlugins,
-} from './plugins'
-import type { ESBuildOptions } from './plugins/esbuild'
-import {
-  type EnvironmentResolveOptions,
-  type InternalResolveOptions,
-  type ResolveOptions,
-} from './plugins/resolve'
-import type { LogLevel, Logger } from './logger'
-import { createLogger } from './logger'
-import type { DepOptimizationOptions } from './optimizer'
-import type { JsonOptions } from './plugins/json'
-import type { HtmlAssetSource } from './assetSource'
-import type { PackageCache } from './packages'
-import { findNearestNodeModules, findNearestPackageData } from './packages'
-import { loadEnv, resolveEnvPrefix } from './env'
-import type { ResolvedSSROptions, SSROptions } from './ssr'
-import { resolveSSROptions, ssrConfigDefaults } from './ssr'
-import { PartialEnvironment } from './baseEnvironment'
-import { createIdResolver } from './idResolver'
-import { runnerImport } from './ssr/runnerImport'
-import { getAdditionalAllowedHosts } from './server/middlewares/hostCheck'
-import { convertEsbuildPluginToRolldownPlugin } from './optimizer/pluginConverter'
-import { type OxcOptions, convertEsbuildConfigToOxcConfig } from './plugins/oxc'
-import type { RequiredExceptFor } from './typeUtils'
-import {
-  BasicMinimalPluginContext,
-  basePluginContextMeta,
-} from './server/pluginContainer'
-import { nodeResolveWithVite } from './nodeResolve'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -280,6 +291,12 @@ type ResolvedAllResolveOptions = Required<ResolveOptions> & { alias: Alias[] }
 
 export interface SharedEnvironmentOptions {
   /**
+   * Entry points of the application.
+   *
+   * Paths are resolved relative to the project root.
+   */
+  input?: InputOption
+  /**
    * Define global variable replacements.
    * Entries will be defined on `window` during dev and replaced during build.
    */
@@ -329,6 +346,7 @@ export interface EnvironmentOptions extends SharedEnvironmentOptions {
 export type ResolvedResolveOptions = Required<ResolveOptions>
 
 export type ResolvedEnvironmentOptions = {
+  input?: InputOption
   define?: Record<string, any>
   resolve: ResolvedResolveOptions
   consumer: 'client' | 'server'
@@ -376,7 +394,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    * the performance. You can use `--force` flag or manually delete the directory
    * to regenerate the cache files. The value can be either an absolute file
    * system path or a path relative to project root.
-   * Default to `.vite` when no `package.json` is detected.
+   * Default to `.vite` when neither a `package.json` nor a `node_modules` directory is detected.
    * @default 'node_modules/.vite'
    */
   cacheDir?: string
@@ -603,6 +621,14 @@ export interface ExperimentalOptions {
    * can override its `isBundled` value via `environments[name].isBundled`.
    *
    * This is highly experimental.
+   *
+   * HMR semantics under full bundle mode differ from the middleware-based dev server
+   * in two ways (boundaries are computed in the browser from runtime state, not
+   * statically on the server):
+   *
+   * - Acceptance counts only when it executed: an `import.meta.hot.accept()` that
+   *   is in a dead branch does not suppress the update and falls back to a full reload.
+   * - `hot.invalidate()` is handled fully client-side.
    *
    * @experimental
    * @default false
@@ -900,6 +926,39 @@ const configDefaults = Object.freeze({
   appType: 'spa',
 } satisfies UserConfig)
 
+function normalizeInput(
+  input: InputOption | undefined,
+): InputOption | undefined {
+  if (input === undefined) {
+    return undefined
+  }
+  if (typeof input === 'string') {
+    return unescapeGlobCharacters(input)
+  }
+  if (Array.isArray(input)) {
+    return input.map(unescapeGlobCharacters)
+  }
+  const resolved: Record<string, string> = {}
+  for (const key in input) {
+    resolved[key] = unescapeGlobCharacters(input[key])
+  }
+  return resolved
+}
+
+const escapedGlobCharactersRE = /\\([*?[\]{}()!+@|])/g
+
+function unescapeGlobCharacters(value: string): string {
+  if (isDynamicPattern(value)) {
+    // so that it could later be changed to accept globs without a breaking change
+    throw new Error(
+      `\`input\` cannot contain glob characters. They are reserved, ` +
+        `so the ${JSON.stringify(value)} is not allowed. Please escape them with a backslash (\\)`,
+    )
+  }
+  // unescape glob characters
+  return value.replace(escapedGlobCharactersRE, '$1')
+}
+
 export function resolveDevEnvironmentOptions(
   dev: DevEnvironmentOptions | undefined,
   environmentName: string | undefined,
@@ -981,6 +1040,7 @@ function resolveEnvironmentOptions(
     isSsrTargetWebworkerEnvironment,
   )
   return {
+    input: normalizeInput(options.input),
     define: options.define,
     resolve,
     keepProcessEnv:
@@ -1005,6 +1065,7 @@ function resolveEnvironmentOptions(
       logger,
       consumer,
       isBundled && !isBuild,
+      options.input,
       isSsrTargetWebworkerEnvironment,
     ),
     isBundled,
@@ -1537,9 +1598,15 @@ export async function resolveConfig(
   }
 
   // resolve root
-  const resolvedRoot = normalizePath(
-    config.root ? path.resolve(config.root) : process.cwd(),
-  )
+  let nonNormalizedResolvedRoot = config.root
+    ? path.resolve(config.root)
+    : process.cwd()
+  if (!config.resolve?.preserveSymlinks) {
+    try {
+      nonNormalizedResolvedRoot = safeRealpathSync(nonNormalizedResolvedRoot)
+    } catch {}
+  }
+  const resolvedRoot = normalizePath(nonNormalizedResolvedRoot)
 
   checkBadCharactersInPath(
     'The project root',
@@ -1607,6 +1674,7 @@ export async function resolveConfig(
   // Some top level options only apply to the client environment
   const defaultClientEnvironmentOptions: UserConfig = {
     ...defaultEnvironmentOptions,
+    input: config.input,
     resolve: config.resolve, // inherit everything including mainFields and conditions
     optimizeDeps: config.optimizeDeps,
   }
@@ -1686,6 +1754,7 @@ export async function resolveConfig(
     logger,
     undefined,
     isBundledDev,
+    config.input,
   )
 
   // Backward compatibility: merge config.environments.ssr back into config.ssr
@@ -1793,6 +1862,7 @@ export async function resolveConfig(
         )
       : ''
 
+  const input = normalizeInput(config.input)
   const server = await resolveServerOptions(resolvedRoot, config.server, logger)
 
   const builder = resolveBuilderOptions(config.builder)
@@ -2037,6 +2107,7 @@ export async function resolveConfig(
 
     ssr,
 
+    input,
     optimizeDeps: backwardCompatibleOptimizeDeps,
     resolve: resolvedDefaultResolve,
     dev: resolvedDevEnvironmentOptions,
@@ -2341,13 +2412,16 @@ export async function loadConfigFromFile(
   }
 
   try {
-    const resolver =
-      configLoader === 'bundle'
-        ? bundleAndLoadConfigFile
-        : configLoader === 'runner'
-          ? runnerImportConfigFile
-          : nativeImportConfigFile
-    const { configExport, dependencies } = await resolver(resolvedPath)
+    const { configExport, dependencies } = await (configLoader === 'bundle'
+      ? bundleAndLoadConfigFile(
+          resolvedPath,
+          configRoot,
+          logLevel,
+          customLogger,
+        )
+      : configLoader === 'runner'
+        ? runnerImportConfigFile(resolvedPath)
+        : nativeImportConfigFile(resolvedPath))
     debug?.(`config file loaded in ${getTime()}`)
 
     const config = await (typeof configExport === 'function'
@@ -2401,7 +2475,12 @@ async function runnerImportConfigFile(resolvedPath: string) {
   }
 }
 
-async function bundleAndLoadConfigFile(resolvedPath: string) {
+async function bundleAndLoadConfigFile(
+  resolvedPath: string,
+  configRoot: string,
+  logLevel: LogLevel | undefined,
+  customLogger: Logger | undefined,
+) {
   const isESM =
     typeof process.versions.deno === 'string' || isFilePathESM(resolvedPath)
 
@@ -2412,16 +2491,30 @@ async function bundleAndLoadConfigFile(resolvedPath: string) {
     isESM,
   )
 
+  if (bundled.nativeIncompatibilities.length > 0) {
+    const logger = createLogger(logLevel, { customLogger })
+    logger.warn(
+      formatNativeConfigIncompatWarning(
+        bundled.nativeIncompatibilities,
+        configRoot,
+      ),
+    )
+  }
+
   return {
     configExport: userConfig,
     dependencies: bundled.dependencies,
   }
 }
 
-async function bundleConfigFile(
+export async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
-): Promise<{ code: string; dependencies: string[] }> {
+): Promise<{
+  code: string
+  dependencies: string[]
+  nativeIncompatibilities: NativeConfigIncompatibility[]
+}> {
   let importMetaResolverRegistered = false
 
   const root = path.dirname(fileName)
@@ -2431,6 +2524,9 @@ async function bundleConfigFile(
   const importMetaResolveVarName =
     '__vite_injected_original_import_meta_resolve'
   const importMetaResolveRegex = /import\.meta\s*\.\s*resolve/
+  const configFileRegex = /\.[cm]?[jt]s$/
+
+  const nativeIncompatibilities: NativeConfigIncompatibility[] = []
 
   const bundle = await rolldown({
     input: fileName,
@@ -2456,6 +2552,8 @@ async function bundleConfigFile(
     // this also aligns with other config loader behaviors
     tsconfig: false,
     plugins: [
+      !process.env.VITE_CONFIG_NATIVE_IGNORE_WARNING &&
+        createNativeConfigCompatPlugin(nativeIncompatibilities),
       {
         name: 'externalize-deps',
         resolveId: {
@@ -2513,7 +2611,7 @@ async function bundleConfigFile(
       {
         name: 'inject-file-scope-variables',
         transform: {
-          filter: { id: /\.[cm]?[jt]s$/ },
+          filter: { id: configFileRegex },
           handler(code, id) {
             let injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(path.dirname(id))};` +
@@ -2535,13 +2633,13 @@ async function bundleConfigFile(
 
             let injectedContents: string
             if (code.startsWith('#!')) {
-              // hashbang
-              let firstLineEndIndex = code.indexOf('\n')
-              if (firstLineEndIndex < 0) firstLineEndIndex = code.length
+              const fileStartIndex = getFileStartIndex(code)
+              const hashbang = code.slice(0, fileStartIndex)
               injectedContents =
-                code.slice(0, firstLineEndIndex + 1) +
+                hashbang +
+                (lineTerminatorRE.test(hashbang) ? '' : '\n') +
                 injectValues +
-                code.slice(firstLineEndIndex + 1)
+                code.slice(fileStartIndex)
             } else {
               injectedContents = injectValues + code
             }
@@ -2555,16 +2653,20 @@ async function bundleConfigFile(
       },
     ],
   })
-  const result = await bundle.generate({
-    format: isESM ? 'esm' : 'cjs',
-    sourcemap: 'inline',
-    sourcemapPathTransform(relative) {
-      return path.resolve(fileName, relative)
-    },
-    // we want to generate a single chunk like esbuild does with `splitting: false`
-    codeSplitting: false,
-  })
-  await bundle.close()
+  let result: RolldownOutput
+  try {
+    result = await bundle.generate({
+      format: isESM ? 'esm' : 'cjs',
+      sourcemap: 'inline',
+      sourcemapPathTransform(relative, sourcemapPath) {
+        return path.resolve(path.dirname(sourcemapPath), relative)
+      },
+      // we want to generate a single chunk like esbuild does with `splitting: false`
+      codeSplitting: false,
+    })
+  } finally {
+    await bundle.close()
+  }
 
   const entryChunk = result.output.find(
     (chunk): chunk is OutputChunk => chunk.type === 'chunk' && chunk.isEntry,
@@ -2580,6 +2682,7 @@ async function bundleConfigFile(
     code: entryChunk.code,
     // exclude `\x00rolldown/runtime.js`
     dependencies: [...allModules].filter((m) => !m.startsWith('\0')),
+    nativeIncompatibilities,
   }
 }
 

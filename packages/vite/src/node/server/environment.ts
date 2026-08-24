@@ -1,42 +1,43 @@
+import path from 'node:path'
 import colors from 'picocolors'
 import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
 import type { FSWatcher } from '#dep-types/chokidar'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
+import { cleanUrl, promiseWithResolvers, unwrapId } from '../../shared/utils'
 import { BaseEnvironment } from '../baseEnvironment'
 import type {
   EnvironmentOptions,
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from '../config'
-import { mergeConfig, monotonicDateNow } from '../utils'
-import { fetchModule } from '../ssr/fetchModule'
 import type { DepsOptimizer } from '../optimizer'
 import { isDepOptimizationDisabled } from '../optimizer'
 import {
   createDepsOptimizer,
   createExplicitDepsOptimizer,
 } from '../optimizer/optimizer'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
-import { promiseWithResolvers } from '../../shared/utils'
 import type { ViteDevServer } from '../server'
-import { EnvironmentModuleGraph } from './moduleGraph'
-import type { EnvironmentModuleNode } from './moduleGraph'
+import { fetchModule } from '../ssr/fetchModule'
+import { mergeConfig, monotonicDateNow } from '../utils'
+import { BundledDev } from './bundledDev'
 import type {
   HotChannel,
   NormalizedHotChannel,
   NormalizedHotChannelClient,
 } from './hmr'
 import { getShortName, normalizeHotChannel, updateModules } from './hmr'
-import type { TransformResult } from './transformRequest'
-import { transformRequest } from './transformRequest'
+import { buildErrorMessage } from './middlewares/error'
+import { EnvironmentModuleGraph } from './moduleGraph'
+import type { EnvironmentModuleNode } from './moduleGraph'
 import type { EnvironmentPluginContainer } from './pluginContainer'
 import {
   ERR_CLOSED_SERVER,
   createEnvironmentPluginContainer,
 } from './pluginContainer'
-import { type WebSocketServer, isWebSocketServer } from './ws'
+import type { TransformResult } from './transformRequest'
+import { transformRequest } from './transformRequest'
 import { warmupFiles } from './warmup'
-import { buildErrorMessage } from './middlewares/error'
-import { BundledDev } from './bundledDev'
+import { type WebSocketServer, isWebSocketServer } from './ws'
 
 export interface DevEnvironmentContext {
   hot: boolean
@@ -175,7 +176,7 @@ export class DevEnvironment extends BaseEnvironment {
       ({ path, message, firstInvalidatedBy }, client) => {
         this.invalidateModule(
           {
-            path,
+            path: unwrapId(path),
             message,
             firstInvalidatedBy,
           },
@@ -218,6 +219,47 @@ export class DevEnvironment extends BaseEnvironment {
       this.config.plugins,
       options?.watcher,
     )
+  }
+
+  /** @internal */
+  async _registerInputsAsSafeModules(): Promise<void> {
+    const input = this.config.input
+    const entries =
+      input == null
+        ? ['index.html']
+        : typeof input === 'string'
+          ? [input]
+          : Array.isArray(input)
+            ? input
+            : Object.values(input)
+
+    const resolveEntries = async () => {
+      const resolvedEntries = await Promise.all(
+        entries.map((entry) =>
+          this.pluginContainer.resolveId(entry, undefined, {
+            isEntry: true,
+            // Avoid a deadlock when the dependency scanner triggers the first
+            // buildStart. Normal resolution waits for the scan to finish,
+            // while the scan is waiting for buildStart to finish.
+            scan: true,
+          }),
+        ),
+      )
+      for (const resolved of resolvedEntries) {
+        if (resolved && !resolved.external) {
+          const resolvedId = cleanUrl(resolved.id)
+          if (path.isAbsolute(resolvedId)) {
+            this.getTopLevelConfig().safeModulePaths.add(resolvedId)
+          }
+        }
+      }
+    }
+
+    if (input == null) {
+      await resolveEntries().catch(() => {})
+    } else {
+      await resolveEntries()
+    }
   }
 
   /**
@@ -295,7 +337,7 @@ export class DevEnvironment extends BaseEnvironment {
     _client: NormalizedHotChannelClient,
   ): void {
     if (this.bundledDev) {
-      this.bundledDev.invalidateModule(m, _client)
+      // full-bundle mode handles `import.meta.hot.invalidate()` fully client-side
       return
     }
 
@@ -329,8 +371,7 @@ export class DevEnvironment extends BaseEnvironment {
 
     this._crawlEndFinder.cancel()
     await Promise.allSettled([
-      this.pluginContainer.close(),
-      this.bundledDev?.close(),
+      this.bundledDev ? this.bundledDev.close() : this.pluginContainer.close(),
       this.depsOptimizer?.close(),
       // WebSocketServer is independent of HotChannel and should not be closed on environment close
       isWebSocketServer in this.hot ? Promise.resolve() : this.hot.close(),

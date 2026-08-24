@@ -40,7 +40,7 @@ function CountTransformedModulesPlugin() {
 
 If we instead want to count the number of transformed modules for each environment, we need to keep a map:
 
-```js
+```ts
 function PerEnvironmentCountTransformedModulesPlugin() {
   const state = new Map<Environment, { count: number }>()
   return {
@@ -48,20 +48,20 @@ function PerEnvironmentCountTransformedModulesPlugin() {
     perEnvironmentStartEndDuringDev: true,
     buildStart() {
       state.set(this.environment, { count: 0 })
-    }
+    },
     transform(id) {
       state.get(this.environment).count++
     },
     buildEnd() {
       console.log(this.environment.name, state.get(this.environment).count)
-    }
+    },
   }
 }
 ```
 
 To simplify this pattern, Vite exports a `perEnvironmentState` helper:
 
-```js
+```ts
 function PerEnvironmentCountTransformedModulesPlugin() {
   const state = perEnvironmentState<{ count: number }>(() => ({ count: 0 }))
   return {
@@ -69,13 +69,13 @@ function PerEnvironmentCountTransformedModulesPlugin() {
     perEnvironmentStartEndDuringDev: true,
     buildStart() {
       state(this).count = 0
-    }
+    },
     transform(id) {
       state(this).count++
     },
     buildEnd() {
       console.log(this.environment.name, state(this).count)
-    }
+    },
   }
 }
 ```

@@ -1,5 +1,5 @@
-import { fileURLToPath } from 'node:url'
 import assert from 'node:assert'
+import { fileURLToPath } from 'node:url'
 import { createServer, createServerModuleRunner } from 'vite'
 
 // same test case as packages/vite/src/node/ssr/runtime/__tests__/server-source-maps.spec.ts

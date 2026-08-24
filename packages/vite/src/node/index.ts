@@ -146,6 +146,7 @@ export type {
   ResolvedServerUrls,
   HttpServer,
 } from './server'
+export type { ServerWatchOptions } from './watch'
 export type {
   ViteBuilder,
   BuildAppHook,
@@ -200,6 +201,7 @@ export type {
   CSSModulesOptions,
   PreprocessCSSResult,
   ResolvedCSSOptions,
+  PostcssUserConfig,
   SassPreprocessorOptions,
   LessPreprocessorOptions,
   StylusPreprocessorOptions,

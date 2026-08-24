@@ -65,7 +65,7 @@ You can further customize Rolldown too with the [`optimizeDeps.rolldownOptions` 
 
 Vite caches the pre-bundled dependencies in `node_modules/.vite`. It determines whether it needs to re-run the pre-bundling step based on a few sources:
 
-- Package manager lockfile content, e.g. `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml` or `bun.lock`.
+- Package manager lockfile content, e.g. `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `bun.lock`, `aube-lock.yaml` or `nub.lock`.
 - Patches folder modification time.
 - Relevant fields in your `vite.config.js`, if present.
 - `NODE_ENV` value.

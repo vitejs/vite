@@ -1,15 +1,6 @@
+import EventEmitter from 'node:events'
 import fs from 'node:fs'
 import { posix, resolve } from 'node:path'
-import EventEmitter from 'node:events'
-import {
-  afterAll,
-  beforeAll,
-  describe,
-  expect,
-  onTestFinished,
-  test,
-  vi,
-} from 'vitest'
 import type {
   InlineConfig,
   Plugin,
@@ -19,10 +10,20 @@ import type {
 import { createRunnableDevEnvironment, createServer } from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
 import {
+  afterAll,
+  beforeAll,
+  describe,
+  expect,
+  onTestFinished,
+  test,
+  vi,
+} from 'vitest'
+import {
   addFile,
   createInMemoryLogger,
   editFile,
   isBuild,
+  isBundledDev,
   promiseWithResolvers,
   readFile,
   removeFile,
@@ -113,6 +114,38 @@ describe.skipIf(isBuild)('hmr works correctly', () => {
       true,
     )
     await expect.poll(() => el()).toMatch('3')
+  })
+
+  test('hot data persists across module instances', async () => {
+    await untilConsoleLogAfter(
+      () =>
+        editFile('hotData.js', (code) =>
+          code.replace('const value = 1', 'const value = 2 '),
+        ),
+      [
+        '>>> vite:beforeUpdate -- update',
+        '(hot data) value from execution: 1',
+        '(hot data) value from dispose: 1',
+        updated('/hotData.js'),
+        '>>> vite:afterUpdate -- update',
+      ],
+      true,
+    )
+
+    await untilConsoleLogAfter(
+      () =>
+        editFile('hotData.js', (code) =>
+          code.replace('const value = 2', 'const value = 3  '),
+        ),
+      [
+        '>>> vite:beforeUpdate -- update',
+        '(hot data) value from execution: 2',
+        '(hot data) value from dispose: 2',
+        updated('/hotData.js'),
+        '>>> vite:afterUpdate -- update',
+      ],
+      true,
+    )
   })
 
   test('accept dep', async () => {
@@ -789,13 +822,15 @@ test('should hmr when file is deleted and restored', async () => {
     .toMatch('parent:not-child')
 
   // restore the file
-  addFile(childFile, originalChildFileCode)
-  editFile(parentFile, (code) =>
-    code.replace(
-      "export const childValue = 'not-child'",
-      "export { value as childValue } from './child'",
-    ),
-  )
+  await untilConsoleLogAfter(() => {
+    addFile(childFile, originalChildFileCode)
+    editFile(parentFile, (code) =>
+      code.replace(
+        "export const childValue = 'not-child'",
+        "export { value as childValue } from './child'",
+      ),
+    )
+  }, 'file-delete-restore/child.js hot data after prune: undefined')
   await expect.poll(() => hmr('.file-delete-restore')).toMatch('parent:child')
 })
 
@@ -1151,6 +1186,9 @@ async function setupModuleRunner(
       disabled: true,
       noDiscovery: true,
       include: [],
+    },
+    experimental: {
+      bundledDev: isBundledDev,
     },
     ...serverOptions,
   })

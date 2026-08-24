@@ -3,6 +3,14 @@ import { rerender } from './runtime'
 export const value = 'child'
 
 if (import.meta.hot) {
+  if (globalThis.__vite_file_delete_restore_child_pruned) {
+    log(
+      `file-delete-restore/child.js hot data after prune: ${import.meta.hot.data.persisted}`,
+    )
+    delete globalThis.__vite_file_delete_restore_child_pruned
+  }
+  import.meta.hot.data.persisted = true
+
   import.meta.hot.accept((newMod) => {
     if (!newMod) return
 
@@ -15,5 +23,6 @@ if (import.meta.hot) {
 
   import.meta.hot.prune(() => {
     log('file-delete-restore/child.js is pruned')
+    globalThis.__vite_file_delete_restore_child_pruned = true
   })
 }

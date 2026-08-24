@@ -2,9 +2,14 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { SourceMapInput } from 'rolldown'
 import type { DefaultTreeAdapterMap, Token } from 'parse5'
+import type { SourceMapInput } from 'rolldown'
 import type { Connect } from '#dep-types/connect'
+import type { PreviewServer, ResolvedConfig, ViteDevServer } from '../..'
+import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
+import { getNodeAssetAttributes } from '../../assetSource'
+import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
+import { getHmrImplementation } from '../../plugins/clientInjections'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
@@ -24,9 +29,7 @@ import {
   resolveHtmlTransforms,
   traverseHtml,
 } from '../../plugins/html'
-import type { PreviewServer, ResolvedConfig, ViteDevServer } from '../..'
-import { send } from '../send'
-import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
+import { checkPublicFile } from '../../publicDir'
 import {
   ensureWatchedFile,
   fsPathFromId,
@@ -41,15 +44,12 @@ import {
   processSrcSetSync,
   stripBase,
 } from '../../utils'
-import { checkPublicFile } from '../../publicDir'
-import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
-import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
-import { getNodeAssetAttributes } from '../../assetSource'
 import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from '../pluginContainer'
-import { getHmrImplementation } from '../../plugins/clientInjections'
+import { send } from '../send'
+import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 interface AssetNode {
@@ -176,7 +176,7 @@ const processNodeUrl = (
 
     if (server) {
       const mod = server.environments.client.moduleGraph.urlToModuleMap.get(
-        preTransformUrl || url,
+        stripBase(preTransformUrl || url, config.decodedBase),
       )
       if (mod && mod.lastHMRTimestamp > 0) {
         url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
@@ -475,19 +475,20 @@ export function indexHtmlMiddleware(
         const filePath = pathname.slice(1) // remove first /
 
         let file = fullBundle.memoryFiles.get(filePath)
-        if (!file && fullBundle.memoryFiles.size !== 0) {
+        if (!file && fullBundle.hasBuildOutput) {
           return next()
         }
         const secFetchDest = req.headers['sec-fetch-dest']
+        const isDocumentRequest = [
+          'document',
+          'iframe',
+          'frame',
+          'fencedframe',
+          '',
+          undefined,
+        ].includes(secFetchDest)
         if (
-          [
-            'document',
-            'iframe',
-            'frame',
-            'fencedframe',
-            '',
-            undefined,
-          ].includes(secFetchDest) &&
+          isDocumentRequest &&
           ((await fullBundle.triggerBundleRegenerationIfStale()) ||
             file === undefined)
         ) {
@@ -571,6 +572,7 @@ async function generateFallbackHtml(server: ViteDevServer) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>globalThis.__vite_is_fallback_page__ = true</script>
   <script type="module">
     ${hmrRuntime.replaceAll('</script>', '<\\/script>')}
   </script>

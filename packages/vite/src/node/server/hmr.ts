@@ -1,36 +1,36 @@
+import { EventEmitter } from 'node:events'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
-import { EventEmitter } from 'node:events'
 import colors from 'picocolors'
 import type { RollupError } from 'rolldown'
 import type { CustomPayload, HotPayload, Update } from '#types/hmrPayload'
+import type { InferCustomEventPayload, ViteDevServer } from '..'
 import type {
   InvokeMethods,
   InvokeResponseData,
   InvokeSendData,
 } from '../../shared/invokeMethods'
+import { withTrailingSlash } from '../../shared/utils'
 import { CLIENT_DIR } from '../constants'
+import {
+  ignoreDeprecationWarnings,
+  warnFutureDeprecation,
+} from '../deprecations'
+import { getEnvFilesForMode } from '../env'
+import type { Environment } from '../environment'
+import type { Plugin } from '../plugin'
+import { getHookHandler } from '../plugins'
+import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import {
   createDebugger,
   formatAndTruncateFileList,
   monotonicDateNow,
   normalizePath,
 } from '../utils'
-import type { InferCustomEventPayload, ViteDevServer } from '..'
-import { getHookHandler } from '../plugins'
-import { isExplicitImportRequired } from '../plugins/importAnalysis'
-import { getEnvFilesForMode } from '../env'
-import type { Environment } from '../environment'
-import { withTrailingSlash, wrapId } from '../../shared/utils'
-import type { Plugin } from '../plugin'
-import {
-  ignoreDeprecationWarnings,
-  warnFutureDeprecation,
-} from '../deprecations'
-import type { EnvironmentModuleNode } from './moduleGraph'
-import type { ModuleNode } from './mixedModuleGraph'
 import type { DevEnvironment } from './environment'
 import { prepareError } from './middlewares/error'
+import type { ModuleNode } from './mixedModuleGraph'
+import type { EnvironmentModuleNode } from './moduleGraph'
 import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
@@ -416,7 +416,11 @@ export async function handleHMRUpdate(
   const { config } = server
   const mixedModuleGraph = ignoreDeprecationWarnings(() => server.moduleGraph)
 
-  const environments = Object.values(server.environments)
+  const environmentSnapshot = server.environments
+  const environments = Object.values(environmentSnapshot)
+  // A plugin hook may restart the server, replacing the environments and
+  // invalidating this HMR transaction.
+  const isStale = () => server.environments !== environmentSnapshot
   const shortFile = getShortName(file, config.root)
 
   const isConfig = file === config.configFile
@@ -509,14 +513,13 @@ export async function handleHMRUpdate(
   const clientHotUpdateOptions = hotMap.get(clientEnvironment)!.options
   const ssrHotUpdateOptions = hotMap.get(ssrEnvironment)?.options
   try {
-    for (const plugin of getSortedHotUpdatePlugins(
-      server.environments.client,
-    )) {
+    for (const plugin of getSortedHotUpdatePlugins(clientEnvironment)) {
       if (plugin.hotUpdate) {
         const filteredModules = await getHookHandler(plugin.hotUpdate).call(
           clientContext,
           clientHotUpdateOptions,
         )
+        if (isStale()) return
         if (filteredModules) {
           clientHotUpdateOptions.modules = filteredModules
           // Invalidate the hmrContext to force compat modules to be updated
@@ -552,6 +555,7 @@ export async function handleHMRUpdate(
         const filteredModules = await getHookHandler(
           plugin.handleHotUpdate!,
         ).call(contextForHandleHotUpdate, mixedHmrContext)
+        if (isStale()) return
         if (filteredModules) {
           mixedHmrContext.modules = filteredModules
           clientHotUpdateOptions.modules =
@@ -590,7 +594,8 @@ export async function handleHMRUpdate(
       }
     }
   } catch (error) {
-    hotMap.get(server.environments.client)!.error = error
+    if (isStale()) return
+    hotMap.get(clientEnvironment)!.error = error
   }
 
   for (const environment of environments) {
@@ -604,17 +609,20 @@ export async function handleHMRUpdate(
             context,
             hot.options,
           )
+          if (isStale()) return
           if (filteredModules) {
             hot.options.modules = filteredModules
           }
         }
       }
     } catch (error) {
+      if (isStale()) return
       hot.error = error
     }
   }
 
   async function hmr(environment: DevEnvironment) {
+    if (isStale()) return
     try {
       const { options, error } = hotMap.get(environment)!
       if (error) {
@@ -653,6 +661,8 @@ export async function handleHMRUpdate(
       })
     }
   }
+
+  if (isStale()) return
 
   const hotUpdateEnvironments =
     server.config.server.hotUpdateEnvironments ??
@@ -709,8 +719,7 @@ export function updateModules(
     if (
       firstInvalidatedBy &&
       boundaries.some(
-        ({ acceptedVia }) =>
-          normalizeHmrUrl(acceptedVia.url) === firstInvalidatedBy,
+        ({ acceptedVia }) => acceptedVia.url === firstInvalidatedBy,
       )
     ) {
       needFullReload = 'circular import invalidate'
@@ -722,8 +731,8 @@ export function updateModules(
         ({ boundary, acceptedVia, isWithinCircularImport }) => ({
           type: `${boundary.type}-update` as const,
           timestamp,
-          path: normalizeHmrUrl(boundary.url),
-          acceptedPath: normalizeHmrUrl(acceptedVia.url),
+          path: boundary.url,
+          acceptedPath: acceptedVia.url,
           explicitImportRequired:
             boundary.type === 'js'
               ? isExplicitImportRequired(acceptedVia.url)
@@ -1112,13 +1121,6 @@ export function lexAcceptedHmrExports(
     exportNames.add(url)
   }
   return urls.size > 0
-}
-
-export function normalizeHmrUrl(url: string): string {
-  if (url[0] !== '.' && url[0] !== '/') {
-    url = wrapId(url)
-  }
-  return url
 }
 
 function error(pos: number) {

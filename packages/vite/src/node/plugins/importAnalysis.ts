@@ -1,20 +1,27 @@
-import path from 'node:path'
 import fs from 'node:fs'
+import path from 'node:path'
 import { performance } from 'node:perf_hooks'
-import colors from 'picocolors'
-import MagicString from 'magic-string'
+import { makeLegalIdentifier } from '@rollup/pluginutils'
 import type {
   ParseError as EsModuleLexerParseError,
   ExportSpecifier,
   ImportSpecifier,
 } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import { parseAst } from 'rolldown/parseAst'
+import MagicString from 'magic-string'
 import type { StaticImport } from 'mlly'
 import { ESM_STATIC_IMPORT_RE, parseStaticImport } from 'mlly'
-import { makeLegalIdentifier } from '@rollup/pluginutils'
+import colors from 'picocolors'
 import type { PartialResolvedId, RollupError } from 'rolldown'
+import { parseAst } from 'rolldown/parseAst'
 import type { ESTree } from 'rolldown/utils'
+import {
+  cleanUrl,
+  unwrapId,
+  withTrailingSlash,
+  wrapId,
+} from '../../shared/utils'
+import type { ResolvedConfig } from '../config'
 import {
   CLIENT_DIR,
   CLIENT_PUBLIC_PATH,
@@ -22,13 +29,21 @@ import {
   FS_PREFIX,
   SPECIAL_QUERY_RE,
 } from '../constants'
+import { shouldExternalize } from '../external'
+import {
+  optimizedDepInfoFromFile,
+  optimizedDepNeedsInterop,
+} from '../optimizer'
+import type { Plugin } from '../plugin'
+import { checkPublicFile } from '../publicDir'
+import type { DevEnvironment } from '../server/environment'
 import {
   debugHmr,
   handlePrunedModules,
   lexAcceptedHmrDeps,
   lexAcceptedHmrExports,
-  normalizeHmrUrl,
 } from '../server/hmr'
+import type { TransformPluginContext } from '../server/pluginContainer'
 import {
   createDebugger,
   fsPathFromUrl,
@@ -42,6 +57,7 @@ import {
   isDefined,
   isExternalUrl,
   isFilePathESM,
+  isFilePathFormatExplicit,
   isInNodeModules,
   isJSRequest,
   joinUrlSegments,
@@ -56,28 +72,12 @@ import {
   transformStableResult,
   urlRE,
 } from '../utils'
-import { checkPublicFile } from '../publicDir'
-import type { ResolvedConfig } from '../config'
-import type { Plugin } from '../plugin'
-import type { DevEnvironment } from '../server/environment'
-import { shouldExternalize } from '../external'
-import {
-  optimizedDepInfoFromFile,
-  optimizedDepNeedsInterop,
-} from '../optimizer'
-import {
-  cleanUrl,
-  unwrapId,
-  withTrailingSlash,
-  wrapId,
-} from '../../shared/utils'
-import type { TransformPluginContext } from '../server/pluginContainer'
-import { throwOutdatedRequest } from './optimizedDeps'
 import { isDirectCSSRequest } from './css'
-import { browserExternalId } from './resolve'
 import { serializeDefine } from './define'
-import { WORKER_FILE_ID } from './worker'
+import { throwOutdatedRequest } from './optimizedDeps'
 import { getAliasPatternMatcher } from './preAlias'
+import { browserExternalId } from './resolve'
+import { WORKER_FILE_ID } from './worker'
 
 const debug = createDebugger('vite:import-analysis')
 
@@ -459,6 +459,17 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         _isNodeModeResult ??= isFilePathESM(importer, config.packageCache)
         return _isNodeModeResult
       }
+      let _isNodeModeForDynamicImportResult = config.legacy
+        ?.inconsistentCjsInterop
+        ? false
+        : undefined
+      const isNodeModeForDynamicImport = () => {
+        _isNodeModeForDynamicImportResult ??= isFilePathFormatExplicit(
+          importer,
+          config.packageCache,
+        )
+        return _isNodeModeForDynamicImportResult
+      }
 
       await Promise.all(
         imports.map(async (importSpecifier, index) => {
@@ -585,8 +596,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
             if (url !== specifier) {
               let rewriteDone = false
+              // optimizer-emitted imports resolve to the sibling file they
+              // name; imports injected by plugins (e.g. @rollup/plugin-inject)
+              // still need interop
+              const isOptimizerEmittedImport =
+                depsOptimizer?.isOptimizedDepFile(importer) &&
+                specifier[0] === '.'
               if (
-                !depsOptimizer?.isOptimizedDepFile(importer) &&
+                !isOptimizerEmittedImport &&
                 depsOptimizer?.isOptimizedDepFile(resolvedId) &&
                 !optimizedDepChunkRE.test(resolvedId)
               ) {
@@ -626,7 +643,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                     url,
                     index,
                     importer,
-                    isNodeMode(),
+                    isDynamicImport
+                      ? isNodeModeForDynamicImport()
+                      : isNodeMode(),
                     config,
                   )
                   rewriteDone = true
@@ -662,10 +681,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
             // record for HMR import chain analysis
             // make sure to unwrap and normalize away base
-            const hmrUrl = unwrapId(stripBase(url, base))
-            const isLocalImport = !isExternalUrl(hmrUrl) && !isDataUrl(hmrUrl)
+            const moduleUrl = unwrapId(stripBase(url, base))
+            const isLocalImport =
+              !isExternalUrl(moduleUrl) && !isDataUrl(moduleUrl)
             if (isLocalImport) {
-              orderedImportedUrls[index] = hmrUrl
+              orderedImportedUrls[index] = moduleUrl
             }
 
             if (enablePartialAccept && importedBindings) {
@@ -685,7 +705,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               // pre-transform known direct imports
               // These requests will also be registered in transformRequest to be awaited
               // by the deps optimizer
-              const url = removeImportQuery(hmrUrl)
+              const url = removeImportQuery(moduleUrl)
               environment.warmupRequest(url)
             }
           } else if (!importer.startsWith(withTrailingSlash(clientDir))) {
@@ -769,7 +789,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         str().prepend(
           `import { createHotContext as __vite__createHotContext } from "${clientPublicPath}";` +
             `import.meta.hot = __vite__createHotContext(${JSON.stringify(
-              normalizeHmrUrl(importerModule.url),
+              importerModule.url,
             )});`,
         )
       }
@@ -807,8 +827,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           })
         }
         normalizedAcceptedUrls.add(normalized)
-        const hmrAccept = normalizeHmrUrl(normalized)
-        str().overwrite(start, end, JSON.stringify(hmrAccept), {
+        str().overwrite(start, end, JSON.stringify(normalized), {
           contentOnly: true,
         })
       }
@@ -948,12 +967,11 @@ export function interopNamedImports(
   } = importSpecifier
   const exp = source.slice(expStart, expEnd)
   if (dynamicIndex > -1) {
-    const inconsistentCjsInterop = !!config.legacy?.inconsistentCjsInterop
     // rewrite `import('package')` to expose the default directly
     str.overwrite(
       expStart,
       expEnd,
-      `import('${rewrittenUrl}').then(m => (${interopHelperStr})(m.default, ${inconsistentCjsInterop ? 0 : 1}))` +
+      `import('${rewrittenUrl}').then(m => (${interopHelperStr})(m.default, ${+isNodeMode}))` +
         getLineBreaks(exp),
       { contentOnly: true },
     )

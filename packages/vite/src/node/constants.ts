@@ -1,11 +1,7 @@
 import path, { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { readFileSync } from 'node:fs'
+import { version } from '../../package.json' with { type: 'json' }
 import type { RollupPluginHooks } from './typeUtils'
-
-const { version } = JSON.parse(
-  readFileSync(new URL('../../package.json', import.meta.url)).toString(),
-)
 
 export const ROLLUP_HOOKS: RollupPluginHooks[] = [
   'options',
@@ -21,7 +17,7 @@ export const ROLLUP_HOOKS: RollupPluginHooks[] = [
   'augmentChunkHash',
   'outputOptions',
   // 'renderDynamicImport',
-  // 'resolveFileUrl',
+  'resolveFileUrl',
   // 'resolveImportMeta',
   'intro',
   'outro',
@@ -129,6 +125,12 @@ export const CLIENT_ENTRY: string = resolve(
   VITE_PACKAGE_DIR,
   'dist/client/client.mjs',
 )
+export const BUNDLED_DEV_CLIENT_ENTRY: string = resolve(
+  VITE_PACKAGE_DIR,
+  'dist/client/bundledDevClient.mjs',
+)
+/** URL filename the bundled-dev server serves the vite client under */
+export const BUNDLED_DEV_CLIENT_FILENAME: string = 'bundledDevClient.mjs'
 export const ENV_ENTRY: string = resolve(
   VITE_PACKAGE_DIR,
   'dist/client/env.mjs',

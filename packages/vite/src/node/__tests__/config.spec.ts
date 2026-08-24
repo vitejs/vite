@@ -1,20 +1,27 @@
+import fs from 'node:fs'
 import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
-import fs from 'node:fs'
+import { stripVTControlCharacters } from 'node:util'
 import { afterEach, assert, describe, expect, test, vi } from 'vitest'
 import type { InlineConfig, PluginOption } from '..'
+import { isWindows } from '../../shared/utils'
 import type { UserConfig, UserConfigExport } from '../config'
-import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
-import { resolveServerOptions } from '../server'
+import {
+  bundleConfigFile,
+  defineConfig,
+  loadConfigFromFile,
+  resolveConfig,
+} from '../config'
 import { resolveEnvPrefix } from '../env'
+import { createLogger } from '../logger'
+import type { Logger } from '../logger'
+import { resolveServerOptions } from '../server'
 import {
   hasBothRollupOptionsAndRolldownOptions,
   mergeConfig,
   normalizePath,
 } from '../utils'
-import { createLogger } from '../logger'
-import type { Logger } from '../logger'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -119,6 +126,105 @@ describe('mergeConfig', () => {
 
     const mergedConfig: UserConfigExport = {
       assetsInclude: ['some-string', 'some-other-string', /regexp?/],
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+  })
+
+  test('handles input', () => {
+    const cases: {
+      name: string
+      a: UserConfig['input']
+      b: UserConfig['input']
+      expected: UserConfig['input']
+    }[] = [
+      {
+        name: 'string + string',
+        a: 'src/a.ts',
+        b: 'src/b.ts',
+        expected: ['src/a.ts', 'src/b.ts'],
+      },
+      {
+        name: 'array + string',
+        a: ['src/a.ts'],
+        b: 'src/b.ts',
+        expected: ['src/a.ts', 'src/b.ts'],
+      },
+      {
+        name: 'string + array',
+        a: 'src/a.ts',
+        b: ['src/b.ts'],
+        expected: ['src/a.ts', 'src/b.ts'],
+      },
+      {
+        name: 'array + array',
+        a: ['src/a.ts'],
+        b: ['src/b.ts'],
+        expected: ['src/a.ts', 'src/b.ts'],
+      },
+      {
+        name: 'object + object',
+        a: { a: 'src/a.ts', shared: 'src/old.ts' },
+        b: { b: 'src/b.ts', shared: 'src/new.ts' },
+        expected: { a: 'src/a.ts', b: 'src/b.ts', shared: 'src/new.ts' },
+      },
+      {
+        name: 'string + object',
+        a: 'src/a.ts',
+        b: { b: 'src/b.ts' },
+        expected: { a: 'src/a.ts', b: 'src/b.ts' },
+      },
+      {
+        name: 'object + string',
+        a: { a: 'src/a.ts' },
+        b: 'src/b.ts',
+        expected: { a: 'src/a.ts', b: 'src/b.ts' },
+      },
+      {
+        name: 'array + object',
+        a: ['src/a.ts'],
+        b: { b: 'src/b.ts' },
+        expected: { a: 'src/a.ts', b: 'src/b.ts' },
+      },
+      {
+        name: 'only a',
+        a: 'src/a.ts',
+        b: undefined,
+        expected: 'src/a.ts',
+      },
+      {
+        name: 'only b',
+        a: undefined,
+        b: 'src/b.ts',
+        expected: 'src/b.ts',
+      },
+    ]
+
+    for (const { name, a, b, expected } of cases) {
+      expect(mergeConfig({ input: a }, { input: b }), name).toStrictEqual({
+        input: expected,
+      })
+    }
+  })
+
+  test('not handles input not at top level', () => {
+    const baseConfig = {
+      build: {
+        input: 'src/a.ts',
+      },
+    }
+
+    const newConfig = {
+      build: {
+        input: 'src/b.ts',
+      },
+    }
+
+    // nested `input` is overwritten, not merged
+    const mergedConfig = {
+      build: {
+        input: 'src/b.ts',
+      },
     }
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
@@ -1073,6 +1179,164 @@ describe('resolveConfig', () => {
       resolved.optimizeDeps!.rolldownOptions,
     )
   })
+
+  test('top-level input applies to the client environment only (non-inherit)', async () => {
+    const config = await resolveConfig({ input: 'src/main.ts' }, 'serve')
+
+    expect(config.input).toBe('src/main.ts')
+    expect(config.environments.client.input).toBe('src/main.ts')
+    expect(
+      config.environments.client.build.rolldownOptions.input,
+    ).toBeUndefined()
+    expect(config.environments.ssr.input).toBeUndefined()
+    expect(config.environments.ssr.build.rolldownOptions.input).toBeUndefined()
+  })
+
+  test('per-environment input overrides the top-level value', async () => {
+    const config = await resolveConfig(
+      {
+        input: 'src/main.ts',
+        environments: {
+          ssr: { input: 'src/entry-server.ts' },
+        },
+      },
+      'serve',
+    )
+
+    expect(config.environments.client.input).toBe('src/main.ts')
+    expect(config.environments.ssr.input).toBe('src/entry-server.ts')
+  })
+
+  test('keeps array input relative to the root', async () => {
+    const config = await resolveConfig(
+      { input: ['src/a.ts', 'src/b.ts'] },
+      'serve',
+    )
+
+    expect(config.environments.client.input).toEqual(['src/a.ts', 'src/b.ts'])
+  })
+
+  test('keeps record input relative to the root', async () => {
+    const config = await resolveConfig(
+      { input: { main: 'src/a.ts', admin: 'src/b.ts' } },
+      'serve',
+    )
+
+    expect(config.environments.client.input).toEqual({
+      main: 'src/a.ts',
+      admin: 'src/b.ts',
+    })
+  })
+
+  test('reserves glob characters in input', async () => {
+    const cases: { name: string; input: UserConfig['input'] }[] = [
+      { name: 'wildcard', input: 'src/*.ts' },
+      { name: 'single char', input: 'src/page?.ts' },
+      { name: 'character class', input: 'src/[id].ts' },
+      { name: 'brace expansion', input: 'src/{a,b}.ts' },
+      { name: 'extglob group', input: 'src/?(group).ts' },
+      { name: 'negation', input: 'src/!(main).ts' },
+      { name: 'extglob prefix +', input: 'src/+(page).ts' },
+      { name: 'extglob prefix @', input: 'src/@(page).ts' },
+      { name: 'array element', input: ['src/main.ts', 'src/*.ts'] },
+      { name: 'record', input: { main: 'src/*.ts' } },
+    ]
+
+    for (const { name, input } of cases) {
+      await expect(resolveConfig({ input }, 'serve'), name).rejects.toThrow(
+        /`input` cannot contain glob characters/,
+      )
+    }
+  })
+
+  test('support escaped input', async () => {
+    const cases: {
+      name: string
+      input: UserConfig['input']
+      expected: UserConfig['input']
+    }[] = [
+      {
+        name: 'glob',
+        input: 'src/\\*.ts',
+        expected: 'src/*.ts',
+      },
+      {
+        name: 'array element',
+        input: ['src/\\*.ts'],
+        expected: ['src/*.ts'],
+      },
+      {
+        name: 'record',
+        input: { main: 'src/\\*.ts' },
+        expected: { main: 'src/*.ts' },
+      },
+    ]
+
+    for (const { name, input, expected } of cases) {
+      await expect(
+        resolveConfig({ input }, 'serve'),
+        name,
+      ).resolves.toMatchObject({
+        input: expected,
+      })
+    }
+  })
+
+  test('allows non-glob special characters in input', async () => {
+    const cases: {
+      name: string
+      input: UserConfig['input']
+      expected: UserConfig['input']
+    }[] = [
+      {
+        name: 'special characters',
+        input: 'src/a-b_c$.ts',
+        expected: 'src/a-b_c$.ts',
+      },
+      ...(isWindows
+        ? [
+            {
+              name: 'windows path',
+              input: 'src\\foo.ts',
+              expected: 'src\\foo.ts',
+            },
+          ]
+        : []),
+    ]
+
+    for (const { name, input, expected } of cases) {
+      await expect(
+        resolveConfig({ input }, 'serve'),
+        name,
+      ).resolves.toMatchObject({
+        input: expected,
+      })
+    }
+  })
+
+  test('is used as the default for build.lib.entry when entry is omitted', async () => {
+    const config = await resolveConfig(
+      {
+        input: 'src/lib.ts',
+        build: { lib: { name: 'MyLib' } },
+      },
+      'build',
+    )
+
+    expect(config.build.lib && config.build.lib.entry).toBe('src/lib.ts')
+  })
+
+  test('explicit build.lib.entry overrides the top-level input', async () => {
+    const config = await resolveConfig(
+      {
+        input: 'src/lib.ts',
+        build: { lib: { entry: 'src/explicit.ts', name: 'MyLib' } },
+      },
+      'build',
+    )
+
+    expect(config.build.lib && config.build.lib.entry).toBe('src/explicit.ts')
+  })
 })
 
 test('config compat 1', async () => {
@@ -1371,6 +1635,144 @@ test('preTransformRequests', async () => {
 describe('loadConfigFromFile', () => {
   const fixtures = path.resolve(import.meta.dirname, './fixtures/config')
 
+  describe('native-incompatibility warnings', () => {
+    const compatRoot = path.resolve(fixtures, './native-compat')
+
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins
+    const supportsTypeStripping = !!process.features.typescript
+
+    const loadWithWarnings = async (
+      dir: string,
+      configFile = 'vite.config.js',
+    ) => {
+      const logger = createLogger('info')
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+      const root = path.resolve(compatRoot, dir)
+      await loadConfigFromFile(
+        {} as any,
+        path.resolve(root, configFile),
+        root,
+        undefined,
+        logger,
+        'bundle',
+      )
+      const messages = warn.mock.calls.map((c) =>
+        stripVTControlCharacters(c[0]),
+      )
+      warn.mockRestore()
+      return messages
+    }
+
+    test('warns on __dirname / __filename', async () => {
+      const messages = await loadWithWarnings('dirname')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - \`__dirname\` (vite.config.js:3:29). Use \`import.meta.dirname\` instead
+          - \`__filename\` (vite.config.js:4:30). Use \`import.meta.filename\` instead
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    // uses a `.ts` config with TypeScript-only syntax; skipped on Node
+    // versions without type stripping support
+    test.skipIf(!supportsTypeStripping)(
+      'warns on __dirname in a config using TypeScript syntax',
+      async () => {
+        const messages = await loadWithWarnings('ts-syntax', 'vite.config.ts')
+        expect(messages).toMatchInlineSnapshot(`
+          [
+            "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+            - \`__dirname\` (vite.config.ts:10:29). Use \`import.meta.dirname\` instead
+          Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+          ]
+        `)
+      },
+    )
+
+    test('warns on extension-less import', async () => {
+      const messages = await loadWithWarnings('extensionless')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - import "./helper" without a file extension (vite.config.js:1:23). Add the file extension
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    test('warns on directory-index import', async () => {
+      const messages = await loadWithWarnings('directory-index')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - import "./plugins" resolves to a directory index (vite.config.js:1:25). Import the index file directly
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    test('warns on JSON import without attributes', async () => {
+      const messages = await loadWithWarnings('json')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - JSON import "./data.json" without import attributes (vite.config.js:1:18). Add \`with { type: 'json' }\`
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    test('does not warn on JSON import with attributes', async () => {
+      expect(await loadWithWarnings('json-ok')).toHaveLength(0)
+    })
+
+    test('warns on an extension-less import that resolves to JSON', async () => {
+      const messages = await loadWithWarnings('json-extensionless')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - import "./foo" resolves to a JSON file (vite.config.js:1:18). Import it with a \`.json\` extension and \`with { type: 'json' }\`
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    test('does not warn on a native-compatible config', async () => {
+      expect(await loadWithWarnings('clean')).toHaveLength(0)
+    })
+
+    test('does not warn for a CJS config using __dirname', async () => {
+      expect(await loadWithWarnings('cjs', 'vite.config.cjs')).toHaveLength(0)
+    })
+
+    test('warns for an ESM file imported by a CJS config', async () => {
+      const messages = await loadWithWarnings(
+        'cjs-imports-esm',
+        'vite.config.cjs',
+      )
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - \`__dirname\` (esm-helper.mjs:1:35). Use \`import.meta.dirname\` instead
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    test('warns on ESM syntax in a config under a `type: commonjs` package', async () => {
+      const messages = await loadWithWarnings('esm-in-commonjs-pkg')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - ESM syntax in a file loaded as CommonJS (vite.config.js:1:1). Use a \`.mjs\` extension or set \`"type": "module"\` in the closest package.json
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+  })
+
   describe('load default files', () => {
     const root = path.resolve(fixtures, './loadConfigFromFile')
 
@@ -1401,6 +1803,7 @@ describe('loadConfigFromFile', () => {
         { command: 'build', mode: 'production' },
         undefined,
         root,
+        'silent',
       )
       expect(result).toBeTruthy()
       expect(result?.config).toStrictEqual({ define: { foo: 1 } })
@@ -1508,6 +1911,18 @@ describe('loadConfigFromFile', () => {
       `)
   })
 
+  test('cjs module vars are supported in esm', async () => {
+    const { config } = (await loadConfigFromFile(
+      {} as any,
+      path.resolve(fixtures, './cjs-module-vars-in-esm/vite.config.ts'),
+      path.resolve(fixtures, './cjs-module-vars-in-esm'),
+      'silent',
+    ))!
+    const c = config as any
+    expect(c.dirname).toContain('cjs-module-vars-in-esm')
+    expect(c.filename).toContain('vite.config.ts')
+  })
+
   test('import.meta properties are supported', async () => {
     const { config } = (await loadConfigFromFile(
       {} as any,
@@ -1533,6 +1948,35 @@ describe('loadConfigFromFile', () => {
 
     const c = config as any
     expect(c.dirname).toContain('shebang')
+  })
+
+  test('injected variables follow a hashbang ending in CRLF', async () => {
+    const { config, path: configPath } = (await loadConfigFromFile(
+      {} as any,
+      path.resolve(fixtures, './shebang-crlf/vite.config.ts'),
+      path.resolve(fixtures, './shebang-crlf'),
+    ))!
+
+    const configFile = fs.readFileSync(configPath, 'utf8')
+    expect(configFile).toContain('\r\n')
+
+    const c = config as any
+    expect(c.dirname).toContain('shebang-crlf')
+  })
+
+  test('sourcemap of a nested config file points to itself', async () => {
+    const configPath = path.resolve(
+      fixtures,
+      './nested/.nested/vite.config.mts',
+    )
+    const { code } = await bundleConfigFile(configPath, true)
+    const [, base64Map] = code.match(
+      /\/\/# sourceMappingURL=data:application\/json;charset=utf-8;base64,(.+)/,
+    )!
+    const map = JSON.parse(Buffer.from(base64Map, 'base64').toString())
+    expect(map.sources.map(normalizePath)).toStrictEqual([
+      normalizePath(configPath),
+    ])
   })
 
   describe('loadConfigFromFile with configLoader: native', () => {
@@ -1574,7 +2018,9 @@ describe('loadConfigFromFile', () => {
       const config = await resolveConfig({ root: tempDir }, 'serve')
 
       expect(config.cacheDir).toBe(
-        normalizePath(path.resolve(tempDir, 'node_modules/.vite')),
+        normalizePath(
+          path.resolve(fs.realpathSync.native(tempDir), 'node_modules/.vite'),
+        ),
       )
     })
 
@@ -1585,9 +2031,31 @@ describe('loadConfigFromFile', () => {
       const config = await resolveConfig({ root: tempDir }, 'serve')
 
       expect(config.cacheDir).toBe(
-        normalizePath(path.resolve(tempDir, '.vite')),
+        normalizePath(path.resolve(fs.realpathSync.native(tempDir), '.vite')),
       )
     })
+  })
+})
+
+describe('root resolution', () => {
+  const fixtureRoot = path.resolve(
+    import.meta.dirname,
+    './fixtures/config/root-resolution',
+  )
+  const realDir = path.join(fixtureRoot, 'real')
+  const linkDir = path.join(fixtureRoot, 'link')
+
+  test('resolves a symlinked root to its real path', async () => {
+    const config = await resolveConfig({ root: linkDir }, 'serve')
+    expect(config.root).toBe(normalizePath(fs.realpathSync.native(realDir)))
+  })
+
+  test('keeps a symlinked root when resolve.preserveSymlinks is true', async () => {
+    const config = await resolveConfig(
+      { root: linkDir, resolve: { preserveSymlinks: true } },
+      'serve',
+    )
+    expect(config.root).toBe(normalizePath(linkDir))
   })
 })
 

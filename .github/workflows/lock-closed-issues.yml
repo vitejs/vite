@@ -5,7 +5,6 @@ on:
     - cron: "0 0 * * *"
 
 permissions:
-  contents: read # to check out the repo for local actions
   issues: write # for actions/issues-helper to update issues
 
 jobs:
@@ -13,11 +12,7 @@ jobs:
     if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-slim
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-        with:
-          persist-credentials: false
-
-      - uses: ./.github/actions/issues-helper
+      - uses: $/.github/actions/issues-helper
         with:
           actions: "lock-closed-issues"
           token: ${{ secrets.GITHUB_TOKEN }}
