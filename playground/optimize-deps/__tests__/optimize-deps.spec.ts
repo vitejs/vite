@@ -255,6 +255,21 @@ test('non optimized module is not duplicated', async () => {
     .toBe('from-absolute-path, from-relative-path')
 })
 
+test.runIf(isServe)(
+  'node_modules module script is not duplicated',
+  async () => {
+    const testPage = await page.context().newPage()
+    try {
+      await testPage.goto(`${viteTestUrl}/node-modules.html`)
+      await expect
+        .poll(() => testPage.textContent('.non-optimized-module'))
+        .toBe('from-html')
+    } finally {
+      await testPage.close()
+    }
+  },
+)
+
 test.runIf(isServe)('error on builtin modules usage', () => {
   expect(browserLogs).toEqual(
     expect.arrayContaining([
