@@ -592,6 +592,26 @@ describe('processSrcSetSync', () => {
     ).toBe('"/base/nested/asset.png" 1x, "/base/nested/asset.png" 2x')
   })
 
+  test('keep the url when a density descriptor omits its leading zero', async () => {
+    const devBase = '/base/'
+    expect(
+      processSrcSetSync(
+        './nested/asset.png .5x, ./nested/asset.png 1x',
+        ({ url }) => path.posix.join(devBase, url),
+      ),
+    ).toBe('/base/nested/asset.png .5x, /base/nested/asset.png 1x')
+  })
+
+  test('keep the quoted url when a density descriptor omits its leading zero', async () => {
+    const devBase = '/base/'
+    expect(
+      processSrcSetSync(
+        '"./nested/asset.png" .75x,"./nested/asset.png" 1x',
+        ({ url }) => `"${path.posix.join(devBase, url.slice(1, -1))}"`,
+      ),
+    ).toBe('"/base/nested/asset.png" .75x, "/base/nested/asset.png" 1x')
+  })
+
   test('should not split the comma inside base64 value', async () => {
     const base64 =
       'data:image/avif;base64,aA+/0= 400w, data:image/avif;base64,bB+/9= 800w'

@@ -813,8 +813,12 @@ function joinSrcset(ret: ImageCandidate[]) {
   * URL string (unquoted)
   The `descriptor` is anything after the space and before the comma.
  */
+// The descriptor may start with a dot: a density descriptor is allowed to omit
+// its leading zero (`.5x`). Without the dot in the leading class the descriptor
+// group fails, the alternation then matches the descriptor itself as the url,
+// and the real image url is dropped from the candidate list.
 const imageCandidateRegex =
-  /(?:^|\s|(?<=,))(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>\w[^,]+))?(?:,|$)/g
+  /(?:^|\s|(?<=,))(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>[\w.][^,]+))?(?:,|$)/g
 const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
 
 export function parseSrcset(string: string): ImageCandidate[] {
