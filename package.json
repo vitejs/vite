@@ -61,7 +61,7 @@
     "execa": "^9.6.1",
     "globals": "^17.11.0",
     "lint-staged": "^17.3.0",
-    "oxfmt": "^0.63.0",
+    "oxfmt": "^0.64.0",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.62.1",
     "rolldown": "~1.2.5",
@@ -71,7 +71,7 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.67.0",
     "vite": "workspace:*",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
