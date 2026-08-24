@@ -258,14 +258,13 @@ test('non optimized module is not duplicated', async () => {
 test.runIf(isServe)(
   'node_modules module script is not duplicated',
   async () => {
-    const testPage = await page.context().newPage()
     try {
-      await testPage.goto(`${viteTestUrl}/node-modules.html`)
+      await page.goto(`${viteTestUrl}/node-modules.html`)
       await expect
-        .poll(() => testPage.textContent('.non-optimized-module'))
+        .poll(() => page.textContent('.non-optimized-module'))
         .toBe('from-html')
     } finally {
-      await testPage.close()
+      await page.goto(viteTestUrl)
     }
   },
 )
