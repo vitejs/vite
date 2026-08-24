@@ -66,6 +66,7 @@ export function createDepsOptimizer(
     getOptimizedDepId: (depInfo: OptimizedDepInfo) =>
       `${depInfo.file}?v=${depInfo.browserHash}`,
     close,
+    isClosed: () => closed,
     options,
   }
 
@@ -147,6 +148,16 @@ export function createDepsOptimizer(
 
   async function close() {
     closed = true
+    if (debounceProcessingHandle) {
+      clearTimeout(debounceProcessingHandle)
+      debounceProcessingHandle = undefined
+    }
+    if (newDepsToLogHandle) {
+      clearTimeout(newDepsToLogHandle)
+      newDepsToLogHandle = undefined
+    }
+    resolveEnqueuedProcessingPromises()
+    depOptimizationProcessing.resolve()
     await Promise.allSettled([
       discover?.cancel(),
       depsOptimizer.scanProcessing,
@@ -753,6 +764,7 @@ export function createDepsOptimizer(
 export function createExplicitDepsOptimizer(
   environment: DevEnvironment,
 ): DepsOptimizer {
+  let closed = false
   const depsOptimizer = {
     metadata: initDepsOptimizerMetadata(environment),
     isOptimizedDepFile: createIsOptimizedDepFile(environment),
@@ -770,7 +782,10 @@ export function createExplicitDepsOptimizer(
     // the optimizer blocks the server start
     run: () => {},
 
-    close: async () => {},
+    close: async () => {
+      closed = true
+    },
+    isClosed: () => closed,
     options: environment.config.optimizeDeps,
   }
 

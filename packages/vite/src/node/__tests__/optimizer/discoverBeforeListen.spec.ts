@@ -85,3 +85,35 @@ test('does not crash when a dep is discovered before the server starts listening
   await ssr.depsOptimizer?.scanProcessing
   expect(errors).toStrictEqual([])
 })
+
+// regression test for https://github.com/vitejs/vite/issues/23143
+// When a module importing a bare specifier is transformed without calling `server.listen()`,
+// calling `server.close()` should not hang waiting for optimizer processing promises.
+test('server.close() resolves promptly when deps were discovered without calling listen()', async () => {
+  server = await createServer({
+    configFile: false,
+    root: path.join(
+      import.meta.dirname,
+      '../fixtures/optimizer-discover-before-listen',
+    ),
+    environments: {
+      client: {
+        optimizeDeps: {
+          force: true,
+        },
+      },
+    },
+  })
+
+  await server.environments.client.transformRequest('/entry.js')
+
+  const closePromise = server.close()
+  const timeoutPromise = setTimeout(2000).then(() => {
+    throw new Error('server.close() timed out')
+  })
+
+  await expect(
+    Promise.race([closePromise, timeoutPromise]),
+  ).resolves.toBeUndefined()
+  server = undefined
+})
