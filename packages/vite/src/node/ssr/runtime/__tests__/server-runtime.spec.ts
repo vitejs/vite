@@ -200,6 +200,19 @@ describe('module runner initialization', async () => {
     })
   })
 
+  it('importing inlined esm module checks exports', async ({ runner }) => {
+    await expect(() =>
+      runner.import('/fixtures/esm-internal-non-existing.js'),
+    ).rejects.toThrowError(
+      `[vite] The requested module '/fixtures/simple.js' does not provide an export named 'nonExisting'`,
+    )
+    await expect(
+      runner.import('/fixtures/esm-internal-existing.js'),
+    ).resolves.toMatchObject({
+      result: 'I am initialized',
+    })
+  })
+
   it("dynamic import doesn't produce duplicates", async ({ runner }) => {
     const mod = await runner.import('/fixtures/dynamic-import.js')
     const modules = await mod.initialize()
