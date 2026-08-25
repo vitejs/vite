@@ -123,13 +123,24 @@ export class ModuleRunner {
     exports: Record<string, any>,
     fetchResult: ResolvedResult,
     metadata?: SSRImportMetadata,
+    isCompleteModule = true,
   ) {
-    if (!('externalize' in fetchResult)) {
+    // Cyclic inlined graphs may return a partial exports object while the
+    // exporter is still evaluating. Named-export checks must wait until the
+    // module finished, matching Node (and avoiding false SyntaxErrors).
+    if (!isCompleteModule) {
       return exports
     }
-    const { url, type } = fetchResult
-    if (type !== 'module' && type !== 'commonjs') return exports
-    analyzeImportedModDifference(exports, url, type, metadata)
+    if ('externalize' in fetchResult) {
+      const { url, type } = fetchResult
+      if (type !== 'module' && type !== 'commonjs') return exports
+      analyzeImportedModDifference(exports, url, type, metadata)
+      return exports
+    }
+    // Vite-transformed modules are ESM. Previously this path skipped
+    // analyzeImportedModDifference entirely, so `import { missing }` from a
+    // local file did not throw (Node throws SyntaxError).
+    analyzeImportedModDifference(exports, fetchResult.url, 'module', metadata)
     return exports
   }
 
@@ -185,7 +196,7 @@ export class ModuleRunner {
         mod.exports &&
         (callstack.includes(moduleId) || this.isCircularRequest(mod, callstack))
       ) {
-        return this.processImport(mod.exports, meta, metadata)
+        return this.processImport(mod.exports, meta, metadata, false)
       }
       return this.processImport(await mod.promise, meta, metadata)
     }
