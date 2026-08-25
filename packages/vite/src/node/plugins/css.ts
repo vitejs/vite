@@ -2104,9 +2104,15 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
 
   return {
     postcssPlugin: 'vite-url-rewrite',
-    OnceExit(root) {
+    OnceExit(_root, { result }) {
       const promises: Promise<void>[] = []
-      root.walkDecls((declaration) => {
+      // walk `result.root` rather than the `root` argument: a plugin running
+      // earlier (e.g. postcss-lightningcss, @tailwindcss/vite) may hand back a
+      // freshly parsed tree by reassigning `result.root`, and PostCSS keeps
+      // passing the pre-reassignment root to the OnceExit hooks that run after
+      // it. Rewriting urls on that discarded tree leaves the emitted CSS
+      // pointing at the original source-relative paths.
+      result.root.walkDecls((declaration) => {
         const importer = declaration.source?.input.file
         if (!importer) {
           opts.logger.warnOnce(

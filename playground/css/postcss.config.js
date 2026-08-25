@@ -11,6 +11,7 @@ export default {
     testSourceInput,
     testInjectUrl,
     testInjectUrlOnceExit,
+    testReplaceRoot,
   ],
 }
 
@@ -116,3 +117,31 @@ function testInjectUrlOnceExit() {
   }
 }
 testInjectUrlOnceExit.postcss = true
+
+/**
+ * A plugin for testing url() rewriting when a plugin replaces the whole tree
+ * at OnceExit by reassigning `result.root` (like postcss-lightningcss or
+ * @tailwindcss/vite do).
+ */
+function testReplaceRoot() {
+  return {
+    postcssPlugin: 'replace-root',
+    OnceExit(root, { result, postcss }) {
+      if (!root.some((node) => node.name === 'replace-root')) return
+      // re-parse from scratch and hand back a brand new tree instead of
+      // mutating `root`, the way postcss-lightningcss and @tailwindcss/vite
+      // return their own output. `from` points at the source file so the
+      // relative url has something to be rebased against.
+      result.root = postcss.parse(
+        '.replace-root { background: url(./replaced-bg.png) }',
+        {
+          from: path.join(
+            import.meta.dirname,
+            'replace-root-source/replaced.css',
+          ),
+        },
+      )
+    },
+  }
+}
+testReplaceRoot.postcss = true
