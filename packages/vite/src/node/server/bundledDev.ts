@@ -518,7 +518,7 @@ class Clients {
   }
 
   getAll(): NormalizedHotChannelClient[] {
-    return Array.from(this.idToClient.values())
+    return [...this.idToClient.values()]
   }
 
   delete(client: NormalizedHotChannelClient): string | undefined {

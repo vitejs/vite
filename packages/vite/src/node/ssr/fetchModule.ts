@@ -141,9 +141,12 @@ function inlineSourceMap(
     code = code.replace(OTHER_SOURCE_MAP_REGEXP, '')
 
   const sourceMap = startOffset
-    ? Object.assign({}, map, {
-        mappings: ';'.repeat(startOffset) + map.mappings,
-      })
+    ? {
+        ...map,
+        ...{
+          mappings: ';'.repeat(startOffset) + map.mappings,
+        },
+      }
     : map
   result.code = `${code.trimEnd()}\n//# sourceURL=${
     mod.id

@@ -233,9 +233,9 @@ async function handleMessage(payload: HotPayload) {
           // can't use querySelector with `[href*=]` here since the link may be
           // using relative paths so we need to use link.href to grab the full
           // URL for the include check.
-          const el = Array.from(
-            document.querySelectorAll<HTMLLinkElement>('link'),
-          ).find(
+          const el = [
+            ...document.querySelectorAll<HTMLLinkElement>('link'),
+          ].find(
             (e) =>
               !outdatedLinkTags.has(e) && cleanUrl(e.href).includes(searchUrl),
           )

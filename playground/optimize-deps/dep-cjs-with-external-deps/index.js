@@ -10,7 +10,7 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 const external = require('@vitejs/test-dep-esm-external')
-// eslint-disable-next-line no-prototype-builtins
-const externalResult = external.hasOwnProperty('foo') ? 'ok' : 'error'
+
+const externalResult = Object.hasOwn(external, 'foo') ? 'ok' : 'error'
 const externalDummyNodeBuiltinResult = `${externalDummyNodeBuiltin()} ${externalDummyNodeBuiltin.bar}`
 module.exports = { externalResult, externalDummyNodeBuiltinResult }

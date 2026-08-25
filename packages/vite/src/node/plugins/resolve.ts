@@ -269,7 +269,7 @@ export function oxcResolvePlugin(
 
             mainFields: options.skipMainField
               ? options.mainFields
-              : options.mainFields.concat(['main']),
+              : [...options.mainFields, 'main'],
             conditions: options.conditions,
             externalConditions: options.externalConditions,
             extensions: options.extensions,
