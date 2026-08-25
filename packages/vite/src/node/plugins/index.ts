@@ -57,15 +57,21 @@ export async function resolvePlugins(
   const buildPlugins = anyEnvBundled
     ? resolveBuildPlugins(config)
     : { pre: [], post: [] }
-  const isDevToolsPluginRegistered =
-    config.command === 'serve' &&
-    [...prePlugins, ...normalPlugins, ...postPlugins].some(
-      (plugin) => plugin.name === 'vite:devtools:server',
+  const isDevToolsPluginRegistered = [
+    ...prePlugins,
+    ...normalPlugins,
+    ...postPlugins,
+  ].some((plugin) => plugin.name === 'vite:devtools')
+  if (config.devtools.enabled && !isWorker && isDevToolsPluginRegistered) {
+    throw new Error(
+      'Vite DevTools cannot be configured through both `plugins` and `devtools`.\n' +
+        'Remove the explicit `DevTools()` plugin and move its options to `devtools`.',
     )
+  }
   const devtoolsIntegrationPlugins =
-    config.devtools.enabled && !isWorker && !isDevToolsPluginRegistered
+    config.devtools.enabled && !isWorker
       ? await loadDevToolsIntegrationPlugins(config)
-      : { pre: [], normal: [], post: [] }
+      : { post: [], pre: [], normal: [] }
   const { modulePreload } = config.build
 
   return [
@@ -172,7 +178,10 @@ async function loadDevToolsIntegrationPlugins(
 ): Promise<{ pre: Plugin[]; normal: Plugin[]; post: Plugin[] }> {
   try {
     const { DevToolsIntegration } = await import('@vitejs/devtools/integration')
-    const plugins = (await DevToolsIntegration({ config })) as Plugin | Plugin[]
+    const plugins = (await DevToolsIntegration({
+      config,
+      devtools: config.devtools,
+    })) as Plugin | Plugin[]
     const [pre, normal, post] = sortUserPlugins([plugins])
     return { pre, normal, post }
   } catch (error: any) {

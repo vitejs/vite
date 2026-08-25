@@ -6,10 +6,6 @@ import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { pathToFileURL } from 'node:url'
 import { inspect, promisify } from 'node:util'
-import type {
-  DevToolsConfig,
-  ResolvedDevToolsConfig,
-} from '@vitejs/devtools/config'
 import {
   getEnv,
   ignoreInput,
@@ -29,6 +25,7 @@ import {
 } from 'rolldown'
 import { isDynamicPattern } from 'tinyglobby'
 import type { Alias, AliasOptions } from '#dep-types/alias'
+import type { DevToolsConfig } from '#types/internal/devtoolsOptions'
 import {
   createImportMetaResolver,
   importMetaResolveWithCustomHookString,
@@ -551,6 +548,12 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   devtools?: boolean | DevToolsConfig
 }
 
+export interface ResolvedDevToolsIntegration {
+  enabled: boolean
+  host: string
+  options: boolean | DevToolsConfig | undefined
+}
+
 export interface HTMLOptions {
   /**
    * A nonce value placeholder that will be used when generating script/style tags.
@@ -734,7 +737,7 @@ export interface ResolvedConfig extends Readonly<
     /** @experimental */
     builder: ResolvedBuilderOptions | undefined
     build: ResolvedBuildOptions
-    devtools: ResolvedDevToolsConfig
+    devtools: ResolvedDevToolsIntegration
     preview: ResolvedPreviewOptions
     ssr: ResolvedSSROptions
     assetsInclude: (file: string) => boolean
@@ -786,35 +789,16 @@ export interface ResolvedConfig extends Readonly<
 export async function resolveDevToolsConfig(
   config: DevToolsConfig | boolean | undefined,
   host: string | boolean | undefined,
-  logger: Logger,
-): Promise<ResolvedDevToolsConfig> {
+): Promise<ResolvedDevToolsIntegration> {
   const isEnabled =
     config === true ||
     (typeof config === 'object' && config != null && config.enabled !== false)
   const resolvedHostname = await resolveHostname(host)
   const fallbackHostname = resolvedHostname.host ?? 'localhost'
-  const fallbackConfig: ResolvedDevToolsConfig = {
-    config: {
-      host: fallbackHostname,
-    },
-    enabled: false,
-    apply: typeof config === 'object' ? (config.apply ?? 'all') : 'all',
-  }
-  if (!isEnabled) {
-    return fallbackConfig
-  }
-
-  try {
-    const { normalizeDevToolsConfig } = await import('@vitejs/devtools/config')
-    return normalizeDevToolsConfig(config, fallbackHostname)
-  } catch (e) {
-    logger.error(
-      colors.red(
-        `Failed to load Vite DevTools config: ${e.message || e.stack}`,
-      ),
-      { error: e },
-    )
-    return fallbackConfig
+  return {
+    enabled: isEnabled,
+    host: fallbackHostname,
+    options: config,
   }
 }
 
@@ -2024,7 +2008,6 @@ export async function resolveConfig(
   const resolvedDevToolsConfig = await resolveDevToolsConfig(
     config.devtools,
     server.host,
-    logger,
   )
 
   resolved = {
