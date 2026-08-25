@@ -1115,6 +1115,50 @@ test('chunkImportMap per environment with shared plugins', async () => {
   expect(entry.code).toContain(JSON.stringify(cssSpecifier.slice(1)))
 })
 
+test('chunkImportMap preserves module preload deps when base is not / (fix #23350)', async () => {
+  const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
+  const builder = await createBuilder({
+    root,
+    base: '/sub/',
+    logLevel: 'warn',
+    environments: {
+      client: {
+        build: {
+          chunkImportMap: true,
+          write: false,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+  })
+
+  const result = (await builder.build(
+    builder.environments.client,
+  )) as RolldownOutput
+
+  const entry = result.output.find(
+    (output): output is OutputChunk =>
+      output.type === 'chunk' && output.isEntry,
+  )!
+  const css = result.output.find(
+    (output) => output.type === 'asset' && output.fileName.endsWith('.css'),
+  )!
+  const importMapAsset = result.output.find(
+    (output): output is OutputAsset =>
+      output.type === 'asset' && output.fileName === 'importmap.json',
+  )!
+  const importMap = JSON.parse(importMapAsset.source.toString())
+    .imports as Record<string, string>
+  const cssSpecifier = Object.entries(importMap).find(
+    ([, fileName]) => fileName === `/sub/${css.fileName}`,
+  )![0]
+  expect(entry.code).toContain(
+    JSON.stringify(cssSpecifier.slice('/sub/'.length)),
+  )
+})
+
 test('chunkImportMap is emitted when emitAssets is false', async () => {
   const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
   const builder = await createBuilder({

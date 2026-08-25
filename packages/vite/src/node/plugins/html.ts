@@ -1706,7 +1706,7 @@ function getImportMapBaseUrl(options: ResolvedEnvironmentOptions): string {
   if (typeof chunkImportMap === 'object' && chunkImportMap.baseUrl) {
     return chunkImportMap.baseUrl
   }
-  return '/'
+  return (options as any).base ?? '/'
 }
 
 /**
