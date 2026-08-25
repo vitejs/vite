@@ -13,24 +13,24 @@ import type {
   TransformPluginContext,
   TransformResult,
 } from 'rolldown'
+import type { PartialEnvironment } from './baseEnvironment'
+import type { BuildAppHook } from './build'
 import type {
   ConfigEnv,
   EnvironmentOptions,
   ResolvedConfig,
   UserConfig,
 } from './config'
-import type { ServerHook } from './server'
-import type { BuildAppHook } from './build'
-import type { IndexHtmlTransform } from './plugins/html'
-import type { EnvironmentModuleNode } from './server/moduleGraph'
-import type { ModuleNode } from './server/mixedModuleGraph'
-import type { HmrContext, HotUpdateOptions } from './server/hmr'
-import type { DevEnvironment } from './server/environment'
 import type { Environment } from './environment'
-import type { PartialEnvironment } from './baseEnvironment'
-import type { PreviewServerHook } from './preview'
-import { arraify, asyncFlatten } from './utils'
+import type { IndexHtmlTransform } from './plugins/html'
 import type { StringFilter } from './plugins/pluginFilter'
+import type { ClosePreviewServerHook, PreviewServerHook } from './preview'
+import type { CloseServerHook, ServerHook } from './server'
+import type { DevEnvironment } from './server/environment'
+import type { HmrContext, HotUpdateOptions } from './server/hmr'
+import type { ModuleNode } from './server/mixedModuleGraph'
+import type { EnvironmentModuleNode } from './server/moduleGraph'
+import { arraify, asyncFlatten } from './utils'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -303,6 +303,20 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
    * applied. Hooks can be async functions and will be called in series.
    */
   configurePreviewServer?: ObjectHook<PreviewServerHook>
+  /**
+   * Run logic when the server is restarted or closed. The hook receives a
+   * `reason` that is `'restart'` when the server is restarting and `'close'`
+   * when it is closing.
+   *
+   * The hooks are called after the server is torn down. Hooks can be async
+   * functions and will be called in parallel.
+   */
+  closeServer?: ObjectHook<CloseServerHook>
+  /**
+   * Same as `closeServer` but for the preview server. The preview server never
+   * restarts, so no `reason` is provided.
+   */
+  closePreviewServer?: ObjectHook<ClosePreviewServerHook>
   /**
    * Transform index.html.
    * The hook receives the following arguments:

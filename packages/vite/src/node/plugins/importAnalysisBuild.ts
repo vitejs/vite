@@ -1,22 +1,22 @@
 import path from 'node:path'
-import MagicString from 'magic-string'
-import type { ImportSpecifier } from 'es-module-lexer'
-import { init, parse as parseImports } from 'es-module-lexer'
-import type { SourceMap } from 'rolldown'
-import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
 import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
+import type { ImportSpecifier } from 'es-module-lexer'
+import { init, parse as parseImports } from 'es-module-lexer'
+import MagicString from 'magic-string'
+import type { SourceMap } from 'rolldown'
+import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
+import type { PartialEnvironment } from '../baseEnvironment'
+import { toOutputFilePathInJS } from '../build'
+import type { ResolvedConfig } from '../config'
+import { type Plugin, perEnvironmentPlugin } from '../plugin'
+import { genSourceMapUrl } from '../server/sourcemap'
 import {
   combineSourcemaps,
   generateCodeFrame,
   getFileStartIndex,
   numberToPos,
 } from '../utils'
-import { type Plugin, perEnvironmentPlugin } from '../plugin'
-import type { ResolvedConfig } from '../config'
-import { toOutputFilePathInJS } from '../build'
-import { genSourceMapUrl } from '../server/sourcemap'
-import type { PartialEnvironment } from '../baseEnvironment'
 import { removedPureCssFilesCache } from './css'
 import { getImportMap, getImportMapFilename } from './html'
 
