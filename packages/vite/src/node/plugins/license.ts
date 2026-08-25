@@ -97,12 +97,6 @@ export function licensePlugin(): Plugin {
           if (licenseFile) {
             entry.text = fs.readFileSync(licenseFile, 'utf-8').trim()
           }
-          if (!entry.identifier && !entry.text) {
-            this.warn(
-              `Could not find any license information for "${key}". ` +
-                `Its entry in the license file will be incomplete.`,
-            )
-          }
           licenses[key] = entry
         }
       }
