@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import type { PackageCache } from '../packages'
-import { findNearestMainPackageData } from '../packages'
+import type { PackageCache, PackageData } from '../packages'
+import { findNearestPackageData } from '../packages'
 import type { Plugin } from '../plugin'
 import { isInNodeModules, sortObjectKeys } from '../utils'
 
@@ -41,6 +41,21 @@ const licenseConfigDefaults = Object.freeze({
 // https://github.com/npm/npm-packlist/blob/53b2a4f42b7fef0f63e8f26a3ea4692e23a58fed/lib/index.js#L284-L286
 const licenseFiles = [/^license/i, /^licence/i, /^copying/i]
 
+// Unlike `findNearestMainPackageData`, a manifest is only accepted when it has both a `name` and a `version`. Dual ESM/CJS packages ship type-marker
+// package.json files (e.g. `build/esm/package.json`) that carry a `name` but no `version` or license information, so the walk must continue up to the real package root to produce a complete license entry.
+function findLicensePackageData(
+  basedir: string,
+  packageCache: PackageCache,
+): PackageData | null {
+  let pkgData = findNearestPackageData(basedir, packageCache)
+  while (pkgData && !(pkgData.data.name && pkgData.data.version)) {
+    const parentDir = path.dirname(pkgData.dir)
+    if (parentDir === pkgData.dir) return null
+    pkgData = findNearestPackageData(parentDir, packageCache)
+  }
+  return pkgData
+}
+
 export function licensePlugin(): Plugin {
   return {
     name: 'vite:license',
@@ -62,7 +77,7 @@ export function licensePlugin(): Plugin {
           if (moduleId.startsWith('\0') || !isInNodeModules(moduleId)) continue
 
           // Find the dependency package.json
-          const pkgData = findNearestMainPackageData(
+          const pkgData = findLicensePackageData(
             path.dirname(moduleId),
             packageCache,
           )
@@ -81,6 +96,12 @@ export function licensePlugin(): Plugin {
           const licenseFile = findLicenseFile(pkgData.dir)
           if (licenseFile) {
             entry.text = fs.readFileSync(licenseFile, 'utf-8').trim()
+          }
+          if (!entry.identifier && !entry.text) {
+            this.warn(
+              `Could not find any license information for "${key}". ` +
+                `Its entry in the license file will be incomplete.`,
+            )
           }
           licenses[key] = entry
         }
