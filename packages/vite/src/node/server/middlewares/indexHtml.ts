@@ -106,11 +106,12 @@ export function createDevHtmlTransformFn(
 }
 
 function getHtmlFilename(url: string, server: ViteDevServer) {
-  if (url.startsWith(FS_PREFIX)) {
-    return decodeURIComponent(fsPathFromId(url))
+  const urlPath = cleanUrl(url)
+  if (urlPath.startsWith(FS_PREFIX)) {
+    return decodeURIComponent(fsPathFromId(urlPath))
   } else {
     return decodeURIComponent(
-      normalizePath(path.join(server.config.root, url.slice(1))),
+      normalizePath(path.join(server.config.root, urlPath.slice(1))),
     )
   }
 }
