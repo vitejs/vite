@@ -1517,7 +1517,8 @@ function mergeConfigRecursively(
       merged[key] = mergeAlias(existing, value)
       continue
     } else if (key === 'assetsInclude' && rootPath === '') {
-      merged[key] = [existing, value]
+      // eslint-disable-next-line e18e/prefer-spread-syntax
+      merged[key] = [].concat(existing, value)
       continue
     } else if (
       (((key === 'noExternal' || key === 'external') &&
