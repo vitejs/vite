@@ -52,7 +52,9 @@ minimumReleaseAgeExclude:
   - rolldown
   - '@rolldown/binding-*'
   - '@voidzero-dev/vitepress-theme@5.0.6'
-blockExoticSubdeps: true
+# Temporarily disabled: `overrides.rolldown: $rolldown` points at a pkg.pr.new URL build,
+# which reaches tsdown's `rolldown` subdependency and would be rejected.
+blockExoticSubdeps: false
 trustPolicy: no-downgrade
 trustPolicyExclude:
   - chokidar@4.0.3 # https://github.com/paulmillr/chokidar/issues/1440
