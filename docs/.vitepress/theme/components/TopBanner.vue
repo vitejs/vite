@@ -176,11 +176,28 @@ function dismiss() {
 
 @media (min-width: 768px) {
   .top-banner {
-    --vp-banner-height: 40px;
+    --vp-banner-height: var(--top-banner-height);
   }
 
   :root:has(.top-banner):not(.banner-dismissed) {
-    --vp-banner-height: 40px;
+    --vp-banner-height: var(--top-banner-height);
+  }
+}
+
+:root:has(.top-banner) {
+  --top-banner-height: 40px;
+}
+
+/* When the banner is dismissed the fixed header moves up by the banner
+   height, so tighten the anchor scroll offset by the same amount to keep
+   the landing position visually identical. .top-banner stays in the DOM
+   (hidden) after dismissal, so :has() still matches. */
+@media (min-width: 1024px) {
+  :root:has(.top-banner).banner-dismissed .vp-doc :is(h1, h2, h3, h4, h5, h6) {
+    scroll-margin-top: calc(
+      var(--vp-nav-height) + var(--vp-layout-top-height, 0px) + 24px -
+        var(--top-banner-height)
+    );
   }
 }
 </style>
