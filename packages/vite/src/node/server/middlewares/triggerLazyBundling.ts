@@ -32,7 +32,6 @@ export function triggerLazyBundlingMiddleware(
     }
 
     res!.setHeader('Content-Type', 'application/javascript')
-    res!.on('finish', () => bundledDev.markPayloadDelivered(result.filename))
     return res!.end(result.code)
   }
 }

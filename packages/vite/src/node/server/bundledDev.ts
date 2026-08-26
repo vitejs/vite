@@ -137,6 +137,9 @@ export class BundledDev {
         this.devEngine.registerClient(payload.clientId)
       },
     )
+    this.environment.hot.on('vite:bundled-dev:payload-delivered', (payload) => {
+      this.markPayloadDelivered(payload.filename)
+    })
     this.environment.hot.on('vite:client:connect', (_payload, client) => {
       // Replay the cached build error to freshly connected clients.
       if (this.lastBuildError) {
@@ -341,13 +344,18 @@ export class BundledDev {
     )
     const result = await this.devEngine.compileEntry(moduleId, clientId)
     this.pendingPayloadFilenames.add(result.filename)
-    return result
+    return {
+      filename: result.filename,
+      code: result.code + payloadDeliveredAck(result.filename),
+    }
   }
 
   /**
-   * Called by the serving middlewares when the response for a payload completed.
-   * Only delivered payloads are recorded on the server's per-client ship map, so
-   * later chunks may omit a module only if the payload carrying it was delivered.
+   * Called when the client reports that it evaluated a payload (the line appended
+   * by `payloadDeliveredAck`). Only then is the payload recorded on the server's
+   * per-client ship map, so later chunks may omit a module only if the client
+   * already registered it. The HTTP response finishing is not enough: the bytes
+   * may still be on the wire while a later chunk is compiled and evaluated.
    *
    * Note: the payload filename is unique across all clients.
    */
@@ -465,7 +473,10 @@ export class BundledDev {
       // https://green.sapphi.red/blog/local-server-security-best-practices#properly-check-the-request-origin
       // we can also use `Cross-Origin Resource Policy` header instead of this
       // but we cannot use `Sec-Fetch-*` headers as they are only sent to potentially-trustworthy origins
-      source: hmrOutput.code + '\n; export {}',
+      source:
+        hmrOutput.code +
+        payloadDeliveredAck(hmrOutput.filename) +
+        '\n; export {}',
     })
     if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
       this.memoryFiles.set(hmrOutput.sourcemapFilename, {
@@ -538,4 +549,14 @@ function debounce(time: number, cb: () => void) {
     }
     timer = globalThis.setTimeout(cb, time)
   }
+}
+
+/**
+ * The line appended to a lazy chunk or HMR patch so the client reports the
+ * payload as delivered once its factories are registered. Placed after the
+ * chunk's tail: if the tail throws, no report is sent and the next payload
+ * simply re-ships those factories, which is safe (registration overwrites).
+ */
+function payloadDeliveredAck(filename: string): string {
+  return `\n;__rolldown_runtime__.payloadDelivered(${JSON.stringify(filename)});`
 }
