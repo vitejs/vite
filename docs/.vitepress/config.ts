@@ -10,10 +10,9 @@ import {
   groupIconVitePlugin,
 } from 'vitepress-plugin-group-icons'
 import llmstxt from 'vitepress-plugin-llms'
-import packageJson from '../../packages/vite/package.json' with { type: 'json' }
+import { version as viteVersion } from '../../packages/vite/package.json' with { type: 'json' }
 import { buildEnd } from './buildEnd.config.ts'
 
-const viteVersion = packageJson.version
 const viteMajorVersion = +viteVersion.split('.')[0]
 
 const ogDescription = 'Next Generation Frontend Tooling'
