@@ -91,6 +91,7 @@ import {
   mergeWithDefaults,
   normalizePath,
   processSrcSet,
+  removeDirectQuery,
   removeUrlQuery,
   stripBomTag,
   urlRE,
@@ -1703,9 +1704,35 @@ async function compilePostCSS(
   let modules: Record<string, string> | undefined
 
   if (isModule) {
+    let processedModulesOptions = { ...modulesOptions }
+    if (
+      modulesOptions &&
+      typeof modulesOptions.generateScopedName === 'string'
+    ) {
+      const genericNames = (await importGenericNames()).default
+      const generate = genericNames(modulesOptions.generateScopedName, {
+        context: config.root,
+      })
+      processedModulesOptions = {
+        ...modulesOptions,
+        generateScopedName: (name: string, filename: string) =>
+          generate(name, cleanUrl(filename)),
+      }
+    } else if (
+      modulesOptions &&
+      typeof modulesOptions.generateScopedName === 'function'
+    ) {
+      const original = modulesOptions.generateScopedName
+      processedModulesOptions = {
+        ...modulesOptions,
+        generateScopedName: (name: string, filename: string, css: string) =>
+          original(name, cleanUrl(filename), css),
+      }
+    }
+
     postcssPlugins.unshift(
       (await importPostcssModules()).default({
-        ...modulesOptions,
+        ...processedModulesOptions,
         localsConvention: modulesOptions?.localsConvention,
         getJSON(
           cssFileName: string,
@@ -1787,7 +1814,7 @@ async function runPostCSS(
 ) {
   let postcssResult: PostCSS.Result
   try {
-    const source = cleanUrl(id)
+    const source = removeDirectQuery(id)
     const postcss = await importPostcss()
 
     // postcss is an unbundled dep and should be lazy imported
@@ -1890,6 +1917,7 @@ function createCachedImport<T>(imp: () => Promise<T>): () => T | Promise<T> {
   }
 }
 const importPostcssImport = createCachedImport(() => import('postcss-import'))
+const importGenericNames = createCachedImport(() => import('generic-names'))
 const importPostcssModules = createCachedImport(() => import('postcss-modules'))
 const importPostcss = createCachedImport(() => import('postcss'))
 
@@ -3298,13 +3326,15 @@ async function compileLightningCSS(
   modules?: Record<string, string>
 }> {
   const { config } = environment
-  const filename = cleanUrl(id)
+  const isModule = cssModuleRE.test(id)
+  const filename = removeDirectQuery(id)
+  const bundleFilename = isModule ? cleanUrl(filename) : filename
 
   let res: LightningCssTransformAttributeResult | LightningCssTransformResult
   try {
     res = styleAttrRE.test(id)
       ? (await importLightningCSS()).transformStyleAttribute({
-          filename,
+          filename: bundleFilename,
           code: Buffer.from(src),
           targets: config.css.lightningcss?.targets,
           minify: config.isProduction && !!config.build.cssMinify,
@@ -3314,12 +3344,12 @@ async function compileLightningCSS(
           await importLightningCSS()
         ).bundleAsync({
           ...config.css.lightningcss,
-          filename,
+          filename: bundleFilename,
           // projectRoot is needed to get stable hash when using CSS modules
           projectRoot: config.root,
           resolver: {
             async read(filePath) {
-              if (filePath === filename) {
+              if (filePath === bundleFilename || filePath === filename) {
                 return src
               }
 

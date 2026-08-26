@@ -104,6 +104,7 @@
     "estree-walker": "^3.0.3",
     "etag": "^1.8.1",
     "fresh-import": "^0.2.1",
+    "generic-names": "^4.0.0",
     "host-validation-middleware": "^0.1.4",
     "http-proxy-3": "^1.23.3",
     "launch-editor-middleware": "^2.14.1",
