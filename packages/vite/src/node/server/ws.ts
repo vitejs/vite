@@ -159,7 +159,7 @@ export function createWebSocketServer(
   ) => void
   const customListeners = new Map<string, Set<WebSocketCustomListener<any>>>()
   const clientsMap = new WeakMap<WebSocketRaw, WebSocketClient>()
-  const port = wsPort || 24678
+  const port = wsPort ?? 24678
   const host = wsOptions?.host || undefined
   const allowedHosts =
     config.server.allowedHosts === true

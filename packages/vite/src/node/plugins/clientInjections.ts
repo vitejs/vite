@@ -82,7 +82,7 @@ async function createClientConfigValueReplacer(
   const wsConfig = isObject(config.server.ws) ? config.server.ws : undefined
   const host = wsConfig?.host || null
   const protocol = wsConfig?.protocol || null
-  const timeout = wsConfig?.timeout || 30000
+  const timeout = wsConfig?.timeout ?? 30000
   const isWsServerSpecified = !!wsConfig?.server
   const hmrConfigName = path.basename(config.configFile || 'vite.config.js')
 
