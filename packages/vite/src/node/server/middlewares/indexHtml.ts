@@ -206,6 +206,13 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   html,
   { path: htmlPath, filename, server, originalUrl },
 ) => {
+  // There's no way to express a relative URL that starts with `//`. URLs starting with `//` is relative to the scheme.
+  // The relative URL is needed to generate the URL in script tags and link tags.
+  // We replace `//` with `/` here for workaround, which is the best we can do.
+  if (htmlPath.startsWith('//')) {
+    htmlPath = htmlPath.slice(1)
+  }
+
   const { config, watcher } = server!
   const base = config.base || '/'
   const decodedBase = config.decodedBase || '/'
