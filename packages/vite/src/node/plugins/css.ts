@@ -91,7 +91,6 @@ import {
   mergeWithDefaults,
   normalizePath,
   processSrcSet,
-  removeDirectQuery,
   removeUrlQuery,
   stripBomTag,
   urlRE,
@@ -1788,7 +1787,7 @@ async function runPostCSS(
 ) {
   let postcssResult: PostCSS.Result
   try {
-    const source = removeDirectQuery(id)
+    const source = cleanUrl(id)
     const postcss = await importPostcss()
 
     // postcss is an unbundled dep and should be lazy imported
@@ -3299,7 +3298,7 @@ async function compileLightningCSS(
   modules?: Record<string, string>
 }> {
   const { config } = environment
-  const filename = removeDirectQuery(id)
+  const filename = cleanUrl(id)
 
   let res: LightningCssTransformAttributeResult | LightningCssTransformResult
   try {

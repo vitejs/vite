@@ -122,7 +122,11 @@ composes: bar from '@/css/bar.module.css';
 }`
     const result1 = await transform(css, '/foo.module.css') // server
     const result2 = await transform(css, '/foo.module.css?direct') // client
+    const result3 = await transform(css, '/foo.module.css?inline') // inline
+    const result4 = await transform(css, '/foo.module.css?inline&used') // inline & used
     expect(result1.code).toBe(result2.code)
+    expect(result1.code).toBe(result3.code)
+    expect(result1.code).toBe(result4.code)
   })
 
   test('custom generateScopedName with lightningcss', async () => {
@@ -141,7 +145,11 @@ composes: bar from '@/css/bar.module.css';
 }`
     const result1 = await transform(css, '/foo.module.css') // server
     const result2 = await transform(css, '/foo.module.css?direct') // client
+    const result3 = await transform(css, '/foo.module.css?inline') // inline
+    const result4 = await transform(css, '/foo.module.css?inline&used') // inline & used
     expect(result1.code).toBe(result2.code)
+    expect(result1.code).toBe(result3.code)
+    expect(result1.code).toBe(result4.code)
   })
 })
 
