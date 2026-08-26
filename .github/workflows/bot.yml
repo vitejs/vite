@@ -77,7 +77,8 @@ jobs:
   issue:
     if: >
       github.event_name == 'issues' &&
-      github.event.label.name == 'bot: likely'
+      github.event.label.name == 'bot: likely' &&
+      !contains(github.event.issue.labels.*.name, 'bot: skip')
     name: Comment and close issue
     runs-on: ubuntu-slim
     permissions:
@@ -114,7 +115,8 @@ jobs:
     runs-on: ubuntu-slim
     if: >
       github.event_name == 'pull_request_target' &&
-      github.event.label.name == 'bot: likely'
+      github.event.label.name == 'bot: likely' &&
+      !contains(github.event.pull_request.labels.*.name, 'bot: skip')
     permissions:
       pull-requests: write
     steps:
