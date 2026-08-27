@@ -1249,7 +1249,9 @@ describe('resolveConfig', () => {
     }
   })
 
-  test('support escaped input', async () => {
+  // On Windows, backslash is the path separator, so glob characters cannot
+  // be escaped with a backslash in input paths.
+  test.skipIf(isWindows)('support escaped input', async () => {
     const cases: {
       name: string
       input: UserConfig['input']
@@ -1299,6 +1301,59 @@ describe('resolveConfig', () => {
               name: 'windows path',
               input: 'src\\foo.ts',
               expected: 'src\\foo.ts',
+            },
+          ]
+        : []),
+    ]
+
+    for (const { name, input, expected } of cases) {
+      await expect(
+        resolveConfig({ input }, 'serve'),
+        name,
+      ).resolves.toMatchObject({
+        input: expected,
+      })
+    }
+  })
+
+  // https://github.com/vitejs/vite/issues/23383
+  test('preserves Windows input paths with glob-special segment names', async () => {
+    const cases: {
+      name: string
+      input: UserConfig['input']
+      expected: UserConfig['input']
+    }[] = [
+      ...(isWindows
+        ? [
+            {
+              name: 'segment starting with @',
+              input: 'D:\\desk\\test\\@src\\whatever.html',
+              expected: 'D:\\desk\\test\\@src\\whatever.html',
+            },
+            {
+              name: 'segment starting with !',
+              input: 'D:\\desk\\test\\!notes\\page.html',
+              expected: 'D:\\desk\\test\\!notes\\page.html',
+            },
+            {
+              name: 'segment starting with +',
+              input: 'D:\\desk\\test\\+draft\\page.html',
+              expected: 'D:\\desk\\test\\+draft\\page.html',
+            },
+            {
+              name: 'segment starting with (',
+              input: 'D:\\desk\\test\\(draft)\\page.html',
+              expected: 'D:\\desk\\test\\(draft)\\page.html',
+            },
+            {
+              name: 'segment starting with [',
+              input: 'D:\\desk\\test\\[id]\\page.html',
+              expected: 'D:\\desk\\test\\[id]\\page.html',
+            },
+            {
+              name: 'relative path',
+              input: 'test\\@src\\whatever.html',
+              expected: 'test\\@src\\whatever.html',
             },
           ]
         : []),

@@ -33,7 +33,7 @@ import {
   createImportMetaResolver,
   importMetaResolveWithCustomHookString,
 } from '../module-runner/importMetaResolver'
-import { withTrailingSlash } from '../shared/utils'
+import { isWindows, withTrailingSlash } from '../shared/utils'
 import type { AnymatchFn } from '../types/anymatch'
 import type { HtmlAssetSource } from './assetSource'
 import { PartialEnvironment } from './baseEnvironment'
@@ -954,6 +954,11 @@ function unescapeGlobCharacters(value: string): string {
       `\`input\` cannot contain glob characters. They are reserved, ` +
         `so the ${JSON.stringify(value)} is not allowed. Please escape them with a backslash (\\)`,
     )
+  }
+  // On Windows, backslash is the path separator, so it must not be treated
+  // as an escape character for glob characters (#23383).
+  if (isWindows) {
+    return value
   }
   // unescape glob characters
   return value.replace(escapedGlobCharactersRE, '$1')
