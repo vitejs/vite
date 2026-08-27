@@ -221,6 +221,15 @@ describe('removeTimestampQuery', () => {
       '/foo.js#t=1712345678901',
     )
   })
+
+  test('removes timestamp query parameter followed by a hash', () => {
+    expect(removeTimestampQuery('/icon.svg?t=1712345678901#shape')).toBe(
+      '/icon.svg#shape',
+    )
+    expect(removeTimestampQuery('/icon.svg?import&t=1712345678901#shape')).toBe(
+      '/icon.svg?import#shape',
+    )
+  })
 })
 
 describe('resolveHostname', () => {
