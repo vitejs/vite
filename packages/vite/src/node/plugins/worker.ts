@@ -32,6 +32,8 @@ import {
 import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
 
 type WorkerBundle = {
+  /** absolute path of the worker entry source */
+  originalFileName: string
   entryFilename: string
   entryCode: string
   referencedAssets: Set<string>
@@ -98,6 +100,7 @@ class WorkerOutputCache {
       this.saveAsset(asset, logger)
     }
     const bundle: WorkerBundle = {
+      originalFileName: file,
       entryFilename: outputEntryFilename,
       entryCode: outputEntryCode,
       referencedAssets: new Set(outputAssets.map((asset) => asset.fileName)),
@@ -259,6 +262,7 @@ class WorkerOutputCache {
       referenceId = pluginContext.emitFile({
         type: 'asset',
         fileName: bundle.entryFilename,
+        originalFileName: bundle.originalFileName,
         source: bundle.entryCode,
       })
       bundle.entryReferenceIds.set(environment, referenceId)
@@ -445,8 +449,10 @@ async function bundleWorkerEntry(
       ? outputChunk
       : {
           fileName: outputChunk.fileName,
-          originalFileName: null,
-          originalFileNames: [],
+          originalFileName: outputChunk.facadeModuleId,
+          originalFileNames: outputChunk.facadeModuleId
+            ? [outputChunk.facadeModuleId]
+            : [],
           source: outputChunk.code,
         },
   )
@@ -485,8 +491,8 @@ export async function workerFileToUrl(
   workerOutput.saveAsset(
     {
       fileName: bundle.entryFilename,
-      originalFileName: null,
-      originalFileNames: [],
+      originalFileName: bundle.originalFileName,
+      originalFileNames: [bundle.originalFileName],
       source: bundle.entryCode,
     },
     config.logger,
@@ -830,6 +836,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         this.emitFile({
           type: 'asset',
           fileName: asset.fileName,
+          originalFileName: asset.originalFileName ?? undefined,
           source: asset.source,
           // NOTE: fileName is already generated when bundling the worker
           //       so no need to pass originalFileNames/names
