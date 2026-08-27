@@ -132,6 +132,8 @@ function getHtmlDirnameForRelativeUrl(htmlPath: string): string {
   return htmlPath.endsWith('/') ? htmlPath : path.posix.dirname(htmlPath)
 }
 
+const multipleLeadingSlashesRE = /^\/{2,}/g
+
 const processNodeUrl = (
   url: string,
   useSrcSetReplacer: boolean,
@@ -210,7 +212,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   // The relative URL is needed to generate the URL in script tags and link tags.
   // We replace `//` with `/` here for workaround, which is the best we can do.
   if (htmlPath.startsWith('//')) {
-    htmlPath = htmlPath.slice(1)
+    htmlPath = htmlPath.replace(multipleLeadingSlashesRE, '/')
   }
 
   const { config, watcher } = server!

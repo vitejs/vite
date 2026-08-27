@@ -87,22 +87,24 @@ describe('indexHtml middleware — inline script proxy cache', () => {
     expect(result!.code).toContain('module loaded')
   })
 
-  test('does not preserve a protocol-relative request URL as the inline module proxy URL', async () => {
-    const server = await createTestServer(VITE_PACKAGE_DIR)
-    const url = '//evil.example.com/payload.js?/../../package.json'
+  for (const prefix of ['//', '///']) {
+    test(`does not preserve a protocol-relative request URL (${prefix}) as the inline module proxy URL`, async () => {
+      const server = await createTestServer(VITE_PACKAGE_DIR)
+      const url = prefix + 'evil.example.com/payload.js?/../../package.json'
 
-    const transformed = await server.transformIndexHtml(url, HTML_CONTENT)
-    const proxyUrlMatch = transformed.match(/src="([^"]*html-proxy[^"]*)"/)
+      const transformed = await server.transformIndexHtml(url, HTML_CONTENT)
+      const proxyUrlMatch = transformed.match(/src="([^"]*html-proxy[^"]*)"/)
 
-    expect(
-      proxyUrlMatch,
-      'devHtmlHook should have rewritten the inline <script> to a ?html-proxy src',
-    ).toBeTruthy()
-    expect(proxyUrlMatch![1]).toMatchInlineSnapshot(
-      `"/@id/__x00__/evil.example.com/payload.js?/../../package.json?html-proxy&index=0.js"`,
-    )
-    expect(proxyUrlMatch![1]).not.toMatch(/^\/\//)
-  })
+      expect(
+        proxyUrlMatch,
+        'devHtmlHook should have rewritten the inline <script> to a ?html-proxy src',
+      ).toBeTruthy()
+      expect(proxyUrlMatch![1]).toMatchInlineSnapshot(
+        `"/@id/__x00__/evil.example.com/payload.js?/../../package.json?html-proxy&index=0.js"`,
+      )
+      expect(proxyUrlMatch![1]).not.toMatch(/^\/\//)
+    })
+  }
 })
 
 describe('indexHtml middleware — HMR timestamp injection with non-root base', () => {
