@@ -84,3 +84,29 @@ test('resolves the package root for scoped packages', () => {
   )
   expect(pkg?.data).toMatchObject({ name: '@scope/dep', version: '2.0.0' })
 })
+
+// under Yarn PnP, packages are hosted inside zip archives at
+// `.../cache/<pkg>-npm-<ver>-<hash>.zip/node_modules/<pkg>/...` (the cache
+// may live outside the project, e.g. in `~/.yarn/berry/cache`). The path
+// contains a synthesized `node_modules/<pkg>` segment, so the layout-based
+// resolution covers PnP without any PnP-specific handling
+test('resolves the package root for the Yarn PnP zip layout', () => {
+  const root = createFixtures({
+    'package.json': projectManifest,
+    'cache/engine.io-client-npm-6.6.6-fd14f4b531-10c0.zip/node_modules/engine.io-client/package.json':
+      { name: 'engine.io-client', version: '6.6.6', license: 'MIT' },
+    // nested type-marker manifest with a `name` but no `version`
+    'cache/engine.io-client-npm-6.6.6-fd14f4b531-10c0.zip/node_modules/engine.io-client/build/esm/package.json':
+      { name: 'engine.io-client', type: 'module' },
+  })
+  const pkg = findNearestMainPackageData(
+    path.join(
+      root,
+      'cache/engine.io-client-npm-6.6.6-fd14f4b531-10c0.zip/node_modules/engine.io-client/build/esm',
+    ),
+  )
+  expect(pkg?.data).toMatchObject({
+    name: 'engine.io-client',
+    version: '6.6.6',
+  })
+})
