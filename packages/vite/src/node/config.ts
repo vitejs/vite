@@ -802,6 +802,33 @@ export async function resolveDevToolsConfig(
   }
 }
 
+async function loadDevToolsIntegrationPlugins(
+  config: UserConfig,
+  command: 'serve' | 'build',
+  devtools: ResolvedDevToolsIntegration,
+): Promise<Plugin[]> {
+  try {
+    const { DevToolsIntegration } = await import('@vitejs/devtools/integration')
+    return await DevToolsIntegration({
+      command,
+      devtools,
+      root: config.root ? path.resolve(config.root) : process.cwd(),
+    })
+  } catch (error: any) {
+    const logger = createLogger(config.logLevel, {
+      allowClearScreen: config.clearScreen,
+      customLogger: config.customLogger,
+    })
+    logger.error(
+      colors.red(
+        `Failed to load Vite DevTools integration: ${error?.message || error?.stack}`,
+      ),
+      { error },
+    )
+    return []
+  }
+}
+
 // inferred ones are omitted
 const configDefaults = Object.freeze({
   define: {},
@@ -1521,18 +1548,49 @@ export async function resolveConfig(
     }
   }
 
-  // resolve plugins
-  const rawPlugins = (await asyncFlatten(config.plugins || [])).filter(
+  // Run user config hooks before resolving DevTools, as they may enable or disable it.
+  const activeUserPlugins = (await asyncFlatten(config.plugins || [])).filter(
     filterPlugin,
   )
+  const [userPrePlugins, userNormalPlugins, userPostPlugins] =
+    sortUserPlugins(activeUserPlugins)
+  config = await runConfigHook(
+    config,
+    [...userPrePlugins, ...userNormalPlugins, ...userPostPlugins],
+    configEnv,
+  )
 
+  const resolvedDevToolsConfig = await resolveDevToolsConfig(
+    config.devtools,
+    config.server?.host,
+  )
+  const isDevToolsPluginRegistered = activeUserPlugins.some(
+    (plugin) => plugin.name === 'vite:devtools',
+  )
+  if (resolvedDevToolsConfig.enabled && isDevToolsPluginRegistered) {
+    throw new Error(
+      'Vite DevTools cannot be configured through both `plugins` and `devtools`.\n' +
+        'Remove the explicit `DevTools()` plugin and move its options to `devtools`.',
+    )
+  }
+  const devtoolsPlugins = resolvedDevToolsConfig.enabled
+    ? await loadDevToolsIntegrationPlugins(
+        config,
+        command,
+        resolvedDevToolsConfig,
+      )
+    : []
+  const rawPlugins = [
+    ...activeUserPlugins,
+    ...devtoolsPlugins.filter(filterPlugin),
+  ]
+
+  // Include DevTools in the final plugin order from configResolved onward.
   const [prePlugins, normalPlugins, postPlugins] = sortUserPlugins(rawPlugins)
 
   const isBuild = command === 'build'
 
-  // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
-  config = await runConfigHook(config, userPlugins, configEnv)
 
   // Ensure default client and ssr environments
   // If there are present, ensure order { client, ssr, ...custom }
@@ -2005,10 +2063,9 @@ export async function resolveConfig(
     experimental.renderBuiltUrl = undefined
   }
 
-  const resolvedDevToolsConfig = await resolveDevToolsConfig(
-    config.devtools,
-    server.host,
-  )
+  resolvedDevToolsConfig.host = (
+    await resolveDevToolsConfig(resolvedDevToolsConfig.options, server.host)
+  ).host
 
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,

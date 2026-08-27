@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
 import { afterEach, assert, describe, expect, test, vi } from 'vitest'
-import type { InlineConfig, PluginOption } from '..'
+import type { InlineConfig, Plugin, PluginOption } from '..'
 import { isWindows } from '../../shared/utils'
 import type { UserConfig, UserConfigExport } from '../config'
 import {
@@ -22,6 +22,121 @@ import {
   mergeConfig,
   normalizePath,
 } from '../utils'
+
+const devToolsIntegration = vi.hoisted(() => vi.fn())
+
+vi.mock('@vitejs/devtools/integration', () => ({
+  DevToolsIntegration: devToolsIntegration,
+}))
+
+describe('DevTools plugin resolution', () => {
+  afterEach(() => {
+    devToolsIntegration.mockReset()
+  })
+
+  test('resolves DevTools after user config hooks and uses the final plugin ordering', async () => {
+    const configHooks: string[] = []
+    const plugin = (
+      name: string,
+      enforce?: 'pre' | 'post',
+      apply?: 'serve' | 'build',
+      config?: InlineConfig,
+    ): Plugin => ({
+      name,
+      enforce,
+      apply,
+      config() {
+        configHooks.push(name)
+        return config
+      },
+    })
+
+    devToolsIntegration.mockResolvedValueOnce([
+      plugin('devtools-pre', 'pre'),
+      plugin('devtools-normal'),
+      plugin('devtools-post', 'post'),
+      plugin('devtools-build-only', undefined, 'build'),
+    ])
+
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        plugins: [
+          plugin('user-pre', 'pre'),
+          plugin('user-normal', undefined, undefined, { devtools: true }),
+          plugin('user-post', 'post'),
+        ],
+      },
+      'serve',
+    )
+
+    expect(devToolsIntegration).toHaveBeenCalledWith({
+      command: 'serve',
+      devtools: {
+        enabled: true,
+        host: 'localhost',
+        options: true,
+      },
+      root: process.cwd(),
+    })
+    expect(configHooks).toEqual(['user-pre', 'user-normal', 'user-post'])
+
+    const pluginNames = config.plugins.map((plugin) => plugin.name)
+    expect(pluginNames).not.toContain('devtools-build-only')
+    expect(pluginNames.indexOf('user-pre')).toBeLessThan(
+      pluginNames.indexOf('devtools-pre'),
+    )
+    expect(pluginNames.indexOf('user-normal')).toBeLessThan(
+      pluginNames.indexOf('devtools-normal'),
+    )
+    expect(pluginNames.indexOf('user-post')).toBeLessThan(
+      pluginNames.indexOf('devtools-post'),
+    )
+  })
+
+  test('rejects the active manual plugin before loading the integration', async () => {
+    await expect(
+      resolveConfig(
+        {
+          configFile: false,
+          plugins: [
+            { name: 'vite:devtools' },
+            {
+              name: 'enable-devtools',
+              config: () => ({ devtools: true }),
+            },
+          ],
+        },
+        'serve',
+      ),
+    ).rejects.toThrow(
+      'Vite DevTools cannot be configured through both `plugins` and `devtools`.',
+    )
+    expect(devToolsIntegration).not.toHaveBeenCalled()
+  })
+
+  test('keeps the manual plugin when a config hook disables the core integration', async () => {
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        devtools: true,
+        plugins: [
+          { name: 'vite:devtools' },
+          {
+            name: 'disable-devtools',
+            config: () => ({ devtools: false }),
+          },
+        ],
+      },
+      'serve',
+    )
+
+    expect(config.plugins.map((plugin) => plugin.name)).toContain(
+      'vite:devtools',
+    )
+    expect(devToolsIntegration).not.toHaveBeenCalled()
+  })
+})
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {

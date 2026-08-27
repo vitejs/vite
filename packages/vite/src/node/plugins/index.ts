@@ -1,5 +1,4 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
-import colors from 'picocolors'
 import type { ObjectHook } from 'rolldown'
 import {
   viteAliasPlugin as nativeAliasPlugin,
@@ -7,11 +6,7 @@ import {
   oxcRuntimePlugin,
 } from 'rolldown/experimental'
 import { resolveBuildPlugins } from '../build'
-import {
-  type PluginHookUtils,
-  type ResolvedConfig,
-  sortUserPlugins,
-} from '../config'
+import { type PluginHookUtils, type ResolvedConfig } from '../config'
 import { watchPackageDataPlugin } from '../packages'
 import {
   type HookHandler,
@@ -57,21 +52,6 @@ export async function resolvePlugins(
   const buildPlugins = anyEnvBundled
     ? resolveBuildPlugins(config)
     : { pre: [], post: [] }
-  const isDevToolsPluginRegistered = [
-    ...prePlugins,
-    ...normalPlugins,
-    ...postPlugins,
-  ].some((plugin) => plugin.name === 'vite:devtools')
-  if (config.devtools.enabled && !isWorker && isDevToolsPluginRegistered) {
-    throw new Error(
-      'Vite DevTools cannot be configured through both `plugins` and `devtools`.\n' +
-        'Remove the explicit `DevTools()` plugin and move its options to `devtools`.',
-    )
-  }
-  const devtoolsIntegrationPlugins =
-    config.devtools.enabled && !isWorker
-      ? await loadDevToolsIntegrationPlugins(config)
-      : { post: [], pre: [], normal: [] }
   const { modulePreload } = config.build
 
   return [
@@ -103,7 +83,6 @@ export async function resolvePlugins(
     } as Plugin,
 
     ...prePlugins,
-    ...devtoolsIntegrationPlugins.pre,
 
     modulePreload !== false && modulePreload.polyfill
       ? modulePreloadPolyfillPlugin()
@@ -150,7 +129,6 @@ export async function resolvePlugins(
       forwardConsolePlugin({ environments: ['client'] }),
 
     ...normalPlugins,
-    ...devtoolsIntegrationPlugins.normal,
 
     definePlugin(config),
     cssPostPlugin(config),
@@ -162,7 +140,6 @@ export async function resolvePlugins(
     importGlobPlugin(config),
 
     ...postPlugins,
-    ...devtoolsIntegrationPlugins.post,
 
     ...buildPlugins.post,
 
@@ -171,28 +148,6 @@ export async function resolvePlugins(
     cssAnalysisPlugin(config),
     importAnalysisPlugin(config),
   ].filter(Boolean) as Plugin[]
-}
-
-async function loadDevToolsIntegrationPlugins(
-  config: ResolvedConfig,
-): Promise<{ pre: Plugin[]; normal: Plugin[]; post: Plugin[] }> {
-  try {
-    const { DevToolsIntegration } = await import('@vitejs/devtools/integration')
-    const plugins = (await DevToolsIntegration({
-      config,
-      devtools: config.devtools,
-    })) as Plugin | Plugin[]
-    const [pre, normal, post] = sortUserPlugins([plugins])
-    return { pre, normal, post }
-  } catch (error: any) {
-    config.logger.error(
-      colors.red(
-        `Failed to load Vite DevTools integration: ${error?.message || error?.stack}`,
-      ),
-      { error },
-    )
-    return { pre: [], normal: [], post: [] }
-  }
 }
 
 export function createPluginHookUtils(
