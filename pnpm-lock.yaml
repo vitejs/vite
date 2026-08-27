@@ -520,6 +520,8 @@ importers:
 
   packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker: {}
 
+  packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker/build/devtools: {}
+
   packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker/build/esm: {}
 
   packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc: {}
