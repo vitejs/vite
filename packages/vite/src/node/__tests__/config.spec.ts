@@ -1728,6 +1728,32 @@ describe('loadConfigFromFile', () => {
       expect(await loadWithWarnings('json-ok')).toHaveLength(0)
     })
 
+    test('warns on named import from JSON module', async () => {
+      const messages = await loadWithWarnings('json-named-import')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - named import from JSON module "./data.json" (vite.config.js:1:25). JSON modules only provide a default export per spec. Use the default import and access the property
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    test('warns on named import from a bare JSON specifier', async () => {
+      const messages = await loadWithWarnings('json-named-import-bare')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - named import from JSON module "some-pkg/package.json" (vite.config.js:1:25). JSON modules only provide a default export per spec. Use the default import and access the property
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    test('does not warn on JSON default imports (`default as` included)', async () => {
+      expect(await loadWithWarnings('json-named-import-ok')).toHaveLength(0)
+    })
+
     test('warns on an extension-less import that resolves to JSON', async () => {
       const messages = await loadWithWarnings('json-extensionless')
       expect(messages).toMatchInlineSnapshot(`

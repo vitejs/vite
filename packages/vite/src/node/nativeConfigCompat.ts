@@ -12,6 +12,7 @@ export type NativeConfigIncompatibilityType =
   | 'extensionless-import'
   | 'directory-index-import'
   | 'json-without-attributes'
+  | 'json-named-import'
   | 'esm-syntax-in-cjs'
 
 export interface NativeConfigIncompatibility {
@@ -31,6 +32,7 @@ export interface ConfigImportRef {
   line: number
   column: number
   hasTypeJsonAttribute: boolean
+  hasNamedImports: boolean
 }
 
 const jsTsExtRE = /\.[cm]?[jt]sx?$/
@@ -56,14 +58,24 @@ export function classifyImportRef(
   const base = { file, line, column, specifier }
 
   if (specifier.endsWith('.json')) {
-    if (ref.hasTypeJsonAttribute) return undefined
-    return { type: 'json-without-attributes', ...base }
+    if (!ref.hasTypeJsonAttribute) {
+      return { type: 'json-without-attributes', ...base }
+    }
+    if (ref.hasNamedImports) {
+      return { type: 'json-named-import', ...base }
+    }
+    return undefined
   }
 
   if (!resolvedId) return undefined
 
-  if (resolvedId.endsWith('.json') && !ref.hasTypeJsonAttribute) {
-    return { type: 'json-without-attributes', ...base }
+  if (resolvedId.endsWith('.json')) {
+    if (!ref.hasTypeJsonAttribute) {
+      return { type: 'json-without-attributes', ...base }
+    }
+    if (ref.hasNamedImports) {
+      return { type: 'json-named-import', ...base }
+    }
   }
 
   const lastSegment = lastSegmentOf(specifier)
@@ -89,6 +101,22 @@ const hasTypeJson = (
     return key === 'type' && attr.value?.value === 'json'
   })
 
+const hasNonDefaultNamedBinding = (specifiers: ESTree.Node[]): boolean =>
+  specifiers.some((s) => {
+    if (s.type === 'ImportSpecifier') {
+      return !isDefaultModuleExportName(s.imported)
+    }
+    if (s.type === 'ExportSpecifier') {
+      return !isDefaultModuleExportName(s.local)
+    }
+    return false
+  })
+
+const isDefaultModuleExportName = (node: ESTree.ModuleExportName): boolean =>
+  node.type === 'Identifier'
+    ? node.name === 'default'
+    : node.value === 'default'
+
 const DIRNAME_FILENAME = {
   __dirname: 'dirname',
   __filename: 'filename',
@@ -104,14 +132,20 @@ export function analyzeConfigModuleReferences(
   const addImportRef = (
     source: ESTree.StringLiteral,
     hasTypeJsonAttribute: boolean,
+    hasNamedImports: boolean,
   ): void => {
-    if (!isPathSpecifier(source.value)) return
+    // bare specifiers are skipped except for the JSON checks, which classify
+    // from the specifier alone (`vue/package.json` etc.)
+    if (!isPathSpecifier(source.value) && !source.value.endsWith('.json')) {
+      return
+    }
     const { line, column } = numberToPos(code, source.start)
     imports.push({
       specifier: source.value,
       line,
       column,
       hasTypeJsonAttribute,
+      hasNamedImports,
     })
   }
 
@@ -120,12 +154,21 @@ export function analyzeConfigModuleReferences(
       const node = _node as ESTree.Node
       switch (node.type) {
         case 'ImportDeclaration':
-          addImportRef(node.source, hasTypeJson(node.attributes))
+          addImportRef(
+            node.source,
+            hasTypeJson(node.attributes),
+            hasNonDefaultNamedBinding(node.specifiers),
+          )
           break
         case 'ExportNamedDeclaration':
         case 'ExportAllDeclaration':
           if (node.source)
-            addImportRef(node.source, hasTypeJson(node.attributes))
+            addImportRef(
+              node.source,
+              hasTypeJson(node.attributes),
+              node.type === 'ExportNamedDeclaration' &&
+                hasNonDefaultNamedBinding(node.specifiers),
+            )
           break
         case 'ImportExpression':
           if (
@@ -133,7 +176,7 @@ export function analyzeConfigModuleReferences(
             typeof node.source.value === 'string'
           ) {
             // if a second (options) arg is present, assume the required attributes is set
-            addImportRef(node.source, node.options != null)
+            addImportRef(node.source, node.options != null, false)
           }
           break
       }
@@ -194,6 +237,8 @@ function describeIncompatibility(
       return item.specifier?.endsWith('.json')
         ? `JSON import "${item.specifier}" without import attributes (${loc}). Add \`with { type: 'json' }\``
         : `import "${item.specifier}" resolves to a JSON file (${loc}). Import it with a \`.json\` extension and \`with { type: 'json' }\``
+    case 'json-named-import':
+      return `named import from JSON module "${item.specifier}" (${loc}). JSON modules only provide a default export per spec. Use the default import and access the property`
     case 'esm-syntax-in-cjs':
       return `ESM syntax in a file loaded as CommonJS (${loc}). Use a \`.mjs\` extension or set \`"type": "module"\` in the closest package.json`
   }
