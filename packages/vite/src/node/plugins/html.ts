@@ -163,11 +163,14 @@ export function addToHTMLProxyTransformResult(
 // - `shortcut`                     : only valid for IE <9, use `icon`
 // - `mask-icon`                    : deprecated since Safari 12 (for pinned tabs)
 // - `apple-touch-icon-precomposed` : only valid for iOS <7 (for avoiding gloss effect)
+// `modulepreload` is also listed because a `data:` URL is fetched as a separate
+// module from the emitted chunk, so inlining defeats the preload entirely.
 const noInlineLinkRels = new Set([
   'icon',
   'apple-touch-icon',
   'apple-touch-startup-image',
   'manifest',
+  'modulepreload',
 ])
 
 export const isAsyncScriptMap: WeakMap<

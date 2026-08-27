@@ -314,6 +314,16 @@ describe('css url() references', () => {
     expect(await getBg('.css-url-quotes-base64-inline')).toMatch(match)
   })
 
+  test('no base64 inline for modulepreload links', async () => {
+    const el = await page.$(`link[rel="modulepreload"]`)
+    const href = await el.getAttribute('href')
+    expect(href).toMatch(
+      isBundled
+        ? /\/foo\/bar\/assets\/preload-module-[-\w]{8}\.js/
+        : 'preload-module.js',
+    )
+  })
+
   test('no base64 inline for icon and manifest links', async () => {
     const iconEl = await page.$(`link.ico`)
     const href = await iconEl.getAttribute('href')
