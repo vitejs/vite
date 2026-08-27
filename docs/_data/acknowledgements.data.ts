@@ -13,7 +13,7 @@ const notableDependencies = [
 // Dev tools used for development
 const devToolNames = [
   'eslint',
-  'prettier',
+  'oxfmt',
   'typescript',
   'vitest',
   'playwright-chromium',

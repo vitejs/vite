@@ -338,9 +338,9 @@ export function injectQuery(url: string, queryToInject: string): string {
   return `${normalizedFile}?${queryToInject}${postfix[0] === '?' ? `&${postfix.slice(1)}` : /* hash only */ postfix}`
 }
 
-const timestampRE = /\bt=\d{13}&?\b/
+const timestampRE = /(\?|&)t=\d{13}(?:&|$)/
 export function removeTimestampQuery(url: string): string {
-  return url.replace(timestampRE, '').replace(trailingSeparatorRE, '')
+  return url.replace(timestampRE, '$1').replace(trailingSeparatorRE, '')
 }
 
 export async function asyncReplace(
