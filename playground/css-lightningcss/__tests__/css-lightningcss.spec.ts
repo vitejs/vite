@@ -80,6 +80,18 @@ test.runIf(isBuild)('minify css', async () => {
   expect(cssFile).not.toMatch('#ffff00b3')
 })
 
+test.runIf(isBuild)('minify inline style', () => {
+  expect(readFile('dist/index.html')).toContain(
+    '<style>.inline-style{color:red}</style>',
+  )
+})
+
+test.runIf(isBuild)('escapes closing style tags in inline CSS', () => {
+  expect(readFile('dist/index.html')).toContain(
+    '<style>.escaped-closing-style{content:"<\\/style>"}</style>',
+  )
+})
+
 test.runIf(isBuild)('does not run the visitor again during minify', () => {
   expect(readFile('dist/media-query-visits.txt')).toBe('2')
 })

@@ -6,39 +6,39 @@ import {
   viteJsonPlugin as nativeJsonPlugin,
   oxcRuntimePlugin,
 } from 'rolldown/experimental'
+import { resolveBuildPlugins } from '../build'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
+import { watchPackageDataPlugin } from '../packages'
 import {
   type HookHandler,
   type Plugin,
   type PluginWithRequiredHook,
 } from '../plugin'
-import { watchPackageDataPlugin } from '../packages'
-import { resolveBuildPlugins } from '../build'
-import { oxcResolvePlugin } from './resolve'
-import { optimizedDepsPlugin } from './optimizedDeps'
-import { importAnalysisPlugin } from './importAnalysis'
-import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
-import { clientInjectionsPlugin } from './clientInjections'
-import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
-import { wasmHelperPlugin } from './wasm'
-import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
-import { webWorkerPlugin } from './worker'
-import { preAliasPlugin } from './preAlias'
-import { definePlugin } from './define'
-import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
 import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
+import { clientInjectionsPlugin } from './clientInjections'
+import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
+import { definePlugin } from './define'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
+import { esbuildBannerFooterCompatPlugin } from './esbuildBannerFooterCompatPlugin'
+import { forwardConsolePlugin } from './forwardConsole'
+import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
+import { importAnalysisPlugin } from './importAnalysis'
 import { importGlobPlugin } from './importMetaGlob'
+import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
+import { optimizedDepsPlugin } from './optimizedDeps'
+import { oxcPlugin } from './oxc'
 import {
   type PluginFilter,
   type TransformHookFilter,
   createFilterForTransform,
   createIdFilter,
 } from './pluginFilter'
-import { forwardConsolePlugin } from './forwardConsole'
-import { oxcPlugin } from './oxc'
-import { esbuildBannerFooterCompatPlugin } from './esbuildBannerFooterCompatPlugin'
+import { preAliasPlugin } from './preAlias'
+import { oxcResolvePlugin } from './resolve'
+import { wasmHelperPlugin } from './wasm'
+import { webWorkerPlugin } from './worker'
+import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
 
 export async function resolvePlugins(
   config: ResolvedConfig,

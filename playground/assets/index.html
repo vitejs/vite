@@ -32,6 +32,7 @@
   <li>Relative: <code class="asset-import-relative"></code></li>
   <li>Absolute: <code class="asset-import-absolute"></code></li>
   <li>From publicDir: <code class="public-import"></code></li>
+  <li>Typeof asset import: <code class="asset-import-typeof">failed</code></li>
   <li>
     From publicDir (json): <code class="public-json-import"></code> Content:
     <code class="public-json-import-content"></code>
@@ -511,6 +512,11 @@
 
   import publicUrl from '/icon.png'
   text('.public-import', publicUrl)
+
+  import typeofAssetUrl from './nested/asset2.png'
+  if (typeof typeofAssetUrl === 'string') {
+    text('.asset-import-typeof', 'string')
+  }
 
   import publicJsonUrl from '/foo.json?url'
   text('.public-json-import', publicJsonUrl)

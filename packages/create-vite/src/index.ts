@@ -1,12 +1,12 @@
+import type { SpawnOptions } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import util from 'node:util'
-import type { SpawnOptions } from 'node:child_process'
-import spawn from 'cross-spawn'
-import mri from 'mri'
 import * as prompts from '@clack/prompts'
 import { determineAgent } from '@vercel/detect-agent'
+import spawn from 'cross-spawn'
+import mri from 'mri'
 
 const {
   blue,
@@ -36,7 +36,7 @@ const argv = mri<{
 })
 const cwd = process.cwd()
 
-// prettier-ignore
+// oxfmt-ignore
 const helpMessage = `\
 Usage: create-vite [OPTION]... [DIRECTORY]
 
@@ -850,7 +850,9 @@ import babel from '@rolldown/plugin-babel'`,
   )
   updateReactCompilerReadme(
     root,
-    'The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.\n\nNote: This will impact Vite dev & build performances.',
+    'The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.\n\n' +
+      'Note: This will impact Vite dev & build performances.\n' +
+      'You can also try [the experimental native React Compiler support in plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md#rust-react-compiler) by using `compiler: true` in the plugin options instead of using the Babel plugin.',
   )
 }
 
@@ -858,7 +860,7 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@eslint/js
   const eslintJsVersion = '10.0.1'
   // renovate: datasource=npm depName=eslint
-  const eslintVersion = '10.8.1'
+  const eslintVersion = '10.9.0'
   // renovate: datasource=npm depName=eslint-plugin-react-hooks
   const eslintPluginReactHooksVersion = '7.1.1'
   // renovate: datasource=npm depName=eslint-plugin-react-refresh
@@ -1060,6 +1062,10 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         if (pkgManager === 'bun') {
           return 'bun x create-'
         }
+        // nub has no `create` verb; `nubx` runs the create- package directly
+        if (pkgManager === 'nub') {
+          return 'nubx create-'
+        }
         // Deno uses `run -A npm:create-` instead of `create` or `init` to also provide needed perms
         if (pkgManager === 'deno') {
           return 'deno run -A npm:create-'
@@ -1086,6 +1092,9 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         }
         if (pkgManager === 'bun') {
           return 'bun x '
+        }
+        if (pkgManager === 'nub') {
+          return 'nubx '
         }
         if (pkgManager === 'deno') {
           return 'deno run -A npm:'

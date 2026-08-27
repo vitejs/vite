@@ -127,6 +127,10 @@ import(`@/${base}.js`).then((mod) => {
   text('.dynamic-import-with-vars-alias', mod.hi())
 })
 
+import(`#alias/${base}.js`).then((mod) => {
+  text('.dynamic-import-with-vars-subpath-imports', mod.hi())
+})
+
 base = 'self'
 import(`../nested/${base}.js`).then((mod) => {
   text('.dynamic-import-self', mod.self)

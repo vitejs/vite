@@ -2,24 +2,26 @@ import path from 'node:path'
 import MagicString from 'magic-string'
 import type { RollupError } from 'rolldown'
 import { parseAstAsync } from 'rolldown/parseAst'
-import { stripLiteral } from 'strip-literal'
 import type { ESTree } from 'rolldown/utils'
+import { stripLiteral } from 'strip-literal'
+import { cleanUrl, slash, splitFileAndPostfix } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
-import type { Plugin } from '../plugin'
-import { evalValue, injectQuery, transformStableResult } from '../utils'
 import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
-import { cleanUrl, slash } from '../../shared/utils'
+import type { Plugin } from '../plugin'
+import { evalValue, injectQuery, transformStableResult } from '../utils'
+import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
+import { hasViteIgnoreRE } from './importAnalysis'
+import type { InternalResolveOptions } from './resolve'
+import { tryFsResolve } from './resolve'
 import type { WorkerType } from './worker'
 import {
   WORKER_FILE_ID,
   emitWorkerAssetsForBundledDev,
+  recordWorkerReference,
+  generateWorkerEntryUrlExpr,
   workerFileToUrl,
 } from './worker'
-import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
-import type { InternalResolveOptions } from './resolve'
-import { tryFsResolve } from './resolve'
-import { hasViteIgnoreRE } from './importAnalysis'
 
 interface WorkerOptions {
   type?: WorkerType
@@ -233,9 +235,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           s ||= new MagicString(code)
           const workerType = await getWorkerType(code, cleanString, endIndex)
           const url = rawUrl.slice(1, -1)
+          const { file: urlWithoutPostfix, postfix } = splitFileAndPostfix(url)
+          const queryPostfix = postfix[0] === '?' ? postfix : ''
           let file: string | undefined
-          if (url[0] === '.') {
-            file = path.resolve(path.dirname(id), url)
+          if (urlWithoutPostfix[0] === '.') {
+            file = path.resolve(path.dirname(id), urlWithoutPostfix)
             file = slash(tryFsResolve(file, fsResolveOptions) ?? file)
           } else {
             workerResolver ??= createBackCompatIdResolver(config, {
@@ -243,11 +247,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               tryIndex: false,
               preferRelative: true,
             })
-            file = await workerResolver(this.environment, url, id)
+            file = await workerResolver(this.environment, urlWithoutPostfix, id)
             file ??=
-              url[0] === '/'
-                ? slash(path.join(config.publicDir, url))
-                : slash(path.resolve(path.dirname(id), url))
+              urlWithoutPostfix[0] === '/'
+                ? slash(path.join(config.publicDir, urlWithoutPostfix))
+                : slash(path.resolve(path.dirname(id), urlWithoutPostfix))
           }
 
           if (
@@ -257,34 +261,43 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           ) {
             s.update(expStart, expEnd, 'self.location.href')
           } else {
-            let builtUrl: string
+            let builtUrlExpr: string
             if (isBundled) {
+              recordWorkerReference(
+                config,
+                config.bundleChain.at(-1),
+                cleanUrl(file),
+                id,
+              )
               const result = await workerFileToUrl(config, file)
               if (this.environment.config.command === 'serve') {
                 emitWorkerAssetsForBundledDev(this, config)
-                builtUrl = toOutputFilePathInJSForBundledDev(
-                  this.environment,
-                  result.entryFilename,
+                builtUrlExpr = JSON.stringify(
+                  toOutputFilePathInJSForBundledDev(
+                    this.environment,
+                    result.entryFilename,
+                  ),
                 )
               } else {
-                builtUrl = result.entryUrlPlaceholder
+                builtUrlExpr = generateWorkerEntryUrlExpr(this, config, result)
               }
               for (const file of result.watchedFiles) {
                 this.addWatchFile(file)
               }
             } else {
-              builtUrl = await fileToUrl(this, cleanUrl(file))
-              builtUrl = injectQuery(
-                builtUrl,
+              builtUrlExpr = await fileToUrl(this, cleanUrl(file), 'string')
+              builtUrlExpr = injectQuery(
+                `${builtUrlExpr}${queryPostfix}`,
                 `${WORKER_FILE_ID}&type=${workerType}`,
               )
+              builtUrlExpr = JSON.stringify(builtUrlExpr)
             }
             s.update(
               expStart,
               expEnd,
               // NOTE: add `'' +` to opt-out rolldown's transform: https://github.com/rolldown/rolldown/issues/2745
               // NOTE: `globalThis.URL` because a module of its own can export `URL`
-              `new globalThis.URL(/* @vite-ignore */ ${JSON.stringify(builtUrl)}, '' + import.meta.url)`,
+              `new globalThis.URL(/* @vite-ignore */ ${builtUrlExpr}, '' + import.meta.url)`,
             )
           }
         }

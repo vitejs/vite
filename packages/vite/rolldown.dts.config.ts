@@ -1,4 +1,7 @@
 import { builtinModules } from 'node:module'
+import { parse as parseWithBabel } from '@babel/parser'
+import { walk } from 'estree-walker'
+import MagicString from 'magic-string'
 import { defineConfig } from 'rolldown'
 import type {
   OutputChunk,
@@ -6,12 +9,9 @@ import type {
   PluginContext,
   RenderedChunk,
 } from 'rolldown'
-import type { ESTree } from 'rolldown/utils'
-import { parseAst } from 'rolldown/parseAst'
 import { dts } from 'rolldown-plugin-dts'
-import { parse as parseWithBabel } from '@babel/parser'
-import { walk } from 'estree-walker'
-import MagicString from 'magic-string'
+import { parseAst } from 'rolldown/parseAst'
+import type { ESTree } from 'rolldown/utils'
 import pkg from './package.json' with { type: 'json' }
 
 type Directive = ESTree.Directive

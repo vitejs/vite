@@ -1,11 +1,11 @@
+import type { Equal, ExpectExtends, ExpectTrue } from '@type-challenges/utils'
 /**
  * This is a development only file for testing types.
  */
 import type { Plugin as RolldownPlugin } from 'rolldown'
-import type { Equal, ExpectExtends, ExpectTrue } from '@type-challenges/utils'
 import type { Plugin as RollupPlugin } from 'rollup'
-import type { Plugin, PluginContextExtension, PluginOption } from '../plugin'
 import type { ROLLUP_HOOKS } from '../constants'
+import type { Plugin, PluginContextExtension, PluginOption } from '../plugin'
 import type {
   GetHookContextMap,
   NonNeverKeys,
