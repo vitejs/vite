@@ -581,6 +581,33 @@ describe('closeServer hook', () => {
 
     await server.close()
   })
+
+  test('queues and runs follow-up restart if requested while restart is in flight', async () => {
+    let restartCount = 0
+    const server = await createServerWithPlugin({
+      name: 'test-restart-race',
+      async config() {
+        restartCount++
+        // simulate slow plugin startup to ensure race window
+        await new Promise((r) => setTimeout(r, 50))
+      },
+    })
+
+    // restartCount is 1 from initial createServer
+    expect(restartCount).toBe(1)
+
+    // Trigger restart 1
+    const p1 = server.restart()
+    // Trigger restart 2 while restart 1 is in flight
+    const p2 = server.restart()
+
+    await Promise.all([p1, p2])
+
+    // restartCount should be 3: 1 (init) + 1 (first restart) + 1 (follow-up restart)
+    expect(restartCount).toBe(3)
+
+    await server.close()
+  })
 })
 
 describe('closePreviewServer hook', () => {
