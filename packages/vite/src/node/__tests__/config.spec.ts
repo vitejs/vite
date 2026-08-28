@@ -1733,7 +1733,7 @@ describe('loadConfigFromFile', () => {
       expect(messages).toMatchInlineSnapshot(`
         [
           "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
-          - named import from JSON module "./data.json" (vite.config.js:1:25). JSON modules only provide a default export per spec. Use the default import and access the property
+          - named import from JSON module "./data.json" (vite.config.js:1:10). JSON modules only provide a default export per spec. Use the default import and access the property
         Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
         ]
       `)
@@ -1744,7 +1744,7 @@ describe('loadConfigFromFile', () => {
       expect(messages).toMatchInlineSnapshot(`
         [
           "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
-          - named import from JSON module "some-pkg/package.json" (vite.config.js:1:25). JSON modules only provide a default export per spec. Use the default import and access the property
+          - named import from JSON module "some-pkg/package.json" (vite.config.js:1:10). JSON modules only provide a default export per spec. Use the default import and access the property
         Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
         ]
       `)

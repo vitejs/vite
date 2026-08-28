@@ -33,6 +33,9 @@ export interface ConfigImportRef {
   column: number
   hasTypeJsonAttribute: boolean
   hasNamedImports: boolean
+  /** position of the first non-default named binding */
+  namedImportLine: number
+  namedImportColumn: number
 }
 
 const jsTsExtRE = /\.[cm]?[jt]sx?$/
@@ -62,7 +65,13 @@ export function classifyImportRef(
       return { type: 'json-without-attributes', ...base }
     }
     if (ref.hasNamedImports) {
-      return { type: 'json-named-import', ...base }
+      return {
+        type: 'json-named-import',
+        file,
+        line: ref.namedImportLine,
+        column: ref.namedImportColumn,
+        specifier,
+      }
     }
     return undefined
   }
@@ -74,7 +83,13 @@ export function classifyImportRef(
       return { type: 'json-without-attributes', ...base }
     }
     if (ref.hasNamedImports) {
-      return { type: 'json-named-import', ...base }
+      return {
+        type: 'json-named-import',
+        file,
+        line: ref.namedImportLine,
+        column: ref.namedImportColumn,
+        specifier,
+      }
     }
   }
 
@@ -101,8 +116,10 @@ const hasTypeJson = (
     return key === 'type' && attr.value?.value === 'json'
   })
 
-const hasNonDefaultNamedBinding = (specifiers: ESTree.Node[]): boolean =>
-  specifiers.some((s) => {
+const findNonDefaultNamedBinding = (
+  specifiers: ESTree.Node[],
+): ESTree.Node | undefined =>
+  specifiers.find((s) => {
     if (s.type === 'ImportSpecifier') {
       return !isDefaultModuleExportName(s.imported)
     }
@@ -132,7 +149,7 @@ export function analyzeConfigModuleReferences(
   const addImportRef = (
     source: ESTree.StringLiteral,
     hasTypeJsonAttribute: boolean,
-    hasNamedImports: boolean,
+    namedBinding: ESTree.Node | undefined,
   ): void => {
     // bare specifiers are skipped except for the JSON checks, which classify
     // from the specifier alone (`vue/package.json` etc.)
@@ -140,12 +157,17 @@ export function analyzeConfigModuleReferences(
       return
     }
     const { line, column } = numberToPos(code, source.start)
+    const namedImportPos = namedBinding
+      ? numberToPos(code, namedBinding.start)
+      : undefined
     imports.push({
       specifier: source.value,
       line,
       column,
       hasTypeJsonAttribute,
-      hasNamedImports,
+      hasNamedImports: namedBinding != null,
+      namedImportLine: namedImportPos?.line ?? line,
+      namedImportColumn: namedImportPos?.column ?? column,
     })
   }
 
@@ -157,7 +179,7 @@ export function analyzeConfigModuleReferences(
           addImportRef(
             node.source,
             hasTypeJson(node.attributes),
-            hasNonDefaultNamedBinding(node.specifiers),
+            findNonDefaultNamedBinding(node.specifiers),
           )
           break
         case 'ExportNamedDeclaration':
@@ -166,8 +188,9 @@ export function analyzeConfigModuleReferences(
             addImportRef(
               node.source,
               hasTypeJson(node.attributes),
-              node.type === 'ExportNamedDeclaration' &&
-                hasNonDefaultNamedBinding(node.specifiers),
+              node.type === 'ExportNamedDeclaration'
+                ? findNonDefaultNamedBinding(node.specifiers)
+                : undefined,
             )
           break
         case 'ImportExpression':
@@ -176,7 +199,7 @@ export function analyzeConfigModuleReferences(
             typeof node.source.value === 'string'
           ) {
             // if a second (options) arg is present, assume the required attributes is set
-            addImportRef(node.source, node.options != null, false)
+            addImportRef(node.source, node.options != null, undefined)
           }
           break
       }
