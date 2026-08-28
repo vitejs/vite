@@ -35,6 +35,7 @@ const input = {
   write: resolve(dirname, 'write.html'),
   'transform-inline-js': resolve(dirname, 'transform-inline-js.html'),
   malformedUrl: resolve(dirname, 'malformed-url.html'),
+  entryAttrs: resolve(dirname, 'entryAttrs.html'),
   // resolved from `process.cwd()` by Rolldown (resolved from `root` by vite's resolver first)
   relativeInput: relative(
     process.cwd(),

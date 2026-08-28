@@ -175,6 +175,14 @@ export const isAsyncScriptMap: WeakMap<
   Map<string, boolean>
 > = new WeakMap()
 
+// tracks non-standard attributes (e.g. `fetchpriority`) written on the original
+// `<script type="module" src="...">` tags so they can be re-applied to the
+// `<script>` tags Vite injects for the built entry chunks, in source order.
+export const entryScriptExtraAttrsMap: WeakMap<
+  ResolvedConfig,
+  Map<string, Record<string, string>[]>
+> = new WeakMap()
+
 export function nodeIsElement(
   node: DefaultTreeAdapterMap['node'],
 ): node is DefaultTreeAdapterMap['element'] {
@@ -229,12 +237,14 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
   isModule: boolean
   isAsync: boolean
   isIgnored: boolean
+  extraAttrs: Record<string, string>
 } {
   let src: Token.Attribute | undefined
   let srcSourceCodeLocation: Token.Location | undefined
   let isModule = false
   let isAsync = false
   let isIgnored = false
+  const extraAttrs: Record<string, string> = {}
   for (const p of node.attrs) {
     if (p.prefix !== undefined) continue
     if (p.name === 'src') {
@@ -248,9 +258,18 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
       isAsync = true
     } else if (p.name === 'vite-ignore') {
       isIgnored = true
+    } else {
+      extraAttrs[p.name] = p.value
     }
   }
-  return { src, srcSourceCodeLocation, isModule, isAsync, isIgnored }
+  return {
+    src,
+    srcSourceCodeLocation,
+    isModule,
+    isAsync,
+    isIgnored,
+    extraAttrs,
+  }
 }
 
 const attrValueStartRE = /=\s*(.)/
@@ -427,6 +446,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
+  entryScriptExtraAttrsMap.set(config, new Map())
 
   return {
     name: 'vite:build-html',
@@ -504,6 +524,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         let everyScriptIsAsync = true
         let someScriptsAreAsync = false
         let someScriptsAreDefer = false
+        const entryScriptExtraAttrs: Record<string, string>[] = []
 
         const assetUrlsPromises: Promise<void>[] = []
 
@@ -540,8 +561,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // script tags
           if (node.nodeName === 'script') {
-            const { src, srcSourceCodeLocation, isModule, isAsync, isIgnored } =
-              getScriptInfo(node)
+            const {
+              src,
+              srcSourceCodeLocation,
+              isModule,
+              isAsync,
+              isIgnored,
+              extraAttrs,
+            } = getScriptInfo(node)
 
             if (isIgnored) {
               removeViteIgnoreAttr(s, node.sourceCodeLocation!)
@@ -583,6 +610,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   // add it as an import
                   js += `\nimport ${JSON.stringify(url)}`
                   shouldRemove = true
+                  entryScriptExtraAttrs.push(extraAttrs)
                 } else if (node.childNodes.length) {
                   const scriptNode =
                     node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
@@ -753,6 +781,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         })
 
         isAsyncScriptMap.get(config)!.set(id, everyScriptIsAsync)
+        entryScriptExtraAttrsMap.get(config)!.set(id, entryScriptExtraAttrs)
 
         if (someScriptsAreAsync && someScriptsAreDefer) {
           config.logger.warn(
@@ -852,6 +881,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         chunkOrUrl: OutputChunk | string,
         toOutputPath: (filename: string) => string,
         isAsync: boolean,
+        extraAttrs?: Record<string, string>,
       ): HtmlTagDescriptor => ({
         tag: 'script',
         attrs: {
@@ -864,6 +894,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // https://developer.chrome.com/blog/modulepreload/#ok-so-why-doesnt-link-relpreload-work-for-modules:~:text=For%20%3Cscript%3E,of%20other%20modules.
           // Now `<script type="module">` uses `same origin`: https://github.com/whatwg/html/pull/3656#:~:text=Module%20scripts%20are%20always%20fetched%20with%20credentials%20mode%20%22same%2Dorigin%22%20by%20default%20and%20can%20no%20longer%0Ause%20%22omit%22
           crossorigin: true,
+          // carry over attributes (e.g. `fetchpriority`) from the original
+          // `<script type="module">` tag, which is otherwise discarded since
+          // this tag is generated fresh for the built entry chunk
+          ...extraAttrs,
           src:
             typeof chunkOrUrl === 'string'
               ? chunkOrUrl
@@ -933,6 +967,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           toOutputFilePath(filename, 'public')
 
         const isAsync = isAsyncScriptMap.get(config)!.get(normalizedId)!
+        const entryExtraAttrs =
+          entryScriptExtraAttrsMap.get(config)!.get(normalizedId) ?? []
 
         let result = html
 
@@ -961,12 +997,27 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           const imports = getImportedChunks(chunk)
           let assetTags: HtmlTagDescriptor[]
           if (canInlineEntry) {
-            assetTags = imports.map((chunk) =>
-              toScriptTag(chunk, toOutputAssetFilePath, isAsync),
+            assetTags = imports.map((chunk, i) =>
+              toScriptTag(
+                chunk,
+                toOutputAssetFilePath,
+                isAsync,
+                entryExtraAttrs[i],
+              ),
             )
           } else {
             const { modulePreload } = this.environment.config.build
-            assetTags = [toScriptTag(chunk, toOutputAssetFilePath, isAsync)]
+            assetTags = [
+              toScriptTag(
+                chunk,
+                toOutputAssetFilePath,
+                isAsync,
+                // multiple original `<script type="module">` tags were merged into
+                // this single entry chunk, so there's no unambiguous tag to carry
+                // attributes from
+                entryExtraAttrs.length === 1 ? entryExtraAttrs[0] : undefined,
+              ),
+            ]
             if (modulePreload !== false) {
               const resolveDependencies =
                 typeof modulePreload === 'object' &&

@@ -365,6 +365,18 @@ describe('Valid HTML', () => {
   })
 })
 
+describe('entry script attrs', () => {
+  beforeAll(async () => {
+    await page.goto(viteTestUrl + '/entryAttrs.html')
+  })
+
+  test('non-standard attributes on the entry script tag are preserved', async () => {
+    const script = await page.$('script[fetchpriority]')
+    expect(await script.getAttribute('type')).toBe('module')
+    expect(await script.getAttribute('fetchpriority')).toBe('high')
+  })
+})
+
 describe('env', () => {
   beforeAll(async () => {
     await page.goto(viteTestUrl + '/env.html')
