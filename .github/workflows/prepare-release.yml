@@ -89,7 +89,7 @@ jobs:
           node scripts/prepare-release.ts "$RELEASE_PACKAGE" "$RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Open release PR
-        uses: vitejs/release-scripts/action/release-pr@005dab4c647ff12519bfd076a595b2be33be8f6b # v1.9.2
+        uses: vitejs/release-scripts/action/release-pr@083fcf277cb3edc873f60d820738be35323d14e7 # v1.10.0
         with:
           token: ${{ github.token }}
           package-name: ${{ inputs.package }}

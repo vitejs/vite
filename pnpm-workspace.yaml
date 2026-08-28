@@ -51,6 +51,7 @@ minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - rolldown
   - '@rolldown/binding-*'
+  - '@vitejs/release-scripts@1.10.0'
 blockExoticSubdeps: true
 trustPolicy: no-downgrade
 trustPolicyExclude:
