@@ -3,6 +3,11 @@ name: Prepare Release
 on:
   workflow_dispatch:
     inputs:
+      target_branch:
+        description: Release target branch
+        required: true
+        default: main
+        type: string
       package:
         description: Package to release
         required: true
@@ -31,7 +36,7 @@ on:
         type: string
 
 concurrency:
-  group: ${{ github.workflow }}-${{ inputs.package }}-${{ inputs.version || inputs.release }}
+  group: ${{ github.workflow }}-${{ inputs.target_branch }}-${{ inputs.package }}-${{ inputs.version || inputs.release }}
   cancel-in-progress: false
 
 permissions: {}
@@ -45,10 +50,19 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      - name: Validate target branch
+        env:
+          TARGET_BRANCH: ${{ inputs.target_branch }}
+        run: |
+          if [[ "$TARGET_BRANCH" != "main" && ! "$TARGET_BRANCH" =~ ^v[0-9]+(\.[0-9]+)?$ ]]; then
+            echo "Target branch must be main or a v* release branch (for example, v8 or v8.0)"
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: main
+          ref: ${{ inputs.target_branch }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -82,4 +96,5 @@ jobs:
           package-path: packages/${{ inputs.package }}
           pr-body: ${{ steps.prepare.outputs.pr_body }}
           tag: ${{ steps.prepare.outputs.tag }}
+          target-branch: ${{ inputs.target_branch }}
           version: ${{ steps.prepare.outputs.version }}
