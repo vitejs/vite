@@ -29,6 +29,7 @@ import {
   removeTimestampQuery,
   resolveHostname,
   resolveServerUrls,
+  setupRollupOptionCompat,
 } from '../utils'
 
 // Test certificate for SAN parsing (localhost, foo.localhost, *.vite.localhost)
@@ -1283,5 +1284,30 @@ describe('resolveServerUrls', () => {
 
     expect(result.network).toStrictEqual(['http://10.0.0.5:3000/'])
     expect(result.networkInterfaceNames).toStrictEqual([undefined])
+  })
+})
+
+describe('setupRollupOptionCompat', () => {
+  test('proxies rollupOptions to rolldownOptions', () => {
+    const config = { rollupOptions: { input: 'index.html' } }
+    setupRollupOptionCompat(config as any, 'optimizeDeps')
+    expect((config as any).rolldownOptions).toBeDefined()
+    expect((config as any).rolldownOptions.input).toBe('index.html')
+
+    // accessing rollupOptions should return rolldownOptions
+    const opts = (config as any).rollupOptions
+    expect(opts.input).toBe('index.html')
+  })
+
+  test('prioritizes rolldownOptions if both are present', () => {
+    const config = {
+      rollupOptions: { input: 'index.html' },
+      rolldownOptions: { input: 'main.html' },
+    }
+    setupRollupOptionCompat(config as any, 'optimizeDeps')
+    expect((config as any).rolldownOptions.input).toBe('main.html')
+
+    const opts = (config as any).rollupOptions
+    expect(opts.input).toBe('main.html')
   })
 })
