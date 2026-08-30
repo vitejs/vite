@@ -25,16 +25,12 @@ import type {
 } from 'rolldown'
 import { viteLoadFallbackPlugin as nativeLoadFallbackPlugin } from 'rolldown/experimental'
 import { esmExternalRequirePlugin } from 'rolldown/plugins'
-import type { EsbuildTarget } from '#types/internal/esbuildOptions'
 import type { RollupCommonJSOptions } from '#dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from '#dep-types/dynamicImportVars'
+import type { EsbuildTarget } from '#types/internal/esbuildOptions'
 import type { AssetMetadata, ChunkMetadata } from '#types/metadata'
-import {
-  DEFAULT_ASSETS_INLINE_LIMIT,
-  ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
-  ROLLUP_HOOKS,
-  VERSION,
-} from './constants'
+import type { PartialEnvironment } from './baseEnvironment'
+import { BaseEnvironment } from './baseEnvironment'
 import type {
   EnvironmentOptions,
   InlineConfig,
@@ -42,10 +38,37 @@ import type {
   ResolvedEnvironmentOptions,
 } from './config'
 import { resolveConfig } from './config'
-import type { PartialEnvironment } from './baseEnvironment'
-import { buildReporterPlugin } from './plugins/reporter'
+import {
+  DEFAULT_ASSETS_INLINE_LIMIT,
+  ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
+  ROLLUP_HOOKS,
+  VERSION,
+} from './constants'
+import {
+  isFutureDeprecationEnabled,
+  warnFutureDeprecation,
+} from './deprecations'
+import type { Environment } from './environment'
+import { type Logger } from './logger'
+import { findNearestMainPackageData, findNearestPackageData } from './packages'
+import type { PackageCache } from './packages'
+import { perEnvironmentPlugin } from './plugin'
+import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
+import { getHookHandler } from './plugins'
 import { buildEsbuildPlugin } from './plugins/esbuild'
+import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
+import { type LicenseOptions, licensePlugin } from './plugins/license'
+import { manifestPlugin } from './plugins/manifest'
+import { prepareOutDirPlugin } from './plugins/prepareOutDir'
+import { buildReporterPlugin } from './plugins/reporter'
 import { type TerserOptions, terserPlugin } from './plugins/terser'
+import { webWorkerPostPlugin } from './plugins/worker'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from './server/pluginContainer'
+import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
+import type { RollupPluginHooks } from './typeUtils'
 import {
   arraify,
   asyncFlatten,
@@ -59,35 +82,12 @@ import {
   setupRollupOptionCompat,
   unique,
 } from './utils'
-import { perEnvironmentPlugin } from './plugin'
-import { manifestPlugin } from './plugins/manifest'
-import { type Logger } from './logger'
-import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
-import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
-import { findNearestMainPackageData, findNearestPackageData } from './packages'
-import type { PackageCache } from './packages'
 import {
   convertToWatcherOptions,
   getResolvedOutDirs,
   resolveChokidarOptions,
   resolveEmptyOutDir,
 } from './watch'
-import { webWorkerPostPlugin } from './plugins/worker'
-import { getHookHandler } from './plugins'
-import { BaseEnvironment } from './baseEnvironment'
-import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
-import type { RollupPluginHooks } from './typeUtils'
-import { type LicenseOptions, licensePlugin } from './plugins/license'
-import {
-  BasicMinimalPluginContext,
-  basePluginContextMeta,
-} from './server/pluginContainer'
-import {
-  isFutureDeprecationEnabled,
-  warnFutureDeprecation,
-} from './deprecations'
-import { prepareOutDirPlugin } from './plugins/prepareOutDir'
-import type { Environment } from './environment'
 
 export interface BuildEnvironmentOptions {
   /**
@@ -157,6 +157,9 @@ export interface BuildEnvironmentOptions {
    * a niche browser that comes with most modern JavaScript features
    * but has poor CSS support, e.g. Android WeChat WebView, which
    * doesn't support the #RGBA syntax.
+   * When `build.cssMinify` is `lightningcss` (the default), this
+   * option takes precedence over `css.lightningcss.targets` for the
+   * minification step.
    * @default target
    */
   cssTarget?: EsbuildTarget | false
@@ -177,7 +180,7 @@ export interface BuildEnvironmentOptions {
   /**
    * Set to `false` to disable minification, or specify the minifier to use.
    * Available options are 'oxc' or 'terser' or 'esbuild'.
-   * @default 'oxc'
+   * @default 'oxc' for client build, false for SSR build
    */
   minify?: boolean | 'oxc' | 'terser' | 'esbuild'
   /**
@@ -685,6 +688,10 @@ export function resolveRolldownOptions(
       viteMode: true,
       chunkImportMap: options.chunkImportMap
         ? {
+            ...(typeof options.rolldownOptions.experimental?.chunkImportMap ===
+            'object'
+              ? options.rolldownOptions.experimental?.chunkImportMap
+              : {}),
             baseUrl: base,
           }
         : options.rolldownOptions.experimental?.chunkImportMap,

@@ -448,6 +448,13 @@ if (isBuild) {
       .toBe('worker-plain-updated')
   })
 
+  test('lazy bundling errors return 500', async () => {
+    const response = await page.request.get(
+      new URL('/@vite/lazy?id=%2Ffoo%2Fbar&clientId=x', page.url()).href,
+    )
+    expect(response.status()).toBe(500)
+  })
+
   // Blocked by https://github.com/rolldown/rolldown/issues/10340
   test.skip('chained invalidate in an import cycle settles', async () => {
     const original = readFile('cycle-a.js')

@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
-import { sassModuleTests, sassOtherTests, sassTest } from './sass-tests'
 import {
   editFile,
   findAssetFile,
@@ -15,6 +14,7 @@ import {
   serverLogs,
   viteTestUrl,
 } from '~utils'
+import { sassModuleTests, sassOtherTests, sassTest } from './sass-tests'
 
 // note: tests should retrieve the element at the beginning of test and reuse it
 // in later assertions to ensure CSS HMR doesn't reload the page
@@ -381,9 +381,9 @@ test('URL separation', async () => {
     if (i > 0)
       editFile('imported.css', (code) => code.replace(cases[i - 1], c) + '\n')
 
-    expect(await getBg(urlSeparated)).toMatch(
-      /^url\(.+\)(?:\s*,\s*url\(.+\))*$/,
-    )
+    await expect
+      .poll(() => getBg(urlSeparated))
+      .toMatch(/^url\(.+\)(?:\s*,\s*url\(.+\))*$/)
   }
 })
 

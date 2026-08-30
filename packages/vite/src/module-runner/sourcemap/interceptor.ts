@@ -1,8 +1,8 @@
 import type { OriginalMapping } from '@jridgewell/trace-mapping'
+import { slash } from '../../shared/utils'
+import type { EvaluatedModules } from '../evaluatedModules'
 import type { ModuleRunner } from '../runner'
 import { decodeBase64, posixDirname, posixResolve } from '../utils'
-import type { EvaluatedModules } from '../evaluatedModules'
-import { slash } from '../../shared/utils'
 import { DecodedMap, getOriginalPosition } from './decoder'
 
 interface RetrieveFileHandler {

@@ -3,6 +3,11 @@
   "singleQuote": true,
   "printWidth": 80,
   "sortPackageJson": false,
+  "sortImports": {
+    "groups": ["builtin", "external", "internal", "parent", "sibling", "index"],
+    "partitionByNewline": true,
+    "newlinesBetween": false
+  },
   "overrides": [
     {
       "files": ["**/*.json5"],

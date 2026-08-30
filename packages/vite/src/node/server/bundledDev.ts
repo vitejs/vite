@@ -1,16 +1,17 @@
 import { setTimeout } from 'node:timers/promises'
+import getEtag from 'etag'
+import colors from 'picocolors'
+import type { RolldownOutput } from 'rolldown'
 import {
   type BindingClientHmrUpdate,
   type DevEngine,
   dev,
 } from 'rolldown/experimental'
-import type { RolldownOutput } from 'rolldown'
-import colors from 'picocolors'
-import getEtag from 'etag'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
 import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
 import { getHmrImplementation } from '../plugins/clientInjections'
 import { createDebugger, formatAndTruncateFileList } from '../utils'
+import { convertToDevWatchOptions } from '../watch'
 import type { DevEnvironment } from './environment'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
 import { prepareError } from './middlewares/error'
@@ -246,6 +247,7 @@ export class BundledDev {
       },
       watch: {
         skipWrite: true,
+        ...convertToDevWatchOptions(this.environment.config.server.watch),
       },
     })
     debug?.('INITIAL: setup dev engine')
