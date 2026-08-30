@@ -472,6 +472,10 @@ export interface ViteDevServer {
   /**
    * @internal
    */
+  _pendingRestart: boolean
+  /**
+   * @internal
+   */
   _forceOptimizeOnRestart: boolean
   /**
    * @internal
@@ -516,6 +520,7 @@ export async function _createServer(
     previousEnvironments?: Record<string, DevEnvironment>
     previousShortcutsState?: ShortcutsState<ViteDevServer>
     previousRestartPromise?: Promise<void> | null
+    previousPendingRestart?: boolean
     previousForceOptimizeOnRestart?: boolean
   },
 ): Promise<ViteDevServer> {
@@ -840,10 +845,23 @@ export async function _createServer(
       bindCLIShortcuts(server, options)
     },
     async restart(forceOptimize?: boolean) {
-      if (!server._restartPromise) {
+      if (server._restartPromise) {
+        server._pendingRestart = true
+        server._forceOptimizeOnRestart ||= !!forceOptimize
+      } else {
+        server._pendingRestart = false
         server._forceOptimizeOnRestart = !!forceOptimize
-        server._restartPromise = restartServer(server).finally(() => {
+        server._restartPromise = (async () => {
+          while (true) {
+            await restartServer(server)
+            if (!server._pendingRestart) {
+              break
+            }
+            server._pendingRestart = false
+          }
+        })().finally(() => {
           server._restartPromise = null
+          server._pendingRestart = false
           server._forceOptimizeOnRestart = false
         })
       }
@@ -866,6 +884,7 @@ export async function _createServer(
       return closeServerPromise
     },
     _restartPromise: options.previousRestartPromise ?? null,
+    _pendingRestart: options.previousPendingRestart ?? false,
     _forceOptimizeOnRestart: options.previousForceOptimizeOnRestart ?? false,
     _shortcutsState: options.previousShortcutsState,
   }
@@ -1407,6 +1426,7 @@ async function restartServer(server: ViteDevServer) {
         previousEnvironments: server.environments,
         previousShortcutsState: server._shortcutsState,
         previousRestartPromise: server._restartPromise,
+        previousPendingRestart: server._pendingRestart,
         previousForceOptimizeOnRestart: server._forceOptimizeOnRestart,
       })
     } catch (err: any) {
@@ -1424,11 +1444,19 @@ async function restartServer(server: ViteDevServer) {
     // restart from a real close.
     await server._closeServer('restart')
 
+    const restartPromise = server._restartPromise
+    const pendingRestart = server._pendingRestart
+    const forceOptimizeOnRestart = server._forceOptimizeOnRestart
+
     // Assign new server props to existing server instance
     const middlewares = server.middlewares
     newServer._configServerPort = server._configServerPort
     newServer._currentServerPort = server._currentServerPort
     Object.assign(server, newServer)
+
+    server._restartPromise = restartPromise
+    server._pendingRestart = pendingRestart
+    server._forceOptimizeOnRestart = forceOptimizeOnRestart
 
     // Keep the same connect instance so app.use(vite.middlewares) works
     // after a restart in middlewareMode (.route is always '/')
