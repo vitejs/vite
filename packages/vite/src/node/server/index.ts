@@ -903,8 +903,34 @@ export async function _createServer(
     }
   }
 
+  const checkOptimizedDepSource = async (file: string) => {
+    let isOptimizedDepSource = false
+    for (const environment of Object.values(server.environments)) {
+      if (
+        environment.depsOptimizer?.metadata.watchFiles?.some(
+          (id) => file === id || file.startsWith(id + '/'),
+        )
+      ) {
+        isOptimizedDepSource = true
+        break
+      }
+    }
+    if (isOptimizedDepSource) {
+      server.config.logger.info(
+        colors.green(
+          `optimized dependency source changed, restarting server...`,
+        ),
+        { clear: true, timestamp: true },
+      )
+      await server.restart(true)
+      return true
+    }
+    return false
+  }
+
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
+    if (await checkOptimizedDepSource(file)) return
     reloadOnTsconfigChange(server, file)
 
     await Promise.all(
@@ -943,6 +969,7 @@ export async function _createServer(
 
   const onFileChange = async (file: string) => {
     file = normalizePath(file)
+    if (await checkOptimizedDepSource(file)) return
     reloadOnTsconfigChange(server, file)
 
     await Promise.all(
