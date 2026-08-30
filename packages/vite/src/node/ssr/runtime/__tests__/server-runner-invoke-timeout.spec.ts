@@ -1,7 +1,7 @@
 import { setTimeout as sleep } from 'node:timers/promises'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { ModuleRunnerTransport } from 'vite/module-runner'
 import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { ViteDevServer } from '../../../server'
 import { createServer } from '../../../server'
 
