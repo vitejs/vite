@@ -2,6 +2,7 @@ import path from 'node:path'
 import MagicString from 'magic-string'
 import { exactRegex } from 'rolldown/filter'
 import { stripLiteral } from 'strip-literal'
+import { escapePath } from 'tinyglobby'
 import { slash } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
@@ -185,7 +186,9 @@ function buildGlobPattern(ast: any) {
   for (let i = 0; i < ast.quasis.length; i++) {
     const str = ast.quasis[i].value.raw
     if (str) {
-      pattern += str
+      // the static parts are plain paths, so glob characters in them
+      // (e.g. a `foo(1)` directory) have to be escaped
+      pattern += escapePath(str)
       lastIsGlob = false
     }
 

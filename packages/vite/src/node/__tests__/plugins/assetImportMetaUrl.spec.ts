@@ -57,6 +57,24 @@ describe('assetImportMetaUrlPlugin', async () => {
     )
   })
 
+  test('escape glob characters in the static parts', async () => {
+    expect(
+      await transform('new URL(`./foo(1)/${file}.js`, import.meta.url)'),
+    ).toMatchInlineSnapshot(
+      `"new URL((import.meta.glob("./foo\\\\(1\\\\)/*.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo(1)/\${file}.js\`], import.meta.url)"`,
+    )
+    expect(
+      await transform('new URL(`./foo/bar[1].${ext}`, import.meta.url)'),
+    ).toMatchInlineSnapshot(
+      `"new URL((import.meta.glob("./foo/bar\\\\[1\\\\].*", {"eager":true,"import":"default","query":"?url"}))[\`./foo/bar[1].\${ext}\`], import.meta.url)"`,
+    )
+    expect(
+      await transform('new URL(`./foo/{a,b}/${file}.js`, import.meta.url)'),
+    ).toMatchInlineSnapshot(
+      `"new URL((import.meta.glob("./foo/\\\\{a,b\\\\}/*.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/{a,b}/\${file}.js\`], import.meta.url)"`,
+    )
+  })
+
   test('ignore starting with a variable', async () => {
     expect(
       await transform('new URL(`${file}.js`, import.meta.url)'),
