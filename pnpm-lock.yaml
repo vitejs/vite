@@ -173,7 +173,7 @@ importers:
         version: 1.2.0
       tsdown:
         specifier: ^0.22.14
-        version: 0.22.14(@vitejs/devtools@0.5.2)(@volar/typescript@2.4.28)(publint@0.3.24)(tsx@4.23.13)(typescript@6.0.3)(unrun@0.3.1)(vue-tsc@3.3.11)
+        version: 0.22.14(@vitejs/devtools@0.5.1)(@volar/typescript@2.4.28)(publint@0.3.24)(tsx@4.23.13)(typescript@6.0.3)(unrun@0.3.1)(vue-tsc@3.3.11)
       unrun:
         specifier: ^0.3.1
         version: 0.3.1
@@ -225,7 +225,7 @@ importers:
         version: 1.1.1
       tsdown:
         specifier: ^0.22.14
-        version: 0.22.14(@vitejs/devtools@0.5.2)(@volar/typescript@2.4.28)(publint@0.3.24)(tsx@4.23.13)(typescript@6.0.3)(unrun@0.3.1)(vue-tsc@3.3.11)
+        version: 0.22.14(@vitejs/devtools@0.5.1)(@volar/typescript@2.4.28)(publint@0.3.24)(tsx@4.23.13)(typescript@6.0.3)(unrun@0.3.1)(vue-tsc@3.3.11)
       unrun:
         specifier: ^0.3.1
         version: 0.3.1
@@ -283,7 +283,7 @@ importers:
         version: 1.2.5
       '@vitejs/devtools':
         specifier: ^0.5.1
-        version: 0.5.2(@devframes/json-render@0.9.7)(srvx@0.12.7)(vite@packages+vite)
+        version: 0.5.1(@devframes/json-render@0.9.7)(srvx@0.12.7)(vite@packages+vite)
       '@vitest/utils':
         specifier: 4.1.11
         version: 4.1.11
@@ -766,7 +766,7 @@ importers:
     devDependencies:
       '@vitejs/devtools':
         specifier: ^0.5.1
-        version: 0.5.2(@devframes/json-render@0.9.7)(srvx@0.12.7)(vite@packages+vite)
+        version: 0.5.1(@devframes/json-render@0.9.7)(srvx@0.12.7)(vite@packages+vite)
       vite:
         specifier: workspace:*
         version: link:../../packages/vite
@@ -4254,19 +4254,19 @@ packages:
     resolution: {integrity: sha512-0krENrjuitlW8s6TJu0MlqCevyCU7K7JK63jZAf7xZ6n17tx+vUEwzHT3sTxawtwZxaW21hu+oFUpoOrm49FsQ==}
     engines: {node: '>=14'}
 
-  '@vitejs/devtools-kit@0.5.2':
-    resolution: {integrity: sha512-3+zUBCEbuuPPCXDLwIZLEcMG+Eo9y+EQkS26s33j3nenLk7jKF7VHxtIP6uxMcmbbRraDZOqwhsNZMTH912W1w==}
+  '@vitejs/devtools-kit@0.5.1':
+    resolution: {integrity: sha512-ZQiD1WUYxTPYwZN8GybYBEVBTe42kSgCGk5l3hYXCwvCYTaAgZzyxtSTyD4nBA51N7ic9cEsmKfpZUSZsjkqRA==}
     peerDependencies:
       vite: workspace:*
 
-  '@vitejs/devtools@0.5.2':
-    resolution: {integrity: sha512-8IqYOFfO3SnrK6rNOg9oeQuzf0tTBLCjYZylW7aY21WavWLUD+++A739mMTbejVXC0/VRNdWFUl0o9y9NVTvsA==}
+  '@vitejs/devtools@0.5.1':
+    resolution: {integrity: sha512-ZQOJ8yXRCyS1cUo4ezcC1FSg9am+UpC4ic1K+BZ4Jft9n7gmKeVJc0WdE7U5p4vjB+3Ulkj4sUsuFWu1ntAzHw==}
     hasBin: true
     peerDependencies:
-      '@vitejs/devtools-oxc': ^0.5.2
-      '@vitejs/devtools-rolldown': ^0.5.2
-      '@vitejs/devtools-vite': ^0.5.2
-      '@vitejs/devtools-vitest': ^0.5.2
+      '@vitejs/devtools-oxc': ^0.5.1
+      '@vitejs/devtools-rolldown': ^0.5.1
+      '@vitejs/devtools-vite': ^0.5.1
+      '@vitejs/devtools-vitest': ^0.5.1
       vite: workspace:*
     peerDependenciesMeta:
       '@vitejs/devtools-oxc':
@@ -10298,7 +10298,7 @@ snapshots:
 
   '@vercel/detect-agent@1.2.5': {}
 
-  '@vitejs/devtools-kit@0.5.2(cac@7.0.0)(srvx@0.12.7)(vite@packages+vite)':
+  '@vitejs/devtools-kit@0.5.1(cac@7.0.0)(srvx@0.12.7)(vite@packages+vite)':
     dependencies:
       '@devframes/hub': 0.9.7(devframe@0.9.7)
       '@devframes/json-render': 0.9.7(@devframes/hub@0.9.7)(devframe@0.9.7)
@@ -10316,7 +10316,7 @@ snapshots:
       - ocache
       - srvx
 
-  '@vitejs/devtools@0.5.2(@devframes/json-render@0.9.7)(srvx@0.12.7)(vite@packages+vite)':
+  '@vitejs/devtools@0.5.1(@devframes/json-render@0.9.7)(srvx@0.12.7)(vite@packages+vite)':
     dependencies:
       '@devframes/hub': 0.9.7(devframe@0.9.7)
       '@devframes/hub-ui': 0.9.7(@devframes/hub@0.9.7)(@devframes/json-render@0.9.7)(devframe@0.9.7)
@@ -10324,7 +10324,7 @@ snapshots:
       '@devframes/plugin-inspect': 0.9.7(devframe@0.9.7)(vite@packages+vite)
       '@devframes/plugin-messages': 0.9.7(@devframes/hub@0.9.7)(devframe@0.9.7)(vite@packages+vite)
       '@devframes/plugin-terminals': 0.9.7(@devframes/hub-ui@0.9.7)(@devframes/hub@0.9.7)(devframe@0.9.7)(vite@packages+vite)
-      '@vitejs/devtools-kit': 0.5.2(cac@7.0.0)(srvx@0.12.7)(vite@packages+vite)
+      '@vitejs/devtools-kit': 0.5.1(cac@7.0.0)(srvx@0.12.7)(vite@packages+vite)
       cac: 7.0.0
       devframe: 0.9.7(cac@7.0.0)(srvx@0.12.7)
       h3: 2.0.1-rc.29(crossws@0.4.10)
@@ -13872,7 +13872,7 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  tsdown@0.22.14(@vitejs/devtools@0.5.2)(@volar/typescript@2.4.28)(publint@0.3.24)(tsx@4.23.13)(typescript@6.0.3)(unrun@0.3.1)(vue-tsc@3.3.11):
+  tsdown@0.22.14(@vitejs/devtools@0.5.1)(@volar/typescript@2.4.28)(publint@0.3.24)(tsx@4.23.13)(typescript@6.0.3)(unrun@0.3.1)(vue-tsc@3.3.11):
     dependencies:
       ansis: 4.3.1
       cac: 7.0.0
@@ -13890,7 +13890,7 @@ snapshots:
       unconfig-core: 7.5.0
       verkit: 0.3.1
     optionalDependencies:
-      '@vitejs/devtools': 0.5.2(@devframes/json-render@0.9.7)(srvx@0.12.7)(vite@packages+vite)
+      '@vitejs/devtools': 0.5.1(@devframes/json-render@0.9.7)(srvx@0.12.7)(vite@packages+vite)
       publint: 0.3.24
       tsx: 4.23.13
       typescript: 6.0.3
