@@ -114,6 +114,47 @@ describe('createIdFilter', () => {
       inputFilter: '/virtual/foo',
       cases: [{ id: '/virtual/foo', expected: true }],
     },
+    // Align picomatch with Rolldown: bare `()` are literals, not regex groups.
+    {
+      inputFilter: { include: '**/*.(js)' },
+      cases: [
+        { id: 'foo.js', expected: false },
+        { id: 'src/foo.js', expected: false },
+        { id: 'foo.(js)', expected: true },
+        { id: 'src/foo.(js)', expected: true },
+      ],
+    },
+    {
+      inputFilter: { include: '**/*.(js|ts)' },
+      cases: [
+        { id: 'foo.js', expected: false },
+        { id: 'foo.ts', expected: false },
+        { id: 'foo.(js|ts)', expected: true },
+      ],
+    },
+    {
+      inputFilter: { include: '**/*.@(js|ts)' },
+      cases: [
+        { id: 'foo.js', expected: true },
+        { id: 'foo.ts', expected: true },
+        { id: 'foo.jsx', expected: false },
+      ],
+    },
+    {
+      inputFilter: { include: '**/*.+(js)' },
+      cases: [
+        { id: 'foo.js', expected: true },
+        { id: 'foo.ts', expected: false },
+      ],
+    },
+    {
+      inputFilter: { include: '**/*.{js,ts}' },
+      cases: [
+        { id: 'foo.js', expected: true },
+        { id: 'foo.ts', expected: true },
+        { id: 'foo.jsx', expected: false },
+      ],
+    },
   ]
 
   for (const filter of filters) {

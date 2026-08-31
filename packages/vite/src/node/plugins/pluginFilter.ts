@@ -33,6 +33,61 @@ function getMatcherString(glob: string, cwd: string) {
   return slash(resolved)
 }
 
+const EXTGLOB_PREFIX_CHARS = '@+*?!'
+
+/**
+ * picomatch compiles unescaped `()` as regex capturing groups (and `|` as
+ * alternation), so `*.(js)` matches `foo.js`. Rolldown's `fast_glob` treats
+ * bare `()` as literals. Escape those groups so dev hook filters match
+ * build. Leave extglobs (`@()`, `!()`, `?()`, `+()`, `*()`) unchanged.
+ */
+function escapeBareParentheses(glob: string): string {
+  let result = ''
+  const groupIsExtglob: boolean[] = []
+  let lastWasEscaped = false
+
+  for (let i = 0; i < glob.length; i++) {
+    const char = glob[i]!
+
+    if (char === '\\' && i + 1 < glob.length) {
+      result += char + glob[++i]
+      lastWasEscaped = true
+      continue
+    }
+
+    if (char === '(') {
+      const prev = i > 0 ? glob[i - 1] : undefined
+      const isExtglob =
+        !lastWasEscaped &&
+        prev !== undefined &&
+        EXTGLOB_PREFIX_CHARS.includes(prev)
+      groupIsExtglob.push(isExtglob)
+      result += isExtglob ? '(' : '\\('
+      lastWasEscaped = false
+      continue
+    }
+
+    if (char === ')') {
+      const isExtglob = groupIsExtglob.pop() ?? false
+      result += isExtglob ? ')' : '\\)'
+      lastWasEscaped = false
+      continue
+    }
+
+    if (char === '|') {
+      const insideExtglob = groupIsExtglob.at(-1) === true
+      result += insideExtglob ? '|' : '\\|'
+      lastWasEscaped = false
+      continue
+    }
+
+    result += char
+    lastWasEscaped = false
+  }
+
+  return result
+}
+
 function patternToIdFilter(
   pattern: string | RegExp,
   cwd: string,
@@ -46,7 +101,7 @@ function patternToIdFilter(
     }
   }
 
-  const glob = getMatcherString(pattern, cwd)
+  const glob = escapeBareParentheses(getMatcherString(pattern, cwd))
   const matcher = picomatch(glob, { dot: true })
   return (id: string) => {
     const normalizedId = slash(id)
