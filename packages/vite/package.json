@@ -70,7 +70,7 @@
   },
   "dependencies": {
     "lightningcss": "^1.33.0",
-    "picomatch": "^4.0.5",
+    "picomatch": "^4.0.7",
     "postcss": "^8.5.26",
     "rolldown": "~1.2.6",
     "tinyglobby": "^0.2.17"
@@ -90,7 +90,7 @@
     "@vitest/utils": "4.1.11",
     "@voidzero-dev/vite-task-client": "^0.2.0",
     "artichokie": "^0.4.4",
-    "baseline-browser-mapping": "^2.11.18",
+    "baseline-browser-mapping": "^2.11.20",
     "cac": "^7.0.0",
     "chokidar": "^3.6.0",
     "connect": "^3.7.0",
@@ -107,7 +107,7 @@
     "host-validation-middleware": "^0.1.4",
     "http-proxy-3": "^1.23.3",
     "launch-editor-middleware": "^2.14.1",
-    "magic-string": "^1.2.2",
+    "magic-string": "^1.2.3",
     "mlly": "^1.8.2",
     "mrmime": "^2.0.1",
     "nanoid": "^5.1.16",
@@ -129,7 +129,7 @@
     "sass-embedded": "^1.103.1",
     "sirv": "^3.0.2",
     "strip-literal": "^4.0.0",
-    "terser": "^5.50.0",
+    "terser": "^5.51.2",
     "ufo": "^1.6.4",
     "ws": "^8.21.3"
   },
