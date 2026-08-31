@@ -105,7 +105,7 @@
     "etag": "^1.8.1",
     "fresh-import": "^0.2.1",
     "host-validation-middleware": "^0.1.4",
-    "http-proxy-3": "^1.23.3",
+    "http-proxy-3": "^2.0.1",
     "launch-editor-middleware": "^2.14.1",
     "magic-string": "^1.2.2",
     "mlly": "^1.8.2",

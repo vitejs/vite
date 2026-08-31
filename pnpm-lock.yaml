@@ -339,8 +339,8 @@ importers:
         specifier: ^0.1.4
         version: 0.1.4
       http-proxy-3:
-        specifier: ^1.23.3
-        version: 1.23.3(ms@2.1.3)
+        specifier: ^2.0.1
+        version: 2.0.1(ms@2.1.3)
       launch-editor-middleware:
         specifier: ^2.14.1
         version: 2.14.1
@@ -5870,9 +5870,9 @@ packages:
     resolution: {integrity: sha512-4FbRdAX+bSdmo4AUFuS0WNiPz8NgFt+r8ThgNWmlrjQjt1Q7ZR9+zTlce2859x4KSXrwIsaeTqDoKQmtP8pLmQ==}
     engines: {node: '>= 0.8'}
 
-  http-proxy-3@1.23.3:
-    resolution: {integrity: sha512-zm8JCrJUwB3Rn0HJypwwDraljDt7YbF+r7Gz0exDRlaT8Yimjs5VRfwug1GrhoasMna1DjwHeEs48+iKxCozyA==}
-    engines: {node: '>=18'}
+  http-proxy-3@2.0.1:
+    resolution: {integrity: sha512-CK9FEsoFko6wv5Y5+YvO6A0KANMZEXh7SvHjbne6zzQpih6qhTmA3xgS/5/QFlIF2HIFH5vZhtvk1Fk2udIsDw==}
+    engines: {node: '>=22'}
 
   human-signals@8.0.1:
     resolution: {integrity: sha512-eKCa6bwnJhvxj14kZk5NCPc6Hb6BdsU9DZcOnmQKSnO1VKrfV0zCvtttPZUsBvjmNDn8rpcJfpwSYnHBjc95MQ==}
@@ -11745,7 +11745,7 @@ snapshots:
       statuses: 2.0.2
       toidentifier: 1.0.1
 
-  http-proxy-3@1.23.3(ms@2.1.3):
+  http-proxy-3@2.0.1(ms@2.1.3):
     dependencies:
       debug: obug@1.0.2(ms@2.1.3)
       follow-redirects: 1.16.0(obug@1.0.2)
