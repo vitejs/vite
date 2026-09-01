@@ -34,7 +34,7 @@ describe('DevTools plugin resolution', () => {
     devToolsIntegration.mockReset()
   })
 
-  test('resolves DevTools after user config hooks and uses the final plugin ordering', async () => {
+  test('uses the standard plugin lifecycle and exposes the resolved config', async () => {
     const configHooks: string[] = []
     const plugin = (
       name: string,
@@ -61,9 +61,10 @@ describe('DevTools plugin resolution', () => {
     const config = await resolveConfig(
       {
         configFile: false,
+        devtools: true,
         plugins: [
           plugin('user-pre', 'pre'),
-          plugin('user-normal', undefined, undefined, { devtools: true }),
+          plugin('user-normal'),
           plugin('user-post', 'post'),
         ],
       },
@@ -73,13 +74,28 @@ describe('DevTools plugin resolution', () => {
     expect(devToolsIntegration).toHaveBeenCalledWith({
       command: 'serve',
       devtools: {
-        enabled: true,
         host: 'localhost',
         options: true,
       },
       root: process.cwd(),
     })
-    expect(configHooks).toEqual(['user-pre', 'user-normal', 'user-post'])
+    expect(configHooks).toEqual([
+      'user-pre',
+      'devtools-pre',
+      'user-normal',
+      'devtools-normal',
+      'user-post',
+      'devtools-post',
+    ])
+    expect(config.devtools).toMatchObject({
+      apply: 'all',
+      config: {
+        clientAuth: true,
+        clientAuthTokens: [],
+        host: 'localhost',
+      },
+      enabled: true,
+    })
 
     const pluginNames = config.plugins.map((plugin) => plugin.name)
     expect(pluginNames).not.toContain('devtools-build-only')
@@ -94,34 +110,31 @@ describe('DevTools plugin resolution', () => {
     )
   })
 
-  test('rejects the active manual plugin before loading the integration', async () => {
-    await expect(
-      resolveConfig(
-        {
-          configFile: false,
-          plugins: [
-            { name: 'vite:devtools' },
-            {
-              name: 'enable-devtools',
-              config: () => ({ devtools: true }),
-            },
-          ],
-        },
-        'serve',
-      ),
-    ).rejects.toThrow(
-      'Vite DevTools cannot be configured through both `plugins` and `devtools`.',
+  test('does not allow a plugin config hook to enable DevTools', async () => {
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        plugins: [
+          {
+            name: 'enable-devtools',
+            config: () => ({ devtools: true }),
+          },
+        ],
+      },
+      'serve',
     )
+
+    expect(config.devtools).toBe(false)
     expect(devToolsIntegration).not.toHaveBeenCalled()
   })
 
-  test('keeps the manual plugin when a config hook disables the core integration', async () => {
+  test('does not allow a plugin config hook to disable DevTools', async () => {
+    devToolsIntegration.mockResolvedValueOnce([])
     const config = await resolveConfig(
       {
         configFile: false,
         devtools: true,
         plugins: [
-          { name: 'vite:devtools' },
           {
             name: 'disable-devtools',
             config: () => ({ devtools: false }),
@@ -131,10 +144,31 @@ describe('DevTools plugin resolution', () => {
       'serve',
     )
 
-    expect(config.plugins.map((plugin) => plugin.name)).toContain(
-      'vite:devtools',
+    expect(config.devtools).toMatchObject({ enabled: true })
+    expect(devToolsIntegration).toHaveBeenCalledOnce()
+  })
+
+  test('does not allow a plugin config hook to mutate DevTools options', async () => {
+    devToolsIntegration.mockResolvedValueOnce([])
+    const devtools = { enabled: true }
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        devtools,
+        plugins: [
+          {
+            name: 'mutate-devtools',
+            config() {
+              devtools.enabled = false
+            },
+          },
+        ],
+      },
+      'serve',
     )
-    expect(devToolsIntegration).not.toHaveBeenCalled()
+
+    expect(config.devtools).toMatchObject({ enabled: true })
+    expect(devToolsIntegration).toHaveBeenCalledOnce()
   })
 })
 

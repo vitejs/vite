@@ -1894,10 +1894,10 @@ export async function createBuilder(
       return output
     },
     async runDevTools() {
-      if (config.devtools.enabled) {
+      if (config.devtools) {
         try {
           const { runDevTools } = await import('@vitejs/devtools/integration')
-          await runDevTools(builder, config.devtools)
+          await runDevTools(builder)
         } catch (e) {
           config.logger.error(
             colors.red(

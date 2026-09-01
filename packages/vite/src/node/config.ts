@@ -548,11 +548,8 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   devtools?: boolean | DevToolsConfig
 }
 
-export interface ResolvedDevToolsIntegration {
-  enabled: boolean
-  host: string
-  options: boolean | DevToolsConfig | undefined
-}
+export type ResolvedDevToolsConfig =
+  import('#types/internal/devtoolsOptions').ResolvedDevToolsConfig
 
 export interface HTMLOptions {
   /**
@@ -737,7 +734,7 @@ export interface ResolvedConfig extends Readonly<
     /** @experimental */
     builder: ResolvedBuilderOptions | undefined
     build: ResolvedBuildOptions
-    devtools: ResolvedDevToolsIntegration
+    devtools: ResolvedDevToolsConfig | false
     preview: ResolvedPreviewOptions
     ssr: ResolvedSSROptions
     assetsInclude: (file: string) => boolean
@@ -789,31 +786,61 @@ export interface ResolvedConfig extends Readonly<
 export async function resolveDevToolsConfig(
   config: DevToolsConfig | boolean | undefined,
   host: string | boolean | undefined,
-): Promise<ResolvedDevToolsIntegration> {
-  const isEnabled =
-    config === true ||
-    (typeof config === 'object' && config != null && config.enabled !== false)
+  command: 'serve' | 'build',
+): Promise<ResolvedDevToolsConfig | false> {
+  if (
+    config !== true &&
+    !(typeof config === 'object' && config != null && config.enabled !== false)
+  ) {
+    return false
+  }
+
+  const { isDevToolsEnabled, normalizeDevToolsConfig } =
+    await import('@vitejs/devtools/config')
   const resolvedHostname = await resolveHostname(host)
   const fallbackHostname = resolvedHostname.host ?? 'localhost'
-  return {
-    enabled: isEnabled,
-    host: fallbackHostname,
-    options: config,
-  }
+  const resolved = normalizeDevToolsConfig(config, fallbackHostname)
+  return isDevToolsEnabled(resolved, command) ? resolved : false
+}
+
+interface DevToolsIntegrationState {
+  plugins: Plugin[]
+  resolveConfig: (
+    host: string | boolean | undefined,
+  ) => Promise<ResolvedDevToolsConfig | false>
 }
 
 async function loadDevToolsIntegrationPlugins(
   config: UserConfig,
   command: 'serve' | 'build',
-  devtools: ResolvedDevToolsIntegration,
-): Promise<Plugin[]> {
+  options: boolean | DevToolsConfig | undefined,
+): Promise<DevToolsIntegrationState | undefined> {
   try {
+    const resolved = await resolveDevToolsConfig(
+      options,
+      config.server?.host,
+      command,
+    )
+    if (!resolved) return
+
+    const devtools = {
+      host: resolved.config.host,
+      options,
+    }
     const { DevToolsIntegration } = await import('@vitejs/devtools/integration')
-    return await DevToolsIntegration({
+    const plugins = await DevToolsIntegration({
       command,
       devtools,
       root: config.root ? path.resolve(config.root) : process.cwd(),
     })
+    return {
+      plugins,
+      async resolveConfig(host) {
+        const resolved = await resolveDevToolsConfig(options, host, command)
+        if (resolved) devtools.host = resolved.config.host
+        return resolved
+      },
+    }
   } catch (error: any) {
     const logger = createLogger(config.logLevel, {
       allowClearScreen: config.clearScreen,
@@ -825,7 +852,6 @@ async function loadDevToolsIntegrationPlugins(
       ),
       { error },
     )
-    return []
   }
 }
 
@@ -1548,49 +1574,28 @@ export async function resolveConfig(
     }
   }
 
-  // Run user config hooks before resolving DevTools, as they may enable or disable it.
-  const activeUserPlugins = (await asyncFlatten(config.plugins || [])).filter(
-    filterPlugin,
-  )
-  const [userPrePlugins, userNormalPlugins, userPostPlugins] =
-    sortUserPlugins(activeUserPlugins)
-  config = await runConfigHook(
+  // Only the top-level user config controls the automatic DevTools integration.
+  const devtoolsOptions =
+    typeof config.devtools === 'object' && config.devtools != null
+      ? deepClone(config.devtools)
+      : config.devtools
+  const devtoolsIntegration = await loadDevToolsIntegrationPlugins(
     config,
-    [...userPrePlugins, ...userNormalPlugins, ...userPostPlugins],
-    configEnv,
+    command,
+    devtoolsOptions,
   )
-
-  const resolvedDevToolsConfig = await resolveDevToolsConfig(
-    config.devtools,
-    config.server?.host,
-  )
-  const isDevToolsPluginRegistered = activeUserPlugins.some(
-    (plugin) => plugin.name === 'vite:devtools',
-  )
-  if (resolvedDevToolsConfig.enabled && isDevToolsPluginRegistered) {
-    throw new Error(
-      'Vite DevTools cannot be configured through both `plugins` and `devtools`.\n' +
-        'Remove the explicit `DevTools()` plugin and move its options to `devtools`.',
-    )
-  }
-  const devtoolsPlugins = resolvedDevToolsConfig.enabled
-    ? await loadDevToolsIntegrationPlugins(
-        config,
-        command,
-        resolvedDevToolsConfig,
-      )
-    : []
-  const rawPlugins = [
-    ...activeUserPlugins,
-    ...devtoolsPlugins.filter(filterPlugin),
-  ]
-
-  // Include DevTools in the final plugin order from configResolved onward.
+  const rawPlugins = (
+    await asyncFlatten([
+      ...(config.plugins || []),
+      ...(devtoolsIntegration?.plugins || []),
+    ])
+  ).filter(filterPlugin)
   const [prePlugins, normalPlugins, postPlugins] = sortUserPlugins(rawPlugins)
 
   const isBuild = command === 'build'
 
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
+  config = await runConfigHook(config, userPlugins, configEnv)
 
   // Ensure default client and ssr environments
   // If there are present, ensure order { client, ssr, ...custom }
@@ -2063,9 +2068,8 @@ export async function resolveConfig(
     experimental.renderBuiltUrl = undefined
   }
 
-  resolvedDevToolsConfig.host = (
-    await resolveDevToolsConfig(resolvedDevToolsConfig.options, server.host)
-  ).host
+  const resolvedDevToolsConfig =
+    (await devtoolsIntegration?.resolveConfig(server.host)) ?? false
 
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
