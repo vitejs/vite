@@ -1,16 +1,20 @@
 import path from 'node:path'
-import colors from 'picocolors'
 import type { RawSourceMap } from '@jridgewell/remapping'
+import colors from 'picocolors'
 import type { InternalModuleFormat, SourceMap } from 'rolldown'
 import { resolveTsconfig } from 'rolldown/experimental'
 import { TsconfigCache } from 'rolldown/utils'
+import type { FSWatcher } from '#dep-types/chokidar'
 import type {
   EsbuildLoader,
   EsbuildMessage,
   EsbuildTransformOptions,
   EsbuildTransformResult as RawEsbuildTransformResult,
 } from '#types/internal/esbuildOptions'
-import type { FSWatcher } from '#dep-types/chokidar'
+import { cleanUrl } from '../../shared/utils'
+import type { ResolvedConfig } from '../config'
+import type { Plugin } from '../plugin'
+import type { ViteDevServer } from '../server'
 import {
   combineSourcemaps,
   createDebugger,
@@ -18,10 +22,6 @@ import {
   ensureWatchedFile,
   generateCodeFrame,
 } from '../utils'
-import type { ViteDevServer } from '../server'
-import type { ResolvedConfig } from '../config'
-import type { Plugin } from '../plugin'
-import { cleanUrl } from '../../shared/utils'
 
 const debug = createDebugger('vite:esbuild')
 

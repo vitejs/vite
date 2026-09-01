@@ -1,28 +1,30 @@
-import fs from 'node:fs'
-import os from 'node:os'
-import net from 'node:net'
-import path from 'node:path'
 import { exec } from 'node:child_process'
 import crypto from 'node:crypto'
-import { fileURLToPath } from 'node:url'
+import { promises as dns } from 'node:dns'
+import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import { builtinModules } from 'node:module'
-import { promises as dns } from 'node:dns'
-import { performance } from 'node:perf_hooks'
+import net from 'node:net'
 import type { AddressInfo, Server } from 'node:net'
-import fsp from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import { performance } from 'node:perf_hooks'
+import { fileURLToPath } from 'node:url'
 import remapping from '@jridgewell/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
-import colors from 'picocolors'
+import type { Equal } from '@type-challenges/utils'
+import type MagicString from 'magic-string'
 import type { Debugger } from 'obug'
 import debug from 'obug'
-import type MagicString from 'magic-string'
-import type { Equal } from '@type-challenges/utils'
+import colors from 'picocolors'
 
-import type { InputOption, TransformResult } from 'rolldown'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
+import type { InputOption, TransformResult } from 'rolldown'
 import type { Alias, AliasOptions } from '#dep-types/alias'
 import type { FSWatcher } from '#dep-types/chokidar'
+import { createIsBuiltin } from '../shared/builtin'
+import { VALID_ID_PREFIX } from '../shared/constants'
 import {
   cleanUrl,
   isWindows,
@@ -30,8 +32,8 @@ import {
   splitFileAndPostfix,
   withTrailingSlash,
 } from '../shared/utils'
-import { VALID_ID_PREFIX } from '../shared/constants'
-import { createIsBuiltin } from '../shared/builtin'
+import type { BuildEnvironmentOptions } from './build'
+import type { ResolvedConfig } from './config'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
@@ -43,11 +45,9 @@ import {
   wildcardHosts,
 } from './constants'
 import type { DepOptimizationOptions } from './optimizer'
-import type { ResolvedConfig } from './config'
-import type { ResolvedServerUrls, ServerOptions, ViteDevServer } from './server'
-import type { PreviewServer } from './preview'
 import { type PackageCache, findNearestPackageData } from './packages'
-import type { BuildEnvironmentOptions } from './build'
+import type { PreviewServer } from './preview'
+import type { ResolvedServerUrls, ServerOptions, ViteDevServer } from './server'
 import type { CommonServerOptions } from '.'
 
 /**
@@ -314,7 +314,7 @@ const internalPrefixes = [
   ENV_PUBLIC_PATH,
 ]
 const InternalPrefixRE = new RegExp(`^(?:${internalPrefixes.join('|')})`)
-const trailingSeparatorRE = /[?&]$/
+export const trailingSeparatorRE: RegExp = /[?&]$/
 export const isImportRequest = (url: string): boolean => importQueryRE.test(url)
 export const isInternalRequest = (url: string): boolean =>
   InternalPrefixRE.test(url)
@@ -338,9 +338,9 @@ export function injectQuery(url: string, queryToInject: string): string {
   return `${normalizedFile}?${queryToInject}${postfix[0] === '?' ? `&${postfix.slice(1)}` : /* hash only */ postfix}`
 }
 
-const timestampRE = /\bt=\d{13}&?\b/
+const timestampRE = /(\?|&)t=\d{13}(?:&|$)/
 export function removeTimestampQuery(url: string): string {
-  return url.replace(timestampRE, '').replace(trailingSeparatorRE, '')
+  return url.replace(timestampRE, '$1').replace(trailingSeparatorRE, '')
 }
 
 export async function asyncReplace(
@@ -821,7 +821,6 @@ export function parseSrcset(string: string): ImageCandidate[] {
   const matches = string
     .trim()
     .replace(escapedSpaceCharacters, ' ')
-    .replace(/\r?\n/, '')
     .replace(/,\s+/, ', ')
     .replaceAll(/\s+/g, ' ')
     .matchAll(imageCandidateRegex)

@@ -1,22 +1,12 @@
 import type { ViteHotContext } from '#types/hot'
+import { createIsBuiltin } from '../shared/builtin'
 import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
-import { cleanUrl, isPrimitive } from '../shared/utils'
-import { analyzeImportedModDifference } from '../shared/ssrTransform'
 import {
   type NormalizedModuleRunnerTransport,
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
-import { createIsBuiltin } from '../shared/builtin'
-import type { EvaluatedModuleNode } from './evaluatedModules'
-import { EvaluatedModules } from './evaluatedModules'
-import type {
-  ModuleEvaluator,
-  ModuleRunnerContext,
-  ModuleRunnerOptions,
-  ResolvedResult,
-  SSRImportMetadata,
-} from './types'
-import { posixDirname, posixPathToFileHref, posixResolve } from './utils'
+import { analyzeImportedModDifference } from '../shared/ssrTransform'
+import { cleanUrl, isPrimitive } from '../shared/utils'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -25,11 +15,21 @@ import {
   ssrImportMetaKey,
   ssrModuleExportsKey,
 } from './constants'
-import { hmrLogger, silentConsole } from './hmrLogger'
-import { createHMRHandlerForRunner } from './hmrHandler'
-import { enableSourceMapSupport } from './sourcemap/index'
-import { ESModulesEvaluator } from './esmEvaluator'
 import { createDefaultImportMeta } from './createImportMeta'
+import { ESModulesEvaluator } from './esmEvaluator'
+import type { EvaluatedModuleNode } from './evaluatedModules'
+import { EvaluatedModules } from './evaluatedModules'
+import { createHMRHandlerForRunner } from './hmrHandler'
+import { hmrLogger, silentConsole } from './hmrLogger'
+import { enableSourceMapSupport } from './sourcemap/index'
+import type {
+  ModuleEvaluator,
+  ModuleRunnerContext,
+  ModuleRunnerOptions,
+  ResolvedResult,
+  SSRImportMetadata,
+} from './types'
+import { posixDirname, posixPathToFileHref, posixResolve } from './utils'
 
 interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void

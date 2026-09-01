@@ -1,8 +1,7 @@
+import fsp from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
-import fsp from 'node:fs/promises'
 import colors from 'picocolors'
-import { afterEach, describe, expect, assert, test, vi } from 'vitest'
 import type {
   LogLevel,
   OutputAsset,
@@ -12,6 +11,8 @@ import type {
   RolldownOutput,
   RollupLog,
 } from 'rolldown'
+import { afterEach, describe, expect, assert, test, vi } from 'vitest'
+import { BuildEnvironment, resolveConfig } from '..'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import {
   ChunkMetadataMap,
@@ -24,7 +25,6 @@ import {
 } from '../build'
 import type { Logger } from '../logger'
 import { createLogger } from '../logger'
-import { BuildEnvironment, resolveConfig } from '..'
 
 const dirname = import.meta.dirname
 
@@ -77,6 +77,34 @@ describe('build', () => {
           "_subentry.css",
         ],
         "unchanged": [
+          "undefined",
+        ],
+      }
+    `)
+    assertOutputHashContentChange(result[0], result[1])
+  })
+
+  test('file hash should change when renderBuiltUrl changes', async () => {
+    const createRenderBuiltUrl = (base: string) => (filename: string) =>
+      `${base}/${filename}`
+    const renderBuiltUrlA = createRenderBuiltUrl('/cdn-a')
+    const renderBuiltUrlB = createRenderBuiltUrl('/cdn-b')
+
+    expect(renderBuiltUrlA.toString()).toBe(renderBuiltUrlB.toString())
+
+    const result = await Promise.all([
+      buildProjectWithRenderBuiltUrl(renderBuiltUrlA),
+      buildProjectWithRenderBuiltUrl(renderBuiltUrlB),
+    ])
+
+    expect(getOutputHashChanges(result[0], result[1])).toMatchInlineSnapshot(`
+      {
+        "changed": [
+          "index",
+        ],
+        "unchanged": [
+          "_subentry",
+          "asset.txt",
           "undefined",
         ],
       }
@@ -1534,6 +1562,44 @@ test('copies public directory after building same environment with write false f
     fsp.readFile(resolve(root, 'dist/favicon.svg'), 'utf-8'),
   ).resolves.toBe('<svg></svg>')
 })
+
+async function buildProjectWithRenderBuiltUrl(
+  renderBuiltUrl: (filename: string) => string,
+) {
+  return (await build({
+    root: resolve(dirname, 'packages/build-project'),
+    logLevel: 'silent',
+    build: {
+      write: false,
+      assetsInlineLimit: 0,
+    },
+    experimental: {
+      renderBuiltUrl,
+    },
+    plugins: [
+      {
+        name: 'test',
+        resolveId(id) {
+          if (id === 'entry.js' || id === 'subentry.js') {
+            return '\0' + id
+          }
+        },
+        load(id) {
+          if (id === '\0entry.js') {
+            return `
+              import assetUrl from '/asset.txt?url'
+              console.log(assetUrl)
+              window.addEventListener('click', () => { import('subentry.js') })
+            `
+          }
+          if (id === '\0subentry.js') {
+            return `export default 'subentry'`
+          }
+        },
+      },
+    ],
+  })) as RolldownOutput
+}
 
 /**
  * for each chunks in output1, if there's a chunk in output2 with the same fileName,

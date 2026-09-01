@@ -1,6 +1,6 @@
 import path from 'node:path'
-import * as staticModule from './simple'
 import { pathToFileURL } from 'node:url'
+import * as staticModule from './simple'
 
 export const initialize = async () => {
   const nameRelative = './simple'
