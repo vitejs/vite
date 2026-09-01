@@ -506,6 +506,27 @@ export interface UserConfig extends DefaultEnvironmentOptions {
      */
     format?: 'es' | 'iife'
     /**
+     * Share chunks between ES module workers, and between workers and the
+     * main build, instead of bundling each worker's dependencies in
+     * isolation. Only applies when `format` is `'es'`, during `vite build`
+     * (dev/serve already serve native, unbundled ESM).
+     *
+     * When enabled, `worker.plugins` and the output-naming options in
+     * `worker.rolldownOptions.output` (`entryFileNames`, `chunkFileNames`,
+     * `assetFileNames`) no longer apply, since the worker's chunk is
+     * generated as part of the main build's chunk graph and follows its
+     * `build.rolldownOptions.output` naming instead.
+     * @default true
+     */
+    shareChunks?: boolean
+    /**
+     * Whether `?worker&inline` workers also participate in chunk sharing.
+     * Disabled by default: an inlined worker is a self-contained blob/data
+     * URL and cannot reliably reference external chunk files.
+     * @default false
+     */
+    shareChunkOnInline?: boolean
+    /**
      * Vite plugins that apply to worker bundle. The plugins returned by this function
      * should be new instances every time it is called, because they are used for each
      * rolldown worker bundling process.
@@ -669,6 +690,8 @@ export interface LegacyOptions {
 
 export interface ResolvedWorkerOptions {
   format: 'es' | 'iife'
+  shareChunks: boolean
+  shareChunkOnInline: boolean
   plugins: (bundleChain: string[]) => Promise<ResolvedConfig>
   /**
    * @deprecated Use `rolldownOptions` instead.
@@ -1975,11 +1998,35 @@ export async function resolveConfig(
     rolldownOptions: ResolvedWorkerOptions['rolldownOptions'] | undefined
   } = {
     format: config.worker?.format || 'iife',
+    shareChunks: config.worker?.shareChunks ?? true,
+    shareChunkOnInline: config.worker?.shareChunkOnInline ?? false,
     plugins: createWorkerPlugins,
     rollupOptions: config.worker?.rollupOptions || {},
     rolldownOptions: config.worker?.rolldownOptions, // will be set by setupRollupOptionCompat if undefined
   }
   setupRollupOptionCompat(resolvedWorkerOptions, 'worker')
+
+  if (
+    resolvedWorkerOptions.format === 'es' &&
+    resolvedWorkerOptions.shareChunks
+  ) {
+    const workerOutputs = arraify(resolvedWorkerOptions.rolldownOptions.output)
+    const hasCustomOutputNaming = workerOutputs.some(
+      (output) =>
+        output?.entryFileNames ||
+        output?.chunkFileNames ||
+        output?.assetFileNames,
+    )
+    if (hasCustomOutputNaming) {
+      logger.warnOnce(
+        colors.yellow(
+          `worker.rolldownOptions.output's entryFileNames/chunkFileNames/assetFileNames have no effect while worker.shareChunks is enabled (the default for worker.format: 'es'), ` +
+            `since the worker's chunk follows build.rolldownOptions.output's naming instead. ` +
+            `Set ${colors.bold('worker.shareChunks: false')} to keep bundling this worker in isolation with its own output naming.`,
+        ),
+      )
+    }
+  }
 
   const base = withTrailingSlash(resolvedBase)
 
