@@ -18,7 +18,7 @@ When `worker.format` is `'es'`, share chunks between multiple ES module workers,
 
 For example, if two separate workers (or a worker and the main entry) both import the same module, that module is extracted into its own chunk and imported by each of them, instead of being duplicated into every worker's bundle.
 
-When enabled, [`worker.plugins`](#worker-plugins) and the output-naming options in `worker.rolldownOptions.output` (`entryFileNames`, `chunkFileNames`, `assetFileNames`) no longer apply: the worker's chunk is generated as part of the main build's chunk graph and follows [`build.rolldownOptions.output`](./build-options#build-rolldownoptions)'s naming instead, since a single build output can't follow two different naming schemes for the same chunk. Set `worker.shareChunks: false` if you rely on those options, or on `worker.plugins` applying to the worker's own bundling pass.
+When enabled, [`worker.plugins`](#worker-plugins) and the output-naming options in `worker.rolldownOptions.output` (`entryFileNames`, `chunkFileNames`, `assetFileNames`) no longer apply: the worker's chunk is generated as part of the main build's chunk graph and follows [`build.rolldownOptions.output`](./build-options.md#build-rolldownoptions)'s naming instead, since a single build output can't follow two different naming schemes for the same chunk. Set `worker.shareChunks: false` if you rely on those options, or on `worker.plugins` applying to the worker's own bundling pass.
 
 ## worker.shareChunkOnInline
 
