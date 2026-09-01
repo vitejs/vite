@@ -1856,6 +1856,8 @@ importers:
 
   playground/transform-plugin: {}
 
+  playground/trusted-types: {}
+
   playground/tsconfig-json: {}
 
   playground/tsconfig-json-load-error: {}
