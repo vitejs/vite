@@ -32,10 +32,8 @@ export interface ConfigImportRef {
   line: number
   column: number
   hasTypeJsonAttribute: boolean
-  hasNamedImports: boolean
   /** position of the first non-default named binding */
-  namedImportLine: number
-  namedImportColumn: number
+  namedImportLoc?: { line: number; column: number }
 }
 
 const jsTsExtRE = /\.[cm]?[jt]sx?$/
@@ -64,12 +62,12 @@ export function classifyImportRef(
     if (!ref.hasTypeJsonAttribute) {
       return { type: 'json-without-attributes', ...base }
     }
-    if (ref.hasNamedImports) {
+    if (ref.namedImportLoc) {
       return {
         type: 'json-named-import',
         file,
-        line: ref.namedImportLine,
-        column: ref.namedImportColumn,
+        line: ref.namedImportLoc.line,
+        column: ref.namedImportLoc.column,
         specifier,
       }
     }
@@ -82,12 +80,12 @@ export function classifyImportRef(
     if (!ref.hasTypeJsonAttribute) {
       return { type: 'json-without-attributes', ...base }
     }
-    if (ref.hasNamedImports) {
+    if (ref.namedImportLoc) {
       return {
         type: 'json-named-import',
         file,
-        line: ref.namedImportLine,
-        column: ref.namedImportColumn,
+        line: ref.namedImportLoc.line,
+        column: ref.namedImportLoc.column,
         specifier,
       }
     }
@@ -157,7 +155,7 @@ export function analyzeConfigModuleReferences(
       return
     }
     const { line, column } = numberToPos(code, source.start)
-    const namedImportPos = namedBinding
+    const namedImportLoc = namedBinding
       ? numberToPos(code, namedBinding.start)
       : undefined
     imports.push({
@@ -165,9 +163,7 @@ export function analyzeConfigModuleReferences(
       line,
       column,
       hasTypeJsonAttribute,
-      hasNamedImports: namedBinding != null,
-      namedImportLine: namedImportPos?.line ?? line,
-      namedImportColumn: namedImportPos?.column ?? column,
+      namedImportLoc,
     })
   }
 
