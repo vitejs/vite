@@ -143,9 +143,7 @@ function inlineSourceMap(
   const sourceMap = startOffset
     ? {
         ...map,
-        ...{
-          mappings: ';'.repeat(startOffset) + map.mappings,
-        },
+        mappings: ';'.repeat(startOffset) + map.mappings,
       }
     : map
   result.code = `${code.trimEnd()}\n//# sourceURL=${
