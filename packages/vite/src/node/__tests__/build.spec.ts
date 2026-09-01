@@ -12,7 +12,7 @@ import type {
   RollupLog,
 } from 'rolldown'
 import { afterEach, describe, expect, assert, test, vi } from 'vitest'
-import { BuildEnvironment, resolveConfig } from '..'
+import { BuildEnvironment, normalizePath, resolveConfig } from '..'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import {
   ChunkMetadataMap,
@@ -506,7 +506,7 @@ describe('resolveBuildOutputs', () => {
       )
 
       expect(options.tsconfig).toBe(
-        resolve(buildProjectRoot, 'custom.tsconfig.json'),
+        normalizePath(resolve(buildProjectRoot, 'custom.tsconfig.json')),
       )
       expect(options.resolve?.tsconfigFilename).toBeUndefined()
     })
