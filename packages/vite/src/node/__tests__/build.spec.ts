@@ -504,7 +504,6 @@ describe('resolveBuildOutputs', () => {
         builder.environments.client,
         new ChunkMetadataMap(),
       )
-
       expect(options.tsconfig).toBe(
         normalizePath(resolve(buildProjectRoot, 'custom.tsconfig.json')),
       )

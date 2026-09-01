@@ -185,7 +185,6 @@ describe('transformWithOxc', () => {
       undefined,
       config,
     )
-
     expect(actual.code).toBe(expected.code)
   })
 })

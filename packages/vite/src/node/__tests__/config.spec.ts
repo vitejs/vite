@@ -1160,10 +1160,10 @@ describe('resolveConfig', () => {
       { root, tsconfig: './custom.tsconfig.json' },
       'build',
     )
-
     expect(resolved.tsconfig).toBe(
       normalizePath(path.resolve(root, 'custom.tsconfig.json')),
     )
+
     const absoluteTsconfig = path.resolve(root, 'absolute.tsconfig.json')
     expect(
       (
@@ -1173,6 +1173,7 @@ describe('resolveConfig', () => {
         )
       ).tsconfig,
     ).toBe(normalizePath(absoluteTsconfig))
+
     expect(
       (await resolveConfig({ root, configFile: false }, 'build')).tsconfig,
     ).toBeUndefined()
