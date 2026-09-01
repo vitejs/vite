@@ -1319,6 +1319,64 @@ describe('resolveConfig', () => {
     }
   })
 
+  // https://github.com/vitejs/vite/issues/23383
+  test('preserves Windows input paths with glob-special segment names', async () => {
+    const cases: {
+      name: string
+      input: UserConfig['input']
+      expected: UserConfig['input']
+    }[] = [
+      ...(isWindows
+        ? [
+            {
+              name: 'segment starting with @',
+              input: 'D:\\desk\\test\\@src\\whatever.html',
+              expected: 'D:\\desk\\test\\@src\\whatever.html',
+            },
+            {
+              name: 'segment starting with !',
+              input: 'D:\\desk\\test\\!notes\\page.html',
+              expected: 'D:\\desk\\test\\!notes\\page.html',
+            },
+            {
+              name: 'segment starting with +',
+              input: 'D:\\desk\\test\\+draft\\page.html',
+              expected: 'D:\\desk\\test\\+draft\\page.html',
+            },
+            {
+              name: 'segment starting with (',
+              input: 'D:\\desk\\test\\(draft)\\page.html',
+              expected: 'D:\\desk\\test\\(draft)\\page.html',
+            },
+            {
+              name: 'segment starting with [',
+              input: 'D:\\desk\\test\\[id]\\page.html',
+              expected: 'D:\\desk\\test\\[id]\\page.html',
+            },
+            {
+              name: 'relative path',
+              input: 'test\\@src\\whatever.html',
+              expected: 'test\\@src\\whatever.html',
+            },
+            {
+              name: 'escaped glob on windows',
+              input: 'D:/desk/test/\\[id]\\page.html',
+              expected: 'D:/desk/test/[id]\\page.html',
+            },
+          ]
+        : []),
+    ]
+
+    for (const { name, input, expected } of cases) {
+      await expect(
+        resolveConfig({ input }, 'serve'),
+        name,
+      ).resolves.toMatchObject({
+        input: expected,
+      })
+    }
+  })
+
   test('allows non-glob special characters in input', async () => {
     const cases: {
       name: string
