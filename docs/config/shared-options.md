@@ -11,20 +11,6 @@ Project root directory (where `index.html` is located). Can be an absolute path,
 
 See [Project Root](/guide/#index-html-and-project-root) for more details.
 
-## tsconfig
-
-- **Type:** `string`
-
-Path to the TypeScript configuration file used by Vite. Relative paths are resolved from the project [`root`](#root).
-
-When this option is not set, Vite discovers the closest matching `tsconfig.json` for each file. See [TypeScript Compiler Options](/guide/features#typescript-compiler-options) for more details.
-
-::: warning Prefer automatic discovery
-Setting this option is discouraged because it overrides Vite's per-file tsconfig discovery which is aligned with TypeScript language server. Prefer placing a `tsconfig.json` near the files it configures and using TypeScript [`references`](https://www.typescriptlang.org/tsconfig/#references) for multi-project setups.
-
-If the goal is to remap imports, prefer [`resolve.alias`](#resolve-alias) or the `imports` and `exports` fields in `package.json` instead of selecting a tsconfig solely for [`compilerOptions.paths`](https://www.typescriptlang.org/tsconfig/#paths). Use this option only when automatic discovery cannot identify the intended configuration.
-:::
-
 ## base
 
 - **Type:** `string`
@@ -642,6 +628,20 @@ Enable devtools integration for visualizing the internal state and build analysi
 Ensure that `@vitejs/devtools` is installed as a dependency. This feature is currently supported only in build mode.
 
 See [Vite DevTools](https://github.com/vitejs/devtools) for more details.
+
+## tsconfig
+
+- **Type:** `string`
+
+Path to the TypeScript configuration file used by Vite. Relative paths are resolved from the project [`root`](#root).
+
+When this option is not set, Vite discovers the closest matching `tsconfig.json` for each file. See [TypeScript Compiler Options](/guide/features#typescript-compiler-options) for more details.
+
+::: warning Prefer automatic discovery
+Setting this option is discouraged because it overrides Vite's per-file tsconfig discovery which is aligned with TypeScript language server. Prefer placing a `tsconfig.json` near the files it configures and using TypeScript [`references`](https://www.typescriptlang.org/tsconfig/#references) for multi-project setups.
+
+If the goal is to remap imports, prefer [`resolve.alias`](#resolve-alias) or the `imports` and `exports` fields in `package.json` instead of selecting a tsconfig solely for [`compilerOptions.paths`](https://www.typescriptlang.org/tsconfig/#paths). Use this option only when automatic discovery cannot identify the intended configuration.
+:::
 
 ## future
 
