@@ -6,8 +6,7 @@
   "sortImports": {
     "groups": ["builtin", "external", "internal", "parent", "sibling", "index"],
     "partitionByNewline": true,
-    "newlinesBetween": false,
-    "partitionByComment": true
+    "newlinesBetween": false
   },
   "overrides": [
     {
