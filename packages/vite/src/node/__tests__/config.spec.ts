@@ -1,22 +1,27 @@
+import fs from 'node:fs'
 import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
-import fs from 'node:fs'
 import { stripVTControlCharacters } from 'node:util'
 import { afterEach, assert, describe, expect, test, vi } from 'vitest'
 import type { InlineConfig, PluginOption } from '..'
+import { isWindows } from '../../shared/utils'
 import type { UserConfig, UserConfigExport } from '../config'
-import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
-import { resolveServerOptions } from '../server'
+import {
+  bundleConfigFile,
+  defineConfig,
+  loadConfigFromFile,
+  resolveConfig,
+} from '../config'
 import { resolveEnvPrefix } from '../env'
+import { createLogger } from '../logger'
+import type { Logger } from '../logger'
+import { resolveServerOptions } from '../server'
 import {
   hasBothRollupOptionsAndRolldownOptions,
   mergeConfig,
   normalizePath,
 } from '../utils'
-import { createLogger } from '../logger'
-import type { Logger } from '../logger'
-import { isWindows } from '../../shared/utils'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -1162,6 +1167,43 @@ describe('resolveConfig', () => {
     await resolveConfig({ root: './inc?ud#s*', customLogger: logger }, 'build')
   })
 
+  test('warns about ignored hooks returned from applyToEnvironment', async () => {
+    const warn = vi.fn()
+    const logger = createLogger('info', {
+      console: { warn } as unknown as Console,
+    })
+
+    await resolveConfig(
+      {
+        configFile: false,
+        customLogger: logger,
+        plugins: [
+          {
+            name: 'parent-plugin',
+            applyToEnvironment() {
+              return {
+                name: 'environment-plugin',
+                config: () => undefined,
+                configEnvironment: () => undefined,
+                configureServer: () => undefined,
+                configResolved: () => undefined,
+                resolveId: () => undefined,
+              }
+            },
+          },
+        ],
+      },
+      'serve',
+    )
+
+    expect(warn).toHaveBeenCalledOnce()
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Plugin "environment-plugin" defines Vite-specific hooks (config, configEnvironment, configureServer, configResolved) in a plugin returned from applyToEnvironment. These hooks will be ignored.',
+      ),
+    )
+  })
+
   test('syncs `build.rollupOptions` and `build.rolldownOptions`', async () => {
     const resolved = await resolveConfig({}, 'build')
     expect(resolved.build!.rollupOptions).toStrictEqual(
@@ -1723,6 +1765,32 @@ describe('loadConfigFromFile', () => {
       expect(await loadWithWarnings('json-ok')).toHaveLength(0)
     })
 
+    test('warns on named import from JSON module', async () => {
+      const messages = await loadWithWarnings('json-named-import')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - named import from JSON module "./data.json" (vite.config.js:1:10). JSON modules only provide a default export per spec. Use the default import and access the property
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    test('warns on named import from a bare JSON specifier', async () => {
+      const messages = await loadWithWarnings('json-named-import-bare')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - named import from JSON module "some-pkg/package.json" (vite.config.js:1:10). JSON modules only provide a default export per spec. Use the default import and access the property
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    test('does not warn on JSON default imports (`default as` included)', async () => {
+      expect(await loadWithWarnings('json-named-import-ok')).toHaveLength(0)
+    })
+
     test('warns on an extension-less import that resolves to JSON', async () => {
       const messages = await loadWithWarnings('json-extensionless')
       expect(messages).toMatchInlineSnapshot(`
@@ -1959,6 +2027,21 @@ describe('loadConfigFromFile', () => {
     expect(c.dirname).toContain('shebang-crlf')
   })
 
+  test('sourcemap of a nested config file points to itself', async () => {
+    const configPath = path.resolve(
+      fixtures,
+      './nested/.nested/vite.config.mts',
+    )
+    const { code } = await bundleConfigFile(configPath, true)
+    const [, base64Map] = code.match(
+      /\/\/# sourceMappingURL=data:application\/json;charset=utf-8;base64,(.+)/,
+    )!
+    const map = JSON.parse(Buffer.from(base64Map, 'base64').toString())
+    expect(map.sources.map(normalizePath)).toStrictEqual([
+      normalizePath(configPath),
+    ])
+  })
+
   describe('loadConfigFromFile with configLoader: native', () => {
     const fixtureRoot = path.resolve(fixtures, './native-import')
 
@@ -2014,6 +2097,28 @@ describe('loadConfigFromFile', () => {
         normalizePath(path.resolve(fs.realpathSync.native(tempDir), '.vite')),
       )
     })
+  })
+})
+
+describe('root resolution', () => {
+  const fixtureRoot = path.resolve(
+    import.meta.dirname,
+    './fixtures/config/root-resolution',
+  )
+  const realDir = path.join(fixtureRoot, 'real')
+  const linkDir = path.join(fixtureRoot, 'link')
+
+  test('resolves a symlinked root to its real path', async () => {
+    const config = await resolveConfig({ root: linkDir }, 'serve')
+    expect(config.root).toBe(normalizePath(fs.realpathSync.native(realDir)))
+  })
+
+  test('keeps a symlinked root when resolve.preserveSymlinks is true', async () => {
+    const config = await resolveConfig(
+      { root: linkDir, resolve: { preserveSymlinks: true } },
+      'serve',
+    )
+    expect(config.root).toBe(normalizePath(linkDir))
   })
 })
 

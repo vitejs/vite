@@ -1,11 +1,11 @@
 // @ts-check
 import eslint from '@eslint/js'
-import pluginN from 'eslint-plugin-n'
 import pluginImportX from 'eslint-plugin-import-x'
+import pluginN from 'eslint-plugin-n'
 import pluginRegExp from 'eslint-plugin-regexp'
-import tseslint from 'typescript-eslint'
 import { defineConfig } from 'eslint/config'
 import globals from 'globals'
+import tseslint from 'typescript-eslint'
 
 // Some rules work better with typechecking enabled, but as enabling it is slow,
 // we only do so when linting in IDEs for now. If you want to lint with typechecking
@@ -149,19 +149,6 @@ export default defineConfig(
       '@typescript-eslint/unbound-method': 'off',
 
       'import-x/no-duplicates': 'error',
-      'import-x/order': [
-        'error',
-        {
-          groups: [
-            'builtin',
-            'external',
-            'internal',
-            'parent',
-            'sibling',
-            'index',
-          ],
-        },
-      ],
 
       'regexp/prefer-regexp-exec': 'error',
       'regexp/prefer-regexp-test': 'error',

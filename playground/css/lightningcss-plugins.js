@@ -1,7 +1,7 @@
 import path from 'node:path'
-import { normalizePath } from 'vite'
 import { bundle as bundleWithLightningCss } from 'lightningcss'
 import { globSync } from 'tinyglobby'
+import { normalizePath } from 'vite'
 
 /**
  * @param {string} filename

@@ -16,13 +16,18 @@ export interface RolldownRuntimeLike {
   loadExports(id: string): unknown
 }
 
+interface PropagationBoundary {
+  boundary: string
+  acceptedVia: string
+  isWithinCircularImport: boolean
+}
+
 type HmrUpdate =
   | { type: 'noop' }
   | { type: 'full-reload'; reason: string }
   | {
       type: 'boundaries'
-      /** `[boundary, acceptedVia]` pairs */
-      boundaries: [string, string][]
+      boundaries: PropagationBoundary[]
       updateSet: string[]
     }
 
@@ -69,7 +74,7 @@ export class BundledDevHMRClient extends HMRClient {
     changedIds: string[],
     opts?: { firstInvalidatedBy?: string },
   ): HmrUpdate {
-    const boundaries: [string, string][] = []
+    const boundaries: PropagationBoundary[] = []
     const updateSet = new Set<string>()
     const traversedModules = new Set<string>()
     for (const changed of changedIds) {
@@ -95,7 +100,7 @@ export class BundledDevHMRClient extends HMRClient {
     id: string,
     stack: string[],
     updateSet: Set<string>,
-    boundaries: [string, string][],
+    boundaries: PropagationBoundary[],
     firstInvalidatedBy: string | undefined,
     traversedModules: Set<string>,
   ): HmrUpdate | undefined {
@@ -109,7 +114,11 @@ export class BundledDevHMRClient extends HMRClient {
       }
     }
     if (this.isSelfAccepted(id)) {
-      boundaries.push([id, id])
+      boundaries.push({
+        boundary: id,
+        acceptedVia: id,
+        isWithinCircularImport: this.isNodeWithinCircularImports(id, stack),
+      })
       return
     }
     const parents = this.runtime
@@ -122,26 +131,105 @@ export class BundledDevHMRClient extends HMRClient {
       }
     }
     for (const parent of parents) {
+      const subChain = [...stack, parent]
       if (this.acceptsDep(parent, id)) {
-        boundaries.push([parent, id])
+        boundaries.push({
+          boundary: parent,
+          acceptedVia: id,
+          isWithinCircularImport: this.isNodeWithinCircularImports(
+            parent,
+            subChain,
+          ),
+        })
         continue
       }
-      if (stack.includes(parent)) {
-        return {
-          type: 'full-reload',
-          reason: `circular import chain between \`${id}\` and \`${parent}\``,
-        }
+      if (!stack.includes(parent)) {
+        const fullReload = this.bubble(
+          parent,
+          subChain,
+          updateSet,
+          boundaries,
+          firstInvalidatedBy,
+          traversedModules,
+        )
+        if (fullReload) return fullReload
       }
-      const fullReload = this.bubble(
-        parent,
-        [...stack, parent],
-        updateSet,
-        boundaries,
-        firstInvalidatedBy,
-        traversedModules,
-      )
-      if (fullReload) return fullReload
     }
+  }
+
+  /**
+   * Check importers recursively if it's an import loop. An accepted module within
+   * an import loop cannot recover its execution order and should be reloaded.
+   *
+   * @param node The node that accepts HMR and is a boundary
+   * @param nodeChain The chain of nodes/imports that lead to the node.
+   *   (The last node in the chain imports the `node` parameter)
+   * @param currentChain The current chain tracked from the `node` parameter
+   * @param traversedModules The set of modules that have traversed
+   */
+  private isNodeWithinCircularImports(
+    node: string,
+    nodeChain: string[],
+    currentChain: string[] = [node],
+    traversedModules = new Set<string>(),
+  ): boolean {
+    // To help visualize how each parameter works, imagine this import graph:
+    //
+    // A -> B -> C -> ACCEPTED -> D -> E -> NODE
+    //      ^--------------------------|
+    //
+    // ACCEPTED: the node that accepts HMR. the `node` parameter.
+    // NODE    : the initial node that triggered this HMR.
+    //
+    // This function will return true in the above graph, which:
+    // `node`         : ACCEPTED
+    // `nodeChain`    : [NODE, E, D, ACCEPTED]
+    // `currentChain` : [ACCEPTED, C, B]
+    //
+    // It works by checking if any `node` importers are within `nodeChain`, which
+    // means there's an import loop with a HMR-accepted module in it.
+
+    if (traversedModules.has(node)) {
+      return false
+    }
+    traversedModules.add(node)
+
+    for (const importer of this.runtime.getImporters(node)) {
+      // Node may import itself which is safe
+      if (importer === node) continue
+
+      // Check circular imports
+      const importerIndex = nodeChain.indexOf(importer)
+      if (importerIndex > -1) {
+        // Log extra debug information so users can fix and remove the circular imports
+        // Following explanation above:
+        // `importer`                    : E
+        // `currentChain` reversed       : [B, C, ACCEPTED]
+        // `nodeChain` sliced & reversed : [D, E]
+        // Combined                      : [E, B, C, ACCEPTED, D, E]
+        const importChain = [
+          importer,
+          ...[...currentChain].reverse(),
+          ...nodeChain.slice(importerIndex, -1).reverse(),
+        ]
+        this.logger.debug(
+          `circular imports detected: ${importChain.join(' -> ')}`,
+        )
+        return true
+      }
+
+      // Continue recursively
+      if (!currentChain.includes(importer)) {
+        const result = this.isNodeWithinCircularImports(
+          importer,
+          nodeChain,
+          currentChain.concat(importer),
+          traversedModules,
+        )
+        if (result) return result
+      }
+    }
+    return false
   }
 
   handlePush(payload: BundledDevUpdatePayload): void {
@@ -247,22 +335,41 @@ export class BundledDevHMRClient extends HMRClient {
     }
 
     // collect callbacks before the caches are removed
-    const applies = update.boundaries.map(([boundary, acceptedVia]) => ({
-      boundary,
-      acceptedVia,
-      callbacks:
-        this.hotModulesMap
-          .get(boundary)
-          ?.callbacks.filter((c) => c.deps.includes(acceptedVia)) ?? [],
-    }))
+    const applies = update.boundaries.map(
+      ({ boundary, acceptedVia, isWithinCircularImport }) => ({
+        boundary,
+        acceptedVia,
+        isWithinCircularImport,
+        callbacks:
+          this.hotModulesMap
+            .get(boundary)
+            ?.callbacks.filter((c) => c.deps.includes(acceptedVia)) ?? [],
+      }),
+    )
 
     for (const id of update.updateSet) {
       this.runtime.removeModuleCache(id)
     }
 
-    for (const { boundary, acceptedVia, callbacks } of applies) {
-      this.runtime.initModule(acceptedVia)
-      const fresh = this.runtime.loadExports(acceptedVia)
+    for (const {
+      boundary,
+      acceptedVia,
+      isWithinCircularImport,
+      callbacks,
+    } of applies) {
+      let fresh: unknown
+      try {
+        this.runtime.initModule(acceptedVia)
+        fresh = this.runtime.loadExports(acceptedVia)
+      } catch (err) {
+        if (isWithinCircularImport) {
+          this.requestFullReload(
+            `${acceptedVia} failed to apply HMR as it's within a circular import. Reloading page to reset the execution order.`,
+          )
+          return
+        }
+        throw err
+      }
       try {
         this.currentFirstInvalidatedBy = firstInvalidatedBy
         for (const { deps, fn } of callbacks) {
@@ -284,16 +391,19 @@ export class BundledDevHMRClient extends HMRClient {
   }
 
   private toUpdatePayload(
-    boundaries: [string, string][],
+    boundaries: PropagationBoundary[],
     firstInvalidatedBy: string | undefined,
   ): UpdatePayload {
-    const updates: Update[] = boundaries.map(([boundary, acceptedVia]) => ({
-      type: 'js-update',
-      path: boundary,
-      acceptedPath: acceptedVia,
-      timestamp: Date.now(),
-      firstInvalidatedBy,
-    }))
+    const updates: Update[] = boundaries.map(
+      ({ boundary, acceptedVia, isWithinCircularImport }) => ({
+        type: 'js-update',
+        path: boundary,
+        acceptedPath: acceptedVia,
+        timestamp: Date.now(),
+        isWithinCircularImport,
+        firstInvalidatedBy,
+      }),
+    )
     return { type: 'update', updates }
   }
 

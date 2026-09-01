@@ -1,8 +1,8 @@
 import fs from 'node:fs'
-import license from 'rollup-plugin-license'
-import type { Dependency } from 'rollup-plugin-license'
 import colors from 'picocolors'
 import type { Plugin, PluginContext } from 'rollup'
+import license from 'rollup-plugin-license'
+import type { Dependency } from 'rollup-plugin-license'
 
 export default function licensePlugin(
   licenseFilePath: string,
@@ -12,7 +12,7 @@ export default function licensePlugin(
 ): Plugin {
   const originalPlugin = license({
     thirdParty(dependencies) {
-      // https://github.com/rollup/rollup/blob/master/build-plugins/generate-license-file.js
+      // https://github.com/rollup/rollup/blob/1378cae13b33838de9c8ba9ef9152354f6eed27b/build-plugins/generate-license-file.js
       // MIT Licensed https://github.com/rollup/rollup/blob/master/LICENSE-CORE.md
       const coreLicense = fs.readFileSync(
         new URL('../../LICENSE', import.meta.url),

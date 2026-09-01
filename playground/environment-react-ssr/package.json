@@ -10,7 +10,7 @@
   },
   "devDependencies": {
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
+    "@types/react-dom": "^19.2.5",
     "react": "^19.2.8",
     "react-fake-client": "npm:react@^19.2.8",
     "react-fake-server": "npm:react@^19.2.8",

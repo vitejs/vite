@@ -1,20 +1,27 @@
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
-import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
+import { promisify } from 'node:util'
 import { ignoreInput, ignoreOutput } from '@voidzero-dev/vite-task-client'
-import colors from 'picocolors'
 import { init, parse } from 'es-module-lexer'
-import { isDynamicPattern } from 'tinyglobby'
+import colors from 'picocolors'
 import {
   type RolldownOptions,
   type RolldownOutput,
   type OutputOptions as RolldownOutputOptions,
   rolldown,
 } from 'rolldown'
+import { isDynamicPattern } from 'tinyglobby'
 import type { DepsOptimizerEsbuildOptions } from '#types/internal/esbuildOptions'
+import { isWindows } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
+import {
+  ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
+  METADATA_FILENAME,
+} from '../constants'
+import type { Environment } from '../environment'
+import { transformWithOxc } from '../plugins/oxc'
 import {
   arraify,
   asyncFlatten,
@@ -29,19 +36,12 @@ import {
   tryStatSync,
   unique,
 } from '../utils'
-import {
-  ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
-  METADATA_FILENAME,
-} from '../constants'
-import { isWindows } from '../../shared/utils'
-import type { Environment } from '../environment'
-import { transformWithOxc } from '../plugins/oxc'
-import { ScanEnvironment, scanImports } from './scan'
 import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
 import {
   rolldownCjsExternalPlugin,
   rolldownDepPlugin,
 } from './rolldownDepPlugin'
+import { ScanEnvironment, scanImports } from './scan'
 
 const debug = createDebugger('vite:deps')
 
@@ -1143,15 +1143,19 @@ export async function extractExportsData(
         ...remainingRolldownOptions.moduleTypes,
       },
     })
-    const result = await build.generate({
-      ...rolldownOptions.output,
-      format: 'esm',
-      sourcemap: false,
-    })
-    const [, exports, , hasModuleSyntax] = parse(result.output[0].code)
-    return {
-      hasModuleSyntax,
-      exports: exports.map((e) => e.n),
+    try {
+      const result = await build.generate({
+        ...rolldownOptions.output,
+        format: 'esm',
+        sourcemap: false,
+      })
+      const [, exports, , hasModuleSyntax] = parse(result.output[0].code)
+      return {
+        hasModuleSyntax,
+        exports: exports.map((e) => e.n),
+      }
+    } finally {
+      await build.close()
     }
   }
 
@@ -1465,7 +1469,7 @@ export async function cleanupDepsCacheStaleDirs(
 
 // The ISC License
 // Copyright (c) 2011-2022 Isaac Z. Schlueter, Ben Noordhuis, and Contributors
-// https://github.com/isaacs/node-graceful-fs/blob/main/LICENSE
+// https://github.com/isaacs/node-graceful-fs/blob/234379906b7d2f4c9cfeb412d2516f42b0fb4953/LICENSE
 
 // On Windows, A/V software can lock the directory, causing this
 // to fail with an EACCES or EPERM if the directory contains newly

@@ -1,11 +1,13 @@
 import path from 'node:path'
-import MagicString from 'magic-string'
-import type { SourceMap } from 'rolldown'
-import type { ESTree } from 'rolldown/utils'
-import { extract_names as extractNames } from 'periscopic'
-import { walk as eswalk } from 'estree-walker'
 import type { RawSourceMap } from '@jridgewell/remapping'
+import { walk as eswalk } from 'estree-walker'
+import MagicString from 'magic-string'
+import { extract_names as extractNames } from 'periscopic'
+import type { SourceMap } from 'rolldown'
 import { parseAstAsync as rolldownParseAstAsync } from 'rolldown/parseAst'
+import type { ESTree } from 'rolldown/utils'
+import type { DefineImportMetadata } from '../../shared/ssrTransform'
+import { isJSONRequest } from '../plugins/json'
 import type { TransformResult } from '../server/transformRequest'
 import {
   combineSourcemaps,
@@ -14,8 +16,6 @@ import {
   isDefined,
   numberToPos,
 } from '../utils'
-import { isJSONRequest } from '../plugins/json'
-import type { DefineImportMetadata } from '../../shared/ssrTransform'
 
 export interface ModuleRunnerTransformOptions {
   json?: {
@@ -575,38 +575,8 @@ function walk(
         if (node.type === 'FunctionExpression' && node.id) {
           setScope(node, node.id.name)
         }
-        // walk function expressions and add its arguments to known identifiers
-        // so that we don't prefix them
-        node.params.forEach((p) => {
-          if (p.type === 'ObjectPattern' || p.type === 'ArrayPattern') {
-            handlePattern(p, node)
-            return
-          }
-          ;(eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
-            enter(child: ESTree.Node, parent: ESTree.Node | undefined) {
-              // skip params default value of destructure
-              if (
-                parent?.type === 'AssignmentPattern' &&
-                parent.right === child
-              ) {
-                return this.skip()
-              }
-              if (child.type !== 'Identifier') return
-              // do not record as scope variable if is a destructuring keyword
-              if (isStaticPropertyKey(child, parent)) return
-              // do not record if this is a default value
-              // assignment of a destructuring variable
-              if (
-                (parent?.type === 'TemplateLiteral' &&
-                  parent.expressions.includes(child as ESTree.Expression)) ||
-                (parent?.type === 'CallExpression' && parent.callee === child)
-              ) {
-                return
-              }
-              setScope(node, child.name)
-            },
-          })
-        })
+        // add function arguments to known identifiers so that we don't prefix them
+        node.params.forEach((p) => handlePattern(p, node))
       } else if (node.type === 'ClassDeclaration') {
         // A class declaration name could shadow an import, so add its name to the parent scope
         const parentScope = findParentScope(parentStack)
