@@ -735,7 +735,8 @@ async function init() {
 function formatTargetDir(targetDir: string) {
   return targetDir
     .trim()
-    .replace(/[<>:"\\|?*]/g, '')
+    .replace(/\\/g, '/')
+    .replace(/[<>:"|?*]/g, '')
     .replace(/\/+$/g, '')
 }
 
