@@ -38,7 +38,7 @@ jobs:
 
       - name: AgentScan
         id: agentscan
-        uses: MatteoGabriele/agentscan-action@98202262c925c508d4c1424b1dfbe17ee35b0c02 # v2.4.0
+        uses: MatteoGabriele/agentscan-action@8112fb79b33fafb8506159df20129a34209ac410 # v2.5.0
         with:
           mode: labels
           cache-path: .agentscan-cache
