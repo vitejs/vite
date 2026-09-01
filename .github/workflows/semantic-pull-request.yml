@@ -7,10 +7,7 @@ on:
   # - Only PR title is read
   # - No PR-supplied code is executed
   pull_request_target:
-    types:
-      - opened
-      - edited
-      - synchronize
+    types: [opened, reopened, edited, synchronize]
 
 jobs:
   main:

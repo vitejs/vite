@@ -1,11 +1,11 @@
 import type { ModuleRunner } from 'vite/module-runner'
 import type { ResolvedConfig } from '../../config'
-import type { DevEnvironmentContext } from '../environment'
-import { DevEnvironment } from '../environment'
+import type { Environment } from '../../environment'
 import type { ServerModuleRunnerOptions } from '../../ssr/runtime/serverModuleRunner'
 import { createServerModuleRunner } from '../../ssr/runtime/serverModuleRunner'
+import type { DevEnvironmentContext } from '../environment'
+import { DevEnvironment } from '../environment'
 import { createServerHotChannel } from '../hmr'
-import type { Environment } from '../../environment'
 
 export function createRunnableDevEnvironment(
   name: string,

@@ -1,8 +1,8 @@
-import { describe, expect, test } from 'vitest'
 import { rolldown } from 'rolldown'
-import { definePlugin } from '../../plugins/define'
-import { resolveConfig } from '../../config'
+import { describe, expect, test } from 'vitest'
 import { PartialEnvironment } from '../../baseEnvironment'
+import { resolveConfig } from '../../config'
+import { definePlugin } from '../../plugins/define'
 
 async function createDefinePluginTransform(
   define: Record<string, any> = {},
@@ -88,6 +88,15 @@ describe('definePlugin (SSR dev)', () => {
     expect(
       await transform('export const version = import.meta.SOMETHING'),
     ).toBe(undefined)
+  })
+
+  test('replaces define keys containing `$`', async () => {
+    const transform = await createJsDefinePluginTransform({
+      $FOO: JSON.stringify('bar'),
+    })
+    expect(await transform('export const x = $FOO;')).toBe(
+      'export const x = "bar";\n',
+    )
   })
 
   test('replace import.meta.env when it is a invalid json', async () => {

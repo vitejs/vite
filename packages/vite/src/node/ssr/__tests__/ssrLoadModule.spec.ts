@@ -1,6 +1,6 @@
-import { fileURLToPath } from 'node:url'
-import path from 'node:path'
 import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { stripVTControlCharacters } from 'node:util'
 import { expect, onTestFinished, test, vi } from 'vitest'
 import { createServer } from '../../server'

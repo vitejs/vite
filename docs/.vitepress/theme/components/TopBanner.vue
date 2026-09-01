@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed, inject } from 'vue'
-import { useData } from 'vitepress'
 import { Icon } from '@iconify/vue'
 import {
   themeContextKey,
   type BannerConfig,
 } from '@voidzero-dev/vitepress-theme'
+import { useData } from 'vitepress'
+import { computed, inject } from 'vue'
 
 const { theme, frontmatter } = useData()
 

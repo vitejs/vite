@@ -1,0 +1,85 @@
+name: Prepare Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Package to release
+        required: true
+        default: vite
+        type: choice
+        options:
+          - vite
+          - create-vite
+          - plugin-legacy
+      release:
+        description: Release type
+        required: true
+        default: next
+        type: choice
+        options:
+          - next
+          - patch
+          - minor
+          - major
+          - prepatch
+          - preminor
+          - premajor
+      version:
+        description: Specify exact version instead of release type
+        required: false
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.package }}-${{ inputs.version || inputs.release }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  prepare:
+    if: github.repository == 'vitejs/vite'
+    name: Prepare release PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - name: Set node version to 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install deps
+        run: pnpm install
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
+      - name: Prepare release
+        id: prepare
+        env:
+          RELEASE: ${{ inputs.version || inputs.release }}
+          RELEASE_PACKAGE: ${{ inputs.package }}
+        run: |
+          node scripts/prepare-release.ts "$RELEASE_PACKAGE" "$RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Open release PR
+        uses: vitejs/release-scripts/action/release-pr@083fcf277cb3edc873f60d820738be35323d14e7 # v1.10.0
+        with:
+          token: ${{ github.token }}
+          package-name: ${{ inputs.package }}
+          package-path: packages/${{ inputs.package }}
+          pr-body: ${{ steps.prepare.outputs.pr_body }}
+          tag: ${{ steps.prepare.outputs.tag }}
+          version: ${{ steps.prepare.outputs.version }}
