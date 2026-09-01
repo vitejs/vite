@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { type ImportSpecifier, init, parse } from 'es-module-lexer'
+import { type ImportSpecifier, init, initSync, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
 import type {
@@ -33,6 +33,7 @@ import {
   urlRE,
 } from '../utils'
 import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
+import { getImportMap } from './html'
 
 type WorkerBundle = {
   entryFilename: string
@@ -108,6 +109,10 @@ class WorkerOutputCache {
 
   getMergedChunkReferenceId(childBundleId: WorkerBundleId): string | undefined {
     return this.mergedChunkReferenceIds.get(childBundleId)
+  }
+
+  getAllMergedChunkReferenceIds(): string[] {
+    return [...this.mergedChunkReferenceIds.values()]
   }
 
   saveWorkerBundle(
@@ -1003,6 +1008,94 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               nextLiveModuleIds.delete(moduleId)
             }
             liveModuleIds = nextLiveModuleIds
+          }
+        }
+
+        // With `build.chunkImportMap` enabled, Rolldown may write some of a
+        // chunk's static import specifiers as "preliminary" names that only
+        // resolve to their real file via the import map it generates into
+        // the main HTML document. A worker script runs in its own realm and
+        // never sees that document's import map, so every chunk reachable
+        // from a shared-chunk worker (the worker's own chunk, and anything
+        // it imports, transitively) needs those specifiers rewritten to the
+        // real path directly - otherwise they'd 404 at runtime for a worker
+        // even though the same reference works fine for the main document.
+        if (this.environment.config.build.chunkImportMap) {
+          const importMap = getImportMap(bundle, this.environment.config)
+          if (importMap) {
+            // `mapping`'s keys/values may carry a leading "/" (an absolute,
+            // base-rooted path) depending on `config.base` and this build's
+            // resolved chunkImportMap.baseUrl, whereas `bundle` (and the
+            // `resolved` paths computed below) are always base-relative
+            // file names with no leading slash - normalize both to that
+            // shape so the lookup below matches regardless.
+            const mapping: Record<string, string> = {}
+            for (const [key, value] of Object.entries(importMap.mapping)) {
+              mapping[key.replace(/^\/+/, '')] = value.replace(/^\/+/, '')
+            }
+            const workerClosure = new Set<string>()
+            const queue: string[] = []
+            for (const referenceId of cache.getAllMergedChunkReferenceIds()) {
+              let fileName: string | undefined
+              try {
+                fileName = this.getFileName(referenceId)
+              } catch {
+                continue
+              }
+              if (bundle[fileName] && !workerClosure.has(fileName)) {
+                workerClosure.add(fileName)
+                queue.push(fileName)
+              }
+            }
+            while (queue.length > 0) {
+              const fileName = queue.shift()!
+              const output = bundle[fileName]
+              if (output?.type !== 'chunk') continue
+              for (const imported of output.imports) {
+                if (!workerClosure.has(imported)) {
+                  workerClosure.add(imported)
+                  queue.push(imported)
+                }
+              }
+            }
+
+            // generateBundle can't be async without forcing every plugin
+            // whose hooks run around it to tolerate that (see the other,
+            // pre-existing `await init` in this file for contrast, inside
+            // an already-async `transform` hook). `initSync` compiles the
+            // (tiny, embedded) WASM synchronously - a no-op if some other
+            // plugin already `await init`-ed it earlier in this same build,
+            // which is normally the case by the time generateBundle runs.
+            initSync()
+            for (const fileName of workerClosure) {
+              const output = bundle[fileName]
+              if (output?.type !== 'chunk') continue
+              let imports: readonly ImportSpecifier[]
+              try {
+                imports = parse(output.code)[0]
+              } catch {
+                continue
+              }
+              let s: MagicString | undefined
+              for (const { n: specifier, s: start, e: end } of imports) {
+                if (!specifier || !specifier.startsWith('.')) continue
+                const resolved = path.posix.normalize(
+                  path.posix.join(path.posix.dirname(fileName), specifier),
+                )
+                const real = mapping[resolved]
+                if (!real || real === resolved) continue
+                let relative = path.posix.relative(
+                  path.posix.dirname(fileName),
+                  real,
+                )
+                if (!relative.startsWith('.')) relative = './' + relative
+                s ||= new MagicString(output.code)
+                s.update(start, end, relative)
+              }
+              if (s) {
+                output.code = s.toString()
+              }
+            }
           }
         }
       }
