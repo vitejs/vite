@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { transformWithOxc } from '../../plugins/oxc'
 import { resolveConfig } from '../../config'
+import { transformWithOxc } from '../../plugins/oxc'
 
 describe('transformWithOxc', () => {
   test('correctly overrides TS configuration and applies automatic transform', async () => {
