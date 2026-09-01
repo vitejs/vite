@@ -324,6 +324,26 @@ describe('css url() references', () => {
     )
   })
 
+  test('no base64 inline for preload and prefetch links', async () => {
+    const preloadAssetMatch = isBundled
+      ? /\/foo\/bar\/assets\/preload-asset-[-\w]{8}\.png/
+      : '/foo/bar/nested/preload-asset.png'
+
+    const preloadEl = await page.$('link.preload-href')
+    expect(await preloadEl.getAttribute('href')).toMatch(preloadAssetMatch)
+
+    const prefetchEl = await page.$('link.prefetch-href')
+    expect(await prefetchEl.getAttribute('href')).toMatch(preloadAssetMatch)
+
+    // `imagesrcset` goes through the srcset branch, which has to honour the
+    // same no-inline decision as `href`
+    const imageSrcSetEl = await page.$('link.preload-imagesrcset')
+    const imageSrcSet = await imageSrcSetEl.getAttribute('imagesrcset')
+    imageSrcSet.split(', ').forEach((s) => {
+      expect(s).toMatch(preloadAssetMatch)
+    })
+  })
+
   test('no base64 inline for icon and manifest links', async () => {
     const iconEl = await page.$(`link.ico`)
     const href = await iconEl.getAttribute('href')

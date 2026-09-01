@@ -169,6 +169,8 @@ const noInlineLinkRels = new Set([
   'apple-touch-startup-image',
   'manifest',
   'modulepreload',
+  'preload',
+  'prefetch',
 ])
 
 export const isAsyncScriptMap: WeakMap<
@@ -623,6 +625,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             config.html?.additionalAssetSources,
           )
           for (const attr of assetAttributes) {
+            // If the node is a link, check if it can be inlined. If not, set `shouldInline`
+            // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
+            const isNoInlineLink =
+              node.nodeName === 'link' &&
+              attr.attributes.rel &&
+              parseRelAttr(attr.attributes.rel).some((v) =>
+                noInlineLinkRels.has(v),
+              )
+            const shouldInline = isNoInlineLink ? false : undefined
+
             if (attr.type === 'remove') {
               s.remove(attr.location.startOffset, attr.location.endOffset)
               continue
@@ -637,7 +649,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                         decodedUrl !== undefined &&
                         !isExcludedUrl(decodedUrl)
                       ) {
-                        const result = await processAssetUrl(url)
+                        const result = await processAssetUrl(url, shouldInline)
                         return result !== decodedUrl
                           ? encodeURIPath(result)
                           : url
@@ -676,15 +688,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   })
                   js += importExpression
                 } else {
-                  // If the node is a link, check if it can be inlined. If not, set `shouldInline`
-                  // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
-                  const isNoInlineLink =
-                    node.nodeName === 'link' &&
-                    attr.attributes.rel &&
-                    parseRelAttr(attr.attributes.rel).some((v) =>
-                      noInlineLinkRels.has(v),
-                    )
-                  const shouldInline = isNoInlineLink ? false : undefined
                   assetUrlsPromises.push(
                     (async () => {
                       const processedUrl = await processAssetUrl(
