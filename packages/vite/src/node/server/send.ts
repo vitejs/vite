@@ -29,6 +29,9 @@ export interface SendOptions {
   map?: SourceMap | { mappings: '' } | null
 }
 
+// skip the fallback sourcemap for large code to avoid OOM (#22132)
+const MAX_FALLBACK_SOURCEMAP_CODE_LENGTH = 4 * 1024 * 1024
+
 export function send(
   req: IncomingMessage,
   res: ServerResponse,
@@ -76,6 +79,8 @@ export function send(
     // if the code has existing inline sourcemap, assume it's correct and skip
     if (convertSourceMap.mapFileCommentRegex.test(code)) {
       debug?.(`Skipped injecting fallback sourcemap for ${req.url}`)
+    } else if (code.length > MAX_FALLBACK_SOURCEMAP_CODE_LENGTH) {
+      debug?.(`Skipped injecting fallback sourcemap for large ${req.url}`)
     } else {
       const urlWithoutTimestamp = removeTimestampQuery(req.url!)
       const ms = new MagicString(code)
