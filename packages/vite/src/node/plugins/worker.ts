@@ -331,7 +331,8 @@ const workerOutputCaches = new WeakMap<ResolvedConfig, WorkerOutputCache>()
 /**
  * Placeholder embedded in place of a shared-chunk worker's URL
  * (`shouldShareWorkerChunk`) until it's resolved in this plugin's
- * `renderChunk`, once every chunk's final file name is known.
+ * `generateBundle`, once every chunk's final file name is known (see the
+ * comment there for why `renderChunk` is too early for this).
  *
  * We can't rely on Rolldown's native `import.meta.ROLLDOWN_FILE_URL_<id>`
  * substitution here, the way `WorkerOutputCache.generateEntryUrlExpr` does
