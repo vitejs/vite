@@ -10,6 +10,10 @@ export default defineConfig(({ isPreview }) => ({
   },
   worker: {
     format: 'es',
+    // This config exercises worker-specific `plugins`/output naming below,
+    // which only apply when the worker is bundled in isolation - see
+    // `worker.shareChunks` in docs/config/worker-options.md.
+    shareChunks: false,
     plugins: () => [workerPluginTestPlugin()],
     rolldownOptions: {
       output: {
