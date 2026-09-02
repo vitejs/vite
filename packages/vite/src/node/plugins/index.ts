@@ -16,6 +16,7 @@ import {
 } from '../plugin'
 import { assetPlugin } from './asset'
 import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
+import { checkOutputReferencesPlugin } from './checkOutputReferences'
 import { clientInjectionsPlugin } from './clientInjections'
 import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
 import { definePlugin } from './define'
@@ -148,6 +149,7 @@ export async function resolvePlugins(
 
     ...buildPlugins.post,
     devtoolsIntegrationPlugin,
+    checkOutputReferencesPlugin(),
 
     // internal server-only plugins are always applied after everything else
     clientInjectionsPlugin(config),
