@@ -662,6 +662,13 @@ export function resolveRolldownOptions(
         : false,
     // cache: options.watch ? undefined : false,
     ...options.rolldownOptions,
+    tsconfig: environment.config.tsconfig ?? options.rolldownOptions.tsconfig,
+    resolve: environment.config.tsconfig
+      ? {
+          ...options.rolldownOptions.resolve,
+          tsconfigFilename: undefined,
+        }
+      : options.rolldownOptions.resolve,
     output: options.rolldownOptions.output,
     input,
     plugins,
