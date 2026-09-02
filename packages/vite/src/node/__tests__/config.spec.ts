@@ -2224,3 +2224,36 @@ describe('resolveServerOptions', () => {
     }
   })
 })
+
+test('keeps repeated optimizer plugin compatibility idempotent', async () => {
+  const optimizerPlugin = { name: 'test:resolve-config-idempotence' }
+  const optimizerPlugins = [optimizerPlugin]
+  Object.freeze(optimizerPlugins)
+  const esbuildPlugin = {
+    name: 'test:esbuild-compat',
+    setup(build: unknown) {
+      void build
+    },
+  }
+  const inlineConfig: InlineConfig = {
+    configFile: false,
+    logLevel: 'silent',
+    optimizeDeps: {
+      rolldownOptions: { plugins: optimizerPlugins },
+      esbuildOptions: { plugins: [esbuildPlugin] },
+    },
+  }
+
+  const first = await resolveConfig(inlineConfig, 'serve')
+  const second = await resolveConfig(inlineConfig, 'serve')
+
+  expect(first.environments.client.optimizeDepsPluginNames).toEqual([
+    optimizerPlugin.name,
+    esbuildPlugin.name,
+  ])
+  expect(second.environments.client.optimizeDepsPluginNames).toEqual([
+    optimizerPlugin.name,
+    esbuildPlugin.name,
+  ])
+  expect(optimizerPlugins).toEqual([optimizerPlugin])
+})
