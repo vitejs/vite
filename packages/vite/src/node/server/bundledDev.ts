@@ -342,6 +342,7 @@ export class BundledDev {
       `TRIGGER-LAZY: trigger lazy bundling for module ${moduleId} for client ${clientId}`,
     )
     const result = await this.devEngine.compileEntry(moduleId, clientId)
+    result.code = this.withBaseForLazyBundlingUrl(result.code)
     this.pendingPayloadFilenames.add(result.filename)
     return result
   }
@@ -377,7 +378,9 @@ export class BundledDev {
     for (const outputFile of output) {
       this.memoryFiles.set(outputFile.fileName, () => {
         const source =
-          outputFile.type === 'chunk' ? outputFile.code : outputFile.source
+          outputFile.type === 'chunk'
+            ? this.withBaseForLazyBundlingUrl(outputFile.code)
+            : outputFile.source
         return {
           source,
           etag: getEtag(Buffer.from(source), { weak: true }),
@@ -467,7 +470,7 @@ export class BundledDev {
       // https://green.sapphi.red/blog/local-server-security-best-practices#properly-check-the-request-origin
       // we can also use `Cross-Origin Resource Policy` header instead of this
       // but we cannot use `Sec-Fetch-*` headers as they are only sent to potentially-trustworthy origins
-      source: hmrOutput.code + '\n; export {}',
+      source: this.withBaseForLazyBundlingUrl(hmrOutput.code) + '\n; export {}',
     })
     if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
       this.memoryFiles.set(hmrOutput.sourcemapFilename, {
@@ -491,6 +494,12 @@ export class BundledDev {
         timestamp: true,
       },
     )
+  }
+
+  private withBaseForLazyBundlingUrl(code: string): string {
+    const { base } = this.environment.config
+    if (base === '/') return code
+    return code.replace(/([`"'])\/@vite\/lazy\?/g, `$1${base}@vite/lazy?`)
   }
 }
 
