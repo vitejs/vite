@@ -160,7 +160,6 @@ export default defineConfig(
       'e18e/prefer-array-fill': 'error',
       'e18e/prefer-includes': 'error',
       'e18e/prefer-array-to-reversed': 'error',
-      'e18e/prefer-spread-syntax': 'error',
       'e18e/prefer-object-has-own': 'error',
       'e18e/prefer-nullish-coalescing': 'error',
     },

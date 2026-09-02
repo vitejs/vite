@@ -387,7 +387,7 @@ const FRAMEWORKS: Framework[] = [
 ]
 
 const TEMPLATES = FRAMEWORKS.map((f) => f.variants.map((v) => v.name)).reduce(
-  (a, b) => [...a, ...b],
+  (a, b) => a.concat(b),
   [],
 )
 

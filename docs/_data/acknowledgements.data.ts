@@ -241,7 +241,7 @@ function groupByAuthor(dependencies: Dependency[]): Author[] {
     }
   }
 
-  return [...authorMap.entries()]
+  return Array.from(authorMap.entries())
     .map(([name, info]) => {
       const sortedPackages = info.packages.sort((a, b) =>
         a.name.localeCompare(b.name),
