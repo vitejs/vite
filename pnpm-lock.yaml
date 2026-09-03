@@ -376,8 +376,8 @@ importers:
         specifier: ^1.2.5
         version: 1.2.5
       '@vitejs/devtools':
-        specifier: ^0.7.0
-        version: 0.7.0(@devframes/json-render@0.9.8)(@vitejs/devtools-rolldown@0.7.0)(@vitejs/devtools-vite@0.7.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
+        specifier: ^0.7.1
+        version: 0.7.1(@devframes/json-render@0.9.8)(@vitejs/devtools-rolldown@0.7.1)(@vitejs/devtools-vite@0.7.1)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
       '@vitest/utils':
         specifier: 4.1.11
         version: 4.1.11
@@ -859,14 +859,14 @@ importers:
         version: 3.5.42(typescript@6.0.3)
     devDependencies:
       '@vitejs/devtools':
-        specifier: ^0.7.0
-        version: 0.7.0(@devframes/json-render@0.9.8)(@vitejs/devtools-rolldown@0.7.0)(@vitejs/devtools-vite@0.7.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
+        specifier: ^0.7.1
+        version: 0.7.1(@devframes/json-render@0.9.8)(@vitejs/devtools-rolldown@0.7.1)(@vitejs/devtools-vite@0.7.1)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
       '@vitejs/devtools-rolldown':
-        specifier: ^0.7.0
-        version: 0.7.0(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
+        specifier: ^0.7.1
+        version: 0.7.1(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
       '@vitejs/devtools-vite':
-        specifier: ^0.7.0
-        version: 0.7.0(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
+        specifier: ^0.7.1
+        version: 0.7.1(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
       vite:
         specifier: workspace:*
         version: link:../../packages/vite
@@ -4362,16 +4362,16 @@ packages:
     peerDependencies:
       vite: workspace:*
 
-  '@vitejs/devtools-kit@0.7.0':
-    resolution: {integrity: sha512-+Ql98sWpq9htf0Sw5MVGVmntiG5fC38jRMNoEZIJQlZi41oty0VocVq7QguMqbEq1coa6PgUexuRn9MTs0hkUw==}
+  '@vitejs/devtools-kit@0.7.1':
+    resolution: {integrity: sha512-She+yf6adPWlVxYgf7FzGNdlt1lW2rF8kT9+PPcNaJ9+wdBVSJBbSESw1izkeqTJH4m/YWB7XaXcxycZBAePyA==}
     peerDependencies:
       vite: workspace:*
 
-  '@vitejs/devtools-rolldown@0.7.0':
-    resolution: {integrity: sha512-yOBVg0Flp+21WFytUGJw3s7hrzFFH6cWU0yspHpbs+wswZbuhtJ+Y0OVv3qmnytDZfoCSf0eUsvOQ5s4fOS8bg==}
+  '@vitejs/devtools-rolldown@0.7.1':
+    resolution: {integrity: sha512-xybDbSyXvuV/ShHYj6z0h+nZyE10dGhQGVlcWA3I6nDoUHR/wgSnn3cbBJt2eIu7iDAP7j1U8Sm1ITaVp+oX2A==}
 
-  '@vitejs/devtools-vite@0.7.0':
-    resolution: {integrity: sha512-Z2FsEUY03tgFtDewQu/wm8BK73dnI6s9/djumSln6QDNrygcz3vk03gdyfkck5Uq61ru8NwTlB0ceGKJGDe7og==}
+  '@vitejs/devtools-vite@0.7.1':
+    resolution: {integrity: sha512-vis6MQmJM+uc/s5zjCJRTriRqpxv9JjFOkyO/VK8svWAHjffSvVkUctFcUFSoJEiGoXb84tJk0yrVaxhymTQYg==}
     peerDependencies:
       vite: workspace:*
 
@@ -4394,14 +4394,14 @@ packages:
       '@vitejs/devtools-vitest':
         optional: true
 
-  '@vitejs/devtools@0.7.0':
-    resolution: {integrity: sha512-6pXtERGQVt/9gOax42pV6l1BJIyg5Fq/jFPtcS3CWNkHTvA8jb8QkuCy+JW22dUYjj3vhYDqR7TtgAOJ2P7XMw==}
+  '@vitejs/devtools@0.7.1':
+    resolution: {integrity: sha512-QWsVFxSu0Lu6Xw190M76vMLiKcTw79z1OIycfax22S0A1IJ6RjUN+AMHAgZ85FpmUOSJ9x7fM6e+PM3LzfODQg==}
     hasBin: true
     peerDependencies:
-      '@vitejs/devtools-oxc': ^0.7.0
-      '@vitejs/devtools-rolldown': ^0.7.0
-      '@vitejs/devtools-vite': ^0.7.0
-      '@vitejs/devtools-vitest': ^0.7.0
+      '@vitejs/devtools-oxc': ^0.7.1
+      '@vitejs/devtools-rolldown': ^0.7.1
+      '@vitejs/devtools-vite': ^0.7.1
+      '@vitejs/devtools-vitest': ^0.7.1
       vite: workspace:*
     peerDependenciesMeta:
       '@vitejs/devtools-oxc':
@@ -10473,7 +10473,7 @@ snapshots:
       - srvx
     optional: true
 
-  '@vitejs/devtools-kit@0.7.0(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)':
+  '@vitejs/devtools-kit@0.7.1(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)':
     dependencies:
       '@devframes/hub': 0.9.8(crossws@0.4.12)(devframe@0.9.8)
       '@devframes/json-render': 0.9.8(@devframes/hub@0.9.8)(devframe@0.9.8)
@@ -10491,10 +10491,10 @@ snapshots:
       - ocache
       - srvx
 
-  '@vitejs/devtools-rolldown@0.7.0(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)':
+  '@vitejs/devtools-rolldown@0.7.1(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)':
     dependencies:
       '@rolldown/debug': 1.2.6
-      '@vitejs/devtools-kit': 0.7.0(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
+      '@vitejs/devtools-kit': 0.7.1(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
       diff: 9.0.0
       nostics: 1.2.0
       pathe: 2.0.3
@@ -10507,9 +10507,9 @@ snapshots:
       - srvx
       - vite
 
-  '@vitejs/devtools-vite@0.7.0(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)':
+  '@vitejs/devtools-vite@0.7.1(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)':
     dependencies:
-      '@vitejs/devtools-kit': 0.7.0(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
+      '@vitejs/devtools-kit': 0.7.1(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
       envinfo: 7.21.0
       nostics: 1.2.0
       pathe: 2.0.3
@@ -10552,7 +10552,7 @@ snapshots:
       - srvx
     optional: true
 
-  '@vitejs/devtools@0.7.0(@devframes/json-render@0.9.8)(@vitejs/devtools-rolldown@0.7.0)(@vitejs/devtools-vite@0.7.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)':
+  '@vitejs/devtools@0.7.1(@devframes/json-render@0.9.8)(@vitejs/devtools-rolldown@0.7.1)(@vitejs/devtools-vite@0.7.1)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)':
     dependencies:
       '@devframes/hub': 0.9.8(crossws@0.4.12)(devframe@0.9.8)
       '@devframes/hub-ui': 0.9.8(@devframes/hub@0.9.8)(@devframes/json-render@0.9.8)(devframe@0.9.8)
@@ -10560,7 +10560,7 @@ snapshots:
       '@devframes/plugin-inspect': 0.9.8(devframe@0.9.8)(vite@packages+vite)
       '@devframes/plugin-messages': 0.9.8(@devframes/hub@0.9.8)(devframe@0.9.8)(vite@packages+vite)
       '@devframes/plugin-terminals': 0.9.8(@devframes/hub-ui@0.9.8)(@devframes/hub@0.9.8)(devframe@0.9.8)(vite@packages+vite)
-      '@vitejs/devtools-kit': 0.7.0(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
+      '@vitejs/devtools-kit': 0.7.1(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
       cac: 7.0.0
       devframe: 0.9.8(cac@7.0.0)(srvx@0.12.7)
       h3: 2.0.1-rc.29(crossws@0.4.12)
@@ -10570,8 +10570,8 @@ snapshots:
       pathe: 2.0.3
       vite: link:packages/vite
     optionalDependencies:
-      '@vitejs/devtools-rolldown': 0.7.0(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
-      '@vitejs/devtools-vite': 0.7.0(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
+      '@vitejs/devtools-rolldown': 0.7.1(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
+      '@vitejs/devtools-vite': 0.7.1(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
     transitivePeerDependencies:
       - '@devframes/json-render'
       - '@devframes/plugin-inspect--assets'

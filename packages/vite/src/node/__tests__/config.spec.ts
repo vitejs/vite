@@ -74,10 +74,8 @@ describe('DevTools plugin resolution', () => {
     expect(devToolsIntegration).toHaveBeenCalledWith({
       command: 'serve',
       devtools: {
-        host: 'localhost',
         options: true,
       },
-      root: process.cwd(),
     })
     expect(configHooks).toEqual([
       'user-pre',
@@ -89,11 +87,6 @@ describe('DevTools plugin resolution', () => {
     ])
     expect(config.devtools).toMatchObject({
       apply: 'all',
-      config: {
-        clientAuth: true,
-        clientAuthTokens: [],
-        host: 'localhost',
-      },
       enabled: true,
     })
 
@@ -131,7 +124,7 @@ describe('DevTools plugin resolution', () => {
     expect(devToolsIntegration).not.toHaveBeenCalled()
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining(
-        "The `devtools` option cannot be enabled or disabled from a plugin's `config` hook.",
+        "The `devtools` option cannot be changed from a plugin's `config` hook.",
       ),
     )
   })
@@ -159,12 +152,12 @@ describe('DevTools plugin resolution', () => {
     expect(devToolsIntegration).toHaveBeenCalledOnce()
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining(
-        "The `devtools` option cannot be enabled or disabled from a plugin's `config` hook.",
+        "The `devtools` option cannot be changed from a plugin's `config` hook.",
       ),
     )
   })
 
-  test('does not allow a plugin config hook to mutate the DevTools enabled state', async () => {
+  test('does not allow a plugin config hook to mutate DevTools options in place', async () => {
     const logger = createLogger('silent')
     const warn = vi.spyOn(logger, 'warn')
     devToolsIntegration.mockResolvedValueOnce([])
@@ -190,7 +183,35 @@ describe('DevTools plugin resolution', () => {
     expect(devToolsIntegration).toHaveBeenCalledOnce()
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining(
-        "The `devtools` option cannot be enabled or disabled from a plugin's `config` hook.",
+        "The `devtools` option cannot be changed from a plugin's `config` hook.",
+      ),
+    )
+  })
+
+  test('does not allow a plugin config hook to change non-enablement DevTools options', async () => {
+    const logger = createLogger('silent')
+    const warn = vi.spyOn(logger, 'warn')
+    devToolsIntegration.mockResolvedValueOnce([])
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        customLogger: logger,
+        devtools: { apply: 'serve' },
+        plugins: [
+          {
+            name: 'change-devtools-options',
+            config: () => ({ devtools: { apply: 'build' } }),
+          },
+        ],
+      },
+      'serve',
+    )
+
+    expect(config.devtools).toMatchObject({ apply: 'serve' })
+    expect(devToolsIntegration).toHaveBeenCalledOnce()
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "The `devtools` option cannot be changed from a plugin's `config` hook.",
       ),
     )
   })

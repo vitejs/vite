@@ -5,7 +5,7 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { pathToFileURL } from 'node:url'
-import { inspect, promisify } from 'node:util'
+import { inspect, isDeepStrictEqual, promisify } from 'node:util'
 import {
   getEnv,
   ignoreInput,
@@ -800,7 +800,6 @@ function isDevToolsOptionEnabled(
 
 export async function resolveDevToolsConfig(
   config: DevToolsConfig | boolean | undefined,
-  host: string | boolean | undefined,
   command: 'serve' | 'build',
 ): Promise<ResolvedDevToolsConfig | false> {
   if (!isDevToolsOptionEnabled(config)) {
@@ -809,15 +808,13 @@ export async function resolveDevToolsConfig(
 
   const { isDevToolsEnabled, normalizeDevToolsConfig } =
     await import('@vitejs/devtools/config')
-  const resolved = normalizeDevToolsConfig(config, host)
+  const resolved = normalizeDevToolsConfig(config, undefined)
   return isDevToolsEnabled(resolved, command) ? resolved : false
 }
 
 interface DevToolsIntegrationState {
   plugins: Plugin[]
-  resolveConfig: (
-    host: string | boolean | undefined,
-  ) => Promise<ResolvedDevToolsConfig | false>
+  resolvedConfig: ResolvedDevToolsConfig
 }
 
 async function loadDevToolsIntegrationPlugins(
@@ -826,30 +823,17 @@ async function loadDevToolsIntegrationPlugins(
   options: boolean | DevToolsConfig | undefined,
 ): Promise<DevToolsIntegrationState | undefined> {
   try {
-    const resolved = await resolveDevToolsConfig(
-      options,
-      config.server?.host,
-      command,
-    )
+    const resolved = await resolveDevToolsConfig(options, command)
     if (!resolved) return
 
-    const devtools = {
-      host: resolved.config.host,
-      options,
-    }
     const { DevToolsIntegration } = await import('@vitejs/devtools/integration')
     const plugins = await DevToolsIntegration({
       command,
-      devtools,
-      root: config.root ? path.resolve(config.root) : process.cwd(),
+      devtools: { options },
     })
     return {
       plugins,
-      async resolveConfig(host) {
-        const resolved = await resolveDevToolsConfig(options, host, command)
-        if (resolved) devtools.host = resolved.config.host
-        return resolved
-      },
+      resolvedConfig: resolved,
     }
   } catch (error: any) {
     const logger = createLogger(config.logLevel, {
@@ -1590,7 +1574,6 @@ export async function resolveConfig(
     typeof config.devtools === 'object' && config.devtools != null
       ? deepClone(config.devtools)
       : config.devtools
-  const devtoolsEnabled = isDevToolsOptionEnabled(devtoolsOptions)
   const devtoolsIntegration = await loadDevToolsIntegrationPlugins(
     config,
     command,
@@ -1609,8 +1592,10 @@ export async function resolveConfig(
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   config = await runConfigHook(config, userPlugins, configEnv)
-  const devtoolsEnabledChanged =
-    isDevToolsOptionEnabled(config.devtools) !== devtoolsEnabled
+  const devtoolsConfigChanged = !isDeepStrictEqual(
+    config.devtools,
+    devtoolsOptions,
+  )
 
   // Ensure default client and ssr environments
   // If there are present, ensure order { client, ssr, ...custom }
@@ -1637,10 +1622,10 @@ export async function resolveConfig(
     customLogger: config.customLogger,
   })
 
-  if (devtoolsEnabledChanged) {
+  if (devtoolsConfigChanged) {
     logger.warn(
       colors.yellow(
-        `The \`devtools\` option cannot be enabled or disabled from a plugin's \`config\` hook. Set it in the user config instead.`,
+        `The \`devtools\` option cannot be changed from a plugin's \`config\` hook. Set it in the user config instead.`,
       ),
     )
   }
@@ -2091,8 +2076,7 @@ export async function resolveConfig(
     experimental.renderBuiltUrl = undefined
   }
 
-  const resolvedDevToolsConfig =
-    (await devtoolsIntegration?.resolveConfig(server.host)) ?? false
+  const resolvedDevToolsConfig = devtoolsIntegration?.resolvedConfig ?? false
 
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
