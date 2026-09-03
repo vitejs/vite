@@ -50,6 +50,8 @@ minimumReleaseAgeExcludePrune: true
 minimumReleaseAgeExclude:
   - rolldown
   - '@rolldown/binding-*'
+  - '@vitejs/devtools'
+  - '@vitejs/devtools-*'
 trustPolicy: no-downgrade
 trustPolicyExclude:
   - '@vercel/detect-agent@1.2.5' # https://github.com/vercel/vercel/issues/17408
