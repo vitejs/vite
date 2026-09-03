@@ -30,6 +30,7 @@ export default defineConfig({
       // only referenced by the import that injectImportIntoOptimizedDep()
       // adds at serve time, so the scanner can never discover it
       '@vitejs/test-dep-cjs-for-injected-import',
+      './source-include.js',
     ],
     exclude: [
       '@vitejs/test-nested-exclude',

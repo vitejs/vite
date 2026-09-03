@@ -450,6 +450,18 @@ function optimizerResolvePlugin(
 
             const normalizedFsPath = normalizePath(fsPath)
 
+            if (asSrc && !options.scan && !SPECIAL_QUERY_RE.test(id)) {
+              const resolvedFsPath = tryFsResolve(fsPath, options)
+              const optimizedDep = depsOptimizer.metadata.depInfoList.find(
+                (depInfo) =>
+                  depInfo.src ===
+                  normalizePath(resolvedFsPath || normalizedFsPath),
+              )
+              if (optimizedDep) {
+                return depsOptimizer.getOptimizedDepId(optimizedDep)
+              }
+            }
+
             if (depsOptimizer.isOptimizedDepFile(normalizedFsPath)) {
               // Optimized files could not yet exist in disk, resolve to the full path
               // Inject the current browserHash version if the path doesn't have one

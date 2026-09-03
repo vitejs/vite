@@ -126,6 +126,24 @@ test('forced include', async () => {
     .toMatch(`[success]`)
 })
 
+test.runIf(isServe)(
+  'optimizes a project source file imported relatively',
+  async () => {
+    await expect
+      .poll(() => page.textContent('.source-include'))
+      .toBe('source include')
+
+    const metadata = readDepOptimizationMetadata()
+    const optimizedFile = metadata.optimized['./source-include.js'].file
+    const response = await fetch(
+      new URL('/source-include-entry.js', viteTestUrl),
+    )
+    const source = await response.text()
+
+    expect(source).toContain(`/node_modules/.vite/deps/${optimizedFile}`)
+  },
+)
+
 test('import * from optimized dep', async () => {
   await expect.poll(() => page.textContent('.import-star')).toMatch(`[success]`)
 })
