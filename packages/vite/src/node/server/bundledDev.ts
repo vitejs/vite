@@ -356,8 +356,7 @@ export class BundledDev {
    * Called when the client reports that it evaluated a payload (the line appended
    * by `payloadDeliveredAck`). Only then is the payload recorded on the server's
    * per-client ship map, so later chunks may omit a module only if the client
-   * already registered it. The HTTP response finishing is not enough: the bytes
-   * may still be on the wire while a later chunk is compiled and evaluated.
+   * already registered it.
    *
    * Note: the payload filename is unique across all clients.
    */

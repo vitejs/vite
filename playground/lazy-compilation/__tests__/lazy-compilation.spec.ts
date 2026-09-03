@@ -1,6 +1,6 @@
 import type { Response, Route } from 'playwright-chromium'
-import { describe, expect, test } from 'vitest'
-import { isServe, page } from '~utils'
+import { beforeAll, describe, expect, test } from 'vitest'
+import { isServe, page, promiseWithResolvers } from '~utils'
 
 // Regression test for rolldown/rolldown#10774.
 //
@@ -37,37 +37,38 @@ const onResponse = (res: Response) => {
 }
 
 describe.runIf(isServe)('lazy compilation', () => {
-  test('a chunk compiled while an earlier chunk is still in flight carries the shared factory', async () => {
+  beforeAll(() => {
     page.on('response', onResponse)
+    return () => {
+      page.off('response', onResponse)
+    }
+  })
 
+  test('a chunk compiled while an earlier chunk is still in flight carries the shared factory', async () => {
     // Resolved once A's response has fully arrived from the server; the route
     // then waits on `releaseA` before handing it to the page.
-    let aFetched!: () => void
-    const aFetchedPromise = new Promise<void>((resolve) => (aFetched = resolve))
-    let releaseA!: () => void
-    const releaseAPromise = new Promise<void>((resolve) => (releaseA = resolve))
+    const aFetched = promiseWithResolvers<void>()
+    const releaseA = promiseWithResolvers<void>()
     // Resolved once the held response was handed to the page, so teardown can
-    // unroute safely (unrouting first makes the pending `fulfill` throw).
-    let aFulfilled!: () => void
-    const aFulfilledPromise = new Promise<void>(
-      (resolve) => (aFulfilled = resolve),
-    )
+    // dispose the route safely (disposing first makes the pending `fulfill`
+    // throw).
+    const aFulfilled = promiseWithResolvers<void>()
 
     const lazyRoute = async (route: Route) => {
       if (!lazyIdOf(route.request().url()).includes('page-a')) {
         return route.continue()
       }
       const response = await route.fetch()
-      aFetched()
-      await releaseAPromise
+      aFetched.resolve()
+      await releaseA.promise
       await route.fulfill({ response })
-      aFulfilled()
+      aFulfilled.resolve()
     }
-    await page.route('**/@vite/lazy?*', lazyRoute)
+    const router = await page.route('**/@vite/lazy?*', lazyRoute)
 
     try {
       await page.click('#route-a-btn')
-      await aFetchedPromise
+      await aFetched.promise
 
       // B is compiled while A's bytes are held back from the page, so the
       // client has not reported A yet and B must still carry shared.js.
@@ -83,35 +84,31 @@ describe.runIf(isServe)('lazy compilation', () => {
         .poll(() => page.textContent('#route-b-content'))
         .toBe('B:shared-value')
 
-      releaseA()
+      releaseA.resolve()
       await expect
         .poll(() => page.textContent('#route-a-content'))
         .toBe('A:shared-value')
       expect(await lazyBody('page-a')).toMatch(factoryFor('shared.js'))
     } finally {
-      releaseA()
-      await aFulfilledPromise
-      await page.unroute('**/@vite/lazy?*', lazyRoute)
+      releaseA.resolve()
+      await aFulfilled.promise
+      await router.dispose()
     }
   })
 
   test('a chunk requested after the earlier chunks were evaluated omits the shared factory', async () => {
-    try {
-      // The client reports A and B over the websocket after evaluating them;
-      // the next lazy request is a separate HTTP request, so give the reports
-      // a moment to land before C is compiled.
-      await new Promise((resolve) => setTimeout(resolve, 300))
+    // The client reports A and B over the websocket after evaluating them;
+    // the next lazy request is a separate HTTP request, so give the reports
+    // a moment to land before C is compiled.
+    await new Promise((resolve) => setTimeout(resolve, 300))
 
-      await page.click('#route-c-btn')
-      await expect
-        .poll(() => page.textContent('#route-c-content'))
-        .toBe('C:shared-value')
+    await page.click('#route-c-btn')
+    await expect
+      .poll(() => page.textContent('#route-c-content'))
+      .toBe('C:shared-value')
 
-      const bodyC = await lazyBody('page-c')
-      expect(bodyC).toMatch(factoryFor('page-c.js'))
-      expect(bodyC).not.toMatch(factoryFor('shared.js'))
-    } finally {
-      page.off('response', onResponse)
-    }
+    const bodyC = await lazyBody('page-c')
+    expect(bodyC).toMatch(factoryFor('page-c.js'))
+    expect(bodyC).not.toMatch(factoryFor('shared.js'))
   })
 })
