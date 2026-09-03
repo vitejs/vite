@@ -1,6 +1,8 @@
 import type { OutputBundle, OutputChunk } from 'rolldown'
 import { describe, expect, test } from 'vitest'
-import { getCssFilesForChunk } from '../plugins/html'
+import { PartialEnvironment } from '../baseEnvironment'
+import { resolveConfig } from '../config'
+import { buildHtmlPlugin, getCssFilesForChunk } from '../plugins/html'
 
 function createChunk(
   fileName: string,
@@ -238,5 +240,34 @@ describe('getCssFilesForChunk', () => {
       'b.css',
       'a.css',
     ])
+  })
+})
+
+describe('buildHtmlPlugin module scripts with src and inline content', () => {
+  // https://html.spec.whatwg.org/multipage/scripting.html#script-processing-model
+  // a script with both a `src` attribute and inline content must only run the
+  // external script and ignore the content. The buggy behavior was to treat
+  // the content as an inline module (visible as a `html-proxy` import in the
+  // returned entry js) and drop the script tag.
+  const transformHtml = async (html: string) => {
+    const config = await resolveConfig({ configFile: false }, 'build')
+    const plugin = buildHtmlPlugin(config)
+    const environment = new PartialEnvironment('client', config)
+    const handler = plugin.transform!.handler
+    const result = await handler.call(
+      { environment },
+      html,
+      '/index.html',
+    )
+    return result!.code
+  }
+
+  test('does not treat content of module scripts with an external (CDN) src as an inline module', async () => {
+    const code = await transformHtml(`<html><body>
+<script type="module" src="https://cdn.example.com/cdn-module.js">
+  // this inline content must be ignored
+</script>
+</body></html>`)
+    expect(code).not.toContain('html-proxy')
   })
 })
