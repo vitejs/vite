@@ -1051,6 +1051,8 @@ importers:
 
   playground/json/json-module: {}
 
+  playground/lazy-compilation: {}
+
   playground/legacy:
     devDependencies:
       '@vitejs/plugin-legacy':
