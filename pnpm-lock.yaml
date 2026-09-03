@@ -108,6 +108,7 @@ settings:
 
 overrides:
   vite: workspace:*
+  debug: npm:obug@^1.0.2
 
 packageExtensionsChecksum: sha256-TN34VxQ4aEf/0bmMCAf/tyq2fur66+GWTFoIOcaYREE=
 
@@ -226,17 +227,17 @@ importers:
         specifier: ^5.0.6
         version: 5.0.6
       '@voidzero-dev/vitepress-theme':
-        specifier: ^5.0.6
-        version: 5.0.6(focus-trap@8.2.2)(vite@packages+vite)(vitepress@2.0.0-alpha.19)(vue@3.5.42)
+        specifier: 5.0.4
+        version: 5.0.4(focus-trap@8.2.2)(vite@packages+vite)(vitepress@https://pkg.pr.new/vitepress@a6573ff)(vue@3.5.42)
       feed:
         specifier: ^6.0.0
         version: 6.0.0
       vitepress:
-        specifier: ^2.0.0-alpha.19
-        version: 2.0.0-alpha.19(postcss@8.5.26)(typescript@6.0.3)
+        specifier: https://pkg.pr.new/vitepress@a6573ff
+        version: https://pkg.pr.new/vitepress@a6573ff(postcss@8.5.26)(typescript@6.0.3)
       vitepress-plugin-graphviz:
         specifier: ^0.1.0
-        version: 0.1.0(vitepress@2.0.0-alpha.19)
+        version: 0.1.0(vitepress@https://pkg.pr.new/vitepress@a6573ff)
       vitepress-plugin-group-icons:
         specifier: ^1.7.6
         version: 1.7.6(vite@packages+vite)
@@ -2895,8 +2896,8 @@ packages:
   '@iconify-json/logos@1.2.11':
     resolution: {integrity: sha512-fOo4pGEatuyuCFNL+cwquYMa2Im0oJHRHV7lt/Qqs5Ode/lPImHCQcfTtPzZj7qYMPb/h8YHN3TG54uEowrjNQ==}
 
-  '@iconify-json/simple-icons@1.2.92':
-    resolution: {integrity: sha512-hR0ozxR97t1dzWw+esoxFijZ15gagt7EIgF3CNifu2yICXhS7gnun4Y+j+odJQtNSl7wvqMdoLbViIShwe/fdw==}
+  '@iconify-json/simple-icons@1.2.94':
+    resolution: {integrity: sha512-l8UWzVxKaqZd9ABsE/M/9p6NyGkQnmCnOoZyhQmjlXCtY5PuL2rcWxOFk2l9pk7ux3ERMPkTLE4jl6kQpTkwxA==}
 
   '@iconify-json/vscode-icons@1.2.68':
     resolution: {integrity: sha512-AG8aMOGv+dzQI50oOD9zMqvh/pnlhb8F2HR2FcKDN7qIZt4wFaUTxKAOtt49EskGdOl8z8Ll1vteUI060jCbDw==}
@@ -3842,10 +3843,6 @@ packages:
   '@sec-ant/readable-stream@0.4.1':
     resolution: {integrity: sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==}
 
-  '@shikijs/core@4.4.1':
-    resolution: {integrity: sha512-VeR2CY6Nn9/WbisoYLOQZ7HZOnwTrpBuOw4wExjqLnBCi62BNWynBUO6K2uPIASPFJwAv7cX1fUu+LrPlSstcw==}
-    engines: {node: '>=20'}
-
   '@shikijs/core@4.4.3':
     resolution: {integrity: sha512-QCR4q2ZO/ILJEuwiBMel4wdcTDb1JGwfjKTxPDF6x8ixOaluPrVqIn06C99AcRPhmYlBR56d/Fb+GN58GzExpg==}
     engines: {node: '>=20'}
@@ -3862,10 +3859,6 @@ packages:
     resolution: {integrity: sha512-ePic0yfAJGOF83D5wBHK/00EjK65oahBYxFk5epgq33WRv7X9UuxLEV8PtR0szC0z8dl7INIpIodB99JRFlR+A==}
     engines: {node: '>=20'}
 
-  '@shikijs/primitive@4.4.1':
-    resolution: {integrity: sha512-ko2OfDoG89YuQ7xL5LtcQiWKb7NIv1Ephb7g48TVU198OzAMLC8lXVEwaJGHK4sUMYrfAGJDqYmNLOLiW/Kz8w==}
-    engines: {node: '>=20'}
-
   '@shikijs/primitive@4.4.3':
     resolution: {integrity: sha512-m0wBeLDQDeIxRdUmrCPdQqfuUamDwRL5isCfYbguKD6NiaKpVbsv+3J81DyIKgNW5h4WAIIr8T4EkgQrBBxvaQ==}
     engines: {node: '>=20'}
@@ -3874,8 +3867,8 @@ packages:
     resolution: {integrity: sha512-w8UHjeUnIR965KMWJHUPXOc2mNJUnK3vpVLYLvw5IYU2mnTTJ89E24OrJDBNiJDQ0qzb0tc4l7mrIXx5cFeIyw==}
     engines: {node: '>=20'}
 
-  '@shikijs/transformers@4.4.1':
-    resolution: {integrity: sha512-Sb9Eehas+5EhClpFgNuklwY3aWf354FLaKRCiAWmjdNbHAjoQUpv6WmSj+N19eTXO6GLIWh1dIOH9dxyauhVWw==}
+  '@shikijs/transformers@4.4.3':
+    resolution: {integrity: sha512-oJSARV6NaWd+rnNJbtnpAdj3Zg0ZVyzsnMgb3vi3HA+35y8lBWUCpOnWsmyiXZIikY+x1BDqrQUgmxfzWh7Jvw==}
     engines: {node: '>=20'}
 
   '@shikijs/twoslash@4.4.3':
@@ -3883,10 +3876,6 @@ packages:
     engines: {node: '>=20'}
     peerDependencies:
       typescript: '>=5.5.0'
-
-  '@shikijs/types@4.4.1':
-    resolution: {integrity: sha512-GOwCLQDHM5EjGUWNPrhzJbr6JP8V/Dx/CDVkWvbZ1Avw5JFnNUckrgbLmE07qtg4WlW7Q7QFndhjIkeU9XMPvw==}
-    engines: {node: '>=20'}
 
   '@shikijs/types@4.4.3':
     resolution: {integrity: sha512-UEJxmRR++MAGR6hugn0vgVS2W/6lWAts84FFSrnlH9sP0LNol7E5+NQ792pH8liWUhyMyjhTgSUH3k7iD7tc5g==}
@@ -4753,8 +4742,9 @@ packages:
     resolution: {integrity: sha512-y932hw4I0qrdlqbDhOC4VS7mtLad+MtXToSVJIZ79Cd7Ib6p4bRuoTRrx6OeedhdPm2yf9+r8ndlhJjn8LbsxQ==}
     engines: {node: '>=18'}
 
-  '@voidzero-dev/vitepress-theme@5.0.6':
-    resolution: {integrity: sha512-pzACA3+D564tulGW5XSWSaJ8YwghPJCKYJdZtGuMDkqji6xH/TDhvlHr35b1s9fCLeN/ksGTjBaWO9S5uwTvtA==}
+  '@voidzero-dev/vitepress-theme@5.0.4':
+    resolution: {integrity: sha512-sLCs+hAfejOAQP2B92djz1CIOgRmgRuYEwrE2Fu0i55SQu9+VDz/U9snVOEhYcz/RcHgAU6J24SMyZFqWOZGng==}
+    version: 5.0.4
     peerDependencies:
       vitepress: ^2.0.0-alpha.16
       vue: ^3.5.0
@@ -8030,6 +8020,7 @@ packages:
 
   vitepress-plugin-graphviz@0.1.0:
     resolution: {integrity: sha512-KpDPhq+jcoJfccJTKvVY19TfkOO4RnRyt1ua/F9Xukd6PHj+Gs76G8FsCpk8svCu0Ei1AioC0x+aXKpg59capw==}
+    version: 0.1.0
     peerDependencies:
       vitepress: ^1.0.0 || ^2.0.0-alpha.17
 
@@ -8045,8 +8036,9 @@ packages:
     resolution: {integrity: sha512-CTiDkKRs0h64J5rdiICdHmXH4pM1gBu2S/MJ+OxSAm+vM72srBkHr86ZubzfMJbGJh4AMVKff4R3oCu8etI1ww==}
     engines: {node: '>=18'}
 
-  vitepress@2.0.0-alpha.19:
-    resolution: {integrity: sha512-WnBsb0Bwr43kXKyiis+lld/7ri3hnMbthS8N3hpFtjjwsdLO4IRmiAE08D7aud4q6oMDf9uwRowxzNqRFe/amw==}
+  vitepress@https://pkg.pr.new/vitepress@a6573ff:
+    resolution: {integrity: sha512-mvGMyAINJoNTya8ErTSv+g3yOg2mfhW3XcD1GztlWGxEepX+zoXwtLo0GquE5PKz9k21L3J9n6OYMHDFagm/dg==, tarball: https://pkg.pr.new/vitepress@a6573ff}
+    version: 2.0.0-alpha.19
     hasBin: true
     peerDependencies:
       markdown-it-mathjax3: ^4
@@ -9283,7 +9275,7 @@ snapshots:
     dependencies:
       '@iconify/types': 2.0.0
 
-  '@iconify-json/simple-icons@1.2.92':
+  '@iconify-json/simple-icons@1.2.94':
     dependencies:
       '@iconify/types': 2.0.0
 
@@ -9887,14 +9879,6 @@ snapshots:
 
   '@sec-ant/readable-stream@0.4.1': {}
 
-  '@shikijs/core@4.4.1':
-    dependencies:
-      '@shikijs/primitive': 4.4.1
-      '@shikijs/types': 4.4.1
-      '@shikijs/vscode-textmate': 10.0.2
-      '@types/hast': 3.0.5
-      hast-util-to-html: 9.0.5
-
   '@shikijs/core@4.4.3':
     dependencies:
       '@shikijs/primitive': 4.4.3
@@ -9918,12 +9902,6 @@ snapshots:
     dependencies:
       '@shikijs/types': 4.4.3
 
-  '@shikijs/primitive@4.4.1':
-    dependencies:
-      '@shikijs/types': 4.4.1
-      '@shikijs/vscode-textmate': 10.0.2
-      '@types/hast': 3.0.5
-
   '@shikijs/primitive@4.4.3':
     dependencies:
       '@shikijs/types': 4.4.3
@@ -9934,10 +9912,10 @@ snapshots:
     dependencies:
       '@shikijs/types': 4.4.3
 
-  '@shikijs/transformers@4.4.1':
+  '@shikijs/transformers@4.4.3':
     dependencies:
-      '@shikijs/core': 4.4.1
-      '@shikijs/types': 4.4.1
+      '@shikijs/core': 4.4.3
+      '@shikijs/types': 4.4.3
 
   '@shikijs/twoslash@4.4.3(ms@2.1.3)(typescript@6.0.3)':
     dependencies:
@@ -9947,11 +9925,6 @@ snapshots:
       typescript: 6.0.3
     transitivePeerDependencies:
       - ms
-
-  '@shikijs/types@4.4.1':
-    dependencies:
-      '@shikijs/vscode-textmate': 10.0.2
-      '@types/hast': 3.0.5
 
   '@shikijs/types@4.4.3':
     dependencies:
@@ -10767,7 +10740,7 @@ snapshots:
 
   '@voidzero-dev/vite-task-client@0.2.0': {}
 
-  '@voidzero-dev/vitepress-theme@5.0.6(focus-trap@8.2.2)(vite@packages+vite)(vitepress@2.0.0-alpha.19)(vue@3.5.42)':
+  '@voidzero-dev/vitepress-theme@5.0.4(focus-trap@8.2.2)(vite@packages+vite)(vitepress@https://pkg.pr.new/vitepress@a6573ff)(vue@3.5.42)':
     dependencies:
       '@docsearch/css': 4.7.0
       '@docsearch/js': 4.7.0
@@ -10784,7 +10757,7 @@ snapshots:
       minisearch: 7.2.0
       reka-ui: 2.9.0(vue@3.5.42)
       tailwindcss: 4.3.3
-      vitepress: 2.0.0-alpha.19(postcss@8.5.26)(typescript@6.0.3)
+      vitepress: https://pkg.pr.new/vitepress@a6573ff(postcss@8.5.26)(typescript@6.0.3)
       vue: 3.5.42(typescript@6.0.3)
     transitivePeerDependencies:
       - '@vue/composition-api'
@@ -14188,10 +14161,10 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  vitepress-plugin-graphviz@0.1.0(vitepress@2.0.0-alpha.19):
+  vitepress-plugin-graphviz@0.1.0(vitepress@https://pkg.pr.new/vitepress@a6573ff):
     dependencies:
       '@hpcc-js/wasm-graphviz': 1.21.2
-      vitepress: 2.0.0-alpha.19(postcss@8.5.26)(typescript@6.0.3)
+      vitepress: https://pkg.pr.new/vitepress@a6573ff(postcss@8.5.26)(typescript@6.0.3)
 
   vitepress-plugin-group-icons@1.7.6(vite@packages+vite):
     dependencies:
@@ -14220,15 +14193,13 @@ snapshots:
     transitivePeerDependencies:
       - ms
 
-  vitepress@2.0.0-alpha.19(postcss@8.5.26)(typescript@6.0.3):
+  vitepress@https://pkg.pr.new/vitepress@a6573ff(postcss@8.5.26)(typescript@6.0.3):
     dependencies:
       '@docsearch/css': 4.7.0
       '@docsearch/js': 4.7.0
       '@docsearch/sidepanel-js': 4.7.0
-      '@iconify-json/simple-icons': 1.2.92
-      '@shikijs/core': 4.4.3
-      '@shikijs/transformers': 4.4.1
-      '@shikijs/types': 4.4.3
+      '@iconify-json/simple-icons': 1.2.94
+      '@shikijs/transformers': 4.4.3
       '@types/markdown-it': 14.1.2
       '@vitejs/plugin-vue': 6.0.8(vite@packages+vite)(vue@3.5.42)
       '@vue/devtools-api': 8.2.1
