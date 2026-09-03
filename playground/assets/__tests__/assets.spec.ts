@@ -218,6 +218,20 @@ describe('asset imports from js', () => {
   })
 })
 
+describe.runIf(isBuild)('file URL emitted by an external plugin', () => {
+  test('replaces the preliminary hash', async () => {
+    expect(await page.textContent('.emitted-worker-url')).toMatch(
+      /^\/foo\/bar\/assets\/emitted-worker-[-\w]{8}\.js$/,
+    )
+  })
+
+  test('loads the emitted chunk', async () => {
+    await expect
+      .poll(() => page.textContent('.emitted-worker-result'))
+      .toBe('worker loaded')
+  })
+})
+
 describe('css url() references', () => {
   test('fonts', async () => {
     expect(
