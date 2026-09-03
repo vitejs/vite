@@ -303,15 +303,10 @@ function CallSiteToString(this: CallSite) {
 
     const methodName = this.getMethodName()
     if (functionName) {
-      if (typeName && functionName.indexOf(typeName) !== 0)
-        line += `${typeName}.`
+      if (typeName && !functionName.startsWith(typeName)) line += `${typeName}.`
 
       line += functionName
-      if (
-        methodName &&
-        functionName.indexOf(`.${methodName}`) !==
-          functionName.length - methodName.length - 1
-      )
+      if (methodName && !functionName.endsWith(`.${methodName}`))
         line += ` [as ${methodName}]`
     } else {
       line += `${typeName}.${methodName || '<anonymous>'}`
