@@ -227,8 +227,8 @@ importers:
         specifier: ^5.0.6
         version: 5.0.6
       '@voidzero-dev/vitepress-theme':
-        specifier: 5.0.4
-        version: 5.0.4(focus-trap@8.2.2)(vite@packages+vite)(vitepress@https://pkg.pr.new/vitepress@a6573ff)(vue@3.5.42)
+        specifier: ^5.0.6
+        version: 5.0.6(focus-trap@8.2.2)(vite@packages+vite)(vitepress@https://pkg.pr.new/vitepress@a6573ff)(vue@3.5.42)
       feed:
         specifier: ^6.0.0
         version: 6.0.0
@@ -4742,9 +4742,9 @@ packages:
     resolution: {integrity: sha512-y932hw4I0qrdlqbDhOC4VS7mtLad+MtXToSVJIZ79Cd7Ib6p4bRuoTRrx6OeedhdPm2yf9+r8ndlhJjn8LbsxQ==}
     engines: {node: '>=18'}
 
-  '@voidzero-dev/vitepress-theme@5.0.4':
-    resolution: {integrity: sha512-sLCs+hAfejOAQP2B92djz1CIOgRmgRuYEwrE2Fu0i55SQu9+VDz/U9snVOEhYcz/RcHgAU6J24SMyZFqWOZGng==}
-    version: 5.0.4
+  '@voidzero-dev/vitepress-theme@5.0.6':
+    resolution: {integrity: sha512-pzACA3+D564tulGW5XSWSaJ8YwghPJCKYJdZtGuMDkqji6xH/TDhvlHr35b1s9fCLeN/ksGTjBaWO9S5uwTvtA==}
+    version: 5.0.6
     peerDependencies:
       vitepress: ^2.0.0-alpha.16
       vue: ^3.5.0
@@ -10740,7 +10740,7 @@ snapshots:
 
   '@voidzero-dev/vite-task-client@0.2.0': {}
 
-  '@voidzero-dev/vitepress-theme@5.0.4(focus-trap@8.2.2)(vite@packages+vite)(vitepress@https://pkg.pr.new/vitepress@a6573ff)(vue@3.5.42)':
+  '@voidzero-dev/vitepress-theme@5.0.6(focus-trap@8.2.2)(vite@packages+vite)(vitepress@https://pkg.pr.new/vitepress@a6573ff)(vue@3.5.42)':
     dependencies:
       '@docsearch/css': 4.7.0
       '@docsearch/js': 4.7.0
