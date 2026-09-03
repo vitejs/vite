@@ -317,11 +317,14 @@ export const createWebSocketModuleRunnerTransport = (options: {
 
       // proxy(nginx, docker) hmr ws maybe caused timeout,
       // so send ping package let ws keep alive.
-      pingIntervalId = setInterval(() => {
-        if (socket.readyState === socket.OPEN) {
-          socket.send(JSON.stringify({ type: 'ping' }))
-        }
-      }, pingInterval)
+      // 0 is a legal timeout (disable ping), matching invoke's `if (timeout > 0)`.
+      if (pingInterval > 0) {
+        pingIntervalId = setInterval(() => {
+          if (socket.readyState === socket.OPEN) {
+            socket.send(JSON.stringify({ type: 'ping' }))
+          }
+        }, pingInterval)
+      }
     },
     disconnect() {
       clearInterval(pingIntervalId)

@@ -82,7 +82,7 @@ async function createClientConfigValueReplacer(
   const wsConfig = isObject(config.server.ws) ? config.server.ws : undefined
   const host = wsConfig?.host || null
   const protocol = wsConfig?.protocol || null
-  const timeout = wsConfig?.timeout || 30000
+  const timeout = wsConfig?.timeout ?? 30000
   const isWsServerSpecified = !!wsConfig?.server
   const hmrConfigName = path.basename(config.configFile || 'vite.config.js')
 
@@ -91,13 +91,13 @@ async function createClientConfigValueReplacer(
 
   // ws.clientPort -> ws.port
   // -> (24678 if middleware mode and WS server is not specified) -> new URL(import.meta.url).port
-  let port = wsConfig?.clientPort || wsConfig?.port || null
+  let port = wsConfig?.clientPort ?? wsConfig?.port ?? null
   if (config.server.middlewareMode && !isWsServerSpecified) {
-    port ||= 24678
+    port ??= 24678
   }
 
   let directTarget = wsConfig?.host || resolvedServerHostname
-  directTarget += `:${wsConfig?.port || resolvedServerPort}`
+  directTarget += `:${wsConfig?.port ?? resolvedServerPort}`
   directTarget += devBase
 
   let hmrBase = devBase
