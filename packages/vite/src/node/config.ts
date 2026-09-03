@@ -25,7 +25,10 @@ import {
 } from 'rolldown'
 import { isDynamicPattern } from 'tinyglobby'
 import type { Alias, AliasOptions } from '#dep-types/alias'
-import type { DevToolsConfig } from '#types/internal/devtoolsOptions'
+import type {
+  DevToolsConfig,
+  ResolvedDevToolsConfig,
+} from '#types/internal/devtoolsOptions'
 import {
   createImportMetaResolver,
   importMetaResolveWithCustomHookString,
@@ -145,6 +148,8 @@ import {
   safeRealpathSync,
   setupRollupOptionCompat,
 } from './utils'
+
+export type { ResolvedDevToolsConfig }
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -552,8 +557,6 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   devtools?: boolean | DevToolsConfig
 }
 
-export type { ResolvedDevToolsConfig } from '#types/internal/devtoolsOptions'
-
 export interface HTMLOptions {
   /**
    * A nonce value placeholder that will be used when generating script/style tags.
@@ -737,9 +740,7 @@ export interface ResolvedConfig extends Readonly<
     /** @experimental */
     builder: ResolvedBuilderOptions | undefined
     build: ResolvedBuildOptions
-    devtools:
-      | import('#types/internal/devtoolsOptions').ResolvedDevToolsConfig
-      | false
+    devtools: ResolvedDevToolsConfig | false
     preview: ResolvedPreviewOptions
     ssr: ResolvedSSROptions
     assetsInclude: (file: string) => boolean
@@ -801,9 +802,7 @@ export async function resolveDevToolsConfig(
   config: DevToolsConfig | boolean | undefined,
   host: string | boolean | undefined,
   command: 'serve' | 'build',
-): Promise<
-  import('#types/internal/devtoolsOptions').ResolvedDevToolsConfig | false
-> {
+): Promise<ResolvedDevToolsConfig | false> {
   if (!isDevToolsOptionEnabled(config)) {
     return false
   }
@@ -818,9 +817,7 @@ interface DevToolsIntegrationState {
   plugins: Plugin[]
   resolveConfig: (
     host: string | boolean | undefined,
-  ) => Promise<
-    import('#types/internal/devtoolsOptions').ResolvedDevToolsConfig | false
-  >
+  ) => Promise<ResolvedDevToolsConfig | false>
 }
 
 async function loadDevToolsIntegrationPlugins(
