@@ -242,6 +242,8 @@ export default defineConfig({
 })
 ```
 
+Note that the plugin returned from `applyToEnvironment` or `perEnvironmentPlugin` should not use Vite-specific hooks.
+
 The `applyToEnvironment` hook is called at config time, currently after `configResolved` due to projects in the ecosystem modifying the plugins in it. Environment plugins resolution may be moved before `configResolved` in the future.
 
 ## Application-Plugin Communication

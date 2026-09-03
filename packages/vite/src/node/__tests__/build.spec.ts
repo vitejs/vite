@@ -12,7 +12,7 @@ import type {
   RollupLog,
 } from 'rolldown'
 import { afterEach, describe, expect, assert, test, vi } from 'vitest'
-import { BuildEnvironment, resolveConfig } from '..'
+import { BuildEnvironment, normalizePath, resolveConfig } from '..'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import {
   ChunkMetadataMap,
@@ -486,6 +486,28 @@ describe('resolveBuildOutputs', () => {
         new ChunkMetadataMap(),
       )
       expect(options.input).toBe('explicit-entry.js')
+    })
+
+    test('top-level tsconfig applies to Rolldown options', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+        tsconfig: './custom.tsconfig.json',
+        build: {
+          rolldownOptions: {
+            tsconfig: './other.tsconfig.json',
+            resolve: { tsconfigFilename: './legacy.tsconfig.json' },
+          },
+        },
+      })
+      const options = resolveRolldownOptions(
+        builder.environments.client,
+        new ChunkMetadataMap(),
+      )
+      expect(options.tsconfig).toBe(
+        normalizePath(resolve(buildProjectRoot, 'custom.tsconfig.json')),
+      )
+      expect(options.resolve?.tsconfigFilename).toBeUndefined()
     })
 
     test('falls back to index.html when no input is set', async () => {

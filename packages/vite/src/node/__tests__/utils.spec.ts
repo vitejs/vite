@@ -26,6 +26,7 @@ import {
   numberToPos,
   posToNumber,
   processSrcSetSync,
+  removeTimestampQuery,
   resolveHostname,
   resolveServerUrls,
 } from '../utils'
@@ -192,6 +193,33 @@ describe('injectQuery', () => {
     const src = '/src/module.ts?url=https%3A%2F%2Fusr.vite%2F'
     const expected = '/src/module.ts?t=1234&url=https%3A%2F%2Fusr.vite%2F'
     expect(injectQuery(src, 't=1234')).toEqual(expected)
+  })
+})
+
+describe('removeTimestampQuery', () => {
+  test('removes timestamp query parameter', () => {
+    expect(removeTimestampQuery('/foo.js?t=1712345678901')).toBe('/foo.js')
+    expect(removeTimestampQuery('/foo.js?t=1712345678901&bar=1')).toBe(
+      '/foo.js?bar=1',
+    )
+    expect(removeTimestampQuery('/foo.js?bar=1&t=1712345678901')).toBe(
+      '/foo.js?bar=1',
+    )
+    expect(removeTimestampQuery('/foo.js?bar=1&t=1712345678901&baz=2')).toBe(
+      '/foo.js?bar=1&baz=2',
+    )
+  })
+
+  test('does not strip params with names ending in hyphen-t', () => {
+    expect(removeTimestampQuery('/foo.js?current-t=1712345678901')).toBe(
+      '/foo.js?current-t=1712345678901',
+    )
+    expect(removeTimestampQuery('/foo.js?my-t=1712345678901&other=1')).toBe(
+      '/foo.js?my-t=1712345678901&other=1',
+    )
+    expect(removeTimestampQuery('/foo.js#t=1712345678901')).toBe(
+      '/foo.js#t=1712345678901',
+    )
   })
 })
 
@@ -590,6 +618,26 @@ describe('processSrcSetSync', () => {
         ({ url }) => `"${path.posix.join(devBase, url.slice(1, -1))}"`,
       ),
     ).toBe('"/base/nested/asset.png" 1x, "/base/nested/asset.png" 2x')
+  })
+
+  test('keep the url when a density descriptor omits its leading zero', async () => {
+    const devBase = '/base/'
+    expect(
+      processSrcSetSync(
+        './nested/asset.png .5x, ./nested/asset.png 1x',
+        ({ url }) => path.posix.join(devBase, url),
+      ),
+    ).toBe('/base/nested/asset.png .5x, /base/nested/asset.png 1x')
+  })
+
+  test('keep the quoted url when a density descriptor omits its leading zero', async () => {
+    const devBase = '/base/'
+    expect(
+      processSrcSetSync(
+        '"./nested/asset.png" .75x,"./nested/asset.png" 1x',
+        ({ url }) => `"${path.posix.join(devBase, url.slice(1, -1))}"`,
+      ),
+    ).toBe('"/base/nested/asset.png" .75x, "/base/nested/asset.png" 1x')
   })
 
   test('should not split the comma inside base64 value', async () => {
