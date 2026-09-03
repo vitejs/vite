@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vitest'
 import type { OutputBundle, OutputChunk } from 'rolldown'
+import { describe, expect, test } from 'vitest'
 import { getCssFilesForChunk } from '../plugins/html'
 
 function createChunk(

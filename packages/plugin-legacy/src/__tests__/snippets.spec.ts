@@ -1,6 +1,6 @@
-import { describe, expect, test } from 'vitest'
 import type { ecmaVersion } from 'acorn'
 import { parse } from 'acorn'
+import { describe, expect, test } from 'vitest'
 import {
   createModernChunkLegacyGuard,
   detectModernBrowserCode,

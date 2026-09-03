@@ -12,8 +12,8 @@
   "devDependencies": {
     "less": "^4.9.0",
     "lightningcss": "^1.33.0",
-    "magic-string": "^1.2.0",
-    "sass": "^1.102.0",
+    "magic-string": "^1.2.3",
+    "sass": "^1.103.1",
     "stylus": "^0.64.0",
     "sugarss": "^5.0.1"
   }

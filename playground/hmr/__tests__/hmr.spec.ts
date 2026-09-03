@@ -1,6 +1,6 @@
 import { stripVTControlCharacters } from 'node:util'
-import { beforeAll, describe, expect, it, test } from 'vitest'
 import type { Page } from 'playwright-chromium'
+import { beforeAll, describe, expect, it, test } from 'vitest'
 import {
   addFile,
   browser,
@@ -302,6 +302,24 @@ if (!isBuild) {
       await page2.close()
     }
   })
+
+  // bundled dev: same missing-importer-factory fallback as `invalidate`
+  test.skipIf(isBundledDev)(
+    'invalidate virtual module propagates to importers',
+    async () => {
+      const el = await page.$('.virtual-invalidation-parent')
+      await expect.poll(() => el.textContent()).toBe('initial')
+
+      // Edit the real dep file — Vite detects the change and sends
+      // js-update to the virtual module.  The virtual module accepts
+      // then invalidates, which should propagate to parent.js.
+      editFile('virtual-invalidation/dep.js', (code) =>
+        code.replace('initial', 'updated2'),
+      )
+
+      await expect.poll(() => el.textContent()).toBe('updated2')
+    },
+  )
 
   test('invalidate on root triggers page reload', async () => {
     editFile('invalidation/root.js', (code) => code.replace('Init', 'Updated'))

@@ -12,7 +12,6 @@ shellEmulator: true
 autoInstallPeers: false
 dedupeInjectedDeps: false
 overrides:
-  rolldown: $rolldown
   vite: 'workspace:*'
   debug: 'npm:obug@^1.0.2'
 patchedDependencies:
@@ -47,14 +46,13 @@ allowBuilds:
   unrs-resolver: true
   workerd: true
 
-minimumReleaseAge: 1440
+minimumReleaseAgeExcludePrune: true
 minimumReleaseAgeExclude:
   - rolldown
   - '@rolldown/binding-*'
-  - '@voidzero-dev/vitepress-theme@5.0.6'
-blockExoticSubdeps: true
 trustPolicy: no-downgrade
 trustPolicyExclude:
+  - '@vercel/detect-agent@1.2.5' # https://github.com/vercel/vercel/issues/17408
   - chokidar@4.0.3 # https://github.com/paulmillr/chokidar/issues/1440
   - semver@5.7.2 || 6.3.1
   - tailwindcss@3.4.18
