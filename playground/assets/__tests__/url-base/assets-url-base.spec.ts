@@ -69,6 +69,10 @@ describe('asset imports from js', () => {
       absolutePublicIconMatch,
     )
   })
+
+  test('typeof asset import', async () => {
+    expect(await page.textContent('.asset-import-typeof')).toBe('string')
+  })
 })
 
 describe('css url() references', () => {

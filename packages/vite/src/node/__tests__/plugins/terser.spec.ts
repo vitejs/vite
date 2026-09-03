@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
-import { describe, expect, test } from 'vitest'
-import { build } from 'vite'
 import type { RollupOutput } from 'rollup'
+import { build } from 'vite'
+import { describe, expect, test } from 'vitest'
 import type { TerserOptions } from '../../plugins/terser'
 
 describe('terser', () => {

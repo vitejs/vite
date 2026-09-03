@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import postcssNested from 'postcss-nested'
 import { globSync } from 'tinyglobby'
 import { normalizePath } from 'vite'
-import postcssNested from 'postcss-nested'
 
 export default {
   plugins: [

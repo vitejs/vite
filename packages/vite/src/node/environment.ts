@@ -1,8 +1,8 @@
 import type { PluginContext } from 'rolldown'
-import type { DevEnvironment } from './server/environment'
+import type { UnknownEnvironment } from './baseEnvironment'
 import type { BuildEnvironment } from './build'
 import type { ScanEnvironment } from './optimizer/scan'
-import type { UnknownEnvironment } from './baseEnvironment'
+import type { DevEnvironment } from './server/environment'
 
 export type Environment =
   | DevEnvironment
