@@ -19,7 +19,7 @@ Plugins run on a shared pipeline, but their hooks fall into two categories depen
 
 Global hooks are called a single time, independent of the configured environments. They handle app-wide concerns such as resolving the config or setting up the dev and preview servers, so `this.environment` is not relevant to them. Config resolution related hooks and server related hooks are global hooks.
 
-Per-environment hooks are called once for each environment, and expose the current environment through `this.environment` in their context. All [universal hooks](/guide/api-plugin#universal-hooks) are per-environment, as are other Vite-specific hooks that handle modules. However, note that `buildStart` and `buildEnd` are only called for the client environment without [the `perEnvironmentStartEndDuringDev: true` flag](##per-environment-state-in-plugins).
+Per-environment hooks are called once for each environment, and expose the current environment through `this.environment` in their context. All [Rolldown hooks](/guide/api-plugin#rolldown-hooks) are per-environment, as are other Vite-specific hooks that handle modules. However, note that `buildStart` and `buildEnd` are only called for the client environment without [the `perEnvironmentStartEndDuringDev: true` flag](#per-environment-state-in-plugins).
 
 ## Accessing the Current Environment in Hooks
 
@@ -103,7 +103,7 @@ interface HotUpdateOptions {
 
 - `modules` is an array of modules in this environment that are affected by the changed file. It's an array because a single file may map to multiple served modules (e.g. Vue SFCs).
 
-- `read` is an async read function that returns the content of the file. This is provided because, on some systems, the file change callback may fire too fast before the editor finishes updating the file, and direct `fs.readFile` will return empty content. The read function passed in normalizes this behavior.
+- `read` is an async read function that returns the content of the file. This is provided because on some systems, the file change callback may fire too fast before the editor finishes updating the file, and direct `fs.readFile` will return empty content. The read function passed in normalizes this behavior.
 
 The hook can choose to:
 
@@ -241,6 +241,8 @@ export default defineConfig({
   ],
 })
 ```
+
+Note that the plugin returned from `applyToEnvironment` or `perEnvironmentPlugin` should not use Vite-specific hooks.
 
 The `applyToEnvironment` hook is called at config time, currently after `configResolved` due to projects in the ecosystem modifying the plugins in it. Environment plugins resolution may be moved before `configResolved` in the future.
 

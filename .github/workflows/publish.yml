@@ -2,20 +2,22 @@ name: Publish Package
 
 on:
   push:
-    tags:
-      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
-      - "plugin-*" # Push events to matching plugin-*, i.e. plugin-(vue|vue-jsx|react|legacy)@1.0.0
-      - "create-vite*" # # Push events to matching create-vite*, i.e. create-vite@1.0.0
+    branches:
+      - main
+      - "v[0-9]*"
+
+permissions: {}
 
 jobs:
-  publish:
-    # prevents this action from running on forks
+  detect-release:
     if: github.repository == 'vitejs/vite'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    environment: Release
+    name: Detect release commit
+    runs-on: ubuntu-slim
+    outputs:
+      package: ${{ steps.detect.outputs.package }}
+      release: ${{ steps.detect.outputs.release }}
+      tag: ${{ steps.detect.outputs.tag }}
+      version: ${{ steps.detect.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -23,7 +25,50 @@ jobs:
           persist-credentials: false
 
       - name: Install pnpm
-        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - name: Set node version to 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install deps
+        run: pnpm install
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
+      - name: Detect release
+        id: detect
+        run: node scripts/detect-release.ts "$(git log -1 --format=%s)" >> "$GITHUB_OUTPUT"
+
+  publish-release:
+    if: needs.detect-release.outputs.release == 'true'
+    needs: detect-release
+    name: Publish ${{ needs.detect-release.outputs.tag }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    environment: Release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check release tag
+        env:
+          TAG: ${{ needs.detect-release.outputs.tag }}
+        run: |
+          if git rev-parse --verify --quiet "refs/tags/$TAG"; then
+            echo "Tag $TAG already exists"
+            exit 1
+          fi
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
 
       - name: Set node version to 24
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
@@ -42,6 +87,29 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
       - name: Publish package
-        run: npm i -g npm@^11.5.2 && pnpm run ci-publish "$REF_NAME"
         env:
-          REF_NAME: ${{ github.ref_name }}
+          TAG: ${{ needs.detect-release.outputs.tag }}
+        # npm 11.5.2+ is required for trusted publishing.
+        # zizmor: ignore[adhoc-packages]
+        run: npm i -g npm@^11.5.2 && pnpm run ci-publish "$TAG"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES_FILE: ${{ runner.temp }}/release-notes.md
+          PACKAGE: ${{ needs.detect-release.outputs.package }}
+          TAG: ${{ needs.detect-release.outputs.tag }}
+          VERSION: ${{ needs.detect-release.outputs.version }}
+        run: |
+          node scripts/extract-changelog.ts "packages/$PACKAGE/CHANGELOG.md" "$VERSION" > "$NOTES_FILE"
+
+          prerelease=()
+          if [[ "${VERSION%%+*}" == *-* ]]; then
+            prerelease+=(--prerelease)
+          fi
+
+          gh release create "$TAG" \
+            --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --notes-file "$NOTES_FILE" \
+            "${prerelease[@]}"

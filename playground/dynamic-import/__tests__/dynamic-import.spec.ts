@@ -4,6 +4,7 @@ import {
   findAssetFile,
   getColor,
   isBuild,
+  isBundled,
   isBundledDev,
   page,
   serverLogs,
@@ -14,6 +15,11 @@ test('should load literal dynamic import', async () => {
   await expect.poll(() => page.textContent('.view')).toMatch('Baz view')
 })
 
+// bundled dev: the `@vite-ignore` import asks for /views/qux.js when clicked.
+// That file is in the project root but not in the bundle.
+// Bundled dev serves only the bundle, so the request fails.
+// This is a real gap that should be fixed, not expected behavior.
+// Tracked in vitejs/vite#23028
 test.skipIf(isBundledDev)(
   'should load full dynamic import from public',
   async () => {
@@ -42,6 +48,8 @@ test('should have same reference on static and dynamic js import, .mxd', async (
 })
 
 // in this case, it is not possible to detect the correct module
+// bundled dev: the `@vite-ignore` URL points at the source file
+// ../files/mxd.js. That file is not in the bundle, so it is not served.
 test.skipIf(isBundledDev)(
   'should have same reference on static and dynamic js import, .mxd2',
   async () => {
@@ -107,21 +115,26 @@ test('should load dynamic import with vars alias', async () => {
     .toMatch('hi')
 })
 
+test('should load dynamic import with vars subpath imports', async () => {
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-vars-subpath-imports'))
+    .toMatch('hi')
+})
+
 test('should load dynamic import with vars raw', async () => {
   await expect
     .poll(() => page.textContent('.dynamic-import-with-vars-raw'))
     .toMatch('export function hello()')
 })
 
-test.skipIf(isBundledDev)(
-  'should load dynamic import with vars url',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.dynamic-import-with-vars-url'))
-      .toMatch(isBuild ? 'data:text/javascript' : '/alias/url.js')
-  },
-)
+test('should load dynamic import with vars url', async () => {
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-vars-url'))
+    .toMatch(isBundled ? 'data:text/javascript' : '/alias/url.js')
+})
 
+// bundled dev: workers created through the dynamic-import-vars glob aren't
+// bundled as worker entries yet
 test.skipIf(isBundledDev)(
   'should load dynamic import with vars worker',
   async () => {

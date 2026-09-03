@@ -1,6 +1,6 @@
 import { equal } from 'node:assert'
-import { msg as linkedMsg } from '@vitejs/test-resolve-linked'
 import browserExportsMessage from '@vitejs/test-browser-exports'
+import { msg as linkedMsg } from '@vitejs/test-resolve-linked'
 import workerExportsMessage from '@vitejs/test-worker-exports'
 import React from 'react'
 

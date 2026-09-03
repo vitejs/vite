@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
-import viteConfig from '../vite.config'
 import { isBundledDev, page } from '~utils'
+import viteConfig from '../vite.config'
 
 const defines = viteConfig.define
 const envDefines = viteConfig.environments.client.define

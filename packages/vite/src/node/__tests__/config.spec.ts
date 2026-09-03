@@ -1,22 +1,27 @@
+import fs from 'node:fs'
 import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
-import fs from 'node:fs'
 import { stripVTControlCharacters } from 'node:util'
 import { afterEach, assert, describe, expect, test, vi } from 'vitest'
 import type { InlineConfig, PluginOption } from '..'
+import { isWindows } from '../../shared/utils'
 import type { UserConfig, UserConfigExport } from '../config'
-import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
-import { resolveServerOptions } from '../server'
+import {
+  bundleConfigFile,
+  defineConfig,
+  loadConfigFromFile,
+  resolveConfig,
+} from '../config'
 import { resolveEnvPrefix } from '../env'
+import { createLogger } from '../logger'
+import type { Logger } from '../logger'
+import { resolveServerOptions } from '../server'
 import {
   hasBothRollupOptionsAndRolldownOptions,
   mergeConfig,
   normalizePath,
 } from '../utils'
-import { createLogger } from '../logger'
-import type { Logger } from '../logger'
-import { isWindows } from '../../shared/utils'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -1149,6 +1154,31 @@ describe('resolveConfig', () => {
     expect(results2.clearScreen).toBe(false)
   })
 
+  test('resolves the configured tsconfig path', async () => {
+    const root = path.resolve(import.meta.dirname, 'fixtures')
+    const resolved = await resolveConfig(
+      { root, tsconfig: './custom.tsconfig.json' },
+      'build',
+    )
+    expect(resolved.tsconfig).toBe(
+      normalizePath(path.resolve(root, 'custom.tsconfig.json')),
+    )
+
+    const absoluteTsconfig = path.resolve(root, 'absolute.tsconfig.json')
+    expect(
+      (
+        await resolveConfig(
+          { root, tsconfig: absoluteTsconfig, configFile: false },
+          'build',
+        )
+      ).tsconfig,
+    ).toBe(normalizePath(absoluteTsconfig))
+
+    expect(
+      (await resolveConfig({ root, configFile: false }, 'build')).tsconfig,
+    ).toBeUndefined()
+  })
+
   test('resolveConfig with root path including "#" and "?" and "*" should warn ', async () => {
     expect.assertions(1)
 
@@ -1160,6 +1190,43 @@ describe('resolveConfig', () => {
     }
 
     await resolveConfig({ root: './inc?ud#s*', customLogger: logger }, 'build')
+  })
+
+  test('warns about ignored hooks returned from applyToEnvironment', async () => {
+    const warn = vi.fn()
+    const logger = createLogger('info', {
+      console: { warn } as unknown as Console,
+    })
+
+    await resolveConfig(
+      {
+        configFile: false,
+        customLogger: logger,
+        plugins: [
+          {
+            name: 'parent-plugin',
+            applyToEnvironment() {
+              return {
+                name: 'environment-plugin',
+                config: () => undefined,
+                configEnvironment: () => undefined,
+                configureServer: () => undefined,
+                configResolved: () => undefined,
+                resolveId: () => undefined,
+              }
+            },
+          },
+        ],
+      },
+      'serve',
+    )
+
+    expect(warn).toHaveBeenCalledOnce()
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Plugin "environment-plugin" defines Vite-specific hooks (config, configEnvironment, configureServer, configResolved) in a plugin returned from applyToEnvironment. These hooks will be ignored.',
+      ),
+    )
   })
 
   test('syncs `build.rollupOptions` and `build.rolldownOptions`', async () => {
@@ -1175,16 +1242,11 @@ describe('resolveConfig', () => {
     )
   })
 
-  const resolveInputFromRoot = (p: string) =>
-    normalizePath(path.resolve(process.cwd(), p))
-
   test('top-level input applies to the client environment only (non-inherit)', async () => {
     const config = await resolveConfig({ input: 'src/main.ts' }, 'serve')
 
-    expect(config.input).toBe(resolveInputFromRoot('src/main.ts'))
-    expect(config.environments.client.input).toBe(
-      resolveInputFromRoot('src/main.ts'),
-    )
+    expect(config.input).toBe('src/main.ts')
+    expect(config.environments.client.input).toBe('src/main.ts')
     expect(
       config.environments.client.build.rolldownOptions.input,
     ).toBeUndefined()
@@ -1203,57 +1265,29 @@ describe('resolveConfig', () => {
       'serve',
     )
 
-    expect(config.environments.client.input).toBe(
-      resolveInputFromRoot('src/main.ts'),
-    )
-    expect(config.environments.ssr.input).toBe(
-      resolveInputFromRoot('src/entry-server.ts'),
-    )
+    expect(config.environments.client.input).toBe('src/main.ts')
+    expect(config.environments.ssr.input).toBe('src/entry-server.ts')
   })
 
-  test('resolves array input to absolute paths', async () => {
+  test('keeps array input relative to the root', async () => {
     const config = await resolveConfig(
       { input: ['src/a.ts', 'src/b.ts'] },
       'serve',
     )
 
-    expect(config.environments.client.input).toEqual([
-      resolveInputFromRoot('src/a.ts'),
-      resolveInputFromRoot('src/b.ts'),
-    ])
+    expect(config.environments.client.input).toEqual(['src/a.ts', 'src/b.ts'])
   })
 
-  test('resolves record input to absolute paths', async () => {
+  test('keeps record input relative to the root', async () => {
     const config = await resolveConfig(
       { input: { main: 'src/a.ts', admin: 'src/b.ts' } },
       'serve',
     )
 
     expect(config.environments.client.input).toEqual({
-      main: resolveInputFromRoot('src/a.ts'),
-      admin: resolveInputFromRoot('src/b.ts'),
+      main: 'src/a.ts',
+      admin: 'src/b.ts',
     })
-  })
-
-  test('adds input to server.fs.allow by default', async () => {
-    const inputs = {
-      main: resolveInputFromRoot('src/a.ts'),
-      admin: resolveInputFromRoot('src/b.ts'),
-    }
-    const config = await resolveConfig(
-      { input: { main: 'src/a.ts', admin: 'src/b.ts' } },
-      'serve',
-    )
-
-    expect(config.server.fs.allow).toStrictEqual(
-      expect.arrayContaining(Object.values(inputs)),
-    )
-  })
-
-  test('adds the default index.html input to server.fs.allow', async () => {
-    const config = await resolveConfig({}, 'serve')
-
-    expect(config.server.fs.allow).toContain(resolveInputFromRoot('index.html'))
   })
 
   test('reserves glob characters in input', async () => {
@@ -1286,17 +1320,17 @@ describe('resolveConfig', () => {
       {
         name: 'glob',
         input: 'src/\\*.ts',
-        expected: resolveInputFromRoot('src/*.ts'),
+        expected: 'src/*.ts',
       },
       {
         name: 'array element',
         input: ['src/\\*.ts'],
-        expected: [resolveInputFromRoot('src/*.ts')],
+        expected: ['src/*.ts'],
       },
       {
         name: 'record',
         input: { main: 'src/\\*.ts' },
-        expected: { main: resolveInputFromRoot('src/*.ts') },
+        expected: { main: 'src/*.ts' },
       },
     ]
 
@@ -1319,14 +1353,14 @@ describe('resolveConfig', () => {
       {
         name: 'special characters',
         input: 'src/a-b_c$.ts',
-        expected: resolveInputFromRoot('src/a-b_c$.ts'),
+        expected: 'src/a-b_c$.ts',
       },
       ...(isWindows
         ? [
             {
               name: 'windows path',
               input: 'src\\foo.ts',
-              expected: resolveInputFromRoot('src/foo.ts'),
+              expected: 'src\\foo.ts',
             },
           ]
         : []),
@@ -1756,6 +1790,32 @@ describe('loadConfigFromFile', () => {
       expect(await loadWithWarnings('json-ok')).toHaveLength(0)
     })
 
+    test('warns on named import from JSON module', async () => {
+      const messages = await loadWithWarnings('json-named-import')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - named import from JSON module "./data.json" (vite.config.js:1:10). JSON modules only provide a default export per spec. Use the default import and access the property
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    test('warns on named import from a bare JSON specifier', async () => {
+      const messages = await loadWithWarnings('json-named-import-bare')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - named import from JSON module "some-pkg/package.json" (vite.config.js:1:10). JSON modules only provide a default export per spec. Use the default import and access the property
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    test('does not warn on JSON default imports (`default as` included)', async () => {
+      expect(await loadWithWarnings('json-named-import-ok')).toHaveLength(0)
+    })
+
     test('warns on an extension-less import that resolves to JSON', async () => {
       const messages = await loadWithWarnings('json-extensionless')
       expect(messages).toMatchInlineSnapshot(`
@@ -1831,6 +1891,7 @@ describe('loadConfigFromFile', () => {
         { command: 'build', mode: 'production' },
         undefined,
         root,
+        'silent',
       )
       expect(result).toBeTruthy()
       expect(result?.config).toStrictEqual({ define: { foo: 1 } })
@@ -1943,6 +2004,7 @@ describe('loadConfigFromFile', () => {
       {} as any,
       path.resolve(fixtures, './cjs-module-vars-in-esm/vite.config.ts'),
       path.resolve(fixtures, './cjs-module-vars-in-esm'),
+      'silent',
     ))!
     const c = config as any
     expect(c.dirname).toContain('cjs-module-vars-in-esm')
@@ -1974,6 +2036,35 @@ describe('loadConfigFromFile', () => {
 
     const c = config as any
     expect(c.dirname).toContain('shebang')
+  })
+
+  test('injected variables follow a hashbang ending in CRLF', async () => {
+    const { config, path: configPath } = (await loadConfigFromFile(
+      {} as any,
+      path.resolve(fixtures, './shebang-crlf/vite.config.ts'),
+      path.resolve(fixtures, './shebang-crlf'),
+    ))!
+
+    const configFile = fs.readFileSync(configPath, 'utf8')
+    expect(configFile).toContain('\r\n')
+
+    const c = config as any
+    expect(c.dirname).toContain('shebang-crlf')
+  })
+
+  test('sourcemap of a nested config file points to itself', async () => {
+    const configPath = path.resolve(
+      fixtures,
+      './nested/.nested/vite.config.mts',
+    )
+    const { code } = await bundleConfigFile(configPath, true)
+    const [, base64Map] = code.match(
+      /\/\/# sourceMappingURL=data:application\/json;charset=utf-8;base64,(.+)/,
+    )!
+    const map = JSON.parse(Buffer.from(base64Map, 'base64').toString())
+    expect(map.sources.map(normalizePath)).toStrictEqual([
+      normalizePath(configPath),
+    ])
   })
 
   describe('loadConfigFromFile with configLoader: native', () => {
@@ -2034,6 +2125,28 @@ describe('loadConfigFromFile', () => {
   })
 })
 
+describe('root resolution', () => {
+  const fixtureRoot = path.resolve(
+    import.meta.dirname,
+    './fixtures/config/root-resolution',
+  )
+  const realDir = path.join(fixtureRoot, 'real')
+  const linkDir = path.join(fixtureRoot, 'link')
+
+  test('resolves a symlinked root to its real path', async () => {
+    const config = await resolveConfig({ root: linkDir }, 'serve')
+    expect(config.root).toBe(normalizePath(fs.realpathSync.native(realDir)))
+  })
+
+  test('keeps a symlinked root when resolve.preserveSymlinks is true', async () => {
+    const config = await resolveConfig(
+      { root: linkDir, resolve: { preserveSymlinks: true } },
+      'serve',
+    )
+    expect(config.root).toBe(normalizePath(linkDir))
+  })
+})
+
 describe('resolveServerOptions', () => {
   const warnFn = vi.fn()
   const logger = { warn: warnFn } as unknown as Logger
@@ -2047,7 +2160,6 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
-      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual(['example.com'])
@@ -2059,7 +2171,6 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
-      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual([
@@ -2075,7 +2186,6 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
-      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual([
@@ -2091,7 +2201,6 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: [] },
-      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual(['example.com', 'test.com'])
@@ -2102,7 +2211,6 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: ['existing.com'] },
-      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toEqual([
@@ -2117,7 +2225,6 @@ describe('resolveServerOptions', () => {
     const resolved = await resolveServerOptions(
       '/root',
       { allowedHosts: true },
-      undefined,
       logger,
     )
     expect(resolved.allowedHosts).toBe(true)
@@ -2130,7 +2237,6 @@ describe('resolveServerOptions', () => {
       const resolved = await resolveServerOptions(
         '/root',
         { allowedHosts: [] },
-        undefined,
         logger,
       )
       expect(resolved.allowedHosts).toEqual([])

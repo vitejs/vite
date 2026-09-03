@@ -1,17 +1,17 @@
-import path from 'node:path'
 import fs from 'node:fs'
-import { inspect } from 'node:util'
+import path from 'node:path'
 import { performance } from 'node:perf_hooks'
+import { inspect } from 'node:util'
 import { cac } from 'cac'
 import colors from 'picocolors'
-import { VERSION } from './constants'
 import { createBuilder } from './build'
 import type { BuildEnvironmentOptions } from './build'
-import type { ServerOptions } from './server'
-import type { CLIShortcut } from './shortcuts'
+import type { InlineConfig } from './config'
+import { VERSION } from './constants'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
-import type { InlineConfig } from './config'
+import type { ServerOptions } from './server'
+import type { CLIShortcut } from './shortcuts'
 
 function checkNodeVersion(nodeVersion: string): boolean {
   const currentVersion = nodeVersion.split('.')
@@ -45,6 +45,7 @@ interface GlobalCLIOptions {
   logLevel?: LogLevel
   clearScreen?: boolean
   configLoader?: 'bundle' | 'runner' | 'native'
+  profile?: boolean | string
   d?: boolean | string
   debug?: boolean | string
   f?: string
@@ -74,9 +75,14 @@ export const stopProfiler = (
     profileSession!.post('Profiler.stop', (err, { profile }) => {
       // Write profile to disk, upload, etc.
       if (!err) {
-        const outPath = path.resolve(
-          `./vite-profile-${profileCount++}.cpuprofile`,
-        )
+        const name = global.__vite_profile_name
+        const count = profileCount++
+        const fileName = name
+          ? count === 0
+            ? name
+            : `${name}-${count}`
+          : `vite-profile-${count}`
+        const outPath = path.resolve(`./${fileName}.cpuprofile`)
         fs.writeFileSync(outPath, JSON.stringify(profile))
         log(
           colors.yellow(
@@ -114,6 +120,7 @@ function cleanGlobalCLIOptions<Options extends GlobalCLIOptions>(
   delete ret.logLevel
   delete ret.clearScreen
   delete ret.configLoader
+  delete ret.profile
   delete ret.d
   delete ret.debug
   delete ret.f
@@ -182,6 +189,10 @@ cli
   .option(
     '--configLoader <loader>',
     `[string] use 'bundle' to bundle the config with Rolldown, or 'runner' (experimental) to process it on the fly, or 'native' (experimental) to load using the native runtime (default: bundle)`,
+  )
+  .option(
+    '--profile [name]',
+    `[boolean | string] start built-in Node.js inspector`,
   )
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
   .option('-f, --filter <filter>', `[string] filter debug logs`)

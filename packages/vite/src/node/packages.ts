@@ -1,6 +1,8 @@
 import fs from 'node:fs'
-import path from 'node:path'
 import { createRequire } from 'node:module'
+import path from 'node:path'
+import type { Plugin } from './plugin'
+import type { InternalResolveOptions } from './plugins/resolve'
 import {
   createFilter,
   isInNodeModules,
@@ -9,8 +11,6 @@ import {
   stripBomTag,
   tryStatSync,
 } from './utils'
-import type { Plugin } from './plugin'
-import type { InternalResolveOptions } from './plugins/resolve'
 
 let pnp: typeof import('pnpapi') | undefined
 if (process.versions.pnp) {
