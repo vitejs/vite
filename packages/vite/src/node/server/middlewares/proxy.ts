@@ -2,9 +2,9 @@ import type * as http from 'node:http'
 import * as httpProxy from 'http-proxy-3'
 import colors from 'picocolors'
 import type { Connect } from '#dep-types/connect'
-import { createDebugger } from '../../utils'
-import type { CommonServerOptions, ResolvedConfig } from '../..'
 import type { HttpServer } from '..'
+import type { CommonServerOptions, ResolvedConfig } from '../..'
+import { createDebugger } from '../../utils'
 
 const debug = createDebugger('vite:proxy')
 

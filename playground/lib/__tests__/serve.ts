@@ -1,8 +1,8 @@
 // this is automatically detected by playground/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
-import path from 'node:path'
 import http from 'node:http'
+import path from 'node:path'
 import sirv from 'sirv'
 import {
   isBuild,

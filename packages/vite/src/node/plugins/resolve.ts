@@ -1,10 +1,16 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'picocolors'
+import { exports, imports } from 'resolve.exports'
 import type { PartialResolvedId } from 'rolldown'
 import { viteResolvePlugin } from 'rolldown/experimental'
-import { exports, imports } from 'resolve.exports'
-import type { Plugin } from '../plugin'
+import type { Environment } from '..'
+import {
+  cleanUrl,
+  splitFileAndPostfix,
+  withTrailingSlash,
+} from '../../shared/utils'
+import type { ResolvedConfig, ResolvedEnvironmentOptions } from '../config'
 import {
   CLIENT_ENTRY,
   DEP_VERSION_RE,
@@ -13,6 +19,21 @@ import {
   FS_PREFIX,
   SPECIAL_QUERY_RE,
 } from '../constants'
+import { canExternalizeFile } from '../external'
+import {
+  isDepOptimizationDisabled,
+  optimizedDepInfoFromFile,
+  optimizedDepInfoFromId,
+} from '../optimizer'
+import type { DepsOptimizer } from '../optimizer'
+import type { PackageCache, PackageData } from '../packages'
+import {
+  findNearestMainPackageData,
+  findNearestPackageData,
+  loadPackageData,
+  resolvePackageData,
+} from '../packages'
+import type { Plugin } from '../plugin'
 import {
   bareImportRE,
   createDebugger,
@@ -30,27 +51,6 @@ import {
   safeRealpathSync,
   tryStatSync,
 } from '../utils'
-import {
-  isDepOptimizationDisabled,
-  optimizedDepInfoFromFile,
-  optimizedDepInfoFromId,
-} from '../optimizer'
-import type { DepsOptimizer } from '../optimizer'
-import type { Environment } from '..'
-import type { PackageCache, PackageData } from '../packages'
-import { canExternalizeFile } from '../external'
-import {
-  findNearestMainPackageData,
-  findNearestPackageData,
-  loadPackageData,
-  resolvePackageData,
-} from '../packages'
-import {
-  cleanUrl,
-  splitFileAndPostfix,
-  withTrailingSlash,
-} from '../../shared/utils'
-import type { ResolvedConfig, ResolvedEnvironmentOptions } from '../config'
 
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
 const normalizedEnvEntry = normalizePath(ENV_ENTRY)
@@ -258,6 +258,7 @@ export function oxcResolvePlugin(
             : [options.noExternal]
 
         const plugin = viteResolvePlugin({
+          tsconfig: partialEnv.config.tsconfig,
           resolveOptions: {
             isBuild: options.isBuild,
             isProduction: options.isProduction,
@@ -350,11 +351,10 @@ export function oxcResolvePlugin(
                 )
                 return newResolvedId === resolvedId ? undefined : newResolvedId
               },
-          resolveSubpathImports(id, importer, isRequire, scan) {
+          resolveSubpathImports(id, importer, isRequire) {
             return resolveSubpathImports(id, importer, {
               ...options,
               isRequire: resolveOptions.isRequire ?? isRequire,
-              scan,
             })
           },
 
@@ -489,11 +489,18 @@ function optimizerResolvePlugin(
   }
 }
 
-function resolveSubpathImports(
+export function resolveSubpathImports(
   id: string,
   importer: string | undefined,
-  options: InternalResolveOptions,
-) {
+  options: Pick<
+    InternalResolveOptions,
+    | 'packageCache'
+    | 'conditions'
+    | 'externalConditions'
+    | 'isProduction'
+    | 'isRequire'
+  >,
+): string | undefined {
   if (!importer || !id.startsWith(subpathImportsPrefix)) return
   const basedir = path.dirname(importer)
   const pkgData = findNearestPackageData(basedir, options.packageCache)
@@ -1027,7 +1034,10 @@ function getConditions(
 function resolveExportsOrImports(
   pkg: PackageData['data'],
   key: string,
-  options: InternalResolveOptions,
+  options: Pick<
+    InternalResolveOptions,
+    'conditions' | 'externalConditions' | 'isProduction' | 'isRequire'
+  >,
   type: 'imports' | 'exports',
   externalize?: boolean,
 ) {
