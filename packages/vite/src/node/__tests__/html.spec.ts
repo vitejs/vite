@@ -254,11 +254,7 @@ describe('buildHtmlPlugin module scripts with src and inline content', () => {
     const plugin = buildHtmlPlugin(config)
     const environment = new PartialEnvironment('client', config)
     const handler = plugin.transform!.handler
-    const result = await handler.call(
-      { environment },
-      html,
-      '/index.html',
-    )
+    const result = await handler.call({ environment }, html, '/index.html')
     return result!.code
   }
 
