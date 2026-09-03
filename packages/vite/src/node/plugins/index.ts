@@ -6,7 +6,7 @@ import {
   oxcRuntimePlugin,
 } from 'rolldown/experimental'
 import { resolveBuildPlugins } from '../build'
-import { type PluginHookUtils, type ResolvedConfig } from '../config'
+import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { watchPackageDataPlugin } from '../packages'
 import {
   type HookHandler,

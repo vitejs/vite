@@ -111,9 +111,12 @@ describe('DevTools plugin resolution', () => {
   })
 
   test('does not allow a plugin config hook to enable DevTools', async () => {
+    const logger = createLogger('silent')
+    const warn = vi.spyOn(logger, 'warn')
     const config = await resolveConfig(
       {
         configFile: false,
+        customLogger: logger,
         plugins: [
           {
             name: 'enable-devtools',
@@ -126,13 +129,21 @@ describe('DevTools plugin resolution', () => {
 
     expect(config.devtools).toBe(false)
     expect(devToolsIntegration).not.toHaveBeenCalled()
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "The `devtools` option cannot be enabled or disabled from a plugin's `config` hook.",
+      ),
+    )
   })
 
   test('does not allow a plugin config hook to disable DevTools', async () => {
+    const logger = createLogger('silent')
+    const warn = vi.spyOn(logger, 'warn')
     devToolsIntegration.mockResolvedValueOnce([])
     const config = await resolveConfig(
       {
         configFile: false,
+        customLogger: logger,
         devtools: true,
         plugins: [
           {
@@ -146,14 +157,22 @@ describe('DevTools plugin resolution', () => {
 
     expect(config.devtools).toMatchObject({ enabled: true })
     expect(devToolsIntegration).toHaveBeenCalledOnce()
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "The `devtools` option cannot be enabled or disabled from a plugin's `config` hook.",
+      ),
+    )
   })
 
-  test('does not allow a plugin config hook to mutate DevTools options', async () => {
+  test('does not allow a plugin config hook to mutate the DevTools enabled state', async () => {
+    const logger = createLogger('silent')
+    const warn = vi.spyOn(logger, 'warn')
     devToolsIntegration.mockResolvedValueOnce([])
     const devtools = { enabled: true }
     const config = await resolveConfig(
       {
         configFile: false,
+        customLogger: logger,
         devtools,
         plugins: [
           {
@@ -169,6 +188,11 @@ describe('DevTools plugin resolution', () => {
 
     expect(config.devtools).toMatchObject({ enabled: true })
     expect(devToolsIntegration).toHaveBeenCalledOnce()
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "The `devtools` option cannot be enabled or disabled from a plugin's `config` hook.",
+      ),
+    )
   })
 })
 

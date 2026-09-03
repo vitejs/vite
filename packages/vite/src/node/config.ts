@@ -142,7 +142,6 @@ import {
   nodeLikeBuiltins,
   normalizeAlias,
   normalizePath,
-  resolveHostname,
   safeRealpathSync,
   setupRollupOptionCompat,
 } from './utils'
@@ -548,8 +547,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   devtools?: boolean | DevToolsConfig
 }
 
-export type ResolvedDevToolsConfig =
-  import('#types/internal/devtoolsOptions').ResolvedDevToolsConfig
+export type { ResolvedDevToolsConfig } from '#types/internal/devtoolsOptions'
 
 export interface HTMLOptions {
   /**
@@ -734,7 +732,9 @@ export interface ResolvedConfig extends Readonly<
     /** @experimental */
     builder: ResolvedBuilderOptions | undefined
     build: ResolvedBuildOptions
-    devtools: ResolvedDevToolsConfig | false
+    devtools:
+      | import('#types/internal/devtoolsOptions').ResolvedDevToolsConfig
+      | false
     preview: ResolvedPreviewOptions
     ssr: ResolvedSSROptions
     assetsInclude: (file: string) => boolean
@@ -783,23 +783,29 @@ export interface ResolvedConfig extends Readonly<
   } & PluginHookUtils
 > {}
 
+function isDevToolsOptionEnabled(
+  config: DevToolsConfig | boolean | undefined,
+): boolean {
+  return (
+    config === true ||
+    (typeof config === 'object' && config != null && config.enabled !== false)
+  )
+}
+
 export async function resolveDevToolsConfig(
   config: DevToolsConfig | boolean | undefined,
   host: string | boolean | undefined,
   command: 'serve' | 'build',
-): Promise<ResolvedDevToolsConfig | false> {
-  if (
-    config !== true &&
-    !(typeof config === 'object' && config != null && config.enabled !== false)
-  ) {
+): Promise<
+  import('#types/internal/devtoolsOptions').ResolvedDevToolsConfig | false
+> {
+  if (!isDevToolsOptionEnabled(config)) {
     return false
   }
 
   const { isDevToolsEnabled, normalizeDevToolsConfig } =
     await import('@vitejs/devtools/config')
-  const resolvedHostname = await resolveHostname(host)
-  const fallbackHostname = resolvedHostname.host ?? 'localhost'
-  const resolved = normalizeDevToolsConfig(config, fallbackHostname)
+  const resolved = normalizeDevToolsConfig(config, host)
   return isDevToolsEnabled(resolved, command) ? resolved : false
 }
 
@@ -807,7 +813,9 @@ interface DevToolsIntegrationState {
   plugins: Plugin[]
   resolveConfig: (
     host: string | boolean | undefined,
-  ) => Promise<ResolvedDevToolsConfig | false>
+  ) => Promise<
+    import('#types/internal/devtoolsOptions').ResolvedDevToolsConfig | false
+  >
 }
 
 async function loadDevToolsIntegrationPlugins(
@@ -1574,11 +1582,13 @@ export async function resolveConfig(
     }
   }
 
+  // resolve plugins
   // Only the top-level user config controls the automatic DevTools integration.
   const devtoolsOptions =
     typeof config.devtools === 'object' && config.devtools != null
       ? deepClone(config.devtools)
       : config.devtools
+  const devtoolsEnabled = isDevToolsOptionEnabled(devtoolsOptions)
   const devtoolsIntegration = await loadDevToolsIntegrationPlugins(
     config,
     command,
@@ -1594,8 +1604,11 @@ export async function resolveConfig(
 
   const isBuild = command === 'build'
 
+  // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   config = await runConfigHook(config, userPlugins, configEnv)
+  const devtoolsEnabledChanged =
+    isDevToolsOptionEnabled(config.devtools) !== devtoolsEnabled
 
   // Ensure default client and ssr environments
   // If there are present, ensure order { client, ssr, ...custom }
@@ -1621,6 +1634,14 @@ export async function resolveConfig(
     allowClearScreen: config.clearScreen,
     customLogger: config.customLogger,
   })
+
+  if (devtoolsEnabledChanged) {
+    logger.warn(
+      colors.yellow(
+        `The \`devtools\` option cannot be enabled or disabled from a plugin's \`config\` hook. Set it in the user config instead.`,
+      ),
+    )
+  }
 
   const tsconfigPathsPlugin = userPlugins.find(
     (p) =>

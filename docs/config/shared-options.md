@@ -627,6 +627,8 @@ Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlew
 Enable devtools integration for inspecting the dev server and analyzing builds.
 Ensure that `@vitejs/devtools` is installed as a dependency. Install `@vitejs/devtools-vite` to inspect the Vite dev server and `@vitejs/devtools-rolldown` to enable build analysis. DevTools runs for both `serve` and `build` by default; use `apply` to limit it to either command.
 
+Plugin `config` hooks cannot enable or disable DevTools. Set the `devtools` option in the user config instead.
+
 When installed, `@vitejs/devtools` provides the type definitions for this option:
 
 ```ts
