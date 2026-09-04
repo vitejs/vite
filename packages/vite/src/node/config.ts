@@ -33,7 +33,7 @@ import {
   createImportMetaResolver,
   importMetaResolveWithCustomHookString,
 } from '../module-runner/importMetaResolver'
-import { withTrailingSlash } from '../shared/utils'
+import { withTrailingSlash, isWindows } from '../shared/utils'
 import type { AnymatchFn } from '../types/anymatch'
 import type { HtmlAssetSource } from './assetSource'
 import { PartialEnvironment } from './baseEnvironment'
@@ -950,10 +950,14 @@ function normalizeInput(
   return resolved
 }
 
-const escapedGlobCharactersRE = /\\([*?[\]{}()!+@|])/g
+const escapedGlobCharactersRE = /\\([*?[\]{}()|]|[@+!](?=\())/g
+function hasUnescapedGlob(value: string): boolean {
+  return isDynamicPattern(value.replace(escapedGlobCharactersRE, ''))
+}
 
 function unescapeGlobCharacters(value: string): string {
-  if (isDynamicPattern(value)) {
+  if (isWindows) return value
+  if (hasUnescapedGlob(value)) {
     // so that it could later be changed to accept globs without a breaking change
     throw new Error(
       `\`input\` cannot contain glob characters. They are reserved, ` +
