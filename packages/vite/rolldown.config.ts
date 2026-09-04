@@ -151,7 +151,6 @@ const moduleRunnerConfig = defineConfig({
     'fsevents',
     'lightningcss',
     /^rolldown\//,
-    '@vitejs/devtools/cli-commands',
     ...Object.keys(pkg.dependencies),
   ],
   plugins: [bundleSizeLimit(55), enableSourceMapsInWatchModePlugin()],
