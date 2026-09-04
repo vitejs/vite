@@ -25,6 +25,9 @@
     "dev:relative-base-iife": "WORKER_MODE=inline vite --config ./vite.config-relative-base-iife.js dev",
     "build:relative-base-iife": "WORKER_MODE=inline vite --config ./vite.config-relative-base-iife.js build",
     "preview:relative-base-iife": "WORKER_MODE=inline vite --config ./vite.config-relative-base-iife.js preview",
+    "dev:shared-chunks": "vite --config ./vite.config-shared-chunks.js dev",
+    "build:shared-chunks": "vite --config ./vite.config-shared-chunks.js build",
+    "preview:shared-chunks": "vite --config ./vite.config-shared-chunks.js preview",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite"
   },
   "dependencies": {

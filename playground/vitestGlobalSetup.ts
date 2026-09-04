@@ -43,6 +43,7 @@ export async function setup(project: TestProject): Promise<void> {
     assets: ['encoded-base', 'relative-base', 'runtime-base', 'url-base'],
     css: ['lightningcss'],
     'transform-plugin': ['base'],
+    worker: ['shared-chunks'],
   }
   const cpPromises = []
   for (const testFile of testFiles) {
