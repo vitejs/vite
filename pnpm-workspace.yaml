@@ -46,6 +46,7 @@ allowBuilds:
   unrs-resolver: true
   workerd: true
 
+minimumReleaseAgeStrict: true
 minimumReleaseAgeExcludePrune: true
 minimumReleaseAgeExclude:
   - rolldown
