@@ -153,9 +153,9 @@ async function doTransform(
   options: TransformOptionsInternal,
   timestamp: number,
 ) {
-  const { pluginContainer } = environment
-
-  let module = await environment.moduleGraph.getModuleByUrl(url)
+  const moduleLookup =
+    await environment.moduleGraph._getModuleByUrlAndResolved(url)
+  let module = moduleLookup.module
   if (module) {
     // try use cache from url
     const cached = await getCachedTransformResult(
@@ -167,9 +167,7 @@ async function doTransform(
     if (cached) return cached
   }
 
-  const resolved = module
-    ? undefined
-    : ((await pluginContainer.resolveId(url, undefined)) ?? undefined)
+  const resolved = module ? undefined : moduleLookup.resolved
 
   // resolve
   const id = module?.id ?? resolved?.id ?? url
@@ -241,7 +239,7 @@ async function loadAndTransform(
   options: TransformOptionsInternal,
   timestamp: number,
   mod?: EnvironmentModuleNode,
-  resolved?: PartialResolvedId,
+  resolved?: PartialResolvedId | null,
 ) {
   const { config, pluginContainer, logger } = environment
   const prettyUrl =
