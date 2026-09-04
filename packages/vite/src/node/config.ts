@@ -375,6 +375,11 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    */
   root?: string
   /**
+   * Path to the TypeScript configuration file. Relative paths are resolved
+   * from the project root.
+   */
+  tsconfig?: string
+  /**
    * Base public path when served in development or production.
    * @default '/'
    */
@@ -2032,6 +2037,9 @@ export async function resolveConfig(
     ),
     inlineConfig,
     root: resolvedRoot,
+    tsconfig: config.tsconfig
+      ? normalizePath(path.resolve(resolvedRoot, config.tsconfig))
+      : undefined,
     base,
     decodedBase: decodeBase(base),
     rawBase: resolvedBase,
