@@ -600,6 +600,9 @@ importers:
       '@vitejs/test-dep-license-mit':
         specifier: file:./dep-license-mit
         version: file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-mit
+      '@vitejs/test-dep-license-type-marker':
+        specifier: file:./dep-license-type-marker
+        version: file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker
 
   packages/vite/src/node/__tests__/plugins/fixtures/license/dep-licence-cc0: {}
 
@@ -608,6 +611,12 @@ importers:
       '@vitejs/test-dep-nested-license-isc':
         specifier: file:../dep-nested-license-isc
         version: file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc
+
+  packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker: {}
+
+  packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker/build/devtools: {}
+
+  packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker/build/esm: {}
 
   packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc: {}
 
@@ -4491,6 +4500,9 @@ packages:
 
   '@vitejs/test-dep-license-mit@file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-mit':
     resolution: {directory: packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-mit, type: directory}
+
+  '@vitejs/test-dep-license-type-marker@file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker':
+    resolution: {directory: packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker, type: directory}
 
   '@vitejs/test-dep-lodash-es@file:playground/optimize-deps/dep-lodash-es':
     resolution: {directory: playground/optimize-deps/dep-lodash-es, type: directory}
@@ -10552,6 +10564,8 @@ snapshots:
   '@vitejs/test-dep-license-mit@file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-mit':
     dependencies:
       '@vitejs/test-dep-nested-license-isc': file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc
+
+  '@vitejs/test-dep-license-type-marker@file:packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker': {}
 
   '@vitejs/test-dep-lodash-es@file:playground/optimize-deps/dep-lodash-es': {}
 
