@@ -306,7 +306,13 @@ function CallSiteToString(this: CallSite) {
       if (typeName && !functionName.startsWith(typeName)) line += `${typeName}.`
 
       line += functionName
-      if (methodName && !functionName.endsWith(`.${methodName}`))
+      if (
+        methodName &&
+        // We use indexOf instead of endsWith to match V8's exact behavior
+        // for method names that appear multiple times in the function name.
+        functionName.indexOf(`.${methodName}`) !==
+          functionName.length - methodName.length - 1
+      )
         line += ` [as ${methodName}]`
     } else {
       line += `${typeName}.${methodName || '<anonymous>'}`
