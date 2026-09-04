@@ -173,6 +173,19 @@ const noInlineLinkRels = new Set([
   'prefetch',
 ])
 
+// If the node is a link, check if it can be inlined. If not, return `false` to
+// force no inline. `undefined` leaves it to the default heuristics.
+function getLinkShouldInline(
+  node: DefaultTreeAdapterMap['element'],
+  attributes: Record<string, string>,
+): false | undefined {
+  const isNoInlineLink =
+    node.nodeName === 'link' &&
+    attributes.rel &&
+    parseRelAttr(attributes.rel).some((v) => noInlineLinkRels.has(v))
+  return isNoInlineLink ? false : undefined
+}
+
 export const isAsyncScriptMap: WeakMap<
   ResolvedConfig,
   Map<string, boolean>
@@ -625,16 +638,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             config.html?.additionalAssetSources,
           )
           for (const attr of assetAttributes) {
-            // If the node is a link, check if it can be inlined. If not, set `shouldInline`
-            // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
-            const isNoInlineLink =
-              node.nodeName === 'link' &&
-              attr.attributes.rel &&
-              parseRelAttr(attr.attributes.rel).some((v) =>
-                noInlineLinkRels.has(v),
-              )
-            const shouldInline = isNoInlineLink ? false : undefined
-
             if (attr.type === 'remove') {
               s.remove(attr.location.startOffset, attr.location.endOffset)
               continue
@@ -649,7 +652,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                         decodedUrl !== undefined &&
                         !isExcludedUrl(decodedUrl)
                       ) {
-                        const result = await processAssetUrl(url, shouldInline)
+                        const result = await processAssetUrl(
+                          url,
+                          getLinkShouldInline(node, attr.attributes),
+                        )
                         return result !== decodedUrl
                           ? encodeURIPath(result)
                           : url
@@ -692,7 +698,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                     (async () => {
                       const processedUrl = await processAssetUrl(
                         url,
-                        shouldInline,
+                        getLinkShouldInline(node, attr.attributes),
                       )
                       if (processedUrl !== url) {
                         overwriteAttrValue(
