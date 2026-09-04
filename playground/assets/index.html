@@ -4,6 +4,24 @@
   <meta charset="UTF-8" />
   <link class="ico" rel="icon" type="image/svg+xml" href="favicon.ico" />
   <link rel="manifest" href="manifest.json" />
+  <link rel="modulepreload" href="preload-module.js" />
+  <link
+    class="preload-href"
+    rel="preload"
+    as="image"
+    href="./nested/preload-asset.png"
+  />
+  <link
+    class="preload-imagesrcset"
+    rel="preload"
+    as="image"
+    imagesrcset="./nested/preload-asset.png 1x, ./nested/preload-asset.png 2x"
+  />
+  <link
+    class="prefetch-href"
+    rel="prefetch"
+    href="./nested/preload-asset.png"
+  />
   <meta
     class="meta-og-image"
     property="og:image"
