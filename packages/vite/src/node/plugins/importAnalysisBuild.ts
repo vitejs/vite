@@ -265,10 +265,55 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
   const renderBuiltUrl = config.experimental.renderBuiltUrl
   const isRelativeBase = config.base === './' || config.base === ''
 
+  // Preload markers are replaced in generateBundle, after chunk hashes are
+  // finalized. Track the graph identities used by Rolldown's chunk import map
+  // so a changed preload list also changes the importing chunk's hash.
+  type ChunkImportNode = {
+    identity: string
+    imports: string[]
+    dynamicImports: string[]
+    importedCssCount: number
+  }
+  const chunkImportGraphs = new Map<string, Map<string, ChunkImportNode>>()
+
   const plugin: Plugin = {
     name: 'vite:build-import-analysis',
 
-    renderChunk(code, _, { format }) {
+    renderStart() {
+      chunkImportGraphs.set(this.environment.name, new Map())
+    },
+
+    renderChunk(code, chunk, { format }, { chunks }) {
+      if (this.environment.config.build.chunkImportMap) {
+        const graph = chunkImportGraphs.get(this.environment.name)!
+        if (graph.size === 0) {
+          const nameCounts = new Map<string, number>()
+          for (const candidate of Object.values(chunks)) {
+            nameCounts.set(
+              candidate.name,
+              (nameCounts.get(candidate.name) ?? 0) + 1,
+            )
+          }
+          for (const [fileName, candidate] of Object.entries(chunks)) {
+            // Keep this identity in step with Rolldown's chunk-import-map
+            // plugin: facade id, unique chunk name, or the first module id.
+            const identity = candidate.facadeModuleId
+              ? `facade:${candidate.facadeModuleId}`
+              : nameCounts.get(candidate.name) === 1
+                ? `name:${candidate.name}`
+                : `module:${[...candidate.moduleIds].sort()[0]}`
+            graph.set(fileName, {
+              identity,
+              imports: candidate.imports,
+              dynamicImports: candidate.dynamicImports,
+              importedCssCount: 0,
+            })
+          }
+        }
+        graph.get(chunk.fileName)!.importedCssCount =
+          chunk.viteMetadata?.importedCss.size ?? 0
+      }
+
       // make sure we only perform the preload logic in modern builds.
       if (code.includes(isModernFlag)) {
         const re = new RegExp(isModernFlag, 'g')
@@ -281,6 +326,49 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         }
       }
       return null
+    },
+
+    augmentChunkHash(chunk) {
+      if (!this.environment.config.build.chunkImportMap) return
+      const graph = chunkImportGraphs.get(this.environment.name)
+      if (!graph) return
+
+      const owner = graph.get(chunk.fileName)
+      if (!owner) return
+      const includeJs = this.environment.config.build.modulePreload !== false
+      let hasRenderedDependencies = false
+      const signatures = owner.dynamicImports.map((dynamicImport) => {
+        const visited = new Set<string>()
+        const dependencies: string[] = []
+        const visit = (fileName: string) => {
+          if (visited.has(fileName)) return
+          visited.add(fileName)
+          const dependency = graph.get(fileName)
+          if (!dependency) return
+          dependencies.push(`js:${dependency.identity}`)
+          for (let index = 0; index < dependency.importedCssCount; index++) {
+            dependencies.push(`css:${dependency.identity}:${index}`)
+          }
+          dependency.imports.forEach(visit)
+        }
+        visit(dynamicImport)
+
+        // Vite omits the imported chunk itself when it is the only preload
+        // dependency. With module preloads disabled, only CSS dependencies
+        // remain in the generated helper call.
+        const renderedDependencies =
+          dependencies.length > 1
+            ? includeJs
+              ? dependencies
+              : dependencies.filter((dependency) =>
+                  dependency.startsWith('css:'),
+                )
+            : []
+        hasRenderedDependencies ||= renderedDependencies.length > 0
+        return renderedDependencies
+      })
+      if (!hasRenderedDependencies) return
+      return JSON.stringify(signatures)
     },
 
     async generateBundle(opts, bundle) {
