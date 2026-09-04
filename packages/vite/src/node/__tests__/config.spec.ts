@@ -1730,8 +1730,8 @@ describe('loadConfigFromFile', () => {
       expect(messages).toMatchInlineSnapshot(`
         [
           "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
-          - \`__dirname\` (vite.config.js:3:29). Use \`import.meta.dirname\` instead
-          - \`__filename\` (vite.config.js:4:30). Use \`import.meta.filename\` instead
+          - \`__dirname\` (./packages/vite/src/node/__tests__/fixtures/config/native-compat/dirname/vite.config.js:3:29). Use \`import.meta.dirname\` instead
+          - \`__filename\` (./packages/vite/src/node/__tests__/fixtures/config/native-compat/dirname/vite.config.js:4:30). Use \`import.meta.filename\` instead
         Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
         ]
       `)
@@ -1746,7 +1746,7 @@ describe('loadConfigFromFile', () => {
         expect(messages).toMatchInlineSnapshot(`
           [
             "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
-            - \`__dirname\` (vite.config.ts:10:29). Use \`import.meta.dirname\` instead
+            - \`__dirname\` (./packages/vite/src/node/__tests__/fixtures/config/native-compat/ts-syntax/vite.config.ts:10:29). Use \`import.meta.dirname\` instead
           Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
           ]
         `)
@@ -1758,7 +1758,7 @@ describe('loadConfigFromFile', () => {
       expect(messages).toMatchInlineSnapshot(`
         [
           "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
-          - import "./helper" without a file extension (vite.config.js:1:23). Add the file extension
+          - import "./helper" without a file extension (./packages/vite/src/node/__tests__/fixtures/config/native-compat/extensionless/vite.config.js:1:23). Add the file extension
         Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
         ]
       `)
@@ -1769,7 +1769,7 @@ describe('loadConfigFromFile', () => {
       expect(messages).toMatchInlineSnapshot(`
         [
           "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
-          - import "./plugins" resolves to a directory index (vite.config.js:1:25). Import the index file directly
+          - import "./plugins" resolves to a directory index (./packages/vite/src/node/__tests__/fixtures/config/native-compat/directory-index/vite.config.js:1:25). Import the index file directly
         Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
         ]
       `)
@@ -1780,7 +1780,7 @@ describe('loadConfigFromFile', () => {
       expect(messages).toMatchInlineSnapshot(`
         [
           "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
-          - JSON import "./data.json" without import attributes (vite.config.js:1:18). Add \`with { type: 'json' }\`
+          - JSON import "./data.json" without import attributes (./packages/vite/src/node/__tests__/fixtures/config/native-compat/json/vite.config.js:1:18). Add \`with { type: 'json' }\`
         Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
         ]
       `)
@@ -1821,7 +1821,7 @@ describe('loadConfigFromFile', () => {
       expect(messages).toMatchInlineSnapshot(`
         [
           "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
-          - import "./foo" resolves to a JSON file (vite.config.js:1:18). Import it with a \`.json\` extension and \`with { type: 'json' }\`
+          - import "./foo" resolves to a JSON file (./packages/vite/src/node/__tests__/fixtures/config/native-compat/json-extensionless/vite.config.js:1:18). Import it with a \`.json\` extension and \`with { type: 'json' }\`
         Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
         ]
       `)
@@ -1843,7 +1843,7 @@ describe('loadConfigFromFile', () => {
       expect(messages).toMatchInlineSnapshot(`
         [
           "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
-          - \`__dirname\` (esm-helper.mjs:1:35). Use \`import.meta.dirname\` instead
+          - \`__dirname\` (./packages/vite/src/node/__tests__/fixtures/config/native-compat/cjs-imports-esm/esm-helper.mjs:1:35). Use \`import.meta.dirname\` instead
         Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
         ]
       `)
@@ -1854,10 +1854,20 @@ describe('loadConfigFromFile', () => {
       expect(messages).toMatchInlineSnapshot(`
         [
           "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
-          - ESM syntax in a file loaded as CommonJS (vite.config.js:1:1). Use a \`.mjs\` extension or set \`"type": "module"\` in the closest package.json
+          - ESM syntax in a file loaded as CommonJS (./packages/vite/src/node/__tests__/fixtures/config/native-compat/esm-in-commonjs-pkg/vite.config.js:1:1). Use a \`.mjs\` extension or set \`"type": "module"\` in the closest package.json
         Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
         ]
       `)
+    })
+
+    test('warning paths are relative to process.cwd()', async () => {
+      const messages = await loadWithWarnings('dirname')
+      // path should be relative to process.cwd() with ./ prefix,
+      // so it is clickable from the terminal's working directory
+      const expectedPath = normalizePath(
+        `./${path.relative(process.cwd(), path.resolve(compatRoot, 'dirname', 'vite.config.js'))}`,
+      )
+      expect(messages[0]).toContain(`${expectedPath}:3:29`)
     })
   })
 
