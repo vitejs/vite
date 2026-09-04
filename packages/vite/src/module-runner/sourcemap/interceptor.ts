@@ -303,12 +303,13 @@ function CallSiteToString(this: CallSite) {
 
     const methodName = this.getMethodName()
     if (functionName) {
-      if (typeName && functionName.indexOf(typeName) !== 0)
-        line += `${typeName}.`
+      if (typeName && !functionName.startsWith(typeName)) line += `${typeName}.`
 
       line += functionName
       if (
         methodName &&
+        // We use indexOf instead of endsWith to match V8's exact behavior
+        // for method names that appear multiple times in the function name.
         functionName.indexOf(`.${methodName}`) !==
           functionName.length - methodName.length - 1
       )
