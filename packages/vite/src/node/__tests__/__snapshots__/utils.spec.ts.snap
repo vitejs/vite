@@ -213,3 +213,16 @@ exports[`generateCodeFrames > works with CRLF 1`] = `
    |  ^
 "
 `;
+
+exports[`generateCodeFrames > works with CRLF given a range 1`] = `
+"
+1  |  import foo from './foo'
+2  |  
+3  |  foo()
+   |  ^^^^^
+4  |  // 1
+   |  ^^^^
+5  |  // 2
+   |  ^^
+"
+`;

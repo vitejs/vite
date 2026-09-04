@@ -307,6 +307,10 @@ describe('posToNumber', () => {
     const actual = posToNumber('a\n\nb', { line: 3, column: 0 })
     expect(actual).toBe(3)
   })
+  test('crlf', () => {
+    const actual = posToNumber('a\r\nb', { line: 2, column: 0 })
+    expect(actual).toBe(3)
+  })
   test('out of range', () => {
     const actual = posToNumber('a\nb', { line: 4, column: 0 })
     expect(actual).toBe(4)
@@ -387,6 +391,25 @@ foo()
 
   test('works with CRLF', () => {
     expectSnapshot(generateCodeFrame(sourceCrLf, { line: 2, column: 0 }))
+  })
+
+  test('works with CRLF given an offset', () => {
+    const longSourceCrLf = longSource.replaceAll('\n', '\r\n')
+    // the frame should point to the same location regardless of the line endings
+    expect(
+      generateCodeFrame(longSourceCrLf, longSourceCrLf.indexOf('// 3')),
+    ).toBe(generateCodeFrame(longSource, longSource.indexOf('// 3')))
+  })
+
+  test('works with CRLF given a range', () => {
+    const longSourceCrLf = longSource.replaceAll('\n', '\r\n')
+    expectSnapshot(
+      generateCodeFrame(
+        longSourceCrLf,
+        longSourceCrLf.indexOf('foo()'),
+        longSourceCrLf.indexOf('// 2'),
+      ),
+    )
   })
 
   test('end', () => {
