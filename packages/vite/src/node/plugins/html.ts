@@ -583,7 +583,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   // add it as an import
                   js += `\nimport ${JSON.stringify(url)}`
                   shouldRemove = true
-                } else if (node.childNodes.length) {
+                } else if (!url && node.childNodes.length) {
                   const scriptNode =
                     node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
                   const contents = scriptNode.value
