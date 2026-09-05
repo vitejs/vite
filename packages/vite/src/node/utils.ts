@@ -1882,13 +1882,25 @@ export function displayTime(time: number): string {
 }
 
 /**
+ * Matches the `scheme://authority` prefix of an absolute URL, so it can be held back
+ * from `encodeURI`. `encodeURI` escapes `[` and `]`, which delimit an IPv6 host rather
+ * than being data (RFC 3986 3.2.2) — encoding them leaves an authority that no longer
+ * parses, and Firefox rejects the result outright.
+ */
+const urlOriginRE = /^[a-z][a-z0-9+.-]*:\/\/[^/?#]*/i
+
+/**
  * Encodes the URI path portion (ignores part after ? or #)
+ *
+ * Callers pass an absolute URL when `server.origin` is configured, so only the path
+ * that follows the origin is encoded.
  */
 export function encodeURIPath(uri: string): string {
   if (uri.startsWith('data:')) return uri
   const filePath = cleanUrl(uri)
   const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
-  return encodeURI(filePath) + postfix
+  const origin = filePath.match(urlOriginRE)?.[0] ?? ''
+  return origin + encodeURI(filePath.slice(origin.length)) + postfix
 }
 
 /**
