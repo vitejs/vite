@@ -323,7 +323,9 @@ export function createWebSocketServer(
     socket.send(JSON.stringify({ type: 'connected' }))
     if (bufferedMessage) {
       socket.send(JSON.stringify(bufferedMessage))
-      bufferedMessage = null
+      if (bufferedMessage.type === 'full-reload') {
+        bufferedMessage = null
+      }
     }
   })
 
@@ -376,12 +378,13 @@ export function createWebSocketServer(
   const normalizedHotChannel = normalizeHotChannel(
     {
       send(payload) {
-        if (
-          (payload.type === 'error' || payload.type === 'full-reload') &&
-          !wss.clients.size
-        ) {
+        if (payload.type === 'error') {
+          bufferedMessage = payload
+        } else if (payload.type === 'full-reload' && !wss.clients.size) {
           bufferedMessage = payload
           return
+        } else {
+          bufferedMessage = null
         }
 
         const stringified = JSON.stringify(payload)
