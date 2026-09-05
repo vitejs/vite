@@ -6,6 +6,7 @@ import {
   createNodeImportMeta,
 } from 'vite/module-runner'
 import { isRunnableDevEnvironment } from '../../node'
+import { isTransportInvokeTimeoutError } from '../../shared/moduleRunnerTransport'
 import { unwrapId } from '../../shared/utils'
 import type { ViteDevServer } from '../server'
 import type { DevEnvironment } from '../server/environment'
@@ -109,7 +110,9 @@ class SSRCompatModuleRunner extends ModuleRunner {
       viteMod.ssrModule = exports
       return exports
     } catch (err) {
-      viteMod.ssrError = err
+      if (!isTransportInvokeTimeoutError(err)) {
+        viteMod.ssrError = err
+      }
       throw err
     }
   }
