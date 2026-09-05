@@ -307,9 +307,9 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       } else if (isModule && node.childNodes.length) {
         addInlineModule(node, 'js')
       } else if (node.childNodes.length) {
-        const scriptNode = node.childNodes[
-          node.childNodes.length - 1
-        ] as DefaultTreeAdapterMap['textNode']
+        const scriptNode = node.childNodes.at(
+          -1,
+        ) as DefaultTreeAdapterMap['textNode']
         for (const {
           url,
           start,

@@ -1,4 +1,5 @@
 // @ts-check
+import e18e from '@e18e/eslint-plugin'
 import eslint from '@eslint/js'
 import pluginImportX from 'eslint-plugin-import-x'
 import pluginN from 'eslint-plugin-n'
@@ -53,6 +54,7 @@ export default defineConfig(
     plugins: {
       n: pluginN,
       'import-x': pluginImportX,
+      e18e,
     },
     rules: {
       'n/no-exports-assign': 'error',
@@ -154,6 +156,12 @@ export default defineConfig(
       'regexp/prefer-regexp-test': 'error',
       // in some cases using explicit letter-casing is more performant than the `i` flag
       'regexp/use-ignore-case': 'off',
+      'e18e/prefer-array-at': 'error',
+      'e18e/prefer-array-fill': 'error',
+      'e18e/prefer-includes': 'error',
+      'e18e/prefer-array-to-reversed': 'error',
+      'e18e/prefer-object-has-own': 'error',
+      'e18e/prefer-nullish-coalescing': 'error',
     },
   },
   {
