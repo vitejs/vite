@@ -134,6 +134,13 @@ interface ResolvePluginOptions {
   // True when resolving during the scan phase to discover dependencies
   scan?: boolean
   /**
+   * Also run user plugins with `enforce: 'pre'` (or a `resolveId` hook with
+   * `order: 'pre'`). Set by the CSS resolvers so `@import` can follow the
+   * migration path the `customResolver` deprecation warning suggests.
+   * @internal
+   */
+  userPrePlugins?: boolean
+  /**
    * @internal
    */
   skipMainField?: boolean

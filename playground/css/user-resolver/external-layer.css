@@ -1,0 +1,5 @@
+@import './external.css';
+
+.user-resolver-external-layer {
+  color: blue;
+}
