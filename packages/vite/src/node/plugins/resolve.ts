@@ -258,6 +258,7 @@ export function oxcResolvePlugin(
             : [options.noExternal]
 
         const plugin = viteResolvePlugin({
+          tsconfig: partialEnv.config.tsconfig,
           resolveOptions: {
             isBuild: options.isBuild,
             isProduction: options.isProduction,

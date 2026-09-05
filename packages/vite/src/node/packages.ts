@@ -158,20 +158,40 @@ export function findNearestPackageData(
   return null
 }
 
-// Finds the nearest package.json with a `name` field
+function isNodeModulesPackageRoot(pkgDir: string): boolean {
+  const parent = path.dirname(pkgDir)
+  if (path.basename(parent) === 'node_modules') {
+    return !path.basename(pkgDir).startsWith('@')
+  }
+  // scoped package root: `node_modules/@scope/pkg`
+  return (
+    path.basename(parent).startsWith('@') &&
+    path.basename(path.dirname(parent)) === 'node_modules'
+  )
+}
+
+// Finds the nearest package.json with a `name` field. For paths inside
+// `node_modules`, the manifest at the package root is returned instead, which
+// may be further up than the nearest manifest.
 export function findNearestMainPackageData(
   basedir: string,
   packageCache?: PackageCache,
 ): PackageData | null {
   const nearestPackage = findNearestPackageData(basedir, packageCache)
-  return (
-    nearestPackage &&
-    (nearestPackage.data.name
-      ? nearestPackage
-      : findNearestMainPackageData(
-          path.dirname(nearestPackage.dir),
-          packageCache,
-        ))
+  if (!nearestPackage) return null
+  if (
+    isInNodeModules(nearestPackage.dir) &&
+    !isNodeModulesPackageRoot(nearestPackage.dir)
+  ) {
+    return findNearestMainPackageData(
+      path.dirname(nearestPackage.dir),
+      packageCache,
+    )
+  }
+  if (nearestPackage.data.name) return nearestPackage
+  return findNearestMainPackageData(
+    path.dirname(nearestPackage.dir),
+    packageCache,
   )
 }
 
