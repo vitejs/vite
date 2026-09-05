@@ -36,7 +36,14 @@ export const assetImportMetaUrlRE: RegExp =
 
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const { publicDir } = config
-  let assetResolver: ResolveIdFn
+  let assetResolver: ResolveIdFn | undefined
+  const getAssetResolver = () =>
+    (assetResolver ??= createBackCompatIdResolver(config, {
+      extensions: [],
+      mainFields: [],
+      tryIndex: false,
+      preferRelative: true,
+    }))
 
   const fsResolveOptions: InternalResolveOptions = {
     ...config.resolve,
@@ -89,11 +96,31 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             const ast = this.parse(pureUrl)
             const templateLiteral = (ast as any).body[0].expression
             if (templateLiteral.expressions.length) {
-              const pattern = buildGlobPattern(templateLiteral)
+              let pattern = buildGlobPattern(templateLiteral)
               if (pattern[0] === '*') {
                 // don't transform for patterns like this
                 // because users won't intend to do that in most cases
                 continue
+              }
+
+              // `new URL()` resolves its first argument against the base URL, so
+              // `foo/${bar}.png` points at the `foo` directory next to the importer,
+              // while `import.meta.glob()` wants that `./` spelled out. Only add it
+              // when the directory is really there and no alias claims the specifier
+              // first, so the pattern resolves in the same order as the static form
+              // below. Subpath imports are left for the resolver, and an importer
+              // that is not a file path has no directory to be relative to.
+              let indexUrl = pureUrl
+              if (
+                pattern[0] !== '/' &&
+                pattern[0] !== '.' &&
+                pattern[0] !== '#' &&
+                path.isAbsolute(id) &&
+                globBaseExists(pattern, id) &&
+                !(await getAssetResolver()(this.environment, pattern, id, true))
+              ) {
+                pattern = './' + pattern
+                indexUrl = '`./' + pureUrl.slice(1)
               }
 
               const globOptions = {
@@ -109,7 +136,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                   pattern,
                 )}, ${JSON.stringify(
                   globOptions,
-                )}))[${pureUrl}], import.meta.url)`,
+                )}))[${indexUrl}], import.meta.url)`,
               )
               continue
             }
@@ -124,13 +151,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             file = slash(path.resolve(path.dirname(id), url))
             file = tryFsResolve(file, fsResolveOptions) ?? file
           } else {
-            assetResolver ??= createBackCompatIdResolver(config, {
-              extensions: [],
-              mainFields: [],
-              tryIndex: false,
-              preferRelative: true,
-            })
-            file = await assetResolver(this.environment, url, id)
+            file = await getAssetResolver()(this.environment, url, id)
             file ??=
               url[0] === '/'
                 ? slash(path.join(publicDir, url))
@@ -195,6 +216,19 @@ function buildGlobPattern(ast: any) {
     }
   }
   return pattern
+}
+
+/**
+ * Whether the directory a glob pattern starts from exists next to the importer,
+ * which tells a relative path missing its `./` apart from a bare specifier. A
+ * pattern with no directory part starts from the importer's own directory, which
+ * is always there.
+ */
+function globBaseExists(pattern: string, importer: string): boolean {
+  const dirEnd = pattern.lastIndexOf('/', pattern.indexOf('*'))
+  if (dirEnd === -1) return true
+  const dir = path.resolve(path.dirname(importer), pattern.slice(0, dirEnd))
+  return tryStatSync(dir)?.isDirectory() ?? false
 }
 
 function getQueryDelimiterIndex(rawUrl: string): number {
