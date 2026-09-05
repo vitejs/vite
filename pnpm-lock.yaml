@@ -1506,6 +1506,8 @@ importers:
 
   playground/proxy-hmr/other-app: {}
 
+  playground/proxy-middleware: {}
+
   playground/resolve:
     dependencies:
       '@babel/runtime':
