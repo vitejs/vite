@@ -6,7 +6,7 @@ import { createServer } from '../..'
 import { promiseWithResolvers } from '../../../shared/utils'
 
 test.each([false, true])(
-  'settles pending dependency loads on close (optimization in flight: %s)',
+  'settles pending dependency requests on close (optimization in flight: %s)',
   async (inFlight) => {
     const root = fs.mkdtempSync(
       path.join(fs.realpathSync(os.tmpdir()), 'vite-optimizer-close-'),
@@ -30,8 +30,10 @@ test.each([false, true])(
       root,
       cacheDir: path.join(root, '.vite'),
       logLevel: 'silent',
-      server: { ws: false },
+      server: { ws: false, port: 0, preTransformRequests: false },
       optimizeDeps: {
+        entries: [],
+        include: inFlight ? ['first-dep'] : [],
         rolldownOptions: {
           plugins: [
             {
@@ -54,11 +56,11 @@ test.each([false, true])(
 
     try {
       const [first, second] = dependencies
-      const firstInfo = optimizer.registerMissingImport(first.name, first.file)
       if (inFlight) {
-        optimizer.run()
+        await server.listen()
         await bundleStarted.promise
       }
+      const firstInfo = optimizer.registerMissingImport(first.name, first.file)
       // Once the run has started, the first dependency belongs to the queued
       // batch and the second belongs to the current, not-yet-optimized batch.
       const secondInfo = optimizer.registerMissingImport(
@@ -74,12 +76,26 @@ test.each([false, true])(
           return info.processing.then(() => settled++)
         }),
       )
+      // Observe the actual optimized-deps hook so shutdown cannot reject the
+      // requests before they reach the processing promises under test.
+      const loadStarted = new Set<string>()
+      const plugin = environment.plugins.find(
+        (plugin) => plugin.name === 'vite:optimized-deps',
+      )
+      assert(plugin && typeof plugin.load === 'function')
+      const originalLoad = plugin.load
+      plugin.load = function (id, options) {
+        const result = originalLoad.call(this, id, options)
+        loadStarted.add(id)
+        return result
+      }
       const loads = Promise.allSettled(
         [firstInfo, secondInfo].map((info) =>
-          environment.pluginContainer.load(optimizer.getOptimizedDepId(info)),
+          environment.transformRequest(optimizer.getOptimizedDepId(info)),
         ),
       )
-      await Promise.resolve()
+      await expect.poll(() => loadStarted.size).toBe(2)
+      expect(environment._pendingRequests.size).toBe(2)
       expect(settled).toBe(0)
 
       const closing = server.close()
@@ -92,6 +108,7 @@ test.each([false, true])(
         expect.objectContaining({ status: 'rejected' }),
       ])
       await closing
+      expect(environment._pendingRequests.size).toBe(0)
     } finally {
       releaseBundle.resolve()
       // Also drain the promises on the unfixed implementation so a regression
