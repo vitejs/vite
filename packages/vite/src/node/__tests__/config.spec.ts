@@ -24,6 +24,31 @@ import {
 } from '../utils'
 
 describe('mergeConfig', () => {
+  test.each([
+    {},
+    { environments: {} },
+    { environments: { client: { build: {} } } },
+  ])(
+    'keeps environment build compatibility writes out of merge overrides with defaults %j',
+    (defaults) => {
+      const build = Object.freeze({})
+      const inlineConfig: InlineConfig = {
+        environments: { client: { build } },
+      }
+
+      const merged = mergeConfig(defaults, inlineConfig)
+      const mergedBuild = merged.environments.client.build!
+
+      expect(mergedBuild).not.toBe(build)
+      expect(
+        Object.getOwnPropertyDescriptor(mergedBuild, 'rollupOptions')?.get,
+      ).toBeTypeOf('function')
+      expect(
+        Object.getOwnPropertyDescriptor(build, 'rollupOptions'),
+      ).toBeUndefined()
+    },
+  )
+
   test('handles configs with different alias schemas', () => {
     const baseConfig = defineConfig({
       resolve: {
@@ -793,6 +818,23 @@ describe('mergeConfig', () => {
       build.rollupOptions = newerOptions
       expect(build.rolldownOptions).toBe(newerOptions)
     }
+  })
+
+  test('keeps HMR compatibility writes in the merged server options', () => {
+    const hmr = Object.freeze({ port: 24678, overlay: false })
+    const server = Object.freeze({ hmr })
+    const merged = mergeConfig({ server }, { server: { ws: { port: 24679 } } })
+    const next = mergeConfig(merged, { server: { ws: { port: 24680 } } })
+
+    expect(hmr.port).toBe(24678)
+    expect(Object.getOwnPropertyDescriptor(hmr, 'port')?.get).toBeUndefined()
+    expect('ws' in server).toBe(false)
+    expect(merged.server.hmr.port).toBe(24679)
+    expect(next.server.hmr.port).toBe(24680)
+    expect(next.server.hmr.overlay).toBe(false)
+    next.server.ws.port = 24681
+    expect(next.server.hmr.port).toBe(24681)
+    expect(merged.server.hmr.port).toBe(24679)
   })
 
   test('syncs `server.hmr.*` to `server.ws.*`', () => {
@@ -2248,4 +2290,36 @@ describe('resolveServerOptions', () => {
       warnFn.mockClear()
     }
   })
+})
+
+test('copies fs.allow before adding the pnpm virtual store', async () => {
+  const root = fs.mkdtempSync(
+    path.join(fs.realpathSync(os.tmpdir()), 'vite-config-fs-allow-'),
+  )
+  try {
+    fs.writeFileSync(path.join(root, 'package.json'), '{}')
+    fs.writeFileSync(path.join(root, 'pnpm-workspace.yaml'), 'packages: []')
+    fs.mkdirSync(path.join(root, 'node_modules'))
+    fs.writeFileSync(
+      path.join(root, 'node_modules', '.modules.yaml'),
+      JSON.stringify({ virtualStoreDir: '../store' }),
+    )
+    const allow = ['src']
+    Object.freeze(allow)
+    const server = await resolveServerOptions(
+      root,
+      { fs: { allow } },
+      createLogger('silent'),
+    )
+
+    expect(allow).toEqual(['src'])
+    expect(server.fs.allow).toEqual(
+      expect.arrayContaining([
+        normalizePath(path.join(root, 'src')),
+        normalizePath(path.join(root, 'store')),
+      ]),
+    )
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
 })

@@ -1263,11 +1263,13 @@ function resolveDepOptimizationOptions(
   consumer: 'client' | 'server' | undefined,
   logger: Logger,
 ): DepOptimizationOptions {
+  let optimizeDepsForMerge = optimizeDeps
   if (
     optimizeDeps?.rolldownOptions &&
-    optimizeDeps?.rolldownOptions === optimizeDeps?.rollupOptions
+    optimizeDeps.rolldownOptions === optimizeDeps.rollupOptions
   ) {
-    delete optimizeDeps?.rollupOptions
+    optimizeDepsForMerge = { ...optimizeDeps }
+    delete optimizeDepsForMerge.rollupOptions
   }
   const merged = mergeWithDefaults(
     {
@@ -1276,14 +1278,17 @@ function resolveDepOptimizationOptions(
       noDiscovery: consumer !== 'client',
       force: forceOptimizeDeps ?? configDefaults.optimizeDeps.force,
     },
-    optimizeDeps ?? {},
+    optimizeDepsForMerge ?? {},
   )
   setupRollupOptionCompat(merged, 'optimizeDeps')
 
+  merged.rolldownOptions = { ...merged.rolldownOptions }
   const rolldownOptions = merged.rolldownOptions as Exclude<
     DepOptimizationOptions['rolldownOptions'],
     undefined
   >
+  rolldownOptions.resolve = { ...rolldownOptions.resolve }
+  rolldownOptions.output = { ...rolldownOptions.output }
 
   if (merged.esbuildOptions && Object.keys(merged.esbuildOptions).length > 0) {
     logger.warn(
@@ -1295,8 +1300,6 @@ function resolveDepOptimizationOptions(
       ),
     )
 
-    rolldownOptions.resolve ??= {}
-    rolldownOptions.output ??= {}
     rolldownOptions.transform ??= {}
 
     const setResolveOptions = <
@@ -1326,21 +1329,26 @@ function resolveDepOptimizationOptions(
       merged.esbuildOptions.define !== undefined &&
       rolldownOptions.transform.define === undefined
     ) {
-      rolldownOptions.transform.define = merged.esbuildOptions.define
+      rolldownOptions.transform = {
+        ...rolldownOptions.transform,
+        define: merged.esbuildOptions.define,
+      }
     }
     if (merged.esbuildOptions.loader !== undefined) {
       const loader = merged.esbuildOptions.loader
-      rolldownOptions.moduleTypes ??= {}
+      const moduleTypes = (rolldownOptions.moduleTypes = {
+        ...rolldownOptions.moduleTypes,
+      })
       for (const [key, value] of Object.entries(loader)) {
         if (
-          rolldownOptions.moduleTypes[key] === undefined &&
+          moduleTypes[key] === undefined &&
           value !== 'copy' &&
           value !== 'css' &&
           value !== 'default' &&
           value !== 'file' &&
           value !== 'local-css'
         ) {
-          rolldownOptions.moduleTypes[key] = value
+          moduleTypes[key] = value
         }
       }
     }
@@ -1404,12 +1412,10 @@ function resolveDepOptimizationOptions(
     // - absWorkingDir
   }
 
-  merged.esbuildOptions ??= {}
+  merged.esbuildOptions = { ...merged.esbuildOptions }
   merged.esbuildOptions.preserveSymlinks ??= preserveSymlinks
 
-  rolldownOptions.resolve ??= {}
   rolldownOptions.resolve.symlinks ??= !preserveSymlinks
-  rolldownOptions.output ??= {}
   rolldownOptions.output.topLevelVar ??= true
 
   return merged
@@ -1440,12 +1446,15 @@ function applyDepOptimizationOptionCompat(resolvedConfig: ResolvedConfig) {
     resolvedConfig.optimizeDeps.esbuildOptions.plugins.length > 0
   ) {
     resolvedConfig.optimizeDeps.rolldownOptions ??= {}
-    resolvedConfig.optimizeDeps.rolldownOptions.plugins ||= []
-    ;(resolvedConfig.optimizeDeps.rolldownOptions.plugins as any[]).push(
+    const plugins = (
+      (resolvedConfig.optimizeDeps.rolldownOptions.plugins as any[]) || []
+    ).slice()
+    plugins.push(
       ...resolvedConfig.optimizeDeps.esbuildOptions.plugins.map((plugin) =>
         convertEsbuildPluginToRolldownPlugin(plugin),
       ),
     )
+    resolvedConfig.optimizeDeps.rolldownOptions.plugins = plugins
   }
 }
 
@@ -1469,15 +1478,16 @@ export async function resolveConfig(
   /** @internal */
   patchPlugins: ((resolvedPlugins: Plugin[]) => void) | undefined = undefined,
 ): Promise<ResolvedConfig> {
-  let config = inlineConfig
-  config.build ??= {}
+  let config: InlineConfig = { ...inlineConfig }
+  config.build = { ...config.build }
   setupRollupOptionCompat(config.build, 'build')
-  config.worker ??= {}
+  config.worker = { ...config.worker }
   setupRollupOptionCompat(config.worker, 'worker')
-  config.optimizeDeps ??= {}
+  config.optimizeDeps = { ...config.optimizeDeps }
   setupRollupOptionCompat(config.optimizeDeps, 'optimizeDeps')
   if (config.ssr) {
-    config.ssr.optimizeDeps ??= {}
+    config.ssr = { ...config.ssr }
+    config.ssr.optimizeDeps = { ...config.ssr.optimizeDeps }
     setupRollupOptionCompat(config.ssr.optimizeDeps, 'ssr.optimizeDeps')
   }
 
@@ -1555,7 +1565,8 @@ export async function resolveConfig(
 
   // Ensure default client and ssr environments
   // If there are present, ensure order { client, ssr, ...custom }
-  config.environments ??= {}
+  // Copy the environments map after config hooks before replacing entries below.
+  config.environments = { ...config.environments }
   if (
     !config.environments.ssr &&
     (!isBuild || config.ssr || config.build?.ssr)
@@ -1620,21 +1631,33 @@ export async function resolveConfig(
     logger,
   )
 
-  const configEnvironmentsClient = config.environments!.client!
+  const configEnvironmentsClient = (config.environments!.client = {
+    ...config.environments!.client!,
+  })
   configEnvironmentsClient.dev ??= {}
 
   const deprecatedSsrOptimizeDepsConfig = config.ssr?.optimizeDeps ?? {}
   let configEnvironmentsSsr = config.environments!.ssr
+  if (configEnvironmentsSsr) {
+    configEnvironmentsSsr = config.environments!.ssr = {
+      ...configEnvironmentsSsr,
+    }
+  }
 
   // Backward compatibility: server.warmup.clientFiles/ssrFiles -> environment.dev.warmup
   const warmupOptions = config.server?.warmup
   if (warmupOptions?.clientFiles) {
-    configEnvironmentsClient.dev.warmup = warmupOptions.clientFiles
+    configEnvironmentsClient.dev = {
+      ...configEnvironmentsClient.dev,
+      warmup: warmupOptions.clientFiles,
+    }
   }
   if (warmupOptions?.ssrFiles) {
     configEnvironmentsSsr ??= {}
-    configEnvironmentsSsr.dev ??= {}
-    configEnvironmentsSsr.dev.warmup = warmupOptions.ssrFiles
+    configEnvironmentsSsr.dev = {
+      ...configEnvironmentsSsr.dev,
+      warmup: warmupOptions.ssrFiles,
+    }
   }
 
   // Backward compatibility: merge ssr into environments.ssr.config as defaults
@@ -1663,8 +1686,10 @@ export async function resolveConfig(
 
   if (config.build?.ssrEmitAssets !== undefined) {
     configEnvironmentsSsr ??= {}
-    configEnvironmentsSsr.build ??= {}
-    configEnvironmentsSsr.build.emitAssets = config.build.ssrEmitAssets
+    configEnvironmentsSsr.build = {
+      ...configEnvironmentsSsr.build,
+      emitAssets: config.build.ssrEmitAssets,
+    }
   }
 
   // The client and ssr environment configs can't be removed by the user in the config hook
@@ -1718,7 +1743,7 @@ export async function resolveConfig(
   const isBundledDev = command === 'serve' && !!config.experimental?.bundledDev
 
   // Backward compatibility: merge config.environments.client.resolve back into config.resolve
-  config.resolve ??= {}
+  config.resolve = { ...config.resolve }
   config.resolve.conditions = config.environments.client.resolve?.conditions
   config.resolve.mainFields = config.environments.client.resolve?.mainFields
 
