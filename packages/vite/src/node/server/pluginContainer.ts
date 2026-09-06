@@ -187,6 +187,10 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   private _buildStartPromise: Promise<void> | undefined
   private _closed = false
 
+  get closed(): boolean {
+    return this._closed
+  }
+
   /**
    * @internal use `createEnvironmentPluginContainer` instead
    */
@@ -866,7 +870,11 @@ class PluginContext
 
   addWatchFile(id: string): void {
     this._container.watchFiles.add(id)
-    if (this._container.watcher)
+    // The container may be closed (e.g. the server was closed) while this
+    // hook's pending call is still in flight. Watching a file at that point
+    // would re-arm the underlying fs watcher and keep the process alive, so
+    // this needs to be a no-op instead. https://github.com/vitejs/vite/issues/18224
+    if (this._container.watcher && !this._container.closed)
       ensureWatchedFile(
         this._container.watcher,
         id,

@@ -1,6 +1,10 @@
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
 import MagicString from 'magic-string'
 import { describe, expect, it, vi } from 'vitest'
+import type { FSWatcher } from '#dep-types/chokidar'
 import type { UserConfig } from '../../config'
 import { resolveConfig } from '../../config'
 import { createLogger } from '../../logger'
@@ -478,6 +482,69 @@ describe('plugin container', () => {
     })
   })
 
+  describe('addWatchFile', () => {
+    it('does not re-arm the watcher for a hook call still pending when the container is closed (#18224)', async () => {
+      // The watched file must exist on disk and be outside the environment
+      // root for `ensureWatchedFile` to call `watcher.add`.
+      const watchedFile = path.join(
+        fs.realpathSync(os.tmpdir()),
+        `vite-plugin-container-watch-test-${Date.now()}.txt`,
+      )
+      fs.writeFileSync(watchedFile, '')
+
+      try {
+        const watcher = { add: vi.fn() } as unknown as FSWatcher
+
+        let resolveTransformStarted: () => void
+        const transformStarted = new Promise<void>((resolve) => {
+          resolveTransformStarted = resolve
+        })
+        let resolveTransform: () => void
+        const canFinishTransform = new Promise<void>((resolve) => {
+          resolveTransform = resolve
+        })
+
+        const plugin: Plugin = {
+          name: 'p1',
+          async transform(_code, id) {
+            if (id === '/x.js') {
+              resolveTransformStarted()
+              await canFinishTransform
+              // Simulates a plugin (e.g. vite:css) calling `addWatchFile`
+              // after the server/container has already been closed.
+              this.addWatchFile(watchedFile)
+            }
+          },
+        }
+
+        const environment = await getDevEnvironment(
+          { plugins: [plugin] },
+          watcher,
+        )
+        await environment.moduleGraph.ensureEntryFromUrl('/x.js', false)
+
+        const transformPromise = environment.pluginContainer.transform(
+          '',
+          '/x.js',
+        )
+        await transformStarted
+
+        const closePromise = environment.pluginContainer.close()
+        resolveTransform!()
+
+        // Once closed, any plugin transform hook running after `p1` in the
+        // pipeline will reject with a "closed server" error, which is
+        // expected and unrelated to what this test checks.
+        await transformPromise.catch(() => {})
+        await closePromise
+
+        expect(watcher.add).not.toHaveBeenCalled()
+      } finally {
+        fs.rmSync(watchedFile)
+      }
+    })
+  })
+
   describe('closeBundle', () => {
     it('passes buildEnd errors to closeBundle', async () => {
       const buildEndError = new Error('buildEnd failed')
@@ -537,6 +604,7 @@ describe('plugin container', () => {
 
 async function getDevEnvironment(
   inlineConfig?: UserConfig,
+  watcher?: FSWatcher,
 ): Promise<DevEnvironment> {
   const config = await resolveConfig(
     { configFile: false, ...inlineConfig },
@@ -547,7 +615,7 @@ async function getDevEnvironment(
   config.plugins = config.plugins.filter((p) => !p.name.includes('pre-alias'))
 
   const environment = new DevEnvironment('client', config, { hot: true })
-  await environment.init()
+  await environment.init({ watcher })
 
   return environment
 }
