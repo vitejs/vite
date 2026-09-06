@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import path from 'node:path'
 import { cleanUrl, withTrailingSlash } from '../shared/utils'
 import type { ResolvedConfig } from './config'
@@ -13,6 +14,14 @@ const publicFilesMap = new WeakMap<ResolvedConfig, Set<string>>()
 export async function initPublicFiles(
   config: ResolvedConfig,
 ): Promise<Set<string> | undefined> {
+  // If the configured public dir doesn't exist, don't return an (empty)
+  // in-memory cache for it: callers rely on `undefined` here to know the
+  // directory isn't there, e.g. so it isn't added to the dev server's file
+  // watcher, which would otherwise silently break the watcher entirely.
+  // https://github.com/vitejs/vite/issues/19864
+  if (!fs.existsSync(config.publicDir)) {
+    return
+  }
   let fileNames: string[]
   try {
     fileNames = await recursiveReaddir(config.publicDir)
