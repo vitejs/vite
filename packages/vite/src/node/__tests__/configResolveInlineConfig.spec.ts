@@ -495,6 +495,52 @@ test.each(['config', 'configEnvironment'] as const)(
   },
 )
 
+test.each(['mutable', 'frozen'] as const)(
+  'copies %s optimizer options supplied by configResolved before plugin conversion',
+  async (state) => {
+    const plugins = [{ name: 'test:native-optimizer' }]
+    const rolldownOptions = { plugins }
+    if (state === 'frozen') Object.freeze(rolldownOptions)
+    const inlineConfig: InlineConfig = {
+      configFile: false,
+      envDir: false,
+      logLevel: 'silent',
+      optimizeDeps: {
+        esbuildOptions: {
+          plugins: [
+            {
+              name: 'test:converted-optimizer',
+              setup(build) {
+                void build
+              },
+            },
+          ],
+        },
+      },
+      plugins: [
+        {
+          name: 'test:late-optimizer-options',
+          configResolved(config) {
+            config.optimizeDeps.rolldownOptions = rolldownOptions
+          },
+        },
+      ],
+    }
+
+    for (let i = 0; i < 2; i++) {
+      const resolved = await resolveConfig(inlineConfig, 'serve')
+      expect(rolldownOptions.plugins).toBe(plugins)
+      expect(rolldownOptions).toEqual({
+        plugins: [{ name: 'test:native-optimizer' }],
+      })
+      expect(resolved.environments.client.optimizeDepsPluginNames).toEqual([
+        'test:native-optimizer',
+        'test:converted-optimizer',
+      ])
+    }
+  },
+)
+
 test('resolves shared optimizer options independently for each environment', async () => {
   const resolve = Object.freeze({})
   const output = Object.freeze({})

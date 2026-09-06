@@ -1454,7 +1454,10 @@ function applyDepOptimizationOptionCompat(resolvedConfig: ResolvedConfig) {
         convertEsbuildPluginToRolldownPlugin(plugin),
       ),
     )
-    resolvedConfig.optimizeDeps.rolldownOptions.plugins = plugins
+    resolvedConfig.optimizeDeps.rolldownOptions = {
+      ...resolvedConfig.optimizeDeps.rolldownOptions,
+      plugins,
+    }
   }
 }
 
