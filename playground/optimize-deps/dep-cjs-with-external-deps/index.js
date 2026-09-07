@@ -10,7 +10,6 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 const external = require('@vitejs/test-dep-esm-external')
-
 const externalResult = Object.hasOwn(external, 'foo') ? 'ok' : 'error'
 const externalDummyNodeBuiltinResult = `${externalDummyNodeBuiltin()} ${externalDummyNodeBuiltin.bar}`
 module.exports = { externalResult, externalDummyNodeBuiltinResult }
