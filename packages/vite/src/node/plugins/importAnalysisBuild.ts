@@ -137,12 +137,14 @@ function preload(
       promises: Array<T | PromiseLike<T>>,
     ): Promise<PromiseSettledResult<T>[]> {
       return Promise.all(
-        promises.map((p) =>
-          Promise.resolve(p).then(
-            (value: T) => ({ status: 'fulfilled' as const, value }),
-            (reason: unknown) => ({ status: 'rejected' as const, reason }),
+        promises
+          .filter((p) => p !== undefined)
+          .map((p) =>
+            Promise.resolve(p).then(
+              (value: T) => ({ status: 'fulfilled' as const, value }),
+              (reason: unknown) => ({ status: 'rejected' as const, reason }),
+            ),
           ),
-        ),
       )
     }
 
