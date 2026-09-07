@@ -2,6 +2,8 @@
 
 Unless noted, the options in this section are only applied to build.
 
+Vite may override some Rolldown defaults for build-specific behavior. For `build.rolldownOptions.preserveEntrySignatures`, the effective default is `false` for regular client builds, `'strict'` in library mode, and `'allow-extension'` for SSR builds.
+
 ## build.target
 
 - **Type:** `string | string[]`
