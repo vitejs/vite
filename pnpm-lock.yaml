@@ -379,7 +379,7 @@ importers:
         specifier: ^1.2.5
         version: 1.2.5
       '@vitejs/devtools':
-        specifier: ^0.7.2
+        specifier: ^0.7.1
         version: 0.7.2(@devframes/json-render@0.9.12)(@vitejs/devtools-rolldown@0.7.2)(@vitejs/devtools-vite@0.7.2)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
       '@vitest/utils':
         specifier: 4.1.11
@@ -871,13 +871,13 @@ importers:
         version: 3.5.42(typescript@6.0.3)
     devDependencies:
       '@vitejs/devtools':
-        specifier: ^0.7.2
+        specifier: ^0.7.1
         version: 0.7.2(@devframes/json-render@0.9.12)(@vitejs/devtools-rolldown@0.7.2)(@vitejs/devtools-vite@0.7.2)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
       '@vitejs/devtools-rolldown':
-        specifier: ^0.7.2
+        specifier: ^0.7.1
         version: 0.7.2(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
       '@vitejs/devtools-vite':
-        specifier: ^0.7.2
+        specifier: ^0.7.1
         version: 0.7.2(cac@7.0.0)(crossws@0.4.12)(srvx@0.12.7)(vite@packages+vite)
       vite:
         specifier: workspace:*
