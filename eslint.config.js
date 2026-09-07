@@ -1,4 +1,5 @@
 // @ts-check
+
 import e18e from '@e18e/eslint-plugin'
 import eslint from '@eslint/js'
 import pluginImportX from 'eslint-plugin-import-x'
