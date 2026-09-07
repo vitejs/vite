@@ -35,6 +35,26 @@ describe('moduleGraph', () => {
       expect(mod2.meta).to.equal(meta)
     })
 
+    it('retries resolving a url after a failed resolution', async () => {
+      let shouldFail = true
+      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => {
+        if (shouldFail) {
+          throw new Error('temporary failure')
+        }
+        return { id: url }
+      })
+
+      await expect(moduleGraph.ensureEntryFromUrl('/foo.js')).rejects.toThrow(
+        'temporary failure',
+      )
+
+      shouldFail = false
+
+      await expect(
+        moduleGraph.ensureEntryFromUrl('/foo.js'),
+      ).resolves.toBeDefined()
+    })
+
     it('ensure backward compatibility', async () => {
       const clientModuleGraph = new EnvironmentModuleGraph(
         'client',

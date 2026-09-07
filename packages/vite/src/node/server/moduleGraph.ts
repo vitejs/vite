@@ -385,7 +385,14 @@ export class EnvironmentModuleGraph {
     // Also register the clean url to the module, so that we can short-circuit
     // resolving the same url twice
     this._setUnresolvedUrlToModule(rawUrl, modPromise)
-    return modPromise
+    try {
+      return await modPromise
+    } catch (error) {
+      if (this._getUnresolvedUrlToModule(rawUrl) === modPromise) {
+        this._unresolvedUrlToModuleMap.delete(rawUrl)
+      }
+      throw error
+    }
   }
 
   // some deps, like a css file referenced via @import, don't have its own
