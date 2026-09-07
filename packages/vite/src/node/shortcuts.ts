@@ -66,6 +66,7 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
         colors.dim(' to show help'),
     )
   }
+
   const shortcuts = customShortcuts.concat(
     (isDev
       ? BASE_DEV_SHORTCUTS
