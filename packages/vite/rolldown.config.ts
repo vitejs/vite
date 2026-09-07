@@ -212,9 +212,10 @@ function externalizeDepsInWatchPlugin(): Plugin {
         options.external ||= []
         if (!Array.isArray(options.external))
           throw new Error('external must be an array')
-        options.external = options.external.concat(
-          Object.keys(pkg.devDependencies),
-        )
+        options.external = [
+          ...options.external,
+          ...Object.keys(pkg.devDependencies),
+        ]
       }
     },
   }

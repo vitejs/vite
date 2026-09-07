@@ -121,6 +121,9 @@ importers:
 
   .:
     devDependencies:
+      '@e18e/eslint-plugin':
+        specifier: ^0.8.0
+        version: 0.8.0(eslint@9.39.5)
       '@eslint/js':
         specifier: ^9.39.5
         version: 9.39.5
@@ -2666,6 +2669,17 @@ packages:
 
   '@docsearch/sidepanel-js@4.7.0':
     resolution: {integrity: sha512-A8r34jCU8kcIk2viECEn2msA28ojUF1BLi/3v5OWWc5G2N3jOuuumBXoeYjfr8dA0UxgFSy5R2bt12dnFJQSyA==}
+
+  '@e18e/eslint-plugin@0.8.0':
+    resolution: {integrity: sha512-js/TeM+XJyoJ2Zk4if5uTEchv3MEbqugc9gLgq8YdB6Dy+LvwGACpQiAwcul0r4LUl0TvhuzAKUeIUPtGp2cew==}
+    peerDependencies:
+      eslint: ^9.0.0 || ^10.0.0
+      oxlint: ^1.72.0
+    peerDependenciesMeta:
+      eslint:
+        optional: true
+      oxlint:
+        optional: true
 
   '@emnapi/core@1.11.2':
     resolution: {integrity: sha512-TC8MkTuZUtcTSiFeuC0ksCh9QIJ5+F21MvZ4Wn4ORfYaFJ/0dsiudv5tVkejgwZlwQ39jL9WWDe2lz8x0WglOA==}
@@ -6746,6 +6760,9 @@ packages:
   mlly@1.8.2:
     resolution: {integrity: sha512-d+ObxMQFmbt10sretNDytwt85VrbkhhUA/JBGm1MPaWJ65Cl4wOgLaB1NYvJSZ0Ef03MMEU/0xpPMXUIQ29UfA==}
 
+  module-replacements@3.2.0:
+    resolution: {integrity: sha512-zaDcWtW+kLmYGWCMWAyQ8Je333BYmsBMB2X6q5MKBCI697l7OawNaC5TQqfgPVxhdXBA1AjumQjPMcHyJe1f2A==}
+
   moment@2.30.1:
     resolution: {integrity: sha512-uEmtNhbDOrWPFS+hdjFCBfy9f2YoyzRpwcl+DqpC6taX21FzsTLQVbMV/W7PzNSX6x/bhC1zA3c2UQ5NzH6how==}
 
@@ -9116,6 +9133,14 @@ snapshots:
   '@docsearch/js@4.7.0': {}
 
   '@docsearch/sidepanel-js@4.7.0': {}
+
+  '@e18e/eslint-plugin@0.8.0(eslint@9.39.5)':
+    dependencies:
+      empathic: 2.0.1
+      module-replacements: 3.2.0
+      semver: 7.8.5
+    optionalDependencies:
+      eslint: 9.39.5(jiti@2.7.0)(ms@2.1.3)
 
   '@emnapi/core@1.11.2':
     dependencies:
@@ -12785,6 +12810,8 @@ snapshots:
       pathe: 2.0.3
       pkg-types: 1.3.1
       ufo: 1.6.4
+
+  module-replacements@3.2.0: {}
 
   moment@2.30.1: {}
 

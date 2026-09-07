@@ -328,8 +328,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                 if (!url) {
                   const rawUrl = code.slice(start, end)
                   if (
-                    (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`) ||
-                    (rawUrl[0] === '`' && rawUrl[rawUrl.length - 1] === '`')
+                    (rawUrl[0] === `"` && rawUrl.at(-1) === `"`) ||
+                    (rawUrl[0] === '`' && rawUrl.at(-1) === '`')
                   )
                     url = rawUrl.slice(1, -1)
                 }
@@ -429,8 +429,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
               if (!url) {
                 const rawUrl = code.slice(start, end)
                 if (
-                  (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`) ||
-                  (rawUrl[0] === '`' && rawUrl[rawUrl.length - 1] === '`')
+                  (rawUrl[0] === `"` && rawUrl.at(-1) === `"`) ||
+                  (rawUrl[0] === '`' && rawUrl.at(-1) === '`')
                 )
                   url = rawUrl.slice(1, -1)
               }
