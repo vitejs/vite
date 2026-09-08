@@ -198,7 +198,7 @@ describe('resolveEsbuildTranspileOptions', () => {
       minify: false,
       minifyIdentifiers: true,
       minifySyntax: true,
-      minifyWhitespace: false,
+      minifyWhitespace: true,
       treeShaking: true,
       supported: {
         'dynamic-import': true,
