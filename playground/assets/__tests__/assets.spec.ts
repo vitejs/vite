@@ -147,6 +147,10 @@ describe('asset imports from js', () => {
     expect(await page.textContent('.public-import')).toMatch(iconMatch)
   })
 
+  test('typeof asset import', async () => {
+    expect(await page.textContent('.asset-import-typeof')).toBe('string')
+  })
+
   test('from /public (json)', async () => {
     expect(await page.textContent('.public-json-import')).toMatch(
       '/foo/bar/foo.json',
@@ -211,6 +215,20 @@ describe('asset imports from js', () => {
         'text/javascript',
       )
     }
+  })
+})
+
+describe.runIf(isBuild)('file URL emitted by an external plugin', () => {
+  test('replaces the preliminary hash', async () => {
+    expect(await page.textContent('.emitted-worker-url')).toMatch(
+      /^\/foo\/bar\/assets\/emitted-worker-[-\w]{8}\.js$/,
+    )
+  })
+
+  test('loads the emitted chunk', async () => {
+    await expect
+      .poll(() => page.textContent('.emitted-worker-result'))
+      .toBe('worker loaded')
   })
 })
 
@@ -308,6 +326,36 @@ describe('css url() references', () => {
       : `/foo/bar/nested/icon.png`
     expect(await getBg('.css-url-base64-inline')).toMatch(match)
     expect(await getBg('.css-url-quotes-base64-inline')).toMatch(match)
+  })
+
+  test('no base64 inline for modulepreload links', async () => {
+    const el = await page.$(`link[rel="modulepreload"]`)
+    const href = await el.getAttribute('href')
+    expect(href).toMatch(
+      isBundled
+        ? /\/foo\/bar\/assets\/preload-module-[-\w]{8}\.js/
+        : 'preload-module.js',
+    )
+  })
+
+  test('no base64 inline for preload and prefetch links', async () => {
+    const preloadAssetMatch = isBundled
+      ? /\/foo\/bar\/assets\/preload-asset-[-\w]{8}\.png/
+      : '/foo/bar/nested/preload-asset.png'
+
+    const preloadEl = await page.$('link.preload-href')
+    expect(await preloadEl.getAttribute('href')).toMatch(preloadAssetMatch)
+
+    const prefetchEl = await page.$('link.prefetch-href')
+    expect(await prefetchEl.getAttribute('href')).toMatch(preloadAssetMatch)
+
+    // `imagesrcset` goes through the srcset branch, which has to honour the
+    // same no-inline decision as `href`
+    const imageSrcSetEl = await page.$('link.preload-imagesrcset')
+    const imageSrcSet = await imageSrcSetEl.getAttribute('imagesrcset')
+    imageSrcSet.split(', ').forEach((s) => {
+      expect(s).toMatch(preloadAssetMatch)
+    })
   })
 
   test('no base64 inline for icon and manifest links', async () => {

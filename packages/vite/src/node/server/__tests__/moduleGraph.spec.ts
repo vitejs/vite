@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { EnvironmentModuleGraph } from '../moduleGraph'
 import type { ModuleNode } from '../mixedModuleGraph'
 import { ModuleGraph } from '../mixedModuleGraph'
+import { EnvironmentModuleGraph } from '../moduleGraph'
 
 describe('moduleGraph', () => {
   describe('invalidateModule', () => {

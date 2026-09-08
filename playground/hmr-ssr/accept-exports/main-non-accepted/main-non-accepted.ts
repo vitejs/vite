@@ -1,4 +1,4 @@
-import { a } from './named'
 import def from './default'
+import { a } from './named'
 
 log(`>>>>>> ${a} ${def}`)

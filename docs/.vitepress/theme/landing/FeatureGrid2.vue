@@ -1,6 +1,6 @@
 <script setup>
-import RiveAnimation from '@components/shared/RiveAnimation.vue'
 import flexiblePluginAnimation from '@assets/vite/animations/640_x_300_flexible_plugin.riv'
+import RiveAnimation from '@components/shared/RiveAnimation.vue'
 </script>
 
 <template>

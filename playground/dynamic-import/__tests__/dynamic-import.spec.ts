@@ -115,6 +115,12 @@ test('should load dynamic import with vars alias', async () => {
     .toMatch('hi')
 })
 
+test('should load dynamic import with vars subpath imports', async () => {
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-vars-subpath-imports'))
+    .toMatch('hi')
+})
+
 test('should load dynamic import with vars raw', async () => {
   await expect
     .poll(() => page.textContent('.dynamic-import-with-vars-raw'))

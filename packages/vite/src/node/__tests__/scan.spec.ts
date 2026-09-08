@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
+import { createServer, createServerModuleRunner } from '..'
 import {
   commentRE,
   devToScanEnvironment,
@@ -12,7 +13,6 @@ import {
   normalizePath,
   singlelineCommentsRE,
 } from '../utils'
-import { createServer, createServerModuleRunner } from '..'
 
 describe('optimizer-scan:script-test', () => {
   const scriptContent = `import { defineComponent } from 'vue'

@@ -10,10 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.5.40"
+    "vue": "^3.5.42"
   },
   "devDependencies": {
     "vite": "workspace:*",
-    "@vitejs/devtools": "^0.4.10"
+    "@vitejs/devtools": "^0.7.1",
+    "@vitejs/devtools-vite": "^0.7.1",
+    "@vitejs/devtools-rolldown": "^0.7.1"
   }
 }

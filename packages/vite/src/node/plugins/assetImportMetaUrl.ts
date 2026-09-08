@@ -1,9 +1,13 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import { stripLiteral } from 'strip-literal'
 import { exactRegex } from 'rolldown/filter'
-import type { Plugin } from '../plugin'
+import { stripLiteral } from 'strip-literal'
+import { slash } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
+import { CLIENT_ENTRY } from '../constants'
+import { createBackCompatIdResolver } from '../idResolver'
+import type { ResolveIdFn } from '../idResolver'
+import type { Plugin } from '../plugin'
 import {
   injectQuery,
   isDataUrl,
@@ -11,15 +15,11 @@ import {
   transformStableResult,
   tryStatSync,
 } from '../utils'
-import { CLIENT_ENTRY } from '../constants'
-import { slash } from '../../shared/utils'
-import { createBackCompatIdResolver } from '../idResolver'
-import type { ResolveIdFn } from '../idResolver'
 import { fileToUrl } from './asset'
+import { hasViteIgnoreRE } from './importAnalysis'
 import { preloadHelperId } from './importAnalysisBuild'
 import type { InternalResolveOptions } from './resolve'
 import { tryFsResolve } from './resolve'
-import { hasViteIgnoreRE } from './importAnalysis'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -139,14 +139,14 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           // Get final asset URL. If the file does not exist,
           // we fall back to the initial URL and let it resolve in runtime
-          let builtUrl: string | undefined
+          let builtUrlExpr: string | undefined
           if (file) {
             try {
               if (publicDir && isParentDirectory(publicDir, file)) {
                 const publicPath = '/' + path.posix.relative(publicDir, file)
-                builtUrl = await fileToUrl(this, publicPath)
+                builtUrlExpr = await fileToUrl(this, publicPath, 'js')
               } else {
-                builtUrl = await fileToUrl(this, file)
+                builtUrlExpr = await fileToUrl(this, file, 'js')
                 // during dev, builtUrl may point to a directory or a non-existing file
                 if (tryStatSync(file)?.isFile()) {
                   this.addWatchFile(file)
@@ -156,19 +156,19 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               // do nothing, we'll log a warning after this
             }
           }
-          if (!builtUrl) {
+          if (!builtUrlExpr) {
             const rawExp = code.slice(startIndex, endIndex)
             config.logger.warnOnce(
               `\n${rawExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime. ` +
                 `If this is intended, you can use the /* @vite-ignore */ comment to suppress this warning.`,
             )
-            builtUrl = url
+            builtUrlExpr = JSON.stringify(url)
           }
           s.update(
             startIndex,
             endIndex,
             // NOTE: add `'' +` to opt-out rolldown's transform: https://github.com/rolldown/rolldown/issues/2745
-            `new URL(${JSON.stringify(builtUrl)}, '' + import.meta.url)`,
+            `new URL(${builtUrlExpr}, '' + import.meta.url)`,
           )
         }
         if (s) {

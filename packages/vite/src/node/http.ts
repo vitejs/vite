@@ -1,14 +1,14 @@
 import fsp from 'node:fs/promises'
-import net from 'node:net'
-import path from 'node:path'
 import type { OutgoingHttpHeaders as HttpServerHeaders } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
+import net from 'node:net'
+import path from 'node:path'
 import colors from 'picocolors'
 import type { Connect } from '#dep-types/connect'
-import type { ProxyOptions } from './server/middlewares/proxy'
+import { wildcardHosts } from './constants'
 import type { Logger } from './logger'
 import type { HttpServer } from './server'
-import { wildcardHosts } from './constants'
+import type { ProxyOptions } from './server/middlewares/proxy'
 
 export interface CommonServerOptions {
   /**

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { defineConfig } from 'vite'
-import svgVirtualModulePlugin from './svgVirtualModulePlugin.ts'
 import matrixTestResultPlugin from './matrixTestResultPlugin.ts'
+import svgVirtualModulePlugin from './svgVirtualModulePlugin.ts'
 import { getWindows83ShortNameForDotEnv } from './windows83Filename.ts'
 
 export default defineConfig({

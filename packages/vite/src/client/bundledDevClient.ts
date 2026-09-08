@@ -24,6 +24,14 @@ export {
 
 if (typeof DevRuntime !== 'undefined') {
   class ViteDevRuntime extends DevRuntime {
+    payloadDelivered(filename: string): void {
+      transport.send({
+        type: 'custom',
+        event: 'vite:bundled-dev:payload-delivered',
+        data: { filename },
+      })
+    }
+
     override createModuleHotContext(moduleId: string) {
       const ctx = new BundledDevHMRContext(bundledDevHmrClient, moduleId)
       // @ts-expect-error TODO: support CSS properly

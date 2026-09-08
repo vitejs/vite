@@ -1,9 +1,10 @@
-import path from 'node:path'
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
+import path from 'node:path'
 import convertSourceMap from 'convert-source-map'
-import type { ExistingRawSourceMap, SourceMap } from 'rolldown'
 import colors from 'picocolors'
+import type { ExistingRawSourceMap, SourceMap } from 'rolldown'
+import { cleanUrl } from '../../shared/utils'
 import type { Logger } from '../logger'
 import {
   blankReplacer,
@@ -11,7 +12,6 @@ import {
   isParentDirectory,
   normalizePath,
 } from '../utils'
-import { cleanUrl } from '../../shared/utils'
 
 const debug = createDebugger('vite:sourcemap', {
   onlyWhenFocused: true,

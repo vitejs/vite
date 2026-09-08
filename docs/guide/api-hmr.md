@@ -169,7 +169,7 @@ if (import.meta.hot) {
 
 ## `hot.prune(cb)`
 
-Register a callback that will call when the module is no longer imported on the page. Compared to `hot.dispose`, this can be used if the source code cleans up side-effects by itself on updates and you only need to clean-up when it's removed from the page. Vite currently uses this for `.css` imports.
+Register a callback that will be called when the module is no longer imported on the page. Compared to `hot.dispose`, this can be used if the source code cleans up side-effects by itself on updates and you only need to clean-up when it's removed from the page. Vite currently uses this for `.css` imports.
 
 ```js twoslash
 import 'vite/client'

@@ -1,22 +1,221 @@
+import fs from 'node:fs'
 import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
-import fs from 'node:fs'
 import { stripVTControlCharacters } from 'node:util'
 import { afterEach, assert, describe, expect, test, vi } from 'vitest'
-import type { InlineConfig, PluginOption } from '..'
+import type { InlineConfig, Plugin, PluginOption } from '..'
+import { isWindows } from '../../shared/utils'
 import type { UserConfig, UserConfigExport } from '../config'
-import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
-import { resolveServerOptions } from '../server'
+import {
+  bundleConfigFile,
+  defineConfig,
+  loadConfigFromFile,
+  resolveConfig,
+} from '../config'
 import { resolveEnvPrefix } from '../env'
+import { createLogger } from '../logger'
+import type { Logger } from '../logger'
+import { resolveServerOptions } from '../server'
 import {
   hasBothRollupOptionsAndRolldownOptions,
   mergeConfig,
   normalizePath,
 } from '../utils'
-import { createLogger } from '../logger'
-import type { Logger } from '../logger'
-import { isWindows } from '../../shared/utils'
+
+const devToolsIntegration = vi.hoisted(() => vi.fn())
+
+vi.mock('@vitejs/devtools/integration', () => ({
+  DevToolsIntegration: devToolsIntegration,
+}))
+
+describe('DevTools plugin resolution', () => {
+  afterEach(() => {
+    devToolsIntegration.mockReset()
+  })
+
+  test('uses the standard plugin lifecycle and exposes the resolved config', async () => {
+    const configHooks: string[] = []
+    const plugin = (
+      name: string,
+      enforce?: 'pre' | 'post',
+      apply?: 'serve' | 'build',
+      config?: InlineConfig,
+    ): Plugin => ({
+      name,
+      enforce,
+      apply,
+      config() {
+        configHooks.push(name)
+        return config
+      },
+    })
+
+    devToolsIntegration.mockResolvedValueOnce([
+      plugin('devtools-pre', 'pre'),
+      plugin('devtools-normal'),
+      plugin('devtools-post', 'post'),
+      plugin('devtools-build-only', undefined, 'build'),
+    ])
+
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        devtools: true,
+        plugins: [
+          plugin('user-pre', 'pre'),
+          plugin('user-normal'),
+          plugin('user-post', 'post'),
+        ],
+      },
+      'serve',
+    )
+
+    expect(devToolsIntegration).toHaveBeenCalledWith({
+      command: 'serve',
+      devtools: {
+        options: true,
+      },
+    })
+    expect(configHooks).toEqual([
+      'user-pre',
+      'devtools-pre',
+      'user-normal',
+      'devtools-normal',
+      'user-post',
+      'devtools-post',
+    ])
+    expect(config.devtools).toMatchObject({
+      apply: 'all',
+      enabled: true,
+    })
+
+    const pluginNames = config.plugins.map((plugin) => plugin.name)
+    expect(pluginNames).not.toContain('devtools-build-only')
+    expect(pluginNames.indexOf('user-pre')).toBeLessThan(
+      pluginNames.indexOf('devtools-pre'),
+    )
+    expect(pluginNames.indexOf('user-normal')).toBeLessThan(
+      pluginNames.indexOf('devtools-normal'),
+    )
+    expect(pluginNames.indexOf('user-post')).toBeLessThan(
+      pluginNames.indexOf('devtools-post'),
+    )
+  })
+
+  test('does not allow a plugin config hook to enable DevTools', async () => {
+    const logger = createLogger('silent')
+    const warn = vi.spyOn(logger, 'warn')
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        customLogger: logger,
+        plugins: [
+          {
+            name: 'enable-devtools',
+            config: () => ({ devtools: true }),
+          },
+        ],
+      },
+      'serve',
+    )
+
+    expect(config.devtools).toBe(false)
+    expect(devToolsIntegration).not.toHaveBeenCalled()
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "The `devtools` option cannot be changed from a plugin's `config` hook.",
+      ),
+    )
+  })
+
+  test('does not allow a plugin config hook to disable DevTools', async () => {
+    const logger = createLogger('silent')
+    const warn = vi.spyOn(logger, 'warn')
+    devToolsIntegration.mockResolvedValueOnce([])
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        customLogger: logger,
+        devtools: true,
+        plugins: [
+          {
+            name: 'disable-devtools',
+            config: () => ({ devtools: false }),
+          },
+        ],
+      },
+      'serve',
+    )
+
+    expect(config.devtools).toMatchObject({ enabled: true })
+    expect(devToolsIntegration).toHaveBeenCalledOnce()
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "The `devtools` option cannot be changed from a plugin's `config` hook.",
+      ),
+    )
+  })
+
+  test('does not allow a plugin config hook to mutate DevTools options in place', async () => {
+    const logger = createLogger('silent')
+    const warn = vi.spyOn(logger, 'warn')
+    devToolsIntegration.mockResolvedValueOnce([])
+    const devtools = { enabled: true }
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        customLogger: logger,
+        devtools,
+        plugins: [
+          {
+            name: 'mutate-devtools',
+            config() {
+              devtools.enabled = false
+            },
+          },
+        ],
+      },
+      'serve',
+    )
+
+    expect(config.devtools).toMatchObject({ enabled: true })
+    expect(devToolsIntegration).toHaveBeenCalledOnce()
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "The `devtools` option cannot be changed from a plugin's `config` hook.",
+      ),
+    )
+  })
+
+  test('does not allow a plugin config hook to change non-enablement DevTools options', async () => {
+    const logger = createLogger('silent')
+    const warn = vi.spyOn(logger, 'warn')
+    devToolsIntegration.mockResolvedValueOnce([])
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        customLogger: logger,
+        devtools: { apply: 'serve' },
+        plugins: [
+          {
+            name: 'change-devtools-options',
+            config: () => ({ devtools: { apply: 'build' } }),
+          },
+        ],
+      },
+      'serve',
+    )
+
+    expect(config.devtools).toMatchObject({ apply: 'serve' })
+    expect(devToolsIntegration).toHaveBeenCalledOnce()
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "The `devtools` option cannot be changed from a plugin's `config` hook.",
+      ),
+    )
+  })
+})
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -1149,6 +1348,31 @@ describe('resolveConfig', () => {
     expect(results2.clearScreen).toBe(false)
   })
 
+  test('resolves the configured tsconfig path', async () => {
+    const root = path.resolve(import.meta.dirname, 'fixtures')
+    const resolved = await resolveConfig(
+      { root, tsconfig: './custom.tsconfig.json' },
+      'build',
+    )
+    expect(resolved.tsconfig).toBe(
+      normalizePath(path.resolve(root, 'custom.tsconfig.json')),
+    )
+
+    const absoluteTsconfig = path.resolve(root, 'absolute.tsconfig.json')
+    expect(
+      (
+        await resolveConfig(
+          { root, tsconfig: absoluteTsconfig, configFile: false },
+          'build',
+        )
+      ).tsconfig,
+    ).toBe(normalizePath(absoluteTsconfig))
+
+    expect(
+      (await resolveConfig({ root, configFile: false }, 'build')).tsconfig,
+    ).toBeUndefined()
+  })
+
   test('resolveConfig with root path including "#" and "?" and "*" should warn ', async () => {
     expect.assertions(1)
 
@@ -1160,6 +1384,43 @@ describe('resolveConfig', () => {
     }
 
     await resolveConfig({ root: './inc?ud#s*', customLogger: logger }, 'build')
+  })
+
+  test('warns about ignored hooks returned from applyToEnvironment', async () => {
+    const warn = vi.fn()
+    const logger = createLogger('info', {
+      console: { warn } as unknown as Console,
+    })
+
+    await resolveConfig(
+      {
+        configFile: false,
+        customLogger: logger,
+        plugins: [
+          {
+            name: 'parent-plugin',
+            applyToEnvironment() {
+              return {
+                name: 'environment-plugin',
+                config: () => undefined,
+                configEnvironment: () => undefined,
+                configureServer: () => undefined,
+                configResolved: () => undefined,
+                resolveId: () => undefined,
+              }
+            },
+          },
+        ],
+      },
+      'serve',
+    )
+
+    expect(warn).toHaveBeenCalledOnce()
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Plugin "environment-plugin" defines Vite-specific hooks (config, configEnvironment, configureServer, configResolved) in a plugin returned from applyToEnvironment. These hooks will be ignored.',
+      ),
+    )
   })
 
   test('syncs `build.rollupOptions` and `build.rolldownOptions`', async () => {
@@ -1723,6 +1984,32 @@ describe('loadConfigFromFile', () => {
       expect(await loadWithWarnings('json-ok')).toHaveLength(0)
     })
 
+    test('warns on named import from JSON module', async () => {
+      const messages = await loadWithWarnings('json-named-import')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - named import from JSON module "./data.json" (vite.config.js:1:10). JSON modules only provide a default export per spec. Use the default import and access the property
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    test('warns on named import from a bare JSON specifier', async () => {
+      const messages = await loadWithWarnings('json-named-import-bare')
+      expect(messages).toMatchInlineSnapshot(`
+        [
+          "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+          - named import from JSON module "some-pkg/package.json" (vite.config.js:1:10). JSON modules only provide a default export per spec. Use the default import and access the property
+        Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+        ]
+      `)
+    })
+
+    test('does not warn on JSON default imports (`default as` included)', async () => {
+      expect(await loadWithWarnings('json-named-import-ok')).toHaveLength(0)
+    })
+
     test('warns on an extension-less import that resolves to JSON', async () => {
       const messages = await loadWithWarnings('json-extensionless')
       expect(messages).toMatchInlineSnapshot(`
@@ -1959,6 +2246,21 @@ describe('loadConfigFromFile', () => {
     expect(c.dirname).toContain('shebang-crlf')
   })
 
+  test('sourcemap of a nested config file points to itself', async () => {
+    const configPath = path.resolve(
+      fixtures,
+      './nested/.nested/vite.config.mts',
+    )
+    const { code } = await bundleConfigFile(configPath, true)
+    const [, base64Map] = code.match(
+      /\/\/# sourceMappingURL=data:application\/json;charset=utf-8;base64,(.+)/,
+    )!
+    const map = JSON.parse(Buffer.from(base64Map, 'base64').toString())
+    expect(map.sources.map(normalizePath)).toStrictEqual([
+      normalizePath(configPath),
+    ])
+  })
+
   describe('loadConfigFromFile with configLoader: native', () => {
     const fixtureRoot = path.resolve(fixtures, './native-import')
 
@@ -2014,6 +2316,28 @@ describe('loadConfigFromFile', () => {
         normalizePath(path.resolve(fs.realpathSync.native(tempDir), '.vite')),
       )
     })
+  })
+})
+
+describe('root resolution', () => {
+  const fixtureRoot = path.resolve(
+    import.meta.dirname,
+    './fixtures/config/root-resolution',
+  )
+  const realDir = path.join(fixtureRoot, 'real')
+  const linkDir = path.join(fixtureRoot, 'link')
+
+  test('resolves a symlinked root to its real path', async () => {
+    const config = await resolveConfig({ root: linkDir }, 'serve')
+    expect(config.root).toBe(normalizePath(fs.realpathSync.native(realDir)))
+  })
+
+  test('keeps a symlinked root when resolve.preserveSymlinks is true', async () => {
+    const config = await resolveConfig(
+      { root: linkDir, resolve: { preserveSymlinks: true } },
+      'serve',
+    )
+    expect(config.root).toBe(normalizePath(linkDir))
   })
 })
 

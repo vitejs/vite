@@ -1,7 +1,7 @@
-import util from 'node:util'
 import path from 'node:path'
-import { describe, expect, test } from 'vitest'
+import util from 'node:util'
 import type { ModuleTypeFilter } from 'rolldown'
+import { describe, expect, test } from 'vitest'
 import {
   type StringFilter,
   createCodeFilter,

@@ -71,6 +71,16 @@ describe('asset imports from js', () => {
       absolutePublicIconMatch,
     )
   })
+
+  test('typeof asset import', async () => {
+    expect(await page.textContent('.asset-import-typeof')).toBe('string')
+  })
+})
+
+test.runIf(isBuild)('loads the emitted worker', async () => {
+  await expect
+    .poll(() => page.textContent('.emitted-worker-result'))
+    .toBe('worker loaded')
 })
 
 describe('css url() references', () => {

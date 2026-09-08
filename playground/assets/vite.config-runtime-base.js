@@ -24,6 +24,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    ...baseConfig.plugins,
     {
       name: 'dynamic-base-assets-globals',
       transformIndexHtml(_, ctx) {

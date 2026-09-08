@@ -6,12 +6,12 @@ import type {
   ModuleRunnerOptions,
 } from 'vite/module-runner'
 import type { HotPayload } from '#types/hmrPayload'
+import type { ModuleRunnerTransport } from '../../../shared/moduleRunnerTransport'
 import type { DevEnvironment } from '../../server/environment'
 import type {
   HotChannelClient,
   NormalizedServerHotChannel,
 } from '../../server/hmr'
-import type { ModuleRunnerTransport } from '../../../shared/moduleRunnerTransport'
 
 /**
  * @experimental

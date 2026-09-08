@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { getNodeModulesPackageRoot } from '../sourcemap'
 import { isWindows } from '../../../shared/utils'
+import { getNodeModulesPackageRoot } from '../sourcemap'
 
 describe('getNodeModulesPackageRoot', () => {
   const cases = [

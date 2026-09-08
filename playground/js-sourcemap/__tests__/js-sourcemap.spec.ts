@@ -1,11 +1,10 @@
-import { URL, fileURLToPath } from 'node:url'
-import { promisify } from 'node:util'
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
+import { URL, fileURLToPath } from 'node:url'
+import { promisify } from 'node:util'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
-import { describe, expect, test, vi } from 'vitest'
 import { mapFileCommentRegex } from 'convert-source-map'
-import { commentSourceMap } from '../foo-with-sourcemap-plugin'
+import { describe, expect, test, vi } from 'vitest'
 import {
   extractSourcemap,
   findAssetFile,
@@ -17,6 +16,7 @@ import {
   readFile,
   serverLogs,
 } from '~utils'
+import { commentSourceMap } from '../foo-with-sourcemap-plugin'
 
 const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
 function escapeRegex(str: string): string {

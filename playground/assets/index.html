@@ -4,6 +4,24 @@
   <meta charset="UTF-8" />
   <link class="ico" rel="icon" type="image/svg+xml" href="favicon.ico" />
   <link rel="manifest" href="manifest.json" />
+  <link rel="modulepreload" href="preload-module.js" />
+  <link
+    class="preload-href"
+    rel="preload"
+    as="image"
+    href="./nested/preload-asset.png"
+  />
+  <link
+    class="preload-imagesrcset"
+    rel="preload"
+    as="image"
+    imagesrcset="./nested/preload-asset.png 1x, ./nested/preload-asset.png 2x"
+  />
+  <link
+    class="prefetch-href"
+    rel="prefetch"
+    href="./nested/preload-asset.png"
+  />
   <meta
     class="meta-og-image"
     property="og:image"
@@ -32,6 +50,7 @@
   <li>Relative: <code class="asset-import-relative"></code></li>
   <li>Absolute: <code class="asset-import-absolute"></code></li>
   <li>From publicDir: <code class="public-import"></code></li>
+  <li>Typeof asset import: <code class="asset-import-typeof">failed</code></li>
   <li>
     From publicDir (json): <code class="public-json-import"></code> Content:
     <code class="public-json-import-content"></code>
@@ -52,6 +71,10 @@
     <code class="public-mts-import-content-type"></code>
   </li>
 </ul>
+
+<h2>File URL emitted by an external plugin</h2>
+<code class="emitted-worker-url">pending</code>
+<code class="emitted-worker-result">pending</code>
 
 <h2>CSS url references</h2>
 <div>Font should be loaded (all text should be italic)</div>
@@ -511,6 +534,11 @@
 
   import publicUrl from '/icon.png'
   text('.public-import', publicUrl)
+
+  import typeofAssetUrl from './nested/asset2.png'
+  if (typeof typeofAssetUrl === 'string') {
+    text('.asset-import-typeof', 'string')
+  }
 
   import publicJsonUrl from '/foo.json?url'
   text('.public-json-import', publicJsonUrl)

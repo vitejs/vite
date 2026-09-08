@@ -1,15 +1,15 @@
 import { pathToFileURL } from 'node:url'
 import type { FetchResult } from 'vite/module-runner'
 import type { EnvironmentModuleNode, TransformResult } from '..'
-import { tryNodeResolve } from '../plugins/resolve'
-import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
-import { unwrapId } from '../../shared/utils'
 import {
   MODULE_RUNNER_SOURCEMAPPING_SOURCE,
   SOURCEMAPPING_URL,
 } from '../../shared/constants'
-import { genSourceMapUrl } from '../server/sourcemap'
+import { unwrapId } from '../../shared/utils'
+import { tryNodeResolve } from '../plugins/resolve'
 import type { DevEnvironment } from '../server/environment'
+import { genSourceMapUrl } from '../server/sourcemap'
+import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
 
 export interface FetchModuleOptions {
   cached?: boolean
@@ -141,9 +141,10 @@ function inlineSourceMap(
     code = code.replace(OTHER_SOURCE_MAP_REGEXP, '')
 
   const sourceMap = startOffset
-    ? Object.assign({}, map, {
+    ? {
+        ...map,
         mappings: ';'.repeat(startOffset) + map.mappings,
-      })
+      }
     : map
   result.code = `${code.trimEnd()}\n//# sourceURL=${
     mod.id

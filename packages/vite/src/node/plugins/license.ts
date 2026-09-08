@@ -1,9 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import type { Plugin } from '../plugin'
-import { isInNodeModules, sortObjectKeys } from '../utils'
 import type { PackageCache } from '../packages'
 import { findNearestMainPackageData } from '../packages'
+import type { Plugin } from '../plugin'
+import { isInNodeModules, sortObjectKeys } from '../utils'
 
 export interface LicenseEntry {
   /**
