@@ -137,14 +137,12 @@ function preload(
       promises: Array<T | PromiseLike<T>>,
     ): Promise<PromiseSettledResult<T>[]> {
       return Promise.all(
-        promises
-          .filter((p) => p !== undefined)
-          .map((p) =>
-            Promise.resolve(p).then(
-              (value: T) => ({ status: 'fulfilled' as const, value }),
-              (reason: unknown) => ({ status: 'rejected' as const, reason }),
-            ),
+        promises.map((p) =>
+          Promise.resolve(p).then(
+            (value: T) => ({ status: 'fulfilled' as const, value }),
+            (reason: unknown) => ({ status: 'rejected' as const, reason }),
           ),
+        ),
       )
     }
 
@@ -159,45 +157,48 @@ function preload(
     }
 
     promise = allSettled(
-      deps.map((dep) => {
-        // @ts-expect-error assetsURL is declared before preload.toString()
-        dep = assetsURL(dep, importerUrl)
-        dep = importMetaResolve(dep)
-        if (dep in seen) return
-        seen[dep] = true
-        const isCss = dep.endsWith('.css')
+      deps
+        .map((dep) => {
+          // @ts-expect-error assetsURL is declared before preload.toString()
+          dep = assetsURL(dep, importerUrl)
+          dep = importMetaResolve(dep)
+          if (dep in seen) return
+          seen[dep] = true
+          const isCss = dep.endsWith('.css')
 
-        // check if the file is already preloaded by SSR markup
-        // `dep` is already converted to an absolute URL by the `assetsURL` function
-        for (let i = links.length - 1; i >= 0; i--) {
-          const link = links[i]
-          // The `links[i].href` is an absolute URL thanks to browser doing the work
-          // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
-          if (link.href === dep && (!isCss || link.rel === 'stylesheet')) {
-            return
+          // check if the file is already preloaded by SSR markup
+          // `dep` is already converted to an absolute URL by the `assetsURL` function
+          for (let i = links.length - 1; i >= 0; i--) {
+            const link = links[i]
+            // The `links[i].href` is an absolute URL thanks to browser doing the work
+            // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
+            if (link.href === dep && (!isCss || link.rel === 'stylesheet')) {
+              return
+            }
           }
-        }
 
-        const link = document.createElement('link')
-        link.rel = isCss ? 'stylesheet' : scriptRel
-        if (!isCss) {
-          link.as = 'script'
-        }
-        link.crossOrigin = ''
-        link.href = dep
-        if (cspNonce) {
-          link.setAttribute('nonce', cspNonce)
-        }
-        document.head.appendChild(link)
-        if (isCss) {
-          return new Promise((res, rej) => {
-            link.addEventListener('load', res)
-            link.addEventListener('error', () =>
-              rej(new Error(`Unable to preload CSS for ${dep}`)),
-            )
-          })
-        }
-      }),
+          const link = document.createElement('link')
+          link.rel = isCss ? 'stylesheet' : scriptRel
+          if (!isCss) {
+            link.as = 'script'
+          }
+          link.crossOrigin = ''
+          link.href = dep
+          if (cspNonce) {
+            link.setAttribute('nonce', cspNonce)
+          }
+          document.head.appendChild(link)
+          if (isCss) {
+            return new Promise((res, rej) => {
+              link.addEventListener('load', res)
+              link.addEventListener('error', () =>
+                rej(new Error(`Unable to preload CSS for ${dep}`)),
+              )
+            })
+          }
+        })
+        // skip undefined to be converted to Promise.resolve for performance
+        .filter((p) => p !== undefined),
     )
   }
 
