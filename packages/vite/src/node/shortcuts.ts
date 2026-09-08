@@ -67,10 +67,11 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
     )
   }
 
-  const shortcuts = [
-    ...customShortcuts,
-    isDev ? BASE_DEV_SHORTCUTS : BASE_PREVIEW_SHORTCUTS,
-  ] as CLIShortcut<Server>[]
+  const shortcuts = customShortcuts.concat(
+    (isDev
+      ? BASE_DEV_SHORTCUTS
+      : BASE_PREVIEW_SHORTCUTS) as CLIShortcut<Server>[],
+  )
 
   let actionRunning = false
 
