@@ -39,6 +39,10 @@ export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadHelperId = '\0vite/preload-helper.js'
 const preloadMarkerRE = new RegExp(preloadMarker, 'g')
 
+export function isCssPreloadUrl(url: string): boolean {
+  return new URL(url).pathname.endsWith('.css')
+}
+
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.posix.relative(path.posix.dirname(importer), filename)
   return relPath[0] === '.' ? relPath : `./${relPath}`
@@ -163,7 +167,7 @@ function preload(
         dep = importMetaResolve(dep)
         if (dep in seen) return
         seen[dep] = true
-        const isCss = dep.endsWith('.css')
+        const isCss = isCssPreloadUrl(dep)
 
         // check if the file is already preloaded by SSR markup
         // `dep` is already converted to an absolute URL by the `assetsURL` function
@@ -249,7 +253,7 @@ function getPreloadCode(
         `function(dep) { return ${JSON.stringify(environment.config.base)}+dep }`
   // replace `import` as a workaround for stackblitz: https://stackblitz.com/edit/node-vqfvv8dy?file=index.js
   const preloadMethodCode = preload.toString().replaceAll('𝐢𝐦𝐩𝐨𝐫𝐭', 'import')
-  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preloadMethodCode}`
+  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};const isCssPreloadUrl = ${isCssPreloadUrl.toString()};export const ${preloadMethod} = ${preloadMethodCode}`
   return preloadCode
 }
 
