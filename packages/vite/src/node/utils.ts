@@ -137,9 +137,6 @@ export function isNodeBuiltin(id: string): boolean {
   return nodeBuiltins.includes(id)
 }
 
-// `node_modules` has to be a complete path segment, otherwise a project that
-// happens to live in a directory like `my-node_modules-test` would have all of
-// its own sources treated as dependencies.
 const inNodeModulesRE = /(?:^|[\\/])node_modules(?:[\\/]|$)/
 
 export function isInNodeModules(id: string): boolean {
