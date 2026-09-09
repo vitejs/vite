@@ -296,7 +296,7 @@ export const isJSRequest = (url: string): boolean => {
   if (knownJsSrcRE.test(url)) {
     return true
   }
-  if (!path.extname(url) && url[url.length - 1] !== '/') {
+  if (!path.extname(url) && url.at(-1) !== '/') {
     return true
   }
   return false
@@ -515,7 +515,7 @@ export function numberToPos(source: string, offset: number | Pos): Pos {
   const lines = source.slice(0, offset).split(splitRE)
   return {
     line: lines.length,
-    column: lines[lines.length - 1].length,
+    column: lines.at(-1)!.length,
   }
 }
 
@@ -814,7 +814,7 @@ function joinSrcset(ret: ImageCandidate[]) {
   The `descriptor` is anything after the space and before the comma.
  */
 const imageCandidateRegex =
-  /(?:^|\s|(?<=,))(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>\w[^,]+))?(?:,|$)/g
+  /(?:^|\s|(?<=,))(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>[\w.][^,]+))?(?:,|$)/g
 const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
 
 export function parseSrcset(string: string): ImageCandidate[] {
@@ -946,7 +946,7 @@ export function combineSourcemaps(
 }
 
 export function unique<T>(arr: T[]): T[] {
-  return Array.from(new Set(arr))
+  return [...new Set(arr)]
 }
 
 /**

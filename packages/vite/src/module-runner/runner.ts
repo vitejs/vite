@@ -171,7 +171,7 @@ export class ModuleRunner {
     const meta = mod.meta!
     const moduleId = meta.id
 
-    const importee = callstack[callstack.length - 1]
+    const importee = callstack.at(-1)
 
     if (importee) mod.importers.add(importee)
 

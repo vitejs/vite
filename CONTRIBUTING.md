@@ -100,7 +100,7 @@ To use breakpoints and explore code execution, you can use the ["Run and Debug"]
 
 Some errors are masked and hidden away because of the layers of abstraction and sandboxed nature added by Vitest, Playwright, and Chromium. In order to see what's actually going wrong and the contents of the devtools console in those instances, follow this setup:
 
-1. Add a `debugger` statement to the `playground/vitestSetup.ts` -> `afterAll` hook. This will pause execution before the tests quit and the Playwright browser instance exits.
+1. Add an `afterAll` hook with a `debugger` statement to `playground/vitestSetup.ts`. This will pause execution before the tests quit and the Playwright browser instance exits.
 
 2. Run the tests with the `debug-serve` script command, which will enable remote debugging: `pnpm run debug-serve resolve`.
 
@@ -352,14 +352,15 @@ All publishable packages in this repository use a pull-request-driven release fl
 #### Prepare a Release
 
 1. Run the [Prepare Release](.github/workflows/prepare-release.yml) workflow from the `main` branch.
-2. Select `vite`, `create-vite`, or `plugin-legacy`.
-3. Select a `release` type. The default `next` creates the next patch for a stable version or advances an existing prerelease. Alternatively, select another supported release type or enter an exact `version`, which takes precedence over `release`.
-4. Wait for the action to open the release PR. The PR contains the selected package's version bump and changelog entry. A `create-vite` release also updates template Vite dependency versions when appropriate.
+2. Enter the target branch. Use `main` for the current release line or a `v*` release branch (for example, `v8` or `v8.0`) for a patch release.
+3. Select `vite`, `create-vite`, or `plugin-legacy`.
+4. Select a `release` type. The default `next` creates the next patch for a stable version or advances an existing prerelease. Alternatively, select another supported release type or enter an exact `version`, which takes precedence over `release`.
+5. Wait for the action to open a release PR against the target branch. The PR contains the selected package's version bump and changelog entry. A `create-vite` release also updates template Vite dependency versions when appropriate.
 
 #### Review and Publish
 
 1. Review the generated version and changelog, and wait for the release PR checks to pass.
-2. Merge the PR while retaining its `release: <tag>` commit subject. Vite uses `release: v<version>`; other packages use `release: <package>@<version>`. A matching commit at the tip of `main` triggers the publish job.
+2. Merge the PR while retaining its `release: <tag>` commit subject. Vite uses `release: v<version>`; other packages use `release: <package>@<version>`. A matching commit at the tip of `main` or a `v*` release branch triggers the publish job.
 3. Open the [Publish Package](.github/workflows/publish.yml) run and approve its `Release` environment deployment.
 4. Wait for the workflow to publish the package, create its tag, and create the corresponding GitHub release.
 5. Verify the new version on npm.
@@ -368,7 +369,7 @@ All publishable packages in this repository use a pull-request-driven release fl
 
 The release flow depends on configuration outside this repository:
 
-- The `Release` environment must require maintainer approval before publishing.
+- The `Release` environment must require maintainer approval before publishing and allow deployments from `main` and supported `v*` release branches.
 - The npm trusted publishers for `vite`, `create-vite`, and `@vitejs/plugin-legacy` must be restricted to `vitejs/vite`, `.github/workflows/publish.yml`, and the `Release` environment.
 
 #### Recovery

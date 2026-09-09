@@ -401,6 +401,13 @@ export type PluginOption = Thenable<
   | PluginOption[]
 >
 
+const ignoredEnvironmentPluginHooks = [
+  'config',
+  'configEnvironment',
+  'configureServer',
+  'configResolved',
+] as const
+
 export async function resolveEnvironmentPlugins(
   environment: PartialEnvironment,
 ): Promise<Plugin[]> {
@@ -412,11 +419,20 @@ export async function resolveEnvironmentPlugins(
         continue
       }
       if (applied !== true) {
-        environmentPlugins.push(
-          ...((await asyncFlatten(arraify(applied))).filter(
-            Boolean,
-          ) as Plugin[]),
-        )
+        const appliedPlugins = (await asyncFlatten(arraify(applied))).filter(
+          Boolean,
+        ) as Plugin[]
+        for (const appliedPlugin of appliedPlugins) {
+          const ignoredHooks = ignoredEnvironmentPluginHooks.filter(
+            (hook) => appliedPlugin[hook],
+          )
+          if (ignoredHooks.length > 0) {
+            environment.logger.warnOnce(
+              `Plugin "${appliedPlugin.name}" defines Vite-specific hooks (${ignoredHooks.join(', ')}) in a plugin returned from applyToEnvironment. These hooks will be ignored.`,
+            )
+          }
+        }
+        environmentPlugins.push(...appliedPlugins)
         continue
       }
     }
