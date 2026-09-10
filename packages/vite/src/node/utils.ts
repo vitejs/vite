@@ -137,8 +137,10 @@ export function isNodeBuiltin(id: string): boolean {
   return nodeBuiltins.includes(id)
 }
 
+const inNodeModulesRE = /(?:^|[\\/])node_modules(?:[\\/]|$)/
+
 export function isInNodeModules(id: string): boolean {
-  return id.includes('node_modules')
+  return inNodeModulesRE.test(id)
 }
 
 export function moduleListContains(
