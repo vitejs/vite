@@ -31,6 +31,7 @@ import {
   dataUrlRE,
   deepClone,
   externalRE,
+  isHTMLRequest,
   isInNodeModules,
   isObject,
   isOptimizable,
@@ -100,7 +101,7 @@ export function devToScanEnvironment(
 
 const debug = createDebugger('vite:deps')
 
-const htmlTypesRE = /\.(?:html|vue|svelte|astro|imba)$/
+const htmlTypesRE = /\.(?:html|htm|vue|svelte|astro|imba)$/
 
 // A simple regex to detect import sources. This is only used on
 // <script lang="ts"> blocks in vue (setup only) or svelte files, since
@@ -244,7 +245,7 @@ async function computeEntries(environment: ScanEnvironment) {
       throw new Error('invalid rolldownOptions.input value.')
     }
   } else {
-    entries = await globEntries('**/*.html', environment)
+    entries = await globEntries(['**/*.html', '**/*.htm'], environment)
   }
 
   // Non-supported entry file types and virtual files should not be scanned for
@@ -457,7 +458,7 @@ function rolldownScanPlugin(
     let raw = await fsp.readFile(id, 'utf-8')
     // Avoid matching the content of the comment
     raw = raw.replace(commentRE, '<!---->')
-    const isHtml = id.endsWith('.html')
+    const isHtml = isHTMLRequest(id)
     let js = ''
     let scriptId = 0
     const matches = raw.matchAll(scriptRE)
