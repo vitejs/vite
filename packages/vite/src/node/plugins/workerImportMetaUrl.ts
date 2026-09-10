@@ -19,8 +19,11 @@ import {
   WORKER_FILE_ID,
   emitWorkerAssetsForBundledDev,
   recordWorkerReference,
+  recordMergedWorkerChunkReference,
   generateWorkerEntryUrlExpr,
+  shouldShareWorkerChunk,
   workerFileToUrl,
+  workerSharedChunkUrlPlaceholder,
 } from './worker'
 
 interface WorkerOptions {
@@ -254,7 +257,22 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 : slash(path.resolve(path.dirname(id), urlWithoutPostfix))
           }
 
-          if (
+          if (shouldShareWorkerChunk(this.environment, config, file)) {
+            // See the equivalent branch in `vite:worker`'s `load` hook for
+            // why this can also handle the worker referencing itself.
+            const workerFile = cleanUrl(file)
+            recordWorkerReference(config, undefined, workerFile, id)
+            const referenceId = this.emitFile({
+              type: 'chunk',
+              id: workerFile,
+            })
+            recordMergedWorkerChunkReference(config, workerFile, referenceId)
+            s.update(
+              expStart,
+              expEnd,
+              `new URL(/* @vite-ignore */ ${workerSharedChunkUrlPlaceholder(referenceId)}, '' + import.meta.url)`,
+            )
+          } else if (
             isBundled &&
             config.isWorker &&
             config.bundleChain.at(-1) === cleanUrl(file)

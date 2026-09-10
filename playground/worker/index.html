@@ -227,6 +227,19 @@
 </p>
 <code class="module-and-worker-worker"></code>
 
+<p>
+  worker.shareChunks: main thread and 2 separate ES module workers all importing
+  the same module
+  <span class="classname">.shared-chunks-main</span>
+  <span class="classname">.shared-chunks-worker-a</span>
+  <span class="classname">.shared-chunks-worker-b</span>
+  <span class="classname">.shared-chunks-worker-inline</span>
+</p>
+<code class="shared-chunks-main"></code>
+<code class="shared-chunks-worker-a"></code>
+<code class="shared-chunks-worker-b"></code>
+<code class="shared-chunks-worker-inline"></code>
+
 <style>
   p {
     background: rgba(0, 0, 0, 0.1);

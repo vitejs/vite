@@ -30,6 +30,7 @@ const bundledDevExclude = [
   './playground/worker/__tests__/iife/worker-iife.spec.ts',
   './playground/worker/__tests__/relative-base-iife/worker-relative-base-iife.spec.ts',
   './playground/worker/__tests__/relative-base/worker-relative-base.spec.ts',
+  './playground/worker/__tests__/shared-chunks/worker-shared-chunks.spec.ts',
 ]
 
 const timeout = process.env.PWDEBUG ? Infinity : process.env.CI ? 50000 : 30000

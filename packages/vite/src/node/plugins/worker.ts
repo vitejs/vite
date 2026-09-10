@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { type ImportSpecifier, init, parse } from 'es-module-lexer'
+import { type ImportSpecifier, init, initSync, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
 import type {
@@ -14,8 +14,10 @@ import { cleanUrl, splitFileAndPostfix } from '../../shared/utils'
 import {
   BuildEnvironment,
   ChunkMetadataMap,
+  createToImportMetaURLBasedRelativeRuntime,
   injectEnvironmentToHooks,
   onRollupLog,
+  toOutputFilePathInJS,
 } from '../build'
 import type { ResolvedConfig } from '../config'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
@@ -23,6 +25,7 @@ import type { Environment } from '../environment'
 import type { Logger } from '../logger'
 import type { Plugin } from '../plugin'
 import {
+  encodeURIPath,
   injectQuery,
   normalizePath,
   prettifyUrl,
@@ -30,6 +33,7 @@ import {
   urlRE,
 } from '../utils'
 import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
+import { getImportMap } from './html'
 
 type WorkerBundle = {
   entryFilename: string
@@ -84,6 +88,32 @@ class WorkerOutputCache {
       Set</* childBundleId */ WorkerBundleId>
     >
   >()
+  /**
+   * referenceId of the chunk emitted via `emitFile({ type: 'chunk' })` for a
+   * worker entry that shares chunks with the main build (`worker.shareChunks`).
+   * Unlike `bundles`, these entries have no isolated `WorkerBundle` of their
+   * own - they're just another entry in the current build's chunk graph -
+   * but they still need to participate in dead-bundle removal below.
+   */
+  private mergedChunkReferenceIds = new Map<
+    /* childBundleId */ WorkerBundleId,
+    /* referenceId */ string
+  >()
+
+  recordMergedChunkReference(
+    childBundleId: WorkerBundleId,
+    referenceId: string,
+  ) {
+    this.mergedChunkReferenceIds.set(childBundleId, referenceId)
+  }
+
+  getMergedChunkReferenceId(childBundleId: WorkerBundleId): string | undefined {
+    return this.mergedChunkReferenceIds.get(childBundleId)
+  }
+
+  getAllMergedChunkReferenceIds(): string[] {
+    return [...this.mergedChunkReferenceIds.values()]
+  }
 
   saveWorkerBundle(
     file: string,
@@ -209,10 +239,17 @@ class WorkerOutputCache {
     return liveFileNames
   }
 
-  getDeadDirectlyReferencedBundles(
+  /**
+   * IDs of worker bundles that are directly referenced from `bundleId`'s
+   * bundle references but not kept alive by `liveModuleIds`. Includes both
+   * isolated `WorkerBundle` ids (see `bundles`) and ids that only have a
+   * `mergedChunkReferenceIds` entry (workers sharing chunks with the main
+   * build) - callers should check both maps.
+   */
+  getDeadDirectlyReferencedBundleIds(
     bundleId: BundleId,
     liveModuleIds: Set<string>,
-  ): WorkerBundle[] {
+  ): WorkerBundleId[] {
     const referencesByModule = this.bundleReferences.get(bundleId)
     if (!referencesByModule) return []
     const deadBundleIds = new Set<WorkerBundleId>()
@@ -226,12 +263,7 @@ class WorkerOutputCache {
         deadBundleIds.delete(childBundleId)
       }
     }
-    const deadBundles: WorkerBundle[] = []
-    for (const childBundleId of deadBundleIds) {
-      const bundle = this.bundles.get(childBundleId)
-      if (bundle) deadBundles.push(bundle)
-    }
-    return deadBundles
+    return [...deadBundleIds]
   }
 
   getWorkerBundle(file: string) {
@@ -301,6 +333,26 @@ export function splitWorkerRequest(id: string): {
 export const WORKER_FILE_ID = 'worker_file'
 const workerOutputCaches = new WeakMap<ResolvedConfig, WorkerOutputCache>()
 
+/**
+ * Placeholder embedded in place of a shared-chunk worker's URL
+ * (`shouldShareWorkerChunk`) until it's resolved in this plugin's
+ * `generateBundle`, once every chunk's final file name is known (see the
+ * comment there for why `renderChunk` is too early for this).
+ *
+ * We can't rely on Rolldown's native `import.meta.ROLLDOWN_FILE_URL_<id>`
+ * substitution here, the way `WorkerOutputCache.generateEntryUrlExpr` does
+ * for `type: 'asset'` references: as of rolldown 1.2.6, that placeholder is
+ * not reliably substituted when it references a `type: 'chunk'` file whose
+ * name isn't known yet (i.e. has no explicit `fileName`) and is embedded
+ * outside of a static/dynamic import specifier.
+ */
+export const workerSharedChunkUrlRE: RegExp =
+  /__VITE_WORKER_SHARED_CHUNK_URL__([\w-]+)__/g
+
+export function workerSharedChunkUrlPlaceholder(referenceId: string): string {
+  return `__VITE_WORKER_SHARED_CHUNK_URL__${referenceId}__`
+}
+
 export function recordWorkerReference(
   config: ResolvedConfig,
   parentInputId: string | undefined,
@@ -310,6 +362,22 @@ export function recordWorkerReference(
   workerOutputCaches
     .get(config.mainConfig || config)!
     .recordReference(parentInputId, childBundleId, referencingModuleId)
+}
+
+/**
+ * Record the `emitFile({ type: 'chunk' })` referenceId for a worker entry
+ * that shares chunks with the main build (`worker.shareChunks`), so
+ * `generateBundle`'s dead-bundle removal can find and delete its emitted
+ * chunk if it turns out to be unreferenced by any live code.
+ */
+export function recordMergedWorkerChunkReference(
+  config: ResolvedConfig,
+  childBundleId: WorkerBundleId,
+  referenceId: string,
+): void {
+  workerOutputCaches
+    .get(config.mainConfig || config)!
+    .recordMergedChunkReference(childBundleId, referenceId)
 }
 
 /**
@@ -325,6 +393,31 @@ export function generateWorkerEntryUrlExpr(
   return workerOutputCaches
     .get(config.mainConfig || config)!
     .generateEntryUrlExpr(pluginContext, bundle)
+}
+
+/**
+ * Whether a `?worker`/`?sharedworker` import at `id` should be folded into
+ * the current build's chunk graph (`worker.shareChunks`) instead of going
+ * through the isolated `bundleWorkerEntry` build below. Only applies to
+ * `format: 'es'` production builds of the client environment - SSR builds
+ * still bundle `?worker` imports via an isolated `BuildEnvironment('client')`
+ * (see `bundleWorkerEntry`), which merging into the *SSR* graph would not
+ * help, and dev/serve already serves native, unbundled ESM.
+ */
+export function shouldShareWorkerChunk(
+  environment: Environment,
+  config: ResolvedConfig,
+  id: string,
+): boolean {
+  const { command, consumer } = environment.config
+  const { format, shareChunks, shareChunkOnInline } = config.worker
+  return (
+    command === 'build' &&
+    consumer === 'client' &&
+    format === 'es' &&
+    shareChunks &&
+    (!inlineRE.test(id) || shareChunkOnInline)
+  )
 }
 
 async function bundleWorkerEntry(
@@ -617,7 +710,19 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         }`
 
         let urlCode: string
-        if (isBundled) {
+        if (shouldShareWorkerChunk(this.environment, config, id)) {
+          // Share chunks between this worker, other ES module workers, and
+          // the main build: fold the worker entry into the current build's
+          // chunk graph instead of bundling it in an isolated rolldown()
+          // call (see `bundleWorkerEntry` below). `emitFile` dedupes by
+          // `id`, so re-importing the same worker (including a worker
+          // importing itself) reuses the same chunk without extra handling.
+          const workerFile = cleanUrl(id)
+          recordWorkerReference(config, undefined, workerFile, id)
+          const referenceId = this.emitFile({ type: 'chunk', id: workerFile })
+          recordMergedWorkerChunkReference(config, workerFile, referenceId)
+          urlCode = workerSharedChunkUrlPlaceholder(referenceId)
+        } else if (isBundled) {
           if (isWorker && config.bundleChain.at(-1) === cleanUrl(id)) {
             urlCode = 'self.location.href'
           } else if (inlineRE.test(id)) {
@@ -780,8 +885,48 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (this.environment.config.isOutputOptionsForLegacyChunks?.(opts)) {
         return
       }
+
+      // Resolve `workerSharedChunkUrlPlaceholder`s left by the shared-chunk
+      // worker path (`shouldShareWorkerChunk`). This has to happen here,
+      // rather than in `renderChunk`, because `this.getFileName` can still
+      // return a chunk's file name with an unresolved internal hash
+      // placeholder of its own (e.g. `worker-a-!~{002}~.js`) until every
+      // chunk has been rendered - `generateBundle`'s `bundle` is the first
+      // point where every chunk's final file name is guaranteed resolved.
+      for (const output of Object.values(bundle)) {
+        if (output.type !== 'chunk') continue
+        workerSharedChunkUrlRE.lastIndex = 0
+        if (!workerSharedChunkUrlRE.test(output.code)) continue
+
+        const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
+          opts.format,
+          this.environment.config.isWorker,
+        )
+        const s = new MagicString(output.code)
+        workerSharedChunkUrlRE.lastIndex = 0
+        let match: RegExpExecArray | null
+        while ((match = workerSharedChunkUrlRE.exec(output.code))) {
+          const [full, referenceId] = match
+          const fileName = this.getFileName(referenceId)
+          const replacement = toOutputFilePathInJS(
+            this.environment,
+            fileName,
+            'asset',
+            output.fileName,
+            'js',
+            toRelativeRuntime,
+          )
+          const replacementCode =
+            typeof replacement === 'string'
+              ? JSON.stringify(encodeURIPath(replacement))
+              : replacement.runtime
+          s.update(match.index, match.index + full.length, replacementCode)
+        }
+        output.code = s.toString()
+      }
+
       const cache = workerOutputCaches.get(config.mainConfig || config)!
-      const liveModuleIds = collectIncludedModuleIds(Object.values(bundle))
+      let liveModuleIds = collectIncludedModuleIds(Object.values(bundle))
       // Reference tracking relies on hooks running for every module, which is
       // not guaranteed when an incremental build reuses cached modules.
       const shouldFilter =
@@ -792,15 +937,165 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       // Rolldown later tree-shakes the module that referenced them. This also
       // needs to run for worker sub-builds so dead nested workers don't become
       // referenced assets of their parent worker bundle.
+      //
+      // A shared-chunk worker (`shouldShareWorkerChunk`) is, like any other
+      // worker here, eagerly emitted as its own chunk regardless of whether
+      // it's actually still referenced. Unlike an isolated worker bundle
+      // though, its code lives directly in `bundle`, so it would still count
+      // towards `liveModuleIds` even after we determine it's dead - which
+      // would incorrectly keep alive any further worker *it* references.
+      // Loop until a pass removes nothing, so removing a dead worker can
+      // reveal its own now-dead nested workers. `delete bundle[fileName]`
+      // doesn't reliably take effect immediately on rolldown's bundle object
+      // (its own re-`collectIncludedModuleIds` pass can still see the
+      // "removed" chunk), so track what's been decided dead ourselves and
+      // subtract those chunks' `moduleIds` directly instead of re-deriving
+      // `liveModuleIds` from `bundle`.
       if (shouldFilter) {
         const rootBundleId = isWorker ? config.bundleChain.at(-1) : undefined
-        for (const workerBundle of cache.getDeadDirectlyReferencedBundles(
-          rootBundleId,
-          liveModuleIds,
-        )) {
-          const emittedAsset = bundle[workerBundle.entryFilename]
-          if (emittedAsset?.type === 'asset') {
-            delete bundle[workerBundle.entryFilename]
+        const removedFileNames = new Set<string>()
+        for (;;) {
+          const excludedModuleIds = new Set<string>()
+          let removedAny = false
+          for (const deadBundleId of cache.getDeadDirectlyReferencedBundleIds(
+            rootBundleId,
+            liveModuleIds,
+          )) {
+            const workerBundle = cache.getWorkerBundle(deadBundleId)
+            if (workerBundle) {
+              if (!removedFileNames.has(workerBundle.entryFilename)) {
+                removedFileNames.add(workerBundle.entryFilename)
+                const emittedAsset = bundle[workerBundle.entryFilename]
+                if (emittedAsset?.type === 'asset') {
+                  delete bundle[workerBundle.entryFilename]
+                  removedAny = true
+                }
+              }
+              continue
+            }
+
+            // A worker that shares chunks with the main build (see
+            // `shouldShareWorkerChunk`) has no `WorkerBundle` of its own -
+            // its chunk was emitted directly into this build via
+            // `emitFile`. Look up its final file name the same way and
+            // remove it too, so an unused shared-chunk worker doesn't
+            // linger as an orphaned chunk.
+            const mergedReferenceId =
+              cache.getMergedChunkReferenceId(deadBundleId)
+            if (!mergedReferenceId) continue
+            let fileName: string | undefined
+            try {
+              fileName = this.getFileName(mergedReferenceId)
+            } catch {
+              // never actually emitted - nothing to remove
+            }
+            if (!fileName || removedFileNames.has(fileName)) continue
+            removedFileNames.add(fileName)
+            const output = bundle[fileName]
+            if (!output) continue
+            delete bundle[fileName]
+            removedAny = true
+            if (output.type === 'chunk') {
+              for (const moduleId of output.moduleIds) {
+                excludedModuleIds.add(moduleId)
+              }
+            }
+          }
+          if (!removedAny) break
+          if (excludedModuleIds.size > 0) {
+            const nextLiveModuleIds = new Set(liveModuleIds)
+            for (const moduleId of excludedModuleIds) {
+              nextLiveModuleIds.delete(moduleId)
+            }
+            liveModuleIds = nextLiveModuleIds
+          }
+        }
+
+        // With `build.chunkImportMap` enabled, Rolldown may write some of a
+        // chunk's static import specifiers as "preliminary" names that only
+        // resolve to their real file via the import map it generates into
+        // the main HTML document. A worker script runs in its own realm and
+        // never sees that document's import map, so every chunk reachable
+        // from a shared-chunk worker (the worker's own chunk, and anything
+        // it imports, transitively) needs those specifiers rewritten to the
+        // real path directly - otherwise they'd 404 at runtime for a worker
+        // even though the same reference works fine for the main document.
+        if (this.environment.config.build.chunkImportMap) {
+          const importMap = getImportMap(bundle, this.environment.config)
+          if (importMap) {
+            // `mapping`'s keys/values may carry a leading "/" (an absolute,
+            // base-rooted path) depending on `config.base` and this build's
+            // resolved chunkImportMap.baseUrl, whereas `bundle` (and the
+            // `resolved` paths computed below) are always base-relative
+            // file names with no leading slash - normalize both to that
+            // shape so the lookup below matches regardless.
+            const mapping: Record<string, string> = {}
+            for (const [key, value] of Object.entries(importMap.mapping)) {
+              mapping[key.replace(/^\/+/, '')] = value.replace(/^\/+/, '')
+            }
+            const workerClosure = new Set<string>()
+            const queue: string[] = []
+            for (const referenceId of cache.getAllMergedChunkReferenceIds()) {
+              let fileName: string | undefined
+              try {
+                fileName = this.getFileName(referenceId)
+              } catch {
+                continue
+              }
+              if (bundle[fileName] && !workerClosure.has(fileName)) {
+                workerClosure.add(fileName)
+                queue.push(fileName)
+              }
+            }
+            while (queue.length > 0) {
+              const fileName = queue.shift()!
+              const output = bundle[fileName]
+              if (output?.type !== 'chunk') continue
+              for (const imported of output.imports) {
+                if (!workerClosure.has(imported)) {
+                  workerClosure.add(imported)
+                  queue.push(imported)
+                }
+              }
+            }
+
+            // generateBundle can't be async without forcing every plugin
+            // whose hooks run around it to tolerate that (see the other,
+            // pre-existing `await init` in this file for contrast, inside
+            // an already-async `transform` hook). `initSync` compiles the
+            // (tiny, embedded) WASM synchronously - a no-op if some other
+            // plugin already `await init`-ed it earlier in this same build,
+            // which is normally the case by the time generateBundle runs.
+            initSync()
+            for (const fileName of workerClosure) {
+              const output = bundle[fileName]
+              if (output?.type !== 'chunk') continue
+              let imports: readonly ImportSpecifier[]
+              try {
+                imports = parse(output.code)[0]
+              } catch {
+                continue
+              }
+              let s: MagicString | undefined
+              for (const { n: specifier, s: start, e: end } of imports) {
+                if (!specifier || !specifier.startsWith('.')) continue
+                const resolved = path.posix.normalize(
+                  path.posix.join(path.posix.dirname(fileName), specifier),
+                )
+                const real = mapping[resolved]
+                if (!real || real === resolved) continue
+                let relative = path.posix.relative(
+                  path.posix.dirname(fileName),
+                  real,
+                )
+                if (!relative.startsWith('.')) relative = './' + relative
+                s ||= new MagicString(output.code)
+                s.update(start, end, relative)
+              }
+              if (s) {
+                output.code = s.toString()
+              }
+            }
           }
         }
       }
