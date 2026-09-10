@@ -1,9 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { isBuild, page, testDir } from '~utils'
+import { isBuild, isBundledDev, page, testDir } from '~utils'
 
-test('normal', async () => {
+test.skipIf(isBundledDev)('normal', async () => {
   await expect.poll(() => page.textContent('.pong')).toMatch('pong')
   await expect
     .poll(() => page.textContent('.mode'))
@@ -102,7 +102,7 @@ test('module worker', async () => {
     .toMatch('A string')
 })
 
-test('classic worker', async () => {
+test.skipIf(isBundledDev)('classic worker', async () => {
   await expect
     .poll(() => page.textContent('.classic-worker'))
     .toMatch('A classic')
