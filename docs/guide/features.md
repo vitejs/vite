@@ -137,10 +137,12 @@ Note that if [`compilerOptions.types`](https://www.typescriptlang.org/tsconfig#t
 
 ::: details Using triple-slash directive
 
-Alternatively, you can add a `d.ts` declaration file:
+Alternatively, you can add a TypeScript file for Vite environment types:
 
-```typescript [vite-env.d.ts]
+```typescript [vite-env.ts]
 /// <reference types="vite/client" />
+
+export {}
 ```
 
 :::
@@ -169,10 +171,13 @@ For example, to make the default import of `*.svg` a React component:
     "include": ["src", "./vite-env-override.d.ts"]
   }
   ```
-- If you are using triple-slash directives, update the file containing the reference to `vite/client` (normally `vite-env.d.ts`):
+- If you are using triple-slash directives, update the file containing the reference to `vite/client` (normally `vite-env.ts`):
+
   ```ts
   /// <reference types="./vite-env-override.d.ts" />
   /// <reference types="vite/client" />
+
+  export {}
   ```
 
 :::

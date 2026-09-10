@@ -126,23 +126,28 @@ To avoid interop issues, it is recommended to avoid relying on this behavior. Vi
 
 By default, Vite provides type definitions for `import.meta.env` in [`vite/client.d.ts`](https://github.com/vitejs/vite/blob/main/packages/vite/client.d.ts). While you can define more custom env variables in `.env.[mode]` files, you may want to get TypeScript IntelliSense for user-defined env variables that are prefixed with `VITE_`.
 
-To achieve this, you can create an `vite-env.d.ts` in `src` directory, then augment `ImportMetaEnv` like this:
+To achieve this, you can create a `vite-env.ts` in `src` directory, then augment `ImportMetaEnv` like this:
 
-```typescript [vite-env.d.ts]
-interface ViteTypeOptions {
-  // By adding this line, you can make the type of ImportMetaEnv strict
-  // to disallow unknown keys.
-  // strictImportMetaEnv: unknown
+```typescript [vite-env.ts]
+declare global {
+  interface ViteTypeOptions {
+    // By adding this line, you can make the type of ImportMetaEnv strict
+    // to disallow unknown keys.
+    // strictImportMetaEnv: unknown
+  }
+
+  interface ImportMetaEnv {
+    readonly VITE_APP_TITLE: string
+    // more env variables...
+  }
+
+  interface ImportMeta {
+    readonly env: ImportMetaEnv
+  }
 }
 
-interface ImportMetaEnv {
-  readonly VITE_APP_TITLE: string
-  // more env variables...
-}
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv
-}
+// Explicitly mark this file as a module.
+export {}
 ```
 
 If your code relies on types from browser environments such as [DOM](https://github.com/microsoft/TypeScript/blob/main/src/lib/dom.generated.d.ts) and [WebWorker](https://github.com/microsoft/TypeScript/blob/main/src/lib/webworker.generated.d.ts), you can update the [lib](https://www.typescriptlang.org/tsconfig#lib) field in `tsconfig.json`.
@@ -153,9 +158,9 @@ If your code relies on types from browser environments such as [DOM](https://git
 }
 ```
 
-:::warning Imports will break type augmentation
+:::warning Imports require global augmentation
 
-If the `ImportMetaEnv` augmentation does not work, make sure you do not have any `import` statements in `vite-env.d.ts`. See the [TypeScript documentation](https://www.typescriptlang.org/docs/handbook/2/modules.html#how-javascript-modules-are-defined) for more information.
+If `vite-env.ts` contains `import` statements, TypeScript treats the file as a module. Wrap custom `ImportMetaEnv` declarations in `declare global` and add `export {}` so the augmentation applies globally. See the [TypeScript documentation](https://www.typescriptlang.org/docs/handbook/2/modules.html#how-javascript-modules-are-defined) for more information.
 
 :::
 
