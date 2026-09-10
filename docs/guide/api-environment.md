@@ -80,10 +80,13 @@ interface EnvironmentOptions {
   resolve?: EnvironmentResolveOptions
   optimizeDeps: DepOptimizationOptions
   consumer?: 'client' | 'server'
+  keepProcessEnv?: boolean
   dev: DevOptions
   build: BuildOptions
 }
 ```
+
+`keepProcessEnv` declares whether the environment's runtime provides a real `process.env`. It defaults to `true` for server environments and `false` for the client one, so a new environment only needs to set it when its runtime does not match that assumption. When it is `false`, Vite statically replaces `process.env` with `{}` and `process.env.NODE_ENV` with the current mode.
 
 The `UserConfig` interface extends from the `EnvironmentOptions` interface, allowing to configure the client and defaults for other environments, configured through the `environments` option. The `client` and a server environment named `ssr` are always present during dev. This allows backward compatibility with `server.ssrLoadModule(url)` and `server.moduleGraph`. During build, the `client` environment is always present, and the `ssr` environment is only present if it is explicitly configured (using `environments.ssr` or for backward compatibility `build.ssr`). An app doesn't need to use the `ssr` name for its SSR environment, it could name it `server` for example.
 
