@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { performance } from 'node:perf_hooks'
+import remapping from '@jridgewell/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
 import MagicString from 'magic-string'
-import { combineSourcemaps } from '../src/node/utils'
 
 const source = Array.from(
   { length: 10_000 },
@@ -16,13 +16,18 @@ const original = new MagicString(source).generateMap({
 const edited = new MagicString(source)
 edited.prepend('const preloadDependencies = ["lazy.js", "lazy.css"];\n')
 const options = { source: 'assets/entry.js', hires: 'boundary' as const }
+// Measure the composition used by combineSourcemaps without importing Vite's
+// source types into the scripts project, which also loads Vite's built types.
 const compose = (decoded: boolean) =>
-  combineSourcemaps('assets/entry.js', [
-    decoded
-      ? (edited.generateDecodedMap(options) as DecodedSourceMap)
-      : (edited.generateMap(options) as RawSourceMap),
-    original,
-  ])
+  remapping(
+    [
+      decoded
+        ? (edited.generateDecodedMap(options) as DecodedSourceMap)
+        : (edited.generateMap(options) as RawSourceMap),
+      original,
+    ],
+    () => null,
+  )
 
 assert.deepEqual(compose(false), compose(true))
 const samples: number[][] = [[], []]
