@@ -68,6 +68,7 @@ export interface DepsOptimizer {
   getOptimizedDepId: (depInfo: OptimizedDepInfo) => string
 
   close: () => Promise<void>
+  isClosed?: () => boolean
 
   options: DepOptimizationOptions
 }
