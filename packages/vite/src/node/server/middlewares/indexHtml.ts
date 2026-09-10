@@ -8,7 +8,7 @@ import type { Connect } from '#dep-types/connect'
 import type { PreviewServer, ResolvedConfig, ViteDevServer } from '../..'
 import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
 import { getNodeAssetAttributes } from '../../assetSource'
-import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
+import { CLIENT_PUBLIC_PATH, DEP_VERSION_RE, FS_PREFIX } from '../../constants'
 import { getHmrImplementation } from '../../plugins/clientInjections'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
@@ -36,8 +36,12 @@ import {
   getHash,
   injectQuery,
   isCSSRequest,
+  isDataUrl,
   isDevServer,
+  isExternalUrl,
+  isInNodeModules,
   isJSRequest,
+  isOptimizable,
   isParentDirectory,
   joinUrlSegments,
   normalizePath,
@@ -161,6 +165,26 @@ const processNodeUrl = (
     }
 
     let preTransformUrl: string | undefined
+
+    if (
+      server &&
+      isClassicScriptLink === false &&
+      !checkPublicFile(url, config) &&
+      isInNodeModules(url) &&
+      !isExternalUrl(url) &&
+      !isDataUrl(url) &&
+      !DEP_VERSION_RE.test(url)
+    ) {
+      const depsOptimizer = server.environments.client.depsOptimizer
+      const versionHash = depsOptimizer?.metadata.browserHash
+      if (
+        versionHash &&
+        depsOptimizer &&
+        isOptimizable(url, depsOptimizer.options)
+      ) {
+        url = injectQuery(url, `v=${versionHash}`)
+      }
+    }
 
     if (!isClassicScriptLink && shouldPreTransform(url, config)) {
       if (url[0] === '/' && url[1] !== '/') {
