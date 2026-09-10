@@ -4,12 +4,26 @@ import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
 import { TestCssLinkPlugin } from './css-link/plugin.ts'
 
+const acceptExportsPages = [
+  'main-accepted',
+  'main-non-accepted',
+  'side-effects',
+  'unused-exports',
+  'star-imports',
+  'dynamic-imports',
+].map((dir) =>
+  path.resolve(import.meta.dirname, `./accept-exports/${dir}/index.html`),
+)
+
 export default defineConfig(({ command }) => ({
   input: [
     path.resolve(import.meta.dirname, './index.html'),
     ...(command === 'build'
       ? []
-      : [path.resolve(import.meta.dirname, './missing-import/index.html')]),
+      : [
+          path.resolve(import.meta.dirname, './missing-import/index.html'),
+          ...acceptExportsPages,
+        ]),
     path.resolve(
       import.meta.dirname,
       './unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
