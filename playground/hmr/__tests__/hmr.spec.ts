@@ -15,6 +15,7 @@ import {
   removeFile,
   serverLogs,
   untilBrowserLogAfter,
+  viteServer,
   viteTestUrl,
 } from '~utils'
 
@@ -513,26 +514,34 @@ if (!isBuild) {
       )
   })
 
-  // bundled dev: partial accept (`import.meta.hot.acceptExports`) is not
-  // supported (rolldown#10061)
-  describe.skipIf(isBundledDev)('acceptExports', () => {
+  describe('acceptExports', () => {
     const HOT_UPDATED = /hot updated/
     const CONNECTED = /connected/
+    const hotUpdated = (file: string) =>
+      isBundledDev
+        ? `[vite] hot updated: playground-temp/hmr/${file}`
+        : `[vite] hot updated: /${file}`
 
     const baseDir = 'accept-exports'
+    const openPage = async (testDir: string) => {
+      if (isBundledDev) {
+        const bundledDev = viteServer.environments.client.bundledDev as any
+        await bundledDev.devEngine.ensureLatestBuildOutput()
+      }
+      await page.goto(`${viteTestUrl}/${testDir}/`)
+    }
 
     describe('when all used exports are accepted', () => {
       const testDir = baseDir + '/main-accepted'
 
       const fileName = 'target.ts'
       const file = `${testDir}/${fileName}`
-      const url = '/' + file
 
       let dep = 'dep0'
 
       beforeAll(async () => {
         await untilBrowserLogAfter(
-          () => page.goto(`${viteTestUrl}/${testDir}/`),
+          () => openPage(testDir),
           [CONNECTED, />>>>>>/],
           (logs) => {
             expect(logs).toContain(`<<<<<< A0 B0 D0 ; ${dep}`)
@@ -543,7 +552,6 @@ if (!isBuild) {
 
       it('the callback is called with the new version the module', async () => {
         const callbackFile = `${testDir}/callback.ts`
-        const callbackUrl = '/' + callbackFile
 
         await untilBrowserLogAfter(
           () => {
@@ -555,10 +563,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
-              'reloaded >>> Y',
-              `[vite] hot updated: ${callbackUrl}`,
-            ])
+            expect(logs).toEqual(['reloaded >>> Y', hotUpdated(callbackFile)])
           },
         )
 
@@ -572,7 +577,7 @@ if (!isBuild) {
           (logs) => {
             expect(logs).toEqual([
               'reloaded (2) >>> Z',
-              `[vite] hot updated: ${callbackUrl}`,
+              hotUpdated(callbackFile),
             ])
           },
         )
@@ -591,10 +596,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
-              `<<<<<< A0 B0 D0 ; ${dep}`,
-              `[vite] hot updated: ${url}`,
-            ])
+            expect(logs).toEqual([`<<<<<< A0 B0 D0 ; ${dep}`, hotUpdated(file)])
           },
         )
       })
@@ -606,10 +608,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
-              `<<<<<< A1 B1 D1 ; ${dep}`,
-              `[vite] hot updated: ${url}`,
-            ])
+            expect(logs).toEqual([`<<<<<< A1 B1 D1 ; ${dep}`, hotUpdated(file)])
           },
         )
       })
@@ -630,10 +629,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
-              `<<<<<< A2 B2 D2 ; ${dep}`,
-              `[vite] hot updated: ${url}`,
-            ])
+            expect(logs).toEqual([`<<<<<< A2 B2 D2 ; ${dep}`, hotUpdated(file)])
           },
         )
       })
@@ -668,7 +664,7 @@ if (!isBuild) {
 
       beforeAll(async () => {
         await untilBrowserLogAfter(
-          () => page.goto(`${viteTestUrl}/${testDir}/`),
+          () => openPage(testDir),
           [CONNECTED, />>>>>>/],
           (logs) => {
             expect(logs).toContain(`<<< named: ${a} ; ${dep}`)
@@ -731,7 +727,7 @@ if (!isBuild) {
       const file = 'side-effects.ts'
 
       await untilBrowserLogAfter(
-        () => page.goto(`${viteTestUrl}/${testDir}/`),
+        () => openPage(testDir),
         [CONNECTED, />>>/],
         (logs) => {
           expect(logs).toContain('>>> side FX')
@@ -748,7 +744,7 @@ if (!isBuild) {
         (logs) => {
           expect(logs).toEqual([
             '>>> side FX !!',
-            `[vite] hot updated: /${testDir}/${file}`,
+            hotUpdated(`${testDir}/${file}`),
           ])
         },
       )
@@ -760,10 +756,9 @@ if (!isBuild) {
       test('accepts itself if no exports are imported', async () => {
         const fileName = 'unused.ts'
         const file = `${testDir}/${fileName}`
-        const url = '/' + file
 
         await untilBrowserLogAfter(
-          () => page.goto(`${viteTestUrl}/${testDir}/`),
+          () => openPage(testDir),
           [CONNECTED, '-- unused --'],
           (logs) => {
             expect(logs).toContain('-- unused --')
@@ -779,7 +774,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual(['-> unused <-', `[vite] hot updated: ${url}`])
+            expect(logs).toEqual(['-> unused <-', hotUpdated(file)])
           },
         )
       })
@@ -789,7 +784,7 @@ if (!isBuild) {
         const file = `${testDir}/${fileName}`
 
         await untilBrowserLogAfter(
-          () => page.goto(`${viteTestUrl}/${testDir}/`),
+          () => openPage(testDir),
           [CONNECTED, '-- used --'],
           (logs) => {
             expect(logs).toContain('-- used --')
@@ -824,10 +819,9 @@ if (!isBuild) {
         it('accepts itself if all its exports are accepted', async () => {
           const fileName = 'deps-all-accepted.ts'
           const file = `${testDir}/${fileName}`
-          const url = '/' + file
 
           await untilBrowserLogAfter(
-            () => page.goto(`${viteTestUrl}/${testDir}/`),
+            () => openPage(testDir),
             [CONNECTED, '>>> ready <<<'],
             (logs) => {
               expect(logs).toContain('loaded:all:a0b0c0default0')
@@ -841,10 +835,7 @@ if (!isBuild) {
             },
             HOT_UPDATED,
             (logs) => {
-              expect(logs).toEqual([
-                'all >>>>>> a1, b1, c1',
-                `[vite] hot updated: ${url}`,
-              ])
+              expect(logs).toEqual(['all >>>>>> a1, b1, c1', hotUpdated(file)])
             },
           )
 
@@ -854,10 +845,7 @@ if (!isBuild) {
             },
             HOT_UPDATED,
             (logs) => {
-              expect(logs).toEqual([
-                'all >>>>>> a2, b2, c2',
-                `[vite] hot updated: ${url}`,
-              ])
+              expect(logs).toEqual(['all >>>>>> a2, b2, c2', hotUpdated(file)])
             },
           )
         })
@@ -867,7 +855,7 @@ if (!isBuild) {
           const file = `${testDir}/${fileName}`
 
           await untilBrowserLogAfter(
-            () => page.goto(`${viteTestUrl}/${testDir}/`),
+            () => openPage(testDir),
             [CONNECTED, '>>> ready <<<'],
             (logs) => {
               expect(logs).toContain('loaded:some:a0b0c0default0')

@@ -116,6 +116,9 @@ async function createClientConfigValueReplacer(
   const hmrTimeoutReplacement = escapeReplacement(timeout)
   const hmrEnableOverlayReplacement = escapeReplacement(overlay)
   const hmrConfigNameReplacement = escapeReplacement(hmrConfigName)
+  const hmrPartialAcceptReplacement = escapeReplacement(
+    config.experimental.hmrPartialAccept,
+  )
   const wsTokenReplacement = escapeReplacement(config.webSocketToken)
   const serverForwardConsoleReplacement = escapeReplacement(
     config.server.forwardConsole as any,
@@ -134,6 +137,7 @@ async function createClientConfigValueReplacer(
       .replace(`__HMR_TIMEOUT__`, hmrTimeoutReplacement)
       .replace(`__HMR_ENABLE_OVERLAY__`, hmrEnableOverlayReplacement)
       .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
+      .replace(`__HMR_PARTIAL_ACCEPT__`, hmrPartialAcceptReplacement)
       .replace(`__WS_TOKEN__`, wsTokenReplacement)
       .replace(`__SERVER_FORWARD_CONSOLE__`, serverForwardConsoleReplacement)
 }

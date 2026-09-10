@@ -9,6 +9,7 @@ import type { NormalizedModuleRunnerTransport } from '../shared/moduleRunnerTran
 /** the subset of `__rolldown_runtime__` the HMR client uses */
 export interface RolldownRuntimeLike {
   getImporters(id: string): string[]
+  getImportedBindings?(importer: string, id: string): string[] | undefined
   isExecuted(id: string): boolean
   hasFactory(id: string): boolean
   removeModuleCache(id: string): void
@@ -33,6 +34,7 @@ type HmrUpdate =
 
 export interface BundledDevHMRClientOptions {
   base: string
+  partialAccept: boolean
   /** returning `'reload'` aborts the apply — the hook reloads the page itself */
   beforeApply: () => 'reload' | 'continue'
 }
@@ -41,6 +43,8 @@ export class BundledDevHMRClient extends HMRClient {
   private applyQueue = Promise.resolve()
   private lastSeq = 0
   private reloadPending = false
+  private acceptedExportsMap = new Map<string, Set<string>>()
+  private partialAcceptCallbacks = new WeakSet<(...args: any[]) => void>()
 
   constructor(
     logger: HMRLogger,
@@ -57,9 +61,37 @@ export class BundledDevHMRClient extends HMRClient {
 
   isSelfAccepted(id: string): boolean {
     return (
-      this.hotModulesMap.get(id)?.callbacks.some((c) => c.deps.includes(id)) ??
-      false
+      this.hotModulesMap
+        .get(id)
+        ?.callbacks.some(
+          (c) => c.deps.includes(id) && !this.partialAcceptCallbacks.has(c.fn),
+        ) ?? false
     )
+  }
+
+  registerAcceptedExports(
+    owner: string,
+    exportNames: string | readonly string[],
+    callback: (...args: any[]) => void,
+  ): void {
+    const accepted = this.acceptedExportsMap.get(owner) ?? new Set<string>()
+    for (const name of typeof exportNames === 'string'
+      ? [exportNames]
+      : exportNames) {
+      accepted.add(name)
+    }
+    this.acceptedExportsMap.set(owner, accepted)
+    this.partialAcceptCallbacks.add(callback)
+  }
+
+  clearAcceptedExports(owner: string): void {
+    this.acceptedExportsMap.delete(owner)
+  }
+
+  private acceptsAllExports(id: string, accepted: Set<string>): boolean {
+    const exports = this.runtime.loadExports(id)
+    if (typeof exports !== 'object' || exports == null) return false
+    return Object.keys(exports).every((name) => accepted.has(name))
   }
 
   acceptsDep(parent: string, id: string): boolean {
@@ -113,7 +145,11 @@ export class BundledDevHMRClient extends HMRClient {
         reason: `update propagated back to ${firstInvalidatedBy}, which already called \`import.meta.hot.invalidate()\``,
       }
     }
-    if (this.isSelfAccepted(id)) {
+    const acceptedExports = this.acceptedExportsMap.get(id)
+    if (
+      this.isSelfAccepted(id) ||
+      (acceptedExports && this.acceptsAllExports(id, acceptedExports))
+    ) {
       boundaries.push({
         boundary: id,
         acceptedVia: id,
@@ -121,16 +157,25 @@ export class BundledDevHMRClient extends HMRClient {
       })
       return
     }
+    if (acceptedExports) {
+      boundaries.push({
+        boundary: id,
+        acceptedVia: id,
+        isWithinCircularImport: this.isNodeWithinCircularImports(id, stack),
+      })
+    }
     const parents = this.runtime
       .getImporters(id)
       .filter((p) => this.runtime.isExecuted(p))
     if (!parents.length) {
+      if (acceptedExports) return
       return {
         type: 'full-reload',
         reason: `no hmr boundary found for module \`${id}\``,
       }
     }
     for (const parent of parents) {
+      if (acceptedExports && parent === id) continue
       const subChain = [...stack, parent]
       if (this.acceptsDep(parent, id)) {
         boundaries.push({
@@ -142,6 +187,12 @@ export class BundledDevHMRClient extends HMRClient {
           ),
         })
         continue
+      }
+      if (acceptedExports && this.options.partialAccept) {
+        const bindings = this.runtime.getImportedBindings?.(parent, id)
+        if (bindings && bindings.every((name) => acceptedExports.has(name))) {
+          continue
+        }
       }
       if (!stack.includes(parent)) {
         const fullReload = this.bubble(
@@ -425,6 +476,16 @@ export class BundledDevHMRContext extends HMRContext {
     private owner: string,
   ) {
     super(bundledDevClient, owner)
+    bundledDevClient.clearAcceptedExports(owner)
+  }
+
+  override acceptExports(
+    exportNames: string | readonly string[],
+    callback?: (data: any) => void,
+  ): void {
+    const fn = ([mod]: any[]) => callback?.(mod)
+    this.bundledDevClient.registerAcceptedExports(this.owner, exportNames, fn)
+    this.acceptDeps([this.owner], fn)
   }
 
   override invalidate(message: string): void {

@@ -75,8 +75,8 @@ export class HMRContext implements ViteHotContext {
     }
   }
 
-  // export names (first arg) are irrelevant on the client side, they're
-  // extracted in the server for propagation
+  // in unbundled dev the export names (first arg) are extracted by the server;
+  // the bundled-dev context overrides this method and reads them itself
   acceptExports(
     _: string | readonly string[],
     callback?: (data: any) => void,
@@ -151,7 +151,7 @@ export class HMRContext implements ViteHotContext {
     this.hmrClient.send({ type: 'custom', event, data })
   }
 
-  private acceptDeps(
+  protected acceptDeps(
     deps: string[],
     callback: HotCallback['fn'] = () => {},
   ): void {
