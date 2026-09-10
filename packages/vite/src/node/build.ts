@@ -899,12 +899,25 @@ async function buildEnvironment(
         },
       })
 
+      let prevResult: any | undefined
       watcher.on('event', (event) => {
         if (event.code === 'BUNDLE_START') {
+          if (prevResult) {
+            prevResult.close()
+            prevResult = undefined
+          }
           logger.info(colors.cyan(`\nbuild started...`))
           chunkMetadataMap.clearResetChunks()
         } else if (event.code === 'BUNDLE_END') {
-          event.result.close()
+          const skipWrite =
+            options.write === false ||
+            (options.watch && (options.watch as any).skipWrite) ||
+            (rolldownOptions.watch && (rolldownOptions.watch as any).skipWrite)
+          if (!skipWrite) {
+            event.result.close()
+          } else {
+            prevResult = event.result
+          }
           logger.info(colors.cyan(`built in ${event.duration}ms.`))
         } else if (event.code === 'ERROR') {
           const e = event.error
