@@ -34,6 +34,7 @@ const input = {
   serveBothFolder: resolve(dirname, 'serve/both/index.html'),
   write: resolve(dirname, 'write.html'),
   'transform-inline-js': resolve(dirname, 'transform-inline-js.html'),
+  'inline-classic-script': resolve(dirname, 'inline-classic-script.html'),
   malformedUrl: resolve(dirname, 'malformed-url.html'),
   // resolved from `process.cwd()` by Rolldown (resolved from `root` by vite's resolver first)
   relativeInput: relative(
