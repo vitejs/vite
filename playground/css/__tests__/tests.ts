@@ -86,6 +86,18 @@ test('postcss config', async () => {
   await expect.poll(() => getColor(imported)).toBe('red')
 })
 
+test('@import resolved by a user resolveId plugin', async () => {
+  expect(await getColor('.user-resolver-layer')).toBe('blue')
+  expect(await getColor('.user-resolver-nested')).toBe('green')
+  expect(await getColor('.user-resolver-scss')).toBe('blue')
+  expect(await getColor('.user-resolver-scss-nested')).toBe('green')
+  expect(await getColor('.user-resolver-hook')).toBe('blue')
+  expect(await getColor('.user-resolver-hook-nested')).toBe('green')
+  // a pre plugin returning `external: true` is ignored here
+  expect(await getColor('.user-resolver-external-layer')).toBe('blue')
+  expect(await getColor('.user-resolver-external')).toBe('green')
+})
+
 test('postcss plugin that injects url()', async () => {
   const imported = await page.$('.inject-url')
   // alias should be resolved
