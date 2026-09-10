@@ -105,7 +105,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               s.update(
                 startIndex,
                 endIndex,
-                `new URL((import.meta.glob(${JSON.stringify(
+                `new globalThis.URL((import.meta.glob(${JSON.stringify(
                   pattern,
                 )}, ${JSON.stringify(
                   globOptions,
@@ -168,7 +168,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             startIndex,
             endIndex,
             // NOTE: add `'' +` to opt-out rolldown's transform: https://github.com/rolldown/rolldown/issues/2745
-            `new URL(${builtUrlExpr}, '' + import.meta.url)`,
+            // NOTE: `globalThis.URL` because a module of its own can export `URL`
+            `new globalThis.URL(${builtUrlExpr}, '' + import.meta.url)`,
           )
         }
         if (s) {
