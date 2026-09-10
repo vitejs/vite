@@ -41,6 +41,10 @@ function escapeRegex(str: string): string {
 }
 
 const versionHeaderRe = /^## (?:<small>)?\[/
+const versionRe = /^## (?:<small>)?\[([^\]]+)\]/
+const prereleaseRe = /alpha|beta|rc/
+const releaseHeaderRe =
+  /^## (?:<small>)?\[([^\]]+)\]\(([^)]+)\)(?: \((\d{4}-\d{2}-\d{2})\))?/
 
 function findReleaseHeaderIndex(lines: string[], version: string): number {
   const re = new RegExp(`^## (?:<small>)?\\[${escapeRegex(version)}\\]`)
@@ -96,10 +100,10 @@ function parseCategories(releaseLines: string[]): Map<string, string[]> {
 
 function findPreviousStableVersion(lines: string[], startIdx: number): string {
   for (let i = startIdx; i < lines.length; i++) {
-    const match = lines[i].match(/^## (?:<small>)?\[([^\]]+)\]/)
+    const match = lines[i].match(versionRe)
     if (match) {
       const v = match[1]
-      if (!/alpha|beta|rc/.test(v)) {
+      if (!prereleaseRe.test(v)) {
         return v
       }
     }
@@ -127,12 +131,10 @@ function collectPrereleaseHeaders(
 ): string[] {
   const lines: string[] = []
   for (const line of releaseLines) {
-    const match = line.match(
-      /^## (?:<small>)?\[([^\]]+)\]\(([^)]+)\)(?: \((\d{4}-\d{2}-\d{2})\))?/,
-    )
+    const match = line.match(releaseHeaderRe)
     if (!match) continue
     const [, ver, compareUrl, date] = match
-    if (!/alpha|beta|rc/.test(ver)) continue
+    if (!prereleaseRe.test(ver)) continue
 
     const tagPrefix = pkg === 'vite' ? 'v' : `${pkg}@`
     const tag = `${tagPrefix}${ver}`
