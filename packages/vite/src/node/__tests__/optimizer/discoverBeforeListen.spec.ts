@@ -90,3 +90,54 @@ test('does not crash when a dep is discovered before the server starts listening
   await ssr.depsOptimizer?.scanProcessing
   expect(errors).toStrictEqual([])
 })
+
+// regression test for https://github.com/vitejs/vite/issues/23143
+// If a request for a pre-init discovered dependency is pending when the server
+// closes, the request waits for the dependency's processing promise. Since
+// discovery before listen intentionally doesn't start an optimizer run, close()
+// needs to resolve that promise so shutdown can finish.
+test('does not hang when closing with a pre-init discovered dep request', async () => {
+  server = await createServer({
+    configFile: false,
+    root: path.join(
+      import.meta.dirname,
+      '../fixtures/optimizer-discover-before-listen',
+    ),
+    cacheDir: 'node_modules/.vite',
+    environments: {
+      ssr: {
+        resolve: {
+          noExternal: true,
+        },
+        optimizeDeps: {
+          force: true,
+          noDiscovery: false,
+        },
+      },
+    },
+  })
+
+  const ssr = server.environments.ssr
+  const depsOptimizer = ssr.depsOptimizer!
+
+  await ssr.transformRequest('/entry.js')
+
+  const discovered = depsOptimizer.metadata.discovered.vue!
+  expect(discovered.processing).toBeDefined()
+
+  // Start a request that waits on the discovered dep's unresolved processing
+  // promise. During shutdown, the request may fail because the optimized file
+  // was never written, but it must not keep close() pending forever.
+  const optimizedRequest = ssr
+    .transformRequest(depsOptimizer.getOptimizedDepId(discovered))
+    .catch(() => {})
+
+  const closeFinished = await Promise.race([
+    server.close().then(() => true),
+    setTimeout(300, false),
+  ])
+
+  expect(closeFinished).toBe(true)
+  server = undefined
+  await optimizedRequest
+})
