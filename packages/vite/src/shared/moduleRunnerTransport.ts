@@ -40,6 +40,17 @@ function reviveInvokeError(e: any) {
   return error
 }
 
+/**
+ * Whether the error is a transport invoke timeout. These are retryable —
+ * callers should not cache them as the module's permanent result.
+ */
+export function isTransportInvokeTimeoutError(error: unknown): boolean {
+  return (
+    (error as { code?: unknown } | null | undefined)?.code ===
+    'ERR_TRANSPORT_INVOKE_TIMEOUT'
+  )
+}
+
 const createInvokeableTransport = (
   transport: ModuleRunnerTransport,
 ): InvokeableModuleRunnerTransport => {
@@ -148,8 +159,11 @@ const createInvokeableTransport = (
         timeoutId = setTimeout(() => {
           rpcPromises.delete(promiseId)
           reject(
-            new Error(
-              `transport invoke timed out after ${timeout}ms (data: ${JSON.stringify(wrappedData)})`,
+            Object.assign(
+              new Error(
+                `transport invoke timed out after ${timeout}ms (data: ${JSON.stringify(wrappedData)})`,
+              ),
+              { code: 'ERR_TRANSPORT_INVOKE_TIMEOUT' },
             ),
           )
         }, timeout)
