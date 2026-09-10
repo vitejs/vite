@@ -61,7 +61,7 @@ const fileUrlMetadata = new WeakMap<Environment, Map<string, FileUrlMetadata>>()
 
 const jsSourceMapRE = /\.[cm]?js\.map$/
 
-export const noInlineRE: RegExp = /[?&]no-inline\b/
+const noInlineRE: RegExp = /[?&]no-inline\b/
 export const inlineRE: RegExp = /[?&]inline\b/
 
 /**

@@ -32,7 +32,7 @@ type VitePreloadErrorEvent = Event & { payload: Error }
  * target is not native es - so that injected helper logic can be conditionally
  * dropped.
  */
-export const isModernFlag = `__VITE_IS_MODERN__`
+const isModernFlag = `__VITE_IS_MODERN__`
 export const preloadMethod = `__vitePreload`
 export const preloadMarker = `__VITE_PRELOAD__`
 
