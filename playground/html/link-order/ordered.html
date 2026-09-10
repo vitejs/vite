@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Link order (already preserved)</title>
+    <!-- the publicDir sheet is authored first, so appending the bundled one at
+         the end of <head> still matches the authored order -->
+    <link rel="stylesheet" href="/link-order-public.css" />
+    <link rel="stylesheet" href="./bundled.css" />
+  </head>
+  <body>
+    <h1 id="link-order">link order</h1>
+  </body>
+</html>

@@ -186,6 +186,21 @@ function getLinkShouldInline(
   return isNoInlineLink ? false : undefined
 }
 
+// Only `<link rel="stylesheet">` directly under `<head>` take part in the
+// cascade we can reason about: `traverseHtml` also descends into `<template>`,
+// and parse5 runs with `scriptingEnabled: false` so `<noscript>` contents are
+// parsed as real elements too.
+function isHeadStylesheetLink(
+  node: DefaultTreeAdapterMap['element'],
+  attributes: Record<string, string>,
+): boolean {
+  return (
+    node.nodeName === 'link' &&
+    node.parentNode?.nodeName === 'head' &&
+    parseRelAttr(attributes.rel ?? '').includes('stylesheet')
+  )
+}
+
 export const isAsyncScriptMap: WeakMap<
   ResolvedConfig,
   Map<string, boolean>
@@ -515,6 +530,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const s = new MagicString(html)
         const scriptUrls: ScriptAssetsUrl[] = []
         const styleUrls: ScriptAssetsUrl[] = []
+        // every `<link rel="stylesheet">` directly under `<head>`, in document
+        // order, and whether it gets bundled away or is left where it is. Used
+        // to warn when building cannot keep the authored cascade order (#8739).
+        const headStylesheetLinks: { url: string; bundled: boolean }[] = []
         let inlineModuleIndex = -1
 
         let everyScriptIsAsync = true
@@ -670,6 +689,24 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               )
             } else if (attr.type === 'src') {
               const url = decodeURIIfPossible(attr.value)
+              if (
+                url !== undefined &&
+                isHeadStylesheetLink(node, attr.attributes)
+              ) {
+                headStylesheetLinks.push({
+                  url,
+                  // mirrors the "convert to import" condition below; links that
+                  // turn out to be unresolvable are downgraded further down
+                  bundled:
+                    !checkPublicFile(url, config) &&
+                    !isExcludedUrl(url) &&
+                    isCSSRequest(url) &&
+                    !(
+                      'media' in attr.attributes ||
+                      'disabled' in attr.attributes
+                    ),
+                })
+              }
               if (url === undefined) {
                 // ignore it
               } else if (checkPublicFile(url, config)) {
@@ -803,9 +840,36 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             )
             const importExpression = `\nimport ${JSON.stringify(url)}`
             js = js.replace(importExpression, '')
+            // it stays in the html, so it keeps its authored position
+            for (const link of headStylesheetLinks) {
+              if (link.url === url) {
+                link.bundled = false
+              }
+            }
           } else {
             s.remove(start, end)
           }
+        }
+
+        // Bundled stylesheet links are removed here and their CSS is appended at
+        // the end of `<head>` in `generateBundle`, while the others keep their
+        // authored position. Any stylesheet link authored after a bundled one
+        // therefore ends up before it, silently flipping the cascade (#8739).
+        const firstBundled = headStylesheetLinks.findIndex((l) => l.bundled)
+        const displaced =
+          firstBundled === -1
+            ? undefined
+            : headStylesheetLinks
+                .slice(firstBundled + 1)
+                .find((l) => !l.bundled)
+        if (displaced) {
+          config.logger.warnOnce(
+            `\n<link rel="stylesheet" href="${displaced.url}"> in "${publicPath}" is authored after ` +
+              `<link rel="stylesheet" href="${headStylesheetLinks[firstBundled].url}">, but Vite bundles the ` +
+              `latter and appends it at the end of <head>, so the built page applies the two in the opposite ` +
+              `order. Move it before the bundled stylesheet links, or import it from JavaScript instead. ` +
+              `See https://github.com/vitejs/vite/issues/8739`,
+          )
         }
 
         processedHtml(this).set(id, s.toString())
