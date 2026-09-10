@@ -4,8 +4,11 @@ import remapping from '@jridgewell/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
 import MagicString from 'magic-string'
 
+// BENCH_LINES=100000 node --import tsx packages/vite/scripts/benchPreloadSourcemap.ts
+const lineCount = Number(process.env.BENCH_LINES ?? 10_000)
+assert(Number.isSafeInteger(lineCount) && lineCount > 0)
 const source = Array.from(
-  { length: 10_000 },
+  { length: lineCount },
   (_, i) => `export const value${i} = ${i};`,
 ).join('\n')
 const original = new MagicString(source).generateMap({
@@ -30,6 +33,9 @@ const compose = (decoded: boolean) =>
   )
 
 assert.deepEqual(compose(false), compose(true))
+console.log(
+  `${lineCount} lines; ${Buffer.byteLength(source)} source bytes; ${Buffer.byteLength(JSON.stringify(original))} original map bytes`,
+)
 const samples: number[][] = [[], []]
 for (let round = 0; round < 25; round++) {
   for (const variant of round % 2 ? [1, 0] : [0, 1]) {
