@@ -231,11 +231,14 @@ export function resolveCSSOptions(
   options: CSSOptions | undefined,
 ): ResolvedCSSOptions {
   const resolved = mergeWithDefaults(_cssConfigDefaults, options ?? {})
-  if (resolved.transformer === 'lightningcss') {
-    resolved.lightningcss ??= {}
-    resolved.lightningcss.targets ??= convertTargets(
-      ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
-    )
+  if (
+    resolved.transformer === 'lightningcss' &&
+    resolved.lightningcss?.targets == null
+  ) {
+    resolved.lightningcss = {
+      ...resolved.lightningcss,
+      targets: convertTargets(ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET),
+    }
   }
   return resolved
 }
