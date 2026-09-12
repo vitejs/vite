@@ -968,6 +968,12 @@ export async function _createServer(
     onFileAddUnlink(file, true).catch((e) => server.config.logger.error(e))
   })
 
+  watcher.on('error', (error) => {
+    server.config.logger.warn(
+      colors.yellow(`file watcher error: ${error.message}`),
+    )
+  })
+
   if (!middlewareMode && httpServer) {
     httpServer.once('listening', () => {
       // update actual port since this may be different from initial value

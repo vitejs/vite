@@ -2,6 +2,7 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { type ViteDevServer, createServer } from '../index'
+import { createLogger } from '../../logger'
 
 const stubGetWatchedCode = /\(\)\s*\{\s*return this;\s*\}/
 
@@ -31,6 +32,21 @@ describe('watcher configuration', () => {
       },
     })
     expect(server.watcher.add.toString()).not.toMatch(stubGetWatchedCode)
+  })
+
+  it('logs watcher errors without throwing', async () => {
+    const logger = createLogger('silent')
+    logger.warn = vi.fn()
+    server = await createServer({
+      customLogger: logger,
+      server: { watch: {} },
+    })
+
+    const error = new Error('watch failed')
+    expect(() => server!.watcher.emit('error', error)).not.toThrow()
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('watcher error: watch failed'),
+    )
   })
 
   it('should watch the root directory, config file dependencies, dotenv files, and the public directory', async () => {
