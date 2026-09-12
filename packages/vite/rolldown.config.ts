@@ -151,7 +151,6 @@ const moduleRunnerConfig = defineConfig({
     'fsevents',
     'lightningcss',
     /^rolldown\//,
-    '@vitejs/devtools/cli-commands',
     ...Object.keys(pkg.dependencies),
   ],
   plugins: [bundleSizeLimit(55), enableSourceMapsInWatchModePlugin()],
@@ -212,9 +211,10 @@ function externalizeDepsInWatchPlugin(): Plugin {
         options.external ||= []
         if (!Array.isArray(options.external))
           throw new Error('external must be an array')
-        options.external = options.external.concat(
-          Object.keys(pkg.devDependencies),
-        )
+        options.external = [
+          ...options.external,
+          ...Object.keys(pkg.devDependencies),
+        ]
       }
     },
   }

@@ -137,8 +137,10 @@ export function isNodeBuiltin(id: string): boolean {
   return nodeBuiltins.includes(id)
 }
 
+const inNodeModulesRE = /(?:^|[\\/])node_modules(?:[\\/]|$)/
+
 export function isInNodeModules(id: string): boolean {
-  return id.includes('node_modules')
+  return inNodeModulesRE.test(id)
 }
 
 export function moduleListContains(
@@ -296,7 +298,7 @@ export const isJSRequest = (url: string): boolean => {
   if (knownJsSrcRE.test(url)) {
     return true
   }
-  if (!path.extname(url) && url[url.length - 1] !== '/') {
+  if (!path.extname(url) && url.at(-1) !== '/') {
     return true
   }
   return false
@@ -481,6 +483,14 @@ export const splitRE: RegExp = /\r?\n/g
 
 const range: number = 2
 
+/**
+ * `splitRE` treats both LF and CRLF as a line terminator, so the terminator
+ * following a line is 2 characters long when the source uses CRLF.
+ */
+function lineTerminatorLengthAt(source: string, index: number): number {
+  return source[index] === '\r' ? 2 : 1
+}
+
 export function pad(source: string, n = 2): string {
   const lines = source.split(splitRE)
   return lines.map((l) => ` `.repeat(n) + l).join(`\n`)
@@ -499,7 +509,8 @@ export function posToNumber(source: string, pos: number | Pos): number {
   const { line, column } = pos
   let start = 0
   for (let i = 0; i < line - 1 && i < lines.length; i++) {
-    start += lines[i].length + 1
+    start += lines[i].length
+    start += lineTerminatorLengthAt(source, start)
   }
   return start + column
 }
@@ -515,7 +526,7 @@ export function numberToPos(source: string, offset: number | Pos): Pos {
   const lines = source.slice(0, offset).split(splitRE)
   return {
     line: lines.length,
-    column: lines[lines.length - 1].length,
+    column: lines.at(-1)!.length,
   }
 }
 
@@ -592,12 +603,12 @@ export function generateCodeFrame(
             const underline = '^'.repeat(Math.min(length, MAX_DISPLAY_LEN))
             res.push(`${' '.repeat(lineNumberWidth)}|  ` + underline)
           }
-          count += lineLength + 1
+          count += lineTerminatorLengthAt(source, count) + lineLength
         }
       }
       break
     }
-    count++
+    count += lineTerminatorLengthAt(source, count)
   }
   return res.join('\n')
 }
@@ -946,7 +957,7 @@ export function combineSourcemaps(
 }
 
 export function unique<T>(arr: T[]): T[] {
-  return Array.from(new Set(arr))
+  return [...new Set(arr)]
 }
 
 /**
