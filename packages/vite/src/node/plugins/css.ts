@@ -1600,7 +1600,7 @@ async function compilePostCSS(
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
-  const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
+  const hasUrl = cssUrlRE.test(code) || code.includes('image-set(')
   const postcssConfig = await resolvePostcssConfig(
     environment.getTopLevelConfig(),
   )
@@ -2089,9 +2089,41 @@ export const cssDataUriRE: RegExp =
   /(?<=^|[^\w\-\u0080-\uffff])data-uri\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
 export const importCssRE: RegExp =
   /@import\s+(?:url\()?('[^']+\.css'|"[^"]+\.css"|[^'"\s)]+\.css)/
-// Assuming a function name won't be longer than 256 chars
-// eslint-disable-next-line regexp/no-unused-capturing-group -- doesn't detect asyncReplace usage
-const cssImageSetRE = /(?<=image-set\()((?:[\w-]{1,256}\([^)]*\)|[^)])*)(?=\))/
+
+/**
+ * Find the index of the `)` that closes the `(` at `openIndex`, respecting
+ * nested parentheses and quoted strings.
+ */
+export function findClosingParenIndex(str: string, openIndex: number): number {
+  let depth = 1
+  let inQuote: '"' | "'" | null = null
+  for (let i = openIndex + 1; i < str.length; i++) {
+    const c = str[i]
+    if (inQuote) {
+      if (c === '\\') {
+        i++
+        continue
+      }
+      if (c === inQuote) {
+        inQuote = null
+      }
+      continue
+    }
+    if (c === '"' || c === "'") {
+      inQuote = c
+      continue
+    }
+    if (c === '(') {
+      depth++
+    } else if (c === ')') {
+      depth--
+      if (depth === 0) {
+        return i
+      }
+    }
+  }
+  return -1
+}
 
 const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
   resolver: CssUrlResolver
@@ -2117,7 +2149,7 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
           )
         }
         const isCssUrl = cssUrlRE.test(declaration.value)
-        const isCssImageSet = cssImageSetRE.test(declaration.value)
+        const isCssImageSet = declaration.value.includes('image-set(')
         if (isCssUrl || isCssImageSet) {
           const replacerForDeclaration = async (rawUrl: string) => {
             const [newUrl, resolvedId] = await opts.resolver(rawUrl, importer)
@@ -2195,9 +2227,26 @@ async function rewriteCssImageSet(
   css: string,
   replacer: CssUrlReplacer,
 ): Promise<string> {
-  return await asyncReplace(css, cssImageSetRE, async (match) => {
-    const [, rawUrl] = match
-    const url = await processSrcSet(rawUrl, async ({ url }) => {
+  // Do not use a single regex for the image-set() contents: nested functions
+  // like linear-gradient(... rgba(...)) contain `)` and truncate [^)]* matches.
+  let result = ''
+  let i = 0
+  while (i < css.length) {
+    const start = css.indexOf('image-set(', i)
+    if (start === -1) {
+      result += css.slice(i)
+      break
+    }
+    result += css.slice(i, start)
+    const openParen = start + 'image-set'.length
+    // handle optional vendor prefix already included via indexOf('image-set(')
+    const closeParen = findClosingParenIndex(css, openParen)
+    if (closeParen === -1) {
+      result += css.slice(start)
+      break
+    }
+    const rawUrl = css.slice(openParen + 1, closeParen)
+    const rewritten = await processSrcSet(rawUrl, async ({ url }) => {
       // the url maybe url(...)
       if (cssUrlRE.test(url)) {
         return await rewriteCssUrls(url, replacer)
@@ -2207,8 +2256,10 @@ async function rewriteCssImageSet(
       }
       return url
     })
-    return url
-  })
+    result += `image-set(${rewritten})`
+    i = closeParen + 1
+  }
+  return result
 }
 function skipUrlReplacer(unquotedUrl: string) {
   return (
