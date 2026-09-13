@@ -298,8 +298,26 @@ if (isBuild) {
   })
 
   test('lazy bundling', async () => {
+    const lazyResponsePromise = page.waitForResponse((res: Response) =>
+      res.url().includes('/@vite/lazy'),
+    )
     await page.click('#load-dynamic')
     await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')
+
+    // the lazy chunk's relative sourceMappingURL must resolve to a served map
+    const lazyResponse = await lazyResponsePromise
+    const code = await lazyResponse.text()
+    const mapRef = /\/\/# sourceMappingURL=(.+)$/m.exec(code)?.[1]
+    if (!mapRef) {
+      throw new Error('lazy chunk has no sourceMappingURL')
+    }
+    const mapUrl = new URL(mapRef, lazyResponse.url()).href
+    const mapResponse = await page.request.get(mapUrl)
+    expect(mapResponse.ok()).toBe(true)
+    const map = await mapResponse.json()
+    expect(
+      (map.sources as string[]).some((source) => source.endsWith('dynamic.js')),
+    ).toBe(true)
   })
 
   // placed before `invalidate` on purpose: that test's cleanup restores
