@@ -346,6 +346,13 @@ export class BundledDev {
     )
     const result = await this.devEngine.compileEntry(moduleId, clientId)
     this.pendingPayloadFilenames.add(result.filename)
+    if (result.sourcemapFilename && result.sourcemap) {
+      // The chunk is served from `/@vite/lazy?...`, so its relative
+      // `sourceMappingURL` resolves to `/@vite/<sourcemapFilename>`.
+      this.memoryFiles.set(`@vite/${result.sourcemapFilename}`, {
+        source: result.sourcemap,
+      })
+    }
     return {
       filename: result.filename,
       code: result.code + payloadDeliveredAck(result.filename),
