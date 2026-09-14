@@ -4,9 +4,9 @@ import colors from 'picocolors'
 import type { RollupError } from 'rolldown'
 import type { Connect } from '#dep-types/connect'
 import type { ErrorPayload } from '#types/hmrPayload'
-import { pad } from '../../utils'
 import type { ViteDevServer } from '../..'
 import { CLIENT_PUBLIC_PATH } from '../../constants'
+import { pad } from '../../utils'
 
 export function prepareError(err: Error | RollupError): ErrorPayload['err'] {
   // only copy the information we need and avoid serializing unnecessary

@@ -57,7 +57,6 @@ import './external.css'
 import './dep.css'
 import './glob-dep.css'
 
-// eslint-disable-next-line import-x/order
 import { barModuleClasses } from '@vitejs/test-css-js-dep'
 document
   .querySelector('.css-js-dep-module')

@@ -1,10 +1,17 @@
 import path from 'node:path'
+import MagicString from 'magic-string'
 import type { ImportKind, Plugin, RolldownPlugin } from 'rolldown'
 import { prefixRegex } from 'rolldown/filter'
-import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
+import { isWindows } from '../../shared/utils'
 import { JS_TYPES_RE, KNOWN_ASSET_TYPES } from '../constants'
+import type { Environment } from '../environment'
+import { createBackCompatIdResolver } from '../idResolver'
 import type { PackageCache } from '../packages'
+import { assetImportMetaUrlRE } from '../plugins/assetImportMetaUrl'
+import { isModuleCSSRequest } from '../plugins/css'
+import { hasViteIgnoreRE } from '../plugins/importAnalysis'
+import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
 import {
   escapeRegex,
   flattenId,
@@ -16,13 +23,6 @@ import {
   moduleListContains,
   normalizePath,
 } from '../utils'
-import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
-import { isModuleCSSRequest } from '../plugins/css'
-import type { Environment } from '../environment'
-import { createBackCompatIdResolver } from '../idResolver'
-import { isWindows } from '../../shared/utils'
-import { hasViteIgnoreRE } from '../plugins/importAnalysis'
-import { assetImportMetaUrlRE } from '../plugins/assetImportMetaUrl'
 
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'

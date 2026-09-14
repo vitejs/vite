@@ -1,11 +1,11 @@
 import { writeFileSync } from 'node:fs'
 import path from 'node:path'
+import { ImportType, init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import type { Plugin } from 'rolldown'
 import { defineConfig } from 'rolldown'
-import { ImportType, init, parse } from 'es-module-lexer'
-import licensePlugin from './rollupLicensePlugin'
 import pkg from './package.json' with { type: 'json' }
+import licensePlugin from './rollupLicensePlugin'
 
 // eslint-disable-next-line n/no-unsupported-features/node-builtins
 const dirname = import.meta.dirname
@@ -151,7 +151,6 @@ const moduleRunnerConfig = defineConfig({
     'fsevents',
     'lightningcss',
     /^rolldown\//,
-    '@vitejs/devtools/cli-commands',
     ...Object.keys(pkg.dependencies),
   ],
   plugins: [bundleSizeLimit(55), enableSourceMapsInWatchModePlugin()],
@@ -212,9 +211,10 @@ function externalizeDepsInWatchPlugin(): Plugin {
         options.external ||= []
         if (!Array.isArray(options.external))
           throw new Error('external must be an array')
-        options.external = options.external.concat(
-          Object.keys(pkg.devDependencies),
-        )
+        options.external = [
+          ...options.external,
+          ...Object.keys(pkg.devDependencies),
+        ]
       }
     },
   }

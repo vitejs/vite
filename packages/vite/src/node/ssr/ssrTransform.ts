@@ -1,11 +1,13 @@
 import path from 'node:path'
-import MagicString from 'magic-string'
-import type { SourceMap } from 'rolldown'
-import type { ESTree } from 'rolldown/utils'
-import { extract_names as extractNames } from 'periscopic'
-import { walk as eswalk } from 'estree-walker'
 import type { RawSourceMap } from '@jridgewell/remapping'
+import { walk as eswalk } from 'estree-walker'
+import MagicString from 'magic-string'
+import { extract_names as extractNames } from 'periscopic'
+import type { SourceMap } from 'rolldown'
 import { parseAstAsync as rolldownParseAstAsync } from 'rolldown/parseAst'
+import type { ESTree } from 'rolldown/utils'
+import type { DefineImportMetadata } from '../../shared/ssrTransform'
+import { isJSONRequest } from '../plugins/json'
 import type { TransformResult } from '../server/transformRequest'
 import {
   combineSourcemaps,
@@ -14,8 +16,6 @@ import {
   isDefined,
   numberToPos,
 } from '../utils'
-import { isJSONRequest } from '../plugins/json'
-import type { DefineImportMetadata } from '../../shared/ssrTransform'
 
 export interface ModuleRunnerTransformOptions {
   json?: {

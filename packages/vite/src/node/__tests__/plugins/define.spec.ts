@@ -1,8 +1,8 @@
-import { describe, expect, test } from 'vitest'
 import { rolldown } from 'rolldown'
-import { definePlugin } from '../../plugins/define'
-import { resolveConfig } from '../../config'
+import { describe, expect, test } from 'vitest'
 import { PartialEnvironment } from '../../baseEnvironment'
+import { resolveConfig } from '../../config'
+import { definePlugin } from '../../plugins/define'
 
 async function createDefinePluginTransform(
   define: Record<string, any> = {},

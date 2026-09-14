@@ -53,7 +53,7 @@ export type { T }
 
 ### TypeScript Compiler Options
 
-Vite respects some of the options in `tsconfig.json` and sets the corresponding Oxc Transformer options. For each file, Vite uses the closest parent `tsconfig.json` that matches the file, or a config referenced by its [`references`](https://www.typescriptlang.org/tsconfig/#references) field that matches the file. Vite treats a config as matching the file when the file satisfies the config's [`files`](https://www.typescriptlang.org/tsconfig/#files), [`include`](https://www.typescriptlang.org/tsconfig/#include), and [`exclude`](https://www.typescriptlang.org/tsconfig/#exclude) fields.
+Vite respects some of the options in `tsconfig.json` and sets the corresponding Oxc Transformer options. By default, Vite uses the closest parent `tsconfig.json` that matches each file. A config referenced by that config's [`references`](https://www.typescriptlang.org/tsconfig/#references) field is used when it matches the file. Vite treats a config as matching the file when the file satisfies the config's [`files`](https://www.typescriptlang.org/tsconfig/#files), [`include`](https://www.typescriptlang.org/tsconfig/#include), and [`exclude`](https://www.typescriptlang.org/tsconfig/#exclude) fields.
 
 When the options are set in both the Vite config and the `tsconfig.json`, the value in the Vite config takes precedence.
 
@@ -655,7 +655,7 @@ Note that variables only represent file names one level deep. If `file` is `'foo
 
 Also note that the dynamic import must match the following rules to be bundled:
 
-- Imports must start with `./` or `../`: ``import(`./dir/${foo}.js`)`` is valid, but ``import(`${foo}.js`)`` is not.
+- Imports must start with `./` or `../` or `#`: ``import(`./dir/${foo}.js`)`` is valid, but ``import(`${foo}.js`)`` is not.
 - Imports must end with a file extension: ``import(`./dir/${foo}.js`)`` is valid, but ``import(`./dir/${foo}`)`` is not.
 - Imports to the own directory must specify a file name pattern: ``import(`./prefix-${foo}.js`)`` is valid, but ``import(`./${foo}.js`)`` is not.
 

@@ -1,6 +1,14 @@
+import EventEmitter from 'node:events'
 import fs from 'node:fs'
 import { posix, resolve } from 'node:path'
-import EventEmitter from 'node:events'
+import type {
+  InlineConfig,
+  Plugin,
+  RunnableDevEnvironment,
+  ViteDevServer,
+} from 'vite'
+import { createRunnableDevEnvironment, createServer } from 'vite'
+import type { ModuleRunner } from 'vite/module-runner'
 import {
   afterAll,
   beforeAll,
@@ -10,14 +18,6 @@ import {
   test,
   vi,
 } from 'vitest'
-import type {
-  InlineConfig,
-  Plugin,
-  RunnableDevEnvironment,
-  ViteDevServer,
-} from 'vite'
-import { createRunnableDevEnvironment, createServer } from 'vite'
-import type { ModuleRunner } from 'vite/module-runner'
 import {
   addFile,
   createInMemoryLogger,

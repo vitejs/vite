@@ -1,6 +1,6 @@
 # JavaScript API
 
-Vite's JavaScript APIs are fully typed, and it's recommended to use TypeScript or enable JS type checking in VS Code to leverage the intellisense and validation.
+Vite's JavaScript APIs are fully typed, and it's recommended to use TypeScript or enable JS type checking in VS Code to leverage the IntelliSense and validation.
 
 ## `createServer`
 
@@ -205,7 +205,7 @@ async function build(
 
 **Example Usage:**
 
-```ts twoslash [vite.config.js]
+```ts twoslash
 import path from 'node:path'
 import { build } from 'vite'
 

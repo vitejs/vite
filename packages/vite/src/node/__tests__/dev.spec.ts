@@ -1,6 +1,6 @@
 import path from 'node:path'
-import { afterEach, describe, expect, test, vi } from 'vitest'
 import type { ResolvedServerUrls } from 'vite'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 import { createServer, resolveConfig } from '..'
 import type { ViteDevServer } from '..'
 import { promiseWithResolvers } from '../../shared/utils'

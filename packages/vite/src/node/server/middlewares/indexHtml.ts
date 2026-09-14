@@ -2,9 +2,14 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { SourceMapInput } from 'rolldown'
 import type { DefaultTreeAdapterMap, Token } from 'parse5'
+import type { SourceMapInput } from 'rolldown'
 import type { Connect } from '#dep-types/connect'
+import type { PreviewServer, ResolvedConfig, ViteDevServer } from '../..'
+import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
+import { getNodeAssetAttributes } from '../../assetSource'
+import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
+import { getHmrImplementation } from '../../plugins/clientInjections'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
@@ -24,9 +29,7 @@ import {
   resolveHtmlTransforms,
   traverseHtml,
 } from '../../plugins/html'
-import type { PreviewServer, ResolvedConfig, ViteDevServer } from '../..'
-import { send } from '../send'
-import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
+import { checkPublicFile } from '../../publicDir'
 import {
   ensureWatchedFile,
   fsPathFromId,
@@ -41,15 +44,12 @@ import {
   processSrcSetSync,
   stripBase,
 } from '../../utils'
-import { checkPublicFile } from '../../publicDir'
-import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
-import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
-import { getNodeAssetAttributes } from '../../assetSource'
 import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from '../pluginContainer'
-import { getHmrImplementation } from '../../plugins/clientInjections'
+import { send } from '../send'
+import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 interface AssetNode {
@@ -307,9 +307,9 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       } else if (isModule && node.childNodes.length) {
         addInlineModule(node, 'js')
       } else if (node.childNodes.length) {
-        const scriptNode = node.childNodes[
-          node.childNodes.length - 1
-        ] as DefaultTreeAdapterMap['textNode']
+        const scriptNode = node.childNodes.at(
+          -1,
+        ) as DefaultTreeAdapterMap['textNode']
         for (const {
           url,
           start,

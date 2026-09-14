@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "imports": {
+    "#alias/*": "./alias/*"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

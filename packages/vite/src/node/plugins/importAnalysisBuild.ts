@@ -1,22 +1,22 @@
 import path from 'node:path'
-import MagicString from 'magic-string'
-import type { ImportSpecifier } from 'es-module-lexer'
-import { init, parse as parseImports } from 'es-module-lexer'
-import type { SourceMap } from 'rolldown'
-import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
 import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
+import type { ImportSpecifier } from 'es-module-lexer'
+import { init, parse as parseImports } from 'es-module-lexer'
+import MagicString from 'magic-string'
+import type { SourceMap } from 'rolldown'
+import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
+import type { PartialEnvironment } from '../baseEnvironment'
+import { toOutputFilePathInJS } from '../build'
+import type { ResolvedConfig } from '../config'
+import { type Plugin, perEnvironmentPlugin } from '../plugin'
+import { genSourceMapUrl } from '../server/sourcemap'
 import {
   combineSourcemaps,
   generateCodeFrame,
   getFileStartIndex,
   numberToPos,
 } from '../utils'
-import { type Plugin, perEnvironmentPlugin } from '../plugin'
-import type { ResolvedConfig } from '../config'
-import { toOutputFilePathInJS } from '../build'
-import { genSourceMapUrl } from '../server/sourcemap'
-import type { PartialEnvironment } from '../baseEnvironment'
 import { removedPureCssFilesCache } from './css'
 import { getImportMap, getImportMapFilename } from './html'
 
@@ -157,45 +157,48 @@ function preload(
     }
 
     promise = allSettled(
-      deps.map((dep) => {
-        // @ts-expect-error assetsURL is declared before preload.toString()
-        dep = assetsURL(dep, importerUrl)
-        dep = importMetaResolve(dep)
-        if (dep in seen) return
-        seen[dep] = true
-        const isCss = dep.endsWith('.css')
+      deps
+        .map((dep) => {
+          // @ts-expect-error assetsURL is declared before preload.toString()
+          dep = assetsURL(dep, importerUrl)
+          dep = importMetaResolve(dep)
+          if (dep in seen) return
+          seen[dep] = true
+          const isCss = dep.endsWith('.css')
 
-        // check if the file is already preloaded by SSR markup
-        // `dep` is already converted to an absolute URL by the `assetsURL` function
-        for (let i = links.length - 1; i >= 0; i--) {
-          const link = links[i]
-          // The `links[i].href` is an absolute URL thanks to browser doing the work
-          // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
-          if (link.href === dep && (!isCss || link.rel === 'stylesheet')) {
-            return
+          // check if the file is already preloaded by SSR markup
+          // `dep` is already converted to an absolute URL by the `assetsURL` function
+          for (let i = links.length - 1; i >= 0; i--) {
+            const link = links[i]
+            // The `links[i].href` is an absolute URL thanks to browser doing the work
+            // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
+            if (link.href === dep && (!isCss || link.rel === 'stylesheet')) {
+              return
+            }
           }
-        }
 
-        const link = document.createElement('link')
-        link.rel = isCss ? 'stylesheet' : scriptRel
-        if (!isCss) {
-          link.as = 'script'
-        }
-        link.crossOrigin = ''
-        link.href = dep
-        if (cspNonce) {
-          link.setAttribute('nonce', cspNonce)
-        }
-        document.head.appendChild(link)
-        if (isCss) {
-          return new Promise((res, rej) => {
-            link.addEventListener('load', res)
-            link.addEventListener('error', () =>
-              rej(new Error(`Unable to preload CSS for ${dep}`)),
-            )
-          })
-        }
-      }),
+          const link = document.createElement('link')
+          link.rel = isCss ? 'stylesheet' : scriptRel
+          if (!isCss) {
+            link.as = 'script'
+          }
+          link.crossOrigin = ''
+          link.href = dep
+          if (cspNonce) {
+            link.setAttribute('nonce', cspNonce)
+          }
+          document.head.appendChild(link)
+          if (isCss) {
+            return new Promise((res, rej) => {
+              link.addEventListener('load', res)
+              link.addEventListener('error', () =>
+                rej(new Error(`Unable to preload CSS for ${dep}`)),
+              )
+            })
+          }
+        })
+        // skip undefined to be converted to Promise.resolve for performance
+        .filter((p) => p !== undefined),
     )
   }
 
@@ -328,8 +331,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                 if (!url) {
                   const rawUrl = code.slice(start, end)
                   if (
-                    (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`) ||
-                    (rawUrl[0] === '`' && rawUrl[rawUrl.length - 1] === '`')
+                    (rawUrl[0] === `"` && rawUrl.at(-1) === `"`) ||
+                    (rawUrl[0] === '`' && rawUrl.at(-1) === '`')
                   )
                     url = rawUrl.slice(1, -1)
                 }
@@ -429,8 +432,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
               if (!url) {
                 const rawUrl = code.slice(start, end)
                 if (
-                  (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`) ||
-                  (rawUrl[0] === '`' && rawUrl[rawUrl.length - 1] === '`')
+                  (rawUrl[0] === `"` && rawUrl.at(-1) === `"`) ||
+                  (rawUrl[0] === '`' && rawUrl.at(-1) === '`')
                 )
                   url = rawUrl.slice(1, -1)
               }

@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, onTestFinished, test } from 'vitest'
-import { createServer } from '../../../server'
 import { FS_PREFIX } from '../../../constants'
+import { createServer } from '../../../server'
 
 const FIXTURE_DIR = path.resolve(import.meta.dirname, 'fixtures')
 const HTML_PATH = path.resolve(FIXTURE_DIR, 'root/index.html')

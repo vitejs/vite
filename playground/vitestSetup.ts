@@ -1,7 +1,13 @@
-import type * as http from 'node:http'
 import fs from 'node:fs'
+import type * as http from 'node:http'
 import path from 'node:path'
 import { chromium } from 'playwright-chromium'
+import type { Browser, Page } from 'playwright-chromium'
+import type {
+  RolldownWatcher,
+  RolldownWatcherEvent,
+  RollupError,
+} from 'rolldown'
 import type {
   ConfigEnv,
   InlineConfig,
@@ -19,12 +25,6 @@ import {
   mergeConfig,
   preview,
 } from 'vite'
-import type { Browser, Page } from 'playwright-chromium'
-import type {
-  RolldownWatcher,
-  RolldownWatcherEvent,
-  RollupError,
-} from 'rolldown'
 import { beforeAll, expect, inject, vi } from 'vitest'
 
 // #region serializer

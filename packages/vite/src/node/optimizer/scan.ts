@@ -2,18 +2,28 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
+import colors from 'picocolors'
+import type { PartialResolvedId, Plugin } from 'rolldown'
 import { scan } from 'rolldown/experimental'
 import type { TransformOptions as OxcTransformOptions } from 'rolldown/utils'
 import { transformSync } from 'rolldown/utils'
-import type { PartialResolvedId, Plugin } from 'rolldown'
-import colors from 'picocolors'
 import { glob } from 'tinyglobby'
+import { cleanUrl } from '../../shared/utils'
+import { BaseEnvironment } from '../baseEnvironment'
 import {
   CSS_LANGS_RE,
   JS_TYPES_RE,
   KNOWN_ASSET_TYPES,
   SPECIAL_QUERY_RE,
 } from '../constants'
+import { transformGlobImport } from '../plugins/importMetaGlob'
+import { getRollupJsxPresets } from '../plugins/oxc'
+import type { DevEnvironment } from '../server/environment'
+import type { EnvironmentPluginContainer } from '../server/pluginContainer'
+import {
+  ERR_CLOSED_SERVER,
+  createEnvironmentPluginContainer,
+} from '../server/pluginContainer'
 import {
   arraify,
   asyncFlatten,
@@ -31,16 +41,6 @@ import {
   virtualModulePrefix,
   virtualModuleRE,
 } from '../utils'
-import type { EnvironmentPluginContainer } from '../server/pluginContainer'
-import {
-  ERR_CLOSED_SERVER,
-  createEnvironmentPluginContainer,
-} from '../server/pluginContainer'
-import { BaseEnvironment } from '../baseEnvironment'
-import type { DevEnvironment } from '../server/environment'
-import { transformGlobImport } from '../plugins/importMetaGlob'
-import { cleanUrl } from '../../shared/utils'
-import { getRollupJsxPresets } from '../plugins/oxc'
 
 export class ScanEnvironment extends BaseEnvironment {
   mode = 'scan' as const

@@ -1,6 +1,6 @@
-import { expect, test } from 'vitest'
 import type { OutputAsset, OutputChunk, RolldownOutput } from 'rolldown'
 import { build } from 'vite'
+import { expect, test } from 'vitest'
 import { browserLogs, getColor, isBuild, page, testDir } from '~utils'
 
 test('should have no 404s', () => {

@@ -1,10 +1,10 @@
 import colors from 'picocolors'
-import { createDebugger, getHash } from '../utils'
 import {
   type PromiseWithResolvers,
   promiseWithResolvers,
 } from '../../shared/utils'
 import type { DevEnvironment } from '../server/environment'
+import { createDebugger, getHash } from '../utils'
 import { devToScanEnvironment } from './scan'
 import {
   addManuallyIncludedOptimizeDeps,

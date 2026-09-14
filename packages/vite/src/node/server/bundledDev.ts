@@ -1,16 +1,17 @@
 import { setTimeout } from 'node:timers/promises'
+import getEtag from 'etag'
+import colors from 'picocolors'
+import type { RolldownOutput } from 'rolldown'
 import {
   type BindingClientHmrUpdate,
   type DevEngine,
   dev,
 } from 'rolldown/experimental'
-import type { RolldownOutput } from 'rolldown'
-import colors from 'picocolors'
-import getEtag from 'etag'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
 import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
 import { getHmrImplementation } from '../plugins/clientInjections'
 import { createDebugger, formatAndTruncateFileList } from '../utils'
+import { convertToDevWatchOptions } from '../watch'
 import type { DevEnvironment } from './environment'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
 import { prepareError } from './middlewares/error'
@@ -137,6 +138,9 @@ export class BundledDev {
         this.devEngine.registerClient(payload.clientId)
       },
     )
+    this.environment.hot.on('vite:bundled-dev:payload-delivered', (payload) => {
+      this.markPayloadDelivered(payload.filename)
+    })
     this.environment.hot.on('vite:client:connect', (_payload, client) => {
       // Replay the cached build error to freshly connected clients.
       if (this.lastBuildError) {
@@ -246,6 +250,7 @@ export class BundledDev {
       },
       watch: {
         skipWrite: true,
+        ...convertToDevWatchOptions(this.environment.config.server.watch),
       },
     })
     debug?.('INITIAL: setup dev engine')
@@ -341,13 +346,17 @@ export class BundledDev {
     )
     const result = await this.devEngine.compileEntry(moduleId, clientId)
     this.pendingPayloadFilenames.add(result.filename)
-    return result
+    return {
+      filename: result.filename,
+      code: result.code + payloadDeliveredAck(result.filename),
+    }
   }
 
   /**
-   * Called by the serving middlewares when the response for a payload completed.
-   * Only delivered payloads are recorded on the server's per-client ship map, so
-   * later chunks may omit a module only if the payload carrying it was delivered.
+   * Called when the client reports that it evaluated a payload (the line appended
+   * by `payloadDeliveredAck`). Only then is the payload recorded on the server's
+   * per-client ship map, so later chunks may omit a module only if the client
+   * already registered it.
    *
    * Note: the payload filename is unique across all clients.
    */
@@ -465,7 +474,10 @@ export class BundledDev {
       // https://green.sapphi.red/blog/local-server-security-best-practices#properly-check-the-request-origin
       // we can also use `Cross-Origin Resource Policy` header instead of this
       // but we cannot use `Sec-Fetch-*` headers as they are only sent to potentially-trustworthy origins
-      source: hmrOutput.code + '\n; export {}',
+      source:
+        hmrOutput.code +
+        payloadDeliveredAck(hmrOutput.filename) +
+        '\n; export {}',
     })
     if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
       this.memoryFiles.set(hmrOutput.sourcemapFilename, {
@@ -516,7 +528,7 @@ class Clients {
   }
 
   getAll(): NormalizedHotChannelClient[] {
-    return Array.from(this.idToClient.values())
+    return [...this.idToClient.values()]
   }
 
   delete(client: NormalizedHotChannelClient): string | undefined {
@@ -538,4 +550,14 @@ function debounce(time: number, cb: () => void) {
     }
     timer = globalThis.setTimeout(cb, time)
   }
+}
+
+/**
+ * The line appended to a lazy chunk or HMR patch so the client reports the
+ * payload as delivered once its factories are registered. Placed after the
+ * chunk's tail: if the tail throws, no report is sent and the next payload
+ * simply re-ships those factories, which is safe (registration overwrites).
+ */
+function payloadDeliveredAck(filename: string): string {
+  return `\n;__rolldown_runtime__.payloadDelivered(${JSON.stringify(filename)});`
 }

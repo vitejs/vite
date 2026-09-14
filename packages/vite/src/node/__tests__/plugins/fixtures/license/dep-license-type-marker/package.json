@@ -1,0 +1,9 @@
+{
+  "name": "@vitejs/test-dep-license-type-marker",
+  "private": true,
+  "version": "1.0.0",
+  "license": "MIT",
+  "exports": {
+    ".": "./build/esm/index.js"
+  }
+}

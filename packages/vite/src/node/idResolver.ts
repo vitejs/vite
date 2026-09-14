@@ -1,12 +1,12 @@
-import type { PartialResolvedId } from 'rolldown'
 import aliasPlugin from '@rollup/plugin-alias'
+import type { PartialResolvedId } from 'rolldown'
+import type { PartialEnvironment } from './baseEnvironment'
 import type { ResolvedConfig } from './config'
-import type { EnvironmentPluginContainer } from './server/pluginContainer'
-import { createEnvironmentPluginContainer } from './server/pluginContainer'
+import type { Environment } from './environment'
 import { oxcResolvePlugin } from './plugins/resolve'
 import type { InternalResolveOptions } from './plugins/resolve'
-import type { Environment } from './environment'
-import type { PartialEnvironment } from './baseEnvironment'
+import type { EnvironmentPluginContainer } from './server/pluginContainer'
+import { createEnvironmentPluginContainer } from './server/pluginContainer'
 
 export type ResolveIdFn = (
   environment: PartialEnvironment,

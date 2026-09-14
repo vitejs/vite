@@ -1,11 +1,11 @@
-import path from 'node:path'
 import fs from 'node:fs'
-import type { Plugin } from '../plugin'
+import path from 'node:path'
+import { cleanUrl } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY, ENV_ENTRY, BUNDLED_DEV_CLIENT_ENTRY } from '../constants'
-import { isObject, normalizePath, resolveHostname } from '../utils'
-import { cleanUrl } from '../../shared/utils'
 import { perEnvironmentState } from '../environment'
+import type { Plugin } from '../plugin'
+import { isObject, normalizePath, resolveHostname } from '../utils'
 import { replaceDefine, serializeDefine } from './define'
 
 // ids in transform are normalized to unix style

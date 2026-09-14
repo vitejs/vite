@@ -1,8 +1,8 @@
 import fs from 'node:fs'
-import license from 'rollup-plugin-license'
-import type { Dependency } from 'rollup-plugin-license'
 import colors from 'picocolors'
 import type { Plugin, PluginContext } from 'rollup'
+import license from 'rollup-plugin-license'
+import type { Dependency } from 'rollup-plugin-license'
 
 export default function licensePlugin(
   licenseFilePath: string,
@@ -170,7 +170,7 @@ function getDependencyInformation(dep: Dependency): DependencyInfo {
     }
   }
   if (names.size > 0) {
-    info.names = Array.from(names).join(', ')
+    info.names = [...names].join(', ')
   }
 
   if (repository) {

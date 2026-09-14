@@ -1,5 +1,5 @@
-import { beforeAll, describe, expect, test } from 'vitest'
 import { init, parse as parseImports } from 'es-module-lexer'
+import { beforeAll, describe, expect, test } from 'vitest'
 import {
   matchImportsToPreloadMarkers,
   preloadMarker,

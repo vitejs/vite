@@ -125,6 +125,7 @@ export type {
   EnvironmentOptions,
   DevEnvironmentOptions,
   ResolvedDevEnvironmentOptions,
+  ResolvedDevToolsConfig,
 } from './config'
 export type { HtmlAssetSource } from './assetSource'
 export type {
@@ -146,6 +147,7 @@ export type {
   ResolvedServerUrls,
   HttpServer,
 } from './server'
+export type { ServerWatchOptions } from './watch'
 export type {
   ViteBuilder,
   BuildAppHook,
