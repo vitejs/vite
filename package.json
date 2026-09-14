@@ -41,6 +41,7 @@
     "merge-changelog": "tsx scripts/mergeChangelog.ts"
   },
   "devDependencies": {
+    "@e18e/eslint-plugin": "^0.8.0",
     "@eslint/js": "^9.39.5",
     "@type-challenges/utils": "^0.1.1",
     "@types/babel__core": "^7.20.5",
@@ -57,19 +58,19 @@
     "eslint": "^9.39.5",
     "eslint-plugin-import-x": "^4.17.1",
     "eslint-plugin-n": "^18.3.0",
-    "eslint-plugin-regexp": "^3.2.0",
+    "eslint-plugin-regexp": "^3.3.0",
     "execa": "^9.6.1",
-    "globals": "^17.11.0",
-    "lint-staged": "^17.4.1",
-    "oxfmt": "^0.65.0",
+    "globals": "^17.12.0",
+    "lint-staged": "^17.5.0",
+    "oxfmt": "^0.66.0",
     "picocolors": "^1.1.1",
-    "playwright-chromium": "^1.62.1",
+    "playwright-chromium": "^1.63.0",
     "rolldown": "~1.2.6",
     "rollup": "^4.59.0",
     "simple-git-hooks": "^2.14.0",
     "tsx": "^4.23.13",
     "typescript": "~6.0.2",
-    "typescript-eslint": "^8.68.0",
+    "typescript-eslint": "^8.69.0",
     "vite": "workspace:*",
     "vitest": "^4.1.11"
   },
@@ -90,7 +91,7 @@
       "eslint --cache --fix --concurrency auto"
     ]
   },
-  "packageManager": "pnpm@12.2.1",
+  "packageManager": "pnpm@12.3.4",
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"
   }

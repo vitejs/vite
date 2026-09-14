@@ -170,7 +170,7 @@ function getDependencyInformation(dep: Dependency): DependencyInfo {
     }
   }
   if (names.size > 0) {
-    info.names = Array.from(names).join(', ')
+    info.names = [...names].join(', ')
   }
 
   if (repository) {
