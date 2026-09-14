@@ -161,6 +161,12 @@ test('should work with load ../ and contain itself directory', async () => {
     .toMatch('dynamic-import-nested-self-content')
 })
 
+test('dynamic import with await in the argument', async () => {
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-await-in-the-argument'))
+    .toMatch('hello')
+})
+
 // #22700: nested `import('a').then(() => import('b'))` where `a` has a CSS
 // side-effect dep — the outer import's CSS must still be loaded in build output
 test('should load css of nested dynamic import', async () => {

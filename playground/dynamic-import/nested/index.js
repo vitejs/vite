@@ -218,4 +218,13 @@ import('./rest-destructure.js').then(({ a, ...rest }) => {
   text('.dynamic-import-rest', `${a} ${rest.b} ${rest.c}`)
 })
 
+async function resolveSpecifier() {
+  return './hello.js'
+}
+
+;(async () => {
+  const mod = await import(await resolveSpecifier())
+  text('.dynamic-import-with-await-in-the-argument', mod.hello())
+})()
+
 console.log('index.js')
