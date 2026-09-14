@@ -198,4 +198,88 @@ describe('the dev server', () => {
       networkInterfaceNames: [],
     })
   })
+
+  test('restarts again for a request made while a restart is in flight', async () => {
+    let configVersion = 'A'
+    const events: string[] = []
+    const enteredB = promiseWithResolvers<void>()
+    const releaseB = promiseWithResolvers<void>()
+
+    server = await createServer({
+      configFile: false,
+      root: import.meta.dirname,
+      logLevel: 'error',
+      server: { middlewareMode: true, ws: false },
+      plugins: [
+        {
+          name: 'test',
+          async config() {
+            const version = configVersion
+            events.push(`config:${version}`)
+            if (version === 'B') {
+              enteredB.resolve()
+              await releaseB.promise
+            }
+            return { define: { __CONFIG_VERSION__: version } }
+          },
+          configureServer(server) {
+            events.push(`server:${server.config.define!.__CONFIG_VERSION__}`)
+          },
+        },
+      ],
+    })
+
+    configVersion = 'B'
+    const restartB = server.restart()
+    await enteredB.promise
+
+    configVersion = 'C'
+    const restartsC = [server.restart(), server.restart(), server.restart()]
+    releaseB.resolve()
+    await Promise.all([restartB, ...restartsC])
+
+    expect(events).toStrictEqual([
+      'config:A',
+      'server:A',
+      'config:B',
+      'server:B',
+      'config:C',
+      'server:C',
+    ])
+    expect(server.config.define!.__CONFIG_VERSION__).toBe('C')
+  })
+
+  test('keeps forceOptimize from a restart requested while a restart is in flight', async () => {
+    const forced: boolean[] = []
+    const enteredRestart = promiseWithResolvers<void>()
+    const releaseRestart = promiseWithResolvers<void>()
+
+    server = await createServer({
+      configFile: false,
+      root: import.meta.dirname,
+      logLevel: 'error',
+      server: { middlewareMode: true, ws: false },
+      plugins: [
+        {
+          name: 'test',
+          async configureServer(server) {
+            forced.push(server.config.environments.client.optimizeDeps.force!)
+            if (forced.length === 2) {
+              enteredRestart.resolve()
+              await releaseRestart.promise
+            }
+          },
+        },
+      ],
+    })
+
+    const first = server.restart()
+    await enteredRestart.promise
+    const second = server.restart(true)
+    releaseRestart.resolve()
+    await Promise.all([first, second])
+
+    expect(forced).toStrictEqual([false, false, true])
+    expect(server.config.environments.client.optimizeDeps.force).toBe(true)
+  })
 })

@@ -472,6 +472,10 @@ export interface ViteDevServer {
   /**
    * @internal
    */
+  _pendingRestart: boolean
+  /**
+   * @internal
+   */
   _forceOptimizeOnRestart: boolean
   /**
    * @internal
@@ -840,13 +844,21 @@ export async function _createServer(
       bindCLIShortcuts(server, options)
     },
     async restart(forceOptimize?: boolean) {
-      if (!server._restartPromise) {
-        server._forceOptimizeOnRestart = !!forceOptimize
-        server._restartPromise = restartServer(server).finally(() => {
-          server._restartPromise = null
-          server._forceOptimizeOnRestart = false
-        })
+      if (server._restartPromise) {
+        server._pendingRestart = true
+        server._forceOptimizeOnRestart ||= !!forceOptimize
+        return server._restartPromise
       }
+      server._forceOptimizeOnRestart = !!forceOptimize
+      server._restartPromise = (async () => {
+        do {
+          server._pendingRestart = false
+          await restartServer(server)
+        } while (server._pendingRestart)
+      })().finally(() => {
+        server._restartPromise = null
+        server._forceOptimizeOnRestart = false
+      })
       return server._restartPromise
     },
 
@@ -866,6 +878,7 @@ export async function _createServer(
       return closeServerPromise
     },
     _restartPromise: options.previousRestartPromise ?? null,
+    _pendingRestart: false,
     _forceOptimizeOnRestart: options.previousForceOptimizeOnRestart ?? false,
     _shortcutsState: options.previousShortcutsState,
   }
@@ -1428,6 +1441,8 @@ async function restartServer(server: ViteDevServer) {
     const middlewares = server.middlewares
     newServer._configServerPort = server._configServerPort
     newServer._currentServerPort = server._currentServerPort
+    newServer._pendingRestart ||= server._pendingRestart
+    newServer._forceOptimizeOnRestart ||= server._forceOptimizeOnRestart
     Object.assign(server, newServer)
 
     // Keep the same connect instance so app.use(vite.middlewares) works
