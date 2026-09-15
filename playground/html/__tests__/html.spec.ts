@@ -175,6 +175,19 @@ describe.runIf(isBuild)('build', () => {
     })
   })
 
+  describe('scriptExtraAttrs', () => {
+    beforeAll(async () => {
+      await page.goto(viteTestUrl + '/scriptExtraAttrs.html')
+    })
+
+    test('user-authored attributes survive on the built entry script', async () => {
+      const script = await page.$(
+        'head script[type=module][fetchpriority=high][data-testid=entry]',
+      )
+      expect(script).toBeTruthy()
+    })
+  })
+
   describe('zeroJS', () => {
     // Ensure that the modulePreload polyfill is discarded in this case
 

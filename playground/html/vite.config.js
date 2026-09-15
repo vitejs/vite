@@ -8,6 +8,7 @@ const input = {
   nested: resolve(dirname, 'nested/index.html'),
   scriptAsync: resolve(dirname, 'scriptAsync.html'),
   scriptMixed: resolve(dirname, 'scriptMixed.html'),
+  scriptExtraAttrs: resolve(dirname, 'scriptExtraAttrs.html'),
   emptyAttr: resolve(dirname, 'emptyAttr.html'),
   link: resolve(dirname, 'link.html'),
   'link/target': resolve(dirname, 'index.html'),
