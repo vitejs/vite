@@ -48,6 +48,11 @@ import { getImportMapFilename } from './html'
 // referenceId is base64url but replaces - with $
 export const assetUrlRE: RegExp = /__VITE_ASSET__([\w$]+)__/g
 
+const encodedHashPlaceholderRE = /!~%7B([\w$]{1,17})%7D~/g
+function unescapeHashPlaceholders(uri: string): string {
+  return uri.replace(encodedHashPlaceholderRE, '!~{$1}~')
+}
+
 interface FileUrlMetadata {
   asFileUrl: boolean
 }
@@ -329,7 +334,9 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
               toRelativeRuntime,
             )
             return typeof replacement === 'string'
-              ? JSON.stringify(encodeURIPath(replacement))
+              ? JSON.stringify(
+                  unescapeHashPlaceholders(encodeURIPath(replacement)),
+                )
               : replacement.runtime
           },
 

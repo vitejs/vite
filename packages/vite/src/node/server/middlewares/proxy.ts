@@ -72,13 +72,29 @@ const rewriteOriginHeader = (
   }
 }
 
+type ProxyContextEntry = {
+  proxy: httpProxy.ProxyServer
+  options: ProxyOptions
+  // Pre-compiled context matcher. Regex contexts are compiled once at server
+  // creation instead of being re-parsed on every request.
+  match: (url: string) => boolean
+}
+
+function createProxyContextMatcher(context: string): (url: string) => boolean {
+  if (context[0] === '^') {
+    const regex = new RegExp(context)
+    return (url) => regex.test(url)
+  }
+  return (url) => url.startsWith(context)
+}
+
 export function proxyMiddleware(
   httpServer: HttpServer | null,
   options: NonNullable<CommonServerOptions['proxy']>,
   config: ResolvedConfig,
 ): Connect.NextHandleFunction {
   // lazy require only when proxy is used
-  const proxies: Record<string, [httpProxy.ProxyServer, ProxyOptions]> = {}
+  const proxies: Record<string, ProxyContextEntry> = {}
 
   Object.keys(options).forEach((context) => {
     let opts = options[context]
@@ -135,15 +151,19 @@ export function proxyMiddleware(
     })
 
     // clone before saving because http-proxy mutates the options
-    proxies[context] = [proxy, { ...opts }]
+    proxies[context] = {
+      proxy,
+      options: { ...opts },
+      match: createProxyContextMatcher(context),
+    }
   })
 
   if (httpServer) {
     httpServer.on('upgrade', async (req, socket, head) => {
       const url = req.url!
       for (const context in proxies) {
-        if (doesProxyContextMatchUrl(context, url)) {
-          const [proxy, opts] = proxies[context]
+        const { proxy, options: opts, match } = proxies[context]
+        if (match(url)) {
           if (
             opts.ws ||
             opts.target?.toString().startsWith('ws:') ||
@@ -190,8 +210,8 @@ export function proxyMiddleware(
   return async function viteProxyMiddleware(req, res, next) {
     const url = req.url!
     for (const context in proxies) {
-      if (doesProxyContextMatchUrl(context, url)) {
-        const [proxy, opts] = proxies[context]
+      const { proxy, options: opts, match } = proxies[context]
+      if (match(url)) {
         const options: httpProxy.ServerOptions = {}
 
         if (opts.bypass) {
@@ -226,11 +246,4 @@ export function proxyMiddleware(
     }
     next()
   }
-}
-
-function doesProxyContextMatchUrl(context: string, url: string): boolean {
-  return (
-    (context[0] === '^' && new RegExp(context).test(url)) ||
-    url.startsWith(context)
-  )
 }

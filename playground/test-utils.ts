@@ -393,7 +393,7 @@ export function extractSourcemap(
   read?: (filename: string) => Promise<string>,
 ): any {
   const lines = content.trim().split('\n')
-  const lastLine = lines[lines.length - 1]
+  const lastLine = lines.at(-1)
   if (read) {
     const result = fromMapFileComment(lastLine, async (url) => {
       if (url.startsWith('data:')) {

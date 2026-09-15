@@ -662,6 +662,13 @@ export function resolveRolldownOptions(
         : false,
     // cache: options.watch ? undefined : false,
     ...options.rolldownOptions,
+    tsconfig: environment.config.tsconfig ?? options.rolldownOptions.tsconfig,
+    resolve: environment.config.tsconfig
+      ? {
+          ...options.rolldownOptions.resolve,
+          tsconfigFilename: undefined,
+        }
+      : options.rolldownOptions.resolve,
     output: options.rolldownOptions.output,
     input,
     plugins,
@@ -1894,7 +1901,7 @@ export async function createBuilder(
       return output
     },
     async runDevTools() {
-      if (config.devtools.enabled) {
+      if (config.devtools) {
         try {
           const { runDevTools } = await import('@vitejs/devtools/integration')
           await runDevTools(builder)

@@ -153,7 +153,9 @@ export async function transformWithOxc(
     filename,
     code,
     resolvedOptions,
-    getTSConfigResolutionCache(config),
+    options?.tsconfig === undefined || options.tsconfig === config?.tsconfig
+      ? getTSConfigResolutionCache(config)
+      : undefined,
   )
   if (
     watcher &&
@@ -292,6 +294,7 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
 
         return nativeTransformPlugin({
           root: environment.config.root,
+          tsconfig: environment.config.tsconfig,
           include,
           exclude,
           jsxRefreshInclude,
