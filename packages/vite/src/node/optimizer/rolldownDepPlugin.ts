@@ -316,7 +316,7 @@ export function rolldownDepPlugin(
         filter: {
           code: assetImportMetaUrlRE,
         },
-        handler(code, id) {
+        async handler(code, id) {
           let s: MagicString | undefined
           const re = new RegExp(assetImportMetaUrlRE)
           const cleanString = stripLiteral(code)
@@ -340,11 +340,15 @@ export function rolldownDepPlugin(
               continue
             }
 
-            if (!s) s = new MagicString(code)
+            // we resolve the URL from the original library file (id) and then
+            // rewrite it relative to the bundle (deps) directory.
+            const absolutePath =
+              url[0] === '.'
+                ? path.resolve(path.dirname(id), url)
+                : await resolve(url, id, 'import-statement')
+            if (!absolutePath) continue
 
-            // we resolve the relative path from the original library file (id) and
-            // then rewrite it relative to the bundle (deps) directory.
-            const absolutePath = path.resolve(path.dirname(id), url)
+            if (!s) s = new MagicString(code)
             const relativePath = path.relative(bundleOutputDir, absolutePath)
             const normalizedRelativePath = normalizePath(relativePath)
             s.update(
