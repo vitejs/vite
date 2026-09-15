@@ -237,12 +237,17 @@ export function findEsmSyntaxInCjs(
   return undefined
 }
 
-function describeIncompatibility(
-  item: NativeConfigIncompatibility,
-  root: string,
-): string {
-  // 1-based column so terminals can link `file:line:column` to the exact position
-  const loc = `${normalizePath(path.relative(root, item.file))}:${item.line}:${item.column + 1}`
+function describeIncompatibility(item: NativeConfigIncompatibility): string {
+  // 1-based column so terminals can link `file:line:column` to the exact
+  // position. Compute the path relative to `process.cwd()` so the result
+  // is resolvable from the terminal's working directory; fall back to the
+  // absolute path when the file lives outside cwd.
+  const relativePath = normalizePath(path.relative(process.cwd(), item.file))
+  const loc = `${
+    relativePath.startsWith('..')
+      ? normalizePath(item.file)
+      : `./${relativePath}`
+  }:${item.line}:${item.column + 1}`
   switch (item.type) {
     case 'dirname':
       return `\`__dirname\` (${loc}). Use \`import.meta.dirname\` instead`
@@ -265,13 +270,12 @@ function describeIncompatibility(
 
 export function formatNativeConfigIncompatWarning(
   items: NativeConfigIncompatibility[],
-  root: string,
 ): string {
   const header =
     `Your Vite config uses features that are unsupported by ` +
     `\`configLoader: 'native'\`, which is planned to become the default in a ` +
     `future major version of Vite:`
-  const lines = items.map((it) => `  - ${describeIncompatibility(it, root)}`)
+  const lines = items.map((it) => `  - ${describeIncompatibility(it)}`)
   const footer = `Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.`
   return colors.yellow([`(!) ${header}`, ...lines, footer].join('\n'))
 }
