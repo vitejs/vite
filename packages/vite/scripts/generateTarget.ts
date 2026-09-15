@@ -1,7 +1,7 @@
 import { getCompatibleVersions } from 'baseline-browser-mapping'
 
 // Update on each major release
-const targetDate = '2026-01-01'
+const targetDate = '2026-09-15'
 
 // https://esbuild.github.io/api/#target
 const baselineToEsbuildTargetMap: Record<string, string> = {
@@ -9,7 +9,7 @@ const baselineToEsbuildTargetMap: Record<string, string> = {
   edge: 'edge',
   firefox: 'firefox',
   safari: 'safari',
-  safari_ios: 'ios',
+  safari_ios: 'oid',
 }
 
 const esbuildSupportedBrowsers = new Set([
@@ -17,7 +17,7 @@ const esbuildSupportedBrowsers = new Set([
   'edge',
   'firefox',
   'safari',
-  'ios',
+  'oid',
 ])
 
 const results = getCompatibleVersions({
