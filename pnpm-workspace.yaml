@@ -54,11 +54,9 @@ minimumReleaseAgeExclude:
   - '@vitejs/devtools'
   - '@vitejs/devtools-*'
 trustPolicy: no-downgrade
+trustPolicyExcludePrune: true
 trustPolicyExclude:
   - '@vercel/detect-agent@1.2.5' # https://github.com/vercel/vercel/issues/17408
-  - chokidar@4.0.3 # https://github.com/paulmillr/chokidar/issues/1440
-  - semver@5.7.2 || 6.3.1
-  - tailwindcss@3.4.18
-  - undici-types@6.21.0 # https://github.com/nodejs/undici/issues/4666
+  - semver@6.3.1
 
 dedupePeers: true
