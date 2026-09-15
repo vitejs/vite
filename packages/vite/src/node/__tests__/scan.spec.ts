@@ -99,14 +99,22 @@ describe('optimizer-scan:script-test', () => {
       `import foo from 'vue';//comment`,
       `import foo from 'vue';/*comment
       */`,
-      // Skipped, false negatives with current regex
-      // `import typescript from 'typescript'`,
-      // import type, {foo} from 'vue'
+      // Identifiers that start with "type" must still match (type is not a keyword here)
+      `import typescript from 'typescript'`,
+      `import typeorm from 'typeorm'`,
+      `import types from 'types'`,
     ]
 
     shouldMatchArray.forEach((str) => {
       importsRE.lastIndex = 0
-      expect(importsRE.exec(str)![1]).toEqual("'vue'")
+      const expected = str.includes('typescript')
+        ? "'typescript'"
+        : str.includes('typeorm')
+          ? "'typeorm'"
+          : str.includes("'types'")
+            ? "'types'"
+            : "'vue'"
+      expect(importsRE.exec(str)![1]).toEqual(expected)
     })
 
     const shouldFailArray = [
