@@ -149,6 +149,7 @@ describe('dev server watch.ignoredFromGitignore', () => {
     server.watcher.on('all', (_event, file) => {
       events.push(normalizePath(file))
     })
+    await waitForWatcherReady(server)
 
     // liveness control: a file created at the root must be picked up. The
     // root watch target is established synchronously by chokidar, unlike
@@ -182,6 +183,7 @@ describe('dev server watch.ignoredFromGitignore', () => {
     server.watcher.on('all', (_event, file) => {
       events.push(normalizePath(file))
     })
+    await waitForWatcherReady(server)
 
     // `ignored-dir/flooding.log` is only reported by the OS on platforms
     // with tree-wide watchers (fsevents); `debug.log` and the liveness
@@ -218,5 +220,11 @@ function waitForEvent(events: string[], substring: string) {
         resolve()
       }
     }, 100)
+  })
+}
+
+function waitForWatcherReady(server: ViteDevServer) {
+  return new Promise<void>((resolve) => {
+    server.watcher.once('ready', resolve)
   })
 }
