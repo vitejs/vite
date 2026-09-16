@@ -109,7 +109,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                   pattern,
                 )}, ${JSON.stringify(
                   globOptions,
-                )}))[${pureUrl}], import.meta.url)`,
+                )}))[${pureUrl}] || ${rawUrl}, import.meta.url)`,
               )
               continue
             }
