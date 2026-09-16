@@ -116,7 +116,10 @@ describe('dev server watch.ignoredFromGitignore', () => {
     root = fs.realpathSync(
       fs.mkdtempSync(path.join(os.tmpdir(), 'vite-watch-server-')),
     )
-    fs.writeFileSync(path.join(root, '.gitignore'), 'ignored-dir\n*.log\n')
+    fs.writeFileSync(
+      path.join(root, '.gitignore'),
+      'ignored-dir\nignored-new\n*.log\n',
+    )
     fs.mkdirSync(path.join(root, 'src'), { recursive: true })
     fs.mkdirSync(path.join(root, 'ignored-dir'), { recursive: true })
     fs.writeFileSync(path.join(root, 'src', 'main.js'), 'console.log(1)\n')
@@ -129,7 +132,7 @@ describe('dev server watch.ignoredFromGitignore', () => {
     fs.rmSync(root, { recursive: true, force: true })
   })
 
-  test('does not watch gitignored directories', async () => {
+  test('does not pick up gitignored directories created after startup', async () => {
     server = await createServer({
       configFile: false,
       root,
@@ -142,20 +145,20 @@ describe('dev server watch.ignoredFromGitignore', () => {
       },
     })
 
-    await new Promise<void>((resolve) => {
-      const timeout = setTimeout(resolve, 5000)
-      server.watcher.once('ready', () => {
-        clearTimeout(timeout)
-        resolve()
-      })
+    const events: string[] = []
+    server.watcher.on('all', (_event, file) => {
+      events.push(normalizePath(file))
     })
 
-    const watchedDirs = Object.keys(server.watcher.getWatched()).map(
-      normalizePath,
-    )
-    expect(watchedDirs).toContain(normalizePath(path.join(root, 'src')))
-    expect(watchedDirs.filter((dir) => dir.includes('ignored-dir'))).toEqual([])
-    expect(server.watcher.getWatched()[root]).not.toContain('ignored-dir')
+    fs.mkdirSync(path.join(root, 'ignored-new'))
+    fs.writeFileSync(path.join(root, 'ignored-new', 'trace.zip'), 'x')
+
+    fs.mkdirSync(path.join(root, 'src', 'nested'))
+    fs.writeFileSync(path.join(root, 'src', 'nested', 'new-file.js'), 'x')
+
+    await waitForEvent(events, 'src/nested')
+    await new Promise((resolve) => setTimeout(resolve, 800))
+    expect(events.filter((file) => file.includes('ignored-new'))).toEqual([])
   })
 
   test('emits no events for gitignored files, but keeps HMR working', async () => {
@@ -177,22 +180,33 @@ describe('dev server watch.ignoredFromGitignore', () => {
     })
 
     fs.writeFileSync(path.join(root, 'ignored-dir', 'flooding.log'), 'noise')
+    fs.writeFileSync(path.join(root, 'debug.log'), 'noise')
     await new Promise((resolve) => setTimeout(resolve, 800))
     expect(events.filter((file) => file.includes('ignored-dir'))).toEqual([])
+    expect(events.filter((file) => file.endsWith('debug.log'))).toEqual([])
 
     fs.writeFileSync(path.join(root, 'src', 'main.js'), 'console.log(2)\n')
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(
-        () => reject(new Error('no change event received')),
-        5000,
-      )
-      const interval = setInterval(() => {
-        if (events.some((file) => file.includes('src/main.js'))) {
-          clearTimeout(timeout)
-          clearInterval(interval)
-          resolve()
-        }
-      }, 100)
-    })
+    await waitForEvent(events, 'src/main.js')
   })
 })
+
+function waitForEvent(events: string[], substring: string) {
+  return new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(
+      () =>
+        reject(
+          new Error(
+            `no event received for "${substring}", got: ${events.join(', ')}`,
+          ),
+        ),
+      5000,
+    )
+    const interval = setInterval(() => {
+      if (events.some((file) => file.includes(substring))) {
+        clearTimeout(timeout)
+        clearInterval(interval)
+        resolve()
+      }
+    }, 100)
+  })
+}
