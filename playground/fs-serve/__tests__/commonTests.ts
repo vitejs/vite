@@ -335,6 +335,14 @@ describe('fetch', () => {
     const res = await fetch(viteTestUrl + '/src/')
     expect(res.headers.get('x-served-by')).toBe('vite')
   })
+
+  test.runIf(isServe)('serve 404 with configured headers', async () => {
+    const res = await fetch(viteTestUrl + '/does-not-exist', {
+      method: 'POST',
+    })
+    expect(res.status).toBe(404)
+    expect(res.headers.get('x-served-by')).toBe('vite')
+  })
 })
 
 describe('cross origin', () => {
