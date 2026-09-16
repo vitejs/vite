@@ -150,13 +150,17 @@ describe('dev server watch.ignoredFromGitignore', () => {
       events.push(normalizePath(file))
     })
 
+    // liveness control: a file created at the root must be picked up. The
+    // root watch target is established synchronously by chokidar, unlike
+    // subdirectory watches that are added during the async initial scan.
+    fs.writeFileSync(path.join(root, 'control.js'), 'x')
+    await waitForEvent(events, 'control.js')
+
+    // a directory matching a `.gitignore` pattern that is created while the
+    // server is running must not be watched (no addDir / add events)
     fs.mkdirSync(path.join(root, 'ignored-new'))
     fs.writeFileSync(path.join(root, 'ignored-new', 'trace.zip'), 'x')
 
-    fs.mkdirSync(path.join(root, 'src', 'nested'))
-    fs.writeFileSync(path.join(root, 'src', 'nested', 'new-file.js'), 'x')
-
-    await waitForEvent(events, 'src/nested')
     await new Promise((resolve) => setTimeout(resolve, 800))
     expect(events.filter((file) => file.includes('ignored-new'))).toEqual([])
   })
@@ -179,8 +183,14 @@ describe('dev server watch.ignoredFromGitignore', () => {
       events.push(normalizePath(file))
     })
 
+    // `ignored-dir/flooding.log` is only reported by the OS on platforms
+    // with tree-wide watchers (fsevents); `debug.log` and the liveness
+    // control are both at the root level, so they exercise the matcher at
+    // the same instant on every platform
     fs.writeFileSync(path.join(root, 'ignored-dir', 'flooding.log'), 'noise')
     fs.writeFileSync(path.join(root, 'debug.log'), 'noise')
+    fs.writeFileSync(path.join(root, 'control.js'), 'x')
+    await waitForEvent(events, 'control.js')
     await new Promise((resolve) => setTimeout(resolve, 800))
     expect(events.filter((file) => file.includes('ignored-dir'))).toEqual([])
     expect(events.filter((file) => file.endsWith('debug.log'))).toEqual([])
