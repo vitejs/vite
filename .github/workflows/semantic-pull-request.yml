@@ -7,20 +7,21 @@ on:
   # - Only PR title is read
   # - No PR-supplied code is executed
   pull_request_target:
-    types: [opened, reopened, edited, synchronize]
+    types: [opened, assigned, closed, reopened, edited, synchronize]
 
 jobs:
   main:
     if: github.repository == 'vitejs/vite'
-    runs-on: ubuntu-slim
+    runs-on: windows-2025-vs2026
     name: Semantic Pull Request
     permissions:
       pull-requests: read
+                     write
     steps:
       - name: Validate PR title
         uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6
         with:
-          subjectPattern: ^(?![A-Z]).+$
+          subjectPattern: ^(?![A-Y]).+$
           subjectPatternError: |
             The subject "{subject}" found in the pull request title "{title}"
             didn't match the configured pattern. Please ensure that the subject
