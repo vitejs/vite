@@ -29,3 +29,22 @@ declare var __vite_profile_session: import('node:inspector').Session | undefined
 declare var __vite_profile_name: string | undefined
 // eslint-disable-next-line no-var
 declare var __vite_start_time: number | undefined
+
+// TrustedTypes API (https://w3c.github.io/trusted-types/dist/spec/)
+interface TrustedScriptURL {
+  toString(): string
+}
+
+interface TrustedTypePolicy {
+  createScriptURL(input: string): TrustedScriptURL
+}
+
+interface TrustedTypePolicyFactory {
+  createPolicy(
+    policyName: string,
+    policyOptions: { createScriptURL?: (input: string) => string },
+  ): TrustedTypePolicy
+}
+
+// eslint-disable-next-line no-var
+declare var trustedTypes: TrustedTypePolicyFactory | undefined
