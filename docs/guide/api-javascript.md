@@ -30,7 +30,9 @@ server.bindCLIShortcuts({ print: true })
 ```
 
 ::: tip NOTE
-When using `createServer` and `build` in the same Node.js process, both functions rely on `process.env.NODE_ENV` to work properly, which also depends on the `mode` config option. To prevent conflicting behavior, set `process.env.NODE_ENV` or the `mode` of the two APIs to `development`. Otherwise, you can spawn a child process to run the APIs separately.
+`createServer()` relies on `process.env.NODE_ENV` while resolving config. If it isn't already set when the API is called, Vite will set it to `'development'`.
+
+When using `createServer` and `build` in the same Node.js process, both functions rely on `process.env.NODE_ENV` to work properly, which also depends on the `mode` config option. To prevent conflicting behavior, set `process.env.NODE_ENV` yourself or set the `mode` of the two APIs to `development`. Otherwise, you can spawn a child process to run the APIs separately.
 :::
 
 ::: tip NOTE
@@ -219,6 +221,10 @@ await build({
   },
 })
 ```
+
+::: tip NOTE
+`build()` also relies on `process.env.NODE_ENV` while resolving config. If it isn't already set when the API is called, Vite will set it to `'production'`.
+:::
 
 ## `preview`
 
