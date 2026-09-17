@@ -135,7 +135,7 @@ function isValidViteVersion(version: string) {
 .checked-input {
   display: inline-block;
   padding: 0px 5px;
-  width: 100px;
+  field-sizing: content;
   color: var(--vp-c-text-1);
   background: var(--vp-c-bg-soft);
   font-size: var(--vp-code-font-size);
