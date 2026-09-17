@@ -3329,9 +3329,12 @@ async function compileLightningCSS(
                 | CssLang
                 | undefined
               if (isPreProcessor(lang)) {
+                // use `filePath` (not the entry `id`) so that relative imports
+                // inside the imported preprocessor file are resolved from its
+                // own directory
                 const result = await compileCSSPreprocessors(
                   environment,
-                  id,
+                  filePath,
                   lang,
                   code,
                   workerController,
@@ -3340,7 +3343,11 @@ async function compileLightningCSS(
                 // TODO: support source map
                 return result.code
               } else if (lang === 'sss') {
-                const sssResult = await transformSugarSS(environment, id, code)
+                const sssResult = await transformSugarSS(
+                  environment,
+                  filePath,
+                  code,
+                )
                 // TODO: support source map
                 return sssResult.code
               }
