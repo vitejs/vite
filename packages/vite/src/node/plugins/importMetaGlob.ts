@@ -439,8 +439,9 @@ export async function transformGlobImport(
   if (!matches.length) return null
 
   const s = new MagicString(code)
+  const rootAst = await parseAstAsync(code)
 
-  const staticImports = (
+  const staticImportGroups = (
     await Promise.all(
       matches.map(
         async ({
@@ -588,13 +589,25 @@ export async function transformGlobImport(
 
           s.overwrite(start, end, replacement)
 
-          return staticImports
+          return {
+            position:
+              rootAst.body
+                .filter(
+                  (node) =>
+                    node.type === 'ImportDeclaration' &&
+                    node.end <= start,
+                )
+                .at(-1)?.end ?? 0,
+            imports: staticImports,
+          }
         },
       ),
     )
-  ).flat()
+  )
 
-  if (staticImports.length) s.prepend(`${staticImports.join(';')};`)
+  for (const { position, imports } of staticImportGroups) {
+    if (imports.length) s.appendLeft(position, `${imports.join(';')};`)
+  }
 
   return {
     s,

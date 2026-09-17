@@ -18,6 +18,19 @@ describe('fixture', async () => {
     ).toMatchSnapshot()
   })
 
+  it('preserves eager import order', async () => {
+    const id = resolve(import.meta.dirname, './fixture-a/index.ts')
+    const code = `import './sibling.ts'
+const modules = import.meta.glob('./modules/*.ts', { eager: true })`
+    const transformed = (
+      await transformGlobImport(code, id, root, resolveId)
+    )?.s.toString()
+
+    expect(transformed!.indexOf("import './sibling.ts'")).toBeLessThan(
+      transformed!.indexOf('import * as __vite_glob_0_0'),
+    )
+  })
+
   it('preserve line count', async () => {
     const getTransformedLineCount = async (code: string) =>
       (await transformGlobImport(code, 'virtual:module', root, resolveId))?.s
