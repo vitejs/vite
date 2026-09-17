@@ -38,7 +38,9 @@ test('rewrites stacktrace when the module path contains a space', async () => {
     expect.unreachable()
   } catch (e: any) {
     server.ssrFixStacktrace(e)
-    expect(e.stack.split('\n')[1].replace(root, '<root>')).toBe(
+    expect(
+      e.stack.split('\n')[1].replace(root, '<root>').replaceAll('\\', '/'),
+    ).toBe(
       '    at Module.main (<root>fixtures/modules/with space/has-error.js:2:9)',
     )
   }
