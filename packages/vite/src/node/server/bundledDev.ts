@@ -58,6 +58,8 @@ export class MemoryFiles {
   }
 }
 
+const LAZY_PROXY_QUERY = '?rolldown-lazy=1'
+
 export class BundledDev {
   private _devEngine!: DevEngine
   private viteRuntime?: string
@@ -105,6 +107,8 @@ export class BundledDev {
   }
 
   private pendingPayloadFilenames = new Set<string>()
+
+  private builtDynamicEntries = new Map<string, string>()
 
   get hasBuildOutput(): boolean {
     return (
@@ -235,6 +239,16 @@ export class BundledDev {
         this.lastBuildError = null
 
         this.storeOutputFiles(result.output)
+        this.builtDynamicEntries.clear()
+        for (const file of result.output) {
+          if (
+            file.type === 'chunk' &&
+            file.isDynamicEntry &&
+            file.facadeModuleId
+          ) {
+            this.builtDynamicEntries.set(file.facadeModuleId, file.fileName)
+          }
+        }
 
         // Trigger a full reload if there's no error in the result and a reload is pending from HMR.
         if (this.fullReloadPending) {
@@ -353,6 +367,19 @@ export class BundledDev {
   }
 
   /**
+   * Nothing while a rebuild is pending, so an edit is never answered with the
+   * chunk it made stale.
+   */
+  async builtLazyChunk(proxyModuleId: string): Promise<string | undefined> {
+    if (!this.initialBuildCompleted) return
+    const state = await this.devEngine.getBundleState()
+    if (state.hasStaleOutput || state.lastBuildErrored) return
+    return this.builtDynamicEntries.get(
+      proxyModuleId.replace(LAZY_PROXY_QUERY, ''),
+    )
+  }
+
+  /**
    * Called when the client reports that it evaluated a payload (the line appended
    * by `payloadDeliveredAck`). Only then is the payload recorded on the server's
    * per-client ship map, so later chunks may omit a module only if the client
@@ -369,6 +396,7 @@ export class BundledDev {
   async close(): Promise<void> {
     this._closed = true
     this.memoryFiles.clear()
+    this.builtDynamicEntries.clear()
     await this._devEngine?.close()
     this.initialBuildCompleted = false
   }

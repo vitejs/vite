@@ -1,3 +1,4 @@
+import path from 'node:path'
 import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '..'
 
@@ -26,6 +27,12 @@ export function triggerLazyBundlingMiddleware(
 
     const moduleId = params.get('id')
     const clientId = params.get('clientId')
+    const builtChunk = moduleId && (await bundledDev.builtLazyChunk(moduleId))
+    if (builtChunk) {
+      res.statusCode = 302
+      res.setHeader('Location', path.posix.join(server.config.base, builtChunk))
+      return res.end()
+    }
     let result: { code: string; filename: string } | undefined
     try {
       result = await bundledDev.triggerLazyBundling(moduleId, clientId)

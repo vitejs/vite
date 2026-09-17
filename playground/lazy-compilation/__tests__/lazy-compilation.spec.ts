@@ -1,6 +1,15 @@
+import path from 'node:path'
 import type { Response, Route } from 'playwright-chromium'
 import { beforeAll, describe, expect, test } from 'vitest'
-import { isServe, page, promiseWithResolvers } from '~utils'
+import {
+  browser,
+  editFile,
+  isServe,
+  page,
+  promiseWithResolvers,
+  viteServer,
+  viteTestUrl,
+} from '~utils'
 
 // Regression test for rolldown/rolldown#10774.
 //
@@ -16,9 +25,9 @@ import { isServe, page, promiseWithResolvers } from '~utils'
 // response is fetched from the server (so the server finished writing it) but
 // held back from the page until B has been requested and evaluated.
 //
-// Both tests share one page session on purpose. A lazy entry is served through
+// Both tests share one page session on purpose. A lazy entry is compiled by
 // `/@vite/lazy` only until it is first fetched on this server; a later page
-// load gets it as an ordinary chunk. So the second test cannot reload — it
+// load is redirected to its built chunk. So the second test cannot reload — it
 // continues from the state the first test leaves behind.
 
 const factoryFor = (file: string) =>
@@ -110,5 +119,69 @@ describe.runIf(isServe)('lazy compilation', () => {
     const bodyC = await lazyBody('page-c')
     expect(bodyC).toMatch(factoryFor('page-c.js'))
     expect(bodyC).not.toMatch(factoryFor('shared.js'))
+  })
+})
+
+const bundledDev = () => viteServer.environments.client.bundledDev as any
+
+const rebuildLanded = async () => {
+  const state = await bundledDev().devEngine.getBundleState()
+  return !state.hasStaleOutput
+}
+
+const builtChunkFor = (file: string): string | undefined =>
+  bundledDev().builtDynamicEntries.get(path.join(viteServer.config.root, file))
+
+describe.runIf(isServe)('lazy compilation: reload after fetch', () => {
+  test('a reload after the first fetch loads the route from the built chunk', async () => {
+    await expect.poll(rebuildLanded).toBe(true)
+
+    const lazyStatuses: number[] = []
+    const chunkRequests: string[] = []
+    page.on('response', (res) => {
+      if (res.url().includes('/@vite/lazy?')) lazyStatuses.push(res.status())
+    })
+    page.on('request', (req) => {
+      if (/\/assets\/page-a-.*\.js$/.test(req.url()))
+        chunkRequests.push(req.url())
+    })
+
+    await page.reload()
+    await page.click('#route-a-btn')
+    await expect
+      .poll(() => page.textContent('#route-a-content'))
+      .toBe('A:shared-value')
+
+    expect(lazyStatuses).toEqual([302])
+    expect(chunkRequests).toHaveLength(1)
+  })
+
+  test('a page that loaded before an edit gets the edited route', async () => {
+    const context = await browser.newContext()
+    const other = await context.newPage()
+    await other.goto(viteTestUrl)
+    await expect
+      .poll(() => other.textContent('#route-b-content'))
+      .toBe('pending')
+
+    // Wait until the server has seen the edit, so the click is not racing
+    // the watcher. Nothing has run B since the reload, so no rebuild follows;
+    // the output just turns stale and the click compiles from source.
+    await expect.poll(rebuildLanded).toBe(true)
+    const before = builtChunkFor('page-b.js')
+    expect(before).toBeDefined()
+    editFile('page-b.js', (code) => code.replace('B:', 'B-edited:'))
+    await expect
+      .poll(
+        async () =>
+          !(await rebuildLanded()) || builtChunkFor('page-b.js') !== before,
+      )
+      .toBe(true)
+
+    await other.click('#route-b-btn')
+    await expect
+      .poll(() => other.textContent('#route-b-content'))
+      .toBe('B-edited:shared-value')
+    await context.close()
   })
 })
