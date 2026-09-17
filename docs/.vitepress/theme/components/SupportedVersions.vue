@@ -135,7 +135,7 @@ function isValidViteVersion(version: string) {
 .checked-input {
   display: inline-block;
   padding: 0px 5px;
-  field-sizing: content;
+  width: 100px;
   color: var(--vp-c-text-1);
   background: var(--vp-c-bg-soft);
   font-size: var(--vp-code-font-size);
@@ -143,6 +143,13 @@ function isValidViteVersion(version: string) {
   border: 1px solid var(--vp-c-divider);
   border-radius: 5px;
   transition: border-color 0.1s;
+}
+
+@supports (field-sizing: content) {
+  .checked-input {
+    width: auto;
+    field-sizing: content;
+  }
 }
 
 .checked-input:focus,
