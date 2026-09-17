@@ -130,7 +130,10 @@ const rebuildLanded = async () => {
 }
 
 const builtChunkFor = (file: string): string | undefined =>
-  bundledDev().builtDynamicEntries.get(path.join(viteServer.config.root, file))
+  bundledDev().builtLazyChunks.get(path.join(viteServer.config.root, file))
+
+const sharedRuns = (p: typeof page) =>
+  p.evaluate(() => (globalThis as any).__sharedRuns as number)
 
 describe.runIf(isServe)('lazy compilation: reload after fetch', () => {
   test('a reload after the first fetch loads the route from the built chunk', async () => {
@@ -183,5 +186,101 @@ describe.runIf(isServe)('lazy compilation: reload after fetch', () => {
       .poll(() => other.textContent('#route-b-content'))
       .toBe('B-edited:shared-value')
     await context.close()
+  })
+
+  test('a page that took a lazy payload keeps taking them, so shared.js runs once', async () => {
+    // With no client that ran A, an edit to A leaves the output stale
+    // instead of rebuilding it.
+    await page.reload()
+    const context = await browser.newContext()
+    const other = await context.newPage()
+    try {
+      await other.goto(viteTestUrl)
+      await expect
+        .poll(() => other.textContent('#route-a-content'))
+        .toBe('pending')
+
+      await expect.poll(rebuildLanded).toBe(true)
+      editFile('page-a.js', (code) => code.replace('A:', 'A-edited:'))
+      await expect.poll(async () => !(await rebuildLanded())).toBe(true)
+      await other.click('#route-a-btn')
+      await expect
+        .poll(() => other.textContent('#route-a-content'))
+        .toBe('A-edited:shared-value')
+      await expect.poll(rebuildLanded).toBe(true)
+      expect(builtChunkFor('page-b.js')).toBeDefined()
+
+      // A built chunk for B would run shared.js a second time
+      await other.click('#route-b-btn')
+      await expect
+        .poll(() => other.textContent('#route-b-content'))
+        .toBe('B-edited:shared-value')
+      expect(await sharedRuns(other)).toBe(1)
+    } finally {
+      await context.close()
+    }
+  })
+
+  test('a click while the edit is still being processed gets the edited route', async () => {
+    // The output turns stale only when the HMR task for the edit ends. The
+    // `hold-page-b` plugin keeps that task inside `transform`.
+    const holdPageB = viteServer.config.plugins.find(
+      (p) => p.name === 'hold-page-b',
+    )!.api as { hold: Promise<void> | null; holding: boolean }
+    const taskHold = promiseWithResolvers<void>()
+    // A redirected chunk is held until the page has seen the update, so the
+    // update cannot repair the page.
+    const chunkHold = promiseWithResolvers<void>()
+    // The page has not run B, so it never fetches the patch; the update
+    // message is the only trace.
+    const updateReceived = promiseWithResolvers<void>()
+
+    await expect.poll(rebuildLanded).toBe(true)
+    const context = await browser.newContext()
+    const held = await context.newPage()
+    try {
+      held.on('websocket', (ws) => {
+        ws.on('framereceived', (frame) => {
+          if (String(frame.payload).includes('bundled-dev-update')) {
+            updateReceived.resolve()
+          }
+        })
+      })
+      await held.goto(viteTestUrl)
+      await expect
+        .poll(() => held.textContent('#route-b-content'))
+        .toBe('pending')
+      await expect.poll(rebuildLanded).toBe(true)
+      expect(builtChunkFor('page-b.js')).toBeDefined()
+      await held.route('**/assets/page-b-*.js', async (route) => {
+        await chunkHold.promise
+        await route.continue()
+      })
+
+      holdPageB.hold = taskHold.promise
+      editFile('page-b.js', (code) =>
+        code.replace('B-edited:', 'B-edited-twice:'),
+      )
+      await expect.poll(() => holdPageB.holding).toBe(true)
+
+      const lazyRequest = held.waitForRequest((req) =>
+        req.url().includes('/@vite/lazy?'),
+      )
+      await held.click('#route-b-btn')
+      await lazyRequest
+
+      taskHold.resolve()
+      await updateReceived.promise
+      chunkHold.resolve()
+
+      await expect
+        .poll(() => held.textContent('#route-b-content'))
+        .toBe('B-edited-twice:shared-value')
+    } finally {
+      holdPageB.hold = null
+      taskHold.resolve()
+      chunkHold.resolve()
+      await context.close()
+    }
   })
 })
