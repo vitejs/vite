@@ -1479,11 +1479,12 @@ function mergeConfigRecursively(
   }
   if (rootPath === 'server.hmr') {
     for (const key of wsOptionKeys) {
-      Object.defineProperty(
-        merged,
-        key,
-        Object.getOwnPropertyDescriptor(defaults, key)!,
-      )
+      const descriptor = Object.getOwnPropertyDescriptor(defaults, key)
+      // `setupHmrWsOptionCompat` is a no-op when `server.ws` is `false`, in
+      // which case the hmr object has no `ws`-related accessors to copy over
+      if (descriptor) {
+        Object.defineProperty(merged, key, descriptor)
+      }
     }
   }
 

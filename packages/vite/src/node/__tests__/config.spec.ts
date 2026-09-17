@@ -1207,6 +1207,16 @@ describe('mergeConfig', () => {
       )
     })
   })
+
+  test('mergeConfig should not throw when merging server.hmr with server.ws: false', () => {
+    // https://github.com/vitejs/vite/issues/23506
+    expect(() =>
+      mergeConfig(
+        { server: { ws: false, hmr: { host: 'localhost' } } },
+        { server: { hmr: { port: 5173 } } },
+      ),
+    ).not.toThrow()
+  })
 })
 
 describe('resolveEnvPrefix', () => {
