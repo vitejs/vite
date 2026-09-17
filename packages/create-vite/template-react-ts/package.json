@@ -20,6 +20,6 @@
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.81.0",
     "typescript": "~6.0.2",
-    "vite": "^8.2.2"
+    "vite": "^8.3.0"
   }
 }

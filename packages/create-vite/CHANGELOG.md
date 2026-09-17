@@ -1,3 +1,9 @@
+## <small>[9.2.1](https://github.com/vitejs/vite/compare/create-vite%409.2.0...create-vite%409.2.1) (2026-09-10)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#23404](https://github.com/vitejs/vite/issues/23404)) ([238ad81](https://github.com/vitejs/vite/commit/238ad811c7fb9e4730cbd317d0657867ed3447b3))
+* **deps:** update all non-major dependencies ([#23445](https://github.com/vitejs/vite/issues/23445)) ([fc7c104](https://github.com/vitejs/vite/commit/fc7c104e74d35a97fa313d5dd6f1b5e7d5b26159))
+
 ## [9.2.0](https://github.com/vitejs/vite/compare/create-vite%409.1.2...create-vite%409.2.0) (2026-08-24)
 ### Features
 
