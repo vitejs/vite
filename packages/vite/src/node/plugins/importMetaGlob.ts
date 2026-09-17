@@ -441,168 +441,163 @@ export async function transformGlobImport(
   const s = new MagicString(code)
   const rootAst = await parseAstAsync(code)
 
-  const staticImportGroups = (
-    await Promise.all(
-      matches.map(
-        async ({
-          globsResolved,
-          isRelative,
-          options,
-          index,
-          start,
-          end,
-          onlyKeys,
-          onlyValues,
-        }) => {
-          if (!dir && !options.base && isRelative) {
-            throw new Error("In virtual modules, all globs must start with '/'")
-          }
+  const staticImportGroups = await Promise.all(
+    matches.map(
+      async ({
+        globsResolved,
+        isRelative,
+        options,
+        index,
+        start,
+        end,
+        onlyKeys,
+        onlyValues,
+      }) => {
+        if (!dir && !options.base && isRelative) {
+          throw new Error("In virtual modules, all globs must start with '/'")
+        }
 
-          const cwd = getCommonBase(globsResolved) ?? root
-          const files = (
-            await glob(globsResolved, {
-              absolute: true,
-              cwd,
-              dot: !!options.exhaustive,
-              expandDirectories: false,
-              caseSensitiveMatch: options.caseSensitive ?? true,
-              ignore: options.exhaustive ? [] : ['**/node_modules/**'],
-              extglob: false,
-            })
-          )
-            .filter((file) => file !== id)
-            .sort()
+        const cwd = getCommonBase(globsResolved) ?? root
+        const files = (
+          await glob(globsResolved, {
+            absolute: true,
+            cwd,
+            dot: !!options.exhaustive,
+            expandDirectories: false,
+            caseSensitiveMatch: options.caseSensitive ?? true,
+            ignore: options.exhaustive ? [] : ['**/node_modules/**'],
+            extglob: false,
+          })
+        )
+          .filter((file) => file !== id)
+          .sort()
 
-          const objectProps: string[] = []
-          const staticImports: string[] = []
+        const objectProps: string[] = []
+        const staticImports: string[] = []
 
-          const resolvePaths = (file: string) => {
-            if (!dir) {
-              const importPath = `/${relative(root, file)}`
-              let filePath = options.base
-                ? `${relative(posix.join(root, options.base), file)}`
-                : importPath
-              if (
-                options.base &&
-                !filePath.startsWith('./') &&
-                !filePath.startsWith('../')
-              ) {
-                filePath = `./${filePath}`
-              }
-              return { filePath, importPath }
+        const resolvePaths = (file: string) => {
+          if (!dir) {
+            const importPath = `/${relative(root, file)}`
+            let filePath = options.base
+              ? `${relative(posix.join(root, options.base), file)}`
+              : importPath
+            if (
+              options.base &&
+              !filePath.startsWith('./') &&
+              !filePath.startsWith('../')
+            ) {
+              filePath = `./${filePath}`
             }
-
-            let importPath = relative(dir, file)
-            if (!importPath.startsWith('./') && !importPath.startsWith('../')) {
-              importPath = `./${importPath}`
-            }
-
-            let filePath: string
-            if (options.base) {
-              const resolvedBasePath = options.base[0] === '/' ? root : dir
-              filePath = relative(
-                posix.join(resolvedBasePath, options.base),
-                file,
-              )
-              if (!filePath.startsWith('./') && !filePath.startsWith('../')) {
-                filePath = `./${filePath}`
-              }
-            } else if (isRelative) {
-              filePath = importPath
-            } else {
-              filePath = relative(root, file)
-              if (!filePath.startsWith('./') && !filePath.startsWith('../')) {
-                filePath = `/${filePath}`
-              }
-            }
-
             return { filePath, importPath }
           }
 
-          files.forEach((file, i) => {
-            const paths = resolvePaths(file)
-            const filePath = paths.filePath
-            let importPath = paths.importPath
-            let importQuery = options.query ?? ''
+          let importPath = relative(dir, file)
+          if (!importPath.startsWith('./') && !importPath.startsWith('../')) {
+            importPath = `./${importPath}`
+          }
 
-            if (onlyKeys) {
-              objectProps.push(`${JSON.stringify(filePath)}: 0`)
-              return
+          let filePath: string
+          if (options.base) {
+            const resolvedBasePath = options.base[0] === '/' ? root : dir
+            filePath = relative(
+              posix.join(resolvedBasePath, options.base),
+              file,
+            )
+            if (!filePath.startsWith('./') && !filePath.startsWith('../')) {
+              filePath = `./${filePath}`
             }
-
-            if (importQuery && importQuery !== '?raw') {
-              const fileExtension = basename(file).split('.').slice(-1)[0]
-              if (fileExtension && restoreQueryExtension)
-                importQuery = `${importQuery}&lang.${fileExtension}`
-            }
-
-            importPath = `${importPath}${importQuery}`
-
-            const importKey =
-              options.import && options.import !== '*'
-                ? options.import
-                : undefined
-
-            if (options.eager) {
-              const variableName = `${importPrefix}${index}_${i}`
-              const expression = importKey
-                ? `{ ${importKey} as ${variableName} }`
-                : `* as ${variableName}`
-              staticImports.push(
-                `import ${expression} from ${JSON.stringify(importPath)}`,
-              )
-              objectProps.push(
-                onlyValues
-                  ? `${variableName}`
-                  : `${JSON.stringify(filePath)}: ${variableName}`,
-              )
-            } else {
-              let importStatement = `import(${JSON.stringify(importPath)})`
-              if (importKey)
-                importStatement += `.then(m => m[${JSON.stringify(importKey)}])`
-              objectProps.push(
-                onlyValues
-                  ? `() => ${importStatement}`
-                  : `${JSON.stringify(filePath)}: () => ${importStatement}`,
-              )
-            }
-          })
-
-          files.forEach((i) => matchedFiles.add(i))
-
-          const originalLineBreakCount =
-            code.slice(start, end).match(/\n/g)?.length ?? 0
-          const lineBreaks =
-            originalLineBreakCount > 0
-              ? '\n'.repeat(originalLineBreakCount)
-              : ''
-          let replacement = ''
-          if (onlyKeys) {
-            replacement = `{${objectProps.join(',')}${lineBreaks}}`
-          } else if (onlyValues) {
-            replacement = `[${objectProps.join(',')}${lineBreaks}]`
+          } else if (isRelative) {
+            filePath = importPath
           } else {
-            replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
-              ',',
-            )}${lineBreaks}})`
+            filePath = relative(root, file)
+            if (!filePath.startsWith('./') && !filePath.startsWith('../')) {
+              filePath = `/${filePath}`
+            }
           }
 
-          s.overwrite(start, end, replacement)
+          return { filePath, importPath }
+        }
 
-          return {
-            position:
-              rootAst.body
-                .filter(
-                  (node) =>
-                    node.type === 'ImportDeclaration' &&
-                    node.end <= start,
-                )
-                .at(-1)?.end ?? 0,
-            imports: staticImports,
+        files.forEach((file, i) => {
+          const paths = resolvePaths(file)
+          const filePath = paths.filePath
+          let importPath = paths.importPath
+          let importQuery = options.query ?? ''
+
+          if (onlyKeys) {
+            objectProps.push(`${JSON.stringify(filePath)}: 0`)
+            return
           }
-        },
-      ),
-    )
+
+          if (importQuery && importQuery !== '?raw') {
+            const fileExtension = basename(file).split('.').slice(-1)[0]
+            if (fileExtension && restoreQueryExtension)
+              importQuery = `${importQuery}&lang.${fileExtension}`
+          }
+
+          importPath = `${importPath}${importQuery}`
+
+          const importKey =
+            options.import && options.import !== '*'
+              ? options.import
+              : undefined
+
+          if (options.eager) {
+            const variableName = `${importPrefix}${index}_${i}`
+            const expression = importKey
+              ? `{ ${importKey} as ${variableName} }`
+              : `* as ${variableName}`
+            staticImports.push(
+              `import ${expression} from ${JSON.stringify(importPath)}`,
+            )
+            objectProps.push(
+              onlyValues
+                ? `${variableName}`
+                : `${JSON.stringify(filePath)}: ${variableName}`,
+            )
+          } else {
+            let importStatement = `import(${JSON.stringify(importPath)})`
+            if (importKey)
+              importStatement += `.then(m => m[${JSON.stringify(importKey)}])`
+            objectProps.push(
+              onlyValues
+                ? `() => ${importStatement}`
+                : `${JSON.stringify(filePath)}: () => ${importStatement}`,
+            )
+          }
+        })
+
+        files.forEach((i) => matchedFiles.add(i))
+
+        const originalLineBreakCount =
+          code.slice(start, end).match(/\n/g)?.length ?? 0
+        const lineBreaks =
+          originalLineBreakCount > 0 ? '\n'.repeat(originalLineBreakCount) : ''
+        let replacement = ''
+        if (onlyKeys) {
+          replacement = `{${objectProps.join(',')}${lineBreaks}}`
+        } else if (onlyValues) {
+          replacement = `[${objectProps.join(',')}${lineBreaks}]`
+        } else {
+          replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
+            ',',
+          )}${lineBreaks}})`
+        }
+
+        s.overwrite(start, end, replacement)
+
+        return {
+          position:
+            rootAst.body
+              .filter(
+                (node) =>
+                  node.type === 'ImportDeclaration' && node.end <= start,
+              )
+              .at(-1)?.end ?? 0,
+          imports: staticImports,
+        }
+      },
+    ),
   )
 
   for (const { position, imports } of staticImportGroups) {
