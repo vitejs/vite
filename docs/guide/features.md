@@ -781,7 +781,9 @@ const worker = new MyWorker()
 
 The worker script can also use ESM `import` statements instead of `importScripts()`. **Note**: During development this relies on [browser native support](https://caniuse.com/?search=module%20worker), but for the production build it is compiled away.
 
-By default, the worker script will be emitted as a separate chunk in the production build. If you wish to inline the worker as base64 strings, add the `inline` query:
+By default, the worker script will be emitted as a separate chunk in the production build. When [`worker.format`](/config/worker-options.md#worker-format) is `'es'`, modules shared between multiple workers - or between a worker and the main build - are deduplicated into a common chunk instead of being bundled into each worker separately; see [`worker.shareChunks`](/config/worker-options.md#worker-sharechunks) (enabled by default).
+
+If you wish to inline the worker as base64 strings, add the `inline` query:
 
 ```js twoslash
 import 'vite/client'
