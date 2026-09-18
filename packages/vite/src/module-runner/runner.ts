@@ -205,13 +205,24 @@ export class ModuleRunner {
       }, 2000)
     }
 
+    let timedOut = false
     try {
       const promise = this.directRequest(url, mod, callstack)
       mod.promise = promise
       mod.evaluated = false
       return this.processImport(await promise, meta, metadata)
+    } catch (err) {
+      timedOut =
+        (err as { code?: unknown } | null)?.code ===
+        'ERR_TRANSPORT_INVOKE_TIMEOUT'
+      throw err
     } finally {
-      mod.evaluated = true
+      if (timedOut) {
+        // a timed out invoke may succeed when retried — don't cache it
+        this.evaluatedModules.invalidateModule(mod)
+      } else {
+        mod.evaluated = true
+      }
       if (debugTimer) clearTimeout(debugTimer)
     }
   }
