@@ -806,7 +806,7 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
 
 function setupReactCompiler(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@rolldown/plugin-babel
-  const babelPluginVersion = '0.2.3'
+  const babelPluginVersion = '0.2.4'
   // renovate: datasource=npm depName=babel-plugin-react-compiler
   const reactCompilerPluginVersion = '1.0.0'
   // renovate: datasource=npm depName=@babel/core
@@ -864,11 +864,11 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=eslint-plugin-react-hooks
   const eslintPluginReactHooksVersion = '7.1.1'
   // renovate: datasource=npm depName=eslint-plugin-react-refresh
-  const eslintPluginReactRefreshVersion = '0.5.6'
+  const eslintPluginReactRefreshVersion = '0.5.7'
   // renovate: datasource=npm depName=globals
   const globalsVersion = '17.12.0'
   // renovate: datasource=npm depName=typescript-eslint
-  const typescriptEslintVersion = '8.69.0'
+  const typescriptEslintVersion = '8.70.0'
 
   const eslintConfigForTS = /* js */ `import js from '@eslint/js'
 import globals from 'globals'
