@@ -234,6 +234,89 @@ describe('build', () => {
     assertOutputHashContentChange(result[0], result[1])
   })
 
+  test('file hash should change when chunk import map preload dependencies change', async () => {
+    const buildProject = async (includeDepB: boolean) => {
+      const moduleIds = new Set([
+        'entry.js',
+        'lazy.js',
+        'deep.js',
+        'other.js',
+        'dep-a.js',
+        'dep-b.js',
+      ])
+      return (await build({
+        root: resolve(dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        input: 'entry.js',
+        build: {
+          chunkImportMap: true,
+          minify: false,
+          write: false,
+        },
+        plugins: [
+          {
+            name: 'preload-dependency-membership',
+            resolveId(id) {
+              if (moduleIds.has(id)) return `\0${id}`
+            },
+            load(id) {
+              if (id === '\0entry.js') {
+                return `
+                  window.addEventListener('click', async () => {
+                    const { runLazy } = await import('lazy.js')
+                    const { runOther } = await import('other.js')
+                    return runLazy() + runOther()
+                  })`
+              }
+              if (id === '\0lazy.js') {
+                return `
+                  export async function runLazy() {
+                    const { runDeep } = await import('deep.js')
+                    return runDeep()
+                  }`
+              }
+              if (id === '\0deep.js') {
+                return includeDepB
+                  ? `
+                      import { A } from 'dep-a.js'
+                      import { B } from 'dep-b.js'
+                      export function runDeep() { return A + B }`
+                  : `
+                      import { A } from 'dep-a.js'
+                      export function runDeep() { return A }`
+              }
+              if (id === '\0other.js') {
+                return `
+                  import { A } from 'dep-a.js'
+                  import { B } from 'dep-b.js'
+                  export function runOther() { return A + B }`
+              }
+              if (id === '\0dep-a.js') return `export const A = 'a'.repeat(64)`
+              if (id === '\0dep-b.js') return `export const B = 'b'.repeat(64)`
+            },
+          },
+        ],
+      })) as RolldownOutput
+    }
+
+    const result = await Promise.all([buildProject(false), buildProject(true)])
+    expect(getOutputHashChanges(result[0], result[1])).toMatchInlineSnapshot(`
+      {
+        "changed": [
+          "_entry",
+          "_deep",
+          "_dep-a",
+          "_lazy",
+          "_other",
+        ],
+        "unchanged": [
+          "undefined",
+        ],
+      }
+    `)
+    assertOutputHashContentChange(result[0], result[1])
+  })
+
   test('css entries with the same basename should not cross-link manifest assets', async () => {
     const root = resolve(dirname, 'fixtures/css-entry-same-basename')
     const result = (await build({
