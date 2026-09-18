@@ -147,6 +147,8 @@ export function createDepsOptimizer(
 
   async function close() {
     closed = true
+    depOptimizationProcessing.resolve()
+    resolveEnqueuedProcessingPromises()
     await Promise.allSettled([
       discover?.cancel(),
       depsOptimizer.scanProcessing,
