@@ -11,12 +11,12 @@
     "@iconify/vue": "^5.0.1",
     "@shikijs/vitepress-twoslash": "^4.4.3",
     "@types/express": "^5.0.6",
-    "@voidzero-dev/vitepress-theme": "^5.0.6",
+    "@voidzero-dev/vitepress-theme": "^5.0.7",
     "feed": "^6.0.0",
     "vitepress": "^2.0.0-alpha.20",
     "vitepress-plugin-graphviz": "^0.1.0",
     "vitepress-plugin-group-icons": "^1.7.6",
-    "vitepress-plugin-llms": "^1.13.5",
+    "vitepress-plugin-llms": "^1.14.0",
     "vue": "^3.5.42",
     "vue-tsc": "^3.3.11"
   }
