@@ -1,6 +1,7 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { isWindows } from '../../../shared/utils'
-import { getNodeModulesPackageRoot } from '../sourcemap'
+import type { Logger } from '../../logger'
+import { getNodeModulesPackageRoot, injectSourcesContent } from '../sourcemap'
 
 describe('getNodeModulesPackageRoot', () => {
   const cases = [
@@ -68,4 +69,41 @@ describe('getNodeModulesPackageRoot', () => {
       expect(getNodeModulesPackageRoot(input)).toBe(expected)
     })
   }
+})
+
+describe('injectSourcesContent', () => {
+  const createLogger = () => ({ warnOnce: vi.fn() }) as unknown as Logger
+
+  test('leaves maps with a remote sourceRoot alone', async () => {
+    const map: Parameters<typeof injectSourcesContent>[0] = {
+      sources: ['index.ts'],
+      sourceRoot: 'https://raw.githubusercontent.com/fb55/domutils/abc123/src/',
+    }
+    const logger = createLogger()
+
+    await injectSourcesContent(
+      map,
+      '/project/node_modules/domutils/lib/esm/index.js',
+      logger,
+    )
+
+    expect(logger.warnOnce).not.toHaveBeenCalled()
+    expect(map.sourcesContent).toBeUndefined()
+  })
+
+  test('warns for sources that resolve outside the package', async () => {
+    const map: Parameters<typeof injectSourcesContent>[0] = {
+      sources: ['/outside/project/index.ts'],
+    }
+    const logger = createLogger()
+
+    await injectSourcesContent(
+      map,
+      '/project/node_modules/foo/dist/index.js',
+      logger,
+    )
+
+    expect(logger.warnOnce).toHaveBeenCalledOnce()
+    expect(map.sourcesContent).toEqual([null])
+  })
 })
