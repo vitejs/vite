@@ -138,3 +138,8 @@ import('./same-name/sub1/sub')
 import('./same-name/sub2/sub')
 
 import './imports-imports-field.css'
+
+import '~layers/layer.css'
+import '~layers/layer.scss'
+import '~layers-hook/hook-layer.css'
+import './user-resolver/external-layer.css'
