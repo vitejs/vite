@@ -188,7 +188,7 @@ export const KNOWN_ASSET_TYPES: string[] = [
 ]
 
 export const DEFAULT_ASSETS_RE: RegExp = new RegExp(
-  `\\.(` + KNOWN_ASSET_TYPES.join('|') + `)(\\?.*)?$`,
+  `\\.(?:` + KNOWN_ASSET_TYPES.join('|') + `)(\\?.*)?$`,
   'i',
 )
 
