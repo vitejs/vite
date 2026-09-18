@@ -1012,6 +1012,7 @@ describe('mergeConfig', () => {
       },
     })
   })
+
   test('syncs `server.hmr.*` to `server.ws.*`', () => {
     const baseConfig = defineConfig({
       server: {
