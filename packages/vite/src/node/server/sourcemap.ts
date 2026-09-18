@@ -9,6 +9,7 @@ import type { Logger } from '../logger'
 import {
   blankReplacer,
   createDebugger,
+  isExternalUrl,
   isParentDirectory,
   normalizePath,
 } from '../utils'
@@ -71,6 +72,15 @@ export async function injectSourcesContent(
   file: string,
   logger: Logger,
 ): Promise<void> {
+  // A `sourceRoot` can be a URL (e.g. raw.githubusercontent.com) for packages
+  // that want devtools to fetch the original sources from a remote host. There
+  // is nothing local to read, so leave the map untouched instead of resolving
+  // the relative `sources` against the cwd and warning that they escape the
+  // package.
+  if (map.sourceRoot && isExternalUrl(map.sourceRoot)) {
+    return
+  }
+
   let sourceRootPromise: Promise<string | undefined>
 
   const packageRoot = getNodeModulesPackageRoot(file)
