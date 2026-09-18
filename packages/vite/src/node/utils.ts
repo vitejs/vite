@@ -1370,6 +1370,7 @@ function setupRollupOptionCompatForEnvironment(environment: any): any {
   }
   const merged: Record<string, any> = { ...environment }
   if (isObject(merged.build)) {
+    merged.build = { ...merged.build }
     setupRollupOptionCompat(merged.build, 'build')
   }
   return merged
@@ -1432,6 +1433,8 @@ export function setupHmrWsOptionCompat(
   }
   if (serverConfig.hmr === true) {
     serverConfig.hmr = {}
+  } else if (serverConfig.hmr) {
+    serverConfig.hmr = { ...serverConfig.hmr }
   }
 
   const hmrConfig = serverConfig.hmr

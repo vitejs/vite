@@ -1270,10 +1270,13 @@ export async function resolveServerOptions(
   const workspaceRoot = searchForWorkspaceRoot(root)
   const server: ResolvedServerOptions = {
     ..._server,
+    allowedHosts: Array.isArray(_server.allowedHosts)
+      ? _server.allowedHosts.slice()
+      : _server.allowedHosts,
     fs: {
       ..._server.fs,
       // run searchForWorkspaceRoot only if needed
-      allow: raw?.fs?.allow ?? [workspaceRoot],
+      allow: raw?.fs?.allow ? raw.fs.allow.slice() : [workspaceRoot],
     },
     sourcemapIgnoreList:
       _server.sourcemapIgnoreList === false
