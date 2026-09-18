@@ -1,5 +1,6 @@
 import path from 'node:path'
 import type { Response, Route } from 'playwright-chromium'
+import { normalizePath } from 'vite'
 import { beforeAll, describe, expect, test } from 'vitest'
 import {
   browser,
@@ -129,8 +130,16 @@ const rebuildLanded = async () => {
   return !state.hasStaleOutput
 }
 
-const builtChunkFor = (file: string): string | undefined =>
-  bundledDev().builtLazyChunks.get(path.join(viteServer.config.root, file))
+// the map is keyed by rolldown's module id, which keeps backslashes on Windows
+const builtChunkFor = (file: string): string | undefined => {
+  const id = path.posix.join(viteServer.config.root, file)
+  for (const [key, chunk] of bundledDev().builtLazyChunks as Map<
+    string,
+    string
+  >) {
+    if (normalizePath(key) === id) return chunk
+  }
+}
 
 const sharedRuns = (p: typeof page) =>
   p.evaluate(() => (globalThis as any).__sharedRuns as number)
