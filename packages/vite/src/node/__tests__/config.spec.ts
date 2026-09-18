@@ -989,6 +989,29 @@ describe('mergeConfig', () => {
     }
   })
 
+  test('mergeConfig handles server.hmr when server.ws is false', () => {
+    const mergedConfig = mergeConfig(
+      {
+        server: {
+          ws: false,
+          hmr: { host: 'localhost' },
+        },
+      },
+      {
+        server: {
+          hmr: { port: 5173 },
+        },
+      },
+    )
+
+    expect(mergedConfig.server).toMatchObject({
+      ws: false,
+      hmr: {
+        host: 'localhost',
+        port: 5173,
+      },
+    })
+  })
   test('syncs `server.hmr.*` to `server.ws.*`', () => {
     const baseConfig = defineConfig({
       server: {
