@@ -19,6 +19,14 @@ export default defineConfig({
         //     return 'chunk'
         //   }
         // },
+        codeSplitting: {
+          groups: [
+            {
+              name: 'chunk',
+              test: 'chunk.js',
+            },
+          ],
+        },
       },
     },
   },
