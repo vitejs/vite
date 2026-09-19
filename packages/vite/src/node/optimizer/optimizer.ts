@@ -147,6 +147,10 @@ export function createDepsOptimizer(
 
   async function close() {
     closed = true
+    // Pending loads must be released even if their batch never finishes or
+    // the optimizer has not been initialized yet.
+    depOptimizationProcessing.resolve()
+    resolveEnqueuedProcessingPromises()
     await Promise.allSettled([
       discover?.cancel(),
       depsOptimizer.scanProcessing,
