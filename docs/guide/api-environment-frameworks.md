@@ -342,6 +342,31 @@ export default defineConfig({
 
 Besides the `builder.buildApp` config option, plugins can define a `buildApp` hook to participate in the app build. The config option and the plugin hooks run in a defined order: hooks with order `'pre'` or `null` run first, then the configured `builder.buildApp`, then hooks with order `'post'`. Within a hook, `environment.isBuilt` tells you whether an environment has already been built, which lets a plugin avoid building it twice.
 
+### Accessing the build manifest with `environment.manifest`
+
+Once an environment has been built, its [build manifest](/config/build-options#build-manifest) is available on `environment.manifest`. This lets a plugin read the manifest of an already built environment directly in the `buildApp` hook, without having to write to and read from the file system. It is a common pattern, for example, to use the manifest to move assets emitted in a server environment to the client bundle.
+
+The manifest is populated regardless of the [`build.manifest`](/config/build-options#build-manifest) option, which only controls whether the manifest file is written to disk. Each environment has its own manifest.
+
+```js [vite.config.js]
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [
+    {
+      name: 'read-manifest',
+      async buildApp(builder) {
+        const client = builder.environments.client
+        if (!client.isBuilt) {
+          await builder.build(client)
+        }
+        console.log('client manifest', client.manifest)
+      },
+    },
+  ],
+})
+```
+
 ### Building programmatically with `createBuilder`
 
 To trigger an app build from your own code, use `createBuilder` instead of the standalone `build` function. `createBuilder` is the build-time equivalent of `createServer`: it resolves the config and returns a `ViteBuilder`, whose `buildApp` method builds every configured environment. You can also build a single environment with `builder.build(environment)`.
