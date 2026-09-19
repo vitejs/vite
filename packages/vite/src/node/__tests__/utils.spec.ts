@@ -2,6 +2,9 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import os, { type NetworkInterfaceInfoIPv4 } from 'node:os'
 import path from 'node:path'
+import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
+import MagicString, { Bundle } from 'magic-string'
 import { fileURLToPath } from 'mlly'
 import { describe, expect, test, vi, onTestFinished } from 'vitest'
 import type { CommonServerOptions, ResolvedServerUrls } from '..'
@@ -901,6 +904,55 @@ describe('combineSourcemaps', () => {
   const resolveFile = (file: string) => {
     return normalizePath(path.resolve(_dirname, file))
   }
+
+  test.each(['assets/index.js', '/dist/index.js', 'C:/dist/index.js'])(
+    'composes decoded intermediate mappings identically for %s',
+    (filename) => {
+      const bundle = new Bundle({ separator: '\n' })
+      bundle.addSource({
+        filename: 'first.js',
+        content: new MagicString('const greeting = "hello 🌍";'),
+      })
+      bundle.addSource({
+        filename: 'second.js',
+        content: new MagicString(
+          'const load = () => import("./lazy.js"); console.log(greeting);',
+        ),
+      })
+      const originalMap = bundle.generateMap({
+        hires: true,
+        includeContent: true,
+      })
+      const s = new MagicString(bundle.toString())
+      const importStart = s.original.indexOf('import(')
+      s.appendLeft(importStart, '__vitePreload(() => ')
+      s.appendRight(s.original.indexOf(';', importStart), ', ["lazy.css"])')
+      s.prepend('const helper = true;\n')
+      const options = { source: filename, hires: 'boundary' as const }
+      const encoded = combineSourcemaps(filename, [
+        s.generateMap(options) as RawSourceMap,
+        originalMap as RawSourceMap,
+      ])
+      const decoded = combineSourcemaps(filename, [
+        s.generateDecodedMap(options) as DecodedSourceMap,
+        originalMap as RawSourceMap,
+      ])
+
+      expect(decoded).toStrictEqual(encoded)
+      expect(typeof decoded.mappings).toBe('string')
+      expect(decoded.sourcesContent).toStrictEqual(originalMap.sourcesContent)
+      expect(
+        originalPositionFor(new TraceMap(decoded), {
+          line: 3,
+          column: s.toString().split('\n')[2].indexOf('console'),
+        }),
+      ).toMatchObject({
+        source: 'second.js',
+        line: 1,
+        column: bundle.toString().split('\n')[1].indexOf('console'),
+      })
+    },
+  )
 
   test('should combine sourcemaps with single sources', () => {
     const sourcemaps = [
