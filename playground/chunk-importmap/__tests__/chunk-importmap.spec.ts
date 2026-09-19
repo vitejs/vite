@@ -125,3 +125,54 @@ for (const cssFileName of ['dynamic.css', 'direct-dynamic.css']) {
     },
   )
 }
+
+// `chunkImportMap` rewrites static imports to stable specifiers, so a change
+// that only alters a chunk's preload-dep *membership* used to keep the same
+// content-hashed filename while the injected `__vite__mapDeps` array changed
+// (#23225). The importer hash must move when that list changes.
+test.runIf(isBuild)(
+  'hashed chunk names move when preload dependency membership changes',
+  async () => {
+    const extraDepPlugin = (dynamicImportsExtra: boolean) => ({
+      name: 'extra-dep-graph',
+      resolveId(id: string) {
+        if (id === 'virtual:extra-dep') return '\0virtual:extra-dep'
+      },
+      load(id: string) {
+        if (id === '\0virtual:extra-dep') {
+          return 'export const extra = () => "extra"'
+        }
+      },
+      transform(code: string, id: string) {
+        // A second importer keeps extra-dep a shared chunk instead of inlining it.
+        if (id.endsWith('/dynamic2.js')) {
+          return `import 'virtual:extra-dep'\n${code}`
+        }
+        if (dynamicImportsExtra && id.endsWith('/dynamic.js')) {
+          return `import 'virtual:extra-dep'\n${code}`
+        }
+      },
+    })
+
+    const buildWithExtraDep = async (dynamicImportsExtra: boolean) =>
+      (await build({
+        root: testDir,
+        logLevel: 'silent',
+        build: { write: false },
+        plugins: [extraDepPlugin(dynamicImportsExtra)],
+      })) as RolldownOutput
+
+    const getIndexChunk = (output: RolldownOutput) =>
+      output.output.find(
+        (file): file is OutputChunk => file.type === 'chunk' && file.isEntry,
+      )!
+
+    const without = await buildWithExtraDep(false)
+    const withExtra = await buildWithExtraDep(true)
+    const withoutIndex = getIndexChunk(without)
+    const withIndex = getIndexChunk(withExtra)
+
+    expect(withIndex.code).not.toBe(withoutIndex.code)
+    expect(withIndex.fileName).not.toBe(withoutIndex.fileName)
+  },
+)
