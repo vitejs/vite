@@ -168,6 +168,8 @@ Directly customize the underlying Rolldown bundle. This is the same as options t
 
 Instead of `build.rolldownOptions.input`, it is recommended to set the top-level [`input`](/config/shared-options#input) option, because it will be used in dev as well. If `build.rolldownOptions.input` is set, it overrides the top-level `input` option for build only.
 
+Note that Vite overrides `preserveEntrySignatures` by default: `false` for a regular client build, `'strict'` for library mode, and `'allow-extension'` for SSR builds. Set `build.rolldownOptions.preserveEntrySignatures` explicitly (e.g. `'exports-only'`) if you need Rolldown's default behavior.
+
 ## build.rollupOptions
 
 - **Type:** `RolldownOptions`
