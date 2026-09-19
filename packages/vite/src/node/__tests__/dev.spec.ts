@@ -5,6 +5,7 @@ import { createServer, resolveConfig } from '..'
 import type { ViteDevServer } from '..'
 import { promiseWithResolvers } from '../../shared/utils'
 import { createLogger } from '../logger'
+import { _createServer } from '../server'
 import { normalizePath } from '../utils'
 
 describe('resolveBuildEnvironmentOptions in dev', () => {
@@ -29,6 +30,37 @@ describe('the dev server', () => {
 
   afterEach(async () => {
     await server?.close()
+  })
+
+  test('releases previous environments after initialization', async () => {
+    const previousServer = await createServer({
+      configFile: false,
+      root: import.meta.dirname,
+      optimizeDeps: { noDiscovery: true },
+      server: { middlewareMode: true, ws: false },
+    })
+    const options = {
+      listen: false,
+      previousEnvironments: previousServer.environments,
+    }
+
+    try {
+      const config = await resolveConfig(
+        {
+          configFile: false,
+          root: import.meta.dirname,
+          optimizeDeps: { noDiscovery: true },
+          server: { middlewareMode: true, ws: false },
+        },
+        'serve',
+      )
+      const nextServer = await _createServer(config, options)
+
+      expect(options.previousEnvironments).toBeUndefined()
+      await nextServer.close()
+    } finally {
+      await previousServer.close()
+    }
   })
 
   test('resolves each environment input as a safe module', async () => {
