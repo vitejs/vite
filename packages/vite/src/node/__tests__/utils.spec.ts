@@ -768,6 +768,29 @@ describe('processSrcSetSync', () => {
     expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
   })
 
+  test('should parse image-set-options with nested functions', async () => {
+    const source = `url("a.png") 1x,
+                    linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1)) 2x`
+    const result =
+      'url("a.png") 1x, linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1)) 2x'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should capture image candidates with nested functions whole', async () => {
+    const source = `url("a.png") 1x,
+                    linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1)) 2x`
+    const expected = [
+      'url("a.png")',
+      'linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1))',
+    ]
+    const result: string[] = []
+    processSrcSetSync(source, ({ url }) => {
+      result.push(url)
+      return url
+    })
+    expect(result).toEqual(expected)
+  })
+
   test('should parse image-set-options with resolution and type specified', async () => {
     const source = `url("picture.png")\t1x\t type("image/jpeg"), url("picture.png")\t type("image/jpeg")\t2x`
     const result =
