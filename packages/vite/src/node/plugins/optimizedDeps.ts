@@ -100,6 +100,9 @@ export function optimizedDepsPlugin(): Plugin {
           }
           return code
         } catch {
+          if (depsOptimizer?.isClosed?.()) {
+            return null
+          }
           if (
             browserHash &&
             !environment.config.optimizeDeps.ignoreOutdatedRequests
