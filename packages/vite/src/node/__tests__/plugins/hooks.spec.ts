@@ -445,6 +445,34 @@ describe('watcher add/unlink error handling', () => {
     expect(logError).toHaveBeenCalled()
     expect(logError).toHaveBeenCalledWith(error)
   })
+
+  test("'error' event logs warning instead of crashing the server", async () => {
+    const { promise, resolve } = promiseWithResolvers<void>()
+    const error = Object.assign(new Error('watch failed'), { code: 'EBUSY' })
+
+    const logWarn = vi.fn()
+    const logger = createLogger('error')
+    logger.warn = (...args) => {
+      logWarn(...args)
+      resolve()
+    }
+
+    const server = await createServerWithPlugin(
+      {
+        name: 'test',
+      },
+      logger,
+    )
+
+    expect(server.watcher.listenerCount('error')).toBeGreaterThan(0)
+    expect(() => {
+      server.watcher.emit('error', error)
+    }).not.toThrow()
+
+    await promise
+    expect(logWarn).toHaveBeenCalled()
+    expect(logWarn.mock.calls[0][0]).toContain('watch failed')
+  })
 })
 
 describe('closeServer hook', () => {
