@@ -305,6 +305,25 @@ export default defineConfig({
 })
 ```
 
+## server.preTransformRequests
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+Pre-transform known direct imports. When Vite transforms a module, it also warms up the modules that module imports statically, so they are already transformed by the time the browser asks for them instead of arriving as a request waterfall. Dynamic imports are not pre-transformed.
+
+Vite also relies on this to start crawling static imports earlier when [`server.open`](#server-open) is enabled, by requesting the entry URL while the browser is still opening.
+
+Set it to `false` to only transform modules when they are requested.
+
+```js
+export default defineConfig({
+  server: {
+    preTransformRequests: false,
+  },
+})
+```
+
 ## server.watch
 
 - **Type:** `object | null`
