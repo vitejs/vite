@@ -1117,7 +1117,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-export function parseRelAttr(attr: string): string[] {
+function parseRelAttr(attr: string): string[] {
   return attr.split(spaceRe).map((v) => v.toLowerCase())
 }
 
