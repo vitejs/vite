@@ -1,6 +1,7 @@
 import { EventEmitter } from 'node:events'
 import path from 'node:path'
 import colors from 'picocolors'
+import picomatch from 'picomatch'
 import type { OutputOptions, WatcherOptions } from 'rolldown'
 import type { DevWatchOptions } from 'rolldown/experimental'
 import { escapePath } from 'tinyglobby'
@@ -63,6 +64,8 @@ export function resolveChokidarOptions(
   resolvedOutDirs: Set<string>,
   emptyOutDir: boolean,
   cacheDir: string,
+  root?: string,
+  logger?: Logger,
 ): WatchOptions {
   const {
     ignored: ignoredList,
@@ -75,10 +78,13 @@ export function resolveChokidarOptions(
     exclude,
     ...otherOptions
   } = options ?? {}
-  const ignored: WatchOptions['ignored'] = [
+  const defaultIgnored = [
     '**/.git/**',
     '**/node_modules/**',
     '**/test-results/**', // Playwright
+  ]
+  const ignored: WatchOptions['ignored'] = [
+    ...defaultIgnored,
     escapePath(cacheDir) + '/**',
     ...arraify(ignoredList || []),
   ]
@@ -86,6 +92,30 @@ export function resolveChokidarOptions(
     ignored.push(
       ...[...resolvedOutDirs].map((outDir) => escapePath(outDir) + '/**'),
     )
+  }
+
+  // A default ignore glob matching the project root itself (e.g. the root
+  // lives under an ancestor `test-results/` directory) silently makes the
+  // watcher observe nothing: no HMR, no invalidation, no error. Warn so this
+  // is diagnosable instead of looking like a downstream caching bug.
+  if (root && logger) {
+    const normalizedRoot = normalizePath(root)
+    const matchedDefault = defaultIgnored.find((glob) =>
+      picomatch(glob, { dot: true })(normalizedRoot),
+    )
+    if (matchedDefault) {
+      logger.warn(
+        colors.yellow(
+          `\n${colors.bold(`(!)`)} The project root ${colors.white(
+            colors.dim(normalizedRoot),
+          )} matches the default watch ignore pattern ${colors.white(
+            colors.dim(matchedDefault),
+          )}.\n` +
+            `The dev server watcher will observe no files, so HMR will not work. ` +
+            `Move the project out of that path.\n`,
+        ),
+      )
+    }
   }
 
   const resolvedWatchOptions: WatchOptions = {

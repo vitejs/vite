@@ -563,6 +563,8 @@ export async function _createServer(
     resolvedOutDirs,
     emptyOutDir,
     config.cacheDir,
+    config.root,
+    config.logger,
   )
 
   const middlewares = connect() as Connect.Server

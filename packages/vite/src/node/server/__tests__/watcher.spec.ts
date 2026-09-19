@@ -54,3 +54,52 @@ describe('watcher configuration', () => {
     })
   })
 })
+
+describe('resolveChokidarOptions warning for ignored project root', () => {
+  it('warns when the project root matches a default ignore glob (#23523)', async () => {
+    const { resolveChokidarOptions } = await import('../../watch')
+    const warn = vi.fn()
+    const logger = { warn } as any
+    resolveChokidarOptions(
+      { disableGlobbing: true },
+      new Set(),
+      false,
+      '/tmp/cache',
+      '/home/user/test-results/my-project',
+      logger,
+    )
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(warn.mock.calls[0][0]).toContain('test-results')
+    expect(warn.mock.calls[0][0]).toContain('HMR will not work')
+  })
+
+  it('does not warn for a normal project root', async () => {
+    const { resolveChokidarOptions } = await import('../../watch')
+    const warn = vi.fn()
+    const logger = { warn } as any
+    resolveChokidarOptions(
+      { disableGlobbing: true },
+      new Set(),
+      false,
+      '/tmp/cache',
+      '/home/user/my-project',
+      logger,
+    )
+    expect(warn).not.toHaveBeenCalled()
+  })
+
+  it('does not warn when a user-supplied ignore matches the root, only defaults', async () => {
+    const { resolveChokidarOptions } = await import('../../watch')
+    const warn = vi.fn()
+    const logger = { warn } as any
+    resolveChokidarOptions(
+      { disableGlobbing: true, ignored: ['**/staging/**'] },
+      new Set(),
+      false,
+      '/tmp/cache',
+      '/home/user/staging/my-project',
+      logger,
+    )
+    expect(warn).not.toHaveBeenCalled()
+  })
+})
