@@ -530,6 +530,52 @@ test('invalidate inline proxy module on reload', async () => {
 })
 
 test.runIf(isServe)(
+  'editing inline script in html reloads with updated content',
+  async () => {
+    await page.goto(viteTestUrl + '/a á.html')
+    try {
+      await untilBrowserLogAfter(
+        () =>
+          editFile('a á.html', (code) =>
+            code.replace('special character', 'special character edited'),
+          ),
+        'special character edited',
+      )
+    } finally {
+      editFile('a á.html', (code) =>
+        code.replace('special character edited', 'special character'),
+      )
+    }
+  },
+)
+
+// TODO: enable for bundledDev once rolldown includes
+// https://github.com/rolldown/rolldown/pull/10637 — classic inline scripts stay
+// in the html output, and rolldown <1.2.4 drops re-emitted assets with changed
+// content from rebuild output, so bundledDev would serve the stale html.
+test.skipIf(isBundled)(
+  'editing classic inline script in html reloads with updated content',
+  async () => {
+    await page.goto(`${viteTestUrl}/inline-classic-script.html`)
+    expect(await page.textContent('.classic-script-content')).toContain(
+      'classic before',
+    )
+    editFile('inline-classic-script.html', (code) =>
+      code.replace('classic before', 'classic after edit'),
+    )
+    try {
+      await expect
+        .poll(() => page.textContent('.classic-script-content'))
+        .toContain('classic after edit')
+    } finally {
+      editFile('inline-classic-script.html', (code) =>
+        code.replace('classic after edit', 'classic before'),
+      )
+    }
+  },
+)
+
+test.runIf(isServe)(
   'malformed URLs in src attributes should show errors',
   async () => {
     serverLogs.length = 0
