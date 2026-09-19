@@ -2,10 +2,10 @@ import path from 'node:path'
 import type { ResolvedServerUrls } from 'vite'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { createServer, resolveConfig } from '..'
-import { _createServer } from '../server'
 import type { ViteDevServer } from '..'
 import { promiseWithResolvers } from '../../shared/utils'
 import { createLogger } from '../logger'
+import { _createServer } from '../server'
 import { normalizePath } from '../utils'
 
 describe('resolveBuildEnvironmentOptions in dev', () => {
