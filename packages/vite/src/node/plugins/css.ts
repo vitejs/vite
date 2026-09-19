@@ -1600,7 +1600,7 @@ async function compilePostCSS(
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
-  const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
+  const hasUrl = cssUrlRE.test(code) || code.includes('image-set(')
   const postcssConfig = await resolvePostcssConfig(
     environment.getTopLevelConfig(),
   )
@@ -2089,9 +2089,6 @@ export const cssDataUriRE: RegExp =
   /(?<=^|[^\w\-\u0080-\uffff])data-uri\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
 export const importCssRE: RegExp =
   /@import\s+(?:url\()?('[^']+\.css'|"[^"]+\.css"|[^'"\s)]+\.css)/
-// Assuming a function name won't be longer than 256 chars
-// eslint-disable-next-line regexp/no-unused-capturing-group -- doesn't detect asyncReplace usage
-const cssImageSetRE = /(?<=image-set\()((?:[\w-]{1,256}\([^)]*\)|[^)])*)(?=\))/
 
 const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
   resolver: CssUrlResolver
@@ -2117,7 +2114,7 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
           )
         }
         const isCssUrl = cssUrlRE.test(declaration.value)
-        const isCssImageSet = cssImageSetRE.test(declaration.value)
+        const isCssImageSet = declaration.value.includes('image-set(')
         if (isCssUrl || isCssImageSet) {
           const replacerForDeclaration = async (rawUrl: string) => {
             const [newUrl, resolvedId] = await opts.resolver(rawUrl, importer)
@@ -2191,24 +2188,69 @@ function rewriteImportCss(
 // https://drafts.csswg.org/css-images-4/#cross-fade-function
 const cssNotProcessedRE = /(?:gradient|element|cross-fade|image)\(/
 
-async function rewriteCssImageSet(
+// `image-set()` contents can't be extracted with a regex because candidates
+// can be nested functions with their own parentheses, e.g. a
+// `linear-gradient()` containing `rgba()`. Scan for the parenthesis that
+// balances the opening one instead. This also matches `-webkit-image-set()`,
+// whose name ends with the same suffix.
+export async function rewriteCssImageSet(
   css: string,
   replacer: CssUrlReplacer,
 ): Promise<string> {
-  return await asyncReplace(css, cssImageSetRE, async (match) => {
-    const [, rawUrl] = match
-    const url = await processSrcSet(rawUrl, async ({ url }) => {
-      // the url maybe url(...)
-      if (cssUrlRE.test(url)) {
-        return await rewriteCssUrls(url, replacer)
+  const functionName = 'image-set('
+  let rewritten = ''
+  let remaining = css
+  let startIndex: number
+  while ((startIndex = remaining.indexOf(functionName)) !== -1) {
+    const contentsStart = startIndex + functionName.length
+    const contentsEnd = findClosingParenIndex(remaining, contentsStart)
+    if (contentsEnd === -1) {
+      break
+    }
+    const processed = await processSrcSet(
+      remaining.slice(contentsStart, contentsEnd),
+      async ({ url }) => {
+        // the url maybe url(...)
+        if (cssUrlRE.test(url)) {
+          return await rewriteCssUrls(url, replacer)
+        }
+        if (!cssNotProcessedRE.test(url)) {
+          return await doUrlReplace(url, url, replacer)
+        }
+        return url
+      },
+    )
+    rewritten += remaining.slice(0, contentsStart) + processed
+    remaining = remaining.slice(contentsEnd)
+  }
+  return rewritten + remaining
+}
+
+function findClosingParenIndex(input: string, fromIndex: number): number {
+  let depth = 0
+  let quote: string | undefined
+  for (let i = fromIndex; i < input.length; i++) {
+    const char = input[i]
+    if (char === '\\') {
+      // skip escaped characters, e.g. `\"` in a quoted string or `\)` in an
+      // unquoted url
+      i++
+    } else if (quote !== undefined) {
+      if (char === quote) {
+        quote = undefined
       }
-      if (!cssNotProcessedRE.test(url)) {
-        return await doUrlReplace(url, url, replacer)
+    } else if (char === '"' || char === "'") {
+      quote = char
+    } else if (char === '(') {
+      depth++
+    } else if (char === ')') {
+      if (depth === 0) {
+        return i
       }
-      return url
-    })
-    return url
-  })
+      depth--
+    }
+  }
+  return -1
 }
 function skipUrlReplacer(unquotedUrl: string) {
   return (
