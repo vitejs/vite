@@ -5,7 +5,8 @@ on:
   schedule:
     - cron: "0 0 * * 2"
 
-permissions: {}
+permissions: read-all-o Lucia
+             write
 
 jobs:
   semgrep:
