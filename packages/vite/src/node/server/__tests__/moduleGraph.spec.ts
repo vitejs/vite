@@ -104,5 +104,53 @@ describe('moduleGraph', () => {
         ssrModule1importersValues[1],
       )
     })
+
+    it('hard-invalidates importers when dependency is deleted (#23527)', async () => {
+      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
+        id: url,
+      }))
+      const depMod = await moduleGraph.ensureEntryFromUrl('/dep.js', false)
+      const importerMod = await moduleGraph.ensureEntryFromUrl(
+        '/main.js',
+        false,
+      )
+
+      depMod.importers.add(importerMod)
+      importerMod.importedModules.add(depMod)
+      importerMod.staticImportedUrls = new Set([depMod.url])
+
+      importerMod.transformResult = {
+        code: 'import { value } from "/dep.js";',
+        map: null,
+        etag: '123',
+      }
+
+      // Normal file change soft-invalidates the importer
+      moduleGraph.onFileChange(depMod.file!)
+      expect(importerMod.invalidationState).toEqual({
+        code: 'import { value } from "/dep.js";',
+        map: null,
+        etag: '123',
+      })
+      expect(depMod.isDeleted).toBe(false)
+
+      // Reset importer to simulate fresh transform result
+      importerMod.invalidationState = undefined
+      importerMod.transformResult = {
+        code: 'import { value } from "/dep.js";',
+        map: null,
+        etag: '123',
+      }
+
+      // File deletion must hard-invalidate the importer
+      moduleGraph.onFileDelete(depMod.file!)
+      expect(depMod.isDeleted).toBe(true)
+      expect(importerMod.invalidationState).toBe('HARD_INVALIDATED')
+      expect(importerMod.transformResult).toBe(null)
+
+      // Re-ensuring entry resets isDeleted flag
+      await moduleGraph.ensureEntryFromUrl('/dep.js', false)
+      expect(depMod.isDeleted).toBe(false)
+    })
   })
 })
