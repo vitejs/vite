@@ -669,10 +669,8 @@ export function resolveRolldownOptions(
           tsconfigFilename: undefined,
         }
       : options.rolldownOptions.resolve,
-    output: options.rolldownOptions.output,
     input,
     plugins,
-    external: options.rolldownOptions.external,
     onLog(level, log) {
       onRollupLog(level, log, environment)
     },
