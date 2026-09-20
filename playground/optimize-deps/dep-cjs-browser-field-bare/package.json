@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "main": "index.js",
   "browser": {
-    "events": "./events-shim.js"
+    "events": "./events-shim.js",
+    "fs": false
   }
 }

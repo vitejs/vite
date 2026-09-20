@@ -116,6 +116,19 @@ test('cjs browser field bare', async () => {
     .toBe('pong')
 })
 
+test.runIf(isServe)(
+  'cjs browser field false mapping does not warn when a property is accessed',
+  () => {
+    expect(
+      browserLogs.some((log) =>
+        log.includes(
+          'Cannot access "fs.__explicitBrowserFieldTest" in client code.',
+        ),
+      ),
+    ).toBe(false)
+  },
+)
+
 test('dep from linked dep (lodash-es)', async () => {
   await expect.poll(() => page.textContent('.deps-linked')).toBe('fooBarBaz')
 })

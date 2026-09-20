@@ -58,6 +58,7 @@ const externalTypes = [
 
 const optionalPeerDepNamespace = 'optional-peer-dep:'
 const browserExternalNamespace = 'browser-external:'
+const browserExternalEmptyNamespace = `${browserExternalNamespace}empty:`
 
 export function rolldownDepPlugin(
   environment: Environment,
@@ -121,6 +122,11 @@ export function rolldownDepPlugin(
   }
 
   const resolveResult = (id: string, resolved: string, kind: ImportKind) => {
+    if (resolved === browserExternalId) {
+      return {
+        id: browserExternalEmptyNamespace + id,
+      }
+    }
     if (resolved.startsWith(browserExternalId)) {
       return {
         id: browserExternalNamespace + id,
@@ -260,6 +266,12 @@ export function rolldownDepPlugin(
           ],
         },
         handler(id) {
+          if (id.startsWith(browserExternalEmptyNamespace)) {
+            return {
+              code: 'module.exports = {}',
+            }
+          }
+
           if (id.startsWith(browserExternalNamespace)) {
             const path = id.slice(browserExternalNamespace.length)
             if (isProduction) {
