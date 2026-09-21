@@ -186,6 +186,12 @@ export function formatConsoleArgs(args: unknown[]): string {
   return message
 }
 
+// Keep forwarded logs readable: deeply nested or very wide objects (Vue component instances and
+// the like) otherwise serialize to megabytes per call, flooding the terminal and the dev server
+// output an agent reads. Depth 2 matches Node's `util.inspect` default.
+const MAX_DEPTH = 2
+const MAX_LENGTH = 5000
+
 function stringifyConsoleArg(value: unknown): string {
   if (typeof value === 'string') {
     return value
@@ -211,8 +217,9 @@ function stringifyConsoleArg(value: unknown): string {
   }
 
   const seen = new WeakSet<object>()
+  const depths = new WeakMap<object, number>()
   try {
-    const serialized = JSON.stringify(value, (_, nested) => {
+    const serialized = JSON.stringify(value, function (_, nested) {
       if (typeof nested === 'bigint') {
         return `${nested}n`
       }
@@ -228,10 +235,23 @@ function stringifyConsoleArg(value: unknown): string {
           return '[Circular]'
         }
         seen.add(nested)
+
+        const depth = (depths.get(this as object) ?? 0) + 1
+        if (depth > MAX_DEPTH) {
+          return Array.isArray(nested)
+            ? `[Array(${nested.length})]`
+            : '[Object]'
+        }
+        depths.set(nested, depth)
       }
       return nested
     })
-    return serialized ?? String(value)
+    if (serialized == null) {
+      return String(value)
+    }
+    return serialized.length > MAX_LENGTH
+      ? `${serialized.slice(0, MAX_LENGTH)}…`
+      : serialized
   } catch {
     return String(value)
   }

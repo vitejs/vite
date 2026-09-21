@@ -66,6 +66,25 @@ describe('formatConsoleArgs', () => {
       `"1n undefined true Symbol(s) [Function: sampleFn] Error: boom {"ok":true,"big":"2n","err":{"name":"Error","message":"nested"},"self":"[Circular]"}"`,
     )
   })
+
+  test('caps the depth of nested objects and arrays', () => {
+    expect(formatConsoleArgs([{ a: { b: { c: 1 } } }])).toMatchInlineSnapshot(
+      `"{"a":{"b":"[Object]"}}"`,
+    )
+
+    expect(formatConsoleArgs([[1, [2, [3]]]])).toMatchInlineSnapshot(
+      `"[1,[2,"[Array(1)]"]]"`,
+    )
+  })
+
+  test('truncates arguments that serialize to a very long string', () => {
+    const text = 'a'.repeat(6000)
+
+    const formatted = formatConsoleArgs([{ text }])
+
+    expect(formatted.length).toBeLessThan(text.length)
+    expect(formatted.endsWith('…')).toBe(true)
+  })
 })
 
 describe('setupForwardConsoleHandler', () => {
