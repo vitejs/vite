@@ -1,9 +1,18 @@
 import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
-import { afterEach, assert, describe, expect, test, vi } from 'vitest'
+import {
+  afterEach,
+  assert,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from 'vitest'
 import type { InlineConfig, Plugin, PluginOption } from '..'
 import { isWindows } from '../../shared/utils'
 import type { UserConfig, UserConfigExport } from '../config'
@@ -2316,6 +2325,103 @@ describe('loadConfigFromFile', () => {
         normalizePath(path.resolve(fs.realpathSync.native(tempDir), '.vite')),
       )
     })
+  })
+
+  describe('temp file of a bundled ESM config', () => {
+    // A project in the OS temp dir with its own node_modules, so the temp file
+    // location under test doesn't depend on the repo's node_modules layout.
+    const tmpBase = path.join(os.tmpdir(), 'vite-config-temp-file-test')
+    const root = path.join(tmpBase, 'project')
+    const configFile = path.join(root, 'vite.config.mjs')
+    const viteTempDir = path.join(root, 'node_modules', '.vite-temp')
+
+    const errnoError = (code: string) =>
+      Object.assign(new Error(`${code}: mocked`), { code })
+    const dirOfCall = (call: unknown[]) => path.dirname(String(call[0]))
+
+    beforeEach(() => {
+      fs.mkdirSync(path.join(root, 'node_modules'), { recursive: true })
+      fs.writeFileSync(configFile, 'export default { define: { foo: 1 } }')
+    })
+
+    afterEach(() => {
+      vi.restoreAllMocks()
+      if (fs.existsSync(viteTempDir)) {
+        fs.chmodSync(viteTempDir, 0o755)
+      }
+      fs.rmSync(tmpBase, { recursive: true, force: true })
+    })
+
+    const loadConfig = async () => {
+      const result = await loadConfigFromFile(
+        { command: 'serve', mode: 'development' },
+        configFile,
+        root,
+        'silent',
+      )
+      expect(result?.config).toStrictEqual({ define: { foo: 1 } })
+    }
+
+    test('is written to node_modules/.vite-temp', async () => {
+      const writeFile = vi.spyOn(fsp, 'writeFile')
+
+      await loadConfig()
+
+      expect(writeFile).toHaveBeenCalledTimes(1)
+      expect(dirOfCall(writeFile.mock.calls[0])).toBe(viteTempDir)
+    })
+
+    test('falls back next to the config when .vite-temp cannot be created', async () => {
+      const mkdir = vi
+        .spyOn(fsp, 'mkdir')
+        .mockRejectedValueOnce(errnoError('EPERM'))
+      const writeFile = vi.spyOn(fsp, 'writeFile')
+
+      await loadConfig()
+
+      expect(mkdir.mock.calls[0][0]).toBe(viteTempDir)
+      expect(writeFile).toHaveBeenCalledTimes(1)
+      expect(dirOfCall(writeFile.mock.calls[0])).toBe(root)
+      expect(path.basename(String(writeFile.mock.calls[0][0]))).toMatch(
+        /^vite\.config\.mjs\.timestamp-.+\.mjs$/,
+      )
+    })
+
+    test('falls back next to the config when .vite-temp cannot be written to', async () => {
+      const writeFile = vi
+        .spyOn(fsp, 'writeFile')
+        .mockRejectedValueOnce(errnoError('EPERM'))
+
+      await loadConfig()
+
+      expect(writeFile).toHaveBeenCalledTimes(2)
+      expect(dirOfCall(writeFile.mock.calls[0])).toBe(viteTempDir)
+      expect(dirOfCall(writeFile.mock.calls[1])).toBe(root)
+    })
+
+    test('rethrows write errors that are not permission errors', async () => {
+      const writeFile = vi
+        .spyOn(fsp, 'writeFile')
+        .mockRejectedValueOnce(errnoError('ENOSPC'))
+
+      await expect(loadConfig()).rejects.toMatchObject({ code: 'ENOSPC' })
+      expect(writeFile).toHaveBeenCalledTimes(1)
+    })
+
+    // chmod has no effect on Windows, and root may write anywhere
+    test.runIf(!isWindows && process.getuid?.() !== 0)(
+      'falls back next to the config when .vite-temp is read-only',
+      async () => {
+        fs.mkdirSync(viteTempDir, { mode: 0o555 })
+        const writeFile = vi.spyOn(fsp, 'writeFile')
+
+        await loadConfig()
+
+        expect(writeFile).toHaveBeenCalledTimes(2)
+        expect(dirOfCall(writeFile.mock.calls[1])).toBe(root)
+        expect(fs.readdirSync(viteTempDir)).toEqual([])
+      },
+    )
   })
 })
 
