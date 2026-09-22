@@ -64,7 +64,9 @@ describe.runIf(isServe)('normal', () => {
   })
 })
 
-describe.runIf(isServe)('matrix', () => {
+// bundled dev serves only the bundle output and the public directory, never a
+// single project file, so the fs allow/deny matrix does not apply to it.
+describe.runIf(isServe && !isBundledDev)('matrix', () => {
   const dotEnvWindows83ShortName = getWindows83ShortNameForDotEnv()
 
   const variants = [
@@ -117,10 +119,6 @@ describe.runIf(isServe)('matrix', () => {
       content: safeJsonContent,
       status: '200',
       disableVariants: [''],
-      // bundled dev: an imported file outside `fs.allow` is exempted through
-      // the module graph (`safeModulesPath`), which stays empty under bundled
-      // dev even if the import is inlined into the bundle (vitejs/vite#23028)
-      skip: isBundledDev,
     },
     {
       name: 'safe fetch imported with query',
@@ -128,8 +126,6 @@ describe.runIf(isServe)('matrix', () => {
       content: safeJsonContent,
       status: '200',
       disableVariants: [''],
-      // bundled dev: same `safeModulesPath` exemption as 'safe fetch imported'
-      skip: isBundledDev,
     },
 
     {
@@ -150,13 +146,6 @@ describe.runIf(isServe)('matrix', () => {
       testId: 'unsafe-html',
       content: /403 Restricted/,
       status: '403',
-      // bundled dev: static serve middleware does not handle HTML files,
-      // so the request went through to the HTML middleware,
-      // which returns 404 for non-existent files (vitejs/vite#23028).
-      //
-      // In this case, only normal variant is affected,
-      // whereas `-fs` variant is handled by `serveRawFsMiddleware`, which checks every file type directly.
-      disableVariants: isBundledDev ? [''] : [],
     },
     {
       name: 'unsafe HTML fetch outside root',
@@ -435,7 +424,8 @@ describe('cross origin', () => {
     test.runIf(isServe)('fetch JS file', async () => {
       const status = await fetchStatusFromPage(
         page,
-        getViteTestUrl('/src/code.js'),
+        // bundled dev serves the bundle output, not the source file
+        getViteTestUrl(isBundledDev ? '/assets/main.js' : '/src/code.js'),
       )
       expect(status).toBe(200)
     })
