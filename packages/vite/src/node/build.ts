@@ -747,6 +747,20 @@ export function resolveRolldownOptions(
             findNearestPackageData(root, packageCache)?.data.type,
           )
         : 'js'
+    const resolvedMinify =
+      options.minify === 'oxc'
+        ? libOptions && (format === 'es' || format === 'esm')
+          ? {
+              compress: true,
+              mangle: true,
+              // Do not minify whitespace for ES lib output since that would remove
+              // pure annotations and break tree-shaking
+              codegen: false,
+            }
+          : true
+        : options.minify === false
+          ? 'dce-only'
+          : false
     return {
       dir: outDir,
       // Default format is 'es' for regular and for SSR builds
@@ -788,22 +802,15 @@ export function resolveRolldownOptions(
           (typeof input === 'string' || Object.keys(input).length === 1))
           ? false
           : undefined),
-      minify:
-        options.minify === 'oxc'
-          ? libOptions && (format === 'es' || format === 'esm')
-            ? {
-                compress: true,
-                mangle: true,
-                // Do not minify whitespace for ES lib output since that would remove
-                // pure annotations and break tree-shaking
-                codegen: false,
-              }
-            : true
-          : options.minify === false
-            ? 'dce-only'
-            : false,
       topLevelVar: true,
       ...output,
+      minify:
+        output.minify === undefined
+          ? resolvedMinify
+          : typeof output.minify === 'object' &&
+              typeof resolvedMinify === 'object'
+            ? { ...resolvedMinify, ...output.minify }
+            : output.minify,
       comments:
         typeof output.comments === 'boolean'
           ? output.comments
