@@ -111,7 +111,7 @@ const htmlTypesRE = /\.(?:html|vue|svelte|astro|imba)$/
 // since even missed imports can be caught at runtime, and false positives will
 // simply be ignored.
 export const importsRE: RegExp =
-  /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
+  /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type\b)(?:[\w*{}\n\r\t, ]+from)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
 
 export function scanImports(environment: ScanEnvironment): {
   cancel: () => Promise<void>
