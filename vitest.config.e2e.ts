@@ -9,13 +9,11 @@ const isBundledDev = !isBuild && !!process.env.VITE_TEST_BUNDLED_DEV
 // support (vitejs/vite#23028). A file where only a few cases fail is not
 // listed here; those cases are marked `test.skipIf(isBundledDev)` instead.
 const bundledDevExclude = [
-  './playground/assets/__tests__/runtime-base/assets-runtime-base.spec.ts',
   './playground/chunk-importmap/__tests__/chunk-importmap.spec.ts',
   './playground/fs-serve/__tests__/base/fs-serve-base.spec.ts',
   './playground/fs-serve/__tests__/deny/fs-serve-deny.spec.ts',
   './playground/fs-serve/__tests__/fs-serve.spec.ts',
   './playground/hmr-ssr/__tests__/hmr-ssr.spec.ts',
-  './playground/legacy/__tests__/chunk-importmap/legacy-chunk-importmap.spec.ts',
   './playground/object-hooks/__tests__/object-hooks.spec.ts',
   './playground/optimize-deps/__tests__/optimize-deps.spec.ts',
   './playground/worker/__tests__/es/worker-es.spec.ts',
