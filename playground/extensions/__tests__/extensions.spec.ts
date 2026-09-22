@@ -7,7 +7,7 @@ test('should have no 404s', () => {
   })
 })
 
-test.skipIf(isBundledDev)('not contain `.mjs`', async () => {
+test('not contain `.mjs`', async () => {
   const appHtml = await page.content()
   expect(appHtml).toMatch('Hello Vite!')
 })
