@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { transformWithEsbuild } from 'vite'
 import { describe, expect, test } from 'vitest'
-import { browserLogs, isBundledDev, isServe, serverLogs } from '~utils'
+import { browserLogs, isServe, serverLogs } from '~utils'
 
 test('should respected each `tsconfig.json`s compilerOptions', () => {
   // main side effect should be called (because of `"verbatimModuleSyntax": true`)

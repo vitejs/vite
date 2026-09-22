@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { browserLogs, isBundledDev, page } from '~utils'
+import { browserLogs, page } from '~utils'
 
 test('should have no 404s', () => {
   browserLogs.forEach((msg) => {
