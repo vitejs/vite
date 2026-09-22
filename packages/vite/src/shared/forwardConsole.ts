@@ -164,7 +164,7 @@ export function formatConsoleArgs(args: unknown[]): string {
       case '%j':
         try {
           const serialized = JSON.stringify(arg)
-          return serialized ?? 'undefined'
+          return truncateConsoleArg(serialized ?? 'undefined')
         } catch {
           return '[Circular]'
         }
@@ -231,8 +231,16 @@ function stringifyConsoleArg(value: unknown): string {
       }
       return nested
     })
-    return serialized ?? String(value)
+    return truncateConsoleArg(serialized ?? String(value))
   } catch {
     return String(value)
   }
+}
+
+const MAX_CONSOLE_ARG_LENGTH = 100_000
+
+function truncateConsoleArg(value: string): string {
+  return value.length > MAX_CONSOLE_ARG_LENGTH
+    ? `${value.slice(0, MAX_CONSOLE_ARG_LENGTH)}… [truncated]`
+    : value
 }

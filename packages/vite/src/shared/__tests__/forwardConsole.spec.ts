@@ -66,6 +66,13 @@ describe('formatConsoleArgs', () => {
       `"1n undefined true Symbol(s) [Function: sampleFn] Error: boom {"ok":true,"big":"2n","err":{"name":"Error","message":"nested"},"self":"[Circular]"}"`,
     )
   })
+
+  test('truncates large object arguments', () => {
+    const output = formatConsoleArgs([{ value: 'x'.repeat(100_001) }])
+
+    expect(output).toContain('… [truncated]')
+    expect(output.length).toBeLessThan(100_020)
+  })
 })
 
 describe('setupForwardConsoleHandler', () => {
