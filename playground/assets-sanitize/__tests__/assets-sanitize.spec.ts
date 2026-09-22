@@ -38,8 +38,11 @@ if (isBuild) {
   })
 }
 
-// this checks that the dev server refuses to serve /.env
+// this checks that the dev server refuses to serve /.env. Bundled dev never
+// serves a project file, so the request gets the SPA fallback instead.
 test.runIf(!isBuild)('denied .env', async () => {
-  expect(await page.textContent('.unsafe-dotenv')).toBe('403')
+  expect(await page.textContent('.unsafe-dotenv')).toBe(
+    isBundledDev ? '200' : '403',
+  )
   expect(await page.textContent('.unsafe-dotenv-double-slash')).toBe('200') // SPA fallback
 })
