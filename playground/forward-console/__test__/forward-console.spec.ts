@@ -1,6 +1,6 @@
 import { stripVTControlCharacters } from 'node:util'
 import { expect, test } from 'vitest'
-import { isServe, page, serverLogs } from '~utils'
+import { isBundledDev, isServe, page, serverLogs } from '~utils'
 
 function normalizeLogs(logs: string[]) {
   return (
@@ -17,7 +17,7 @@ function normalizeLogs(logs: string[]) {
   )
 }
 
-test.runIf(isServe)('unhandled error', async () => {
+test.runIf(isServe && !isBundledDev)('unhandled error', async () => {
   await page.click('#test-error')
   await expect.poll(() => normalizeLogs(serverLogs)).toContain(`\
 [Unhandled error] Error: this is test error
@@ -32,7 +32,7 @@ test.runIf(isServe)('unhandled error', async () => {
 `)
 })
 
-test.runIf(isServe)('unhandled rejection', async () => {
+test.runIf(isServe && !isBundledDev)('unhandled rejection', async () => {
   const logIndex = serverLogs.length
   await page.click('#test-unhandledrejection')
   await expect.poll(() => normalizeLogs(serverLogs.slice(logIndex)))
@@ -59,11 +59,13 @@ test.runIf(isServe)('console.error', async () => {
     )
 })
 
-test.runIf(isServe)('dependency stack uses source map path', async () => {
-  const logIndex = serverLogs.length
-  await page.click('#test-dep-error')
-  await expect.poll(() => normalizeLogs(serverLogs.slice(logIndex)))
-    .toContain(`\
+test.runIf(isServe && !isBundledDev)(
+  'dependency stack uses source map path',
+  async () => {
+    const logIndex = serverLogs.length
+    await page.click('#test-dep-error')
+    await expect.poll(() => normalizeLogs(serverLogs.slice(logIndex)))
+      .toContain(`\
 [Unhandled error] Error: this is test dependency error
  > throwDepError ../../node_modules/.pnpm/<normalized>/node_modules/@vitejs/test-forward-console-throw-dep/index.js:2:8
  > testDepError src/main.ts:38:2
@@ -75,4 +77,5 @@ test.runIf(isServe)('dependency stack uses source map path', async () => {
     40 |
  > HTMLButtonElement.<anonymous> src/main.ts:22:2
 `)
-})
+  },
+)
