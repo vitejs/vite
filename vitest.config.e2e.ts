@@ -26,10 +26,6 @@ const bundledDevExclude = [
   './playground/tailwind-v3/__test__/tailwind-v3.spec.ts',
   './playground/tailwind/__test__/tailwind.spec.ts',
   './playground/transform-plugin/__tests__/base/transform-plugin.spec.ts',
-  './playground/worker/__tests__/es/worker-es.spec.ts',
-  './playground/worker/__tests__/iife/worker-iife.spec.ts',
-  './playground/worker/__tests__/relative-base-iife/worker-relative-base-iife.spec.ts',
-  './playground/worker/__tests__/relative-base/worker-relative-base.spec.ts',
 ]
 
 const timeout = process.env.PWDEBUG ? Infinity : process.env.CI ? 50000 : 30000
