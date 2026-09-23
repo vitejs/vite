@@ -172,12 +172,20 @@ const FRAMEWORKS: Framework[] = [
         customCommand: 'npm create react-router@latest TARGET_DIR',
       },
       {
+        name: 'custom-tanstack-start-react',
+        display: 'TanStack Start ↗',
+        link: 'https://tanstack.com/start',
+        color: cyan,
+        customCommand:
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --interactive',
+      },
+      {
         name: 'custom-tanstack-router-react',
         display: 'TanStack Router ↗',
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --router-only --interactive',
       },
       {
         name: 'redwoodsdk-standard',
@@ -274,12 +282,20 @@ const FRAMEWORKS: Framework[] = [
         color: yellow,
       },
       {
+        name: 'custom-tanstack-start-solid',
+        display: 'TanStack Start ↗',
+        link: 'https://tanstack.com/start',
+        color: cyan,
+        customCommand:
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --interactive',
+      },
+      {
         name: 'custom-tanstack-router-solid',
         display: 'TanStack Router ↗',
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --router-only --interactive',
       },
       {
         name: 'custom-vike-solid',
