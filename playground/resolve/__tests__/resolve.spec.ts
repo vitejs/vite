@@ -284,12 +284,11 @@ test.runIf(isBuild)('sideEffects field glob pattern is respected', async () => {
   expect(sideEffectValues).toStrictEqual(['success'])
 })
 
-// bundled dev: these HEAD requests ask for source files (/absolute.js,
-// /style.css). Those files are not in the bundle, and bundled dev serves
-// only the bundle.
-describe.runIf(isServe && !isBundledDev)('HEAD request handling', () => {
+describe.runIf(isServe)('HEAD request handling', () => {
   test('HEAD request to JS file returns correct Content-Type', async () => {
-    const response = await fetch(new URL('/absolute.js', viteTestUrl), {
+    // bundled dev serves the bundle output, not the source file
+    const jsPath = isBundledDev ? '/assets/index.js' : '/absolute.js'
+    const response = await fetch(new URL(jsPath, viteTestUrl), {
       method: 'HEAD',
     })
     expect(response.headers.get('content-type')).toBe('text/javascript')
@@ -298,14 +297,19 @@ describe.runIf(isServe && !isBundledDev)('HEAD request handling', () => {
     expect(text).toBe('')
   })
 
-  test('HEAD request to CSS file returns correct Content-Type', async () => {
-    const response = await fetch(new URL('/style.css', viteTestUrl), {
-      method: 'HEAD',
-      headers: {
-        Accept: 'text/css',
-      },
-    })
-    expect(response.headers.get('content-type')).toBe('text/css')
-    expect(response.status).toBe(200)
-  })
+  // bundled dev serves only the bundle output, and this playground's bundle
+  // has no CSS file
+  test.skipIf(isBundledDev)(
+    'HEAD request to CSS file returns correct Content-Type',
+    async () => {
+      const response = await fetch(new URL('/style.css', viteTestUrl), {
+        method: 'HEAD',
+        headers: {
+          Accept: 'text/css',
+        },
+      })
+      expect(response.headers.get('content-type')).toBe('text/css')
+      expect(response.status).toBe(200)
+    },
+  )
 })

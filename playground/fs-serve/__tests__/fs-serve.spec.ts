@@ -1,7 +1,7 @@
 import net from 'node:net'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { isServe, isWindows, viteTestUrl } from '~utils'
+import { isBundledDev, isServe, isWindows, viteTestUrl } from '~utils'
 import './commonTests'
 
 describe.runIf(isServe)('invalid request', () => {
@@ -40,6 +40,10 @@ describe.runIf(isServe)('invalid request', () => {
   const root = path
     .resolve(import.meta.dirname.replace('playground', 'playground-temp'), '..')
     .replace(/\\/g, '/')
+  // bundled dev serves only the bundle output and the public directory. A
+  // request for a project file never reaches the file, so it is a 404 no
+  // matter what plain dev would answer.
+  const notFound = 'HTTP/1.1 404 Not Found'
   const testCases: Array<{
     name: string
     target: string
@@ -49,14 +53,14 @@ describe.runIf(isServe)('invalid request', () => {
     {
       name: 'basic request',
       target: '/src/safe.txt',
-      status: 'HTTP/1.1 200 OK',
-      content: 'KEY=safe',
+      status: isBundledDev ? notFound : 'HTTP/1.1 200 OK',
+      content: isBundledDev ? undefined : 'KEY=safe',
     },
     {
       name: 'request with /@fs/',
       target: path.posix.join('/@fs/', root, 'root/src/safe.txt'),
-      status: 'HTTP/1.1 200 OK',
-      content: 'KEY=safe',
+      status: isBundledDev ? notFound : 'HTTP/1.1 200 OK',
+      content: isBundledDev ? undefined : 'KEY=safe',
     },
     {
       name: '# in request-target',
@@ -73,42 +77,49 @@ describe.runIf(isServe)('invalid request', () => {
     {
       name: 'denied file with /.',
       target: '/src/dummy.crt/.',
-      status: 'HTTP/1.1 403 Forbidden',
+      status: isBundledDev ? notFound : 'HTTP/1.1 403 Forbidden',
     },
     {
       name: 'denied file ending with \\',
       target: '/src/.env\\',
-      status: isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 404 Not Found',
+      status: isWindows && !isBundledDev ? 'HTTP/1.1 403 Forbidden' : notFound,
     },
     {
       name: 'denied file ending with \\ with /@fs/',
       target: path.posix.join('/@fs/', root, 'root/src/.env') + '\\',
-      status: isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 404 Not Found',
+      status: isWindows && !isBundledDev ? 'HTTP/1.1 403 Forbidden' : notFound,
     },
     {
       name: 'denied file with /. with /@fs/',
       target: path.posix.join('/@fs/', root, 'root/src/dummy.crt/') + '.',
-      status: 'HTTP/1.1 403 Forbidden',
+      status: isBundledDev ? notFound : 'HTTP/1.1 403 Forbidden',
     },
     {
       name: 'denied optimize deps sourcemap handler',
       target:
         path.posix.join('/@fs/', root) +
         '/node_modules/.vite/deps/../../../unsafe.map',
-      status: 'HTTP/1.1 403 Forbidden',
+      status: isBundledDev ? notFound : 'HTTP/1.1 403 Forbidden',
     },
     {
       name: 'denied backslash optimize deps sourcemap handler',
       target:
         path.posix.join('/@fs/', root) +
         '/node_modules/.vite/deps/..\\..\\..\\unsafe.map',
-      status: isWindows ? 'HTTP/1.1 403 Forbidden' : 'HTTP/1.1 200 OK',
-      content: isWindows ? undefined : 'Cache-Control: no-cache',
+      // the plain-dev 200 comes from the dep optimizer's sourcemap handler,
+      // which bundled dev does not have
+      status: isBundledDev
+        ? notFound
+        : isWindows
+          ? 'HTTP/1.1 403 Forbidden'
+          : 'HTTP/1.1 200 OK',
+      content:
+        isWindows || isBundledDev ? undefined : 'Cache-Control: no-cache',
     },
     {
       name: 'HTML outside root with relative path',
       target: '/../unsafe.html',
-      status: 'HTTP/1.1 403 Forbidden',
+      status: isBundledDev ? notFound : 'HTTP/1.1 403 Forbidden',
     },
   ]
   for (const { name, target, status, content } of testCases) {

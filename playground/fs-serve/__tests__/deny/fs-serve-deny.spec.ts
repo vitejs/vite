@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { isServe, page, viteTestUrl } from '~utils'
+import { isBundledDev, isServe, page, viteTestUrl } from '~utils'
 
 describe.runIf(isServe)('main', () => {
   for (const { name, urlPath } of [
@@ -18,7 +18,9 @@ describe.runIf(isServe)('main', () => {
   ]) {
     test(`**/deny/** should deny ${name}`, async () => {
       const res = await page.request.fetch(new URL(urlPath, viteTestUrl).href)
-      expect(res.status()).toBe(403)
+      // bundled dev never serves a project file, so the request is a 404
+      // before any deny rule is consulted
+      expect(res.status()).toBe(isBundledDev ? 404 : 403)
     })
   }
 })

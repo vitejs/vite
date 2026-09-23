@@ -13,7 +13,14 @@ import {
   test,
 } from 'vitest'
 import WebSocket from 'ws'
-import { browser, isServe, page, viteServer, viteTestUrl } from '~utils'
+import {
+  browser,
+  isBundledDev,
+  isServe,
+  page,
+  viteServer,
+  viteTestUrl,
+} from '~utils'
 import { getWindows83ShortNameForDotEnv as getWindows83ShortNameForDotEnv } from '../root/windows83Filename'
 import testJSON from '../safe.json'
 
@@ -22,6 +29,12 @@ const getViteTestIndexHtmlUrl = () => {
   // NOTE: viteTestUrl is set lazily
   return viteTestUrl + srcPrefix + 'src/'
 }
+
+// `viteTestUrl` keeps its trailing slash when the playground sets a base, so
+// plain concatenation would produce `//`-prefixed paths, which the server
+// refuses to serve as files.
+const getViteTestUrl = (pathname: string) =>
+  viteTestUrl.replace(/\/$/, '') + pathname
 
 const safeJsonContent = fs.readFileSync(
   path.resolve(import.meta.dirname, '../safe.json'),
@@ -51,7 +64,9 @@ describe.runIf(isServe)('normal', () => {
   })
 })
 
-describe.runIf(isServe)('matrix', () => {
+// bundled dev serves only the bundle output and the public directory, never a
+// single project file, so the fs allow/deny matrix does not apply to it.
+describe.runIf(isServe && !isBundledDev)('matrix', () => {
   const dotEnvWindows83ShortName = getWindows83ShortNameForDotEnv()
 
   const variants = [
@@ -332,7 +347,7 @@ describe.runIf(isServe)('matrix', () => {
 
 describe('fetch', () => {
   test('serve with configured headers', async () => {
-    const res = await fetch(viteTestUrl + '/src/')
+    const res = await fetch(getViteTestUrl('/src/'))
     expect(res.headers.get('x-served-by')).toBe('vite')
   })
 })
@@ -402,14 +417,15 @@ describe('cross origin', () => {
     })
 
     test('fetch HTML file', async () => {
-      const status = await fetchStatusFromPage(page, viteTestUrl + '/src/')
+      const status = await fetchStatusFromPage(page, getViteTestUrl('/src/'))
       expect(status).toBe(200)
     })
 
     test.runIf(isServe)('fetch JS file', async () => {
       const status = await fetchStatusFromPage(
         page,
-        viteTestUrl + '/src/code.js',
+        // bundled dev serves the bundle output, not the source file
+        getViteTestUrl(isBundledDev ? '/assets/main.js' : '/src/code.js'),
       )
       expect(status).toBe(200)
     })
@@ -425,7 +441,7 @@ describe('cross origin', () => {
 
     test('fetch with allowed hosts', async () => {
       const viteTestUrlUrl = new URL(viteTestUrl)
-      const res = await fetch(viteTestUrl + '/src/index.html', {
+      const res = await fetch(getViteTestUrl('/src/index.html'), {
         headers: { Host: viteTestUrlUrl.host },
       })
       expect(res.status).toBe(200)
