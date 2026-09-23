@@ -775,6 +775,25 @@ describe('processSrcSetSync', () => {
     expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
   })
 
+  test('should keep nested parentheses as a single gradient candidate', async () => {
+    const source = `linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 1)) 1x,
+                    url("hero.png") 2x`
+    const result =
+      'linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 1)) 1x, url("hero.png") 2x'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should keep cross-fade urls as a single candidate', async () => {
+    const source = `cross-fade(url(a.png), url(b.png)) 1x`
+    const expected = ['cross-fade(url(a.png), url(b.png))']
+    const result: string[] = []
+    processSrcSetSync(source, ({ url }) => {
+      result.push(url)
+      return url
+    })
+    expect(result).toEqual(expected)
+  })
+
   test('should capture whole image set options', async () => {
     const source = `linear-gradient(cornflowerblue, white) 1x,
                     url("detailed-gradient.png") 3x`
