@@ -581,11 +581,14 @@ export async function _createServer(
 
   // eslint-disable-next-line eqeqeq
   const watchEnabled = serverConfig.watch !== null
+  const hasUnbundledEnvironment = Object.values(config.environments).some(
+    (environment) => !environment.isBundled,
+  )
   const watcher = watchEnabled
     ? (chokidar.watch(
         // config file dependencies and env file might be outside of root
         [
-          ...(config.experimental.bundledDev ? [] : [root]),
+          ...(hasUnbundledEnvironment ? [root] : []),
           ...config.configFileDependencies,
           ...getEnvFilesForMode(config.mode, config.envDir),
           // Watch the public directory explicitly because it might be outside
@@ -908,11 +911,13 @@ export async function _createServer(
     reloadOnTsconfigChange(server, file)
 
     await Promise.all(
-      Object.values(server.environments).map((environment) =>
-        environment.pluginContainer.watchChange(file, {
-          event: isUnlink ? 'delete' : 'create',
-        }),
-      ),
+      Object.values(server.environments)
+        .filter((environment) => !environment.config.isBundled)
+        .map((environment) =>
+          environment.pluginContainer.watchChange(file, {
+            event: isUnlink ? 'delete' : 'create',
+          }),
+        ),
     )
 
     if (publicDir && publicFiles) {
@@ -934,7 +939,9 @@ export async function _createServer(
     }
     if (isUnlink) {
       // invalidate module graph cache on file change
-      for (const environment of Object.values(server.environments)) {
+      for (const environment of Object.values(server.environments).filter(
+        (environment) => !environment.config.isBundled,
+      )) {
         environment.moduleGraph.onFileDelete(file)
       }
     }
@@ -946,12 +953,16 @@ export async function _createServer(
     reloadOnTsconfigChange(server, file)
 
     await Promise.all(
-      Object.values(server.environments).map((environment) =>
-        environment.pluginContainer.watchChange(file, { event: 'update' }),
-      ),
+      Object.values(server.environments)
+        .filter((environment) => !environment.config.isBundled)
+        .map((environment) =>
+          environment.pluginContainer.watchChange(file, { event: 'update' }),
+        ),
     )
     // invalidate module graph cache on file change
-    for (const environment of Object.values(server.environments)) {
+    for (const environment of Object.values(server.environments).filter(
+      (environment) => !environment.config.isBundled,
+    )) {
       environment.moduleGraph.onFileChange(file)
     }
     await onHMRUpdate('update', file)

@@ -128,6 +128,30 @@ if (isBuild) {
     await expect.poll(() => page.textContent('.asset')).toMatch(assetUrl)
   })
 
+  test('orders custom events after the latest bundled update', async () => {
+    const baseUrl = new URL(page.url())
+    const previousVersion = await (
+      await fetch(new URL('/__test-change-version', baseUrl))
+    ).text()
+    const afterBuildUrl = new URL('/__test-after-build', baseUrl)
+    afterBuildUrl.searchParams.set('after', previousVersion)
+
+    editFile('hmr.js', (code) =>
+      code.replace("const foo = 'hello'", "const foo = 'hello1'"),
+    )
+    try {
+      await fetch(afterBuildUrl)
+      await expect
+        .poll(() => page.textContent('.ordered-update'))
+        .toBe('hello1')
+    } finally {
+      editFile('hmr.js', (code) =>
+        code.replace("const foo = 'hello1'", "const foo = 'hello'"),
+      )
+    }
+    await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+  })
+
   // BUNDLED -> GENERATING_HMR_PATCH -> GENERATING_HMR_PATCH -> BUNDLED
   test('continuous generate hmr patch', async () => {
     editFile('hmr.js', (code) =>

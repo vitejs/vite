@@ -53,4 +53,23 @@ describe('watcher configuration', () => {
       )
     })
   })
+
+  it('should watch the root for unbundled environments in bundled dev', async () => {
+    const root = fileURLToPath(
+      new URL('./fixtures/watcher/nested-root', import.meta.url),
+    )
+    server = await createServer({
+      configFile: false,
+      root,
+      experimental: { bundledDev: true },
+      environments: {
+        rsc: { consumer: 'server' },
+      },
+    })
+    await new Promise((resolve) => server!.watcher.once('ready', resolve))
+
+    await vi.waitFor(() => {
+      expect(Object.keys(server!.watcher.getWatched())).toContain(root)
+    })
+  })
 })
