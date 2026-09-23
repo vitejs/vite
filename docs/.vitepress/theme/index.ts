@@ -1,17 +1,17 @@
-import { h } from 'vue'
 import TwoslashFloatingVue from '@shikijs/vitepress-twoslash/client'
+import Theme from '@voidzero-dev/vitepress-theme/src/vite'
 import '@shikijs/vitepress-twoslash/style.css'
 import 'virtual:group-icons.css'
 import 'vitepress-plugin-graphviz/style.css'
-import Theme from '@voidzero-dev/vitepress-theme/src/vite'
+import { h } from 'vue'
 import './styles.css'
 
 // components
+import AsideSponsors from './components/AsideSponsors.vue'
+import NonInheritBadge from './components/NonInheritBadge.vue'
+import ScrimbaLink from './components/ScrimbaLink.vue'
 import SvgImage from './components/SvgImage.vue'
 import YouTubeVideo from './components/YouTubeVideo.vue'
-import NonInheritBadge from './components/NonInheritBadge.vue'
-import AsideSponsors from './components/AsideSponsors.vue'
-import ScrimbaLink from './components/ScrimbaLink.vue'
 
 export default {
   Layout() {

@@ -1,8 +1,11 @@
-import fs from 'node:fs'
-import path from 'node:path'
 import crypto from 'node:crypto'
-import { describe, expect, test } from 'vitest'
+import fs from 'node:fs'
+import os, { type NetworkInterfaceInfoIPv4 } from 'node:os'
+import path from 'node:path'
 import { fileURLToPath } from 'mlly'
+import { describe, expect, test, vi, onTestFinished } from 'vitest'
+import type { CommonServerOptions, ResolvedServerUrls } from '..'
+import { isWindows } from '../../shared/utils'
 import {
   asyncFlatten,
   bareImportRE,
@@ -11,22 +14,23 @@ import {
   extractHostnamesFromSubjectAltName,
   flattenId,
   generateCodeFrame,
+  getFileStartIndex,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
   getServerUrlByHost,
   injectQuery,
   isFileReadable,
+  isInNodeModules,
   isParentDirectory,
   mergeWithDefaults,
   normalizePath,
   numberToPos,
   posToNumber,
   processSrcSetSync,
+  removeTimestampQuery,
   resolveHostname,
   resolveServerUrls,
 } from '../utils'
-import { isWindows } from '../../shared/utils'
-import type { CommonServerOptions, ResolvedServerUrls } from '..'
 
 // Test certificate for SAN parsing (localhost, foo.localhost, *.vite.localhost)
 // Generate once:
@@ -77,6 +81,29 @@ describe('bareImportRE', () => {
   test('should work with relative path', () => {
     expect(bareImportRE.test('./foo')).toBe(false)
     expect(bareImportRE.test('.\\foo')).toBe(false)
+  })
+})
+
+describe('isInNodeModules', () => {
+  test('should detect node_modules path segments', () => {
+    expect(isInNodeModules('/project/node_modules/foo/index.js')).toBe(true)
+    expect(isInNodeModules('node_modules/foo/index.js')).toBe(true)
+    expect(
+      isInNodeModules(
+        '/project/node_modules/.pnpm/foo@1/node_modules/foo/i.js',
+      ),
+    ).toBe(true)
+    expect(isInNodeModules('C:\\project\\node_modules\\foo\\index.js')).toBe(
+      true,
+    )
+    expect(isInNodeModules('/project/node_modules')).toBe(true)
+  })
+
+  test('should not match node_modules as part of a directory name', () => {
+    expect(isInNodeModules('/project/node_modules_bug/src/main.js')).toBe(false)
+    expect(isInNodeModules('/project/my_node_modules/src/main.js')).toBe(false)
+    expect(isInNodeModules('/project/src/node_modules.js')).toBe(false)
+    expect(isInNodeModules('C:\\node_modules_bug\\src\\main.js')).toBe(false)
   })
 })
 
@@ -193,6 +220,33 @@ describe('injectQuery', () => {
   })
 })
 
+describe('removeTimestampQuery', () => {
+  test('removes timestamp query parameter', () => {
+    expect(removeTimestampQuery('/foo.js?t=1712345678901')).toBe('/foo.js')
+    expect(removeTimestampQuery('/foo.js?t=1712345678901&bar=1')).toBe(
+      '/foo.js?bar=1',
+    )
+    expect(removeTimestampQuery('/foo.js?bar=1&t=1712345678901')).toBe(
+      '/foo.js?bar=1',
+    )
+    expect(removeTimestampQuery('/foo.js?bar=1&t=1712345678901&baz=2')).toBe(
+      '/foo.js?bar=1&baz=2',
+    )
+  })
+
+  test('does not strip params with names ending in hyphen-t', () => {
+    expect(removeTimestampQuery('/foo.js?current-t=1712345678901')).toBe(
+      '/foo.js?current-t=1712345678901',
+    )
+    expect(removeTimestampQuery('/foo.js?my-t=1712345678901&other=1')).toBe(
+      '/foo.js?my-t=1712345678901&other=1',
+    )
+    expect(removeTimestampQuery('/foo.js#t=1712345678901')).toBe(
+      '/foo.js#t=1712345678901',
+    )
+  })
+})
+
 describe('resolveHostname', () => {
   test('defaults to localhost', async () => {
     const resolved = await getLocalhostAddressIfDiffersFromDNS()
@@ -277,6 +331,10 @@ describe('posToNumber', () => {
     const actual = posToNumber('a\n\nb', { line: 3, column: 0 })
     expect(actual).toBe(3)
   })
+  test('crlf', () => {
+    const actual = posToNumber('a\r\nb', { line: 2, column: 0 })
+    expect(actual).toBe(3)
+  })
   test('out of range', () => {
     const actual = posToNumber('a\nb', { line: 4, column: 0 })
     expect(actual).toBe(4)
@@ -335,7 +393,9 @@ foo()
       expect('\n' + value + '\n').toMatchSnapshot()
     } catch (e) {
       // don't include this function in stacktrace
-      Error.captureStackTrace(e, expectSnapshot)
+      if (e instanceof Error) {
+        Error.captureStackTrace(e, expectSnapshot)
+      }
       throw e
     }
   }
@@ -355,6 +415,25 @@ foo()
 
   test('works with CRLF', () => {
     expectSnapshot(generateCodeFrame(sourceCrLf, { line: 2, column: 0 }))
+  })
+
+  test('works with CRLF given an offset', () => {
+    const longSourceCrLf = longSource.replaceAll('\n', '\r\n')
+    // the frame should point to the same location regardless of the line endings
+    expect(
+      generateCodeFrame(longSourceCrLf, longSourceCrLf.indexOf('// 3')),
+    ).toBe(generateCodeFrame(longSource, longSource.indexOf('// 3')))
+  })
+
+  test('works with CRLF given a range', () => {
+    const longSourceCrLf = longSource.replaceAll('\n', '\r\n')
+    expectSnapshot(
+      generateCodeFrame(
+        longSourceCrLf,
+        longSourceCrLf.indexOf('foo()'),
+        longSourceCrLf.indexOf('// 2'),
+      ),
+    )
   })
 
   test('end', () => {
@@ -449,6 +528,33 @@ foo()
       { line: 3, column: 30 },
     )
     expectSnapshot(frame)
+  })
+})
+
+describe('getFileStartIndex', () => {
+  const LINE_TERMINATORS = {
+    LF: '\n',
+    CRLF: '\r\n',
+    CR: '\r',
+    'LINE SEPARATOR': '\u2028',
+    'PARAGRAPH SEPARATOR': '\u2029',
+  }
+  for (const [terminatorName, terminator] of Object.entries(LINE_TERMINATORS)) {
+    test(`returns the index after a hashbang ending in ${terminatorName}`, () => {
+      const hashbang = `#!/usr/bin/env node${terminator}`
+      expect(getFileStartIndex(`${hashbang}console.log(1)`)).toBe(
+        hashbang.length,
+      )
+    })
+  }
+
+  test('returns the end of an unterminated hashbang', () => {
+    const code = '#!/usr/bin/env node'
+    expect(getFileStartIndex(code)).toBe(code.length)
+  })
+
+  test('returns zero without a hashbang', () => {
+    expect(getFileStartIndex('console.log(1)')).toBe(0)
   })
 })
 
@@ -561,6 +667,26 @@ describe('processSrcSetSync', () => {
     ).toBe('"/base/nested/asset.png" 1x, "/base/nested/asset.png" 2x')
   })
 
+  test('keep the url when a density descriptor omits its leading zero', async () => {
+    const devBase = '/base/'
+    expect(
+      processSrcSetSync(
+        './nested/asset.png .5x, ./nested/asset.png 1x',
+        ({ url }) => path.posix.join(devBase, url),
+      ),
+    ).toBe('/base/nested/asset.png .5x, /base/nested/asset.png 1x')
+  })
+
+  test('keep the quoted url when a density descriptor omits its leading zero', async () => {
+    const devBase = '/base/'
+    expect(
+      processSrcSetSync(
+        '"./nested/asset.png" .75x,"./nested/asset.png" 1x',
+        ({ url }) => `"${path.posix.join(devBase, url.slice(1, -1))}"`,
+      ),
+    ).toBe('"/base/nested/asset.png" .75x, "/base/nested/asset.png" 1x')
+  })
+
   test('should not split the comma inside base64 value', async () => {
     const base64 =
       'data:image/avif;base64,aA+/0= 400w, data:image/avif;base64,bB+/9= 800w'
@@ -595,6 +721,18 @@ describe('processSrcSetSync', () => {
     `
     const result =
       'https://example.com/dpr_1,f_auto,fl_progressive,q_auto,w_100/v1/img 1x, https://example.com/dpr_2,f_auto,fl_progressive,q_auto,w_100/v1/img 2x'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should convert newline-separated srcset candidates to space-separated', async () => {
+    const source = 'asset.png\n1x,\nnested/asset.png\n2x'
+    const result = 'asset.png 1x, nested/asset.png 2x'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should convert CRLF-separated srcset candidates to space-separated', async () => {
+    const source = 'asset.png\r\n1x,\r\nnested/asset.png\r\n2x'
+    const result = 'asset.png 1x, nested/asset.png 2x'
     expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
   })
 
@@ -1095,5 +1233,122 @@ describe('resolveServerUrls', () => {
     )
 
     expect(result.local).toContain('https://localhost:3000/')
+  })
+
+  test('captures interface names aligned with the network URLs', () => {
+    const mockServer = createMockServer('IPv4', '0.0.0.0')
+    const networkInterfacesSpy = vi
+      .spyOn(os, 'networkInterfaces')
+      .mockReturnValue({
+        lo: [
+          { address: '127.0.0.1', family: 'IPv4' } as NetworkInterfaceInfoIPv4,
+        ],
+        eth0: [
+          {
+            address: '192.168.1.10',
+            family: 'IPv4',
+          } as NetworkInterfaceInfoIPv4,
+        ],
+        wlan0: [
+          { address: '10.0.0.5', family: 'IPv4' } as NetworkInterfaceInfoIPv4,
+        ],
+      })
+    onTestFinished(() => {
+      networkInterfacesSpy.mockRestore()
+    })
+
+    const result = resolveServerUrls(
+      mockServer,
+      { https: false } as any,
+      { host: undefined, name: 'localhost' } as any,
+      {},
+      { rawBase: '/' } as any,
+    )
+
+    expect(result.network).toEqual([
+      'http://192.168.1.10:3000/',
+      'http://10.0.0.5:3000/',
+    ])
+    expect(result.networkInterfaceNames).toStrictEqual(['eth0', 'wlan0'])
+    expect(result.networkInterfaceNames).toHaveLength(result.network.length)
+    // The loopback interface is reported as a local URL, not a network one.
+    expect(result.local).toContain('http://localhost:3000/')
+  })
+
+  test('uses an undefined interface name for an explicit network host', () => {
+    const mockServer = createMockServer('IPv4', '0.0.0.0')
+
+    const result = resolveServerUrls(
+      mockServer,
+      { https: false } as any,
+      { host: 'example.com', name: 'example.com' } as any,
+      {},
+      { rawBase: '/' } as any,
+    )
+
+    expect(result.network).toStrictEqual(['http://example.com:3000/'])
+    expect(result.networkInterfaceNames).toStrictEqual([undefined])
+  })
+
+  test('resolves interface name for an explicit host IP that matches a network interface', () => {
+    const mockServer = createMockServer('IPv4', '0.0.0.0')
+    const networkInterfacesSpy = vi
+      .spyOn(os, 'networkInterfaces')
+      .mockReturnValue({
+        lo: [
+          { address: '127.0.0.1', family: 'IPv4' } as NetworkInterfaceInfoIPv4,
+        ],
+        eth0: [
+          {
+            address: '192.168.1.10',
+            family: 'IPv4',
+          } as NetworkInterfaceInfoIPv4,
+        ],
+      })
+    onTestFinished(() => {
+      networkInterfacesSpy.mockRestore()
+    })
+
+    const result = resolveServerUrls(
+      mockServer,
+      { https: false } as any,
+      { host: '192.168.1.10', name: '192.168.1.10' } as any,
+      {},
+      { rawBase: '/' } as any,
+    )
+
+    expect(result.network).toStrictEqual(['http://192.168.1.10:3000/'])
+    expect(result.networkInterfaceNames).toStrictEqual(['eth0'])
+  })
+
+  test('uses undefined interface name when explicit host IP does not match any interface', () => {
+    const mockServer = createMockServer('IPv4', '0.0.0.0')
+    const networkInterfacesSpy = vi
+      .spyOn(os, 'networkInterfaces')
+      .mockReturnValue({
+        lo: [
+          { address: '127.0.0.1', family: 'IPv4' } as NetworkInterfaceInfoIPv4,
+        ],
+        eth0: [
+          {
+            address: '192.168.1.10',
+            family: 'IPv4',
+          } as NetworkInterfaceInfoIPv4,
+        ],
+      })
+    onTestFinished(() => {
+      networkInterfacesSpy.mockRestore()
+    })
+
+    const result = resolveServerUrls(
+      mockServer,
+      { https: false } as any,
+      { host: '10.0.0.5', name: '10.0.0.5' } as any,
+      {},
+      { rawBase: '/' } as any,
+    )
+
+    expect(result.network).toStrictEqual(['http://10.0.0.5:3000/'])
+    expect(result.networkInterfaceNames).toStrictEqual([undefined])
   })
 })

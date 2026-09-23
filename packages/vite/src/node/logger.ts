@@ -165,6 +165,8 @@ export function createLogger(
   return logger
 }
 
+const maxNetworkInterfaceNameLength = 20
+
 export function printServerUrls(
   urls: ResolvedServerUrls,
   optionsHost: string | boolean | undefined,
@@ -175,9 +177,25 @@ export function printServerUrls(
   for (const url of urls.local) {
     info(`  ${colors.green('➜')}  ${colors.bold('Local')}:   ${colorUrl(url)}`)
   }
-  for (const url of urls.network) {
-    info(`  ${colors.green('➜')}  ${colors.bold('Network')}: ${colorUrl(url)}`)
-  }
+  const networkUrlMaxLength = Math.max(
+    ...urls.network.map((url) => url.length),
+    0,
+  )
+  urls.network.forEach((url, index) => {
+    const interfaceName = urls.networkInterfaceNames?.[index]
+    let suffix = ''
+    if (interfaceName) {
+      const label =
+        interfaceName.length > maxNetworkInterfaceNameLength
+          ? `${interfaceName.slice(0, maxNetworkInterfaceNameLength - 1)}…`
+          : interfaceName
+      suffix =
+        ' '.repeat(networkUrlMaxLength - url.length + 2) + colors.dim(label)
+    }
+    info(
+      `  ${colors.green('➜')}  ${colors.bold('Network')}: ${colorUrl(url)}${suffix}`,
+    )
+  })
   if (urls.network.length === 0 && optionsHost === undefined) {
     info(
       colors.dim(`  ${colors.green('➜')}  ${colors.bold('Network')}: use `) +

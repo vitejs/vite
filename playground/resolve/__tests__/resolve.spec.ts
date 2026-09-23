@@ -2,7 +2,16 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
-import { isBuild, isServe, isWindows, page, testDir, viteTestUrl } from '~utils'
+import {
+  isBuild,
+  isBundled,
+  isBundledDev,
+  isServe,
+  isWindows,
+  page,
+  testDir,
+  viteTestUrl,
+} from '~utils'
 
 test('bom import', async () => {
   expect(await page.textContent('.utf8-bom')).toMatch('[success]')
@@ -29,7 +38,7 @@ test('deep import with exports field', async () => {
 test('deep import with query with exports field', async () => {
   // since it is imported with `?url` it should return a URL
   expect(await page.textContent('.exports-deep-query')).toMatch(
-    isBuild ? /base64/ : '/exports-path/deep.json',
+    isBundled ? /base64/ : '/exports-path/deep.json',
   )
 })
 
@@ -129,6 +138,13 @@ test('browser field', async () => {
   expect(await page.textContent('.browser')).toMatch('[success]')
 })
 
+// accessing a property of a `browser: false` module must not throw (#22022)
+test('access property of browser:false module', async () => {
+  expect(await page.textContent('.browser-field-false-access')).toMatch(
+    '[success]',
+  )
+})
+
 test('Resolve browser field even if module field exists', async () => {
   expect(await page.textContent('.browser-module1')).toMatch('[success]')
 })
@@ -214,7 +230,7 @@ test('Resolving from other package with imports field', async () => {
 test('Resolving with query with imports field', async () => {
   // since it is imported with `?url` it should return a URL
   expect(await page.textContent('.imports-query')).toMatch(
-    isBuild ? /base64/ : '/imports-path/query.json',
+    isBundled ? /base64/ : '/imports-path/query.json',
   )
 })
 
@@ -268,7 +284,10 @@ test.runIf(isBuild)('sideEffects field glob pattern is respected', async () => {
   expect(sideEffectValues).toStrictEqual(['success'])
 })
 
-describe.runIf(isServe)('HEAD request handling', () => {
+// bundled dev: these HEAD requests ask for source files (/absolute.js,
+// /style.css). Those files are not in the bundle, and bundled dev serves
+// only the bundle.
+describe.runIf(isServe && !isBundledDev)('HEAD request handling', () => {
   test('HEAD request to JS file returns correct Content-Type', async () => {
     const response = await fetch(new URL('/absolute.js', viteTestUrl), {
       method: 'HEAD',

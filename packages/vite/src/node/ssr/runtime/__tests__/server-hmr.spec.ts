@@ -1,4 +1,5 @@
-import { describe, expect, onTestFinished } from 'vitest'
+import { assert, describe, expect, onTestFinished, vi } from 'vitest'
+import { promiseWithResolvers } from '../../../../shared/utils'
 import { createModuleRunnerTester } from './utils'
 
 describe(
@@ -26,14 +27,15 @@ describe(
       const fixtureC = '/fixtures/c.ts'
       const fixtureD = '/fixtures/d.ts'
 
-      expect(runner.hmrClient!.hotModulesMap.size).toBe(2)
-      expect(runner.hmrClient!.dataMap.size).toBe(2)
-      expect(runner.hmrClient!.ctxToListenersMap.size).toBe(2)
+      assert(runner.hmrClient)
+      expect(runner.hmrClient.hotModulesMap.size).toBe(2)
+      expect(runner.hmrClient.dataMap.size).toBe(2)
+      expect(runner.hmrClient.ctxToListenersMap.size).toBe(2)
 
       for (const fixture of [fixtureC, fixtureD]) {
-        expect(runner.hmrClient!.hotModulesMap.has(fixture)).toBe(true)
-        expect(runner.hmrClient!.dataMap.has(fixture)).toBe(true)
-        expect(runner.hmrClient!.ctxToListenersMap.has(fixture)).toBe(true)
+        expect(runner.hmrClient.hotModulesMap.has(fixture)).toBe(true)
+        expect(runner.hmrClient.dataMap.has(fixture)).toBe(true)
+        expect(runner.hmrClient.ctxToListenersMap.has(fixture)).toBe(true)
       }
     })
 
@@ -41,6 +43,10 @@ describe(
       runner,
     }) => {
       const testGlobal = globalThis as any
+      const sharedUrl = '/fixtures/hmr-reexport-race/shared.js'
+      const coreUrl = '/fixtures/hmr-reexport-race/core.js'
+      const entryAUrl = '/fixtures/hmr-reexport-race/entry-a.js'
+      const entryBUrl = '/fixtures/hmr-reexport-race/entry-b.js'
 
       testGlobal.__vite_ssr_hmr_reexport_race__ = {
         wait: () => Promise.resolve(),
@@ -49,34 +55,22 @@ describe(
         delete testGlobal.__vite_ssr_hmr_reexport_race__
       })
 
-      await runner.import('/fixtures/hmr-reexport-race/entry-a.js')
-      await runner.import('/fixtures/hmr-reexport-race/entry-b.js')
+      await runner.import(entryAUrl)
+      await runner.import(entryBUrl)
 
-      const sharedModule = runner.evaluatedModules.getModuleByUrl(
-        '/fixtures/hmr-reexport-race/shared.js',
-      )
-      const coreModule = runner.evaluatedModules.getModuleByUrl(
-        '/fixtures/hmr-reexport-race/core.js',
-      )
-      const entryAModule = runner.evaluatedModules.getModuleByUrl(
-        '/fixtures/hmr-reexport-race/entry-a.js',
-      )
-      const entryBModule = runner.evaluatedModules.getModuleByUrl(
-        '/fixtures/hmr-reexport-race/entry-b.js',
-      )
-      expect(sharedModule).toBeDefined()
-      expect(coreModule).toBeDefined()
-      expect(entryAModule).toBeDefined()
-      expect(entryBModule).toBeDefined()
+      const sharedModule = runner.evaluatedModules.getModuleByUrl(sharedUrl)
+      const coreModule = runner.evaluatedModules.getModuleByUrl(coreUrl)
+      const entryAModule = runner.evaluatedModules.getModuleByUrl(entryAUrl)
+      const entryBModule = runner.evaluatedModules.getModuleByUrl(entryBUrl)
+      assert(sharedModule)
+      assert(coreModule)
+      assert(entryAModule)
+      assert(entryBModule)
 
-      let waitStarted!: () => void
-      const waitStartedPromise = new Promise<void>((resolve) => {
-        waitStarted = resolve
-      })
-      let releaseWait!: () => void
-      const waitPromise = new Promise<void>((resolve) => {
-        releaseWait = resolve
-      })
+      const { promise: waitStartedPromise, resolve: waitStarted } =
+        promiseWithResolvers<void>()
+      const { promise: waitPromise, resolve: releaseWait } =
+        promiseWithResolvers<void>()
 
       testGlobal.__vite_ssr_hmr_reexport_race__ = {
         wait: () => {
@@ -86,18 +80,18 @@ describe(
       }
 
       for (const module of [
-        entryAModule!,
-        entryBModule!,
-        sharedModule!,
-        coreModule!,
+        entryAModule,
+        entryBModule,
+        sharedModule,
+        coreModule,
       ]) {
         runner.evaluatedModules.invalidateModule(module)
       }
 
-      const importA = runner.import('/fixtures/hmr-reexport-race/entry-a.js')
+      const importA = runner.import(entryAUrl)
       await waitStartedPromise
 
-      const importB = runner.import('/fixtures/hmr-reexport-race/entry-b.js')
+      const importB = runner.import(entryBUrl)
       // Wait deterministically until entry-b has reached the point where it
       // observes shared as in-flight. The `mod.imports.add(depMod.id)` line
       // in `request()` runs synchronously immediately before `cachedRequest`
@@ -105,12 +99,7 @@ describe(
       // the buggy/fixed branch has either just run or is about to run on
       // the same microtask. `imports` is cleared by invalidateModule, so
       // this is a fresh signal (unlike `importers`, which is preserved).
-      const entryBNode = runner.evaluatedModules.getModuleByUrl(
-        '/fixtures/hmr-reexport-race/entry-b.js',
-      )!
-      while (!entryBNode.imports.has(sharedModule!.id)) {
-        await new Promise((resolve) => setImmediate(resolve))
-      }
+      await vi.waitUntil(() => entryBModule.imports.has(sharedModule.id))
       releaseWait()
       const results = await Promise.allSettled([importA, importB] as const)
 
@@ -125,13 +114,97 @@ describe(
         },
       ])
 
-      const hmrListeners = runner.hmrClient!.hotModulesMap
-      expect(hmrListeners.has('/fixtures/hmr-reexport-race/entry-a.js')).toBe(
-        true,
-      )
-      expect(hmrListeners.has('/fixtures/hmr-reexport-race/entry-b.js')).toBe(
-        true,
-      )
+      assert(runner.hmrClient)
+      const hmrListeners = runner.hmrClient.hotModulesMap
+      expect(hmrListeners.has(entryAUrl)).toBe(true)
+      expect(hmrListeners.has(entryBUrl)).toBe(true)
+    })
+
+    it('does not treat evaluated imports as live circular requests', async ({
+      runner,
+    }) => {
+      const testGlobal = globalThis as any
+      const sharedUrl = '/fixtures/hmr-evaluated-import-race/shared.js'
+      const evaluatedUrl = '/fixtures/hmr-evaluated-import-race/evaluated.js'
+
+      testGlobal.__vite_ssr_hmr_evaluated_import_race__ = {
+        wait: () => Promise.resolve(),
+        importShared: () => false,
+      }
+      onTestFinished(() => {
+        delete testGlobal.__vite_ssr_hmr_evaluated_import_race__
+      })
+
+      await runner.import(sharedUrl)
+
+      const sharedModule = runner.evaluatedModules.getModuleByUrl(sharedUrl)
+      const evaluatedModule =
+        runner.evaluatedModules.getModuleByUrl(evaluatedUrl)
+      assert(sharedModule)
+      assert(evaluatedModule)
+
+      const { promise: waitStartedPromise, resolve: waitStarted } =
+        promiseWithResolvers<void>()
+      const { promise: waitPromise, resolve: releaseWait } =
+        promiseWithResolvers<void>()
+      const {
+        promise: evaluatedWaitStartedPromise,
+        resolve: evaluatedWaitStarted,
+      } = promiseWithResolvers<void>()
+      const { promise: evaluatedWaitPromise, resolve: releaseEvaluatedWait } =
+        promiseWithResolvers<void>()
+
+      let evaluatedRequestCount = 0
+      testGlobal.__vite_ssr_hmr_evaluated_import_race__ = {
+        wait: () => {
+          waitStarted()
+          return waitPromise
+        },
+        importShared: async () => {
+          if (evaluatedRequestCount++ === 0) {
+            evaluatedWaitStarted()
+            await evaluatedWaitPromise
+            return true
+          }
+          return false
+        },
+      }
+
+      runner.evaluatedModules.invalidateModule(sharedModule)
+
+      const sharedRequest = runner.import(sharedUrl)
+      await waitStartedPromise
+      expect(sharedModule.imports.has(evaluatedModule.id)).toBe(true)
+
+      // Start an evaluation that pauses before dynamically importing shared.
+      runner.evaluatedModules.invalidateModule(evaluatedModule)
+
+      let staleEvaluatedRequestSettled = false
+      const staleEvaluatedRequest = runner
+        .import(evaluatedUrl)
+        .then((result) => {
+          staleEvaluatedRequestSettled = true
+          return result
+        })
+      await evaluatedWaitStartedPromise
+
+      // Simulate HMR restarting evaluated while the older evaluation is still
+      // paused. The newer evaluation completes without importing shared.
+      runner.evaluatedModules.invalidateModule(evaluatedModule)
+      await runner.import(evaluatedUrl)
+      expect(evaluatedModule.evaluated).toBe(true)
+
+      releaseEvaluatedWait()
+      await vi.waitUntil(() => evaluatedModule.imports.has(sharedModule.id))
+      expect(staleEvaluatedRequestSettled).toBe(false)
+
+      releaseWait()
+      const [sharedResult, evaluatedResult] = await Promise.all([
+        sharedRequest,
+        staleEvaluatedRequest,
+      ])
+      expect(sharedResult.value).toBe('ready')
+      expect(evaluatedResult.sharedValue).toBe('ready')
     })
   },
   process.env.CI ? 50_00 : 5_000,

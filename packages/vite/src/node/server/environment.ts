@@ -1,41 +1,43 @@
+import path from 'node:path'
 import colors from 'picocolors'
 import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
 import type { FSWatcher } from '#dep-types/chokidar'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
+import { cleanUrl, promiseWithResolvers, unwrapId } from '../../shared/utils'
 import { BaseEnvironment } from '../baseEnvironment'
 import type {
   EnvironmentOptions,
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from '../config'
-import { mergeConfig, monotonicDateNow } from '../utils'
-import { fetchModule } from '../ssr/fetchModule'
 import type { DepsOptimizer } from '../optimizer'
 import { isDepOptimizationDisabled } from '../optimizer'
 import {
   createDepsOptimizer,
   createExplicitDepsOptimizer,
 } from '../optimizer/optimizer'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
-import { promiseWithResolvers } from '../../shared/utils'
 import type { ViteDevServer } from '../server'
-import { EnvironmentModuleGraph } from './moduleGraph'
-import type { EnvironmentModuleNode } from './moduleGraph'
+import { fetchModule } from '../ssr/fetchModule'
+import { mergeConfig, monotonicDateNow } from '../utils'
+import { BundledDev } from './bundledDev'
 import type {
   HotChannel,
   NormalizedHotChannel,
   NormalizedHotChannelClient,
 } from './hmr'
 import { getShortName, normalizeHotChannel, updateModules } from './hmr'
-import type { TransformResult } from './transformRequest'
-import { transformRequest } from './transformRequest'
+import { buildErrorMessage } from './middlewares/error'
+import { EnvironmentModuleGraph } from './moduleGraph'
+import type { EnvironmentModuleNode } from './moduleGraph'
 import type { EnvironmentPluginContainer } from './pluginContainer'
 import {
   ERR_CLOSED_SERVER,
   createEnvironmentPluginContainer,
 } from './pluginContainer'
-import { type WebSocketServer, isWebSocketServer } from './ws'
+import type { TransformResult } from './transformRequest'
+import { transformRequest } from './transformRequest'
 import { warmupFiles } from './warmup'
-import { buildErrorMessage } from './middlewares/error'
+import { type WebSocketServer, isWebSocketServer } from './ws'
 
 export interface DevEnvironmentContext {
   hot: boolean
@@ -105,6 +107,9 @@ export class DevEnvironment extends BaseEnvironment {
    * environment.hot.send({ type: 'full-reload' })
    */
   hot: NormalizedHotChannel
+
+  public bundledDev?: BundledDev
+
   constructor(
     name: string,
     config: ResolvedConfig,
@@ -121,6 +126,13 @@ export class DevEnvironment extends BaseEnvironment {
       ) as ResolvedEnvironmentOptions
     }
     super(name, config, options)
+    if (
+      options.isBundled ||
+      (name === 'client' && config.experimental.bundledDev)
+    ) {
+      context.disableDepsOptimizer = true
+      this.bundledDev = new BundledDev(this)
+    }
 
     this._pendingRequests = new Map()
 
@@ -164,7 +176,7 @@ export class DevEnvironment extends BaseEnvironment {
       ({ path, message, firstInvalidatedBy }, client) => {
         this.invalidateModule(
           {
-            path,
+            path: unwrapId(path),
             message,
             firstInvalidatedBy,
           },
@@ -209,6 +221,47 @@ export class DevEnvironment extends BaseEnvironment {
     )
   }
 
+  /** @internal */
+  async _registerInputsAsSafeModules(): Promise<void> {
+    const input = this.config.input
+    const entries =
+      input == null
+        ? ['index.html']
+        : typeof input === 'string'
+          ? [input]
+          : Array.isArray(input)
+            ? input
+            : Object.values(input)
+
+    const resolveEntries = async () => {
+      const resolvedEntries = await Promise.all(
+        entries.map((entry) =>
+          this.pluginContainer.resolveId(entry, undefined, {
+            isEntry: true,
+            // Avoid a deadlock when the dependency scanner triggers the first
+            // buildStart. Normal resolution waits for the scan to finish,
+            // while the scan is waiting for buildStart to finish.
+            scan: true,
+          }),
+        ),
+      )
+      for (const resolved of resolvedEntries) {
+        if (resolved && !resolved.external) {
+          const resolvedId = cleanUrl(resolved.id)
+          if (path.isAbsolute(resolvedId)) {
+            this.getTopLevelConfig().safeModulePaths.add(resolvedId)
+          }
+        }
+      }
+    }
+
+    if (input == null) {
+      await resolveEntries().catch(() => {})
+    } else {
+      await resolveEntries()
+    }
+  }
+
   /**
    * When the dev server is restarted, the methods are called in the following order:
    * - new instance `init`
@@ -217,7 +270,7 @@ export class DevEnvironment extends BaseEnvironment {
    */
   async listen(server: ViteDevServer): Promise<void> {
     this.hot.listen()
-    await this.depsOptimizer?.init()
+    await Promise.all([this.bundledDev?.listen(), this.depsOptimizer?.init()])
     warmupFiles(server, this)
   }
 
@@ -249,6 +302,11 @@ export class DevEnvironment extends BaseEnvironment {
   }
 
   async warmupRequest(url: string): Promise<void> {
+    if (this.bundledDev) {
+      // no-op
+      return
+    }
+
     try {
       await transformRequest(this, url, { skipFsCheck: true })
     } catch (e) {
@@ -278,6 +336,11 @@ export class DevEnvironment extends BaseEnvironment {
     },
     _client: NormalizedHotChannelClient,
   ): void {
+    if (this.bundledDev) {
+      // full-bundle mode handles `import.meta.hot.invalidate()` fully client-side
+      return
+    }
+
     const mod = this.moduleGraph.urlToModuleMap.get(m.path)
     if (
       mod &&
@@ -308,7 +371,7 @@ export class DevEnvironment extends BaseEnvironment {
 
     this._crawlEndFinder.cancel()
     await Promise.allSettled([
-      this.pluginContainer.close(),
+      this.bundledDev ? this.bundledDev.close() : this.pluginContainer.close(),
       this.depsOptimizer?.close(),
       // WebSocketServer is independent of HotChannel and should not be closed on environment close
       isWebSocketServer in this.hot ? Promise.resolve() : this.hot.close(),

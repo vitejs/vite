@@ -25,16 +25,12 @@ import type {
 } from 'rolldown'
 import { viteLoadFallbackPlugin as nativeLoadFallbackPlugin } from 'rolldown/experimental'
 import { esmExternalRequirePlugin } from 'rolldown/plugins'
-import type { EsbuildTarget } from '#types/internal/esbuildOptions'
 import type { RollupCommonJSOptions } from '#dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from '#dep-types/dynamicImportVars'
+import type { EsbuildTarget } from '#types/internal/esbuildOptions'
 import type { AssetMetadata, ChunkMetadata } from '#types/metadata'
-import {
-  DEFAULT_ASSETS_INLINE_LIMIT,
-  ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
-  ROLLUP_HOOKS,
-  VERSION,
-} from './constants'
+import type { PartialEnvironment } from './baseEnvironment'
+import { BaseEnvironment } from './baseEnvironment'
 import type {
   EnvironmentOptions,
   InlineConfig,
@@ -42,10 +38,37 @@ import type {
   ResolvedEnvironmentOptions,
 } from './config'
 import { resolveConfig } from './config'
-import type { PartialEnvironment } from './baseEnvironment'
-import { buildReporterPlugin } from './plugins/reporter'
+import {
+  DEFAULT_ASSETS_INLINE_LIMIT,
+  ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
+  ROLLUP_HOOKS,
+  VERSION,
+} from './constants'
+import {
+  isFutureDeprecationEnabled,
+  warnFutureDeprecation,
+} from './deprecations'
+import type { Environment } from './environment'
+import { type Logger } from './logger'
+import { findNearestMainPackageData, findNearestPackageData } from './packages'
+import type { PackageCache } from './packages'
+import { perEnvironmentPlugin } from './plugin'
+import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
+import { getHookHandler } from './plugins'
 import { buildEsbuildPlugin } from './plugins/esbuild'
+import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
+import { type LicenseOptions, licensePlugin } from './plugins/license'
+import { manifestPlugin } from './plugins/manifest'
+import { prepareOutDirPlugin } from './plugins/prepareOutDir'
+import { buildReporterPlugin } from './plugins/reporter'
 import { type TerserOptions, terserPlugin } from './plugins/terser'
+import { webWorkerPostPlugin } from './plugins/worker'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from './server/pluginContainer'
+import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
+import type { RollupPluginHooks } from './typeUtils'
 import {
   arraify,
   asyncFlatten,
@@ -59,35 +82,12 @@ import {
   setupRollupOptionCompat,
   unique,
 } from './utils'
-import { perEnvironmentPlugin } from './plugin'
-import { manifestPlugin } from './plugins/manifest'
-import { type Logger } from './logger'
-import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
-import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
-import { findNearestMainPackageData, findNearestPackageData } from './packages'
-import type { PackageCache } from './packages'
 import {
   convertToWatcherOptions,
   getResolvedOutDirs,
   resolveChokidarOptions,
   resolveEmptyOutDir,
 } from './watch'
-import { webWorkerPostPlugin } from './plugins/worker'
-import { getHookHandler } from './plugins'
-import { BaseEnvironment } from './baseEnvironment'
-import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
-import type { RollupPluginHooks } from './typeUtils'
-import { type LicenseOptions, licensePlugin } from './plugins/license'
-import {
-  BasicMinimalPluginContext,
-  basePluginContextMeta,
-} from './server/pluginContainer'
-import {
-  isFutureDeprecationEnabled,
-  warnFutureDeprecation,
-} from './deprecations'
-import { prepareOutDirPlugin } from './plugins/prepareOutDir'
-import type { Environment } from './environment'
 
 export interface BuildEnvironmentOptions {
   /**
@@ -157,13 +157,16 @@ export interface BuildEnvironmentOptions {
    * a niche browser that comes with most modern JavaScript features
    * but has poor CSS support, e.g. Android WeChat WebView, which
    * doesn't support the #RGBA syntax.
+   * When `build.cssMinify` is `lightningcss` (the default), this
+   * option takes precedence over `css.lightningcss.targets` for the
+   * minification step.
    * @default target
    */
   cssTarget?: EsbuildTarget | false
   /**
    * Override CSS minification specifically instead of defaulting to `build.minify`,
    * so you can configure minification for JS and CSS separately.
-   * @default 'lightningcss'
+   * @default 'lightningcss', but false if build.minify is disabled for client build
    */
   cssMinify?: boolean | 'lightningcss' | 'esbuild'
   /**
@@ -177,7 +180,7 @@ export interface BuildEnvironmentOptions {
   /**
    * Set to `false` to disable minification, or specify the minifier to use.
    * Available options are 'oxc' or 'terser' or 'esbuild'.
-   * @default 'oxc'
+   * @default 'oxc' for client build, false for SSR build
    */
   minify?: boolean | 'oxc' | 'terser' | 'esbuild'
   /**
@@ -188,6 +191,12 @@ export interface BuildEnvironmentOptions {
    * max number of workers to spawn. Defaults to the number of CPUs minus 1.
    */
   terserOptions?: TerserOptions
+  /**
+   * Whether to use import maps feature to optimize chunk caching efficiency.
+   * @default false
+   * @experimental
+   */
+  chunkImportMap?: boolean
   /**
    * Alias to `rolldownOptions`
    * @deprecated Use `rolldownOptions` instead.
@@ -307,16 +316,19 @@ export type BuildOptions = BuildEnvironmentOptions
 
 export interface LibraryOptions {
   /**
-   * Path of library entry
+   * Path of library entry.
+   * Defaults to the top-level `input` option when omitted.
    */
-  entry: InputOption
+  entry?: InputOption
   /**
    * The name of the exposed global variable. Required when the `formats` option includes
    * `umd` or `iife`
    */
   name?: string
   /**
-   * Output bundle formats
+   * Output bundle formats. Defaults to `['es', 'umd']` for a single entry, or
+   * `['es', 'cjs']` for multiple entries (`umd` and `iife` do not support
+   * multiple entries).
    * @default ['es', 'umd']
    */
   formats?: LibraryFormats[]
@@ -389,6 +401,7 @@ const _buildEnvironmentOptionsDefaults = Object.freeze({
   sourcemap: false,
   // minify
   terserOptions: {},
+  chunkImportMap: false,
   rolldownOptions: {},
   commonjsOptions: {
     include: [/node_modules/],
@@ -421,6 +434,7 @@ export function resolveBuildEnvironmentOptions(
   logger: Logger,
   consumer: 'client' | 'server' | undefined,
   isBundledDev: boolean,
+  input?: InputOption,
   isSsrTargetWebworkerEnvironment?: boolean,
 ): ResolvedBuildEnvironmentOptions {
   const deprecatedPolyfillModulePreload = raw.polyfillModulePreload
@@ -458,6 +472,10 @@ export function resolveBuildEnvironmentOptions(
         ? 'browser'
         : 'node',
     ...merged.rolldownOptions,
+  }
+  if (merged.lib && merged.lib.entry == null && input != null) {
+    // avoid mutating the user-provided lib options object
+    merged.lib = { ...merged.lib, entry: input }
   }
 
   // handle special build targets
@@ -498,6 +516,9 @@ export function resolveBuildEnvironmentOptions(
               ...merged.modulePreload,
             },
   }
+  // The object spread above evaluates the `rollupOptions` getter set up on
+  // `merged` and copies it as a plain data property.
+  setupRollupOptionCompat(resolved, 'build')
 
   return resolved
 }
@@ -577,12 +598,18 @@ export function resolveRolldownOptions(
   environment: Environment,
   chunkMetadataMap: ChunkMetadataMap,
 ): RolldownOptions {
-  const { root, packageCache, build: options } = environment.config
+  const { root, packageCache, base, build: options } = environment.config
   const libOptions = options.lib
   const { logger } = environment
   const ssr = environment.config.consumer === 'server'
 
   const resolve = (p: string) => path.resolve(root, p)
+  const topLevelInput = environment.config.input
+  if (libOptions && libOptions.entry == null) {
+    throw new Error(
+      `Either "build.lib.entry" or the top-level "input" option is required when "build.lib" is set.`,
+    )
+  }
   const input = libOptions
     ? options.rolldownOptions.input ||
       (typeof libOptions.entry === 'string'
@@ -590,14 +617,15 @@ export function resolveRolldownOptions(
         : Array.isArray(libOptions.entry)
           ? libOptions.entry.map(resolve)
           : Object.fromEntries(
-              Object.entries(libOptions.entry).map(([alias, file]) => [
+              Object.entries(libOptions.entry!).map(([alias, file]) => [
                 alias,
                 resolve(file),
               ]),
             ))
     : typeof options.ssr === 'string'
       ? resolve(options.ssr)
-      : options.rolldownOptions.input || resolve('index.html')
+      : options.rolldownOptions.input ||
+        (topLevelInput ?? resolve('index.html'))
 
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
     throw new Error(
@@ -634,10 +662,15 @@ export function resolveRolldownOptions(
         : false,
     // cache: options.watch ? undefined : false,
     ...options.rolldownOptions,
-    output: options.rolldownOptions.output,
+    tsconfig: environment.config.tsconfig ?? options.rolldownOptions.tsconfig,
+    resolve: environment.config.tsconfig
+      ? {
+          ...options.rolldownOptions.resolve,
+          tsconfigFilename: undefined,
+        }
+      : options.rolldownOptions.resolve,
     input,
     plugins,
-    external: options.rolldownOptions.external,
     onLog(level, log) {
       onRollupLog(level, log, environment)
     },
@@ -658,6 +691,15 @@ export function resolveRolldownOptions(
     experimental: {
       ...options.rolldownOptions.experimental,
       viteMode: true,
+      chunkImportMap: options.chunkImportMap
+        ? {
+            ...(typeof options.rolldownOptions.experimental?.chunkImportMap ===
+            'object'
+              ? options.rolldownOptions.experimental?.chunkImportMap
+              : {}),
+            baseUrl: base,
+          }
+        : options.rolldownOptions.experimental?.chunkImportMap,
     },
   }
 
@@ -744,19 +786,6 @@ export function resolveRolldownOptions(
           (typeof input === 'string' || Object.keys(input).length === 1))
           ? false
           : undefined),
-      comments:
-        typeof output.comments === 'boolean'
-          ? output.comments
-          : {
-              // Do not minify whitespace for ES lib output since that would remove
-              // pure annotations and break tree-shaking
-              annotation:
-                !options.minify ||
-                (libOptions && (format === 'es' || format === 'esm')),
-              jsdoc: !options.minify,
-              legal: !options.minify,
-              ...output.comments,
-            },
       minify:
         options.minify === 'oxc'
           ? libOptions && (format === 'es' || format === 'esm')
@@ -773,6 +802,19 @@ export function resolveRolldownOptions(
             : false,
       topLevelVar: true,
       ...output,
+      comments:
+        typeof output.comments === 'boolean'
+          ? output.comments
+          : {
+              // Do not minify whitespace for ES lib output since that would remove
+              // pure annotations and break tree-shaking
+              annotation:
+                !options.minify ||
+                (libOptions && (format === 'es' || format === 'esm')),
+              jsdoc: !options.minify,
+              legal: !options.minify,
+              ...output.comments,
+            },
     }
   }
 
@@ -1019,6 +1061,7 @@ export function resolveBuildOutputs(
   if (libOptions) {
     const libHasMultipleEntries =
       typeof libOptions.entry !== 'string' &&
+      libOptions.entry &&
       Object.values(libOptions.entry).length > 1
     const libFormats =
       libOptions.formats ||
@@ -1856,7 +1899,7 @@ export async function createBuilder(
       return output
     },
     async runDevTools() {
-      if (config.devtools.enabled) {
+      if (config.devtools) {
         try {
           const { runDevTools } = await import('@vitejs/devtools/integration')
           await runDevTools(builder)

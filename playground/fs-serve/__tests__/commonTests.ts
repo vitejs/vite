@@ -1,8 +1,9 @@
+import fs from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
-import fs from 'node:fs'
-import { pathToFileURL } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
+import { pathToFileURL } from 'node:url'
+import type { Page } from 'playwright-chromium'
 import {
   afterEach,
   beforeAll,
@@ -11,11 +12,10 @@ import {
   expect,
   test,
 } from 'vitest'
-import type { Page } from 'playwright-chromium'
 import WebSocket from 'ws'
-import testJSON from '../safe.json'
-import { getWindows83ShortNameForDotEnv as getWindows83ShortNameForDotEnv } from '../root/windows83Filename'
 import { browser, isServe, page, viteServer, viteTestUrl } from '~utils'
+import { getWindows83ShortNameForDotEnv as getWindows83ShortNameForDotEnv } from '../root/windows83Filename'
+import testJSON from '../safe.json'
 
 const getViteTestIndexHtmlUrl = () => {
   const srcPrefix = viteTestUrl.endsWith('/') ? '' : '/'
@@ -463,6 +463,14 @@ describe('cross origin', () => {
     let page2: Page
     beforeEach(async () => {
       page2 = await browser.newPage()
+      // Serve the navigation locally so the tests don't depend on reaching the
+      // public `vite.dev` site (flaky from CI runners).
+      await page2.route('http://vite.dev/**', (route) =>
+        route.fulfill({
+          contentType: 'text/html',
+          body: '<!doctype html><title>404</title>',
+        }),
+      )
       await page2.goto('http://vite.dev/404')
     })
     afterEach(async () => {

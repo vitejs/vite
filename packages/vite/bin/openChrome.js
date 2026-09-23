@@ -3,7 +3,7 @@ Copyright (c) 2015-present, Facebook, Inc.
 
 This source code is licensed under the MIT license found in the
 LICENSE file at
-https://github.com/facebook/create-react-app/blob/main/LICENSE
+https://github.com/react/create-react-app/blob/main/LICENSE
 */
 
 /* global Application */

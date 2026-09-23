@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { page } from '~utils'
+import { getColor, page } from '~utils'
 
 test('import from .ts', async () => {
   await expect.poll(() => page.textContent('.ts')).toMatch('[success]')
@@ -20,4 +20,25 @@ test('fallback works', async () => {
 test('nested tsconfig.json & references / include works', async () => {
   await expect.poll(() => page.textContent('.nested-a')).toMatch('[success]')
   await expect.poll(() => page.textContent('.nested-b')).toMatch('[success]')
+})
+
+test('import.meta.glob resolves tsconfig paths', async () => {
+  await expect
+    .poll(() => page.textContent('.glob-eager'))
+    .toBe('[success] glob-a [success] glob-b')
+})
+
+test('css @import resolves tsconfig paths', async () => {
+  await expect.poll(() => getColor('.tsconfig-paths-css')).toBe('darkcyan')
+})
+
+test('sass @use resolves tsconfig paths', async () => {
+  await expect.poll(() => getColor('.tsconfig-paths-scss')).toBe('seagreen')
+})
+
+// `resolve.tsconfigPaths` is not supported inside `.less` files. The aliased
+// `@import (optional) '@/less-imported.less'` cannot resolve (even with
+// `**/*.less` in `include`), so it is skipped and the color stays `navy`.
+test('less @import does not resolve tsconfig paths (unsupported)', async () => {
+  await expect.poll(() => getColor('.tsconfig-paths-less')).toBe('navy')
 })

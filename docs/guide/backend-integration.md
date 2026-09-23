@@ -12,6 +12,8 @@ If you need a custom integration, you can follow the steps in this guide to conf
    import { defineConfig } from 'vite'
    // ---cut---
    export default defineConfig({
+     // overwrite default .html entry
+     input: '/path/to/main.js',
      server: {
        cors: {
          // the origin you will be accessing via browser
@@ -21,10 +23,6 @@ If you need a custom integration, you can follow the steps in this guide to conf
      build: {
        // generate .vite/manifest.json in outDir
        manifest: true,
-       rolldownOptions: {
-         // overwrite default .html entry
-         input: '/path/to/main.js',
-       },
      },
    })
    ```
@@ -270,4 +268,11 @@ If you need a custom integration, you can follow the steps in this guide to conf
    }
    ```
 
+   :::
+
+   :::info Chunk Import Maps Support (Experimental)
+
+   If you are using the experimental [`build.chunkImportMap`](/config/build-options#build-chunkimportmap) option, you also need to inject the import map into the HTML.
+
+   The import map is output to `importmap.json` in the output directory. Make sure to inject the `<script type="importmap">` tag before any `<script type="module">` tags or `<link rel="modulepreload">` tags.
    :::

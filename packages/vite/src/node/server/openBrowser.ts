@@ -1,22 +1,22 @@
 /**
  * The following is modified based on source found in
- * https://github.com/facebook/create-react-app
+ * https://github.com/react/create-react-app
  *
  * MIT Licensed
  * Copyright (c) 2015-present, Facebook, Inc.
- * https://github.com/facebook/create-react-app/blob/main/LICENSE
+ * https://github.com/react/create-react-app/blob/main/LICENSE
  *
  */
 
-import { join } from 'node:path'
 import { exec } from 'node:child_process'
 import type { ExecOptions } from 'node:child_process'
+import { join } from 'node:path'
+import spawn from 'cross-spawn'
 import open from 'open'
 import type { Options } from 'open'
-import spawn from 'cross-spawn'
 import colors from 'picocolors'
-import type { Logger } from '../logger'
 import { VITE_PACKAGE_DIR } from '../constants'
+import type { Logger } from '../logger'
 
 /**
  * Reads the BROWSER environment variable and decides what to do with it.
@@ -108,7 +108,7 @@ async function startBrowserProcess(
   // Another special case: on OS X, check if BROWSER has been set to "open".
   // In this case, instead of passing the string `open` to `open` function (which won't work),
   // just ignore it (thus ensuring the intended behavior, i.e. opening the system browser):
-  // https://github.com/facebook/create-react-app/pull/1690#issuecomment-283518768
+  // https://github.com/react/create-react-app/pull/1690#issuecomment-283518768
   if (process.platform === 'darwin' && browser === 'open') {
     browser = undefined
   }

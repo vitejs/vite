@@ -21,9 +21,9 @@ export {
   type ESTree,
 } from 'rolldown/utils'
 
-/** @deprecated - use `parse` instead */
+/** @deprecated - use `parseSync` instead */
 export const parseAst: typeof _parseAst = _parseAst
-/** @deprecated - use `parseAsync` instead */
+/** @deprecated - use `parse` instead */
 export const parseAstAsync: typeof _parseAstAsync = _parseAstAsync
 
 export {
@@ -125,6 +125,7 @@ export type {
   EnvironmentOptions,
   DevEnvironmentOptions,
   ResolvedDevEnvironmentOptions,
+  ResolvedDevToolsConfig,
 } from './config'
 export type { HtmlAssetSource } from './assetSource'
 export type {
@@ -146,6 +147,7 @@ export type {
   ResolvedServerUrls,
   HttpServer,
 } from './server'
+export type { ServerWatchOptions } from './watch'
 export type {
   ViteBuilder,
   BuildAppHook,
@@ -200,6 +202,7 @@ export type {
   CSSModulesOptions,
   PreprocessCSSResult,
   ResolvedCSSOptions,
+  PostcssUserConfig,
   SassPreprocessorOptions,
   LessPreprocessorOptions,
   StylusPreprocessorOptions,

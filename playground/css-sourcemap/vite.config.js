@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite'
 import MagicString from 'magic-string'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
   resolve: {

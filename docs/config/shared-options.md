@@ -34,6 +34,22 @@ Specifying this in config will override the default mode for **both serve and bu
 
 See [Env Variables and Modes](/guide/env-and-mode) for more details.
 
+## input <NonInheritBadge />
+
+- **Type:** `string | string[] | { [entryAlias: string]: string }`
+
+Entry points of your application, resolved relative to the project root. This works as the default value for [`build.rolldownOptions.input`](/config/build-options#build-rolldownoptions), [`build.lib.entry`](/config/build-options#build-lib), [`build.ssr`](/config/build-options#build-ssr) (if `true`), and [`optimizeDeps.entries`](/config/dep-optimization-options#optimizedeps-entries) when those are not set explicitly.
+
+This is useful when your application does not use an `index.html` entry, so you only need to declare the entry once instead of repeating it across the options above.
+
+```js twoslash [vite.config.js]
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  input: 'src/main.ts',
+})
+```
+
 ## define
 
 - **Type:** `Record<string, any>`
@@ -207,6 +223,18 @@ Enabling this setting causes vite to determine file identity by the original fil
 
 Enables the tsconfig paths resolution feature. `paths` option in `tsconfig.json` will be used to resolve imports. See [Features](/guide/features.md#paths) for more details.
 
+`paths` only applies to a file matched by a `tsconfig.json` through its `files` or `include`. Non-JS extension files should be explicitly listed in them, since a bare `"src"` or `"**/*"` `include` only matches TS/JS extensions, aligning with TypeScript's behavior. For example, to use a `paths` alias inside a CSS file (such as `@import '@/foo.css'`), list those files in `files`, or add an explicit extension to `include`:
+
+```json [tsconfig.json]
+{
+  "include": ["src", "src/**/*.css", "src/**/*.scss"]
+}
+```
+
+::: warning Less is not supported
+`resolve.tsconfigPaths` does not apply inside `.less` files. Less only gives Vite the importing file's directory, not the file itself, so Vite cannot find the `tsconfig.json` that matches it. Use a relative path or [`resolve.alias`](#resolve-alias) for `@import` in Less.
+:::
+
 ## html.cspNonce
 
 - **Type:** `string`
@@ -270,8 +298,7 @@ export default defineConfig({
     globalModulePaths?: RegExp[]
     exportGlobals?: boolean
     generateScopedName?:
-      | string
-      | ((name: string, filename: string, css: string) => string)
+      string | ((name: string, filename: string, css: string) => string)
     hashPrefix?: string
     /**
      * default: undefined
@@ -597,10 +624,38 @@ Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlew
 - **Type:** `boolean` | `DevToolsConfig`
 - **Default:** `false`
 
-Enable devtools integration for visualizing the internal state and build analysis.
-Ensure that `@vitejs/devtools` is installed as a dependency. This feature is currently supported only in build mode.
+Enable devtools integration for inspecting the dev server and analyzing builds.
+Ensure that `@vitejs/devtools` is installed as a dependency. Install `@vitejs/devtools-vite` to inspect the Vite dev server and `@vitejs/devtools-rolldown` to enable build analysis. DevTools runs for both `serve` and `build` by default; use `apply` to limit it to either command.
+
+Plugin `config` hooks cannot change the `devtools` option. Set it in the user config instead.
+
+When installed, `@vitejs/devtools` provides the type definitions for this option:
+
+```ts
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  devtools: {
+    apply: 'serve',
+  },
+})
+```
 
 See [Vite DevTools](https://github.com/vitejs/devtools) for more details.
+
+## tsconfig
+
+- **Type:** `string`
+
+Path to the TypeScript configuration file used by Vite. Relative paths are resolved from the project [`root`](#root).
+
+When this option is not set, Vite discovers the closest matching `tsconfig.json` for each file. See [TypeScript Compiler Options](/guide/features#typescript-compiler-options) for more details.
+
+::: warning Prefer automatic discovery
+Setting this option is discouraged because it overrides Vite's per-file tsconfig discovery which is aligned with TypeScript language server. Prefer placing a `tsconfig.json` near the files it configures and using TypeScript [`references`](https://www.typescriptlang.org/tsconfig/#references) for multi-project setups.
+
+If the goal is to remap imports, prefer [`resolve.alias`](#resolve-alias) or the `imports` and `exports` fields in `package.json` instead of selecting a tsconfig solely for [`compilerOptions.paths`](https://www.typescriptlang.org/tsconfig/#paths). Use this option only when automatic discovery cannot identify the intended configuration.
+:::
 
 ## future
 

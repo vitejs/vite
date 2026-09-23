@@ -3,13 +3,13 @@ description: Add labels, create comments, close stale issues, or lock inactive c
 inputs:
   actions:
     required: true
-    description: One of `add-labels`, `remove-labels`, `create-comment`, `close-issues`, `lock-closed-issues`.
+    description: One of `add-labels`, `remove-labels`, `create-comment`, `close-issue`, `close-issues`, `lock-closed-issues`.
   token:
     required: true
     description: GitHub token.
   issue-number:
     required: false
-    description: Issue or PR number. Required for `add-labels`, `remove-labels` and `create-comment`.
+    description: Issue or PR number. Required for `add-labels`, `remove-labels`, `create-comment`, and `close-issue`.
   labels:
     required: false
     description: Comma-separated label names. Required for `add-labels`, `remove-labels` and `close-issues`.
@@ -77,6 +77,21 @@ runs:
             repo: context.repo.repo,
             issue_number: Number(process.env.INPUT_ISSUE_NUMBER),
             body: process.env.INPUT_BODY,
+          })
+
+    - name: Close issue
+      if: inputs.actions == 'close-issue'
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+      env:
+        INPUT_ISSUE_NUMBER: ${{ inputs.issue-number }}
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          await github.rest.issues.update({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: Number(process.env.INPUT_ISSUE_NUMBER),
+            state: 'closed',
           })
 
     - name: Close stale issues

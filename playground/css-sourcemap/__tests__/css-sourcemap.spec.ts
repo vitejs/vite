@@ -4,6 +4,8 @@ import {
   extractSourcemap,
   formatSourcemapForSnapshot,
   isBuild,
+  isBundled,
+  isBundledDev,
   isServe,
   page,
   serverLogs,
@@ -28,6 +30,22 @@ describe.runIf(isServe)('serve', () => {
   }
 
   test('linked css', async () => {
+    if (isBundledDev) {
+      // has a sourcemap, unlike unbundled dev below
+      const css = await getStyleTagContentIncluding('.linked ')
+      expect(formatSourcemapForSnapshot(extractSourcemap(css), css))
+        .toMatchInlineSnapshot(`
+        SourceMap {
+          content: {
+            "mappings": "",
+            "sources": [],
+            "version": 3,
+          },
+          visualization: "https://evanw.github.io/source-map-visualization/#MjYALmxpbmtlZCB7CiAgY29sb3I6IHJlZDsKfQo0MAB7Im1hcHBpbmdzIjoiIiwic291cmNlcyI6W10sInZlcnNpb24iOjN9"
+        }
+      `)
+      return
+    }
     const res = await page.request.get(
       new URL('./linked.css', page.url()).href,
       {
@@ -37,10 +55,42 @@ describe.runIf(isServe)('serve', () => {
       },
     )
     const css = await res.text()
+    // drops transform result when the transformed result is the same as the source file.
     expect(css).not.toContain('sourceMappingURL')
   })
 
   test('linked css with import', async () => {
+    if (isBundledDev) {
+      // not served at its own URL, so check the style tag the bundle added
+      const css = await getStyleTagContentIncluding('.linked-with-import ')
+      expect(formatSourcemapForSnapshot(extractSourcemap(css), css))
+        .toMatchInlineSnapshot(`
+          SourceMap {
+            content: {
+              "mappings": "AAAA;EACE,UAAU;AACZ;ACAA;EACE,UAAU;AACZ",
+              "sources": [
+                "/root/be-imported.css",
+                "/root/linked-with-import.css",
+              ],
+              "sourcesContent": [
+                ".be-imported {
+            color: red;
+          }
+          ",
+                "@import '@/be-imported.css';
+
+          .linked-with-import {
+            color: red;
+          }
+          ",
+              ],
+              "version": 3,
+            },
+            visualization: "https://evanw.github.io/source-map-visualization/#NjkALmJlLWltcG9ydGVkIHsKICBjb2xvcjogcmVkOwp9Ci5saW5rZWQtd2l0aC1pbXBvcnQgewogIGNvbG9yOiByZWQ7Cn0KMjY1AHsibWFwcGluZ3MiOiJBQUFBO0VBQ0UsVUFBVTtBQUNaO0FDQUE7RUFDRSxVQUFVO0FBQ1oiLCJzb3VyY2VzIjpbIi9yb290L2JlLWltcG9ydGVkLmNzcyIsIi9yb290L2xpbmtlZC13aXRoLWltcG9ydC5jc3MiXSwic291cmNlc0NvbnRlbnQiOlsiLmJlLWltcG9ydGVkIHtcbiAgY29sb3I6IHJlZDtcbn1cbiIsIkBpbXBvcnQgJ0AvYmUtaW1wb3J0ZWQuY3NzJztcblxuLmxpbmtlZC13aXRoLWltcG9ydCB7XG4gIGNvbG9yOiByZWQ7XG59XG4iXSwidmVyc2lvbiI6M30="
+          }
+        `)
+      return
+    }
     const res = await page.request.get(
       new URL('./linked-with-import.css', page.url()).href,
       {
@@ -54,7 +104,7 @@ describe.runIf(isServe)('serve', () => {
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
-          "mappings": "AAAA;EACE,UAAU;AACZ;;ACAA;EACE,UAAU;AACZ",
+          "mappings": "AAAA;EACE,UAAU;AACZ;ACAA;EACE,UAAU;AACZ",
           "sources": [
             "be-imported.css",
             "linked-with-import.css",
@@ -73,25 +123,44 @@ describe.runIf(isServe)('serve', () => {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#NzAALmJlLWltcG9ydGVkIHsKICBjb2xvcjogcmVkOwp9CgoubGlua2VkLXdpdGgtaW1wb3J0IHsKICBjb2xvcjogcmVkOwp9CjI1NAB7Im1hcHBpbmdzIjoiQUFBQTtFQUNFLFVBQVU7QUFDWjs7QUNBQTtFQUNFLFVBQVU7QUFDWiIsInNvdXJjZXMiOlsiYmUtaW1wb3J0ZWQuY3NzIiwibGlua2VkLXdpdGgtaW1wb3J0LmNzcyJdLCJzb3VyY2VzQ29udGVudCI6WyIuYmUtaW1wb3J0ZWQge1xuICBjb2xvcjogcmVkO1xufVxuIiwiQGltcG9ydCAnQC9iZS1pbXBvcnRlZC5jc3MnO1xuXG4ubGlua2VkLXdpdGgtaW1wb3J0IHtcbiAgY29sb3I6IHJlZDtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ=="
+        visualization: "https://evanw.github.io/source-map-visualization/#NjkALmJlLWltcG9ydGVkIHsKICBjb2xvcjogcmVkOwp9Ci5saW5rZWQtd2l0aC1pbXBvcnQgewogIGNvbG9yOiByZWQ7Cn0KMjUzAHsibWFwcGluZ3MiOiJBQUFBO0VBQ0UsVUFBVTtBQUNaO0FDQUE7RUFDRSxVQUFVO0FBQ1oiLCJzb3VyY2VzIjpbImJlLWltcG9ydGVkLmNzcyIsImxpbmtlZC13aXRoLWltcG9ydC5jc3MiXSwic291cmNlc0NvbnRlbnQiOlsiLmJlLWltcG9ydGVkIHtcbiAgY29sb3I6IHJlZDtcbn1cbiIsIkBpbXBvcnQgJ0AvYmUtaW1wb3J0ZWQuY3NzJztcblxuLmxpbmtlZC13aXRoLWltcG9ydCB7XG4gIGNvbG9yOiByZWQ7XG59XG4iXSwidmVyc2lvbiI6M30="
       }
     `)
   })
 
-  test.runIf(isServe)(
+  test.runIf(!isBundled)(
     'js .css request does not include sourcemap',
     async () => {
       const res = await page.request.get(
         new URL('./linked-with-import.css', page.url()).href,
       )
       const content = await res.text()
-      expect(content).not.toMatch('//#s*sourceMappingURL')
+      // The response is the JS module that wraps the CSS. The JS itself must
+      // not carry a `//# sourceMappingURL` comment. The CSS text inlined in
+      // that JS still contains its own `/*# sourceMappingURL` comment; that
+      // one is fine.
+      expect(content).not.toMatch('//# sourceMappingURL')
     },
   )
 
   test('imported css', async () => {
     const css = await getStyleTagContentIncluding('.imported ')
     const map = extractSourcemap(css)
+    if (isBundledDev) {
+      // the empty map with no sources is a known gap (vitejs/vite#23028);
+      // once fixed, this should match the lightningcss twin
+      expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
+        SourceMap {
+          content: {
+            "mappings": "",
+            "sources": [],
+            "version": 3,
+          },
+          visualization: "https://evanw.github.io/source-map-visualization/#MjgALmltcG9ydGVkIHsKICBjb2xvcjogcmVkOwp9CjQwAHsibWFwcGluZ3MiOiIiLCJzb3VyY2VzIjpbXSwidmVyc2lvbiI6M30="
+        }
+      `)
+      return
+    }
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
@@ -107,7 +176,7 @@ describe.runIf(isServe)('serve', () => {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#MjgALmltcG9ydGVkIHsKICBjb2xvcjogcmVkOwp9CjE3MwB7InZlcnNpb24iOjMsInNvdXJjZXMiOlsiL3Jvb3QvaW1wb3J0ZWQuY3NzIl0sInNvdXJjZXNDb250ZW50IjpbIi5pbXBvcnRlZCB7XG4gIGNvbG9yOiByZWQ7XG59XG4iXSwibWFwcGluZ3MiOiJBQUFBLENBQUMsUUFBUSxDQUFDO0FBQ1YsQ0FBQyxDQUFDLEtBQUssQ0FBQyxDQUFDLEdBQUc7QUFDWjsifQ=="
+        visualization: "https://evanw.github.io/source-map-visualization/#MjgALmltcG9ydGVkIHsKICBjb2xvcjogcmVkOwp9CjE3MwB7Im1hcHBpbmdzIjoiQUFBQSxDQUFDLFFBQVEsQ0FBQztBQUNWLENBQUMsQ0FBQyxLQUFLLENBQUMsQ0FBQyxHQUFHO0FBQ1o7Iiwic291cmNlcyI6WyIvcm9vdC9pbXBvcnRlZC5jc3MiXSwic291cmNlc0NvbnRlbnQiOlsiLmltcG9ydGVkIHtcbiAgY29sb3I6IHJlZDtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ=="
       }
     `)
   })
@@ -118,7 +187,7 @@ describe.runIf(isServe)('serve', () => {
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
-          "mappings": "AAAA;EACE,UAAU;AACZ;;ACAA;EACE,UAAU;AACZ",
+          "mappings": "AAAA;EACE,UAAU;AACZ;ACAA;EACE,UAAU;AACZ",
           "sources": [
             "/root/be-imported.css",
             "/root/imported-with-import.css",
@@ -137,7 +206,7 @@ describe.runIf(isServe)('serve', () => {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#NzIALmJlLWltcG9ydGVkIHsKICBjb2xvcjogcmVkOwp9CgouaW1wb3J0ZWQtd2l0aC1pbXBvcnQgewogIGNvbG9yOiByZWQ7Cn0KMjcwAHsibWFwcGluZ3MiOiJBQUFBO0VBQ0UsVUFBVTtBQUNaOztBQ0FBO0VBQ0UsVUFBVTtBQUNaIiwic291cmNlcyI6WyIvcm9vdC9iZS1pbXBvcnRlZC5jc3MiLCIvcm9vdC9pbXBvcnRlZC13aXRoLWltcG9ydC5jc3MiXSwic291cmNlc0NvbnRlbnQiOlsiLmJlLWltcG9ydGVkIHtcbiAgY29sb3I6IHJlZDtcbn1cbiIsIkBpbXBvcnQgJ0AvYmUtaW1wb3J0ZWQuY3NzJztcblxuLmltcG9ydGVkLXdpdGgtaW1wb3J0IHtcbiAgY29sb3I6IHJlZDtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ=="
+        visualization: "https://evanw.github.io/source-map-visualization/#NzEALmJlLWltcG9ydGVkIHsKICBjb2xvcjogcmVkOwp9Ci5pbXBvcnRlZC13aXRoLWltcG9ydCB7CiAgY29sb3I6IHJlZDsKfQoyNjkAeyJtYXBwaW5ncyI6IkFBQUE7RUFDRSxVQUFVO0FBQ1o7QUNBQTtFQUNFLFVBQVU7QUFDWiIsInNvdXJjZXMiOlsiL3Jvb3QvYmUtaW1wb3J0ZWQuY3NzIiwiL3Jvb3QvaW1wb3J0ZWQtd2l0aC1pbXBvcnQuY3NzIl0sInNvdXJjZXNDb250ZW50IjpbIi5iZS1pbXBvcnRlZCB7XG4gIGNvbG9yOiByZWQ7XG59XG4iLCJAaW1wb3J0ICdAL2JlLWltcG9ydGVkLmNzcyc7XG5cbi5pbXBvcnRlZC13aXRoLWltcG9ydCB7XG4gIGNvbG9yOiByZWQ7XG59XG4iXSwidmVyc2lvbiI6M30="
       }
     `)
   })
@@ -166,7 +235,7 @@ describe.runIf(isServe)('serve', () => {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#MzMALmltcG9ydGVkLXNhc3MgewogIGNvbG9yOiByZWQ7Cn0KMjUyAHsidmVyc2lvbiI6Mywic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiL3Jvb3QvaW1wb3J0ZWQuc2FzcyIsIi9yb290L2ltcG9ydGVkLW5lc3RlZC5zYXNzIl0sIm1hcHBpbmdzIjoiQUFHRTtFQUNFLE9DSk0iLCJzb3VyY2VzQ29udGVudCI6WyJAdXNlIFwiL2ltcG9ydGVkLW5lc3RlZC5zYXNzXCJcblxuLmltcG9ydGVkXG4gICYtc2Fzc1xuICAgIGNvbG9yOiBpbXBvcnRlZC1uZXN0ZWQuJHByaW1hcnlcbiIsIiRwcmltYXJ5OiByZWRcbiJdfQ=="
+        visualization: "https://evanw.github.io/source-map-visualization/#MzMALmltcG9ydGVkLXNhc3MgewogIGNvbG9yOiByZWQ7Cn0KMjUyAHsibWFwcGluZ3MiOiJBQUdFO0VBQ0UsT0NKTSIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbIi9yb290L2ltcG9ydGVkLnNhc3MiLCIvcm9vdC9pbXBvcnRlZC1uZXN0ZWQuc2FzcyJdLCJzb3VyY2VzQ29udGVudCI6WyJAdXNlIFwiL2ltcG9ydGVkLW5lc3RlZC5zYXNzXCJcblxuLmltcG9ydGVkXG4gICYtc2Fzc1xuICAgIGNvbG9yOiBpbXBvcnRlZC1uZXN0ZWQuJHByaW1hcnlcbiIsIiRwcmltYXJ5OiByZWRcbiJdLCJ2ZXJzaW9uIjozfQ=="
       }
     `)
   })
@@ -177,7 +246,6 @@ describe.runIf(isServe)('serve', () => {
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
-          "ignoreList": [],
           "mappings": "AACE;EACE",
           "sources": [
             "/root/imported.module.sass",
@@ -190,7 +258,7 @@ describe.runIf(isServe)('serve', () => {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#NDkALl9pbXBvcnRlZC1zYXNzLW1vZHVsZV9yMXFjcF8xIHsKICBjb2xvcjogcmVkOwp9CjE1OQB7InZlcnNpb24iOjMsIm1hcHBpbmdzIjoiQUFDRTtFQUNFIiwiaWdub3JlTGlzdCI6W10sInNvdXJjZXMiOlsiL3Jvb3QvaW1wb3J0ZWQubW9kdWxlLnNhc3MiXSwic291cmNlc0NvbnRlbnQiOlsiLmltcG9ydGVkXG4gICYtc2Fzcy1tb2R1bGVcbiAgICBjb2xvcjogcmVkXG4iXX0="
+        visualization: "https://evanw.github.io/source-map-visualization/#NDkALl9pbXBvcnRlZC1zYXNzLW1vZHVsZV9yMXFjcF8xIHsKICBjb2xvcjogcmVkOwp9CjE0MwB7Im1hcHBpbmdzIjoiQUFDRTtFQUNFIiwic291cmNlcyI6WyIvcm9vdC9pbXBvcnRlZC5tb2R1bGUuc2FzcyJdLCJzb3VyY2VzQ29udGVudCI6WyIuaW1wb3J0ZWRcbiAgJi1zYXNzLW1vZHVsZVxuICAgIGNvbG9yOiByZWRcbiJdLCJ2ZXJzaW9uIjozfQ=="
       }
     `)
   })
@@ -201,7 +269,6 @@ describe.runIf(isServe)('serve', () => {
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
-          "ignoreList": [],
           "mappings": "AACE,SAAC;EACC",
           "sources": [
             "/root/imported.less",
@@ -216,7 +283,7 @@ describe.runIf(isServe)('serve', () => {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#MzMALmltcG9ydGVkLWxlc3MgewogIGNvbG9yOiByZWQ7Cn0KMTY2AHsidmVyc2lvbiI6MywibWFwcGluZ3MiOiJBQUNFLFNBQUM7RUFDQyIsImlnbm9yZUxpc3QiOltdLCJzb3VyY2VzIjpbIi9yb290L2ltcG9ydGVkLmxlc3MiXSwic291cmNlc0NvbnRlbnQiOlsiLmltcG9ydGVkIHtcbiAgJi1sZXNzIHtcbiAgICBjb2xvcjogQGNvbG9yO1xuICB9XG59XG4iXX0="
+        visualization: "https://evanw.github.io/source-map-visualization/#MzMALmltcG9ydGVkLWxlc3MgewogIGNvbG9yOiByZWQ7Cn0KMTUwAHsibWFwcGluZ3MiOiJBQUNFLFNBQUM7RUFDQyIsInNvdXJjZXMiOlsiL3Jvb3QvaW1wb3J0ZWQubGVzcyJdLCJzb3VyY2VzQ29udGVudCI6WyIuaW1wb3J0ZWQge1xuICAmLWxlc3Mge1xuICAgIGNvbG9yOiBAY29sb3I7XG4gIH1cbn1cbiJdLCJ2ZXJzaW9uIjozfQ=="
       }
     `)
   })
@@ -227,7 +294,6 @@ describe.runIf(isServe)('serve', () => {
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
-          "ignoreList": [],
           "mappings": "AACE;EACE,OAAM,QAAN",
           "sources": [
             "/root/imported.styl",
@@ -240,7 +306,7 @@ describe.runIf(isServe)('serve', () => {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#MzkALmltcG9ydGVkLXN0eWx1cyB7CiAgY29sb3I6ICM4MDAwODA7Cn0KMTY3AHsidmVyc2lvbiI6MywibWFwcGluZ3MiOiJBQUNFO0VBQ0UsT0FBTSxRQUFOIiwiaWdub3JlTGlzdCI6W10sInNvdXJjZXMiOlsiL3Jvb3QvaW1wb3J0ZWQuc3R5bCJdLCJzb3VyY2VzQ29udGVudCI6WyIuaW1wb3J0ZWRcbiAgJi1zdHlsdXNcbiAgICBjb2xvciBibHVlLXJlZC1taXhlZFxuIl19"
+        visualization: "https://evanw.github.io/source-map-visualization/#MzkALmltcG9ydGVkLXN0eWx1cyB7CiAgY29sb3I6ICM4MDAwODA7Cn0KMTUxAHsibWFwcGluZ3MiOiJBQUNFO0VBQ0UsT0FBTSxRQUFOIiwic291cmNlcyI6WyIvcm9vdC9pbXBvcnRlZC5zdHlsIl0sInNvdXJjZXNDb250ZW50IjpbIi5pbXBvcnRlZFxuICAmLXN0eWx1c1xuICAgIGNvbG9yIGJsdWUtcmVkLW1peGVkXG4iXSwidmVyc2lvbiI6M30="
       }
     `)
   })

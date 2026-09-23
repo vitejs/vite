@@ -1,44 +1,43 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
-import colors from 'picocolors'
 import type { ObjectHook } from 'rolldown'
 import {
   viteAliasPlugin as nativeAliasPlugin,
   viteJsonPlugin as nativeJsonPlugin,
-  viteWasmFallbackPlugin as nativeWasmFallbackPlugin,
   oxcRuntimePlugin,
 } from 'rolldown/experimental'
+import { resolveBuildPlugins } from '../build'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
+import { watchPackageDataPlugin } from '../packages'
 import {
   type HookHandler,
   type Plugin,
   type PluginWithRequiredHook,
 } from '../plugin'
-import { watchPackageDataPlugin } from '../packages'
-import { oxcResolvePlugin } from './resolve'
-import { optimizedDepsPlugin } from './optimizedDeps'
-import { importAnalysisPlugin } from './importAnalysis'
-import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
-import { clientInjectionsPlugin } from './clientInjections'
-import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
-import { wasmHelperPlugin } from './wasm'
-import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
-import { webWorkerPlugin } from './worker'
-import { preAliasPlugin } from './preAlias'
-import { definePlugin } from './define'
-import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
 import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
+import { clientInjectionsPlugin } from './clientInjections'
+import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
+import { definePlugin } from './define'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
+import { esbuildBannerFooterCompatPlugin } from './esbuildBannerFooterCompatPlugin'
+import { forwardConsolePlugin } from './forwardConsole'
+import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
+import { importAnalysisPlugin } from './importAnalysis'
 import { importGlobPlugin } from './importMetaGlob'
+import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
+import { optimizedDepsPlugin } from './optimizedDeps'
+import { oxcPlugin } from './oxc'
 import {
   type PluginFilter,
   type TransformHookFilter,
   createFilterForTransform,
   createIdFilter,
 } from './pluginFilter'
-import { forwardConsolePlugin } from './forwardConsole'
-import { oxcPlugin } from './oxc'
-import { esbuildBannerFooterCompatPlugin } from './esbuildBannerFooterCompatPlugin'
+import { preAliasPlugin } from './preAlias'
+import { oxcResolvePlugin } from './resolve'
+import { wasmHelperPlugin } from './wasm'
+import { webWorkerPlugin } from './worker'
+import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -51,12 +50,8 @@ export async function resolvePlugins(
   const anyEnvBundled =
     isBuild || Object.values(config.environments).some((env) => env.isBundled)
   const buildPlugins = anyEnvBundled
-    ? (await import('../build')).resolveBuildPlugins(config)
+    ? resolveBuildPlugins(config)
     : { pre: [], post: [] }
-  const devtoolsIntegrationPlugin =
-    config.devtools.enabled && !isWorker
-      ? await loadDevToolsIntegrationPlugin(config)
-      : null
   const { modulePreload } = config.build
 
   return [
@@ -135,7 +130,6 @@ export async function resolvePlugins(
 
     ...normalPlugins,
 
-    nativeWasmFallbackPlugin(),
     definePlugin(config),
     cssPostPlugin(config),
     buildHtmlPlugin(config),
@@ -148,30 +142,12 @@ export async function resolvePlugins(
     ...postPlugins,
 
     ...buildPlugins.post,
-    devtoolsIntegrationPlugin,
 
     // internal server-only plugins are always applied after everything else
     clientInjectionsPlugin(config),
     cssAnalysisPlugin(config),
     importAnalysisPlugin(config),
   ].filter(Boolean) as Plugin[]
-}
-
-async function loadDevToolsIntegrationPlugin(
-  config: ResolvedConfig,
-): Promise<Plugin | null> {
-  try {
-    const { DevToolsIntegration } = await import('@vitejs/devtools/integration')
-    return DevToolsIntegration({ config })
-  } catch (error: any) {
-    config.logger.error(
-      colors.red(
-        `Failed to load Vite DevTools integration: ${error?.message || error?.stack}`,
-      ),
-      { error },
-    )
-    return null
-  }
 }
 
 export function createPluginHookUtils(

@@ -1,15 +1,16 @@
-import path from 'node:path'
 import fs from 'node:fs'
-import type { Plugin } from '../plugin'
-import type { ResolvedConfig } from '../config'
-import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
-import { isObject, normalizePath, resolveHostname } from '../utils'
+import path from 'node:path'
 import { cleanUrl } from '../../shared/utils'
+import type { ResolvedConfig } from '../config'
+import { CLIENT_ENTRY, ENV_ENTRY, BUNDLED_DEV_CLIENT_ENTRY } from '../constants'
 import { perEnvironmentState } from '../environment'
+import type { Plugin } from '../plugin'
+import { isObject, normalizePath, resolveHostname } from '../utils'
 import { replaceDefine, serializeDefine } from './define'
 
 // ids in transform are normalized to unix style
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
+const normalizedBundledDevClientEntry = normalizePath(BUNDLED_DEV_CLIENT_ENTRY)
 const normalizedEnvEntry = normalizePath(ENV_ENTRY)
 
 /**
@@ -119,9 +120,6 @@ async function createClientConfigValueReplacer(
   const serverForwardConsoleReplacement = escapeReplacement(
     config.server.forwardConsole as any,
   )
-  const bundleDevReplacement = escapeReplacement(
-    config.experimental.bundledDev || false,
-  )
 
   return (code) =>
     code
@@ -138,13 +136,12 @@ async function createClientConfigValueReplacer(
       .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
       .replace(`__WS_TOKEN__`, wsTokenReplacement)
       .replace(`__SERVER_FORWARD_CONSOLE__`, serverForwardConsoleReplacement)
-      .replaceAll(`__BUNDLED_DEV__`, bundleDevReplacement)
 }
 
 export async function getHmrImplementation(
   config: ResolvedConfig,
 ): Promise<string> {
-  const content = fs.readFileSync(normalizedClientEntry, 'utf-8')
+  const content = fs.readFileSync(normalizedBundledDevClientEntry, 'utf-8')
   const replacer = await createClientConfigValueReplacer(config)
   return (
     replacer(content)

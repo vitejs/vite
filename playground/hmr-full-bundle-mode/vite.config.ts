@@ -4,6 +4,10 @@ export default defineConfig({
   experimental: {
     bundledDev: true,
   },
+  build: {
+    // emit assets as files instead of inlining, for the new-asset HMR test
+    assetsInlineLimit: 0,
+  },
   plugins: [waitBundleCompleteUntilAccess(), delayTransformComment()],
 })
 

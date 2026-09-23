@@ -1,0 +1,9 @@
+.tsconfig-paths-less {
+  color: navy;
+}
+
+// `resolve.tsconfigPaths` does NOT apply inside `.less` files (Less only gives
+// Vite the importer's directory, not the file). Even though `**/*.less` is in
+// the tsconfig `include`, this aliased import cannot resolve, so it is skipped
+// via `(optional)` and the color stays `navy` instead of becoming `tomato`.
+@import (optional) '@/less-imported.less';

@@ -27,6 +27,9 @@ export default defineConfig({
       '@vitejs/test-dep-optimize-with-glob/**/*.js',
       '@vitejs/test-dep-cjs-with-external-deps',
       '@vitejs/test-dep-cjs-with-es-module-flag',
+      // only referenced by the import that injectImportIntoOptimizedDep()
+      // adds at serve time, so the scanner can never discover it
+      '@vitejs/test-dep-cjs-for-injected-import',
     ],
     exclude: [
       '@vitejs/test-nested-exclude',
@@ -58,6 +61,7 @@ export default defineConfig({
     testVue(),
     notjs(),
     virtualModulePlugin(),
+    injectImportIntoOptimizedDep(),
     {
       name: 'test-astro',
       transform(code, id) {
@@ -130,6 +134,26 @@ function notjs() {
       if (id.endsWith('.notjs')) {
         code = code.replace('<notjs>', '').replace('</notjs>', '')
         return { code }
+      }
+    },
+  }
+}
+
+// Injects a named import of a CJS dep into the served output of an optimized
+// dep, like @rollup/plugin-inject does when providing `Buffer` / `process`
+function injectImportIntoOptimizedDep() {
+  return {
+    name: 'inject-import-into-optimized-dep',
+    transform(code, id) {
+      if (
+        /\.vite[\\/]deps[\\/].*test-dep-with-injected-import/.test(id) &&
+        !code.includes('test-dep-cjs-for-injected-import')
+      ) {
+        return {
+          code:
+            `import { msg as injectedMsg } from '@vitejs/test-dep-cjs-for-injected-import';\n` +
+            code,
+        }
       }
     },
   }

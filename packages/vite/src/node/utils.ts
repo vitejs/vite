@@ -1,28 +1,30 @@
-import fs from 'node:fs'
-import os from 'node:os'
-import net from 'node:net'
-import path from 'node:path'
 import { exec } from 'node:child_process'
 import crypto from 'node:crypto'
-import { fileURLToPath } from 'node:url'
+import { promises as dns } from 'node:dns'
+import fs from 'node:fs'
+import fsp from 'node:fs/promises'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import { builtinModules } from 'node:module'
-import { promises as dns } from 'node:dns'
-import { performance } from 'node:perf_hooks'
+import net from 'node:net'
 import type { AddressInfo, Server } from 'node:net'
-import fsp from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import { performance } from 'node:perf_hooks'
+import { fileURLToPath } from 'node:url'
 import remapping from '@jridgewell/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
-import colors from 'picocolors'
+import type { Equal } from '@type-challenges/utils'
+import type MagicString from 'magic-string'
 import type { Debugger } from 'obug'
 import debug from 'obug'
-import type MagicString from 'magic-string'
-import type { Equal } from '@type-challenges/utils'
+import colors from 'picocolors'
 
-import type { TransformResult } from 'rolldown'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
+import type { InputOption, TransformResult } from 'rolldown'
 import type { Alias, AliasOptions } from '#dep-types/alias'
 import type { FSWatcher } from '#dep-types/chokidar'
+import { createIsBuiltin } from '../shared/builtin'
+import { VALID_ID_PREFIX } from '../shared/constants'
 import {
   cleanUrl,
   isWindows,
@@ -30,8 +32,8 @@ import {
   splitFileAndPostfix,
   withTrailingSlash,
 } from '../shared/utils'
-import { VALID_ID_PREFIX } from '../shared/constants'
-import { createIsBuiltin } from '../shared/builtin'
+import type { BuildEnvironmentOptions } from './build'
+import type { ResolvedConfig } from './config'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
@@ -43,11 +45,9 @@ import {
   wildcardHosts,
 } from './constants'
 import type { DepOptimizationOptions } from './optimizer'
-import type { ResolvedConfig } from './config'
-import type { ResolvedServerUrls, ServerOptions, ViteDevServer } from './server'
-import type { PreviewServer } from './preview'
 import { type PackageCache, findNearestPackageData } from './packages'
-import type { BuildEnvironmentOptions } from './build'
+import type { PreviewServer } from './preview'
+import type { ResolvedServerUrls, ServerOptions, ViteDevServer } from './server'
 import type { CommonServerOptions } from '.'
 
 /**
@@ -137,8 +137,10 @@ export function isNodeBuiltin(id: string): boolean {
   return nodeBuiltins.includes(id)
 }
 
+const inNodeModulesRE = /(?:^|[\\/])node_modules(?:[\\/]|$)/
+
 export function isInNodeModules(id: string): boolean {
-  return id.includes('node_modules')
+  return inNodeModulesRE.test(id)
 }
 
 export function moduleListContains(
@@ -296,7 +298,7 @@ export const isJSRequest = (url: string): boolean => {
   if (knownJsSrcRE.test(url)) {
     return true
   }
-  if (!path.extname(url) && url[url.length - 1] !== '/') {
+  if (!path.extname(url) && url.at(-1) !== '/') {
     return true
   }
   return false
@@ -314,7 +316,7 @@ const internalPrefixes = [
   ENV_PUBLIC_PATH,
 ]
 const InternalPrefixRE = new RegExp(`^(?:${internalPrefixes.join('|')})`)
-const trailingSeparatorRE = /[?&]$/
+export const trailingSeparatorRE: RegExp = /[?&]$/
 export const isImportRequest = (url: string): boolean => importQueryRE.test(url)
 export const isInternalRequest = (url: string): boolean =>
   InternalPrefixRE.test(url)
@@ -331,9 +333,6 @@ export const rawRE: RegExp = /(\?|&)raw(?:&|$)/
 export function removeUrlQuery(url: string): string {
   return url.replace(urlRE, '$1').replace(trailingSeparatorRE, '')
 }
-export function removeRawQuery(url: string): string {
-  return url.replace(rawRE, '$1').replace(trailingSeparatorRE, '')
-}
 
 export function injectQuery(url: string, queryToInject: string): string {
   const { file, postfix } = splitFileAndPostfix(url)
@@ -341,9 +340,9 @@ export function injectQuery(url: string, queryToInject: string): string {
   return `${normalizedFile}?${queryToInject}${postfix[0] === '?' ? `&${postfix.slice(1)}` : /* hash only */ postfix}`
 }
 
-const timestampRE = /\bt=\d{13}&?\b/
+const timestampRE = /(\?|&)t=\d{13}(?:&|$)/
 export function removeTimestampQuery(url: string): string {
-  return url.replace(timestampRE, '').replace(trailingSeparatorRE, '')
+  return url.replace(timestampRE, '$1').replace(trailingSeparatorRE, '')
 }
 
 export async function asyncReplace(
@@ -433,6 +432,13 @@ export function isFilePathESM(
     return true
   } else if (/\.c[jt]s$/.test(filePath)) {
     return false
+  } else if (filePath.startsWith('\0')) {
+    // treat virtual modules as ESM
+    return true
+  } else if (!path.isAbsolute(filePath)) {
+    // should not rely on `process.cwd()` as that would depend on
+    // the environment and make it unreproducible
+    return false
   } else {
     // check package.json for type: "module"
     try {
@@ -444,9 +450,46 @@ export function isFilePathESM(
   }
 }
 
+/**
+ * Whether the file's module format is explicitly determined as ESM or CJS by
+ * its extension or the nearest `package.json` `"type"` field, as opposed to
+ * being ambiguous.
+ */
+export function isFilePathFormatExplicit(
+  filePath: string,
+  packageCache?: PackageCache,
+): boolean {
+  if (/\.[mc][jt]s$/.test(filePath)) {
+    return true
+  }
+  if (filePath.startsWith('\0')) {
+    // treat virtual modules as ESM
+    return true
+  }
+  if (!path.isAbsolute(filePath)) {
+    // should not rely on `process.cwd()` as that would depend on
+    // the environment and make it unreproducible
+    return false
+  }
+  try {
+    const pkg = findNearestPackageData(path.dirname(filePath), packageCache)
+    return pkg?.data.type === 'module' || pkg?.data.type === 'commonjs'
+  } catch {
+    return false
+  }
+}
+
 export const splitRE: RegExp = /\r?\n/g
 
 const range: number = 2
+
+/**
+ * `splitRE` treats both LF and CRLF as a line terminator, so the terminator
+ * following a line is 2 characters long when the source uses CRLF.
+ */
+function lineTerminatorLengthAt(source: string, index: number): number {
+  return source[index] === '\r' ? 2 : 1
+}
 
 export function pad(source: string, n = 2): string {
   const lines = source.split(splitRE)
@@ -466,7 +509,8 @@ export function posToNumber(source: string, pos: number | Pos): number {
   const { line, column } = pos
   let start = 0
   for (let i = 0; i < line - 1 && i < lines.length; i++) {
-    start += lines[i].length + 1
+    start += lines[i].length
+    start += lineTerminatorLengthAt(source, start)
   }
   return start + column
 }
@@ -482,7 +526,7 @@ export function numberToPos(source: string, offset: number | Pos): Pos {
   const lines = source.slice(0, offset).split(splitRE)
   return {
     line: lines.length,
-    column: lines[lines.length - 1].length,
+    column: lines.at(-1)!.length,
   }
 }
 
@@ -559,12 +603,12 @@ export function generateCodeFrame(
             const underline = '^'.repeat(Math.min(length, MAX_DISPLAY_LEN))
             res.push(`${' '.repeat(lineNumberWidth)}|  ` + underline)
           }
-          count += lineLength + 1
+          count += lineTerminatorLengthAt(source, count) + lineLength
         }
       }
       break
     }
-    count++
+    count += lineTerminatorLengthAt(source, count)
   }
   return res.join('\n')
 }
@@ -721,7 +765,7 @@ function optimizeSafeRealPathSync() {
       return
     }
   }
-  exec('net use', (error, stdout) => {
+  exec('net use', { windowsHide: true }, (error, stdout) => {
     if (error) return
     const lines = stdout.split('\n')
     // OK           Y:        \\NETWORKA\Foo         Microsoft Windows Network
@@ -781,14 +825,13 @@ function joinSrcset(ret: ImageCandidate[]) {
   The `descriptor` is anything after the space and before the comma.
  */
 const imageCandidateRegex =
-  /(?:^|\s|(?<=,))(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>\w[^,]+))?(?:,|$)/g
+  /(?:^|\s|(?<=,))(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>[\w.][^,]+))?(?:,|$)/g
 const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
 
 export function parseSrcset(string: string): ImageCandidate[] {
   const matches = string
     .trim()
     .replace(escapedSpaceCharacters, ' ')
-    .replace(/\r?\n/, '')
     .replace(/,\s+/, ', ')
     .replaceAll(/\s+/g, ' ')
     .matchAll(imageCandidateRegex)
@@ -914,7 +957,7 @@ export function combineSourcemaps(
 }
 
 export function unique<T>(arr: T[]): T[] {
-  return Array.from(new Set(arr))
+  return [...new Set(arr)]
 }
 
 /**
@@ -1026,11 +1069,13 @@ export function resolveServerUrls(
 
   const isAddressInfo = (x: any): x is AddressInfo => x?.address
   if (!isAddressInfo(address)) {
-    return { local: [], network: [] }
+    return { local: [], network: [], networkInterfaceNames: [] }
   }
 
   const local: string[] = []
   const network: string[] = []
+  // Interface name for each `network` URL, kept in the same order as `network`.
+  const networkInterfaceNames: (string | undefined)[] = []
   const protocol = options.https ? 'https' : 'http'
   const port = address.port
   const base =
@@ -1047,24 +1092,40 @@ export function resolveServerUrls(
       local.push(address)
     } else {
       network.push(address)
+      // Look up the interface name for the explicit host IP
+      let interfaceName: string | undefined
+      if (hostname.host) {
+        const interfaces = os.networkInterfaces()
+        outer: for (const [name, nInterface] of Object.entries(interfaces)) {
+          for (const detail of nInterface ?? []) {
+            if (detail.address === hostname.host) {
+              interfaceName = name
+              break outer
+            }
+          }
+        }
+      }
+      networkInterfaceNames.push(interfaceName)
     }
   } else {
-    Object.values(os.networkInterfaces())
-      .flatMap((nInterface) => nInterface ?? [])
-      .filter((detail) => detail.address && detail.family === 'IPv4')
-      .forEach((detail) => {
-        let host = detail.address.replace('127.0.0.1', hostname.name)
-        // ipv6 host
-        if (host.includes(':')) {
-          host = `[${host}]`
-        }
-        const url = `${protocol}://${host}:${port}${base}`
-        if (detail.address.includes('127.0.0.1')) {
-          local.push(url)
-        } else {
-          network.push(url)
-        }
-      })
+    Object.entries(os.networkInterfaces()).forEach(([name, nInterface]) => {
+      ;(nInterface ?? [])
+        .filter((detail) => detail.address && detail.family === 'IPv4')
+        .forEach((detail) => {
+          let host = detail.address.replace('127.0.0.1', hostname.name)
+          // ipv6 host
+          if (host.includes(':')) {
+            host = `[${host}]`
+          }
+          const url = `${protocol}://${host}:${port}${base}`
+          if (detail.address.includes('127.0.0.1')) {
+            local.push(url)
+          } else {
+            network.push(url)
+            networkInterfaceNames.push(name)
+          }
+        })
+    })
   }
 
   const hostnamesFromCert = extractHostnamesFromCerts(httpsOptions?.cert)
@@ -1077,7 +1138,7 @@ export function resolveServerUrls(
     )
   }
 
-  return { local, network }
+  return { local, network, networkInterfaceNames }
 }
 
 export function extractHostnamesFromSubjectAltName(
@@ -1460,7 +1521,10 @@ function mergeConfigRecursively(
     }
 
     // fields that require special handling
-    if (key === 'alias' && (rootPath === 'resolve' || rootPath === '')) {
+    if (key === 'input' && rootPath === '') {
+      merged[key] = mergeInput(existing, value)
+      continue
+    } else if (key === 'alias' && (rootPath === 'resolve' || rootPath === '')) {
       merged[key] = mergeAlias(existing, value)
       continue
     } else if (key === 'assetsInclude' && rootPath === '') {
@@ -1522,6 +1586,44 @@ export function mergeConfig<
   }
 
   return mergeConfigRecursively(defaults, overrides, isRoot ? '' : '.')
+}
+
+function mergeInput(a?: InputOption, b?: InputOption): InputOption | undefined {
+  if (!a) return b
+  if (!b) return a
+
+  if (typeof a === 'string' && typeof b === 'string') {
+    return [a, b]
+  }
+  if (Array.isArray(a) && (typeof b === 'string' || Array.isArray(b))) {
+    return [...a, ...(Array.isArray(b) ? b : [b])]
+  }
+  if (Array.isArray(b) && (typeof a === 'string' || Array.isArray(a))) {
+    return [...(Array.isArray(a) ? a : [a]), ...b]
+  }
+  if (typeof a !== 'string' && !Array.isArray(a)) {
+    return {
+      ...a,
+      ...normalizeToInputObject(b),
+    }
+  }
+  // b is a record
+  return {
+    ...normalizeToInputObject(a),
+    ...(b as Record<string, string>),
+  }
+}
+
+function normalizeToInputObject(input: InputOption): Record<string, string> {
+  if (typeof input === 'string') {
+    return { [path.basename(input, path.extname(input))]: input }
+  }
+  if (Array.isArray(input)) {
+    return Object.fromEntries(
+      input.map((i) => [path.basename(i, path.extname(i)), i]),
+    )
+  }
+  return input
 }
 
 export function mergeAlias(
@@ -1910,7 +2012,9 @@ export function formatAndTruncateFileList(files: string[]): {
   return { formatted: log, truncated }
 }
 
-const hashbangRE = /^#!.*\n/
+export const lineTerminatorRE: RegExp = /[\r\n\u2028\u2029]$/
+
+const hashbangRE = /^#![^\r\n\u2028\u2029]*(?:\r\n|[\r\n\u2028\u2029])?/
 
 // find the start of the file, after the hashbang
 export function getFileStartIndex(code: string): number {
