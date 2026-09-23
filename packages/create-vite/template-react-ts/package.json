@@ -14,11 +14,11 @@
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
-    "@types/node": "^24.13.5",
+    "@types/node": "^24.13.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
-    "oxlint": "^1.83.0",
+    "oxlint": "^1.85.0",
     "typescript": "~6.0.2",
     "vite": "^8.3.0"
   }

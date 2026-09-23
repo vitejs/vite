@@ -41,7 +41,7 @@
     "merge-changelog": "tsx scripts/mergeChangelog.ts"
   },
   "devDependencies": {
-    "@e18e/eslint-plugin": "^0.8.0",
+    "@e18e/eslint-plugin": "^0.8.1",
     "@eslint/js": "^9.39.5",
     "@type-challenges/utils": "^0.1.1",
     "@types/babel__core": "^7.20.5",
@@ -50,7 +50,7 @@
     "@types/cross-spawn": "^6.0.6",
     "@types/etag": "^1.8.4",
     "@types/less": "^3.0.8",
-    "@types/node": "^24.13.5",
+    "@types/node": "^24.13.6",
     "@types/picomatch": "^4.0.3",
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.18.1",
@@ -58,19 +58,19 @@
     "eslint": "^9.39.5",
     "eslint-plugin-import-x": "^4.17.1",
     "eslint-plugin-n": "^18.3.0",
-    "eslint-plugin-regexp": "^3.3.0",
+    "eslint-plugin-regexp": "^3.3.1",
     "execa": "^9.6.1",
     "globals": "^17.12.0",
     "lint-staged": "^17.5.1",
-    "oxfmt": "^0.68.0",
+    "oxfmt": "^0.70.0",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.63.0",
     "rolldown": "~1.2.9",
     "rollup": "^4.59.0",
     "simple-git-hooks": "^2.14.0",
-    "tsx": "^4.23.13",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.2",
-    "typescript-eslint": "^8.70.0",
+    "typescript-eslint": "^8.70.1",
     "vite": "workspace:*",
     "vitest": "^4.1.11"
   },
@@ -91,7 +91,7 @@
       "eslint --cache --fix --concurrency auto"
     ]
   },
-  "packageManager": "pnpm@12.4.2",
+  "packageManager": "pnpm@12.6.0",
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"
   }
