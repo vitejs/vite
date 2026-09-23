@@ -2,7 +2,12 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { cleanUrl } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
-import { CLIENT_ENTRY, ENV_ENTRY, BUNDLED_DEV_CLIENT_ENTRY } from '../constants'
+import {
+  CLIENT_ENTRY,
+  ENV_ENTRY,
+  BUNDLED_DEV_CLIENT_ENTRY,
+  BUNDLED_ROLLDOWN_VERSION,
+} from '../constants'
 import { perEnvironmentState } from '../environment'
 import type { Plugin } from '../plugin'
 import { isObject, normalizePath, resolveHostname } from '../utils'
@@ -120,6 +125,9 @@ async function createClientConfigValueReplacer(
   const serverForwardConsoleReplacement = escapeReplacement(
     config.server.forwardConsole as any,
   )
+  const bundledRolldownVersionReplacement = escapeReplacement(
+    BUNDLED_ROLLDOWN_VERSION ?? 'unknown',
+  )
 
   return (code) =>
     code
@@ -136,6 +144,10 @@ async function createClientConfigValueReplacer(
       .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
       .replace(`__WS_TOKEN__`, wsTokenReplacement)
       .replace(`__SERVER_FORWARD_CONSOLE__`, serverForwardConsoleReplacement)
+      .replace(
+        /__VITE_BUNDLED_ROLLDOWN_VERSION__/g,
+        bundledRolldownVersionReplacement,
+      )
 }
 
 export async function getHmrImplementation(

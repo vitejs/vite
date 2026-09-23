@@ -35,6 +35,12 @@ export const ROLLUP_HOOKS: RollupPluginHooks[] = [
 
 export const VERSION = version as string
 
+declare const __VITE_BUNDLED_ROLLDOWN_VERSION__: string
+export const BUNDLED_ROLLDOWN_VERSION: string | undefined =
+  typeof __VITE_BUNDLED_ROLLDOWN_VERSION__ === 'undefined'
+    ? undefined
+    : __VITE_BUNDLED_ROLLDOWN_VERSION__
+
 const DEFAULT_MAIN_FIELDS = [
   'browser',
   'module',

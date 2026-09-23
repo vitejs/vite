@@ -4,6 +4,7 @@ import { ImportType, init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import type { Plugin } from 'rolldown'
 import { defineConfig } from 'rolldown'
+import rolldownPkg from 'rolldown/package.json' with { type: 'json' }
 import pkg from './package.json' with { type: 'json' }
 import licensePlugin from './rollupLicensePlugin'
 
@@ -82,6 +83,11 @@ const nodeConfig = defineConfig({
     index: path.resolve(dirname, 'src/node/index.ts'),
     cli: path.resolve(dirname, 'src/node/cli.ts'),
     internal: path.resolve(dirname, 'src/node/internalIndex.ts'),
+  },
+  transform: {
+    define: {
+      __VITE_BUNDLED_ROLLDOWN_VERSION__: JSON.stringify(rolldownPkg.version),
+    },
   },
   external: [
     /^vite\//,

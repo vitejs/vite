@@ -7,8 +7,12 @@ import {
   type DevEngine,
   dev,
 } from 'rolldown/experimental'
+import rolldownPkg from 'rolldown/package.json' with { type: 'json' }
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
-import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
+import {
+  BUNDLED_DEV_CLIENT_FILENAME,
+  BUNDLED_ROLLDOWN_VERSION,
+} from '../constants'
 import { getHmrImplementation } from '../plugins/clientInjections'
 import { createDebugger, formatAndTruncateFileList } from '../utils'
 import { convertToDevWatchOptions } from '../watch'
@@ -116,6 +120,7 @@ export class BundledDev {
 
   async listen(): Promise<void> {
     this._closed = false
+    checkBundledRolldownVersion(this.environment)
     debug?.('INITIAL: setup bundle options')
     const rolldownOptions = await this.getRolldownOptions()
     // NOTE: only single outputOptions is supported here
@@ -560,4 +565,23 @@ function debounce(time: number, cb: () => void) {
  */
 function payloadDeliveredAck(filename: string): string {
   return `\n;__rolldown_runtime__.payloadDelivered(${JSON.stringify(filename)});`
+}
+
+function checkBundledRolldownVersion(environment: DevEnvironment): void {
+  // undefined when running from source, where nothing is pre-bundled
+  if (BUNDLED_ROLLDOWN_VERSION === undefined) return
+  const installed = rolldownPkg.version
+  if (installed === BUNDLED_ROLLDOWN_VERSION) return
+  environment.logger.warn(
+    colors.yellow(
+      `experimental.bundledDev: this Vite release bundles the rolldown dev runtime ` +
+        `of rolldown@${BUNDLED_ROLLDOWN_VERSION}, but the installed rolldown@${installed} ` +
+        `generates the code that runtime executes. The mismatch can break dynamic ` +
+        `imports or HMR at runtime with errors like ` +
+        `"__rolldown_runtime__.requestLazy is not a function".\n` +
+        `To fix this, upgrade Vite to a release built against rolldown@${installed}, ` +
+        `or pin rolldown to ${BUNDLED_ROLLDOWN_VERSION} (e.g. via the "overrides" ` +
+        `field in package.json).`,
+    ),
+  )
 }

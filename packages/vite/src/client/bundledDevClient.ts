@@ -13,6 +13,10 @@ import {
   updateStyle,
 } from './client'
 
+// Replaced with the rolldown version this client was built against when the
+// file is served, see `getHmrImplementation` in `node/plugins/clientInjections.ts`.
+declare const __VITE_BUNDLED_ROLLDOWN_VERSION__: string
+
 // keep the same public exports as `client.ts`, which this entry replaces when inlined
 export {
   createHotContext,
@@ -50,6 +54,8 @@ if (typeof DevRuntime !== 'undefined') {
 
   const runtime = ((globalThis as any).__rolldown_runtime__ ??=
     new ViteDevRuntime(clientId))
+
+  ;(runtime as any).bundledRolldownVersion = __VITE_BUNDLED_ROLLDOWN_VERSION__
 
   const bundledDevHmrClient = new BundledDevHMRClient(
     {
