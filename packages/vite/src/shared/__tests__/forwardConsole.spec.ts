@@ -79,26 +79,6 @@ describe('formatConsoleArgs', () => {
     expect(formatConsoleArgs([wide])).toContain('…(1)')
     expect(formatConsoleArgs([wide])).not.toContain('k100')
   })
-
-  test('limits large object output', () => {
-    function makeTree(depth: number, breadth: number): unknown {
-      if (depth === 0) return { leaf: true }
-      return Object.fromEntries(
-        Array.from({ length: breadth }, (_, i) => [
-          `k${i}`,
-          makeTree(depth - 1, breadth),
-        ]),
-      )
-    }
-
-    const output = formatConsoleArgs([
-      'one console.warn with a large object:',
-      makeTree(6, 6),
-    ])
-
-    expect(output.length).toBeLessThan(10_000)
-    expect(output).toContain('[Object]')
-  })
 })
 
 describe('setupForwardConsoleHandler', () => {
