@@ -1073,6 +1073,31 @@ describe('mergeConfig', () => {
     expect(config.server.ws?.overlay).toBeUndefined()
   })
 
+  test('`mergeConfig` does not crash when `server.ws` is false and `server.hmr` is merged', () => {
+    const baseConfig = defineConfig({
+      server: {
+        ws: false,
+        hmr: {
+          host: 'localhost',
+        },
+      },
+    })
+
+    const newConfig = defineConfig({
+      server: {
+        hmr: {
+          port: 5173,
+        },
+      },
+    })
+
+    const mergedConfig = mergeConfig(baseConfig, newConfig)
+
+    expect(mergedConfig.server.ws).toBe(false)
+    expect(mergedConfig.server.hmr).toBeTypeOf('object')
+    expect(mergedConfig.server.hmr).toBeTruthy()
+  })
+
   test('resolveConfig properly syncs hmr and ws', async () => {
     const config = await resolveConfig(
       {
