@@ -26,7 +26,7 @@ describe('formatConsoleArgs', () => {
         'done',
       ]),
     ).toMatchInlineSnapshot(
-      `"format: string=hello number=12.9 int=42 float=3.5 json={"id":1} object={"enabled":true} object2={"nested":{"deep":1}} sym=NaN style= literal=% trailing done"`,
+      `"format: string=hello number=12.9 int=42 float=3.5 json={"id":1} object={ enabled: true } object2={ nested: { deep: 1 } } sym=NaN style= literal=% trailing done"`,
     )
 
     expect(
@@ -63,8 +63,49 @@ describe('formatConsoleArgs', () => {
         circular,
       ]),
     ).toMatchInlineSnapshot(
-      `"1n undefined true Symbol(s) [Function: sampleFn] Error: boom {"ok":true,"big":"2n","err":{"name":"Error","message":"nested"},"self":"[Circular]"}"`,
+      `"1n undefined true Symbol(s) [Function: sampleFn] Error: boom { ok: true, big: 2n, err: [Error: nested], self: [Circular] }"`,
     )
+  })
+
+  test('limits object depth and width', () => {
+    const deep = { a: { b: { c: { d: true } } } }
+    const wide = Object.fromEntries(
+      Array.from({ length: 101 }, (_, i) => [`k${i}`, i]),
+    )
+
+    expect(formatConsoleArgs([deep])).toMatchInlineSnapshot(
+      `"{ a: { b: { c: [Object] } } }"`,
+    )
+    expect(formatConsoleArgs([wide])).toContain('…(1)')
+    expect(formatConsoleArgs([wide])).not.toContain('k100')
+  })
+
+  test('limits large object output', () => {
+    function makeTree(depth: number, breadth: number): unknown {
+      if (depth === 0) return { leaf: true }
+      return Object.fromEntries(
+        Array.from({ length: breadth }, (_, i) => [
+          `k${i}`,
+          makeTree(depth - 1, breadth),
+        ]),
+      )
+    }
+
+    const output = formatConsoleArgs([
+      'one console.warn with a large object:',
+      makeTree(6, 6),
+    ])
+
+    expect(output.length).toBeLessThan(10_000)
+    expect(output).toContain('[Object]')
+  })
+
+  test('caps the final message while keeping %j JSON formatting', () => {
+    expect(formatConsoleArgs(['json=%j', { nested: true }])).toBe(
+      'json={"nested":true}',
+    )
+    expect(formatConsoleArgs(['x'.repeat(20_000)])).toHaveLength(10_000)
+    expect(formatConsoleArgs(['x'.repeat(20_000)])).toMatch(/…$/)
   })
 })
 

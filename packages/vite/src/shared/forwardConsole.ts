@@ -3,6 +3,7 @@ import {
   type NormalizedModuleRunnerTransport,
   SendBeforeConnectError,
 } from './moduleRunnerTransport'
+import { format as prettyFormat } from './pretty-format'
 
 export type ForwardConsoleLogLevel =
   | 'error'
@@ -121,7 +122,9 @@ export function formatConsoleArgs(args: unknown[]): string {
   }
 
   if (typeof args[0] !== 'string') {
-    return args.map((arg) => stringifyConsoleArg(arg)).join(' ')
+    return truncateConsoleMessage(
+      args.map((arg) => stringifyConsoleArg(arg)).join(' '),
+    )
   }
 
   const len = args.length
@@ -183,7 +186,7 @@ export function formatConsoleArgs(args: unknown[]): string {
     }
   }
 
-  return message
+  return truncateConsoleMessage(message)
 }
 
 function stringifyConsoleArg(value: unknown): string {
@@ -210,29 +213,26 @@ function stringifyConsoleArg(value: unknown): string {
     return `${value}n`
   }
 
-  const seen = new WeakSet<object>()
   try {
-    const serialized = JSON.stringify(value, (_, nested) => {
-      if (typeof nested === 'bigint') {
-        return `${nested}n`
-      }
-      if (nested instanceof Error) {
-        return {
-          name: nested.name,
-          message: nested.message,
-          stack: nested.stack,
-        }
-      }
-      if (nested && typeof nested === 'object') {
-        if (seen.has(nested)) {
-          return '[Circular]'
-        }
-        seen.add(nested)
-      }
-      return nested
-    })
-    return serialized ?? String(value)
+    return prettyFormat(value)
   } catch {
     return String(value)
   }
+}
+
+const MAX_CONSOLE_MESSAGE_LENGTH = 10_000
+
+function truncateConsoleMessage(message: string): string {
+  if (message.length <= MAX_CONSOLE_MESSAGE_LENGTH) {
+    return message
+  }
+  let end = MAX_CONSOLE_MESSAGE_LENGTH - 1
+  if (isHighSurrogate(message[end - 1])) {
+    end--
+  }
+  return `${message.slice(0, end)}…`
+}
+
+function isHighSurrogate(value: string): boolean {
+  return value >= '\uD800' && value <= '\uDBFF'
 }
