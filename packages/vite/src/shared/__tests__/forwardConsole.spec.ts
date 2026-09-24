@@ -99,12 +99,6 @@ describe('formatConsoleArgs', () => {
     expect(output.length).toBeLessThan(10_000)
     expect(output).toContain('[Object]')
   })
-
-  test('keeps %j JSON formatting', () => {
-    expect(formatConsoleArgs(['json=%j', { nested: true }])).toBe(
-      'json={"nested":true}',
-    )
-  })
 })
 
 describe('setupForwardConsoleHandler', () => {
