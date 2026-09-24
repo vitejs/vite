@@ -1,0 +1,19 @@
+docs/superpowers/specs/2026-08-05-hmr-module-url-design.md
+  s_56dc7265a8fef3::t_a8d4aa7b1b6b21 1-91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f0d8f382d8a1a963f0dc75e7c58dae2907b10d54",
+  "prompts": {},
+  "sessions": {
+    "s_56dc7265a8fef3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd067-1a21-7941-996d-40009bc682c2",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

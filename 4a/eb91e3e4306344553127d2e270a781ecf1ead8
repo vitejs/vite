@@ -1,0 +1,31 @@
+packages/vite/src/node/server/environment.ts
+  s_56dc7265a8fef3::t_6c29ede2fdf479 20,179
+playground/hmr/virtual-invalidation/parent.js
+  s_3c48b57b0c6dd8::t_cdbef834c9f983 1-7
+playground/hmr/virtual-invalidation/dep.js
+  s_3c48b57b0c6dd8::t_044a1870cab7ac 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "4aeb91e3e4306344553127d2e270a781ecf1ead8",
+  "prompts": {},
+  "sessions": {
+    "s_3c48b57b0c6dd8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fcf96-0e74-7b42-8ea1-16d0182901f3",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_56dc7265a8fef3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd067-1a21-7941-996d-40009bc682c2",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

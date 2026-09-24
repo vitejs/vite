@@ -1,0 +1,31 @@
+packages/vite/src/node/__tests__/build.spec.ts
+  s_8a310a2d6a4804::t_2f8640a8cdc6ea 115-144
+packages/vite/src/node/__tests__/scan.spec.ts
+  s_8a310a2d6a4804::t_e049b3cf6e4b79 243-283
+packages/vite/src/node/config.ts
+  s_b66953525cff61::t_003f0243fed9c1 926,933,936,940,1040,1860
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "10504380d8a1abed56435921c109993c3be2bd83",
+  "prompts": {},
+  "sessions": {
+    "s_8a310a2d6a4804": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fac21-2e94-78a0-9b3b-1fca69883aa8",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_b66953525cff61": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa8c8-d756-7d92-9f9f-6ac112340c35",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

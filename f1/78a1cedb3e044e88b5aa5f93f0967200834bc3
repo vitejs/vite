@@ -1,0 +1,19 @@
+playground/worker/__tests__/iife/worker-iife.spec.ts
+  s_f46a306e3dcc64::t_4e73bdf9402d43 210,216
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f178a1cedb3e044e88b5aa5f93f0967200834bc3",
+  "prompts": {},
+  "sessions": {
+    "s_f46a306e3dcc64": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "08772320-e1cd-4cc3-8f56-4133b3a56fd3",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "hana <andywangsy@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+packages/vite/src/node/__tests__/packages/build-project/asset.txt
+  s_68fa63dc377e6c::t_dea69b15bebe6c 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "489346cce06e7edfd65e0ab0ba5d663c0a374287",
+  "prompts": {},
+  "sessions": {
+    "s_68fa63dc377e6c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb794-1f58-7873-b641-58362e2844a6",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
