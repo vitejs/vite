@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'vitest'
-import { format } from '../pretty-format'
+import { prettyFormat } from '../pretty-format'
 
-describe('format', () => {
+describe('prettyFormat', () => {
   test('formats basic JavaScript values', () => {
     const circular: Record<string, unknown> = {}
     circular.self = circular
 
     expect(
-      format({
+      prettyFormat({
         array: [1, 'two'],
         date: new Date('2020-01-01T00:00:00.000Z'),
         error: new Error('boom'),
@@ -19,9 +19,9 @@ describe('format', () => {
   })
 
   test('limits depth and collection width', () => {
-    expect(format({ a: { b: { c: { d: true } } } })).toBe(
+    expect(prettyFormat({ a: { b: { c: { d: true } } } })).toBe(
       '{ a: { b: { c: [Object] } } }',
     )
-    expect(format([1, 2, 3, 4], { maxWidth: 2 })).toBe('[ 1, 2, …(2) ]')
+    expect(prettyFormat([1, 2, 3, 4], { maxWidth: 2 })).toBe('[ 1, 2, …(2) ]')
   })
 })

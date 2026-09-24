@@ -3,7 +3,7 @@ import {
   type NormalizedModuleRunnerTransport,
   SendBeforeConnectError,
 } from './moduleRunnerTransport'
-import { format as prettyFormat } from './pretty-format'
+import { prettyFormat } from './pretty-format'
 
 export type ForwardConsoleLogLevel =
   | 'error'

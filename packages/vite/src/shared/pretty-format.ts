@@ -30,7 +30,7 @@ const objectToString = Object.prototype.toString
 const errorToString = Error.prototype.toString
 const identifierRE = /^[a-z_$][\w$]*$/i
 
-export function format(
+export function prettyFormat(
   value: unknown,
   options: PrettyFormatOptions = {},
 ): string {
