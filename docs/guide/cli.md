@@ -98,6 +98,7 @@ vite optimize [root]
 | `-l, --logLevel <level>`  | info \| warn \| error \| silent (`string`)                                                                                                                                            |
 | `--clearScreen`           | Allow/disable clear screen when logging (`boolean`)                                                                                                                                   |
 | `--configLoader <loader>` | Use `bundle` to bundle the config with Rolldown, or `runner` (experimental) to process it on the fly, or `native` (experimental) to load using the native runtime (default: `bundle`) |
+| `--profile [name]`        | Start built-in Node.js inspector and write the profile to `<name>.cpuprofile` (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks)) (`boolean \| string`) |
 | `-d, --debug [feat]`      | Show debug logs (`string \| boolean`)                                                                                                                                                 |
 | `-f, --filter <filter>`   | Filter debug logs (`string`)                                                                                                                                                          |
 | `-m, --mode <mode>`       | Set env mode (`string`)                                                                                                                                                               |
@@ -129,6 +130,7 @@ vite preview [root]
 | `-l, --logLevel <level>`  | info \| warn \| error \| silent (`string`)                                                                                                                                            |
 | `--clearScreen`           | Allow/disable clear screen when logging (`boolean`)                                                                                                                                   |
 | `--configLoader <loader>` | Use `bundle` to bundle the config with Rolldown, or `runner` (experimental) to process it on the fly, or `native` (experimental) to load using the native runtime (default: `bundle`) |
+| `--profile [name]`        | Start built-in Node.js inspector and write the profile to `<name>.cpuprofile` (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks)) (`boolean \| string`) |
 | `-d, --debug [feat]`      | Show debug logs (`string \| boolean`)                                                                                                                                                 |
 | `-f, --filter <filter>`   | Filter debug logs (`string`)                                                                                                                                                          |
 | `-m, --mode <mode>`       | Set env mode (`string`)                                                                                                                                                               |
