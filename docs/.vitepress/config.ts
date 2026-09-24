@@ -114,9 +114,9 @@ const config = defineConfig({
   themeConfig: {
     variant: 'vite',
     banner: {
-      id: 'cloudflare-supports-vite',
-      text: `Cloudflare supports Vite's mission`,
-      url: '/blog/cloudflare-supports-vite',
+      id: 'viteconf-2026',
+      text: 'ViteConf 2026 - October 15, Online',
+      url: 'https://viteconf.org/',
     },
 
     editLink: {
