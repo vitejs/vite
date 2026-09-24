@@ -1,0 +1,23 @@
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/tla-circular/a.js
+  s_5ac10e7bec92d2::t_d50e1cd7b981ce 1-6
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/tla-circular/b.js
+  s_5ac10e7bec92d2::t_63bbf840522d0f 1-6
+packages/vite/src/node/ssr/runtime/__tests__/server-runtime.spec.ts
+  s_5ac10e7bec92d2::t_07856c2fa1b3e4 275-285
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "9bf463c7c4c905b9065d2c706e43ccabade15dbc",
+  "prompts": {},
+  "sessions": {
+    "s_5ac10e7bec92d2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a014a5-a1e8-7ec1-b066-54c9e7a58f6c",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

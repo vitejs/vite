@@ -1,0 +1,19 @@
+packages/vite/src/node/server/index.ts
+  s_c9bc7d73536dae::t_b91fbb6ff026f0 1113,1115-1117
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c158467bcaed385b886e18e3ceaf522ec1be75e2",
+  "prompts": {},
+  "sessions": {
+    "s_c9bc7d73536dae": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd6d5-9676-7052-8bdc-43a6613c6cbc",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

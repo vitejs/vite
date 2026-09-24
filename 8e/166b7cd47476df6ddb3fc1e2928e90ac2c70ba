@@ -1,0 +1,19 @@
+playground/optimize-missing-deps/server.js
+  s_0b8c183d088bac::t_77778734f6db20 26-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "8e166b7cd47476df6ddb3fc1e2928e90ac2c70ba",
+  "prompts": {},
+  "sessions": {
+    "s_0b8c183d088bac": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f937c-4842-7b63-82e0-e46aab281013",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

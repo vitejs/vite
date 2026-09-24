@@ -1,0 +1,37 @@
+packages/vite/src/node/server/htmlSafeModulePaths.ts
+  s_4901f29ad8b30e::t_735377ce35cfbe 1-96
+packages/vite/src/node/server/middlewares/indexHtml.ts
+  s_4901f29ad8b30e::t_4d066fae74d7d7 53-56,248,309-316,338-345,388-402,424
+packages/vite/src/node/plugins/html.ts
+  s_4901f29ad8b30e::t_243cd9aa909a18 37,1450,1473-1475,1498-1499
+packages/vite/src/node/server/middlewares/__tests__/fixtures/root/classic.js
+  s_4901f29ad8b30e::t_1368b471634990 1
+packages/vite/src/node/server/middlewares/__tests__/fixtures/root/dynamic.js
+  s_4901f29ad8b30e::t_0a5b14900b0ed9 1
+packages/vite/src/node/server/middlewares/__tests__/fixtures/root/style.css
+  s_4901f29ad8b30e::t_50999c93b8d86e 1-3
+packages/vite/src/node/server/middlewares/__tests__/indexHtml.spec.ts
+  s_4901f29ad8b30e::t_ece299b65fb549 6,12,19,91-144
+playground/hmr/vite.config.ts
+  s_4901f29ad8b30e::t_e99b29bcf59563 12-22
+playground/html/vite.config.js
+  s_4901f29ad8b30e::t_492c1dcf3cc396 26-28,41
+playground/vitestSetup.ts
+  s_4901f29ad8b30e::t_18cb9a15587627 265
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "19f7ce3c186f9c3f9dcf62d6ececb626e0e12ae9",
+  "prompts": {},
+  "sessions": {
+    "s_4901f29ad8b30e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa76d-c3ae-7cb0-ab7f-42e6688e291d",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
