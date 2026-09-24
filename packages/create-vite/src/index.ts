@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url'
 import util from 'node:util'
 import * as prompts from '@clack/prompts'
 import { determineAgent } from '@vercel/detect-agent'
-import spawn from 'cross-spawn'
 import mri from 'mri'
+import { xSync } from 'tinyexec'
 
 const {
   blue,
@@ -415,15 +415,17 @@ const renameFiles: Record<string, string | undefined> = {
 const defaultTargetDir = 'vite-project'
 
 function run([command, ...args]: string[], options?: SpawnOptions) {
-  const { status, error } = spawn.sync(command, args, options)
-  if (status != null && status > 0) {
-    process.exit(status)
-  }
-
-  if (error) {
+  let exitCode: number | undefined
+  try {
+    ;({ exitCode } = xSync(command, args, { nodeOptions: options }))
+  } catch (error) {
     console.error(`\n${command} ${args.join(' ')} error!`)
     console.error(error)
     process.exit(1)
+  }
+
+  if (exitCode != null && exitCode > 0) {
+    process.exit(exitCode)
   }
 }
 
@@ -637,10 +639,10 @@ async function init() {
     const replacedArgs = args.map((arg) =>
       arg.replace('TARGET_DIR', () => targetDir),
     )
-    const { status } = spawn.sync(command, replacedArgs, {
-      stdio: 'inherit',
+    const { exitCode } = xSync(command, replacedArgs, {
+      nodeOptions: { stdio: 'inherit' },
     })
-    process.exit(status ?? 0)
+    process.exit(exitCode ?? 0)
   }
 
   // 5. Ask whether to use ESLint instead of Oxlint (React templates only)
