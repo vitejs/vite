@@ -1,4 +1,3 @@
-import path from 'node:path'
 import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import type { FooterLink } from '@voidzero-dev/vitepress-theme'
 import { extendConfig } from '@voidzero-dev/vitepress-theme/config'
@@ -544,14 +543,6 @@ const config = defineConfig({
     },
   },
   vite: {
-    resolve: {
-      alias: {
-        '@components/oss/TopBanner.vue': path.resolve(
-          import.meta.dirname,
-          'theme/components/TopBanner.vue',
-        ),
-      },
-    },
     plugins: [
       groupIconVitePlugin({
         customIcon: {
