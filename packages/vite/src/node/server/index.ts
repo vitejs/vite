@@ -69,6 +69,7 @@ import {
 import {
   createNoopWatcher,
   getResolvedOutDirs,
+  makeWatcherCloseFinal,
   resolveChokidarOptions,
   resolveEmptyOutDir,
 } from '../watch'
@@ -582,19 +583,21 @@ export async function _createServer(
   // eslint-disable-next-line eqeqeq
   const watchEnabled = serverConfig.watch !== null
   const watcher = watchEnabled
-    ? (chokidar.watch(
-        // config file dependencies and env file might be outside of root
-        [
-          ...(config.experimental.bundledDev ? [] : [root]),
-          ...config.configFileDependencies,
-          ...getEnvFilesForMode(config.mode, config.envDir),
-          // Watch the public directory explicitly because it might be outside
-          // of the root directory.
-          ...(publicDir && publicFiles ? [publicDir] : []),
-        ],
+    ? makeWatcherCloseFinal(
+        chokidar.watch(
+          // config file dependencies and env file might be outside of root
+          [
+            ...(config.experimental.bundledDev ? [] : [root]),
+            ...config.configFileDependencies,
+            ...getEnvFilesForMode(config.mode, config.envDir),
+            // Watch the public directory explicitly because it might be outside
+            // of the root directory.
+            ...(publicDir && publicFiles ? [publicDir] : []),
+          ],
 
-        resolvedWatchOptions,
-      ) as FSWatcher)
+          resolvedWatchOptions,
+        ) as FSWatcher,
+      )
     : createNoopWatcher(resolvedWatchOptions)
 
   const environments: Record<string, DevEnvironment> = {}
