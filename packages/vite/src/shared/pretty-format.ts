@@ -16,15 +16,12 @@
  * MIT License.
  */
 
-export interface PrettyFormatOptions {
-  maxDepth?: number
-  maxWidth?: number
-}
-
 interface Config {
   maxDepth: number
   maxWidth: number
 }
+
+export type PrettyFormatOptions = Partial<Config>
 
 type Refs = unknown[]
 
