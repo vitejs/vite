@@ -58,7 +58,7 @@
     "react-dom": "^19.3.0",
     "@vitejs/test-resolve-linked": "workspace:0.0.0",
     "url": "^0.11.4",
-    "vue": "^3.5.42",
+    "vue": "^3.5.43",
     "vuex": "^4.1.0"
   }
 }
