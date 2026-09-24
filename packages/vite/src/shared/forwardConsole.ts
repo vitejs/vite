@@ -218,6 +218,7 @@ function stringifyConsoleArg(value: unknown): string {
   }
 }
 
+// hard-truncate the generated string in addition to pretty-format-level structural truncation
 const MAX_CONSOLE_MESSAGE_LENGTH = 10_000
 
 function truncateConsoleMessage(message: string): string {
