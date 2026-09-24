@@ -92,6 +92,7 @@ export async function injectSourcesContent(
     if (
       sourcesContent[index] == null &&
       sourcePath &&
+      !isExternalUrl(sourcePath) &&
       !virtualSourceRE.test(sourcePath)
     ) {
       sourcesContentPromises.push(

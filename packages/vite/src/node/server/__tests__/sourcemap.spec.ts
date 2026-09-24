@@ -91,6 +91,24 @@ describe('injectSourcesContent', () => {
     expect(map.sourcesContent).toBeUndefined()
   })
 
+  test('does not inject content for remote sources', async () => {
+    const map: Parameters<typeof injectSourcesContent>[0] = {
+      sources: [
+        'https://raw.githubusercontent.com/fb55/domutils/abc123/src/index.ts',
+      ],
+    }
+    const logger = createLogger()
+
+    await injectSourcesContent(
+      map,
+      '/project/node_modules/domutils/lib/esm/index.js',
+      logger,
+    )
+
+    expect(logger.warnOnce).not.toHaveBeenCalled()
+    expect(map.sourcesContent).toEqual([])
+  })
+
   test('warns for sources that resolve outside the package', async () => {
     const map: Parameters<typeof injectSourcesContent>[0] = {
       sources: ['/outside/project/index.ts'],
