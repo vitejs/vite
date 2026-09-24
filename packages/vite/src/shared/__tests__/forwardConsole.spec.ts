@@ -76,8 +76,9 @@ describe('formatConsoleArgs', () => {
     const wide = Object.fromEntries(
       Array.from({ length: 101 }, (_, i) => [`k${i}`, i]),
     )
-    expect(formatConsoleArgs([wide])).toContain('…(1)')
-    expect(formatConsoleArgs([wide])).not.toContain('k100')
+    const output = formatConsoleArgs([wide])
+    expect(output).toMatch(/^\{ k0: 0, k1: 1, k2: 2, /)
+    expect(output).toMatch(/, k98: 98, k99: 99, …\(1\) \}$/)
   })
 })
 
