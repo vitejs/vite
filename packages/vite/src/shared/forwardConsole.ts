@@ -57,7 +57,7 @@ export function setupForwardConsoleHandler(
           type: 'log',
           data: {
             level,
-            message: formatConsoleArgs(args),
+            message: truncateConsoleMessage(formatConsoleArgs(args)),
           },
         } satisfies ForwardConsolePayload,
       })
@@ -122,9 +122,7 @@ export function formatConsoleArgs(args: unknown[]): string {
   }
 
   if (typeof args[0] !== 'string') {
-    return truncateConsoleMessage(
-      args.map((arg) => stringifyConsoleArg(arg)).join(' '),
-    )
+    return args.map((arg) => stringifyConsoleArg(arg)).join(' ')
   }
 
   const len = args.length
@@ -186,7 +184,7 @@ export function formatConsoleArgs(args: unknown[]): string {
     }
   }
 
-  return truncateConsoleMessage(message)
+  return message
 }
 
 function stringifyConsoleArg(value: unknown): string {

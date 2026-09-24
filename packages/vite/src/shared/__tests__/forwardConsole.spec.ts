@@ -100,12 +100,10 @@ describe('formatConsoleArgs', () => {
     expect(output).toContain('[Object]')
   })
 
-  test('caps the final message while keeping %j JSON formatting', () => {
+  test('keeps %j JSON formatting', () => {
     expect(formatConsoleArgs(['json=%j', { nested: true }])).toBe(
       'json={"nested":true}',
     )
-    expect(formatConsoleArgs(['x'.repeat(20_000)])).toHaveLength(10_000)
-    expect(formatConsoleArgs(['x'.repeat(20_000)])).toMatch(/…$/)
   })
 })
 
@@ -176,5 +174,26 @@ describe('setupForwardConsoleHandler', () => {
       'Failed to send error to Vite server:',
       new Error('other error'),
     )
+  })
+
+  test('caps the forwarded console message', () => {
+    const send = vi.fn(() => Promise.resolve())
+    const transport = createMockTransport(send)
+    const console = createMockConsole()
+
+    setupForwardConsoleHandler(
+      transport,
+      {
+        enabled: true,
+        unhandledErrors: false,
+        logLevels: ['log'],
+      },
+      console,
+    )
+
+    console.log('x'.repeat(20_000))
+
+    const message = send.mock.calls[0][0].data.data.message
+    expect(message).toBe(`${'x'.repeat(9_999)}…`)
   })
 })
