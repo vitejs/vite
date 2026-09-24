@@ -1,0 +1,19 @@
+docs/superpowers/specs/2026-07-24-baseline-browser-support-wording-design.md
+  s_e1d7e3d7ae54f1::t_c1544ba0b70326 1-23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "3a015bc2f8305b148451b72da4ad1d044631afe3",
+  "prompts": {},
+  "sessions": {
+    "s_e1d7e3d7ae54f1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9280-c48a-7db2-8e36-c5a1db828d9b",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

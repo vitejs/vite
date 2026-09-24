@@ -1,0 +1,19 @@
+docs/superpowers/specs/2026-08-06-top-level-tsconfig-design.md
+  s_f8def00b6e4ee6::t_97593d7e5d0a97 1-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "d3b258ce8ab523b0aa775b975d323534e1d96d1c",
+  "prompts": {},
+  "sessions": {
+    "s_f8def00b6e4ee6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd5c8-63c2-7e22-84d5-89b23dc4b4a8",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
