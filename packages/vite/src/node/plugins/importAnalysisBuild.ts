@@ -402,6 +402,19 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           const s = new MagicString(code)
           const rewroteMarkerStartPos = new Set() // position of the leading double quote
 
+          // Make __vitePreload factory async so `await` in import specifiers
+          // is valid syntax. `async () => import(...)` always returns a Promise
+          // (identical semantics) and is safe for plain string specifiers too.
+          // https://github.com/vitejs/vite/issues/23485
+          const asyncFactoryPrefix = `${preloadMethod}(() => import(`
+          for (
+            let pos = code.indexOf(asyncFactoryPrefix);
+            pos !== -1;
+            pos = code.indexOf(asyncFactoryPrefix, pos + asyncFactoryPrefix.length)
+          ) {
+            s.prependLeft(pos + preloadMethod.length + 1, 'async ')
+          }
+
           const fileDeps: FileDep[] = []
           const addFileDep = (
             url: string,
