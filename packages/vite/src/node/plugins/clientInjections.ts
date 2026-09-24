@@ -1,8 +1,14 @@
 import fs from 'node:fs'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 import { cleanUrl } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
-import { CLIENT_ENTRY, ENV_ENTRY, BUNDLED_DEV_CLIENT_ENTRY } from '../constants'
+import {
+  BUNDLED_DEV_CLIENT_ENTRY,
+  BUNDLED_DEV_ROLLDOWN_RUNTIME_DIR,
+  CLIENT_ENTRY,
+  ENV_ENTRY,
+} from '../constants'
 import { perEnvironmentState } from '../environment'
 import type { Plugin } from '../plugin'
 import { isObject, normalizePath, resolveHostname } from '../utils'
@@ -138,6 +144,10 @@ async function createClientConfigValueReplacer(
       .replace(`__SERVER_FORWARD_CONSOLE__`, serverForwardConsoleReplacement)
 }
 
+const _require = createRequire(/** #__KEEP__ */ import.meta.url)
+
+const ROLLDOWN_DEV_RUNTIME_ENTRY = 'rolldown/experimental/runtime'
+
 export async function getHmrImplementation(
   config: ResolvedConfig,
 ): Promise<string> {
@@ -145,7 +155,46 @@ export async function getHmrImplementation(
   const replacer = await createClientConfigValueReplacer(config)
   return (
     replacer(content)
-      // the rolldown runtime cannot import a module
+      // `/@vite/env` is not served in bundled dev
       .replace(/import\s*['"]@vite\/env['"]/, '')
+      // absolute under `base`: a relative specifier would resolve against a sub-page's URL
+      .replace(
+        new RegExp(`(from\\s*['"])${ROLLDOWN_DEV_RUNTIME_ENTRY}(['"])`),
+        (_, before, after) =>
+          `${before}${path.posix.join(
+            config.base,
+            BUNDLED_DEV_ROLLDOWN_RUNTIME_DIR,
+            path.basename(rolldownDevRuntimeEntryPath()),
+          )}${after}`,
+      )
   )
+}
+
+function rolldownDevRuntimeEntryPath(): string {
+  return _require.resolve(ROLLDOWN_DEV_RUNTIME_ENTRY)
+}
+
+/**
+ * The dev runtime must match the rolldown that generates the bundle, so it is read from the
+ * installed package at serve time instead of being bundled into the client. The entry imports
+ * its helper file with a relative path, so both are served under the same directory.
+ */
+export function getRolldownDevRuntimeFiles(): Map<string, string> {
+  const entry = rolldownDevRuntimeEntryPath()
+  const dir = path.dirname(entry)
+  const files = new Map<string, string>()
+  for (const name of fs.readdirSync(dir)) {
+    if (name.startsWith('experimental-runtime') && name.endsWith('.mjs')) {
+      files.set(
+        `${BUNDLED_DEV_ROLLDOWN_RUNTIME_DIR}/${name}`,
+        fs.readFileSync(path.join(dir, name), 'utf-8'),
+      )
+    }
+  }
+  if (
+    !files.has(`${BUNDLED_DEV_ROLLDOWN_RUNTIME_DIR}/${path.basename(entry)}`)
+  ) {
+    throw new Error(`rolldown dev runtime entry ${entry} was not found`)
+  }
+  return files
 }
