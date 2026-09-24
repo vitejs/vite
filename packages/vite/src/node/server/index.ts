@@ -1425,7 +1425,19 @@ async function restartServer(server: ViteDevServer) {
 
     // Close with reason 'restart' so `closeServer` hooks can distinguish a
     // restart from a real close.
-    await server._closeServer('restart')
+    try {
+      await server._closeServer('restart')
+    } catch (restartError) {
+      try {
+        await newServer.close()
+      } catch (cleanupError) {
+        throw new AggregateError(
+          [restartError, cleanupError],
+          'Server restart and replacement cleanup failed',
+        )
+      }
+      throw restartError
+    }
 
     // Assign new server props to existing server instance
     const middlewares = server.middlewares
