@@ -139,9 +139,11 @@ test('resolves discovered dep processing promise on close before init', async ()
   const info = client.depsOptimizer?.metadata.discovered?.vue
   expect(info).toBeDefined()
 
+  const processingPromise = info!.processing?.then(() => true)
+
   // The dep's processing promise should still be pending at this point.
   const resolvedBeforeClose = await Promise.race([
-    info!.processing,
+    processingPromise,
     setTimeout(500, false),
   ])
   expect(resolvedBeforeClose).toBe(false)
@@ -151,9 +153,9 @@ test('resolves discovered dep processing promise on close before init', async ()
   await client.depsOptimizer?.close()
 
   const resolvedAfterClose = await Promise.race([
-    info!.processing,
+    processingPromise,
     setTimeout(500, false),
   ])
-  expect(resolvedAfterClose).toBeUndefined()
+  expect(resolvedAfterClose).toBe(true)
   expect(errors).toStrictEqual([])
 })
