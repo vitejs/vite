@@ -69,12 +69,12 @@ describe('formatConsoleArgs', () => {
 
   test('limits object depth and width', () => {
     const deep = { a: { b: { c: { d: true } } } }
-    const wide = Object.fromEntries(
-      Array.from({ length: 101 }, (_, i) => [`k${i}`, i]),
-    )
-
     expect(formatConsoleArgs([deep])).toMatchInlineSnapshot(
       `"{ a: { b: { c: [Object] } } }"`,
+    )
+
+    const wide = Object.fromEntries(
+      Array.from({ length: 101 }, (_, i) => [`k${i}`, i]),
     )
     expect(formatConsoleArgs([wide])).toContain('…(1)')
     expect(formatConsoleArgs([wide])).not.toContain('k100')
