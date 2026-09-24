@@ -1,7 +1,11 @@
 import { describe, expect, test, vi } from 'vitest'
 import { isWindows } from '../../../shared/utils'
-import type { Logger } from '../../logger'
-import { getNodeModulesPackageRoot, injectSourcesContent } from '../sourcemap'
+import { createLogger } from '../../logger'
+import {
+  getNodeModulesPackageRoot,
+  injectSourcesContent,
+  type SourceMapLike,
+} from '../sourcemap'
 
 describe('getNodeModulesPackageRoot', () => {
   const cases = [
@@ -72,14 +76,18 @@ describe('getNodeModulesPackageRoot', () => {
 })
 
 describe('injectSourcesContent', () => {
-  const createLogger = () => ({ warnOnce: vi.fn() }) as unknown as Logger
+  function createMockLogger() {
+    const logger = createLogger()
+    logger.warnOnce = vi.fn()
+    return logger
+  }
 
   test('leaves maps with a remote sourceRoot alone', async () => {
-    const map: Parameters<typeof injectSourcesContent>[0] = {
+    const map: SourceMapLike = {
       sources: ['index.ts'],
       sourceRoot: 'https://raw.githubusercontent.com/fb55/domutils/abc123/src/',
     }
-    const logger = createLogger()
+    const logger = createMockLogger()
 
     await injectSourcesContent(
       map,
@@ -92,12 +100,12 @@ describe('injectSourcesContent', () => {
   })
 
   test('does not inject content for remote sources', async () => {
-    const map: Parameters<typeof injectSourcesContent>[0] = {
+    const map: SourceMapLike = {
       sources: [
         'https://raw.githubusercontent.com/fb55/domutils/abc123/src/index.ts',
       ],
     }
-    const logger = createLogger()
+    const logger = createMockLogger()
 
     await injectSourcesContent(
       map,
@@ -106,14 +114,14 @@ describe('injectSourcesContent', () => {
     )
 
     expect(logger.warnOnce).not.toHaveBeenCalled()
-    expect(map.sourcesContent).toEqual([])
+    expect(map.sourcesContent).toStrictEqual([])
   })
 
   test('warns for sources that resolve outside the package', async () => {
-    const map: Parameters<typeof injectSourcesContent>[0] = {
+    const map: SourceMapLike = {
       sources: ['/outside/project/index.ts'],
     }
-    const logger = createLogger()
+    const logger = createMockLogger()
 
     await injectSourcesContent(
       map,
@@ -122,6 +130,6 @@ describe('injectSourcesContent', () => {
     )
 
     expect(logger.warnOnce).toHaveBeenCalledOnce()
-    expect(map.sourcesContent).toEqual([null])
+    expect(map.sourcesContent).toStrictEqual([null])
   })
 })

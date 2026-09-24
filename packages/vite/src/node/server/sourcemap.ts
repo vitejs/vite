@@ -50,7 +50,7 @@ export function getNodeModulesPackageRoot(
 // prefixes used for special handling in esbuildDepPlugin.
 const virtualSourceRE = /^(?:dep:|browser-external:|virtual:)|\0/
 
-interface SourceMapLike {
+export interface SourceMapLike {
   sources: string[]
   sourcesContent?: (string | null)[]
   sourceRoot?: string
