@@ -191,24 +191,8 @@ function stringifyConsoleArg(value: unknown): string {
   if (typeof value === 'string') {
     return value
   }
-  if (
-    typeof value === 'number' ||
-    typeof value === 'boolean' ||
-    typeof value === 'undefined'
-  ) {
-    return String(value)
-  }
-  if (typeof value === 'symbol') {
-    return value.toString()
-  }
-  if (typeof value === 'function') {
-    return value.name ? `[Function: ${value.name}]` : '[Function]'
-  }
   if (value instanceof Error) {
     return value.stack || `${value.name}: ${value.message}`
-  }
-  if (typeof value === 'bigint') {
-    return `${value}n`
   }
 
   try {
