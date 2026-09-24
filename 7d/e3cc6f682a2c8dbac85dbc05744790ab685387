@@ -1,0 +1,21 @@
+packages/vite/src/node/server/index.ts
+  s_cb60eb89bb309a::t_2edaf412cf3321 72,586-600
+packages/vite/src/node/watch.ts
+  s_cb60eb89bb309a::t_d8de8233e5fe13 164-186
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "7de3cc6f682a2c8dbac85dbc05744790ab685387",
+  "prompts": {},
+  "sessions": {
+    "s_cb60eb89bb309a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0d2a9-8382-7392-9560-2e8d88b913bb",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
