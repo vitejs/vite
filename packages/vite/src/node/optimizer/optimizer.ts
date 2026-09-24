@@ -148,11 +148,19 @@ export function createDepsOptimizer(
 
   async function close() {
     closed = true
+
+    // Ensure that a rerun will not be issued
+    if (debounceProcessingHandle) clearTimeout(debounceProcessingHandle)
+    debounceProcessingHandle = undefined
+
     await Promise.allSettled([
       discover?.cancel(),
       depsOptimizer.scanProcessing,
       optimizationResult?.cancel(),
     ])
+
+    depOptimizationProcessing.resolve()
+    resolveEnqueuedProcessingPromises()
   }
 
   async function init() {
@@ -337,11 +345,8 @@ export function createDepsOptimizer(
 
     if (closed) {
       currentlyProcessing = false
-      depOptimizationProcessing.resolve()
-      resolveEnqueuedProcessingPromises()
       return
     }
-
     currentlyProcessing = true
 
     try {
@@ -360,7 +365,6 @@ export function createDepsOptimizer(
       if (closed) {
         currentlyProcessing = false
         processingResult.cancel()
-        resolveEnqueuedProcessingPromises()
         return
       }
 
