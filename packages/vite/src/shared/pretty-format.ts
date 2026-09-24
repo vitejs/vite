@@ -7,7 +7,9 @@
  * heuristics, and option validation.
  *
  * At introduction, this formatter and its forward-console integration added
- * about 2.7 kB raw / 1.0 kB gzip to Vite's client bundle.
+ * about 2.7 kB raw / 1.0 kB gzip to Vite's client bundle, compared with an
+ * estimated 27.6 kB raw / 7.0 kB gzip for a tree-shaken direct dependency on
+ * @vitest/pretty-format.
  *
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  * Copyright (c) 2021-Present VoidZero Inc. and Vitest contributors.
