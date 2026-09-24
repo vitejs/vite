@@ -1,5 +1,14 @@
 /**
- * This file is based on @vitest/pretty-format.
+ * Minimal subset of @vitest/pretty-format for forwarded console objects.
+ *
+ * This keeps its basic/complex printer split, path-based circular reference
+ * tracking, and bounded array/object traversal. It omits plugins, colors,
+ * indentation, specialized collection printers, toJSON calls, output-budget
+ * heuristics, and option validation.
+ *
+ * At introduction, this formatter and its forward-console integration added
+ * about 2.7 kB raw / 1.0 kB gzip to Vite's client bundle.
+ *
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  * Copyright (c) 2021-Present VoidZero Inc. and Vitest contributors.
  * MIT License.
