@@ -8,8 +8,46 @@ export default defineConfig({
     // emit assets as files instead of inlining, for the new-asset HMR test
     assetsInlineLimit: 0,
   },
-  plugins: [waitBundleCompleteUntilAccess(), delayTransformComment()],
+  plugins: [
+    waitBundleCompleteUntilAccess(),
+    waitForLatestBuildOutput(),
+    delayTransformComment(),
+  ],
 })
+
+function waitForLatestBuildOutput(): Plugin {
+  let changeVersion = 0
+  const changeWaiters = new Set<() => void>()
+
+  function notifyChange() {
+    changeVersion++
+    for (const resolve of changeWaiters) resolve()
+    changeWaiters.clear()
+  }
+
+  return {
+    name: 'wait-for-latest-build-output',
+    apply: 'serve',
+    watchChange(id) {
+      if (id.endsWith('/hmr.js')) notifyChange()
+    },
+    configureServer(server) {
+      server.middlewares.use('/__test-change-version', (_req, res) => {
+        res.end(String(changeVersion))
+      })
+      server.middlewares.use('/__test-after-build', async (req, res) => {
+        const url = new URL(req.url ?? '/', 'http://localhost')
+        const previousVersion = Number(url.searchParams.get('after'))
+        if (changeVersion <= previousVersion) {
+          await new Promise<void>((resolve) => changeWaiters.add(resolve))
+        }
+        await server.environments.client.bundledDev!.waitForLatestBuildOutput()
+        server.environments.client.hot.send('test:after-build')
+        res.end()
+      })
+    },
+  }
+}
 
 function waitBundleCompleteUntilAccess(): Plugin {
   let resolvers: PromiseWithResolvers<void>

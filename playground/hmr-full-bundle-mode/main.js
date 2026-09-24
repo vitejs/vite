@@ -40,6 +40,10 @@ document.querySelector('#load-dynamic').addEventListener('click', () => {
 
 import.meta.hot?.accept('./cycle-a.js', () => {})
 
+import.meta.hot?.on('test:after-build', () => {
+  text('.ordered-update', document.querySelector('.hmr').textContent)
+})
+
 function text(el, text) {
   document.querySelector(el).textContent = text
 }

@@ -213,7 +213,7 @@ async function handleMessage(payload: HotPayload) {
       console.debug(`[vite] connected.`)
       break
     case 'bundled-dev-update':
-      bundledDevClient!.handlePush(payload)
+      await bundledDevClient!.handlePush(payload)
       break
     case 'update':
       await activeHmrClient.notifyListeners('vite:beforeUpdate', payload)

@@ -414,10 +414,12 @@ export async function handleHMRUpdate(
   server: ViteDevServer,
 ): Promise<void> {
   const { config } = server
-  const mixedModuleGraph = ignoreDeprecationWarnings(() => server.moduleGraph)
 
   const environmentSnapshot = server.environments
-  const environments = Object.values(environmentSnapshot)
+  const allEnvironments = Object.values(environmentSnapshot)
+  const environments = allEnvironments.filter(
+    (environment) => !environment.config.isBundled,
+  )
   // A plugin hook may restart the server, replacing the environments and
   // invalidating this HMR transaction.
   const isStale = () => server.environments !== environmentSnapshot
@@ -454,7 +456,7 @@ export async function handleHMRUpdate(
 
   // (dev only) the client itself cannot be hot updated.
   if (file.startsWith(withTrailingSlash(normalizedClientDir))) {
-    environments.forEach(({ hot }) =>
+    allEnvironments.forEach(({ hot }) =>
       hot.send({
         type: 'full-reload',
         path: '*',
@@ -464,8 +466,9 @@ export async function handleHMRUpdate(
     return
   }
 
-  if (config.experimental.bundledDev) {
-    // TODO: support handleHotUpdate / hotUpdate
+  // Bundled environments receive file updates from their bundler. The Vite
+  // watcher still drives unbundled environments in a mixed dev server.
+  if (environments.length === 0) {
     return
   }
 
@@ -496,106 +499,108 @@ export async function handleHMRUpdate(
     hotMap.set(environment, { options })
   }
 
-  const mixedMods = new Set(mixedModuleGraph.getModulesByFile(file))
-
-  const mixedHmrContext: HmrContext = {
-    ...contextMeta,
-    modules: [...mixedMods],
-  }
-
-  const contextForHandleHotUpdate = new BasicMinimalPluginContext(
-    { ...basePluginContextMeta, watchMode: true },
-    config.logger,
-  )
   const clientEnvironment = server.environments.client
   const ssrEnvironment = server.environments.ssr
-  const clientContext = clientEnvironment.pluginContainer.minimalContext
-  const clientHotUpdateOptions = hotMap.get(clientEnvironment)!.options
-  const ssrHotUpdateOptions = hotMap.get(ssrEnvironment)?.options
-  try {
-    for (const plugin of getSortedHotUpdatePlugins(clientEnvironment)) {
-      if (plugin.hotUpdate) {
-        const filteredModules = await getHookHandler(plugin.hotUpdate).call(
-          clientContext,
-          clientHotUpdateOptions,
-        )
-        if (isStale()) return
-        if (filteredModules) {
-          clientHotUpdateOptions.modules = filteredModules
-          // Invalidate the hmrContext to force compat modules to be updated
-          mixedHmrContext.modules = mixedHmrContext.modules.filter(
-            (mixedMod) =>
-              filteredModules.some((mod) => mixedMod.id === mod.id) ||
-              ssrHotUpdateOptions?.modules.some(
-                (ssrMod) => ssrMod.id === mixedMod.id,
-              ),
+  const clientHot = hotMap.get(clientEnvironment)
+  if (clientHot) {
+    const mixedModuleGraph = ignoreDeprecationWarnings(() => server.moduleGraph)
+    const mixedMods = new Set(mixedModuleGraph.getModulesByFile(file))
+    const mixedHmrContext: HmrContext = {
+      ...contextMeta,
+      modules: [...mixedMods],
+    }
+    const contextForHandleHotUpdate = new BasicMinimalPluginContext(
+      { ...basePluginContextMeta, watchMode: true },
+      config.logger,
+    )
+    const clientContext = clientEnvironment.pluginContainer.minimalContext
+    const clientHotUpdateOptions = clientHot.options
+    const ssrHotUpdateOptions = hotMap.get(ssrEnvironment)?.options
+    try {
+      for (const plugin of getSortedHotUpdatePlugins(clientEnvironment)) {
+        if (plugin.hotUpdate) {
+          const filteredModules = await getHookHandler(plugin.hotUpdate).call(
+            clientContext,
+            clientHotUpdateOptions,
           )
-          mixedHmrContext.modules.push(
-            ...filteredModules
-              .filter(
-                (mod) =>
-                  !mixedHmrContext.modules.some(
-                    (mixedMod) => mixedMod.id === mod.id,
-                  ),
-              )
-              .map((mod) =>
-                mixedModuleGraph.getBackwardCompatibleModuleNode(mod),
-              ),
-          )
-        }
-      } else if (type === 'update') {
-        warnFutureDeprecation(
-          config,
-          'removePluginHookHandleHotUpdate',
-          `Used in plugin "${plugin.name}".`,
-          false,
-        )
-        // later on, we'll need: if (runtime === 'client')
-        // Backward compatibility with mixed client and ssr moduleGraph
-        const filteredModules = await getHookHandler(
-          plugin.handleHotUpdate!,
-        ).call(contextForHandleHotUpdate, mixedHmrContext)
-        if (isStale()) return
-        if (filteredModules) {
-          mixedHmrContext.modules = filteredModules
-          clientHotUpdateOptions.modules =
-            clientHotUpdateOptions.modules.filter((mod) =>
-              filteredModules.some((mixedMod) => mod.id === mixedMod.id),
+          if (isStale()) return
+          if (filteredModules) {
+            clientHotUpdateOptions.modules = filteredModules
+            // Invalidate the hmrContext to force compat modules to be updated
+            mixedHmrContext.modules = mixedHmrContext.modules.filter(
+              (mixedMod) =>
+                filteredModules.some((mod) => mixedMod.id === mod.id) ||
+                ssrHotUpdateOptions?.modules.some(
+                  (ssrMod) => ssrMod.id === mixedMod.id,
+                ),
             )
-          clientHotUpdateOptions.modules.push(
-            ...(filteredModules
-              .filter(
-                (mixedMod) =>
-                  !clientHotUpdateOptions.modules.some(
-                    (mod) => mod.id === mixedMod.id,
-                  ),
-              )
-              .map((mixedMod) => mixedMod._clientModule)
-              .filter(Boolean) as EnvironmentModuleNode[]),
+            mixedHmrContext.modules.push(
+              ...filteredModules
+                .filter(
+                  (mod) =>
+                    !mixedHmrContext.modules.some(
+                      (mixedMod) => mixedMod.id === mod.id,
+                    ),
+                )
+                .map((mod) =>
+                  mixedModuleGraph.getBackwardCompatibleModuleNode(mod),
+                ),
+            )
+          }
+        } else if (type === 'update') {
+          warnFutureDeprecation(
+            config,
+            'removePluginHookHandleHotUpdate',
+            `Used in plugin "${plugin.name}".`,
+            false,
           )
-          if (ssrHotUpdateOptions) {
-            ssrHotUpdateOptions.modules = ssrHotUpdateOptions.modules.filter(
-              (mod) =>
+          // later on, we'll need: if (runtime === 'client')
+          // Backward compatibility with mixed client and ssr moduleGraph
+          const filteredModules = await getHookHandler(
+            plugin.handleHotUpdate!,
+          ).call(contextForHandleHotUpdate, mixedHmrContext)
+          if (isStale()) return
+          if (filteredModules) {
+            mixedHmrContext.modules = filteredModules
+            clientHotUpdateOptions.modules =
+              clientHotUpdateOptions.modules.filter((mod) =>
                 filteredModules.some((mixedMod) => mod.id === mixedMod.id),
-            )
-            ssrHotUpdateOptions.modules.push(
+              )
+            clientHotUpdateOptions.modules.push(
               ...(filteredModules
                 .filter(
                   (mixedMod) =>
-                    !ssrHotUpdateOptions.modules.some(
+                    !clientHotUpdateOptions.modules.some(
                       (mod) => mod.id === mixedMod.id,
                     ),
                 )
-                .map((mixedMod) => mixedMod._ssrModule)
+                .map((mixedMod) => mixedMod._clientModule)
                 .filter(Boolean) as EnvironmentModuleNode[]),
             )
+            if (ssrHotUpdateOptions) {
+              ssrHotUpdateOptions.modules = ssrHotUpdateOptions.modules.filter(
+                (mod) =>
+                  filteredModules.some((mixedMod) => mod.id === mixedMod.id),
+              )
+              ssrHotUpdateOptions.modules.push(
+                ...(filteredModules
+                  .filter(
+                    (mixedMod) =>
+                      !ssrHotUpdateOptions.modules.some(
+                        (mod) => mod.id === mixedMod.id,
+                      ),
+                  )
+                  .map((mixedMod) => mixedMod._ssrModule)
+                  .filter(Boolean) as EnvironmentModuleNode[]),
+              )
+            }
           }
         }
       }
+    } catch (error) {
+      if (isStale()) return
+      clientHot.error = error
     }
-  } catch (error) {
-    if (isStale()) return
-    hotMap.get(clientEnvironment)!.error = error
   }
 
   for (const environment of environments) {
@@ -623,8 +628,10 @@ export async function handleHMRUpdate(
 
   async function hmr(environment: DevEnvironment) {
     if (isStale()) return
+    const hot = hotMap.get(environment)
+    if (!hot) return
     try {
-      const { options, error } = hotMap.get(environment)!
+      const { options, error } = hot
       if (error) {
         throw error
       }
@@ -666,13 +673,9 @@ export async function handleHMRUpdate(
 
   const hotUpdateEnvironments =
     server.config.server.hotUpdateEnvironments ??
-    ((server, hmr) => {
+    ((_server, hmr) => {
       // Run HMR in parallel for all environments by default
-      return Promise.all(
-        Object.values(server.environments).map((environment) =>
-          hmr(environment),
-        ),
-      )
+      return Promise.all(environments.map((environment) => hmr(environment)))
     })
 
   await hotUpdateEnvironments(server, hmr)

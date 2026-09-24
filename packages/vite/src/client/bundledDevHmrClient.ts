@@ -232,12 +232,13 @@ export class BundledDevHMRClient extends HMRClient {
     return false
   }
 
-  handlePush(payload: BundledDevUpdatePayload): void {
+  handlePush(payload: BundledDevUpdatePayload): Promise<void> {
     this.applyQueue = this.applyQueue
       .then(() => this.applyPush(payload))
       .catch((err) => {
         this.warnFailedUpdate(err, payload.changedIds)
       })
+    return this.applyQueue
   }
 
   invalidateLocally(id: string, message?: string): void {

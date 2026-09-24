@@ -53,3 +53,48 @@ test('does not schedule stale HMR with a custom environment handler', async () =
   })
   expect(hotUpdateEnvironmentsCalls).toBe(0)
 })
+
+test('runs HMR for unbundled environments when the client is bundled', async () => {
+  const hookEnvironments: string[] = []
+  const scheduledEnvironments: string[] = []
+  const server = await createServer({
+    configFile: false,
+    root: import.meta.dirname,
+    logLevel: 'silent',
+    experimental: { bundledDev: true },
+    environments: {
+      rsc: { consumer: 'server' },
+    },
+    server: {
+      middlewareMode: true,
+      watch: null,
+      ws: false,
+      async hotUpdateEnvironments(server, hmr) {
+        for (const environment of Object.values(server.environments)) {
+          scheduledEnvironments.push(environment.name)
+          await hmr(environment)
+        }
+      },
+    },
+    plugins: [
+      {
+        name: 'track-hot-update-environment',
+        hotUpdate() {
+          hookEnvironments.push(this.environment.name)
+        },
+      },
+    ],
+  })
+  onTestFinished(async () => {
+    await server.close()
+  })
+
+  await handleHMRUpdate(
+    'update',
+    path.join(import.meta.dirname, 'fixture.js'),
+    server,
+  )
+
+  expect(hookEnvironments).toEqual(['ssr', 'rsc'])
+  expect(scheduledEnvironments).toEqual(['client', 'ssr', 'rsc'])
+})

@@ -302,6 +302,27 @@ export class BundledDev {
     )
   }
 
+  /**
+   * Wait for pending bundled updates and make their latest full output
+   * available to consumers coordinating work across environments.
+   *
+   * @experimental
+   */
+  async waitForLatestBuildOutput(): Promise<void> {
+    await this.devEngine.ensureLatestBuildOutput()
+    // Rolldown can settle the build before its HMR callback is dispatched.
+    // Let that callback publish the browser update before a server environment
+    // sends an event that depends on the new browser modules.
+    await new Promise<void>((resolve) => setImmediate(resolve))
+    const state = await this.devEngine.getBundleState()
+    if (state.lastBuildErrored) {
+      throw (
+        this.lastBuildError ??
+        new Error('The latest bundled development build failed.')
+      )
+    }
+  }
+
   async triggerBundleRegenerationIfStale(): Promise<boolean> {
     const bundleState = await this.devEngine.getBundleState()
 
