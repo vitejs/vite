@@ -81,10 +81,17 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install pnpm and node ${{ matrix.node_version }}
+      - if: matrix.node_version != '20'
+        name: Install pnpm and node ${{ matrix.node_version }}
         uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3
         with:
           runtime: node@${{ matrix.node_version }}
+          cache: true
+      - if: matrix.node_version == '20' # use node 24 for builds
+        name: Install pnpm and node 24 for builds
+        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3
+        with:
+          runtime: node@24
           cache: true
 
       # Install playwright's binary under custom directory to cache
@@ -118,10 +125,10 @@ jobs:
 
       - if: matrix.node_version == '20'
         name: Set node version to ${{ matrix.node_version }}
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
-        with:
-          node-version: ${{ matrix.node_version }}
-          cache: "pnpm"
+        run: pnpm runtime set node ${{ matrix.node_version }} -g
+      - if: matrix.node_version == '20'
+        name: Check node version
+        run: node -v
 
       - name: Test unit
         run: pnpm run test-unit
