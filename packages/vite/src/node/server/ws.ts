@@ -321,9 +321,14 @@ export function createWebSocketServer(
     emitCustomEvent('vite:client:connect', undefined, socket)
 
     socket.send(JSON.stringify({ type: 'connected' }))
-    if (bufferedMessage) {
-      socket.send(JSON.stringify(bufferedMessage))
-      bufferedMessage = null
+
+    // Send buffered messages (copy and clear immediately to prevent race conditions)
+    if (bufferedMessages.length > 0) {
+      const messagesToSend = bufferedMessages.slice()
+      bufferedMessages = []
+      for (const msg of messagesToSend) {
+        socket.send(JSON.stringify(msg))
+      }
     }
   })
 
@@ -371,16 +376,36 @@ export function createWebSocketServer(
   // connected client.
   // The same thing may happen when the optimizer runs fast enough to
   // finish the bundling before the client connects.
-  let bufferedMessage: ErrorPayload | FullReloadPayload | null = null
+  let bufferedMessages: (ErrorPayload | FullReloadPayload)[] = []
 
   const normalizedHotChannel = normalizeHotChannel(
     {
       send(payload) {
-        if (
-          (payload.type === 'error' || payload.type === 'full-reload') &&
-          !wss.clients.size
-        ) {
-          bufferedMessage = payload
+        if (payload.type === 'error' || payload.type === 'full-reload') {
+          // full-reload invalidates previous errors and redundant full-reloads
+          if (payload.type === 'full-reload') {
+            bufferedMessages = []
+          }
+
+          if (!wss.clients.size) {
+            bufferedMessages.push(payload)
+            return
+          }
+
+          const stringified = JSON.stringify(payload)
+          let sent = false
+          wss.clients.forEach((client) => {
+            // readyState 1 means the connection is open
+            if (client.readyState === 1) {
+              client.send(stringified)
+              sent = true
+            }
+          })
+
+          // Buffer if no client received the message
+          if (!sent) {
+            bufferedMessages.push(payload)
+          }
           return
         }
 
