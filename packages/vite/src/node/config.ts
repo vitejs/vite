@@ -2769,6 +2769,17 @@ interface NodeModuleWithCompile extends NodeModule {
   _compile(code: string, filename: string): any
 }
 
+/**
+ * Whether a filesystem error means "you may not write here" rather than
+ * something that should stop the build. EACCES covers ordinary permissions;
+ * EPERM is what a macOS Seatbelt profile or a Windows ACL returns for the same
+ * situation.
+ */
+function isWriteDenied(e: unknown): boolean {
+  const code = (e as NodeJS.ErrnoException | null)?.code
+  return code === 'EACCES' || code === 'EPERM'
+}
+
 const _require = createRequire(/** #__KEEP__ */ import.meta.url)
 async function loadConfigFromBundledFile(
   fileName: string,
@@ -2796,7 +2807,7 @@ async function loadConfigFromBundledFile(
           recursive: true,
         })
       } catch (e) {
-        if (e.code === 'EACCES') {
+        if (isWriteDenied(e)) {
           // If there is no access permission, a temporary configuration file is created by default.
           viteTempDir = undefined
         } else {
@@ -2805,16 +2816,32 @@ async function loadConfigFromBundledFile(
       }
     }
     const hash = `timestamp-${Date.now()}-${Math.random().toString(16).slice(2)}`
-    const tempFileName = viteTempDir
+    const fallbackFileName = `${fileName}.${hash}.mjs`
+    let tempFileName = viteTempDir
       ? path.resolve(viteTempDir, `${path.basename(fileName)}.${hash}.mjs`)
-      : `${fileName}.${hash}.mjs`
+      : fallbackFileName
 
     // Tell Vite Task to ignore node_modules/.vite-temp or the temp config file,
     // so the read-write of this path doesn't affect the cache fingerprints.
-    const pathToIgnore = viteTempDir ?? tempFileName
-    ignoreInput(pathToIgnore)
-    ignoreOutput(pathToIgnore)
-    await fsp.writeFile(tempFileName, bundledCode)
+    const ignorePath = (pathToIgnore: string) => {
+      ignoreInput(pathToIgnore)
+      ignoreOutput(pathToIgnore)
+    }
+    ignorePath(viteTempDir ?? tempFileName)
+
+    try {
+      await fsp.writeFile(tempFileName, bundledCode)
+    } catch (e) {
+      // mkdir succeeds on a directory that already exists, so a node_modules
+      // that cannot be written to is only discovered here. Fall back to where an
+      // unwritable mkdir would have put the file.
+      if (!viteTempDir || !isWriteDenied(e)) {
+        throw e
+      }
+      tempFileName = fallbackFileName
+      ignorePath(tempFileName)
+      await fsp.writeFile(tempFileName, bundledCode)
+    }
     try {
       return (await import(pathToFileURL(tempFileName).href)).default
     } finally {
