@@ -1,8 +1,16 @@
 import net from 'node:net'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { isBundledDev, isServe, isWindows, viteTestUrl } from '~utils'
+import { isBundledDev, isServe, isWindows, page, viteTestUrl } from '~utils'
 import './commonTests'
+
+describe.runIf(isServe)('safe module paths', () => {
+  test('keeps root-relative module URLs separate from absolute filesystem paths', async () => {
+    await expect
+      .poll(() => page.textContent('.safe-module-path-status'))
+      .toBe('403')
+  })
+})
 
 describe.runIf(isServe)('invalid request', () => {
   const sendRawRequest = async (baseUrl: string, requestTarget: string) => {
