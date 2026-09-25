@@ -1098,6 +1098,32 @@ describe('mergeConfig', () => {
     expect(mergedConfig.server.hmr).toBeTruthy()
   })
 
+  test('does not warn about ignored `server.hmr.server` during preview', async () => {
+    const warnFn = vi.fn()
+    const originalWarn = console.warn
+    console.warn = warnFn
+    try {
+      await resolveConfig(
+        {
+          configFile: false,
+          server: {
+            ws: false,
+            hmr: {
+              server: http.createServer(),
+            },
+          },
+        } as InlineConfig,
+        'serve',
+        'production',
+        'production',
+        true,
+      )
+    } finally {
+      console.warn = originalWarn
+    }
+    expect(warnFn).not.toHaveBeenCalled()
+  })
+
   test('resolveConfig properly syncs hmr and ws', async () => {
     const config = await resolveConfig(
       {
@@ -1120,6 +1146,130 @@ describe('mergeConfig', () => {
 
     expect(config.server.ws.host).toBe('new-host.com')
     expect(config.server.hmr.host).toBe('new-host.com')
+  })
+
+  test('warns when `server.hmr.server` is ignored due to `server.ws: false`', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const trace = vi.spyOn(console, 'trace').mockImplementation(() => {})
+
+    try {
+      // a fresh module instance has a fresh "already warned" state
+      vi.resetModules()
+      const { resolveConfig } = await import('../config')
+      await resolveConfig(
+        {
+          configFile: false,
+          customLogger: createLogger('silent'),
+          server: {
+            ws: false,
+            hmr: {
+              server: http.createServer(),
+            },
+          },
+        },
+        'serve',
+      )
+
+      const reported = [...warn.mock.calls, ...trace.mock.calls]
+        .map((args) => String(args[0]))
+        .filter((message) => message.includes('`server.hmr.server` is ignored'))
+
+      expect(reported).toHaveLength(1)
+    } finally {
+      warn.mockRestore()
+      trace.mockRestore()
+    }
+  })
+
+  test('does not warn for `server.hmr` options that `server.ws: false` implies are ignored', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    try {
+      vi.resetModules()
+      const { resolveConfig } = await import('../config')
+      await resolveConfig(
+        {
+          configFile: false,
+          customLogger: createLogger('silent'),
+          server: {
+            ws: false,
+            hmr: {
+              host: 'test-host.com',
+              port: 4000,
+            },
+          },
+        },
+        'serve',
+      )
+
+      const reported = warn.mock.calls
+        .map((args) => String(args[0]))
+        .filter((message) => message.includes('is ignored'))
+
+      expect(reported).toHaveLength(0)
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  test('does not warn when `server.hmr` has no HMR server', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    try {
+      vi.resetModules()
+      const { resolveConfig } = await import('../config')
+      await resolveConfig(
+        {
+          configFile: false,
+          customLogger: createLogger('silent'),
+          server: {
+            ws: false,
+            hmr: {
+              overlay: false,
+            },
+          },
+        },
+        'serve',
+      )
+
+      const reported = warn.mock.calls
+        .map((args) => String(args[0]))
+        .filter((message) => message.includes('is ignored'))
+
+      expect(reported).toHaveLength(0)
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  test('does not warn for `server.hmr.server` on build', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    try {
+      vi.resetModules()
+      const { resolveConfig } = await import('../config')
+      await resolveConfig(
+        {
+          configFile: false,
+          customLogger: createLogger('silent'),
+          server: {
+            ws: false,
+            hmr: {
+              server: http.createServer(),
+            },
+          },
+        },
+        'build',
+      )
+
+      const reported = warn.mock.calls
+        .map((args) => String(args[0]))
+        .filter((message) => message.includes('is ignored'))
+
+      expect(reported).toHaveLength(0)
+    } finally {
+      warn.mockRestore()
+    }
   })
 
   describe('later plugin can read `rollupOptions` set via `rolldownOptions` in earlier plugin', () => {

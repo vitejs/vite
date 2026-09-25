@@ -1920,7 +1920,13 @@ export async function resolveConfig(
       : ''
 
   const input = normalizeInput(config.input)
-  const server = await resolveServerOptions(resolvedRoot, config.server, logger)
+  const server = await resolveServerOptions(
+    resolvedRoot,
+    config.server,
+    logger,
+    command,
+    isPreview,
+  )
 
   const builder = resolveBuilderOptions(config.builder)
 

@@ -1258,6 +1258,8 @@ export async function resolveServerOptions(
   root: string,
   raw: ServerOptions | undefined,
   logger: Logger,
+  command: 'build' | 'serve' = 'serve',
+  isPreview = false,
 ): Promise<ResolvedServerOptions> {
   const _server = mergeWithDefaults(
     {
@@ -1268,7 +1270,7 @@ export async function resolveServerOptions(
     raw ?? {},
   )
 
-  setupHmrWsOptionCompat(_server)
+  setupHmrWsOptionCompat(_server, command, isPreview)
 
   const workspaceRoot = searchForWorkspaceRoot(root)
   const server: ResolvedServerOptions = {
