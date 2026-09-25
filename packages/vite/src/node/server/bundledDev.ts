@@ -9,7 +9,10 @@ import {
 } from 'rolldown/experimental'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
 import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
-import { getHmrImplementation } from '../plugins/clientInjections'
+import {
+  getHmrImplementation,
+  getRolldownDevRuntimeFiles,
+} from '../plugins/clientInjections'
 import { createDebugger, formatAndTruncateFileList } from '../utils'
 import { convertToDevWatchOptions } from '../watch'
 import type { DevEnvironment } from './environment'
@@ -60,7 +63,8 @@ export class MemoryFiles {
 
 export class BundledDev {
   private _devEngine!: DevEngine
-  private viteRuntime?: string
+  /** the vite client and the rolldown runtime; set before the first build so `hasBuildOutput` can count them */
+  private staticFiles = new Map<string, MemoryFile>()
   private initialBuildCompleted = false
   private _closed = false
   private clients = new Clients()
@@ -107,17 +111,14 @@ export class BundledDev {
   private pendingPayloadFilenames = new Set<string>()
 
   get hasBuildOutput(): boolean {
-    return (
-      this.memoryFiles.size > 1 ||
-      (this.memoryFiles.size === 1 &&
-        !this.memoryFiles.has(BUNDLED_DEV_CLIENT_FILENAME))
-    )
+    return this.memoryFiles.size > this.staticFiles.size
   }
 
   async listen(): Promise<void> {
     this._closed = false
     debug?.('INITIAL: setup bundle options')
     const rolldownOptions = await this.getRolldownOptions()
+    await this.storeStaticFiles()
     // NOTE: only single outputOptions is supported here
     if (
       Array.isArray(rolldownOptions.output) &&
@@ -262,10 +263,6 @@ export class BundledDev {
         debug?.('INITIAL: run error', e)
       },
     )
-    this.viteRuntime = await getHmrImplementation(
-      this.environment.getTopLevelConfig(),
-    )
-    this.storeOutputFiles([])
     this.waitForInitialBuildFinish().then(() => {
       if (this._closed) return
       debug?.('INITIAL: build done')
@@ -373,14 +370,27 @@ export class BundledDev {
     this.initialBuildCompleted = false
   }
 
+  private async storeStaticFiles(): Promise<void> {
+    const sources = new Map<string, string>([
+      [
+        BUNDLED_DEV_CLIENT_FILENAME,
+        await getHmrImplementation(this.environment.getTopLevelConfig()),
+      ],
+      ...getRolldownDevRuntimeFiles(),
+    ])
+    this.staticFiles.clear()
+    for (const [fileName, source] of sources) {
+      const file = {
+        source,
+        etag: getEtag(Buffer.from(source), { weak: true }),
+      }
+      this.staticFiles.set(fileName, file)
+      this.memoryFiles.set(fileName, file)
+    }
+  }
+
   private storeOutputFiles(output: RolldownOutput['output'][number][]): void {
     // NOTE: don't clear memoryFiles here as incremental build reuses the files
-    if (this.viteRuntime) {
-      this.memoryFiles.set(BUNDLED_DEV_CLIENT_FILENAME, {
-        source: this.viteRuntime,
-        etag: getEtag(Buffer.from(this.viteRuntime), { weak: true }),
-      })
-    }
     for (const outputFile of output) {
       this.memoryFiles.set(outputFile.fileName, () => {
         const source =
