@@ -1,0 +1,5 @@
+@import '~layers-hook/hook-nested.css';
+
+.user-resolver-hook {
+  color: blue;
+}
