@@ -25,4 +25,18 @@ describe.runIf(isBuild)('build', () => {
       /link rel="stylesheet".*?href=".*?\/assets\/hello-[-\w]{8}\.css"/,
     )
   })
+
+  test('does not re-preload a chunk already preloaded by the HTML', async () => {
+    const chunkPreloads = () =>
+      page.$$eval('link[rel="modulepreload"]', (links) =>
+        links
+          .map((l) => (l as HTMLLinkElement).href)
+          .filter((href) => /\/assets\/chunk-[-\w]{8}\.js$/.test(href)),
+      )
+    expect(await chunkPreloads()).toHaveLength(1)
+
+    await page.click('#about .load')
+    await page.waitForSelector('#about output')
+    expect(await chunkPreloads()).toHaveLength(1)
+  })
 })

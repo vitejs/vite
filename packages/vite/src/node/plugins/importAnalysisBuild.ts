@@ -123,7 +123,9 @@ function preload(
     Promise.resolve()
   // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
   if (__VITE_IS_MODERN__ && deps && deps.length > 0) {
-    const links = document.getElementsByTagName('link')
+    const preloadedHref = new Set<string>()
+    const preloadedStyleHref = new Set<string>()
+    let scannedLinks = false
     const cspNonceMeta = document.querySelector<HTMLMetaElement>(
       'meta[property=csp-nonce]',
     )
@@ -163,18 +165,26 @@ function preload(
           dep = assetsURL(dep, importerUrl)
           dep = importMetaResolve(dep)
           if (dep in seen) return
+          if (!scannedLinks) {
+            scannedLinks = true
+            const links = document.getElementsByTagName('link')
+            for (let i = links.length - 1; i >= 0; i--) {
+              const link = links[i]
+              // The `links[i].href` is an absolute URL thanks to browser doing the work
+              // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
+              preloadedHref.add(link.href)
+              if (link.rel === 'stylesheet') {
+                preloadedStyleHref.add(link.href)
+              }
+            }
+          }
           seen[dep] = true
           const isCss = dep.endsWith('.css')
 
           // check if the file is already preloaded by SSR markup
           // `dep` is already converted to an absolute URL by the `assetsURL` function
-          for (let i = links.length - 1; i >= 0; i--) {
-            const link = links[i]
-            // The `links[i].href` is an absolute URL thanks to browser doing the work
-            // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
-            if (link.href === dep && (!isCss || link.rel === 'stylesheet')) {
-              return
-            }
+          if (isCss ? preloadedStyleHref.has(dep) : preloadedHref.has(dep)) {
+            return
           }
 
           const link = document.createElement('link')
