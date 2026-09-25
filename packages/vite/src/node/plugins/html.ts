@@ -33,6 +33,7 @@ import {
   encodeURIPath,
   generateCodeFrame,
   getHash,
+  htmlExtensionRE,
   isCSSRequest,
   isDataUrl,
   isExternalUrl,
@@ -65,7 +66,6 @@ const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
 // Do not allow preceding '.', but do allow preceding '...' for spread operations
 const inlineImportRE =
   /(?<!(?<!\.\.)\.)\bimport\s*\(("(?:[^"]|(?<=\\)")*"|'(?:[^']|(?<=\\)')*')\)/dg
-const htmlLangRE = /\.(?:html|htm)$/
 const spaceRe = /[\t\n\f\r ]/
 
 const importMapRE =
@@ -80,9 +80,6 @@ const importMapAppendRE = new RegExp(
 )
 
 export const isHTMLProxy = (id: string): boolean => isHtmlProxyRE.test(id)
-
-export const isHTMLRequest = (request: string): boolean =>
-  htmlLangRE.test(request)
 
 // HTML Proxy Caches are stored by config -> filePath -> index
 export const htmlProxyMap: WeakMap<
@@ -452,7 +449,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     },
 
     transform: {
-      filter: { id: /\.html$/ },
+      filter: { id: htmlExtensionRE },
       async handler(html, id) {
         id = normalizePath(id)
         const relativeUrlPath = normalizePath(path.relative(config.root, id))
