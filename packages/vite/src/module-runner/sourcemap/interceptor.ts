@@ -1,5 +1,5 @@
 import type { OriginalMapping } from '@jridgewell/trace-mapping'
-import { slash } from '../../shared/utils'
+import { decodeSourceURL, slash } from '../../shared/utils'
 import type { EvaluatedModules } from '../evaluatedModules'
 import type { ModuleRunner } from '../runner'
 import { decodeBase64, posixDirname, posixResolve } from '../utils'
@@ -102,11 +102,12 @@ function supportRelativeURL(file: string, url: string) {
 }
 
 function getRunnerSourceMap(position: OriginalMapping): CachedMapEntry | null {
+  const id = decodeSourceURL(position.source!)
   for (const moduleGraph of evaluatedModulesCache) {
-    const sourceMap = moduleGraph.getModuleSourceMapById(position.source!)
+    const sourceMap = moduleGraph.getModuleSourceMapById(id)
     if (sourceMap) {
       return {
-        url: position.source,
+        url: id,
         map: sourceMap,
         vite: true,
       }

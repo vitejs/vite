@@ -28,6 +28,24 @@ test('call rewriteStacktrace twice', async () => {
   }
 })
 
+test('rewrites stacktrace when the module path contains a space', async () => {
+  const server = await createDevServer()
+  const mod = await server.ssrLoadModule(
+    '/fixtures/modules/with space/has-error.js',
+  )
+  try {
+    mod.main()
+    expect.unreachable()
+  } catch (e: any) {
+    server.ssrFixStacktrace(e)
+    expect(
+      e.stack.split('\n')[1].replace(root, '<root>').replaceAll('\\', '/'),
+    ).toBe(
+      '    at Module.main (<root>fixtures/modules/with space/has-error.js:2:9)',
+    )
+  }
+})
+
 test('outputs message when stacktrace appears to be already rewritten', async () => {
   const server = await createDevServer()
   try {
