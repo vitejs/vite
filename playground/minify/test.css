@@ -4,3 +4,11 @@ h1 {
   /* do not minify as red text */
   color: #ff0000;
 }
+
+body {
+  h1 {
+    div[id*='app'] & {
+      color: red;
+    }
+  }
+}

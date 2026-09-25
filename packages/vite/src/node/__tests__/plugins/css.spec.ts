@@ -3,8 +3,10 @@ import MagicString from 'magic-string'
 import type { InternalModuleFormat } from 'rolldown'
 import { describe, expect, test } from 'vitest'
 import { PartialEnvironment } from '../../baseEnvironment'
+import { build } from '../../build'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
+import { createLogger } from '../../logger'
 import {
   convertTargets,
   createCSSResolvers,
@@ -879,4 +881,86 @@ console.log("foo");`,
       injectCSS();"
     `)
   })
+})
+
+describe('CSS minify warning sources', () => {
+  test.each([
+    [true, 'a { color: blue; }', false],
+    [false, 'a { color: blue; }', false],
+    [true, 'a { content: "你好"; }\n', false],
+    [false, 'a { content: "你好"; }', false],
+    [false, 'a { color: blue; }', true],
+    [true, 'a { color: blue; }', false, true],
+    [false, 'a { color: blue; }', false, true],
+    [true, 'a { background: url(/favicon.svg); }', false],
+    [false, 'a { background: url(/favicon.svg); }', false],
+    [false, 'a { content: "你好"; }\n', true],
+  ])(
+    'maps concatenated modules (cssCodeSplit=%s, prefix=%s, dynamic=%s)',
+    async (cssCodeSplit, prefix, dynamic, hoist = false) => {
+      const warnings: string[] = []
+      const logger = createLogger('silent')
+      logger.warn = (message) => warnings.push(message)
+      const warningCss = "body { h1 { div[id*='app'] & { color: red; } } }"
+
+      await build({
+        configFile: false,
+        base: './',
+        publicDir: path.resolve(
+          dirname,
+          '../fixtures/public-dir-write-false/public',
+        ),
+        logLevel: 'silent',
+        customLogger: logger,
+        build: {
+          write: false,
+          cssMinify: 'esbuild',
+          cssTarget: 'chrome87',
+          cssCodeSplit,
+          rolldownOptions: { input: 'entry.js' },
+        },
+        plugins: [
+          {
+            name: 'css-warning-sources',
+            resolveId(id) {
+              if (
+                ['entry.js', 'second.js', 'first.css', 'second.css'].includes(
+                  id,
+                )
+              )
+                return '\0' + id
+            },
+            load(id) {
+              if (id === '\0entry.js')
+                return dynamic
+                  ? "import 'first.css'; import('second.js')"
+                  : "import 'first.css'; import 'second.css'"
+              if (id === '\0second.js') return "import 'second.css'"
+              if (id === '\0first.css') return prefix
+              if (id === '\0second.css') {
+                return hoist
+                  ? '@import "https://example.test/external.css";\n' +
+                      warningCss
+                  : warningCss
+              }
+            },
+          },
+        ],
+      })
+
+      const warning = warnings.find((message) =>
+        message.includes('unsupported-css-nesting'),
+      )
+      if (hoist) {
+        expect(warning).toContain(cssCodeSplit ? 'entry.css:' : 'style.css:')
+        expect(warning).not.toContain('first.css')
+        expect(warning).not.toContain('second.css')
+        return
+      }
+      expect(warning).toContain('second.css:1:27:')
+      expect(warning).toContain(warningCss)
+      expect(warning).not.toContain('first.css')
+      expect(warning).not.toContain(prefix)
+    },
+  )
 })

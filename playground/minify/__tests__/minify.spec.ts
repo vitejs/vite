@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { expect, test } from 'vitest'
-import { isBuild, readFile, testDir } from '~utils'
+import { isBuild, readFile, serverLogs, testDir } from '~utils'
 
 test.runIf(isBuild)('no minifySyntax', () => {
   const assetsDir = path.resolve(testDir, 'dist/assets')
@@ -30,4 +30,8 @@ test.runIf(isBuild)('escapes closing style tags with esbuild', () => {
   expect(readFile('dist/index.html')).toContain(
     '<style>.escaped-closing-style{content:"<\\/style>"}</style>',
   )
+})
+
+test.runIf(isBuild)('css minify warnings include source file names', () => {
+  expect(serverLogs.join('\n')).toContain('test.css')
 })
