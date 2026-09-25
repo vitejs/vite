@@ -5,7 +5,7 @@ import { cleanUrl } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
 import {
   BUNDLED_DEV_CLIENT_ENTRY,
-  BUNDLED_DEV_ROLLDOWN_RUNTIME_DIR,
+  BUNDLED_DEV_ROLLDOWN_RUNTIME_FILENAME,
   CLIENT_ENTRY,
   ENV_ENTRY,
 } from '../constants'
@@ -159,40 +159,18 @@ export async function getHmrImplementation(
       .replace(
         new RegExp(`(from\\s*['"])${ROLLDOWN_DEV_RUNTIME_ENTRY}(['"])`),
         (_, before, after) =>
-          `${before}${path.posix.join(
-            config.base,
-            BUNDLED_DEV_ROLLDOWN_RUNTIME_DIR,
-            path.basename(rolldownDevRuntimeEntryPath()),
-          )}${after}`,
+          `${before}${path.posix.join(config.base, BUNDLED_DEV_ROLLDOWN_RUNTIME_FILENAME)}${after}`,
       )
   )
 }
 
-function rolldownDevRuntimeEntryPath(): string {
-  return fileURLToPath(import.meta.resolve(ROLLDOWN_DEV_RUNTIME_ENTRY))
-}
-
 /**
  * The dev runtime must match the rolldown that generates the bundle, so it is read from the
- * installed package at serve time instead of being bundled into the client. The entry imports
- * its helper file with a relative path, so both are served under the same directory.
+ * installed package at serve time instead of being bundled into the client.
  */
-export function getRolldownDevRuntimeFiles(): Map<string, string> {
-  const entry = rolldownDevRuntimeEntryPath()
-  const dir = path.dirname(entry)
-  const files = new Map<string, string>()
-  for (const name of fs.readdirSync(dir)) {
-    if (name.startsWith('experimental-runtime') && name.endsWith('.mjs')) {
-      files.set(
-        `${BUNDLED_DEV_ROLLDOWN_RUNTIME_DIR}/${name}`,
-        fs.readFileSync(path.join(dir, name), 'utf-8'),
-      )
-    }
-  }
-  if (
-    !files.has(`${BUNDLED_DEV_ROLLDOWN_RUNTIME_DIR}/${path.basename(entry)}`)
-  ) {
-    throw new Error(`rolldown dev runtime entry ${entry} was not found`)
-  }
-  return files
+export function getRolldownDevRuntime(): string {
+  return fs.readFileSync(
+    fileURLToPath(import.meta.resolve(ROLLDOWN_DEV_RUNTIME_ENTRY)),
+    'utf-8',
+  )
 }
