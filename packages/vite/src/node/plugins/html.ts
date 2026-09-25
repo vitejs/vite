@@ -58,7 +58,7 @@ interface ScriptAssetsUrl {
 }
 
 const htmlProxyRE =
-  /[?&]html-proxy=?(?:&inline-css)?(?:&style-attr)?&index=(\d+)\.(?:js|css)$/
+  /[?&]html-proxy=?(?:&inline-css)?(?:&style-attr)?&index=(\d+)(?:&h=[a-z0-9]+)?\.(?:js|css)$/
 const isHtmlProxyRE = /[?&]html-proxy\b/
 
 const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
@@ -608,7 +608,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
                     code: contents,
                   })
-                  js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.js"`
+                  // include a content hash in the proxy id so that editing the
+                  // inline script is detected as a change by the bundler
+                  js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}&h=${getHash(contents)}.js"`
                   shouldRemove = true
                 }
 
@@ -723,7 +725,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const filePath = id.replace(normalizePath(config.root), '')
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
             // will transform with css plugin and cache result with css-post plugin
-            js += `\nimport "${id}?html-proxy&inline-css&style-attr&index=${inlineModuleIndex}.css"`
+            js += `\nimport "${id}?html-proxy&inline-css&style-attr&index=${inlineModuleIndex}&h=${getHash(code)}.css"`
             const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             overwriteAttrValue(
@@ -742,7 +744,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
               code: styleNode.value,
             })
-            js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
+            js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}&h=${getHash(styleNode.value)}.css"`
             const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             s.update(
