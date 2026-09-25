@@ -273,6 +273,10 @@ export interface DepOptimizationMetadata {
    * OptimizedDepInfo list
    */
   depInfoList: OptimizedDepInfo[]
+  /**
+   * Directories and files to watch for changes
+   */
+  watchFiles?: string[]
 }
 
 /**
@@ -729,6 +733,29 @@ export function runOptimizeDeps(
           }
         }
 
+        // Gather directories of linked monorepo packages to watch for changes
+        metadata.watchFiles ??= []
+        for (const depInfo of Object.values(metadata.optimized)) {
+          if (depInfo.src) {
+            try {
+              const realPath = fs.realpathSync(depInfo.src)
+              if (!realPath.includes('node_modules')) {
+                const pkgPath = lookupFile(path.dirname(realPath), [
+                  'package.json',
+                ])
+                if (pkgPath) {
+                  const pkgDir = path.dirname(pkgPath)
+                  if (!metadata.watchFiles.includes(pkgDir)) {
+                    metadata.watchFiles.push(pkgDir)
+                  }
+                }
+              }
+            } catch (_e) {
+              // Ignore
+            }
+          }
+        }
+
         clearTimeout(bundleTimer)
 
         debug?.(
@@ -1015,15 +1042,22 @@ function parseDepsOptimizerMetadata(
   jsonMetadata: string,
   depsCacheDir: string,
 ): DepOptimizationMetadata | undefined {
-  const { hash, lockfileHash, configHash, browserHash, optimized, chunks } =
-    JSON.parse(jsonMetadata, (key: string, value: string) => {
-      // Paths can be absolute or relative to the deps cache dir where
-      // the _metadata.json is located
-      if (key === 'file' || key === 'src') {
-        return normalizePath(path.resolve(depsCacheDir, value))
-      }
-      return value
-    })
+  const {
+    hash,
+    lockfileHash,
+    configHash,
+    browserHash,
+    optimized,
+    chunks,
+    watchFiles,
+  } = JSON.parse(jsonMetadata, (key: string, value: string) => {
+    // Paths can be absolute or relative to the deps cache dir where
+    // the _metadata.json is located
+    if (key === 'file' || key === 'src') {
+      return normalizePath(path.resolve(depsCacheDir, value))
+    }
+    return value
+  })
   if (
     !chunks ||
     Object.values(optimized).some((depInfo: any) => !depInfo.fileHash)
@@ -1040,6 +1074,7 @@ function parseDepsOptimizerMetadata(
     discovered: {},
     chunks: {},
     depInfoList: [],
+    watchFiles: watchFiles || [],
   }
   for (const id of Object.keys(optimized)) {
     addOptimizedDepInfo(metadata, 'optimized', {
@@ -1069,14 +1104,22 @@ function stringifyDepsOptimizerMetadata(
   metadata: DepOptimizationMetadata,
   depsCacheDir: string,
 ) {
-  const { hash, configHash, lockfileHash, browserHash, optimized, chunks } =
-    metadata
+  const {
+    hash,
+    configHash,
+    lockfileHash,
+    browserHash,
+    optimized,
+    chunks,
+    watchFiles,
+  } = metadata
   return JSON.stringify(
     {
       hash,
       configHash,
       lockfileHash,
       browserHash,
+      watchFiles,
       optimized: Object.fromEntries(
         Object.values(optimized).map(
           ({ id, src, file, fileHash, needsInterop, isDynamicEntry }) => [
