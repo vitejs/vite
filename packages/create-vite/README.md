@@ -79,6 +79,17 @@ Currently supported template presets include:
 
 You can use `.` for the project name to scaffold in the current directory.
 
+## Command Line Options
+
+| Option | Description |
+| --- | --- |
+| `-t, --template <name>` | Use a specific template |
+| `-i, --immediate` / `--no-immediate` | Install dependencies and start dev server immediately |
+| `--eslint` / `--no-eslint` | Use ESLint instead of Oxlint (only for React templates) |
+| `--overwrite` | Remove existing files if target directory is not empty |
+| `--interactive` / `--no-interactive` | Force interactive / non-interactive mode |
+| `-h, --help` | Display help message |
+
 ## Community Templates
 
 create-vite is a tool to quickly start a project from a basic template for popular frameworks. Check out Awesome Vite for [community maintained templates](https://github.com/vitejs/awesome-vite#templates) that include other tools or target different frameworks. You can use a tool like [tiged](https://github.com/tiged/tiged) to scaffold your project with one of the templates.
