@@ -7,6 +7,7 @@ import { type Logger, createLogger } from '../../logger'
 import type { Plugin } from '../../plugin'
 import { preview } from '../../preview'
 import { createServer } from '../../server'
+import { DevEnvironment } from '../../server/environment'
 
 const resolveConfigWithPlugin = (
   plugin: Plugin,
@@ -446,22 +447,26 @@ describe('watcher add/unlink error handling', () => {
     expect(logError).toHaveBeenCalledWith(error)
   })
 
-  test("'error' event during server creation logs warning instead of crashing", async () => {
+  test("'error' event during environment initialization logs warning instead of crashing", async () => {
     const error = Object.assign(new Error('watch failed'), { code: 'EBUSY' })
 
     const logWarn = vi.fn()
     const logger = createLogger('error')
     logger.warn = logWarn
 
-    await createServerWithPlugin(
-      {
-        name: 'test',
-        configureServer(server) {
-          expect(() => server.watcher.emit('error', error)).not.toThrow()
-        },
-      },
-      logger,
-    )
+    const init = DevEnvironment.prototype.init
+    const initSpy = vi
+      .spyOn(DevEnvironment.prototype, 'init')
+      .mockImplementation(function (options) {
+        const watcher = options?.watcher
+        if (this.name === 'client' && watcher) {
+          expect(() => watcher.emit('error', error)).not.toThrow()
+        }
+        return init.call(this, options)
+      })
+    onTestFinished(() => initSpy.mockRestore())
+
+    await createServerWithPlugin({ name: 'test' }, logger)
 
     expect(logWarn).toHaveBeenCalledWith(
       expect.stringContaining('file watcher error: watch failed'),

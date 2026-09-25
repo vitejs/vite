@@ -597,6 +597,10 @@ export async function _createServer(
       ) as FSWatcher)
     : createNoopWatcher(resolvedWatchOptions)
 
+  watcher.on('error', (error: Error) => {
+    config.logger.warn(colors.yellow(`file watcher error: ${error.message}`))
+  })
+
   const environments: Record<string, DevEnvironment> = {}
 
   await Promise.all(
@@ -966,13 +970,6 @@ export async function _createServer(
   })
   watcher.on('unlink', (file) => {
     onFileAddUnlink(file, true).catch((e) => server.config.logger.error(e))
-  })
-  watcher.on('error', (error: Error) => {
-    // A single unwatchable path (e.g. EBUSY on a briefly locked file)
-    // must not crash the dev server with an uncaught 'error' event.
-    server.config.logger.warn(
-      colors.yellow(`file watcher error: ${error.message}`),
-    )
   })
 
   if (!middlewareMode && httpServer) {
