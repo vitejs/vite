@@ -6,7 +6,7 @@ import { resolveConfig } from '../../config'
 import { type Logger, createLogger } from '../../logger'
 import type { Plugin } from '../../plugin'
 import { preview } from '../../preview'
-import { createServer } from '../../server'
+import { type ViteDevServer, createServer } from '../../server'
 
 const resolveConfigWithPlugin = (
   plugin: Plugin,
@@ -581,6 +581,63 @@ describe('closeServer hook', () => {
 
     await server.close()
   })
+})
+
+describe('failed restart cleanup', () => {
+  test.each([false, true])(
+    'closes the replacement when old shutdown fails (cleanup fails: %s)',
+    async (cleanupFails) => {
+      expect.assertions(4)
+      const restartError = new Error('old shutdown failed')
+      const cleanupError = new Error('replacement cleanup failed')
+      const cleanupRelease = promiseWithResolvers<void>()
+      const servers: ViteDevServer[] = []
+      const closeWatchers: ReturnType<typeof vi.spyOn>[] = []
+      let cleanupStarted = false
+      let restartSettled = false
+      onTestFinished(async () => {
+        cleanupRelease.resolve()
+        await Promise.allSettled(servers.map((server) => server.close()))
+      })
+      const server = await createServer({
+        configFile: false,
+        root: import.meta.dirname,
+        logLevel: 'silent',
+        server: { middlewareMode: true, ws: false },
+        plugins: [
+          {
+            name: 'failed-restart',
+            configureServer(currentServer) {
+              servers.push(currentServer)
+              closeWatchers.push(vi.spyOn(currentServer.watcher, 'close'))
+            },
+            async closeServer({ reason }) {
+              if (reason === 'restart') throw restartError
+              cleanupStarted = true
+              await cleanupRelease.promise
+              if (cleanupFails) throw cleanupError
+            },
+          },
+        ],
+      })
+      const failure = server.restart().catch((error: unknown) => {
+        restartSettled = true
+        return error
+      })
+      await vi.waitUntil(() => cleanupStarted)
+      expect(servers).toHaveLength(2)
+      expect(closeWatchers[1]).toHaveBeenCalledOnce()
+      expect(restartSettled).toBe(false)
+      cleanupRelease.resolve()
+      if (cleanupFails) {
+        expect(await failure).toMatchObject({
+          errors: [restartError, cleanupError],
+        })
+      } else {
+        expect(await failure).toBe(restartError)
+      }
+    },
+  )
 })
 
 describe('closePreviewServer hook', () => {
