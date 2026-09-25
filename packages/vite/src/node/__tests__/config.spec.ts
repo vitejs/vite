@@ -1074,28 +1074,35 @@ describe('mergeConfig', () => {
   })
 
   test('`mergeConfig` does not crash when `server.ws` is false and `server.hmr` is merged', () => {
-    const baseConfig = defineConfig({
-      server: {
-        ws: false,
-        hmr: {
-          host: 'localhost',
+    // `server.hmr.host` is ignored here and reported by the warning covered in the
+    // test below. Silence it so it does not consume that warning's per-key dedupe.
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const baseConfig = defineConfig({
+        server: {
+          ws: false,
+          hmr: {
+            host: 'localhost',
+          },
         },
-      },
-    })
+      })
 
-    const newConfig = defineConfig({
-      server: {
-        hmr: {
-          port: 5173,
+      const newConfig = defineConfig({
+        server: {
+          hmr: {
+            port: 5173,
+          },
         },
-      },
-    })
+      })
 
-    const mergedConfig = mergeConfig(baseConfig, newConfig)
+      const mergedConfig = mergeConfig(baseConfig, newConfig)
 
-    expect(mergedConfig.server.ws).toBe(false)
-    expect(mergedConfig.server.hmr).toBeTypeOf('object')
-    expect(mergedConfig.server.hmr).toBeTruthy()
+      expect(mergedConfig.server.ws).toBe(false)
+      expect(mergedConfig.server.hmr).toBeTypeOf('object')
+      expect(mergedConfig.server.hmr).toBeTruthy()
+    } finally {
+      warn.mockRestore()
+    }
   })
 
   test('resolveConfig properly syncs hmr and ws', async () => {
@@ -1120,6 +1127,71 @@ describe('mergeConfig', () => {
 
     expect(config.server.ws.host).toBe('new-host.com')
     expect(config.server.hmr.host).toBe('new-host.com')
+  })
+
+  test('warns when `server.hmr` WebSocket options are ignored due to `server.ws: false`', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const trace = vi.spyOn(console, 'trace').mockImplementation(() => {})
+
+    try {
+      await resolveConfig(
+        {
+          configFile: false,
+          customLogger: createLogger('silent'),
+          server: {
+            ws: false,
+            hmr: {
+              host: 'test-host.com',
+              port: 4000,
+            },
+          },
+        },
+        'serve',
+      )
+
+      const reported = [...warn.mock.calls, ...trace.mock.calls]
+        .map((args) => String(args[0]))
+        .filter((message) => message.includes('ignored because'))
+
+      // Keys are deduped and batched, so a single message may name several of
+      // them. An earlier test in this file may already have reported one.
+      expect(reported.length).toBeGreaterThan(0)
+      const allReported = reported.join('\n')
+      expect(allReported).toContain('`server.hmr.')
+      expect(allReported).toMatch(/host|port/)
+      expect(allReported).toContain('`server.ws` is `false`')
+    } finally {
+      warn.mockRestore()
+      trace.mockRestore()
+    }
+  })
+
+  test('does not warn when `server.hmr` has no WebSocket options', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    try {
+      await resolveConfig(
+        {
+          configFile: false,
+          customLogger: createLogger('silent'),
+          server: {
+            ws: false,
+            hmr: {
+              overlay: false,
+            },
+          },
+        },
+        'serve',
+      )
+
+      const reported = warn.mock.calls
+        .map((args) => String(args[0]))
+        .filter((message) => message.includes('ignored because'))
+
+      expect(reported).toHaveLength(0)
+    } finally {
+      warn.mockRestore()
+    }
   })
 
   describe('later plugin can read `rollupOptions` set via `rolldownOptions` in earlier plugin', () => {

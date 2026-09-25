@@ -1424,10 +1424,41 @@ const hmrWsOptionsDeprecationCall = /* @__PURE__ */ (() => {
   }
 })()
 
+const hmrWsOptionsIgnoredCall = /* @__PURE__ */ (() => {
+  const logged = new Set<string>()
+  return (keys: string[]) => {
+    const pending = keys.filter((key) => !logged.has(key))
+    if (pending.length === 0) return
+    for (const key of pending) logged.add(key)
+    const method = process.env.VITE_DEPRECATION_TRACE ? 'trace' : 'warn'
+    // eslint-disable-next-line no-console
+    console[method](
+      `\`server.hmr.${pending.join('/')}\` ${
+        pending.length > 1 ? 'are' : 'is'
+      } ignored because \`server.ws\` is \`false\`. ` +
+        '`server.ws: false` disables the WebSocket server, so these options have no effect. ' +
+        'Remove `server.ws: false` to use them.',
+    )
+  }
+})()
+
 export function setupHmrWsOptionCompat(
   serverConfig: Pick<ServerOptions, 'hmr' | 'ws'>,
 ): void {
-  if (serverConfig.hmr === false || serverConfig.ws === false) {
+  if (serverConfig.hmr === false) {
+    return
+  }
+  if (serverConfig.ws === false) {
+    // `server.ws: false` turns the WebSocket server off entirely, so the deprecated
+    // `server.hmr.*` options that are otherwise synced onto `server.ws` cannot be
+    // honoured here. Report them instead of dropping them without a word.
+    const ignoredKeys =
+      serverConfig.hmr === true || !isObject(serverConfig.hmr)
+        ? []
+        : wsOptionKeys.filter((key) => serverConfig.hmr[key] !== undefined)
+    if (ignoredKeys.length > 0) {
+      hmrWsOptionsIgnoredCall(ignoredKeys)
+    }
     return
   }
   if (serverConfig.hmr === true) {
