@@ -2606,8 +2606,6 @@ const makeScssWorker = (
   const worker: WorkerType = {
     async run(sassPath, data, options) {
       const sass: typeof Sass = await import(sassPath)
-      compilerPromise ??= sass.initAsyncCompiler()
-      const compiler = await compilerPromise
 
       const sassOptions = { ...options } as Sass.StringOptions<'async'>
       sassOptions.url = pathToFileURL(options.filename)
@@ -2669,7 +2667,38 @@ const makeScssWorker = (
       ]
       sassOptions.importer ??= internalImporter
 
-      const result = await compiler.compileStringAsync(data, sassOptions)
+      const compileWithSharedCompiler = async () => {
+        compilerPromise ??= sass.initAsyncCompiler()
+        const compiler = await compilerPromise
+        return await compiler.compileStringAsync(data, sassOptions)
+      }
+
+      let result: Sass.CompileResult
+      try {
+        result = await compileWithSharedCompiler()
+      } catch (e) {
+        // Spawning the embedded compiler process can fail transiently (e.g.
+        // intermittent EBADF on macOS under fd pressure). initAsyncCompiler()
+        // resolves before the spawn settles, so the failure only surfaces
+        // here, and the dead compiler would otherwise stay cached and fail
+        // every subsequent compile until the server restarts (#20825).
+        // Drop the cached compiler and retry once with a fresh process.
+        if (
+          !(
+            e instanceof Error &&
+            (e as NodeJS.ErrnoException).syscall?.startsWith('spawn')
+          )
+        ) {
+          throw e
+        }
+        const deadCompilerPromise = compilerPromise
+        compilerPromise = undefined
+        deadCompilerPromise
+          ?.then((compiler) => compiler.dispose())
+          .catch(() => {})
+        result = await compileWithSharedCompiler()
+      }
+
       return {
         css: result.css,
         map: result.sourceMap ? JSON.stringify(result.sourceMap) : undefined,
