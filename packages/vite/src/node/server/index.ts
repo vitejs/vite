@@ -621,6 +621,8 @@ export async function _createServer(
     ),
   )
 
+  options.previousEnvironments = undefined
+
   // Backward compatibility
 
   let moduleGraph = new ModuleGraph({
