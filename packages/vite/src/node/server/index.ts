@@ -600,6 +600,10 @@ export async function _createServer(
       )
     : createNoopWatcher(resolvedWatchOptions)
 
+  watcher.on('error', (error: Error) => {
+    config.logger.warn(colors.yellow(`file watcher error: ${error.message}`))
+  })
+
   const environments: Record<string, DevEnvironment> = {}
 
   await Promise.all(
