@@ -365,6 +365,12 @@
   <code class="dynamic-import-meta-url-js"></code>
 </p>
 
+<h2>new URL(`${dynamic}`, import.meta.url) (without leading ./)</h2>
+<p>
+  <img class="dynamic-import-meta-url-img-no-dot" />
+  <code class="dynamic-import-meta-url-no-dot"></code>
+</p>
+
 <h2>new URL(`./${dynamic}`, import.meta.url,) (with comma)</h2>
 <p>
   <img class="dynamic-import-meta-url-img-1-comma" />
@@ -712,6 +718,14 @@
 
   testDynamicImportMetaUrl('icon', 1)
   testDynamicImportMetaUrl('asset', 2)
+
+  function testDynamicImportMetaUrlWithoutLeadingDot(name) {
+    const metaUrl = new URL(`nested/${name}.png`, import.meta.url)
+    text('.dynamic-import-meta-url-no-dot', metaUrl)
+    document.querySelector('.dynamic-import-meta-url-img-no-dot').src = metaUrl
+  }
+
+  testDynamicImportMetaUrlWithoutLeadingDot('asset')
 
   function testDynamicImportMetaUrlWithComma(name, i) {
     // prettier-ignore
