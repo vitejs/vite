@@ -1,6 +1,6 @@
 import fs from 'node:fs'
-import { createRequire } from 'node:module'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { cleanUrl } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
 import {
@@ -144,8 +144,6 @@ async function createClientConfigValueReplacer(
       .replace(`__SERVER_FORWARD_CONSOLE__`, serverForwardConsoleReplacement)
 }
 
-const _require = createRequire(/** #__KEEP__ */ import.meta.url)
-
 const ROLLDOWN_DEV_RUNTIME_ENTRY = 'rolldown/experimental/runtime'
 
 export async function getHmrImplementation(
@@ -171,7 +169,7 @@ export async function getHmrImplementation(
 }
 
 function rolldownDevRuntimeEntryPath(): string {
-  return _require.resolve(ROLLDOWN_DEV_RUNTIME_ENTRY)
+  return fileURLToPath(import.meta.resolve(ROLLDOWN_DEV_RUNTIME_ENTRY))
 }
 
 /**
