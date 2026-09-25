@@ -196,9 +196,6 @@ importers:
       '@types/convert-source-map':
         specifier: ^2.0.3
         version: 2.0.3
-      '@types/cross-spawn':
-        specifier: ^6.0.6
-        version: 6.0.6
       '@types/etag':
         specifier: ^1.8.4
         version: 1.8.4
@@ -465,9 +462,6 @@ importers:
       cors:
         specifier: ^2.8.6
         version: 2.8.6
-      cross-spawn:
-        specifier: ^7.0.6
-        version: 7.0.6
       dotenv-expand:
         specifier: ^13.0.0
         version: 13.0.0(patch_hash=49330a663821151418e003e822a82a6a61d2f0f8a6e3cab00c1c94815a112889)
@@ -567,6 +561,9 @@ importers:
       terser:
         specifier: ^5.51.2
         version: 5.51.2
+      tinyexec:
+        specifier: ^1.3.1
+        version: 1.3.1
       ufo:
         specifier: ^1.6.4
         version: 1.6.4
@@ -4279,9 +4276,6 @@ packages:
 
   '@types/convert-source-map@2.0.3':
     resolution: {integrity: sha512-ag0BfJLZf6CQz8VIuRIEYQ5Ggwk/82uvTQf27RcpyDNbY0Vw49LIPqAxk5tqYfrCs9xDaIMvl4aj7ZopnYL8bA==}
-
-  '@types/cross-spawn@6.0.6':
-    resolution: {integrity: sha512-fXRhhUkG4H3TQk5dBhQ7m/JDdSNHKwR2BBia62lhwEIq9xGiQKLxd6LymNhn47SjXhsUEPmxi+PKw2OkW4LLjA==}
 
   '@types/debug@4.1.12':
     resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
@@ -10408,10 +10402,6 @@ snapshots:
       '@types/node': 24.13.6
 
   '@types/convert-source-map@2.0.3': {}
-
-  '@types/cross-spawn@6.0.6':
-    dependencies:
-      '@types/node': 24.13.6
 
   '@types/debug@4.1.12':
     dependencies:
