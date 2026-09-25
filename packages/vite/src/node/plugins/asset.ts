@@ -9,6 +9,7 @@ import colors from 'picocolors'
 import picomatch from 'picomatch'
 import type {
   NormalizedOutputOptions,
+  OutputBundle,
   PluginContext,
   RenderedChunk,
 } from 'rolldown'
@@ -366,7 +367,9 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         }
       : {}),
 
-    generateBundle(_, bundle) {
+    async generateBundle(_, bundle) {
+      await transformSvgAssetReferences(this, bundle)
+
       // Remove empty entry point file
       let importedFiles: Set<string> | undefined
       for (const file in bundle) {
@@ -424,6 +427,80 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     watchChange(id) {
       assetCache.get(this.environment)?.delete(normalizePath(id))
     },
+  }
+}
+
+const svgReferenceRE = /\b(?:href|xlink:href|src)=(['"])([^'"]+)\1/g
+
+async function transformSvgAssetReferences(
+  pluginContext: PluginContext,
+  bundle: OutputBundle,
+): Promise<void> {
+  for (const asset of Object.values(bundle)) {
+    if (
+      asset.type !== 'asset' ||
+      !asset.fileName.endsWith('.svg') ||
+      !asset.originalFileName
+    ) {
+      continue
+    }
+
+    const svgDir = path.dirname(
+      path.resolve(
+        pluginContext.environment.config.root,
+        asset.originalFileName,
+      ),
+    )
+    let source =
+      typeof asset.source === 'string'
+        ? asset.source
+        : Buffer.from(asset.source).toString()
+
+    const replacements = await Promise.all(
+      Array.from(source.matchAll(svgReferenceRE), async (match) => {
+        const url = match[2]
+        if (!url || /^(?:[a-z][a-z\d+.-]*:|\/|#)/i.test(url)) return
+
+        const [fileUrl, postfix = ''] = url.split(/(?=[?#])/, 2)
+        const file = path.resolve(svgDir, fileUrl)
+        let content: Buffer
+        try {
+          content = await fsp.readFile(file)
+        } catch {
+          return
+        }
+
+        const referenceId = pluginContext.emitFile({
+          type: 'asset',
+          name: path.basename(file),
+          originalFileName: normalizePath(
+            path.relative(pluginContext.environment.config.root, file),
+          ),
+          source: content,
+        })
+        const fileName = pluginContext.getFileName(referenceId)
+        return {
+          start: match.index + match[0].indexOf(url),
+          end: match.index + match[0].indexOf(url) + url.length,
+          replacement:
+            encodeURIPath(
+              normalizePath(
+                path.relative(path.dirname(asset.fileName), fileName),
+              ),
+            ) + postfix,
+        }
+      }),
+    )
+
+    for (const replacement of replacements.reverse()) {
+      if (replacement) {
+        source =
+          source.slice(0, replacement.start) +
+          replacement.replacement +
+          source.slice(replacement.end)
+      }
+    }
+    asset.source = source
   }
 }
 

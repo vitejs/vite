@@ -1539,6 +1539,29 @@ test('watch rebuild manifest', async (ctx) => {
   `)
 })
 
+test('rewrites relative asset references in emitted svg files', async () => {
+  const output = (await build({
+    root: resolve(dirname, 'fixtures/svg-asset-refs'),
+    logLevel: 'silent',
+    build: {
+      write: false,
+      assetsInlineLimit: 0,
+    },
+  })) as RolldownOutput
+
+  const svg = output.output.find(
+    (item): item is OutputAsset =>
+      item.type === 'asset' && item.fileName.endsWith('.svg'),
+  )
+  expect(svg?.source.toString()).toMatch(/href="img-.*\.png"/)
+  expect(
+    output.output.some(
+      (item) =>
+        item.type === 'asset' && /assets\/img-.*\.png/.test(item.fileName),
+    ),
+  ).toBe(true)
+})
+
 test('copies public directory after building same environment with write false first', async (ctx) => {
   const root = resolve(dirname, 'fixtures/public-dir-write-false')
   ctx.onTestFinished(() =>
