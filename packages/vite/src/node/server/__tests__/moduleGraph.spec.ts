@@ -35,6 +35,46 @@ describe('moduleGraph', () => {
       expect(mod2.meta).to.equal(meta)
     })
 
+    it('returns the resolved id so entry creation does not resolve twice', async () => {
+      let resolveCalls = 0
+      const moduleGraph = new EnvironmentModuleGraph('client', async () => {
+        resolveCalls++
+        return null
+      })
+
+      const lookup = await moduleGraph._getModuleByUrlAndResolved('/x.js')
+      expect(lookup.module).toBeUndefined()
+      expect(lookup.resolved).toBeNull()
+
+      await moduleGraph._ensureEntryFromUrl('/x.js', false, lookup.resolved)
+      expect(resolveCalls).toBe(1)
+    })
+
+    it('preserves the resolved id and meta when creating an entry', async () => {
+      let resolveCalls = 0
+      const resolved = {
+        id: '/resolved.js',
+        meta: { source: 'test' },
+      }
+      const moduleGraph = new EnvironmentModuleGraph('client', async () => {
+        resolveCalls++
+        return resolved
+      })
+
+      const lookup = await moduleGraph._getModuleByUrlAndResolved('/x.js')
+      expect(lookup.module).toBeUndefined()
+      expect(lookup.resolved).toEqual(resolved)
+
+      const module = await moduleGraph._ensureEntryFromUrl(
+        '/x.js',
+        false,
+        lookup.resolved,
+      )
+      expect(module.id).toBe('/resolved.js')
+      expect(module.meta).toEqual(resolved.meta)
+      expect(resolveCalls).toBe(1)
+    })
+
     it('ensure backward compatibility', async () => {
       const clientModuleGraph = new EnvironmentModuleGraph(
         'client',
