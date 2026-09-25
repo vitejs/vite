@@ -126,9 +126,6 @@ jobs:
       - if: matrix.node_version == '20'
         name: Set node version to ${{ matrix.node_version }}
         run: pnpm runtime set node ${{ matrix.node_version }} -g
-      - if: matrix.node_version == '20'
-        name: Check node version
-        run: node -v
 
       - name: Test unit
         run: pnpm run test-unit
