@@ -1,0 +1,27 @@
+packages/vite/src/node/__tests__/dev.spec.ts
+  s_5d83d318a93be0::t_b0c5277974a69d 92-120
+playground/fs-serve/__tests__/fs-serve.spec.ts
+  s_5d83d318a93be0::t_c117d3d979192e 4,7-14
+playground/fs-serve/root/vite.config-base.js
+  s_5d83d318a93be0::t_8fe7915d73969f 4,40-44
+playground/fs-serve/root/vite.config-deny.js
+  s_5d83d318a93be0::t_ffce913b0da18f 3,23
+playground/fs-serve/root/vite.config.js
+  s_5d83d318a93be0::t_ef41ba3dcab72a 4,36-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b57868839678d8ad1fc90d1d1875463b510df5e2",
+  "prompts": {},
+  "sessions": {
+    "s_5d83d318a93be0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0d7a5-e3c7-7070-91fc-c3cfb0bda879",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
