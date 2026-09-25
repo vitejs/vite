@@ -70,8 +70,7 @@ jobs:
           - os: macos-latest
             node_version: 24
           - os: windows-latest
-            # use older minor to workaround https://github.com/nodejs/node/issues/63638
-            node_version: 24.15.0
+            node_version: 24
       fail-fast: false
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
