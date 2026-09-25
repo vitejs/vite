@@ -1,5 +1,5 @@
 import path from 'node:path'
-import type { RawSourceMap } from '@jridgewell/remapping'
+import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
@@ -604,13 +604,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           if (s.hasChanged()) {
             chunk.code = s.toString()
             if (buildSourcemap && chunk.map) {
-              const nextMap = s.generateMap({
+              // Avoid encoding mappings only for combineSourcemaps to decode them.
+              const nextMap = s.generateDecodedMap({
                 source: chunk.fileName,
                 hires: 'boundary',
               })
               const originalFile = chunk.map.file
               const map = combineSourcemaps(chunk.fileName, [
-                nextMap as RawSourceMap,
+                nextMap as DecodedSourceMap,
                 chunk.map as RawSourceMap,
               ]) as SourceMap
               map.toUrl = () => genSourceMapUrl(map)
