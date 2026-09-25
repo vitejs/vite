@@ -1452,10 +1452,10 @@ export function setupHmrWsOptionCompat(
     // `server.ws: false` turns the WebSocket server off entirely, so the deprecated
     // `server.hmr.*` options that are otherwise synced onto `server.ws` cannot be
     // honoured here. Report them instead of dropping them without a word.
-    const ignoredKeys =
-      serverConfig.hmr === true || !isObject(serverConfig.hmr)
-        ? []
-        : wsOptionKeys.filter((key) => serverConfig.hmr[key] !== undefined)
+    const hmrOptions = serverConfig.hmr
+    const ignoredKeys = isObject(hmrOptions)
+      ? wsOptionKeys.filter((key) => hmrOptions[key] !== undefined)
+      : []
     if (ignoredKeys.length > 0) {
       hmrWsOptionsIgnoredCall(ignoredKeys)
     }
