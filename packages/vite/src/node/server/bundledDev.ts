@@ -58,6 +58,8 @@ export class MemoryFiles {
   }
 }
 
+const LAZY_PROXY_QUERY = '?rolldown-lazy=1'
+
 export class BundledDev {
   private _devEngine!: DevEngine
   private viteRuntime?: string
@@ -106,6 +108,11 @@ export class BundledDev {
 
   private pendingPayloadFilenames = new Set<string>()
 
+  private builtLazyChunks = new Map<string, string>()
+  private buildGeneration = 0
+  private clientBuildGeneration = new Map<string, number>()
+  private clientsWithLazyPayloads = new Set<string>()
+
   get hasBuildOutput(): boolean {
     return (
       this.memoryFiles.size > 1 ||
@@ -135,6 +142,7 @@ export class BundledDev {
       'vite:client-connected',
       async (payload, client) => {
         this.clients.setupIfNeeded(client, payload.clientId)
+        this.clientBuildGeneration.set(payload.clientId, this.buildGeneration)
         this.devEngine.registerClient(payload.clientId)
       },
     )
@@ -157,6 +165,8 @@ export class BundledDev {
       if (clientId) {
         this.devEngine.removeClient(clientId)
         this.reloadNeededClientIds.delete(clientId)
+        this.clientBuildGeneration.delete(clientId)
+        this.clientsWithLazyPayloads.delete(clientId)
       }
     })
     this.environment.hot.on(
@@ -235,6 +245,19 @@ export class BundledDev {
         this.lastBuildError = null
 
         this.storeOutputFiles(result.output)
+        this.buildGeneration++
+        this.builtLazyChunks.clear()
+        for (const file of result.output) {
+          if (
+            file.type === 'chunk' &&
+            file.isDynamicEntry &&
+            file.facadeModuleId &&
+            // the stub of a never-fetched route is a dynamic entry too
+            !file.facadeModuleId.endsWith(LAZY_PROXY_QUERY)
+          ) {
+            this.builtLazyChunks.set(file.facadeModuleId, file.fileName)
+          }
+        }
 
         // Trigger a full reload if there's no error in the result and a reload is pending from HMR.
         if (this.fullReloadPending) {
@@ -344,12 +367,39 @@ export class BundledDev {
     debug?.(
       `TRIGGER-LAZY: trigger lazy bundling for module ${moduleId} for client ${clientId}`,
     )
+    this.clientsWithLazyPayloads.add(clientId)
     const result = await this.devEngine.compileEntry(moduleId, clientId)
     this.pendingPayloadFilenames.add(result.filename)
     return {
       filename: result.filename,
       code: result.code + payloadDeliveredAck(result.filename),
     }
+  }
+
+  /**
+   * A full-build chunk runs and re-registers every module in it, unlike a
+   * lazy payload whose factories skip modules the client already holds. So a
+   * client gets a chunk only while it took no lazy payload and saw no full
+   * build since it connected.
+   *
+   * The build state is read after the running build finished, because an
+   * edit marks the output stale only when its build task ends.
+   */
+  async builtLazyChunk(
+    proxyModuleId: string,
+    clientId: string,
+  ): Promise<string | undefined> {
+    if (this._closed || !this.initialBuildCompleted) return
+    if (!proxyModuleId.endsWith(LAZY_PROXY_QUERY)) return
+    if (this.clientsWithLazyPayloads.has(clientId)) return
+    await this.devEngine.ensureCurrentBuildFinish()
+    const state = await this.devEngine.getBundleState()
+    if (state.hasStaleOutput || state.lastBuildErrored) return
+    if (this.clientBuildGeneration.get(clientId) !== this.buildGeneration)
+      return
+    return this.builtLazyChunks.get(
+      proxyModuleId.slice(0, -LAZY_PROXY_QUERY.length),
+    )
   }
 
   /**
@@ -369,6 +419,7 @@ export class BundledDev {
   async close(): Promise<void> {
     this._closed = true
     this.memoryFiles.clear()
+    this.builtLazyChunks.clear()
     await this._devEngine?.close()
     this.initialBuildCompleted = false
   }
