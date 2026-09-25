@@ -1424,26 +1424,25 @@ const hmrWsOptionsDeprecationCall = /* @__PURE__ */ (() => {
   }
 })()
 
-const hmrWsOptionsIgnoredCall = /* @__PURE__ */ (() => {
-  const logged = new Set<string>()
-  return (keys: string[]) => {
-    const pending = keys.filter((key) => !logged.has(key))
-    if (pending.length === 0) return
-    for (const key of pending) logged.add(key)
+const hmrServerIgnoredCall = /* @__PURE__ */ (() => {
+  let logged = false
+  return () => {
+    if (logged) return
+    logged = true
     const method = process.env.VITE_DEPRECATION_TRACE ? 'trace' : 'warn'
     // eslint-disable-next-line no-console
     console[method](
-      `\`server.hmr.${pending.join('/')}\` ${
-        pending.length > 1 ? 'are' : 'is'
-      } ignored because \`server.ws\` is \`false\`. ` +
-        '`server.ws: false` disables the WebSocket server, so these options have no effect. ' +
-        'Remove `server.ws: false` to use them.',
+      '`server.ws` is `false`, so `server.hmr.server` is ignored. ' +
+        '`server.hmr.server` is the transport used for HMR, which `server.ws: false` turns off. ' +
+        'Remove `server.ws: false`, or use `server.ws.server` instead.',
     )
   }
 })()
 
 export function setupHmrWsOptionCompat(
   serverConfig: Pick<ServerOptions, 'hmr' | 'ws'>,
+  command?: 'build' | 'serve',
+  isPreview = false,
 ): void {
   if (serverConfig.hmr === false) {
     return
@@ -1451,13 +1450,19 @@ export function setupHmrWsOptionCompat(
   if (serverConfig.ws === false) {
     // `server.ws: false` turns the WebSocket server off entirely, so the deprecated
     // `server.hmr.*` options that are otherwise synced onto `server.ws` cannot be
-    // honoured here. Report them instead of dropping them without a word.
-    const hmrOptions = serverConfig.hmr
-    const ignoredKeys = isObject(hmrOptions)
-      ? wsOptionKeys.filter((key) => hmrOptions[key] !== undefined)
-      : []
-    if (ignoredKeys.length > 0) {
-      hmrWsOptionsIgnoredCall(ignoredKeys)
+    // honoured here. Only `server.hmr.server` is worth reporting: it is the HMR
+    // transport, not a socket parameter, so losing it is not implied by `server.ws: false`
+    // the way losing e.g. `server.hmr.port` is.
+    // The warning is only meaningful when a dev server is started, so it is skipped for
+    // `vite build`, for `vite preview` (which serves static files and has no HMR), and
+    // for bare `mergeConfig` (which passes no `command`).
+    if (
+      command === 'serve' &&
+      !isPreview &&
+      isObject(serverConfig.hmr) &&
+      serverConfig.hmr.server !== undefined
+    ) {
+      hmrServerIgnoredCall()
     }
     return
   }

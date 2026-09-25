@@ -1074,35 +1074,54 @@ describe('mergeConfig', () => {
   })
 
   test('`mergeConfig` does not crash when `server.ws` is false and `server.hmr` is merged', () => {
-    // `server.hmr.host` is ignored here and reported by the warning covered in the
-    // test below. Silence it so it does not consume that warning's per-key dedupe.
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const baseConfig = defineConfig({
+      server: {
+        ws: false,
+        hmr: {
+          host: 'localhost',
+        },
+      },
+    })
+
+    const newConfig = defineConfig({
+      server: {
+        hmr: {
+          port: 5173,
+        },
+      },
+    })
+
+    const mergedConfig = mergeConfig(baseConfig, newConfig)
+
+    expect(mergedConfig.server.ws).toBe(false)
+    expect(mergedConfig.server.hmr).toBeTypeOf('object')
+    expect(mergedConfig.server.hmr).toBeTruthy()
+  })
+
+  test('does not warn about ignored `server.hmr.server` during preview', async () => {
+    const warnFn = vi.fn()
+    const originalWarn = console.warn
+    console.warn = warnFn
     try {
-      const baseConfig = defineConfig({
-        server: {
-          ws: false,
-          hmr: {
-            host: 'localhost',
+      await resolveConfig(
+        {
+          configFile: false,
+          server: {
+            ws: false,
+            hmr: {
+              server: http.createServer(),
+            },
           },
-        },
-      })
-
-      const newConfig = defineConfig({
-        server: {
-          hmr: {
-            port: 5173,
-          },
-        },
-      })
-
-      const mergedConfig = mergeConfig(baseConfig, newConfig)
-
-      expect(mergedConfig.server.ws).toBe(false)
-      expect(mergedConfig.server.hmr).toBeTypeOf('object')
-      expect(mergedConfig.server.hmr).toBeTruthy()
+        } as InlineConfig,
+        'serve',
+        'production',
+        'production',
+        true,
+      )
     } finally {
-      warn.mockRestore()
+      console.warn = originalWarn
     }
+    expect(warnFn).not.toHaveBeenCalled()
   })
 
   test('resolveConfig properly syncs hmr and ws', async () => {
@@ -1129,11 +1148,45 @@ describe('mergeConfig', () => {
     expect(config.server.hmr.host).toBe('new-host.com')
   })
 
-  test('warns when `server.hmr` WebSocket options are ignored due to `server.ws: false`', async () => {
+  test('warns when `server.hmr.server` is ignored due to `server.ws: false`', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const trace = vi.spyOn(console, 'trace').mockImplementation(() => {})
 
     try {
+      // a fresh module instance has a fresh "already warned" state
+      vi.resetModules()
+      const { resolveConfig } = await import('../config')
+      await resolveConfig(
+        {
+          configFile: false,
+          customLogger: createLogger('silent'),
+          server: {
+            ws: false,
+            hmr: {
+              server: http.createServer(),
+            },
+          },
+        },
+        'serve',
+      )
+
+      const reported = [...warn.mock.calls, ...trace.mock.calls]
+        .map((args) => String(args[0]))
+        .filter((message) => message.includes('`server.hmr.server` is ignored'))
+
+      expect(reported).toHaveLength(1)
+    } finally {
+      warn.mockRestore()
+      trace.mockRestore()
+    }
+  })
+
+  test('does not warn for `server.hmr` options that `server.ws: false` implies are ignored', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    try {
+      vi.resetModules()
+      const { resolveConfig } = await import('../config')
       await resolveConfig(
         {
           configFile: false,
@@ -1149,27 +1202,22 @@ describe('mergeConfig', () => {
         'serve',
       )
 
-      const reported = [...warn.mock.calls, ...trace.mock.calls]
+      const reported = warn.mock.calls
         .map((args) => String(args[0]))
-        .filter((message) => message.includes('ignored because'))
+        .filter((message) => message.includes('is ignored'))
 
-      // Keys are deduped and batched, so a single message may name several of
-      // them. An earlier test in this file may already have reported one.
-      expect(reported.length).toBeGreaterThan(0)
-      const allReported = reported.join('\n')
-      expect(allReported).toContain('`server.hmr.')
-      expect(allReported).toMatch(/host|port/)
-      expect(allReported).toContain('`server.ws` is `false`')
+      expect(reported).toHaveLength(0)
     } finally {
       warn.mockRestore()
-      trace.mockRestore()
     }
   })
 
-  test('does not warn when `server.hmr` has no WebSocket options', async () => {
+  test('does not warn when `server.hmr` has no HMR server', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
     try {
+      vi.resetModules()
+      const { resolveConfig } = await import('../config')
       await resolveConfig(
         {
           configFile: false,
@@ -1186,7 +1234,37 @@ describe('mergeConfig', () => {
 
       const reported = warn.mock.calls
         .map((args) => String(args[0]))
-        .filter((message) => message.includes('ignored because'))
+        .filter((message) => message.includes('is ignored'))
+
+      expect(reported).toHaveLength(0)
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  test('does not warn for `server.hmr.server` on build', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    try {
+      vi.resetModules()
+      const { resolveConfig } = await import('../config')
+      await resolveConfig(
+        {
+          configFile: false,
+          customLogger: createLogger('silent'),
+          server: {
+            ws: false,
+            hmr: {
+              server: http.createServer(),
+            },
+          },
+        },
+        'build',
+      )
+
+      const reported = warn.mock.calls
+        .map((args) => String(args[0]))
+        .filter((message) => message.includes('is ignored'))
 
       expect(reported).toHaveLength(0)
     } finally {
