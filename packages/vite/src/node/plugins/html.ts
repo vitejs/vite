@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import path from 'node:path'
 import { URL } from 'node:url'
 import escapeHtml from 'escape-html'
@@ -442,12 +443,42 @@ function htmlInputFiles(input: string[] | Record<string, string>): string[] {
   return Array.isArray(input) ? input : Object.values(input)
 }
 
-function isInsideRoot(root: string, filePath: string): boolean {
+// The Rust resolver and Node can spell the same Windows file differently
+// (notably a short 8.3 path versus its long path). Compare file identity as a
+// fallback when their normalized strings do not match.
+function htmlFileIdentity(file: string): string | undefined {
+  try {
+    const { dev, ino } = fs.statSync(file)
+    if (ino) return `\0html-file:${dev}:${ino}`
+  } catch {
+    // A missing input is reported by the build itself.
+  }
+}
+
+function htmlPathInsideRoot(
+  root: string,
+  filePath: string,
+): string | undefined {
   const normalizedRoot = normalizePath(root)
   const prefix = normalizedRoot.endsWith('/')
     ? normalizedRoot
     : `${normalizedRoot}/`
-  return filePath.startsWith(prefix)
+  if (filePath.startsWith(prefix)) return filePath.slice(prefix.length)
+
+  // On Windows the configured input may use a long path while config.root
+  // comes back from realpath with 8.3 directory names. Walk directories by
+  // identity so a spelling difference cannot make an in-root entry escape.
+  const rootIdentity = htmlFileIdentity(root)
+  if (!rootIdentity) return
+  const parts: string[] = [path.basename(filePath)]
+  let parent = path.dirname(filePath)
+  while (parent !== path.dirname(parent)) {
+    if (htmlFileIdentity(parent) === rootIdentity) {
+      return normalizePath(parts.reverse().join('/'))
+    }
+    parts.push(path.basename(parent))
+    parent = path.dirname(parent)
+  }
 }
 
 function preferHtmlLogicalPath(
@@ -461,7 +492,7 @@ function preferHtmlLogicalPath(
   // inside root when the other one is not, so the emitted name cannot escape.
   if (
     !existing ||
-    (!isInsideRoot(root, existing) && isInsideRoot(root, logical))
+    (!htmlPathInsideRoot(root, existing) && htmlPathInsideRoot(root, logical))
   ) {
     logicalById.set(id, logical)
   }
@@ -491,6 +522,10 @@ async function recordHtmlEntryLogicalPaths(
     } catch {
       // A missing input is reported when the build resolves the entry.
     }
+    const identity = htmlFileIdentity(logical)
+    if (identity) {
+      preferHtmlLogicalPath(logicalById, identity, logical, root)
+    }
     if (resolved && !resolved.external) {
       const resolvedId = normalizePath(resolved.id)
       preferHtmlLogicalPath(logicalById, resolvedId, logical, root)
@@ -514,13 +549,12 @@ function htmlEmitPathRelativeToRoot(
   normalizedId: string,
   logicalById: Map<string, string>,
 ): string {
-  const logical = logicalById.get(normalizedId)
-  if (logical && isInsideRoot(root, logical)) {
-    const normalizedRoot = normalizePath(root)
-    const prefix = normalizedRoot.endsWith('/')
-      ? normalizedRoot
-      : `${normalizedRoot}/`
-    return logical.slice(prefix.length)
+  const logical =
+    logicalById.get(normalizedId) ||
+    logicalById.get(htmlFileIdentity(normalizedId) ?? '')
+  if (logical) {
+    const relative = htmlPathInsideRoot(root, logical)
+    if (relative) return relative
   }
   return normalizePath(path.relative(root, normalizedId))
 }
