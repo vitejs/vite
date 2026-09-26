@@ -39,6 +39,7 @@
     "@vitejs/test-dep-with-asset-ext1.pdf": "file:./dep-with-asset-ext/dep1",
     "@vitejs/test-dep-with-asset-ext2.pdf": "file:./dep-with-asset-ext/dep2",
     "@vitejs/test-dep-with-builtin-module-cjs": "file:./dep-with-builtin-module-cjs",
+    "@vitejs/test-dep-browser-false": "file:./dep-browser-false",
     "@vitejs/test-dep-with-builtin-module-esm": "file:./dep-with-builtin-module-esm",
     "@vitejs/test-dep-with-dynamic-import": "file:./dep-with-dynamic-import",
     "@vitejs/test-dep-with-optional-peer-dep": "file:./dep-with-optional-peer-dep",

@@ -58,6 +58,7 @@ const externalTypes = [
 
 const optionalPeerDepNamespace = 'optional-peer-dep:'
 const browserExternalNamespace = 'browser-external:'
+const browserExternalEmptyNamespace = 'browser-external-empty:'
 
 export function rolldownDepPlugin(
   environment: Environment,
@@ -121,6 +122,11 @@ export function rolldownDepPlugin(
   }
 
   const resolveResult = (id: string, resolved: string, kind: ImportKind) => {
+    // An exact browser-external id is an explicit browser:false mapping.
+    // Suffixed ids are unsupported Node builtins and still need the warning.
+    if (resolved === browserExternalId) {
+      return { id: browserExternalEmptyNamespace + id }
+    }
     if (resolved.startsWith(browserExternalId)) {
       return {
         id: browserExternalNamespace + id,
@@ -255,11 +261,15 @@ export function rolldownDepPlugin(
       load: {
         filter: {
           id: [
+            prefixRegex(browserExternalEmptyNamespace),
             prefixRegex(browserExternalNamespace),
             prefixRegex(optionalPeerDepNamespace),
           ],
         },
         handler(id) {
+          if (id.startsWith(browserExternalEmptyNamespace)) {
+            return { code: 'module.exports = {}' }
+          }
           if (id.startsWith(browserExternalNamespace)) {
             const path = id.slice(browserExternalNamespace.length)
             if (isProduction) {

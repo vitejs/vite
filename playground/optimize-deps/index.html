@@ -336,6 +336,12 @@
   }
 </script>
 
+<p class="browser-false-optimized">[pending]</p>
+<script type="module">
+  import browserFalse from '@vitejs/test-dep-browser-false'
+  text('.browser-false-optimized', browserFalse)
+</script>
+
 <script type="module">
   // should error on builtin modules from dep
   import { read } from '@vitejs/test-dep-with-builtin-module-cjs'

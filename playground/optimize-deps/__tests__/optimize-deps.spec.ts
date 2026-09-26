@@ -255,6 +255,20 @@ test('non optimized module is not duplicated', async () => {
     .toBe('from-absolute-path, from-relative-path')
 })
 
+test.runIf(isServe)(
+  'optimized browser:false is empty without warning',
+  async () => {
+    expect(await page.textContent('.browser-false-optimized')).toBe('[success]')
+    expect(browserLogs).not.toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          'Module "browser-false-only" has been externalized for browser compatibility',
+        ),
+      ]),
+    )
+  },
+)
+
 test.runIf(isServe)('error on builtin modules usage', () => {
   expect(browserLogs).toEqual(
     expect.arrayContaining([
