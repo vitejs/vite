@@ -1234,6 +1234,9 @@ importers:
       '@vitejs/test-dep-alias-using-absolute-path':
         specifier: file:./dep-alias-using-absolute-path
         version: file:playground/optimize-deps/dep-alias-using-absolute-path
+      '@vitejs/test-dep-browser-false':
+        specifier: file:./dep-browser-false
+        version: file:playground/optimize-deps/dep-browser-false
       '@vitejs/test-dep-cjs-browser-field':
         specifier: file:./dep-cjs-browser-field
         version: file:playground/optimize-deps/dep-cjs-browser-field
@@ -1401,6 +1404,8 @@ importers:
       '@vitejs/test-dep-lodash':
         specifier: file:../dep-lodash
         version: file:playground/optimize-deps/dep-lodash
+
+  playground/optimize-deps/dep-browser-false: {}
 
   playground/optimize-deps/dep-cjs-browser-field: {}
 
@@ -4696,6 +4701,9 @@ packages:
 
   '@vitejs/test-dep-alias-using-absolute-path@file:playground/optimize-deps/dep-alias-using-absolute-path':
     resolution: {directory: playground/optimize-deps/dep-alias-using-absolute-path, type: directory}
+
+  '@vitejs/test-dep-browser-false@file:playground/optimize-deps/dep-browser-false':
+    resolution: {directory: playground/optimize-deps/dep-browser-false, type: directory}
 
   '@vitejs/test-dep-cjs-browser-field-bare@file:playground/optimize-deps/dep-cjs-browser-field-bare':
     resolution: {directory: playground/optimize-deps/dep-cjs-browser-field-bare, type: directory}
@@ -10894,6 +10902,8 @@ snapshots:
   '@vitejs/test-dep-alias-using-absolute-path@file:playground/optimize-deps/dep-alias-using-absolute-path':
     dependencies:
       '@vitejs/test-dep-lodash': file:playground/optimize-deps/dep-lodash
+
+  '@vitejs/test-dep-browser-false@file:playground/optimize-deps/dep-browser-false': {}
 
   '@vitejs/test-dep-cjs-browser-field-bare@file:playground/optimize-deps/dep-cjs-browser-field-bare': {}
 
