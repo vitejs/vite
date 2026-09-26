@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import path from 'node:path'
 import { URL } from 'node:url'
 import escapeHtml from 'escape-html'
@@ -13,6 +14,7 @@ import type {
   OutputAsset,
   OutputBundle,
   OutputChunk,
+  ResolvedId,
   RollupError,
   SourceMapInput,
 } from 'rolldown'
@@ -425,6 +427,139 @@ export function getCssFilesForChunk(
 }
 
 /**
+ * Resolved HTML id -> absolute configured input path.
+ *
+ * `buildStart` still has the input path under the project root. The resolver
+ * then realpaths it, so a symlink entry whose target is outside `root` shows
+ * up here as that outside path. The emitted file name has to follow the
+ * configured path (`index.html`, `nested/page.html`) instead.
+ * https://github.com/vitejs/vite/issues/23585
+ */
+const htmlEntryLogicalPaths = perEnvironmentState(
+  () => new Map<string, string>(),
+)
+
+function htmlInputFiles(input: string[] | Record<string, string>): string[] {
+  return Array.isArray(input) ? input : Object.values(input)
+}
+
+// The Rust resolver and Node can spell the same Windows file differently
+// (notably a short 8.3 path versus its long path). Compare file identity as a
+// fallback when their normalized strings do not match.
+function htmlFileIdentity(file: string): string | undefined {
+  try {
+    const { dev, ino } = fs.statSync(file)
+    if (ino) return `\0html-file:${dev}:${ino}`
+  } catch {
+    // A missing input is reported by the build itself.
+  }
+}
+
+function htmlPathInsideRoot(
+  root: string,
+  filePath: string,
+): string | undefined {
+  const normalizedRoot = normalizePath(root)
+  const prefix = normalizedRoot.endsWith('/')
+    ? normalizedRoot
+    : `${normalizedRoot}/`
+  if (filePath.startsWith(prefix)) return filePath.slice(prefix.length)
+
+  // On Windows the configured input may use a long path while config.root
+  // comes back from realpath with 8.3 directory names. Walk directories by
+  // identity so a spelling difference cannot make an in-root entry escape.
+  const rootIdentity = htmlFileIdentity(root)
+  if (!rootIdentity) return
+  const parts: string[] = [path.basename(filePath)]
+  let parent = path.dirname(filePath)
+  while (parent !== path.dirname(parent)) {
+    if (htmlFileIdentity(parent) === rootIdentity) {
+      return normalizePath(parts.reverse().join('/'))
+    }
+    parts.push(path.basename(parent))
+    parent = path.dirname(parent)
+  }
+}
+
+function preferHtmlLogicalPath(
+  logicalById: Map<string, string>,
+  id: string,
+  logical: string,
+  root: string,
+): void {
+  const existing = logicalById.get(id)
+  // Two configured inputs can realpath to one module. Keep a path that is
+  // inside root when the other one is not, so the emitted name cannot escape.
+  if (
+    !existing ||
+    (!htmlPathInsideRoot(root, existing) && htmlPathInsideRoot(root, logical))
+  ) {
+    logicalById.set(id, logical)
+  }
+}
+
+async function recordHtmlEntryLogicalPaths(
+  root: string,
+  cwd: string,
+  input: string[] | Record<string, string> | undefined,
+  logicalById: Map<string, string>,
+  resolveId: (id: string) => Promise<ResolvedId | null>,
+): Promise<void> {
+  logicalById.clear()
+  if (input == null) return
+  for (const file of htmlInputFiles(input)) {
+    if (!htmlLangRE.test(file)) continue
+    // Relative inputs are resolved from rolldown's cwd, matching the path the
+    // resolver starts from. Absolute inputs already include their directory.
+    const logical = normalizePath(path.resolve(cwd, file))
+    // Key the map with the same id `transform` will see. That id comes from
+    // the Rust resolver, which realpaths symlinks. Node's `realpath` is not a
+    // substitute: rules_js patches it to stay inside a Bazel sandbox, and the
+    // Rust resolver does not. `this.resolve` goes through that resolver.
+    let resolved: ResolvedId | null = null
+    try {
+      resolved = await resolveId(logical)
+    } catch {
+      // A missing input is reported when the build resolves the entry.
+    }
+    const identity = htmlFileIdentity(logical)
+    if (identity) {
+      preferHtmlLogicalPath(logicalById, identity, logical, root)
+    }
+    if (resolved && !resolved.external) {
+      const resolvedId = normalizePath(resolved.id)
+      preferHtmlLogicalPath(logicalById, resolvedId, logical, root)
+      if (resolvedId !== logical) {
+        preferHtmlLogicalPath(logicalById, logical, logical, root)
+      }
+    } else {
+      preferHtmlLogicalPath(logicalById, logical, logical, root)
+    }
+  }
+}
+
+/**
+ * HTML asset path relative to `root`. Use the configured input when that path
+ * is inside `root`. Otherwise keep `path.relative(root, resolvedId)`, which is
+ * what a symlinked root already relies on (`config.root` is the realpath, and
+ * the resolved id is the real file inside it).
+ */
+function htmlEmitPathRelativeToRoot(
+  root: string,
+  normalizedId: string,
+  logicalById: Map<string, string>,
+): string {
+  const logical =
+    logicalById.get(normalizedId) ||
+    logicalById.get(htmlFileIdentity(normalizedId) ?? '')
+  if (logical) {
+    const relative = htmlPathInsideRoot(root, logical)
+    if (relative) return relative
+  }
+  return normalizePath(path.relative(root, normalizedId))
+}
+
+/**
  * Compiles index.html into an entry js module
  */
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
@@ -451,11 +586,25 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       return environment.config.isBundled
     },
 
+    async buildStart(options) {
+      await recordHtmlEntryLogicalPaths(
+        config.root,
+        options.cwd,
+        options.input,
+        htmlEntryLogicalPaths(this),
+        (id) => this.resolve(id),
+      )
+    },
+
     transform: {
       filter: { id: /\.html$/ },
       async handler(html, id) {
         id = normalizePath(id)
-        const relativeUrlPath = normalizePath(path.relative(config.root, id))
+        const relativeUrlPath = htmlEmitPathRelativeToRoot(
+          config.root,
+          id,
+          htmlEntryLogicalPaths(this),
+        )
         const publicPath = `/${relativeUrlPath}`
         const publicBase = getBaseInHTML(relativeUrlPath, config)
 
@@ -914,8 +1063,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         )
 
       for (const [normalizedId, html] of processedHtml(this)) {
-        const relativeUrlPath = normalizePath(
-          path.relative(config.root, normalizedId),
+        const relativeUrlPath = htmlEmitPathRelativeToRoot(
+          config.root,
+          normalizedId,
+          htmlEntryLogicalPaths(this),
         )
         const assetsBase = getBaseInHTML(relativeUrlPath, config)
         const toOutputFilePath = (
@@ -1098,9 +1249,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           inlineEntryChunk.add(chunk.fileName)
         }
 
-        const shortEmitName = normalizePath(
-          path.relative(config.root, normalizedId),
-        )
+        // Same path as `relativeUrlPath`: the asset name and the relative URL
+        // base both have to be the logical entry, or `base: './'` points at
+        // the realpath outside root.
+        const shortEmitName = relativeUrlPath
         this.emitFile({
           type: 'asset',
           originalFileName: normalizedId,
