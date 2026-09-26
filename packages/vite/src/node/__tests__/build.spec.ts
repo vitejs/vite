@@ -1,5 +1,7 @@
+import fs from 'node:fs'
 import fsp from 'node:fs/promises'
-import { basename, resolve } from 'node:path'
+import os from 'node:os'
+import path, { basename, resolve } from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
 import colors from 'picocolors'
 import type {
@@ -1560,6 +1562,230 @@ test('copies public directory after building same environment with write false f
   await expect(
     fsp.readFile(resolve(root, 'dist/favicon.svg'), 'utf-8'),
   ).resolves.toBe('<svg></svg>')
+})
+
+describe('symlinked HTML entries', () => {
+  const tempDirs: string[] = []
+
+  afterEach(() => {
+    for (const dir of tempDirs.splice(0)) {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  function makeTempDir(): string {
+    // realpath so the path we pass as `root` matches `config.root` on systems
+    // where the temp directory itself is a symlink (/var -> /private/var).
+    const dir = fs.realpathSync(
+      fs.mkdtempSync(path.join(os.tmpdir(), 'vite-html-symlink-')),
+    )
+    tempDirs.push(dir)
+    return dir
+  }
+
+  function writePage(file: string): void {
+    fs.mkdirSync(path.dirname(file), { recursive: true })
+    fs.writeFileSync(
+      file,
+      '<!doctype html><html><body><script type="module" src="/main.js"></script></body></html>\n',
+    )
+  }
+
+  function writeMain(root: string): void {
+    fs.writeFileSync(path.join(root, 'main.js'), 'console.log("hi")\n')
+  }
+
+  function htmlFileNames(output: RolldownOutput): string[] {
+    return output.output
+      .filter(
+        (item) => item.type === 'asset' && item.fileName.endsWith('.html'),
+      )
+      .map((item) => item.fileName)
+      .sort()
+  }
+
+  test('emits dist/index.html and a nested entry when the HTML files are symlinks outside root', async () => {
+    const base = makeTempDir()
+    const external = path.join(base, 'external')
+    const root = path.join(base, 'sandbox')
+    writePage(path.join(external, 'index.html'))
+    writePage(path.join(external, 'nested', 'page.html'))
+    // Same basename as the nested entry, different directory: the output path
+    // has to keep the directory, not collapse to `page.html`.
+    writePage(path.join(external, 'other', 'page.html'))
+    fs.mkdirSync(path.join(root, 'nested'), { recursive: true })
+    fs.mkdirSync(path.join(root, 'other'), { recursive: true })
+    writeMain(root)
+    fs.symlinkSync(
+      path.join(external, 'index.html'),
+      path.join(root, 'index.html'),
+    )
+    fs.symlinkSync(
+      path.join(external, 'nested', 'page.html'),
+      path.join(root, 'nested', 'page.html'),
+    )
+    fs.symlinkSync(
+      path.join(external, 'other', 'page.html'),
+      path.join(root, 'other', 'page.html'),
+    )
+
+    const result = (await build({
+      root,
+      configFile: false,
+      logLevel: 'silent',
+      base: './',
+      build: {
+        rolldownOptions: {
+          input: {
+            // Chunk names must not replace the HTML output paths.
+            main: path.join(root, 'index.html'),
+            nested: path.join(root, 'nested', 'page.html'),
+            other: path.join(root, 'other', 'page.html'),
+          },
+        },
+      },
+    })) as RolldownOutput
+
+    expect(htmlFileNames(result)).toEqual([
+      'index.html',
+      'nested/page.html',
+      'other/page.html',
+    ])
+    const indexHtml = fs.readFileSync(
+      path.join(root, 'dist', 'index.html'),
+      'utf-8',
+    )
+    const nestedHtml = fs.readFileSync(
+      path.join(root, 'dist', 'nested', 'page.html'),
+      'utf-8',
+    )
+    const otherHtml = fs.readFileSync(
+      path.join(root, 'dist', 'other', 'page.html'),
+      'utf-8',
+    )
+    expect(indexHtml).toContain('./assets/')
+    expect(indexHtml).not.toContain('../')
+    expect(nestedHtml).toContain('../assets/')
+    expect(otherHtml).toContain('../assets/')
+  })
+
+  test('default index.html symlink emits dist/index.html', async () => {
+    const base = makeTempDir()
+    const external = path.join(base, 'external')
+    const root = path.join(base, 'sandbox')
+    writePage(path.join(external, 'index.html'))
+    fs.mkdirSync(root)
+    writeMain(root)
+    fs.symlinkSync(
+      path.join(external, 'index.html'),
+      path.join(root, 'index.html'),
+    )
+
+    const result = (await build({
+      root,
+      configFile: false,
+      logLevel: 'silent',
+    })) as RolldownOutput
+
+    expect(htmlFileNames(result)).toEqual(['index.html'])
+    expect(fs.existsSync(path.join(root, 'dist', 'index.html'))).toBe(true)
+  })
+
+  test('relative multi-page inputs keep nested symlink output paths', async () => {
+    const base = makeTempDir()
+    const external = path.join(base, 'external')
+    const root = path.join(base, 'sandbox')
+    writePage(path.join(external, 'index.html'))
+    writePage(path.join(external, 'nested', 'page.html'))
+    fs.mkdirSync(path.join(root, 'nested'), { recursive: true })
+    writeMain(root)
+    fs.symlinkSync(
+      path.join(external, 'index.html'),
+      path.join(root, 'index.html'),
+    )
+    fs.symlinkSync(
+      path.join(external, 'nested', 'page.html'),
+      path.join(root, 'nested', 'page.html'),
+    )
+
+    const result = (await build({
+      root,
+      configFile: false,
+      logLevel: 'silent',
+      build: {
+        rolldownOptions: {
+          cwd: root,
+          input: ['index.html', 'nested/page.html'],
+        },
+      },
+    })) as RolldownOutput
+
+    expect(htmlFileNames(result)).toEqual(['index.html', 'nested/page.html'])
+    expect(fs.existsSync(path.join(root, 'dist', 'nested', 'page.html'))).toBe(
+      true,
+    )
+  })
+
+  test('ordinary files and a symlinked root keep their HTML output paths', async () => {
+    const plain = makeTempDir()
+    writePage(path.join(plain, 'index.html'))
+    writePage(path.join(plain, 'nested', 'page.html'))
+    writeMain(plain)
+    const plainResult = (await build({
+      root: plain,
+      configFile: false,
+      logLevel: 'silent',
+      build: {
+        rolldownOptions: {
+          input: [
+            path.join(plain, 'index.html'),
+            path.join(plain, 'nested', 'page.html'),
+          ],
+        },
+      },
+    })) as RolldownOutput
+    expect(htmlFileNames(plainResult)).toEqual([
+      'index.html',
+      'nested/page.html',
+    ])
+
+    const base = makeTempDir()
+    const real = path.join(base, 'real')
+    const link = path.join(base, 'link')
+    writePage(path.join(real, 'index.html'))
+    writePage(path.join(real, 'nested', 'page.html'))
+    writeMain(real)
+    fs.symlinkSync(real, link, 'dir')
+
+    const linkedInput = (await build({
+      root: link,
+      configFile: false,
+      logLevel: 'silent',
+      build: {
+        rolldownOptions: {
+          input: [
+            path.join(link, 'index.html'),
+            path.join(link, 'nested', 'page.html'),
+          ],
+        },
+      },
+    })) as RolldownOutput
+    expect(htmlFileNames(linkedInput)).toEqual([
+      'index.html',
+      'nested/page.html',
+    ])
+    expect(fs.existsSync(path.join(real, 'dist', 'index.html'))).toBe(true)
+    expect(fs.existsSync(path.join(real, 'dist', 'nested', 'page.html'))).toBe(
+      true,
+    )
+
+    const linkedDefault = (await build({
+      root: link,
+      configFile: false,
+      logLevel: 'silent',
+    })) as RolldownOutput
+    expect(htmlFileNames(linkedDefault)).toEqual(['index.html'])
+  })
 })
 
 async function buildProjectWithRenderBuiltUrl(
