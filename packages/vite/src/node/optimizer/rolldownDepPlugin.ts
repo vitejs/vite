@@ -376,6 +376,7 @@ const matchesEntireLine = (text: string) => `^${escapeRegex(text)}$`
 export function rolldownCjsExternalPlugin(
   externals: string[],
   platform: 'node' | 'browser' | 'neutral',
+  environment: Environment,
 ): Plugin | undefined {
   // Skip this plugin for `platform: 'node'` as `require` is available in Node
   // and that is more accurate than converting to `import`
@@ -392,12 +393,16 @@ export function rolldownCjsExternalPlugin(
   platform satisfies 'browser'
 
   const filter = new RegExp(externals.map(matchesEntireLine).join('|'))
+  const resolveRequire = createBackCompatIdResolver(
+    environment.getTopLevelConfig(),
+    { asSrc: false, isRequire: true, scan: true },
+  )
 
   return {
     name: 'cjs-external',
     resolveId: {
       filter: { id: [prefixRegex(nonFacadePrefix), filter] },
-      handler(id, _importer, options) {
+      async handler(id, importer, options) {
         if (id.startsWith(nonFacadePrefix)) {
           return {
             id: id.slice(nonFacadePrefix.length),
@@ -405,6 +410,18 @@ export function rolldownCjsExternalPlugin(
           }
         }
         if (options.kind === 'require-call') {
+          // A missing optional peer must throw when require() runs, not when
+          // an eager ESM facade is evaluated. Reuse the pre-bundler's CJS stub
+          // so the dependency's try/catch can still select its fallback.
+          // Other excluded deps may intentionally be unresolvable until served.
+          const resolved = await resolveRequire(
+            environment,
+            id,
+            importer,
+          ).catch(() => undefined)
+          if (resolved?.startsWith(optionalPeerDepId)) {
+            return { id: optionalPeerDepNamespace + resolved }
+          }
           return {
             id: cjsExternalFacadeNamespace + id,
           }
