@@ -1,0 +1,21 @@
+packages/vite/src/node/optimizer/index.ts
+  s_4c41c37d38ae2e::t_f561becac5a13b 836
+playground/optimize-deps/vite.config.js
+  s_4c41c37d38ae2e::t_73a11bef55c8f1 35-36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "5e08166d7c43f6a8dc10a612afe47d71726cdd80",
+  "prompts": {},
+  "sessions": {
+    "s_4c41c37d38ae2e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0e508-7c84-7e90-abec-af2292e625b7",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "James <james@eli.cx>"
+    }
+  }
+}
