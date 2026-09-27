@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import convertSourceMap from 'convert-source-map'
+import MagicString from 'magic-string'
 import colors from 'picocolors'
 import type { ExistingRawSourceMap, SourceMap } from 'rolldown'
 import { cleanUrl } from '../../shared/utils'
@@ -146,6 +147,20 @@ export function genSourceMapUrl(map: SourceMap | string): string {
   return `data:application/json;base64,${Buffer.from(map).toString('base64')}`
 }
 
+export function getCodeWithSourcemapUrl(
+  type: 'js' | 'css',
+  code: string,
+  url: string,
+): string {
+  if (type === 'js') {
+    code += `\n//# sourceMappingURL=${url}`
+  } else if (type === 'css') {
+    code += `\n/*# sourceMappingURL=${url} */`
+  }
+
+  return code
+}
+
 export function getCodeWithSourcemap(
   type: 'js' | 'css',
   code: string,
@@ -155,13 +170,24 @@ export function getCodeWithSourcemap(
     code += `\n/*${JSON.stringify(map, null, 2).replace(/\*\//g, '*\\/')}*/\n`
   }
 
-  if (type === 'js') {
-    code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
-  } else if (type === 'css') {
-    code += `\n/*# sourceMappingURL=${genSourceMapUrl(map)} */`
-  }
+  return getCodeWithSourcemapUrl(type, code, genSourceMapUrl(map))
+}
 
-  return code
+/**
+ * Generates a boundary sourcemap for a js response with no real sourcemap,
+ * so that stepping through devtools still lands on readable source instead
+ * of the transformed output.
+ * https://github.com/vitejs/vite/pull/13514#issuecomment-1592431496
+ */
+export function genFallbackSourceMap(
+  code: string,
+  sourceFileName: string,
+): SourceMap {
+  return new MagicString(code).generateMap({
+    source: sourceFileName,
+    hires: 'boundary',
+    includeContent: true,
+  }) as SourceMap
 }
 
 export function applySourcemapIgnoreList(

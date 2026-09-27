@@ -68,22 +68,56 @@ describe.runIf(isServe)('serve', () => {
   })
 
   test('linked css with import', async () => {
-    let css: string
     if (isBundledDev) {
       // not served at its own URL, so check the style tag the bundle added
-      css = await getStyleTagContentIncluding('.linked-with-import ')
-    } else {
-      const res = await page.request.get(
-        new URL('./linked-with-import.css', page.url()).href,
-        {
-          headers: {
-            accept: 'text/css',
+      const css = await getStyleTagContentIncluding('.linked-with-import ')
+      const map = extractSourcemap(css)
+      expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
+        SourceMap {
+          content: {
+            "mappings": "ACAA;;;;ADEA",
+            "sources": [
+              "linked-with-import.css",
+              "be-imported.css",
+            ],
+            "sourcesContent": [
+              "@import '@/be-imported.css';
+
+        .linked-with-import {
+          color: red;
+        }
+        ",
+              ".be-imported {
+          color: red;
+        }
+        ",
+            ],
+            "version": 3,
           },
-        },
-      )
-      css = await res.text()
+          visualization: "https://evanw.github.io/source-map-visualization/#NzAALmJlLWltcG9ydGVkIHsKICBjb2xvcjogcmVkOwp9CgoubGlua2VkLXdpdGgtaW1wb3J0IHsKICBjb2xvcjogcmVkOwp9CjIyNgB7Im1hcHBpbmdzIjoiQUNBQTs7OztBREVBIiwic291cmNlcyI6WyJsaW5rZWQtd2l0aC1pbXBvcnQuY3NzIiwiYmUtaW1wb3J0ZWQuY3NzIl0sInNvdXJjZXNDb250ZW50IjpbIkBpbXBvcnQgJ0AvYmUtaW1wb3J0ZWQuY3NzJztcblxuLmxpbmtlZC13aXRoLWltcG9ydCB7XG4gIGNvbG9yOiByZWQ7XG59XG4iLCIuYmUtaW1wb3J0ZWQge1xuICBjb2xvcjogcmVkO1xufVxuIl0sInZlcnNpb24iOjN9"
+        }
+      `)
+      return
     }
-    const map = extractSourcemap(css)
+    const res = await page.request.get(
+      new URL('./linked-with-import.css', page.url()).href,
+      {
+        headers: {
+          accept: 'text/css',
+        },
+      },
+    )
+    const css = await res.text()
+    // direct CSS requests reference their sourcemap via an external `.map`
+    // file instead of inlining it as a base64 data URI, since a single
+    // large inline map can freeze some devtools implementations when
+    // parsed (https://github.com/vitejs/vite/issues/23549)
+    expect(css).toMatch(/\/\*# sourceMappingURL=(?!data:)\S+\.map(\?|\s)/)
+    const map = await extractSourcemap(css, async (url) => {
+      const mapRes = await page.request.get(new URL(url, res.url()).href)
+      expect(mapRes.status()).toBe(200)
+      return mapRes.text()
+    })
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
@@ -106,7 +140,7 @@ describe.runIf(isServe)('serve', () => {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#NzAALmJlLWltcG9ydGVkIHsKICBjb2xvcjogcmVkOwp9CgoubGlua2VkLXdpdGgtaW1wb3J0IHsKICBjb2xvcjogcmVkOwp9CjIyNgB7Im1hcHBpbmdzIjoiQUNBQTs7OztBREVBIiwic291cmNlcyI6WyJsaW5rZWQtd2l0aC1pbXBvcnQuY3NzIiwiYmUtaW1wb3J0ZWQuY3NzIl0sInNvdXJjZXNDb250ZW50IjpbIkBpbXBvcnQgJ0AvYmUtaW1wb3J0ZWQuY3NzJztcblxuLmxpbmtlZC13aXRoLWltcG9ydCB7XG4gIGNvbG9yOiByZWQ7XG59XG4iLCIuYmUtaW1wb3J0ZWQge1xuICBjb2xvcjogcmVkO1xufVxuIl0sInZlcnNpb24iOjN9"
+        visualization: "https://evanw.github.io/source-map-visualization/#MTI5AC5iZS1pbXBvcnRlZCB7CiAgY29sb3I6IHJlZDsKfQoKLmxpbmtlZC13aXRoLWltcG9ydCB7CiAgY29sb3I6IHJlZDsKfQoKLyojIHNvdXJjZU1hcHBpbmdVUkw9L2xpbmtlZC13aXRoLWltcG9ydC5jc3MubWFwP2RpcmVjdCAqLzIyNgB7Im1hcHBpbmdzIjoiQUNBQTs7OztBREVBIiwic291cmNlcyI6WyJsaW5rZWQtd2l0aC1pbXBvcnQuY3NzIiwiYmUtaW1wb3J0ZWQuY3NzIl0sInNvdXJjZXNDb250ZW50IjpbIkBpbXBvcnQgJ0AvYmUtaW1wb3J0ZWQuY3NzJztcblxuLmxpbmtlZC13aXRoLWltcG9ydCB7XG4gIGNvbG9yOiByZWQ7XG59XG4iLCIuYmUtaW1wb3J0ZWQge1xuICBjb2xvcjogcmVkO1xufVxuIl0sInZlcnNpb24iOjN9"
       }
     `)
   })
