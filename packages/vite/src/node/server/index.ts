@@ -1386,6 +1386,21 @@ export async function resolveServerOptions(
   return server
 }
 
+/** Preserve both failures if disposing an abandoned replacement also fails. */
+async function closeUnusedReplacementServer(
+  replacementServer: ViteDevServer,
+  restartError: unknown,
+): Promise<void> {
+  try {
+    await replacementServer.close()
+  } catch (cleanupError) {
+    throw new AggregateError(
+      [restartError, cleanupError],
+      'Server restart and replacement cleanup failed',
+    )
+  }
+}
+
 async function restartServer(server: ViteDevServer) {
   global.__vite_start_time = performance.now()
 
@@ -1428,14 +1443,7 @@ async function restartServer(server: ViteDevServer) {
     try {
       await server._closeServer('restart')
     } catch (restartError) {
-      try {
-        await newServer.close()
-      } catch (cleanupError) {
-        throw new AggregateError(
-          [restartError, cleanupError],
-          'Server restart and replacement cleanup failed',
-        )
-      }
+      await closeUnusedReplacementServer(newServer, restartError)
       throw restartError
     }
 
