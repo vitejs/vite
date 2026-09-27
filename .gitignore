@@ -1,5 +1,6 @@
 .DS_Store
 .idea
+.wrangler
 .pnpm-store
 *.cpuprofile
 *.local
