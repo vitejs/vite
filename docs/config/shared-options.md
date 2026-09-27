@@ -473,7 +473,7 @@ If set to `'auto'`, the data will be stringified only if [the data is bigger tha
 
 - **Type:** `OxcOptions | false`
 
-`OxcOptions` extends [Oxc Transformer's options](https://oxc.rs/docs/guide/usage/transformer). The most common use case is customizing JSX:
+`OxcOptions` extends [Oxc Transformer's options](https://oxc.rs/docs/guide/usage/transformer). The most common use cases are customizing JSX and setting `oxc.target` for how application source is lowered during `vite dev` (defaults to `esnext`; during `vite build`, [`build.target`](/config/build-options#build-target) takes priority when set):
 
 ```js
 export default defineConfig({

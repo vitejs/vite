@@ -89,7 +89,7 @@ While most libraries expect `"useDefineForClassFields": true`, you can explicitl
 
 Vite ignores the `target` value in the `tsconfig.json`, following the same behavior as [esbuild](https://esbuild.github.io/).
 
-To specify the target in dev, the [`oxc.target`](/config/shared-options.html#oxc) option can be used, which defaults to `esnext` for minimal transpilation. In builds, the [`build.target`](/config/build-options.html#build-target) option takes higher priority over `oxc.target` and can also be set if needed.
+To specify the target in dev, the [`oxc.target`](/config/shared-options.html#oxc) option can be used, which defaults to `esnext` for minimal transpilation. In builds, the [`build.target`](/config/build-options.html#build-target) option takes higher priority over `oxc.target` and can also be set if needed. `build.target` does not affect `vite dev`; see the [dev vs build target matrix](/config/build-options.html#build-target) for application code vs dependency pre-bundling.
 
 #### `emitDecoratorMetadata`
 

@@ -16,6 +16,15 @@ The transform is performed with Oxc Transformer and the value should be a valid 
 
 Note the build will output a warning if the code contains features that cannot be safely transpiled by Oxc. See [Oxc docs](https://oxc.rs/docs/guide/usage/transformer/lowering#warnings) for more details.
 
+`build.target` applies to **`vite build` only**. It does not change how application code or dependencies are transformed during `vite dev`. Use the options below when you need to control targets in development:
+
+| Command | Application code | Dependency pre-bundling |
+| ------- | ---------------- | ----------------------- |
+| `vite dev` | [`oxc.target`](/config/shared-options#oxc) (defaults to `esnext` for minimal transpilation) | [`optimizeDeps.rolldownOptions`](/config/dep-optimization-options#optimizedeps-rolldownoptions) (or deprecated `optimizeDeps.esbuildOptions`) |
+| `vite build` | `build.target` (takes priority over `oxc.target`) | `build.target` |
+
+This split is intentional: the dev server prefers serving modern syntax with minimal transforms. If a dependency needs a lower target while developing, configure dependency optimization separately rather than expecting `build.target` to apply.
+
 ## build.modulePreload
 
 - **Type:** `boolean | { polyfill?: boolean, resolveDependencies?: ResolveModulePreloadDependenciesFn }`
