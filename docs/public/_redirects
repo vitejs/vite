@@ -10,10 +10,10 @@ https://vitejs.dev/* https://vite.dev/:splat 301!
 /guide/rolldown.html https://v7.vite.dev/guide/rolldown 301
 
 # llms.txt
-/*.txt           /:splat.md 301
 /llms.md         /llms.txt 301
-/llms.txt        /llms.txt 200!
-/llms-full.txt   /llms-full.txt 200!
+/llms.txt        /llms.txt 200
+/llms-full.txt   /llms-full.txt 200
+/*.txt           /:splat.md 301
 
 # short links
 /rolldown /guide/rolldown 301

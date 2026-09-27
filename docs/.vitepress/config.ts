@@ -20,11 +20,17 @@ const ogImage = 'https://vite.dev/og-image.jpg'
 const ogTitle = 'Vite'
 const ogUrl = 'https://vite.dev'
 
-// netlify envs
+// Netlify and Cloudflare build environments
 const deployURL = process.env.DEPLOY_PRIME_URL || ''
-const commitRef = process.env.COMMIT_REF?.slice(0, 8) || 'dev'
+const commitRef =
+  (process.env.COMMIT_REF || process.env.WORKERS_CI_COMMIT_SHA)?.slice(0, 8) ||
+  'dev'
 
 const deployType = (() => {
+  if (process.env.WORKERS_CI === '1') {
+    return process.env.WORKERS_CI_BRANCH === 'main' ? 'main' : 'release'
+  }
+
   switch (deployURL) {
     case 'https://main--vite-docs-main.netlify.app':
       return 'main'
