@@ -94,5 +94,6 @@ See [`server.cors`](./server-options#server-cors) for more details.
 ## preview.headers
 
 - **Type:** `OutgoingHttpHeaders`
+- **Default:** [`server.headers`](./server-options#server-headers)
 
 Specify server response headers.
