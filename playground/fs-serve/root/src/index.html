@@ -31,9 +31,7 @@
 
   if (import.meta.env.DEV) {
     const base = typeof BASE !== 'undefined' ? BASE : '/'
-    const rootWithoutDrive = ROOT.replace(/^[A-Z]:/i, '')
-    const hostFileUrl = `${base}@fs${rootWithoutDrive}/root/unsafe.txt`
-
+    const hostFileUrl = `${base}@fs${ROOT}/root/unsafe.txt`
     const response = await fetch(hostFileUrl)
     text('.safe-module-path-status', response.status)
   }
