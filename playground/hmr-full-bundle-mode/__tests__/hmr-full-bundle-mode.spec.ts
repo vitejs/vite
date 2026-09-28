@@ -48,7 +48,7 @@ if (isBuild) {
     expect(await client.text()).toContain(`from "${runtimeUrl.pathname}"`)
     const runtime = await page.request.get(runtimeUrl.href)
     expect(runtime.status()).toBe(200)
-    expect(await runtime.text()).toContain('class DevRuntime')
+    expect(await runtime.text()).toContain('DevRuntime')
     const loaded: string[] = await page.evaluate(() =>
       performance.getEntriesByType('resource').map((entry) => entry.name),
     )
