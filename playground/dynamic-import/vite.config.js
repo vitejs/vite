@@ -27,7 +27,7 @@ export default defineConfig({
       configureServer(server) {
         if (!server.config.experimental.bundledDev) return
         server.middlewares.use((req, res, next) => {
-          const file = new URL(req.url, 'http://localhost').pathname.slice(1)
+          const file = new URL(`http://localhost${req.url}`).pathname.slice(1)
           if (!runtimeFiles.includes(file)) return next()
           res.setHeader(
             'Content-Type',

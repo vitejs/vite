@@ -297,8 +297,8 @@ describe.runIf(isServe)('HEAD request handling', () => {
     expect(text).toBe('')
   })
 
-  // bundled dev serves only the bundle output, and this playground's bundle
-  // has no CSS file
+  // bundled dev serves only the bundle output, and dev puts CSS into the JS
+  // bundle, so there is no CSS file to request
   test.skipIf(isBundledDev)(
     'HEAD request to CSS file returns correct Content-Type',
     async () => {

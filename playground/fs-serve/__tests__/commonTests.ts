@@ -24,12 +24,7 @@ import {
 import { getWindows83ShortNameForDotEnv as getWindows83ShortNameForDotEnv } from '../root/windows83Filename'
 import testJSON from '../safe.json'
 
-const getViteTestIndexHtmlUrl = () => {
-  const srcPrefix = viteTestUrl.endsWith('/') ? '' : '/'
-  // NOTE: viteTestUrl is set lazily
-  return viteTestUrl + srcPrefix + 'src/'
-}
-
+// `viteTestUrl` is set lazily, so this must be a function.
 // `viteTestUrl` keeps its trailing slash when the playground sets a base, so
 // plain concatenation would produce `//`-prefixed paths, which the server
 // refuses to serve as files.
@@ -43,7 +38,7 @@ const safeJsonContent = fs.readFileSync(
 const stringified = JSON.stringify(testJSON)
 
 beforeAll(async () => {
-  await page.goto(getViteTestIndexHtmlUrl())
+  await page.goto(getViteTestUrl('/src/'))
 })
 
 describe.runIf(isServe)('normal', () => {
@@ -413,7 +408,7 @@ describe('cross origin', () => {
 
   describe('allowed for same origin', () => {
     beforeEach(async () => {
-      await page.goto(getViteTestIndexHtmlUrl())
+      await page.goto(getViteTestUrl('/src/'))
     })
 
     test('fetch HTML file', async () => {
