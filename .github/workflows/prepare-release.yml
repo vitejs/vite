@@ -60,23 +60,16 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.target_branch }}
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
-
-      - name: Set node version to 24
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - name: Install pnpm and node 24
+        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
         with:
-          node-version: 24
-          package-manager-cache: false
-
-      - name: Install deps
-        run: pnpm install
+          runtime: node@24
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 

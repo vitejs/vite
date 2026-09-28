@@ -5,7 +5,7 @@ import {
   MODULE_RUNNER_SOURCEMAPPING_SOURCE,
   SOURCEMAPPING_URL,
 } from '../../shared/constants'
-import { unwrapId } from '../../shared/utils'
+import { encodeSourceURL, unwrapId } from '../../shared/utils'
 import { tryNodeResolve } from '../plugins/resolve'
 import type { DevEnvironment } from '../server/environment'
 import { genSourceMapUrl } from '../server/sourcemap'
@@ -141,13 +141,14 @@ function inlineSourceMap(
     code = code.replace(OTHER_SOURCE_MAP_REGEXP, '')
 
   const sourceMap = startOffset
-    ? Object.assign({}, map, {
+    ? {
+        ...map,
         mappings: ';'.repeat(startOffset) + map.mappings,
-      })
+      }
     : map
-  result.code = `${code.trimEnd()}\n//# sourceURL=${
-    mod.id
-  }\n${MODULE_RUNNER_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
+  result.code = `${code.trimEnd()}\n//# sourceURL=${encodeSourceURL(
+    mod.id!,
+  )}\n${MODULE_RUNNER_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
 
   return result
 }

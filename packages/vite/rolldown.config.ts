@@ -44,7 +44,8 @@ const bundledDevClientConfig = defineConfig({
   transform: {
     target: 'es2020',
   },
-  external: ['@vite/env'],
+  // the runtime is served from the installed rolldown at dev time (`getRolldownDevRuntimeFiles`)
+  external: ['@vite/env', 'rolldown/experimental/runtime'],
   output: {
     dir: path.resolve(dirname, 'dist'),
     entryFileNames: 'client/bundledDevClient.mjs',
@@ -151,7 +152,6 @@ const moduleRunnerConfig = defineConfig({
     'fsevents',
     'lightningcss',
     /^rolldown\//,
-    '@vitejs/devtools/cli-commands',
     ...Object.keys(pkg.dependencies),
   ],
   plugins: [bundleSizeLimit(55), enableSourceMapsInWatchModePlugin()],
@@ -212,9 +212,10 @@ function externalizeDepsInWatchPlugin(): Plugin {
         options.external ||= []
         if (!Array.isArray(options.external))
           throw new Error('external must be an array')
-        options.external = options.external.concat(
-          Object.keys(pkg.devDependencies),
-        )
+        options.external = [
+          ...options.external,
+          ...Object.keys(pkg.devDependencies),
+        ]
       }
     },
   }

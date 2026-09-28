@@ -48,7 +48,6 @@ export function memoryFilesMiddleware(
         res.setHeader(name, headers[name]!)
       }
 
-      res.on('finish', () => bundledDev.markPayloadDelivered(filePath))
       return res.end(file.source)
     }
     next()

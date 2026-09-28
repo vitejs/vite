@@ -36,6 +36,25 @@ if (isBuild) {
     await expect.poll(() => page.textContent('.worker-url')).toBe('worker-url')
   })
 
+  // The runtime must be the installed rolldown's, served by the dev server
+  test('loads the rolldown runtime from the server', async () => {
+    const runtimeUrl = new URL(
+      '/@rolldown/experimental-runtime.mjs',
+      page.url(),
+    )
+    const client = await page.request.get(
+      new URL('/bundledDevClient.mjs', page.url()).href,
+    )
+    expect(await client.text()).toContain(`from "${runtimeUrl.pathname}"`)
+    const runtime = await page.request.get(runtimeUrl.href)
+    expect(runtime.status()).toBe(200)
+    expect(await runtime.text()).toContain('class DevRuntime')
+    const loaded: string[] = await page.evaluate(() =>
+      performance.getEntriesByType('resource').map((entry) => entry.name),
+    )
+    expect(loaded).toContain(runtimeUrl.href)
+  })
+
   // BUNDLED -> GENERATE_HMR_PATCH -> BUNDLING -> BUNDLE_ERROR -> BUNDLING -> BUNDLED
   test('handle bundle error', async () => {
     editFile('main.js', (code) =>
