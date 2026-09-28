@@ -6,10 +6,13 @@ import type {
 import path from 'node:path'
 import convertSourceMap from 'convert-source-map'
 import getEtag from 'etag'
-import MagicString from 'magic-string'
 import type { SourceMap } from 'rolldown'
 import { createDebugger, removeTimestampQuery } from '../utils'
-import { getCodeWithSourcemap } from './sourcemap'
+import {
+  genFallbackSourceMap,
+  getCodeWithSourcemap,
+  getCodeWithSourcemapUrl,
+} from './sourcemap'
 
 const debug = createDebugger('vite:send', {
   onlyWhenFocused: true,
@@ -27,6 +30,13 @@ export interface SendOptions {
   cacheControl?: string
   headers?: OutgoingHttpHeaders
   map?: SourceMap | { mappings: '' } | null
+  /**
+   * When set, reference the sourcemap via this URL instead of inlining it as
+   * a base64 data URI. Large inline sourcemaps can produce single response
+   * lines large enough to freeze some devtools implementations when parsed
+   * (https://github.com/vitejs/vite/issues/23549).
+   */
+  sourcemapUrl?: string
 }
 
 export function send(
@@ -41,6 +51,7 @@ export function send(
     cacheControl = 'no-cache',
     headers,
     map,
+    sourcemapUrl,
   } = options
 
   if (res.writableEnded) {
@@ -66,7 +77,9 @@ export function send(
   // inject source map reference
   if (map && 'version' in map && map.mappings) {
     if (type === 'js' || type === 'css') {
-      content = getCodeWithSourcemap(type, content.toString(), map)
+      content = sourcemapUrl
+        ? getCodeWithSourcemapUrl(type, content.toString(), sourcemapUrl)
+        : getCodeWithSourcemap(type, content.toString(), map)
     }
   }
   // inject fallback sourcemap for js for improved debugging
@@ -76,17 +89,16 @@ export function send(
     // if the code has existing inline sourcemap, assume it's correct and skip
     if (convertSourceMap.mapFileCommentRegex.test(code)) {
       debug?.(`Skipped injecting fallback sourcemap for ${req.url}`)
+    } else if (sourcemapUrl) {
+      // the same boundary map is regenerated on demand by the `.map` request
+      // handler in transformMiddleware, from the same `code`
+      content = getCodeWithSourcemapUrl(type, code, sourcemapUrl)
     } else {
       const urlWithoutTimestamp = removeTimestampQuery(req.url!)
-      const ms = new MagicString(code)
       content = getCodeWithSourcemap(
         type,
         code,
-        ms.generateMap({
-          source: path.basename(urlWithoutTimestamp),
-          hires: 'boundary',
-          includeContent: true,
-        }) as SourceMap,
+        genFallbackSourceMap(code, path.basename(urlWithoutTimestamp)),
       )
     }
   }

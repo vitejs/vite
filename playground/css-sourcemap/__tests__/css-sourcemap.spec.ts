@@ -100,7 +100,16 @@ describe.runIf(isServe)('serve', () => {
       },
     )
     const css = await res.text()
-    const map = extractSourcemap(css)
+    // direct CSS requests reference their sourcemap via an external `.map`
+    // file instead of inlining it as a base64 data URI, since a single large
+    // inline map can freeze some devtools implementations when parsed
+    // (https://github.com/vitejs/vite/issues/23549)
+    expect(css).toMatch(/\/\*# sourceMappingURL=(?!data:)\S+\.map(\?|\s)/)
+    const map = await extractSourcemap(css, async (url) => {
+      const mapRes = await page.request.get(new URL(url, res.url()).href)
+      expect(mapRes.status()).toBe(200)
+      return mapRes.text()
+    })
     expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
@@ -123,7 +132,7 @@ describe.runIf(isServe)('serve', () => {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#NjkALmJlLWltcG9ydGVkIHsKICBjb2xvcjogcmVkOwp9Ci5saW5rZWQtd2l0aC1pbXBvcnQgewogIGNvbG9yOiByZWQ7Cn0KMjUzAHsibWFwcGluZ3MiOiJBQUFBO0VBQ0UsVUFBVTtBQUNaO0FDQUE7RUFDRSxVQUFVO0FBQ1oiLCJzb3VyY2VzIjpbImJlLWltcG9ydGVkLmNzcyIsImxpbmtlZC13aXRoLWltcG9ydC5jc3MiXSwic291cmNlc0NvbnRlbnQiOlsiLmJlLWltcG9ydGVkIHtcbiAgY29sb3I6IHJlZDtcbn1cbiIsIkBpbXBvcnQgJ0AvYmUtaW1wb3J0ZWQuY3NzJztcblxuLmxpbmtlZC13aXRoLWltcG9ydCB7XG4gIGNvbG9yOiByZWQ7XG59XG4iXSwidmVyc2lvbiI6M30="
+        visualization: "https://evanw.github.io/source-map-visualization/#MTI4AC5iZS1pbXBvcnRlZCB7CiAgY29sb3I6IHJlZDsKfQoubGlua2VkLXdpdGgtaW1wb3J0IHsKICBjb2xvcjogcmVkOwp9CgovKiMgc291cmNlTWFwcGluZ1VSTD0vbGlua2VkLXdpdGgtaW1wb3J0LmNzcy5tYXA/ZGlyZWN0ICovMjUzAHsibWFwcGluZ3MiOiJBQUFBO0VBQ0UsVUFBVTtBQUNaO0FDQUE7RUFDRSxVQUFVO0FBQ1oiLCJzb3VyY2VzIjpbImJlLWltcG9ydGVkLmNzcyIsImxpbmtlZC13aXRoLWltcG9ydC5jc3MiXSwic291cmNlc0NvbnRlbnQiOlsiLmJlLWltcG9ydGVkIHtcbiAgY29sb3I6IHJlZDtcbn1cbiIsIkBpbXBvcnQgJ0AvYmUtaW1wb3J0ZWQuY3NzJztcblxuLmxpbmtlZC13aXRoLWltcG9ydCB7XG4gIGNvbG9yOiByZWQ7XG59XG4iXSwidmVyc2lvbiI6M30="
       }
     `)
   })

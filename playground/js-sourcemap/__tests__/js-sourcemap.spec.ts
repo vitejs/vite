@@ -35,14 +35,28 @@ async function getDepJs(entry: string, depIdFragment: string) {
   expect(depUrl).toContain('/deps/')
 
   const depRes = await page.request.get(new URL(depUrl, page.url()).href)
-  return depRes.text()
+  return { depJs: await depRes.text(), depUrl: depRes.url() }
 }
 
-function expectConsoleLogArgumentMapsToOriginalX(
+// every non-bundled-dev response now references its sourcemap via an
+// external `.map` file instead of inlining it as a base64 data URI, since a
+// single large inline map can freeze some devtools implementations when
+// parsed (https://github.com/vitejs/vite/issues/23549)
+async function extractServedSourcemap(js: string, resourceUrl: string) {
+  expect(js).toMatch(/^\/\/# sourceMappingURL=(?!data:)\S+\.map(\?|$)/m)
+  return extractSourcemap(js, async (url) => {
+    const res = await page.request.get(new URL(url, resourceUrl).href)
+    expect(res.status()).toBe(200)
+    return res.text()
+  })
+}
+
+async function expectConsoleLogArgumentMapsToOriginalX(
   depJs: string,
+  depUrl: string,
   generatedName: string,
 ) {
-  const map = extractSourcemap(depJs)
+  const map = await extractServedSourcemap(depJs, depUrl)
   const depLines = depJs.split('\n')
   const consoleLogCallRE = new RegExp(
     `console[\\w$]*\\.\\s*log[\\w$]*\\(${escapeRegex(generatedName)}\\)`,
@@ -59,9 +73,6 @@ function expectConsoleLogArgumentMapsToOriginalX(
     column: generatedColumn,
   })
 
-  expect(depJs).toMatch(
-    /^\/\/# sourceMappingURL=data:application\/json;base64,/m,
-  )
   expect(position).toMatchObject({
     line: 6,
     column: 16,
@@ -136,7 +147,7 @@ if (!isBuild) {
     }
     const res = await page.request.get(new URL('./foo.js', page.url()).href)
     const js = await res.text()
-    const map = extractSourcemap(js)
+    const map = await extractServedSourcemap(js, res.url())
     expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
@@ -150,7 +161,7 @@ if (!isBuild) {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#MjUAZXhwb3J0IGNvbnN0IGZvbyA9ICdmb28nCjE1MQB7Im1hcHBpbmdzIjoiQUFBQSxNQUFNLENBQUMsS0FBSyxDQUFDLEdBQUcsQ0FBQyxDQUFDLENBQUMsQ0FBQyxHQUFHOyIsInNvdXJjZXMiOlsiZm9vLmpzIl0sInNvdXJjZXNDb250ZW50IjpbImV4cG9ydCBjb25zdCBmb28gPSAnZm9vJ1xuIl0sInZlcnNpb24iOjN9"
+        visualization: "https://evanw.github.io/source-map-visualization/#NTgAZXhwb3J0IGNvbnN0IGZvbyA9ICdmb28nCgovLyMgc291cmNlTWFwcGluZ1VSTD0vZm9vLmpzLm1hcDE1MQB7Im1hcHBpbmdzIjoiQUFBQSxNQUFNLENBQUMsS0FBSyxDQUFDLEdBQUcsQ0FBQyxDQUFDLENBQUMsQ0FBQyxHQUFHOyIsInNvdXJjZXMiOlsiZm9vLmpzIl0sInNvdXJjZXNDb250ZW50IjpbImV4cG9ydCBjb25zdCBmb28gPSAnZm9vJ1xuIl0sInZlcnNpb24iOjN9"
       }
     `)
   })
@@ -193,7 +204,7 @@ if (!isBuild) {
     }
     const res = await page.request.get(new URL('./bar.ts', page.url()).href)
     const js = await res.text()
-    const map = extractSourcemap(js)
+    const map = await extractServedSourcemap(js, res.url())
     expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
@@ -207,7 +218,7 @@ if (!isBuild) {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#MjYAZXhwb3J0IGNvbnN0IGJhciA9ICJiYXIiOwoxMTUAeyJtYXBwaW5ncyI6IkFBQUEsT0FBTyxNQUFNLE1BQU0iLCJzb3VyY2VzIjpbImJhci50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgY29uc3QgYmFyID0gJ2JhcidcbiJdLCJ2ZXJzaW9uIjozfQ=="
+        visualization: "https://evanw.github.io/source-map-visualization/#NTkAZXhwb3J0IGNvbnN0IGJhciA9ICJiYXIiOwoKLy8jIHNvdXJjZU1hcHBpbmdVUkw9L2Jhci50cy5tYXAxMTUAeyJtYXBwaW5ncyI6IkFBQUEsT0FBTyxNQUFNLE1BQU0iLCJzb3VyY2VzIjpbImJhci50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgY29uc3QgYmFyID0gJ2JhcidcbiJdLCJ2ZXJzaW9uIjozfQ=="
       }
     `)
   })
@@ -219,7 +230,7 @@ if (!isBuild) {
       new URL('./with-multiline-import.ts', page.url()).href,
     )
     const js = await res.text()
-    const map = extractSourcemap(js)
+    const map = await extractServedSourcemap(js, res.url())
     expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
@@ -238,7 +249,7 @@ if (!isBuild) {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#MjQ3AGNvbnN0IGZvbyA9IF9fdml0ZV9fY2pzSW1wb3J0MF9fdml0ZWpzX3Rlc3RJbXBvcnRlZVBrZ1siZm9vIl07Ly8gcHJldHRpZXItaWdub3JlCmltcG9ydCBfX3ZpdGVfX2Nqc0ltcG9ydDBfX3ZpdGVqc190ZXN0SW1wb3J0ZWVQa2cgZnJvbSAiL25vZGVfbW9kdWxlcy8udml0ZS9kZXBzL0B2aXRlanNfdGVzdC1pbXBvcnRlZS1wa2cuanM/dj0wMDAwMDAwMCI7CmNvbnNvbGUubG9nKCJ3aXRoLW11bHRpbGluZS1pbXBvcnQiLCBmb28pOwoyNDgAeyJtYXBwaW5ncyI6IjtBQUNBLFNBQ0UsV0FDSztBQUVQLFFBQVEsSUFBSSx5QkFBeUIsR0FBRyIsInNvdXJjZXMiOlsid2l0aC1tdWx0aWxpbmUtaW1wb3J0LnRzIl0sInNvdXJjZXNDb250ZW50IjpbIi8vIHByZXR0aWVyLWlnbm9yZVxuaW1wb3J0IHtcbiAgZm9vXG59IGZyb20gJ0B2aXRlanMvdGVzdC1pbXBvcnRlZS1wa2cnXG5cbmNvbnNvbGUubG9nKCd3aXRoLW11bHRpbGluZS1pbXBvcnQnLCBmb28pXG4iXSwidmVyc2lvbiI6M30="
+        visualization: "https://evanw.github.io/source-map-visualization/#Mjk4AGNvbnN0IGZvbyA9IF9fdml0ZV9fY2pzSW1wb3J0MF9fdml0ZWpzX3Rlc3RJbXBvcnRlZVBrZ1siZm9vIl07Ly8gcHJldHRpZXItaWdub3JlCmltcG9ydCBfX3ZpdGVfX2Nqc0ltcG9ydDBfX3ZpdGVqc190ZXN0SW1wb3J0ZWVQa2cgZnJvbSAiL25vZGVfbW9kdWxlcy8udml0ZS9kZXBzL0B2aXRlanNfdGVzdC1pbXBvcnRlZS1wa2cuanM/dj0wMDAwMDAwMCI7CmNvbnNvbGUubG9nKCJ3aXRoLW11bHRpbGluZS1pbXBvcnQiLCBmb28pOwoKLy8jIHNvdXJjZU1hcHBpbmdVUkw9L3dpdGgtbXVsdGlsaW5lLWltcG9ydC50cy5tYXAyNDgAeyJtYXBwaW5ncyI6IjtBQUNBLFNBQ0UsV0FDSztBQUVQLFFBQVEsSUFBSSx5QkFBeUIsR0FBRyIsInNvdXJjZXMiOlsid2l0aC1tdWx0aWxpbmUtaW1wb3J0LnRzIl0sInNvdXJjZXNDb250ZW50IjpbIi8vIHByZXR0aWVyLWlnbm9yZVxuaW1wb3J0IHtcbiAgZm9vXG59IGZyb20gJ0B2aXRlanMvdGVzdC1pbXBvcnRlZS1wa2cnXG5cbmNvbnNvbGUubG9nKCd3aXRoLW11bHRpbGluZS1pbXBvcnQnLCBmb28pXG4iXSwidmVyc2lvbiI6M30="
       }
     `)
   })
@@ -248,6 +259,29 @@ if (!isBuild) {
       expect(log).not.toMatch(/Sourcemap for .+ points to missing source files/)
     })
   })
+
+  // Inlining a sourcemap as a base64 data: URI puts the whole payload on a
+  // single line. For larger modules (and for /@vite/client, served on every
+  // page load) that line can reach hundreds of KB to ~1MB, which is enough to
+  // freeze some devtools implementations when they parse it.
+  // https://github.com/vitejs/vite/issues/23549
+  test.skipIf(isBundledDev)(
+    'does not inline large sourcemaps as a single long response line (#23549)',
+    async () => {
+      for (const url of ['./foo.js', './bar.ts', '/@vite/client']) {
+        const res = await page.request.get(new URL(url, page.url()).href)
+        const text = await res.text()
+        expect(text).not.toMatch(/sourceMappingURL=data:/)
+        const longestLine = Math.max(
+          ...text.split('\n').map((line) => line.length),
+        )
+        expect(
+          longestLine,
+          `${url} had an unexpectedly long response line (${longestLine} chars)`,
+        ).toBeLessThan(2000)
+      }
+    },
+  )
 
   test('should not leak file contents via sourcemap path traversal in node_modules', async () => {
     if (isBundledDev) {
@@ -277,7 +311,7 @@ if (!isBuild) {
     const depUrl = depUrlMatch![1]
     const depRes = await page.request.get(new URL(depUrl, page.url()).href)
     const depJs = await depRes.text()
-    const map = extractSourcemap(depJs)
+    const map = await extractServedSourcemap(depJs, depRes.url())
     expect(map.sourcesContent).toBeDefined()
     expect(map.sourcesContent).not.toContainEqual(
       expect.stringContaining('defineConfig'),
@@ -302,10 +336,7 @@ if (!isBuild) {
       expect(depUrl).toContain('.vite/deps')
       const depRes = await page.request.get(new URL(depUrl, page.url()).href)
       const depJs = await depRes.text()
-      expect(depJs).toMatch(
-        /^\/\/# sourceMappingURL=data:application\/json;base64,/m,
-      )
-      const map = extractSourcemap(depJs)
+      const map = await extractServedSourcemap(depJs, depRes.url())
       expect(map.sourcesContent).toBeDefined()
       expect(map.sourcesContent).not.toContainEqual(
         expect.stringContaining('defineConfig'),
@@ -318,7 +349,7 @@ if (!isBuild) {
   test.skipIf(isBundledDev)(
     'babel-transformed downleveled optimized dep maps to the correct original name',
     async () => {
-      const depJs = await getDepJs(
+      const { depJs, depUrl } = await getDepJs(
         './optimized-class-field-import-babel.js',
         'test-dep-class-field-sourcemap-babel',
       )
@@ -326,14 +357,14 @@ if (!isBuild) {
       expect(depJs).toContain('x = () => 1')
       expect(depJs).toContain('constructor(_x)')
       expect(depJs).toContain('console.log(_x)')
-      expectConsoleLogArgumentMapsToOriginalX(depJs, '_x')
+      await expectConsoleLogArgumentMapsToOriginalX(depJs, depUrl, '_x')
     },
   )
 
   test.skipIf(isBundledDev)(
     'oxc-transformed downleveled optimized dep maps to the correct original name',
     async () => {
-      const depJs = await getDepJs(
+      const { depJs, depUrl } = await getDepJs(
         './optimized-class-field-import-oxc.js',
         'test-dep-class-field-sourcemap-oxc',
       )
@@ -341,7 +372,7 @@ if (!isBuild) {
       expect(depJs).toContain('x$$$ = () => 1')
       expect(depJs).toContain('constructor$$$(_x$$$)')
       expect(depJs).toContain('console$$$.log$$$(_x$$$)')
-      expectConsoleLogArgumentMapsToOriginalX(depJs, '_x$$$')
+      await expectConsoleLogArgumentMapsToOriginalX(depJs, depUrl, '_x$$$')
     },
   )
 }
