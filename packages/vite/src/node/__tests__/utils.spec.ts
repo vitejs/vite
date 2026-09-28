@@ -248,6 +248,18 @@ describe('removeTimestampQuery', () => {
       '/foo.js#t=1712345678901',
     )
   })
+
+  test('strips timestamp when followed by a hash fragment (fixes #23390)', () => {
+    expect(removeTimestampQuery('/icon.svg?t=1787868494725#shape')).toBe(
+      '/icon.svg#shape',
+    )
+    expect(removeTimestampQuery('/foo.js?bar=1&t=1712345678901#frag')).toBe(
+      '/foo.js?bar=1#frag',
+    )
+    expect(
+      removeTimestampQuery('/foo.js?t=1712345678901&bar=1#frag'),
+    ).toBe('/foo.js?bar=1#frag')
+  })
 })
 
 describe('rawRE and urlRE', () => {
