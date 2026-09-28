@@ -17,10 +17,6 @@ const bundledDevExclude = [
   './playground/legacy/__tests__/chunk-importmap/legacy-chunk-importmap.spec.ts',
   './playground/object-hooks/__tests__/object-hooks.spec.ts',
   './playground/optimize-deps/__tests__/optimize-deps.spec.ts',
-  './playground/worker/__tests__/es/worker-es.spec.ts',
-  './playground/worker/__tests__/iife/worker-iife.spec.ts',
-  './playground/worker/__tests__/relative-base-iife/worker-relative-base-iife.spec.ts',
-  './playground/worker/__tests__/relative-base/worker-relative-base.spec.ts',
 ]
 
 const timeout = process.env.PWDEBUG ? Infinity : process.env.CI ? 50000 : 30000
