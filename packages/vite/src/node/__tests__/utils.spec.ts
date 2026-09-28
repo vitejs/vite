@@ -256,9 +256,9 @@ describe('removeTimestampQuery', () => {
     expect(removeTimestampQuery('/foo.js?bar=1&t=1712345678901#frag')).toBe(
       '/foo.js?bar=1#frag',
     )
-    expect(
-      removeTimestampQuery('/foo.js?t=1712345678901&bar=1#frag'),
-    ).toBe('/foo.js?bar=1#frag')
+    expect(removeTimestampQuery('/foo.js?t=1712345678901&bar=1#frag')).toBe(
+      '/foo.js?bar=1#frag',
+    )
   })
 })
 
