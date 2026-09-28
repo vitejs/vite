@@ -18,8 +18,8 @@ describe.runIf(isServe)('main', () => {
   ]) {
     test(`**/deny/** should deny ${name}`, async () => {
       const res = await page.request.fetch(new URL(urlPath, viteTestUrl).href)
-      // bundled dev never serves a project file, so the request is a 404
-      // before any deny rule is consulted
+      // bundled dev does not serve project files, and this playground has no
+      // `/index.html` for the SPA fallback
       expect(res.status()).toBe(isBundledDev ? 404 : 403)
     })
   }

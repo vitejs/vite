@@ -40,9 +40,8 @@ describe.runIf(isServe)('invalid request', () => {
   const root = path
     .resolve(import.meta.dirname.replace('playground', 'playground-temp'), '..')
     .replace(/\\/g, '/')
-  // bundled dev serves only the bundle output and the public directory. A
-  // request for a project file never reaches the file, so it is a 404 no
-  // matter what plain dev would answer.
+  // bundled dev serves only the bundle output and the public directory. Other
+  // requests fall back to `/index.html`, which this playground does not have.
   const notFound = 'HTTP/1.1 404 Not Found'
   const testCases: Array<{
     name: string
