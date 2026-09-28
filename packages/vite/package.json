@@ -97,7 +97,7 @@
     "convert-source-map": "^2.0.0",
     "cors": "^2.8.6",
     "dotenv-expand": "^13.0.0",
-    "es-module-lexer": "^2.3.2",
+    "es-module-lexer": "^3.0.2",
     "esbuild": "^0.28.2",
     "escape-html": "^1.0.3",
     "estree-walker": "^3.0.3",
