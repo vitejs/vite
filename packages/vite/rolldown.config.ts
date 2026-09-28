@@ -44,7 +44,8 @@ const bundledDevClientConfig = defineConfig({
   transform: {
     target: 'es2020',
   },
-  external: ['@vite/env'],
+  // the runtime is served from the installed rolldown at dev time (`getRolldownDevRuntimeFiles`)
+  external: ['@vite/env', 'rolldown/experimental/runtime'],
   output: {
     dir: path.resolve(dirname, 'dist'),
     entryFileNames: 'client/bundledDevClient.mjs',

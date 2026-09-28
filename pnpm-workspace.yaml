@@ -34,6 +34,15 @@ packageExtensions:
   '@volar/typescript':
     dependencies:
       '@volar/language-service': 2.4.28
+  '@vue/compiler-core':
+    dependencies:
+      '@babel/types': ^7.29.8
+  '@vue/compiler-sfc':
+    dependencies:
+      '@babel/types': ^7.29.8
+  '@vue/language-core':
+    dependencies:
+      '@vue/compiler-sfc': ^3.5.0
 allowBuilds:
   core-js: false
   vue-demi: false

@@ -57,6 +57,7 @@ export type ExportsData = {
 
 export interface DepsOptimizer {
   init: () => Promise<void>
+  initState: 'idle' | 'initializing' | 'initialized'
 
   metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
@@ -74,8 +75,8 @@ export interface DepsOptimizer {
 
 export interface DepOptimizationConfig {
   /**
-   * Force optimize listed dependencies (must be resolvable import paths,
-   * cannot be globs).
+   * Force optimize listed dependencies (must be resolvable import paths).
+   * Supports experimental glob patterns for deep imports.
    */
   include?: string[]
   /**

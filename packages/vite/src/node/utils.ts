@@ -1479,11 +1479,10 @@ function mergeConfigRecursively(
   }
   if (rootPath === 'server.hmr') {
     for (const key of wsOptionKeys) {
-      Object.defineProperty(
-        merged,
-        key,
-        Object.getOwnPropertyDescriptor(defaults, key)!,
-      )
+      const descriptor = Object.getOwnPropertyDescriptor(defaults, key)
+      if (descriptor) {
+        Object.defineProperty(merged, key, descriptor)
+      }
     }
   }
 
