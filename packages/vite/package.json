@@ -87,7 +87,7 @@
     "@types/pnpapi": "^0.0.5",
     "@vercel/detect-agent": "^1.2.5",
     "@vitejs/devtools": "^0.7.6",
-    "@vitest/utils": "4.1.11",
+    "@vitest/utils": "^4.1.11",
     "@voidzero-dev/vite-task-client": "^0.2.0",
     "artichokie": "^0.4.5",
     "baseline-browser-mapping": "^2.11.26",

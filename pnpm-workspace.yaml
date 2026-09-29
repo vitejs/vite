@@ -67,5 +67,6 @@ trustPolicyExcludePrune: true
 trustPolicyExclude:
   - '@vercel/detect-agent@1.2.5' # https://github.com/vercel/vercel/issues/17408
   - semver@6.3.1
+  - why-is-node-running@3.2.2 # https://github.com/mafintosh/why-is-node-running/issues/90
 
 dedupePeers: true
