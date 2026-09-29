@@ -487,7 +487,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           let specifier =
             importSpecifier.type === 'dynamic' && importSpecifier.glob
               ? undefined
-              : importSpecifier.specifier
+              : (importSpecifier.specifier ?? undefined)
 
           const rawUrl = source.slice(start, end)
 
