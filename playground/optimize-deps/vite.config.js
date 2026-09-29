@@ -32,7 +32,6 @@ export default defineConfig({
       '@vitejs/test-dep-cjs-for-injected-import',
     ],
     exclude: [
-      // Exclusion must not hoist a missing optional peer out of a CJS try/catch.
       '@vitejs/test-excluded-optional-peer',
       '@vitejs/test-nested-exclude',
       '@vitejs/test-dep-non-optimized',
