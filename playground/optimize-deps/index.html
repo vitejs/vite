@@ -97,6 +97,9 @@
 <div class="dep-with-optional-peer-dep-cjs"></div>
 <div class="dep-with-optional-peer-dep-cjs-error"></div>
 
+<h2>Import from optimized dependency with excluded optional peer dep (cjs)</h2>
+<div class="dep-with-excluded-optional-peer-dep-cjs"></div>
+
 <h2>Externalize known non-js files in optimize included dep</h2>
 <div class="externalize-known-non-js"></div>
 
@@ -307,6 +310,15 @@
   // expect fallback as optional peer dep not installed
   text(
     '.dep-with-optional-peer-dep-cjs-error',
+    callPeerDep() === 'fallback' ? '[success]' : `[failed]: did not fallback`,
+  )
+</script>
+
+<script type="module">
+  import { callPeerDep } from '@vitejs/test-dep-with-excluded-optional-peer-dep-cjs'
+
+  text(
+    '.dep-with-excluded-optional-peer-dep-cjs',
     callPeerDep() === 'fallback' ? '[success]' : `[failed]: did not fallback`,
   )
 </script>
