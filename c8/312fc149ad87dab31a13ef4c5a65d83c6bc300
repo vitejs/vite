@@ -1,0 +1,31 @@
+pnpm-lock.yaml
+  s_510201b50cfae7::t_b4eac1c23f5707 1318-1320,1485-1486,5718-5720,11851-11852
+playground/optimize-deps/__tests__/optimize-deps.spec.ts
+  s_510201b50cfae7::t_892c614cf0cc21 399-404
+playground/optimize-deps/dep-ts-enum/index.ts
+  s_510201b50cfae7::t_729492fd626dc5 1-16
+playground/optimize-deps/dep-ts-enum/package.json
+  s_510201b50cfae7::t_90685741ecc298 1-8
+playground/optimize-deps/index.html
+  s_510201b50cfae7::t_8c0bd94aeb0453 400-412
+playground/optimize-deps/package.json
+  s_510201b50cfae7::t_427f6e03e172e6 37
+playground/tsconfig.json
+  s_510201b50cfae7::t_68268b58caed37 14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c8312fc149ad87dab31a13ef4c5a65d83c6bc300",
+  "prompts": {},
+  "sessions": {
+    "s_510201b50cfae7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0eafc-5e6c-7ed3-90db-b4516843d814",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
