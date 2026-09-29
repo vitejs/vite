@@ -393,9 +393,11 @@ export function rolldownCjsExternalPlugin(
   platform satisfies 'browser'
 
   const filter = new RegExp(externals.map(matchesEntireLine).join('|'))
+
+  const packageCache: PackageCache = new Map()
   const resolveRequire = createBackCompatIdResolver(
     environment.getTopLevelConfig(),
-    { asSrc: false, isRequire: true, scan: true },
+    { asSrc: false, isRequire: true, scan: true, packageCache },
   )
 
   return {
