@@ -1,5 +1,7 @@
-import type { OutputBundle, OutputChunk } from 'rolldown'
+import { resolve } from 'node:path'
+import type { OutputAsset, OutputBundle, OutputChunk } from 'rolldown'
 import { describe, expect, test } from 'vitest'
+import { build } from '../build'
 import { getCssFilesForChunk } from '../plugins/html'
 
 function createChunk(
@@ -238,5 +240,41 @@ describe('getCssFilesForChunk', () => {
       'b.css',
       'a.css',
     ])
+  })
+})
+
+describe('srcset urls in index.html', () => {
+  const dirname = import.meta.dirname
+
+  async function buildFixtureHtml(): Promise<string> {
+    const outputs = await build({
+      root: resolve(dirname, 'fixtures/html-srcset'),
+      configFile: false,
+      logLevel: 'silent',
+      build: {
+        write: false,
+        assetsInlineLimit: 0,
+      },
+    })
+    const html = outputs.output.find(
+      (output) => output.type === 'asset' && output.fileName.endsWith('.html'),
+    ) as OutputAsset
+    return html.source.toString()
+  }
+
+  test('resolves percent-encoded srcset candidates against the decoded path', async () => {
+    const html = await buildFixtureHtml()
+
+    // `./asset%20space.png` resolves to `asset space.png` and is emitted
+    // with a hash, re-encoded once in the attribute
+    expect(html).toMatch(/\/assets\/asset%20space-[-\w]+\.png 1x/)
+    expect(html).toContain('imagesrcset="/assets/asset%20space-')
+    expect(html).not.toContain('%25')
+  })
+
+  test('keeps an unresolvable percent-encoded candidate as written', async () => {
+    const html = await buildFixtureHtml()
+
+    expect(html).toContain('./missing%20asset.png 2x')
   })
 })

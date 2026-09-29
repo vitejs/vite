@@ -672,6 +672,14 @@ describe.runIf(isBuild)('encodeURI', () => {
     const img = await page.$('.encodeURI')
     expect(await img.getAttribute('src')).toMatch(/^data:image\/png;base64,/)
   })
+
+  test('img srcset with encodeURI', async () => {
+    const img = await page.$('.encodeURI-srcset')
+    const srcset = await img.getAttribute('srcset')
+    srcset.split(', ').forEach((candidate) => {
+      expect(candidate).toMatch(/^data:image\/png;base64,\S+ \dx$/)
+    })
+  })
 })
 
 test('new URL(..., import.meta.url)', async () => {
