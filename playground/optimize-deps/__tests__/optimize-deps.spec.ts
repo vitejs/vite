@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
+  addFile,
   browserErrors,
   browserLogs,
   getColor,
@@ -7,6 +8,7 @@ import {
   isServe,
   page,
   readDepOptimizationMetadata,
+  removeFile,
   serverLogs,
   viteTestUrl,
 } from '~utils'
@@ -254,6 +256,45 @@ test('non optimized module is not duplicated', async () => {
     .poll(() => page.textContent('.non-optimized-module-is-not-duplicated'))
     .toBe('from-absolute-path, from-relative-path')
 })
+
+test.runIf(isServe)(
+  'node_modules module script is not duplicated',
+  async () => {
+    const packageJson = 'node_modules/test-browserhash-repro/package.json'
+    const packageIndex = 'node_modules/test-browserhash-repro/index.js'
+
+    try {
+      addFile(
+        packageJson,
+        JSON.stringify({
+          name: 'test-browserhash-repro',
+          type: 'module',
+          main: 'index.js',
+        }),
+      )
+      addFile(
+        packageIndex,
+        `document.body.insertAdjacentHTML(
+  'beforeend',
+  \`<p class="browserhash-repro-load">\${import.meta.url}</p>\`,
+)`,
+      )
+
+      await page.goto(`${viteTestUrl}/node-modules.html`)
+      const loadedUrls = await page
+        .locator('.browserhash-repro-load')
+        .allTextContents()
+      expect(loadedUrls).toHaveLength(1)
+      expect(loadedUrls[0]).toMatch(
+        /\/node_modules\/test-browserhash-repro\/index\.js\?v=\w+/,
+      )
+    } finally {
+      await page.goto(viteTestUrl)
+      removeFile(packageIndex)
+      removeFile(packageJson)
+    }
+  },
+)
 
 test.runIf(isServe)('error on builtin modules usage', () => {
   expect(browserLogs).toEqual(
