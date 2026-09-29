@@ -271,9 +271,15 @@ export class BundledDevHMRClient extends HMRClient {
     this.lastSeq = seq
 
     const update = this.computeHmrUpdate(changedIds)
-    if (update.type === 'noop') return
     if (update.type === 'full-reload') {
       this.requestFullReload(update.reason)
+      return
+    }
+    if (update.type === 'noop') {
+      // Nothing re-runs, but the patch is still loaded: a changed module that has not run
+      // yet, such as a CommonJS wrapper in the entry chunk, must find its new factory when
+      // it first runs. A failed load changes nothing on the page, so it does not reload.
+      await this.importPatch(url)
       return
     }
 
@@ -281,15 +287,22 @@ export class BundledDevHMRClient extends HMRClient {
     await this.notifyListeners('vite:beforeUpdate', listenerPayload)
     if (this.options.beforeApply() === 'reload') return
 
-    try {
-      await import(/* @vite-ignore */ this.options.base + url)
-    } catch {
+    if (!(await this.importPatch(url))) {
       this.requestFullReload(`failed to import hmr patch ${url}`)
       return
     }
 
     await this.applyUpdate(update)
     await this.notifyListeners('vite:afterUpdate', listenerPayload)
+  }
+
+  private async importPatch(url: string): Promise<boolean> {
+    try {
+      await import(/* @vite-ignore */ this.options.base + url)
+      return true
+    } catch {
+      return false
+    }
   }
 
   private async applyInvalidate(id: string): Promise<void> {
