@@ -1,0 +1,31 @@
+playground/optimize-deps/__tests__/optimize-deps.spec.ts
+  s_6aa244ed5bb16d::t_b27537e782f0e8 182-195
+pnpm-lock.yaml
+  s_6aa244ed5bb16d::t_2f2c833e3d090e 1336-1338,1501-1502,4843-4850,11026-11027
+playground/optimize-deps/dep-with-excluded-optional-peer-dep-cjs/index.js
+  s_6aa244ed5bb16d::t_9410b2cf4d4793 1-8
+playground/optimize-deps/dep-with-excluded-optional-peer-dep-cjs/package.json
+  s_6aa244ed5bb16d::t_da93325f75008d 1-14
+playground/optimize-deps/index.html
+  s_6aa244ed5bb16d::t_1acc4eea003467 100-102,317-325
+playground/optimize-deps/package.json
+  s_6aa244ed5bb16d::t_1a6612e5572268 44
+playground/optimize-deps/vite.config.js
+  s_6aa244ed5bb16d::t_9796776d102bc5 36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "66adbaac7a8d0e2711117f886b2976e60431ff56",
+  "prompts": {},
+  "sessions": {
+    "s_6aa244ed5bb16d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0eb97-6ade-7b33-b59e-7c69551070a3",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
