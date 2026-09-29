@@ -1333,6 +1333,9 @@ importers:
       '@vitejs/test-dep-with-dynamic-import':
         specifier: file:./dep-with-dynamic-import
         version: file:playground/optimize-deps/dep-with-dynamic-import
+      '@vitejs/test-dep-with-excluded-optional-peer-dep-cjs':
+        specifier: file:./dep-with-excluded-optional-peer-dep-cjs
+        version: file:playground/optimize-deps/dep-with-excluded-optional-peer-dep-cjs
       '@vitejs/test-dep-with-injected-import':
         specifier: file:./dep-with-injected-import
         version: file:playground/optimize-deps/dep-with-injected-import
@@ -1494,6 +1497,8 @@ importers:
   playground/optimize-deps/dep-with-builtin-module-esm: {}
 
   playground/optimize-deps/dep-with-dynamic-import: {}
+
+  playground/optimize-deps/dep-with-excluded-optional-peer-dep-cjs: {}
 
   playground/optimize-deps/dep-with-injected-import: {}
 
@@ -4834,6 +4839,14 @@ packages:
 
   '@vitejs/test-dep-with-dynamic-import@file:playground/optimize-deps/dep-with-dynamic-import':
     resolution: {directory: playground/optimize-deps/dep-with-dynamic-import, type: directory}
+
+  '@vitejs/test-dep-with-excluded-optional-peer-dep-cjs@file:playground/optimize-deps/dep-with-excluded-optional-peer-dep-cjs':
+    resolution: {directory: playground/optimize-deps/dep-with-excluded-optional-peer-dep-cjs, type: directory}
+    peerDependencies:
+      '@vitejs/test-excluded-optional-peer': 0.0.0
+    peerDependenciesMeta:
+      '@vitejs/test-excluded-optional-peer':
+        optional: true
 
   '@vitejs/test-dep-with-injected-import@file:playground/optimize-deps/dep-with-injected-import':
     resolution: {directory: playground/optimize-deps/dep-with-injected-import, type: directory}
@@ -11009,6 +11022,8 @@ snapshots:
   '@vitejs/test-dep-with-builtin-module-esm@file:playground/optimize-deps/dep-with-builtin-module-esm': {}
 
   '@vitejs/test-dep-with-dynamic-import@file:playground/optimize-deps/dep-with-dynamic-import': {}
+
+  '@vitejs/test-dep-with-excluded-optional-peer-dep-cjs@file:playground/optimize-deps/dep-with-excluded-optional-peer-dep-cjs': {}
 
   '@vitejs/test-dep-with-injected-import@file:playground/optimize-deps/dep-with-injected-import': {}
 

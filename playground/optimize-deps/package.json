@@ -41,6 +41,7 @@
     "@vitejs/test-dep-with-builtin-module-cjs": "file:./dep-with-builtin-module-cjs",
     "@vitejs/test-dep-with-builtin-module-esm": "file:./dep-with-builtin-module-esm",
     "@vitejs/test-dep-with-dynamic-import": "file:./dep-with-dynamic-import",
+    "@vitejs/test-dep-with-excluded-optional-peer-dep-cjs": "file:./dep-with-excluded-optional-peer-dep-cjs",
     "@vitejs/test-dep-with-optional-peer-dep": "file:./dep-with-optional-peer-dep",
     "@vitejs/test-dep-with-optional-peer-dep-cjs": "file:./dep-with-optional-peer-dep-cjs",
     "@vitejs/test-dep-with-optional-peer-dep-submodule": "file:./dep-with-optional-peer-dep-submodule",
