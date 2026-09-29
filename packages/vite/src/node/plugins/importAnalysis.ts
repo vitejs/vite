@@ -3,9 +3,9 @@ import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import type {
+  Export,
+  Import,
   ParseError as EsModuleLexerParseError,
-  ExportSpecifier,
-  ImportSpecifier,
 } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import MagicString from 'magic-string'
@@ -147,7 +147,7 @@ function normalizeResolvedIdToUrl(
 function extractImportedBindings(
   id: string,
   source: string,
-  importSpec: ImportSpecifier,
+  importSpec: Import,
   importedBindings: Map<string, Set<string>>,
 ) {
   let bindings = importedBindings.get(id)
@@ -156,15 +156,15 @@ function extractImportedBindings(
     importedBindings.set(id, bindings)
   }
 
-  const isDynamic = importSpec.d > -1
-  const isMeta = importSpec.d === -2
+  const isDynamic = importSpec.type === 'dynamic'
+  const isMeta = importSpec.type === 'import-meta'
   if (isDynamic || isMeta) {
     // this basically means the module will be impacted by any change in its dep
     bindings.add('*')
     return
   }
 
-  const exp = source.slice(importSpec.ss, importSpec.se)
+  const exp = source.slice(importSpec.importStart, importSpec.importEnd)
   ESM_STATIC_IMPORT_RE.lastIndex = 0
   const match = ESM_STATIC_IMPORT_RE.exec(exp)
   if (!match) {
@@ -272,9 +272,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const msAtStart = debug ? performance.now() : 0
-      await init
-      let imports!: readonly ImportSpecifier[]
-      let exports!: readonly ExportSpecifier[]
+      await init()
+      let imports!: readonly Import[]
+      let exports!: readonly Export[]
       source = stripBomTag(source)
       try {
         ;[imports, exports] = parseImports(source)
@@ -286,6 +286,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
         this.error(message, showCodeFrame ? e.idx : undefined)
       }
+      const exportNames = exports.flatMap((e) =>
+        e.type === 'reexport-all' || e.typeOnly ? [] : [e.name],
+      )
 
       const depsOptimizer = environment.depsOptimizer
 
@@ -474,22 +477,22 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       await Promise.all(
         imports.map(async (importSpecifier, index) => {
           const {
-            s: start,
-            e: end,
-            ss: expStart,
-            se: expEnd,
-            d: dynamicIndex,
-            a: attributeIndex,
+            start,
+            end,
+            importStart: expStart,
+            importEnd: expEnd,
           } = importSpecifier
 
-          // #2083 User may use escape path,
-          // so use imports[index].n to get the unescaped string
-          let specifier = importSpecifier.n
+          // #2083 User may use escape path, so use the decoded specifier.
+          let specifier =
+            importSpecifier.type === 'dynamic' && importSpecifier.glob
+              ? undefined
+              : importSpecifier.specifier
 
           const rawUrl = source.slice(start, end)
 
           // check import.meta usage
-          if (rawUrl === 'import.meta') {
+          if (importSpecifier.type === 'import-meta') {
             const prop = source.slice(end, end + 4)
             if (prop === '.hot') {
               hasHMR = true
@@ -533,10 +536,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
           }
 
-          const isDynamicImport = dynamicIndex > -1
+          const isDynamicImport = importSpecifier.type === 'dynamic'
 
           // strip import attributes as we can process them ourselves
-          if (!isDynamicImport && attributeIndex > -1) {
+          if (!isDynamicImport && importSpecifier.attributesStart > -1) {
             str().remove(end + 1, expEnd)
           }
 
@@ -710,6 +713,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
           } else if (!importer.startsWith(withTrailingSlash(clientDir))) {
             if (!isInNodeModules(importer)) {
+              const dynamicIndex = isDynamicImport
+                ? importSpecifier.dynamicStart
+                : -1
               // check @vite-ignore which suppresses dynamic import warning
               const hasViteIgnore = hasViteIgnoreRE.test(
                 // complete expression inside parens
@@ -858,8 +864,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (
           !isSelfAccepting &&
           isPartiallySelfAccepting &&
-          acceptedExports.size >= exports.length &&
-          exports.every((e) => acceptedExports.has(e.n))
+          acceptedExports.size >= exportNames.length &&
+          exportNames.every((name) => acceptedExports.has(name))
         ) {
           isSelfAccepting = true
         }
@@ -950,7 +956,7 @@ const interopHelperStr = interopHelper.toString().replaceAll('\n', '')
 
 export function interopNamedImports(
   str: MagicString,
-  importSpecifier: ImportSpecifier,
+  importSpecifier: Import,
   rewrittenUrl: string,
   importIndex: number,
   importer: string,
@@ -959,14 +965,13 @@ export function interopNamedImports(
 ): void {
   const source = str.original
   const {
-    s: start,
-    e: end,
-    ss: expStart,
-    se: expEnd,
-    d: dynamicIndex,
+    start,
+    end,
+    importStart: expStart,
+    importEnd: expEnd,
   } = importSpecifier
   const exp = source.slice(expStart, expEnd)
-  if (dynamicIndex > -1) {
+  if (importSpecifier.type === 'dynamic') {
     // rewrite `import('package')` to expose the default directly
     str.overwrite(
       expStart,

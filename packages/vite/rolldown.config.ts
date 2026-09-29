@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { ImportType, init, parse } from 'es-module-lexer'
+import { init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import type { Plugin } from 'rolldown'
 import { defineConfig } from 'rolldown'
@@ -325,23 +325,23 @@ function buildTimeImportMetaUrlPlugin(): Plugin {
           lastIndex++
         }
 
-        await init
+        await init()
 
         const s = new MagicString(code)
         const [imports] = parse(code)
-        for (const { t, ss, se } of imports) {
+        for (const { type, importStart, importEnd } of imports) {
           if (
-            t === ImportType.ImportMeta &&
-            code.slice(se, se + 4) === '.url'
+            type === 'import-meta' &&
+            code.slice(importEnd, importEnd + 4) === '.url'
           ) {
             // ignore import.meta.url with /** #__KEEP__ */ comment
-            if (keepCommentRE.test(code.slice(0, ss))) {
+            if (keepCommentRE.test(code.slice(0, importStart))) {
               keepCommentRE.lastIndex = 0
               continue
             }
 
             // import.meta.url
-            s.overwrite(ss, se + 4, `${prefix}${index}`)
+            s.overwrite(importStart, importEnd + 4, `${prefix}${index}`)
           }
         }
         return s.hasChanged() ? s.toString() : undefined

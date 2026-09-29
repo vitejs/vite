@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { type ImportSpecifier, init, parse } from 'es-module-lexer'
+import { type Import, init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
 import type {
@@ -537,9 +537,9 @@ export function webWorkerPostPlugin(_config: ResolvedConfig): Plugin {
       async handler(code, id) {
         // import.meta is unavailable in the IIFE worker, so we need to replace it
         if (this.environment.config.worker.format === 'iife') {
-          await init
+          await init()
 
-          let imports: readonly ImportSpecifier[]
+          let imports: readonly Import[]
           try {
             imports = parse(code)[0]
           } catch {
@@ -549,9 +549,9 @@ export function webWorkerPostPlugin(_config: ResolvedConfig): Plugin {
 
           let injectedImportMeta = false
           let s: MagicString | undefined
-          for (const { s: start, e: end, d: dynamicIndex } of imports) {
+          for (const { type, start, end } of imports) {
             // is import.meta
-            if (dynamicIndex === -2) {
+            if (type === 'import-meta') {
               const prop = code.slice(end, end + 4)
               if (prop === '.url') {
                 s ||= new MagicString(code)

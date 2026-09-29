@@ -1,7 +1,7 @@
 import path from 'node:path'
 import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
-import type { ImportSpecifier } from 'es-module-lexer'
+import type { DynamicImport } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import type { SourceMap } from 'rolldown'
@@ -66,7 +66,7 @@ function findPreloadMarker(str: string, pos: number = 0): number {
  */
 export function matchImportsToPreloadMarkers(
   code: string,
-  imports: readonly ImportSpecifier[],
+  imports: readonly DynamicImport[],
 ): number[] {
   const importMarkerPos = new Array<number>(imports.length).fill(-1)
   if (imports.length === 0) return importMarkerPos
@@ -74,7 +74,7 @@ export function matchImportsToPreloadMarkers(
   const openImports: number[] = []
   let nextImport = 0
   for (
-    let markerStartPos = findPreloadMarker(code, imports[0].e);
+    let markerStartPos = findPreloadMarker(code, imports[0].end);
     markerStartPos !== -1;
     markerStartPos = findPreloadMarker(
       code,
@@ -83,7 +83,7 @@ export function matchImportsToPreloadMarkers(
   ) {
     while (
       nextImport < imports.length &&
-      imports[nextImport].e <= markerStartPos
+      imports[nextImport].end <= markerStartPos
     ) {
       openImports.push(nextImport++)
     }
@@ -292,7 +292,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         return
       }
 
-      await init
+      await init()
 
       // If preload is not enabled, we parse through each imports and remove any imports to pure CSS chunks
       // as they are removed from the bundle
@@ -303,9 +303,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             const chunk = bundle[file]
             if (chunk.type === 'chunk' && chunk.code.includes('import')) {
               const code = chunk.code
-              let imports!: ImportSpecifier[]
+              let imports!: DynamicImport[]
               try {
-                imports = parseImports(code)[0].filter((i) => i.d > -1)
+                imports = parseImports(code)[0].filter(
+                  (i): i is DynamicImport => i.type === 'dynamic',
+                )
               } catch (e: any) {
                 const loc = numberToPos(code, e.idx)
                 this.error({
@@ -321,13 +323,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
               for (const imp of imports) {
                 const {
-                  n: name,
-                  s: start,
-                  e: end,
-                  ss: expStart,
-                  se: expEnd,
+                  specifier: name,
+                  start,
+                  end,
+                  importStart: expStart,
+                  importEnd: expEnd,
+                  glob,
                 } = imp
-                let url = name
+                let url = glob ? undefined : name
                 if (!url) {
                   const rawUrl = code.slice(start, end)
                   if (
@@ -383,9 +386,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         // dynamic import to constant json may get inlined.
         if (chunk.type === 'chunk' && chunk.code.includes(preloadMarker)) {
           const code = chunk.code
-          let imports!: ImportSpecifier[]
+          let imports!: DynamicImport[]
           try {
-            imports = parseImports(code)[0].filter((i) => i.d > -1)
+            imports = parseImports(code)[0].filter(
+              (i): i is DynamicImport => i.type === 'dynamic',
+            )
           } catch (e: any) {
             const loc = numberToPos(code, e.idx)
             this.error({
@@ -419,16 +424,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             const importMarkerPos = matchImportsToPreloadMarkers(code, imports)
 
             for (let index = 0; index < imports.length; index++) {
-              // To handle escape sequences in specifier strings, the .n field will be provided where possible.
+              // Use the decoded specifier to handle escape sequences.
               const {
-                n: name,
-                s: start,
-                e: end,
-                ss: expStart,
-                se: expEnd,
+                specifier: name,
+                start,
+                end,
+                importStart: expStart,
+                importEnd: expEnd,
+                glob,
               } = imports[index]
               // check the chunk being imported
-              let url = name
+              let url = glob ? undefined : name
               if (!url) {
                 const rawUrl = code.slice(start, end)
                 if (
