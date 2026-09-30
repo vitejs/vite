@@ -601,7 +601,7 @@ describe('resolveBuildOutputs', () => {
         builder.environments.client,
         new ChunkMetadataMap(),
       )
-      const outputs = options.output as OutputOptions | OutputOptions[]
+      const outputs = options.output!
       const output = Array.isArray(outputs) ? outputs[0] : outputs
       expect(output.minify).toStrictEqual({
         compress: true,
@@ -628,7 +628,7 @@ describe('resolveBuildOutputs', () => {
         builder.environments.client,
         new ChunkMetadataMap(),
       )
-      const outputs = options.output as OutputOptions | OutputOptions[]
+      const outputs = options.output!
       const output = Array.isArray(outputs) ? outputs[0] : outputs
       expect(output.minify).toBe(false)
     })
