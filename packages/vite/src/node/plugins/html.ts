@@ -654,7 +654,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                         !isExcludedUrl(decodedUrl)
                       ) {
                         const result = await processAssetUrl(
-                          url,
+                          decodedUrl,
                           getLinkShouldInline(node, attr.attributes),
                         )
                         return result !== decodedUrl
