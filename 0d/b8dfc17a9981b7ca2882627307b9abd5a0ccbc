@@ -1,0 +1,19 @@
+docs/superpowers/specs/2026-07-24-worker-bundle-reference-dag-design.md
+  s_013d8cd021e52a::t_1299aed3637eb2 1-78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "0db8dfc17a9981b7ca2882627307b9abd5a0ccbc",
+  "prompts": {},
+  "sessions": {
+    "s_013d8cd021e52a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8786-e804-7a83-9e78-3033f2cf6658",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

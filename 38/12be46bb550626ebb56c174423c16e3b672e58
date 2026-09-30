@@ -1,0 +1,21 @@
+docs/.vitepress/theme/components/VersionsList.vue
+  s_da2398f19240d6::t_cb4bec7c2953e8 1-17
+docs/.vitepress/theme/components/SupportedVersions.vue
+  s_da2398f19240d6::t_3c8cfffc0158dc 3,103,107,111
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "3812be46bb550626ebb56c174423c16e3b672e58",
+  "prompts": {},
+  "sessions": {
+    "s_da2398f19240d6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa7a6-341b-7840-bf24-d1231ace0fd9",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

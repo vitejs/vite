@@ -1,0 +1,19 @@
+playground/hmr-full-bundle-mode/data.js
+  s_b49e0e1e676bb2::t_3eaa58103f712d 19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "030b870d8a4b0beab4fef1e0ccda3e47db7544c0",
+  "prompts": {},
+  "sessions": {
+    "s_b49e0e1e676bb2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb673-9081-7f92-a97e-c2bb05ea3839",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+playground/hmr-full-bundle-mode/index.html
+  s_c8225030c07fcf::t_f5d3d8bc711b97 13-14
+playground/hmr-full-bundle-mode/data.js
+  s_c8225030c07fcf::t_a32257953ad95f 1-23
+playground/hmr-full-bundle-mode/__tests__/hmr-full-bundle-mode.spec.ts
+  s_c8225030c07fcf::t_6def2bfb4ab3f4 227-245
+packages/vite/src/client/bundledDevHmrClient.ts
+  s_c8225030c07fcf::t_abb14b9ea1eb65 167
+playground/hmr-full-bundle-mode/main.js
+  s_c8225030c07fcf::t_f65cc49ca79314 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "33186aa768ae618ffc940a3a9718365fa15ce988",
+  "prompts": {},
+  "sessions": {
+    "s_c8225030c07fcf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_c8225030c07fcf",
+        "model": "unknown"
+      },
+      "human_author": "hana <andywangsy@gmail.com>"
+    }
+  }
+}

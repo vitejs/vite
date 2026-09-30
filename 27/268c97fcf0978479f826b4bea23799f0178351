@@ -1,0 +1,23 @@
+packages/vite/src/node/plugins/importAnalysis.ts
+  s_4901f29ad8b30e::t_13fa512cd4b540 593
+packages/vite/src/node/server/middlewares/__tests__/transform.spec.ts
+  s_4901f29ad8b30e::t_d5d17190f167a6 6,8,15-22
+packages/vite/src/node/server/middlewares/transform.ts
+  s_4901f29ad8b30e::t_8efbf003fbc656 65-68,329,333-335
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "27268c97fcf0978479f826b4bea23799f0178351",
+  "prompts": {},
+  "sessions": {
+    "s_4901f29ad8b30e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa76d-c3ae-7cb0-ab7f-42e6688e291d",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

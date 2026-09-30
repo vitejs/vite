@@ -1,0 +1,19 @@
+docs/superpowers/specs/2026-08-05-hmr-raw-module-ids-design.md
+  s_291ca8ed9ef212::t_94edcb8eaec318 1-89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "a8a2dd09e4c3dfed189d948a14e4398e68a80f13",
+  "prompts": {},
+  "sessions": {
+    "s_291ca8ed9ef212": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd010-8f8d-72b3-a262-5c6421a03627",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

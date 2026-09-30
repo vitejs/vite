@@ -1,0 +1,49 @@
+packages/vite/src/node/server/middlewares/indexHtml.ts
+  s_2ec570738b081e::t_36003f2bde5031 53,140-141,193,199,248-258,316,340,383,406
+packages/vite/src/node/plugins/html.ts
+  s_71ca55805e137c::t_a256df463df0f4 37,1475,1498-1500,1523-1524
+packages/vite/src/node/server/htmlSafeModulePaths.ts
+  s_71ca55805e137c::t_86001efe2b9f30 1-96
+packages/vite/src/node/server/middlewares/__tests__/fixtures/root/classic.js
+  s_71ca55805e137c::t_b81516ded45df3 1
+packages/vite/src/node/server/middlewares/__tests__/fixtures/root/dynamic.js
+  s_71ca55805e137c::t_b52f0cdd3dd780 1
+packages/vite/src/node/server/middlewares/__tests__/fixtures/root/style.css
+  s_71ca55805e137c::t_c68b79bd5102c5 1-3
+playground/hmr/vite.config.ts
+  s_71ca55805e137c::t_d35155e7804858 12-22
+playground/html/vite.config.js
+  s_71ca55805e137c::t_f2519f6d2a696d 45-54,283
+playground/resolve/index.html
+  s_71ca55805e137c::t_25b27b026ae5e0 189-190
+playground/resolve/vite.config-mainfields-custom-first.js
+  s_71ca55805e137c::t_d8ab3e76e06beb 1-7
+playground/resolve/vite.config.js
+  s_71ca55805e137c::t_c69b8871e2d514 41,170
+playground/vitestSetup.ts
+  s_71ca55805e137c::t_d8f5a0c13b8345 265
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "196281c18225b208e8b59ce634a406d38ffc0392",
+  "prompts": {},
+  "sessions": {
+    "s_2ec570738b081e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fccb7-f658-7101-a175-5734a632e3a1",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_71ca55805e137c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb1d6-bb22-79d1-b25c-575baf1f60d1",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

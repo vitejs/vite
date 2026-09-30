@@ -1,0 +1,21 @@
+packages/vite/src/node/server/__tests__/sourcemap.spec.ts
+  s_111b3942c11cab::t_99ec06791edaf7 94-111
+packages/vite/src/node/server/sourcemap.ts
+  s_111b3942c11cab::t_f24ae8106d37b9 95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f76466f60fe9b1d59ea989f0e2d9d23b0d829de1",
+  "prompts": {},
+  "sessions": {
+    "s_111b3942c11cab": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0d2c4-586c-73d3-8cfe-4bf838b615c9",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

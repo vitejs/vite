@@ -1,0 +1,19 @@
+docs/superpowers/specs/2026-08-04-prepare-release-pr-body-design.md
+  s_03f2b743616ccf::t_70a3c9434f9379 1-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "63b64b530f6efaf3d40eeb38c4eff0c212f92125",
+  "prompts": {},
+  "sessions": {
+    "s_03f2b743616ccf": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fcc1e-0702-7a50-bfa3-e1602d3a0cbb",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

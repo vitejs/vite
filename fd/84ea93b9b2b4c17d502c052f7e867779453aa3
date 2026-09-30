@@ -1,0 +1,47 @@
+packages/vite/src/node/__tests__/fixtures/config/shebang-crlf/.gitattributes
+  s_013d8cd021e52a::t_8bdd6cfb0d9526 1
+packages/vite/src/node/__tests__/utils.spec.ts
+  s_2d65d8212c4ff8::t_35251cb8627b03 15,459-485
+packages/vite/src/node/plugins/importAnalysisBuild.ts
+  s_7ea1c7ab509564::t_d977a9a2d9204d 9-14,578
+packages/vite/src/node/utils.ts
+  s_013d8cd021e52a::t_5cc7277e3568d1 1992-1994
+packages/vite/src/node/config.ts
+  s_013d8cd021e52a::t_fffed2311c7a83 92,101,2639-2640,2642-2643,2645
+packages/vite/src/node/plugins/css.ts
+  s_013d8cd021e52a::t_296b4300f18a13 68,78,1230-1232,1237
+packages/vite/src/node/ssr/__tests__/ssrTransform.spec.ts
+  s_013d8cd021e52a::t_0ce7b7a183b60c 1158-1165
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "fd84ea93b9b2b4c17d502c052f7e867779453aa3",
+  "prompts": {},
+  "sessions": {
+    "s_013d8cd021e52a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8786-e804-7a83-9e78-3033f2cf6658",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_2d65d8212c4ff8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9226-7063-76d1-a7c0-8da51e6f5598",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_7ea1c7ab509564": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9240-4821-7ac3-88bf-8e287ef68274",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

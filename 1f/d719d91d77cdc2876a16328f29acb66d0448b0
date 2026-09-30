@@ -1,0 +1,21 @@
+playground/hmr/virtual-invalidation/dep.js
+  s_3c48b57b0c6dd8::t_044a1870cab7ac 1
+playground/hmr/virtual-invalidation/parent.js
+  s_3c48b57b0c6dd8::t_cdbef834c9f983 1-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "1fd719d91d77cdc2876a16328f29acb66d0448b0",
+  "prompts": {},
+  "sessions": {
+    "s_3c48b57b0c6dd8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fcf96-0e74-7b42-8ea1-16d0182901f3",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

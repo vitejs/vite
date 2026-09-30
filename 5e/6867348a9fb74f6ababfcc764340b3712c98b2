@@ -1,0 +1,19 @@
+docs/superpowers/specs/2026-08-05-css-code-split-false-sourcemaps-design.md
+  s_2ec570738b081e::t_6afad4fda6df75 1-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "5e6867348a9fb74f6ababfcc764340b3712c98b2",
+  "prompts": {},
+  "sessions": {
+    "s_2ec570738b081e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fccb7-f658-7101-a175-5734a632e3a1",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

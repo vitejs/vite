@@ -1,0 +1,41 @@
+playground/hmr/virtual-invalidation/dep.js
+  s_3c48b57b0c6dd8::t_044a1870cab7ac 1
+playground/hmr/virtual-invalidation/parent.js
+  s_3c48b57b0c6dd8::t_cdbef834c9f983 1-7
+packages/vite/src/node/plugins/importAnalysis.ts
+  s_56dc7265a8fef3::t_f45d5401e6bcf2 684-686,688,708,792,830
+packages/vite/src/node/server/hmr.ts
+  s_56dc7265a8fef3::t_81efc5de05f034 24,722,734-735
+packages/vite/src/module-runner/hmrHandler.ts
+  s_56dc7265a8fef3::t_658c7f3c13d967 2
+packages/vite/src/node/server/environment.ts
+  s_56dc7265a8fef3::t_73633c25848bb6 20,179
+packages/vite/src/node/server/transformRequest.ts
+  s_56dc7265a8fef3::t_2edcb5fc24ee2d 494-495,502,515
+packages/vite/types/customEvent.d.ts
+  s_56dc7265a8fef3::t_952e7b8f1a293c 42-45,48-51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "5399f523c6fa566d1b57a41a9b031252fb215b49",
+  "prompts": {},
+  "sessions": {
+    "s_3c48b57b0c6dd8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fcf96-0e74-7b42-8ea1-16d0182901f3",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_56dc7265a8fef3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd067-1a21-7941-996d-40009bc682c2",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

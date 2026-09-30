@@ -1,0 +1,81 @@
+packages/vite/src/module-runner/evaluatedModules.ts
+  s_b38dadacac32a8::t_2499cc775fbfa7 22,24,38,49-52,59-62,64-67,74-75,77,81,84,86,152-153,156
+packages/vite/src/module-runner/runner.ts
+  s_b38dadacac32a8::t_4fb9bd69b9b6b5 88-89,91-93,167,210,221,224,226-234,236-239,274,284,290-291,293,305,315-316,332,353,371
+packages/vite/src/module-runner/types.ts
+  s_b38dadacac32a8::t_22a71ff0b10fd6 74,76,81
+packages/vite/src/node/plugins/importAnalysis.ts
+  s_09e560005eae14::t_32889c716619e0 109,116,122,134,136,142-143,146,340,348,364-371,377,383,394-398,402,404-405,415-418,429,431,434-435,438,447,452-453,455,599-605,610-612,614,651,656,660,675,681,690,693,699-703,705,725-726,824-832,842,845,849-851,891
+packages/vite/src/node/server/hmr.ts
+  s_09e560005eae14::t_11a28c5ba33a3f 1127-1133,1135
+packages/vite/src/node/server/index.ts
+  s_09e560005eae14::t_62afe45fa64646 355-356,359,367,674,677,679,682
+packages/vite/src/node/server/middlewares/base.ts
+  s_39c6903aab69f9::t_72201dc84104e3 13-14,18-20,32,40-42
+packages/vite/src/node/server/middlewares/indexHtml.ts
+  s_09e560005eae14::t_5f1a037b8a6843 163-164,168,170,179-181,183-184,190,192,197,563,568-570
+packages/vite/src/node/server/middlewares/transform.ts
+  s_09e560005eae14::t_5213340a60679f 133-135,137,153,160,163-169,206,220-221,226-229,231-233,236,239,241,250-251,253,260,263,265-266,328
+packages/vite/src/node/server/mixedModuleGraph.ts
+  s_09e560005eae14::t_e3b9783f3b941d 125,132,139,268,270,274,333,338-339,449,454,466-469
+packages/vite/src/node/server/moduleGraph.ts
+  s_09e560005eae14::t_247301b4515e32 17,21,24-27,68-71,79-83,85-86,94,102,104,107,121,128,135,137-139,144-145,345,348,355,357,360-362,367-370,374,379,390-393,395,399-401,405-407,416,418,423,430,432,434-436,440,464,466,472,475,482,485-486,488-490,494,496,500
+packages/vite/src/node/server/pluginContainer.ts
+  s_09e560005eae14::t_b49d9168351618 358-361,488,540
+packages/vite/src/node/server/transformRequest.ts
+  s_09e560005eae14::t_277a37d8948bf4 76,80,108-110,112,114,126,131,137,143,154,160,165,174,176,180-186,189,199,216,220-222,247,255,330-333,346,364,435,495-496,498,500,503-505,507,512,515,525
+packages/vite/src/node/ssr/ssrModuleLoader.ts
+  s_39c6903aab69f9::t_f91502aa108f2c 20,31,34,42,47,54,62-64
+packages/vite/src/shared/hmr.ts
+  s_b38dadacac32a8::t_750bbc82e3f5e4 9,15,30
+packages/vite/src/shared/invokeMethods.ts
+  s_b38dadacac32a8::t_c6d242ae5cadfe 40-41,45,49,80
+packages/vite/src/shared/utils.ts
+  s_8e8b95e72d5315::t_c10775ceb53df5 7-10,12-15,19-20,22-25
+packages/vite/types/hmrPayload.d.ts
+  s_b38dadacac32a8::t_4dceea2fc99de1 41,43,58
+packages/vite/src/node/server/environment.ts
+  s_8e8b95e72d5315::t_374a1f130bfa3f 139-140,284,288,300-303,306,313
+packages/vite/src/node/ssr/fetchModule.ts
+  s_8e8b95e72d5315::t_2c3e2e9257f44b 26,31-32,34,38,40-41,46-51,56,74,86,88,91,96,100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "64dd2c09f0d213acf5e951633fea8ec13b81b7ff",
+  "prompts": {},
+  "sessions": {
+    "s_09e560005eae14": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb617-df8c-7c13-b523-1bf55b89bedc",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_39c6903aab69f9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb134-cfae-79b2-8256-7e3ce1ffaf48",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_8e8b95e72d5315": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb36a-986f-7110-9508-3d30c6fbd505",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_b38dadacac32a8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb3f1-4068-7b81-968f-a350329b15c3",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

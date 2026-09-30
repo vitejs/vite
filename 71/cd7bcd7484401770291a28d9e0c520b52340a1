@@ -1,0 +1,35 @@
+playground/hmr-ssr/__tests__/hmr-ssr.spec.ts
+  s_5c21bda6e12018::t_b1e53814b57ab8 118-149,824-832
+playground/hmr/__tests__/hmr.spec.ts
+  s_5c21bda6e12018::t_dfad281e8107e7 89-120,1057-1065
+packages/vite/src/shared/hmr.ts
+  s_5c21bda6e12018::t_20a0cf6ce667e8 217-234
+playground/hmr-ssr/file-delete-restore/child.js
+  s_5c21bda6e12018::t_8b18a377c54d00 6-13,26
+playground/hmr-ssr/hmr.ts
+  s_5c21bda6e12018::t_531a783fe8447b 3
+playground/hmr-ssr/hotData.js
+  s_5c21bda6e12018::t_295dc32db9832f 1-15
+playground/hmr/file-delete-restore/child.js
+  s_5c21bda6e12018::t_57221099621c96 6-13,26
+playground/hmr/hmr.ts
+  s_5c21bda6e12018::t_0ef76fbc346ee3 4
+playground/hmr/hotData.js
+  s_5c21bda6e12018::t_71607751985c41 1-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "71cd7bcd7484401770291a28d9e0c520b52340a1",
+  "prompts": {},
+  "sessions": {
+    "s_5c21bda6e12018": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f84c8-2333-7082-a139-312eac7d3349",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

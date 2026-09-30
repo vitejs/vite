@@ -1,0 +1,21 @@
+packages/vite/src/node/server/__tests__/hmr.spec.ts
+  s_bdf9c626fb3fad::t_da48cc30ed6c8d 4,6,15,22,40-54
+packages/vite/src/node/server/hmr.ts
+  s_bdf9c626fb3fad::t_1fd39486003f04 419-423,516,522,558,597,612,619,625,665-666,669,671-675
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "2450ddacd180316ea7743dd887d4d383656bddc0",
+  "prompts": {},
+  "sessions": {
+    "s_bdf9c626fb3fad": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f84bf-7d77-7f83-9928-c54476ba2490",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

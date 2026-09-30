@@ -1,0 +1,21 @@
+packages/vite/src/node/ssr/__tests__/ssrTransform.spec.ts
+  s_56425ea7f20b78::t_b9946fb0c8777d 780-836
+packages/vite/src/node/ssr/ssrTransform.ts
+  s_56425ea7f20b78::t_2b581da81e8df0 578-579
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "398f4e54432ca2815fafee7cac1028be62fd2694",
+  "prompts": {},
+  "sessions": {
+    "s_56425ea7f20b78": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01945-7ad9-7000-91cd-c8e3c11e69c9",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

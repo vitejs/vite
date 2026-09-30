@@ -1,0 +1,31 @@
+playground/chunk-importmap/index.js
+  s_e506ac547b5ec1::t_69b89d24308022 3
+playground/chunk-importmap/direct-dynamic.css
+  s_cbfa8f43b113ac::t_179d12ed09dd66 1-3
+playground/chunk-importmap/index.html
+  s_cbfa8f43b113ac::t_dbf6d052bdd874 15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "de30648e112e11f59446de8467e1212a4c63c593",
+  "prompts": {},
+  "sessions": {
+    "s_cbfa8f43b113ac": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f6ee8-6223-7210-ae3c-e2fce1fec54c",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_e506ac547b5ec1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f6faa-7a7d-7500-b59c-dd73d37827a9",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

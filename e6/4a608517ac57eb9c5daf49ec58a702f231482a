@@ -1,0 +1,19 @@
+docs/superpowers/specs/2026-07-29-input-safe-modules-design.md
+  s_54d5bd3c84b54a::t_bcd243f0a2e2a0 1-46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e64a608517ac57eb9c5daf49ec58a702f231482a",
+  "prompts": {},
+  "sessions": {
+    "s_54d5bd3c84b54a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fac4a-5b32-7683-bc9f-a1f22ba297f3",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

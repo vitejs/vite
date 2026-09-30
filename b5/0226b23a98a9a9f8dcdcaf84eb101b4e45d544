@@ -1,0 +1,19 @@
+docs/superpowers/specs/2026-07-24-hashbang-line-terminators-design.md
+  s_2d65d8212c4ff8::t_1711c00fc250ea 1-80
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b50226b23a98a9a9f8dcdcaf84eb101b4e45d544",
+  "prompts": {},
+  "sessions": {
+    "s_2d65d8212c4ff8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9226-7063-76d1-a7c0-8da51e6f5598",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

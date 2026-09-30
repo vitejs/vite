@@ -1,0 +1,35 @@
+playground/css-codesplit-cjs/vite.config.js
+  s_013d8cd021e52a::t_e06a55b943ec2d 5-8
+playground/css/vite.config-sass-modern-compiler-build.js
+  s_013d8cd021e52a::t_871e2e7f7bba13 5-14
+playground/css/vite.config.js
+  s_013d8cd021e52a::t_bfbaf20515a16d 16-20
+playground/environment-react-ssr/vite.config.ts
+  s_013d8cd021e52a::t_8562585e330c96 48-50
+playground/fs-serve/root/vite.config-base.js
+  s_013d8cd021e52a::t_081decdcef33dd 11-13
+playground/fs-serve/root/vite.config-deny.js
+  s_013d8cd021e52a::t_5d881fd68ebb2d 6-8
+playground/fs-serve/root/vite.config.js
+  s_013d8cd021e52a::t_28091aad692e34 8-10
+playground/multiple-entrypoints/vite.config.js
+  s_013d8cd021e52a::t_59d3af2c28faad 7-34
+playground/resolve/vite.config-sass-node-builtin-clash.js
+  s_013d8cd021e52a::t_d19c9d25813e22 5-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "6abb21b76e5060a73016307876fab91f65d36633",
+  "prompts": {},
+  "sessions": {
+    "s_013d8cd021e52a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8786-e804-7a83-9e78-3033f2cf6658",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
