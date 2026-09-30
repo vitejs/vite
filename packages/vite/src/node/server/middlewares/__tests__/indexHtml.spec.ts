@@ -1,4 +1,6 @@
 import fs from 'node:fs'
+import http from 'node:http'
+import type { AddressInfo } from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
@@ -705,5 +707,25 @@ describe('indexHtml middleware — safe module paths', () => {
         )
       }
     })
+  })
+})
+
+describe('indexHtml middleware — malformed URI', () => {
+  test('responds 404 to an .html URL with a malformed escape', async () => {
+    const server = await createTestServer()
+    const httpServer = http.createServer(server.middlewares)
+    await new Promise<void>((resolve) =>
+      httpServer.listen(0, '127.0.0.1', resolve),
+    )
+    onTestFinished(() => {
+      httpServer.close()
+    })
+    const { port } = httpServer.address() as AddressInfo
+
+    for (const url of ['/%E0%A4%A.html', `${FS_PREFIX}%E0%A4%A.html`]) {
+      const res = await fetch(`http://127.0.0.1:${port}${url}`)
+      expect(res.status, url).toBe(404)
+    }
+    expect((await fetch(`http://127.0.0.1:${port}/`)).status).toBe(200)
   })
 })
