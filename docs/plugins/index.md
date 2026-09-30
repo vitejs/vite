@@ -42,11 +42,11 @@ Provides legacy browsers support for the production build.
 
 Check out [Vite Plugin Registry](https://registry.vite.dev/plugins) for the list of plugins published to npm.
 
-## Rolldown Builtin Plugins
+## Rolldown Built-in Plugins
 
-Vite uses [Rolldown](https://rolldown.rs/) under the hood and it provides a few builtin plugins for common use cases.
+Vite uses [Rolldown](https://rolldown.rs/) under the hood and it provides a few built-in plugins for common use cases.
 
-Read the [Rolldown Builtin Plugins section](https://rolldown.rs/builtin-plugins/) for more information.
+Read the [Rolldown Built-in Plugins section](https://rolldown.rs/builtin-plugins/) for more information.
 
 ## Rolldown / Rollup Plugins
 
