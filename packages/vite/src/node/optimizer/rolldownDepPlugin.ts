@@ -1,7 +1,7 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
 import type { ImportKind, Plugin, RolldownPlugin } from 'rolldown'
-import { prefixRegex } from 'rolldown/filter'
+import { exactRegex, prefixRegex } from 'rolldown/filter'
 import { stripLiteral } from 'strip-literal'
 import { isWindows } from '../../shared/utils'
 import { JS_TYPES_RE, KNOWN_ASSET_TYPES } from '../constants'
@@ -58,7 +58,6 @@ const externalTypes = [
 
 const optionalPeerDepNamespace = 'optional-peer-dep:'
 const browserExternalNamespace = 'browser-external:'
-const browserExternalEmptyNamespace = 'browser-external-empty:'
 
 export function rolldownDepPlugin(
   environment: Environment,
@@ -125,7 +124,7 @@ export function rolldownDepPlugin(
     // An exact browser-external id is an explicit browser:false mapping.
     // Suffixed ids are unsupported Node builtins and still need the warning.
     if (resolved === browserExternalId) {
-      return { id: browserExternalEmptyNamespace + id }
+      return { id: browserExternalId }
     }
     if (resolved.startsWith(browserExternalId)) {
       return {
@@ -261,13 +260,13 @@ export function rolldownDepPlugin(
       load: {
         filter: {
           id: [
-            prefixRegex(browserExternalEmptyNamespace),
+            exactRegex(browserExternalId),
             prefixRegex(browserExternalNamespace),
             prefixRegex(optionalPeerDepNamespace),
           ],
         },
         handler(id) {
-          if (id.startsWith(browserExternalEmptyNamespace)) {
+          if (id === browserExternalId) {
             return { code: 'module.exports = {}' }
           }
           if (id.startsWith(browserExternalNamespace)) {
