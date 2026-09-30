@@ -674,7 +674,7 @@ describe.runIf(isBuild)('encodeURI', () => {
   })
 
   test('img srcset with encodeURI', async () => {
-    const img = await page.$('.encodeURI-srcset')
+    const img = await page.$('.encodeURI')
     const srcset = await img.getAttribute('srcset')
     srcset.split(', ').forEach((candidate) => {
       expect(candidate).toMatch(/^data:image\/png;base64,\S+ \dx$/)
