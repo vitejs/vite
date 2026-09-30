@@ -39,6 +39,10 @@ export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadHelperId = '\0vite/preload-helper.js'
 const preloadMarkerRE = new RegExp(preloadMarker, 'g')
 
+export function isCssPreloadUrl(url: URL): boolean {
+  return url.pathname.endsWith('.css')
+}
+
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.posix.relative(path.posix.dirname(importer), filename)
   return relPath[0] === '.' ? relPath : `./${relPath}`
@@ -148,23 +152,23 @@ function preload(
       )
     }
 
-    function importMetaResolve(specifier: string): string {
+    function importMetaResolve(specifier: string): URL {
       // @ts-expect-error import.meta.resolve is not supported by all browsers we support
       // But `import.meta.resolve` is only needed when build.chunkImportMap is enabled,
       // and that option requires `import.meta.resolve` support.
       if (import.meta.resolve) {
-        return import.meta.resolve(specifier)
+        return new URL(import.meta.resolve(specifier))
       }
-      return new URL(specifier, /** #__KEEP__ */ import.meta.url).href
+      return new URL(specifier, /** #__KEEP__ */ import.meta.url)
     }
 
     promise = allSettled(
       deps
-        .map((dep) => {
+        .map((depString) => {
           // @ts-expect-error assetsURL is declared before preload.toString()
-          dep = assetsURL(dep, importerUrl)
-          dep = importMetaResolve(dep)
-          if (dep in seen) return
+          depString = assetsURL(depString, importerUrl)
+          const dep = importMetaResolve(depString)
+          if (dep.href in seen) return
           if (!scannedLinks) {
             scannedLinks = true
             const links = document.getElementsByTagName('link')
@@ -178,12 +182,16 @@ function preload(
               }
             }
           }
-          seen[dep] = true
-          const isCss = dep.endsWith('.css')
+          seen[dep.href] = true
+          const isCss = isCssPreloadUrl(dep)
 
           // check if the file is already preloaded by SSR markup
-          // `dep` is already converted to an absolute URL by the `assetsURL` function
-          if (isCss ? preloadedStyleHref.has(dep) : preloadedHref.has(dep)) {
+          // `importMetaResolve` converts `dep` to an absolute URL
+          if (
+            isCss
+              ? preloadedStyleHref.has(dep.href)
+              : preloadedHref.has(dep.href)
+          ) {
             return
           }
 
@@ -193,7 +201,7 @@ function preload(
             link.as = 'script'
           }
           link.crossOrigin = ''
-          link.href = dep
+          link.href = dep.href
           if (cspNonce) {
             link.setAttribute('nonce', cspNonce)
           }
@@ -262,7 +270,7 @@ function getPreloadCode(
         `function(dep) { return ${JSON.stringify(environment.config.base)}+dep }`
   // replace `import` as a workaround for stackblitz: https://stackblitz.com/edit/node-vqfvv8dy?file=index.js
   const preloadMethodCode = preload.toString().replaceAll('𝐢𝐦𝐩𝐨𝐫𝐭', 'import')
-  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preloadMethodCode}`
+  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};const isCssPreloadUrl = ${isCssPreloadUrl.toString()};export const ${preloadMethod} = ${preloadMethodCode}`
   return preloadCode
 }
 
