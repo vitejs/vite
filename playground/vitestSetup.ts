@@ -403,16 +403,32 @@ export async function notifyRebuildComplete(
   watcher: RolldownWatcher,
 ): Promise<void> {
   let resolveFn: undefined | (() => void)
+  let timeout: ReturnType<typeof setTimeout> | undefined
   const callback = (event: RolldownWatcherEvent): void => {
-    if (event.code === 'END') {
-      resolveFn?.()
+    if (event.code === 'START' || event.code === 'BUNDLE_START') {
+      if (timeout) {
+        clearTimeout(timeout)
+        timeout = undefined
+      }
+    } else if (event.code === 'END') {
+      if (timeout) {
+        clearTimeout(timeout)
+      }
+      timeout = setTimeout(
+        () => {
+          resolveFn?.()
+        },
+        process.platform === 'win32' ? 150 : 50,
+      )
     }
   }
   watcher.on('event', callback)
   await new Promise<void>((resolve) => {
     resolveFn = resolve
   })
-
+  if (timeout) {
+    clearTimeout(timeout)
+  }
   watcher.off('event', callback)
 }
 
