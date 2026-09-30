@@ -1,16 +1,16 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { posix, resolve, win32 } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it, vi } from 'vitest'
-import { isWindows } from '../../../../shared/utils'
+import type { HMRLogger } from '../../../../../dist/node/module-runner'
 import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
+import { isWindows } from '../../../../shared/utils'
 import { createServer } from '../../../server'
 import {
   createRunnableDevEnvironment,
   isRunnableDevEnvironment,
 } from '../../../server/environments/runnableEnvironment'
-import type { HMRLogger } from '../../../../../dist/node/module-runner'
 import { createModuleRunnerTester } from './utils'
 
 const _URL = URL
@@ -270,6 +270,17 @@ describe('module runner initialization', async () => {
     await mod.setupCyclic()
     const action = await mod.importAction('/fixtures/cyclic/action')
     expect(action).toBeDefined()
+  })
+
+  it('resolves circular imports between modules with top-level await', async ({
+    runner,
+  }) => {
+    const mod = await runner.import('/fixtures/tla-circular/index.js')
+
+    expect(mod.a).toBe('a')
+    expect(mod.b).toBe('b')
+    expect(mod.getA()).toBe('a')
+    expect(mod.getB()).toBe('b')
   })
 
   it('this of the exported function should be undefined', async ({

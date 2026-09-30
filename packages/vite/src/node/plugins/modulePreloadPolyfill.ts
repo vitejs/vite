@@ -1,5 +1,5 @@
-import { exactRegex } from 'rolldown/filter'
 import { viteModulePreloadPolyfillPlugin as nativeModulePreloadPolyfillPlugin } from 'rolldown/experimental'
+import { exactRegex } from 'rolldown/filter'
 import type { Plugin } from '../plugin'
 
 export const modulePreloadPolyfillId = 'vite/modulepreload-polyfill'

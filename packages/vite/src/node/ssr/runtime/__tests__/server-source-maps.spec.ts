@@ -1,5 +1,5 @@
-import { runInThisContext } from 'node:vm'
 import { resolve } from 'node:path'
+import { runInThisContext } from 'node:vm'
 import { describe, expect } from 'vitest'
 import type { ViteDevServer } from '../../..'
 import type { ModuleRunnerContext } from '../../../../module-runner'
@@ -155,6 +155,21 @@ describe('module runner initialization', async () => {
       'Error: crash',
       '    at crash (<root>/fixtures/has-error-toplevel-dep.js:2:9)',
       '    at <root>/fixtures/has-error-toplevel.js:3:1',
+    ])
+  })
+
+  it('maps stack traces when the module path contains a space', async ({
+    runner,
+    server,
+  }) => {
+    const methodError = await getError(async () => {
+      const mod = await runner.import('/fixtures/with space/has-error-deep.ts')
+      mod.main()
+    })
+    expect(serializeStackDeep(server, methodError).slice(0, 3)).toEqual([
+      'Error: crash',
+      '    at crash (<root>/fixtures/with space/has-error-deep.ts:2:9)',
+      '    at Module.main (<root>/fixtures/with space/has-error-deep.ts:6:3)',
     ])
   })
 

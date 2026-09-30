@@ -1,8 +1,8 @@
-import { describe, expect, test } from 'vitest'
 import { parseAst } from 'rollup/parseAst'
-import { assetImportMetaUrlPlugin } from '../../plugins/assetImportMetaUrl'
-import { resolveConfig } from '../../config'
+import { describe, expect, test } from 'vitest'
 import { PartialEnvironment } from '../../baseEnvironment'
+import { resolveConfig } from '../../config'
+import { assetImportMetaUrlPlugin } from '../../plugins/assetImportMetaUrl'
 
 async function createAssetImportMetaurlPluginTransform() {
   const config = await resolveConfig({ configFile: false }, 'serve')

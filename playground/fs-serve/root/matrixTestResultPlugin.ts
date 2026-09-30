@@ -1,5 +1,5 @@
-import type { Plugin } from 'vite'
 import escapeHtml from 'escape-html'
+import type { Plugin } from 'vite'
 
 const testIds = [
   'safe',

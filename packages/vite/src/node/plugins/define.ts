@@ -1,8 +1,8 @@
 import { transformSync } from 'rolldown/utils'
 import type { ResolvedConfig } from '../config'
+import type { Environment } from '../environment'
 import type { Plugin } from '../plugin'
 import { escapeRegex, isCSSRequest } from '../utils'
-import type { Environment } from '../environment'
 import { isHTMLRequest } from './html'
 
 const nonJsRe = /\.json(?:$|\?)/

@@ -1,11 +1,10 @@
-import { URL, fileURLToPath } from 'node:url'
-import { promisify } from 'node:util'
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
+import { URL, fileURLToPath } from 'node:url'
+import { promisify } from 'node:util'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
-import { describe, expect, test, vi } from 'vitest'
 import { mapFileCommentRegex } from 'convert-source-map'
-import { commentSourceMap } from '../foo-with-sourcemap-plugin'
+import { describe, expect, test, vi } from 'vitest'
 import {
   extractSourcemap,
   findAssetFile,
@@ -17,6 +16,7 @@ import {
   readFile,
   serverLogs,
 } from '~utils'
+import { commentSourceMap } from '../foo-with-sourcemap-plugin'
 
 const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
 function escapeRegex(str: string): string {
@@ -361,7 +361,10 @@ describe.runIf(isBuild)('build tests', () => {
         SourceMap {
           content: {
             "debugId": "00000000-0000-0000-0000-000000000000",
-            "mappings": ";0sCAAA,aAAO,qDAEP,QAAQ,IAAI,uBAAuB",
+            "mappings": ";guCAAAA,MAAA,OAAO,qDAEP,QAAQ,IAAI,uBAAuB",
+            "names": [
+              "__vitePreload",
+            ],
             "sources": [
               "../../after-preload-dynamic.js",
             ],
@@ -373,7 +376,7 @@ describe.runIf(isBuild)('build tests', () => {
             ],
             "version": 3,
           },
-          visualization: "https://evanw.github.io/source-map-visualization/#MTU5NwBjb25zdCBfX3ZpdGVfX21hcERlcHM9KGksbT1fX3ZpdGVfX21hcERlcHMsZD0obS5mfHwobS5mPVsiYXNzZXRzL2R5bmFtaWMtZm9vLUJ3aFpUa3RCLmpzIiwiYXNzZXRzL2R5bmFtaWMtZm9vLURzcUtSckV5LmNzcyJdKSkpPT5pLm1hcChpPT5kW2ldKTsKdmFyIGU9ZnVuY3Rpb24oZSl7cmV0dXJuYC9gK2V9LHQ9e30sbj1mdW5jdGlvbihlKXtyZXR1cm4gbmV3IFVSTChlKS5wYXRobmFtZS5lbmRzV2l0aChgLmNzc2ApfSxyPWZ1bmN0aW9uKHIsaSxhKXtsZXQgbz1Qcm9taXNlLnJlc29sdmUoKTtpZihpJiZpLmxlbmd0aD4wKXtsZXQgcj1kb2N1bWVudC5nZXRFbGVtZW50c0J5VGFnTmFtZShgbGlua2ApLHM9ZG9jdW1lbnQucXVlcnlTZWxlY3RvcihgbWV0YVtwcm9wZXJ0eT1jc3Atbm9uY2VdYCksYz1zPy5ub25jZXx8cz8uZ2V0QXR0cmlidXRlKGBub25jZWApO2Z1bmN0aW9uIGwoZSl7cmV0dXJuIFByb21pc2UuYWxsKGUubWFwKGU9PlByb21pc2UucmVzb2x2ZShlKS50aGVuKGU9Pih7c3RhdHVzOmBmdWxmaWxsZWRgLHZhbHVlOmV9KSxlPT4oe3N0YXR1czpgcmVqZWN0ZWRgLHJlYXNvbjplfSkpKSl9ZnVuY3Rpb24gdShlKXtyZXR1cm4gaW1wb3J0Lm1ldGEucmVzb2x2ZT9pbXBvcnQubWV0YS5yZXNvbHZlKGUpOm5ldyBVUkwoZSxpbXBvcnQubWV0YS51cmwpLmhyZWZ9bz1sKGkubWFwKGk9PntpZihpPWUoaSxhKSxpPXUoaSksaSBpbiB0KXJldHVybjt0W2ldPSEwO2xldCBvPW4oaSk7Zm9yKGxldCBlPXIubGVuZ3RoLTE7ZT49MDtlLS0pe2xldCB0PXJbZV07aWYodC5ocmVmPT09aSYmKCFvfHx0LnJlbD09PWBzdHlsZXNoZWV0YCkpcmV0dXJufWxldCBzPWRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoYGxpbmtgKTtpZihzLnJlbD1vP2BzdHlsZXNoZWV0YDpgbW9kdWxlcHJlbG9hZGAsb3x8KHMuYXM9YHNjcmlwdGApLHMuY3Jvc3NPcmlnaW49YGAscy5ocmVmPWksYyYmcy5zZXRBdHRyaWJ1dGUoYG5vbmNlYCxjKSxkb2N1bWVudC5oZWFkLmFwcGVuZENoaWxkKHMpLG8pcmV0dXJuIG5ldyBQcm9taXNlKChlLHQpPT57cy5hZGRFdmVudExpc3RlbmVyKGBsb2FkYCxlKSxzLmFkZEV2ZW50TGlzdGVuZXIoYGVycm9yYCwoKT0+dChFcnJvcihgVW5hYmxlIHRvIHByZWxvYWQgQ1NTIGZvciAke2l9YCkpKX0pfSkpfWZ1bmN0aW9uIHMoZSl7bGV0IHQ9bmV3IEV2ZW50KGB2aXRlOnByZWxvYWRFcnJvcmAse2NhbmNlbGFibGU6ITB9KTtpZih0LnBheWxvYWQ9ZSx3aW5kb3cuZGlzcGF0Y2hFdmVudCh0KSwhdC5kZWZhdWx0UHJldmVudGVkKXRocm93IGV9cmV0dXJuIG8udGhlbihlPT57Zm9yKGxldCB0IG9mIGV8fFtdKXQuc3RhdHVzPT09YHJlamVjdGVkYCYmcyh0LnJlYXNvbik7cmV0dXJuIHIoKS5jYXRjaChzKX0pfTtyKCgpPT5pbXBvcnQoYC4vZHluYW1pYy1mb28tQndoWlRrdEIuanNgKSxfX3ZpdGVfX21hcERlcHMoWzAsMV0pKSxjb25zb2xlLmxvZyhgYWZ0ZXIgcHJlbG9hZCBkeW5hbWljYCk7ZXhwb3J0e3IgYXMgdH07Ci8vIyBkZWJ1Z0lkPTM0NWJhOGQ1LTI3YmUtNDk2ZC1hNDliLTAzY2RjMGE1ZTBkZAovLyMgc291cmNlTWFwcGluZ1VSTD1hZnRlci1wcmVsb2FkLWR5bmFtaWMtMFc2alZKNzQuanMubWFwMjUxAHsiZGVidWdJZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMCIsIm1hcHBpbmdzIjoiOzBzQ0FBQSxhQUFPLHFEQUVQLFFBQVEsSUFBSSx1QkFBdUIiLCJzb3VyY2VzIjpbIi4uLy4uL2FmdGVyLXByZWxvYWQtZHluYW1pYy5qcyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQoJy4vZHluYW1pYy9keW5hbWljLWZvbycpXG5cbmNvbnNvbGUubG9nKCdhZnRlciBwcmVsb2FkIGR5bmFtaWMnKVxuIl0sInZlcnNpb24iOjN9"
+          visualization: "https://evanw.github.io/source-map-visualization/#MTYxOQBjb25zdCBfX3ZpdGVfX21hcERlcHM9KGksbT1fX3ZpdGVfX21hcERlcHMsZD0obS5mfHwobS5mPVsiYXNzZXRzL2R5bmFtaWMtZm9vLUJ3aFpUa3RCLmpzIiwiYXNzZXRzL2R5bmFtaWMtZm9vLURzcUtSckV5LmNzcyJdKSkpPT5pLm1hcChpPT5kW2ldKTsKdmFyIGU9ZnVuY3Rpb24oZSl7cmV0dXJuYC9gK2V9LHQ9e30sbj1mdW5jdGlvbihlKXtyZXR1cm4gbmV3IFVSTChlKS5wYXRobmFtZS5lbmRzV2l0aChgLmNzc2ApfSxyPWZ1bmN0aW9uKHIsaSxhKXtsZXQgbz1Qcm9taXNlLnJlc29sdmUoKTtpZihpJiZpLmxlbmd0aD4wKXtsZXQgcj1kb2N1bWVudC5nZXRFbGVtZW50c0J5VGFnTmFtZShgbGlua2ApLHM9ZG9jdW1lbnQucXVlcnlTZWxlY3RvcihgbWV0YVtwcm9wZXJ0eT1jc3Atbm9uY2VdYCksYz1zPy5ub25jZXx8cz8uZ2V0QXR0cmlidXRlKGBub25jZWApO2Z1bmN0aW9uIGwoZSl7cmV0dXJuIFByb21pc2UuYWxsKGUubWFwKGU9PlByb21pc2UucmVzb2x2ZShlKS50aGVuKGU9Pih7c3RhdHVzOmBmdWxmaWxsZWRgLHZhbHVlOmV9KSxlPT4oe3N0YXR1czpgcmVqZWN0ZWRgLHJlYXNvbjplfSkpKSl9ZnVuY3Rpb24gdShlKXtyZXR1cm4gaW1wb3J0Lm1ldGEucmVzb2x2ZT9pbXBvcnQubWV0YS5yZXNvbHZlKGUpOm5ldyBVUkwoZSxpbXBvcnQubWV0YS51cmwpLmhyZWZ9bz1sKGkubWFwKGk9PntpZihpPWUoaSxhKSxpPXUoaSksaSBpbiB0KXJldHVybjt0W2ldPSEwO2xldCBvPW4oaSk7Zm9yKGxldCBlPXIubGVuZ3RoLTE7ZT49MDtlLS0pe2xldCB0PXJbZV07aWYodC5ocmVmPT09aSYmKCFvfHx0LnJlbD09PWBzdHlsZXNoZWV0YCkpcmV0dXJufWxldCBzPWRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoYGxpbmtgKTtpZihzLnJlbD1vP2BzdHlsZXNoZWV0YDpgbW9kdWxlcHJlbG9hZGAsb3x8KHMuYXM9YHNjcmlwdGApLHMuY3Jvc3NPcmlnaW49YGAscy5ocmVmPWksYyYmcy5zZXRBdHRyaWJ1dGUoYG5vbmNlYCxjKSxkb2N1bWVudC5oZWFkLmFwcGVuZENoaWxkKHMpLG8pcmV0dXJuIG5ldyBQcm9taXNlKChlLHQpPT57cy5hZGRFdmVudExpc3RlbmVyKGBsb2FkYCxlKSxzLmFkZEV2ZW50TGlzdGVuZXIoYGVycm9yYCwoKT0+dChFcnJvcihgVW5hYmxlIHRvIHByZWxvYWQgQ1NTIGZvciAke2l9YCkpKX0pfSkuZmlsdGVyKGU9PmUhPT12b2lkIDApKX1mdW5jdGlvbiBzKGUpe2xldCB0PW5ldyBFdmVudChgdml0ZTpwcmVsb2FkRXJyb3JgLHtjYW5jZWxhYmxlOiEwfSk7aWYodC5wYXlsb2FkPWUsd2luZG93LmRpc3BhdGNoRXZlbnQodCksIXQuZGVmYXVsdFByZXZlbnRlZCl0aHJvdyBlfXJldHVybiBvLnRoZW4oZT0+e2ZvcihsZXQgdCBvZiBlfHxbXSl0LnN0YXR1cz09PWByZWplY3RlZGAmJnModC5yZWFzb24pO3JldHVybiByKCkuY2F0Y2gocyl9KX07cigoKT0+aW1wb3J0KGAuL2R5bmFtaWMtZm9vLUJ3aFpUa3RCLmpzYCksX192aXRlX19tYXBEZXBzKFswLDFdKSksY29uc29sZS5sb2coYGFmdGVyIHByZWxvYWQgZHluYW1pY2ApO2V4cG9ydHtyIGFzIHR9OwovLyMgZGVidWdJZD0wMTg1MzA5ZS02YjAwLTRlYTctYmY3NS1hOWFiYzc1N2E5ZWIKLy8jIHNvdXJjZU1hcHBpbmdVUkw9YWZ0ZXItcHJlbG9hZC1keW5hbWljLUJoVENlYXdBLmpzLm1hcDI4MwB7ImRlYnVnSWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAiLCJtYXBwaW5ncyI6IjtndUNBQUFBLE1BQUEsT0FBTyxxREFFUCxRQUFRLElBQUksdUJBQXVCIiwibmFtZXMiOlsiX192aXRlUHJlbG9hZCJdLCJzb3VyY2VzIjpbIi4uLy4uL2FmdGVyLXByZWxvYWQtZHluYW1pYy5qcyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQoJy4vZHluYW1pYy9keW5hbWljLWZvbycpXG5cbmNvbnNvbGUubG9nKCdhZnRlciBwcmVsb2FkIGR5bmFtaWMnKVxuIl0sInZlcnNpb24iOjN9"
         }
       `)
     // verify sourcemap comment is preserved at the last line
@@ -420,7 +423,12 @@ describe.runIf(isBuild)('build tests', () => {
         SourceMap {
           content: {
             "debugId": "00000000-0000-0000-0000-000000000000",
-            "mappings": "AAEA,SAAS,GAAO,CACd,EAAU,CACZ,CAEA,SAAS,GAAY,CAEnB,QAAQ,MAAM,qBAAA,CAAA,MAAA,MAAA,CAAwC,CACxD,CAEA,EAAK",
+            "mappings": "AAEA,SAASA,GAAO,CACdC,EAAU,CACZ,CAEA,SAASA,GAAY,CAEnB,QAAQ,MAAM,qBAAA,CAAAC,MAAA,MAAA,CAAwC,CACxD,CAEAF,EAAK",
+            "names": [
+              "main",
+              "mainInner",
+              ""hello"",
+            ],
             "sources": [
               "../../with-define-object.ts",
             ],
@@ -441,7 +449,7 @@ describe.runIf(isBuild)('build tests', () => {
             ],
             "version": 3,
           },
-          visualization: "https://evanw.github.io/source-map-visualization/#MTkwAGZ1bmN0aW9uIGUoKXt0KCl9ZnVuY3Rpb24gdCgpe2NvbnNvbGUudHJhY2UoYHdpdGgtZGVmaW5lLW9iamVjdGAse2hlbGxvOmB0ZXN0YH0pfWUoKTsKLy8jIGRlYnVnSWQ9NjRlNzI1NTUtMTk0Zi00MTRkLTk1MzUtOWVmYjI1ZTQyZmI2Ci8vIyBzb3VyY2VNYXBwaW5nVVJMPXdpdGgtZGVmaW5lLW9iamVjdC1CazV5VlZHVS5qcy5tYXA1MTAAeyJkZWJ1Z0lkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIiwibWFwcGluZ3MiOiJBQUVBLFNBQVMsR0FBTyxDQUNkLEVBQVUsQ0FDWixDQUVBLFNBQVMsR0FBWSxDQUVuQixRQUFRLE1BQU0scUJBQUEsQ0FBQSxNQUFBLE1BQUEsQ0FBd0MsQ0FDeEQsQ0FFQSxFQUFLIiwic291cmNlcyI6WyIuLi8uLi93aXRoLWRlZmluZS1vYmplY3QudHMiXSwic291cmNlc0NvbnRlbnQiOlsiLy8gdGVzdCBjb21wbGljYXRlZCBzdGFjayBzaW5jZSBicm9rZW4gc291cmNlbWFwXG4vLyBtaWdodCBzdGlsbCBsb29rIGNvcnJlY3Qgd2l0aCBhIHNpbXBsZSBjYXNlXG5mdW5jdGlvbiBtYWluKCkge1xuICBtYWluSW5uZXIoKVxufVxuXG5mdW5jdGlvbiBtYWluSW5uZXIoKSB7XG4gIC8vIEB0cy1leHBlY3QtZXJyb3IgXCJkZWZpbmVcIlxuICBjb25zb2xlLnRyYWNlKCd3aXRoLWRlZmluZS1vYmplY3QnLCBfX3Rlc3REZWZpbmVPYmplY3QpXG59XG5cbm1haW4oKVxuIl0sInZlcnNpb24iOjN9"
+          visualization: "https://evanw.github.io/source-map-visualization/#MTkwAGZ1bmN0aW9uIGUoKXt0KCl9ZnVuY3Rpb24gdCgpe2NvbnNvbGUudHJhY2UoYHdpdGgtZGVmaW5lLW9iamVjdGAse2hlbGxvOmB0ZXN0YH0pfWUoKTsKLy8jIGRlYnVnSWQ9NjRlNzI1NTUtMTk0Zi00MTRkLTk1MzUtOWVmYjI1ZTQyZmI2Ci8vIyBzb3VyY2VNYXBwaW5nVVJMPXdpdGgtZGVmaW5lLW9iamVjdC1CazV5VlZHVS5qcy5tYXA1NTYAeyJkZWJ1Z0lkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIiwibWFwcGluZ3MiOiJBQUVBLFNBQVNBLEdBQU8sQ0FDZEMsRUFBVSxDQUNaLENBRUEsU0FBU0EsR0FBWSxDQUVuQixRQUFRLE1BQU0scUJBQUEsQ0FBQUMsTUFBQSxNQUFBLENBQXdDLENBQ3hELENBRUFGLEVBQUsiLCJuYW1lcyI6WyJtYWluIiwibWFpbklubmVyIiwiXCJoZWxsb1wiIl0sInNvdXJjZXMiOlsiLi4vLi4vd2l0aC1kZWZpbmUtb2JqZWN0LnRzIl0sInNvdXJjZXNDb250ZW50IjpbIi8vIHRlc3QgY29tcGxpY2F0ZWQgc3RhY2sgc2luY2UgYnJva2VuIHNvdXJjZW1hcFxuLy8gbWlnaHQgc3RpbGwgbG9vayBjb3JyZWN0IHdpdGggYSBzaW1wbGUgY2FzZVxuZnVuY3Rpb24gbWFpbigpIHtcbiAgbWFpbklubmVyKClcbn1cblxuZnVuY3Rpb24gbWFpbklubmVyKCkge1xuICAvLyBAdHMtZXhwZWN0LWVycm9yIFwiZGVmaW5lXCJcbiAgY29uc29sZS50cmFjZSgnd2l0aC1kZWZpbmUtb2JqZWN0JywgX190ZXN0RGVmaW5lT2JqZWN0KVxufVxuXG5tYWluKClcbiJdLCJ2ZXJzaW9uIjozfQ=="
         }
       `)
   })

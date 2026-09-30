@@ -1,4 +1,6 @@
 import path from 'node:path'
+import type { PartialEnvironment } from './baseEnvironment'
+import type { Environment } from './environment'
 import type { InternalResolveOptions } from './plugins/resolve'
 import { tryNodeResolve } from './plugins/resolve'
 import {
@@ -9,8 +11,6 @@ import {
   isBuiltin,
   isInNodeModules,
 } from './utils'
-import type { Environment } from './environment'
-import type { PartialEnvironment } from './baseEnvironment'
 
 const debug = createDebugger('vite:external')
 

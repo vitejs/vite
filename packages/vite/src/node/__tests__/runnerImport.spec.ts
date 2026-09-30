@@ -1,8 +1,8 @@
 import { resolve } from 'node:path'
-import { describe, expect, test } from 'vitest'
 import { loadConfigFromFile } from 'vite'
-import { runnerImport } from '../ssr/runnerImport'
+import { describe, expect, test } from 'vitest'
 import { slash } from '../../shared/utils'
+import { runnerImport } from '../ssr/runnerImport'
 
 // eslint-disable-next-line n/no-unsupported-features/node-builtins
 const isTypeStrippingSupported = !!process.features.typescript

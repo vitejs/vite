@@ -1,12 +1,12 @@
+import type { SpawnOptions } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import util from 'node:util'
-import type { SpawnOptions } from 'node:child_process'
-import spawn from 'cross-spawn'
-import mri from 'mri'
 import * as prompts from '@clack/prompts'
 import { determineAgent } from '@vercel/detect-agent'
+import mri from 'mri'
+import { xSync } from 'tinyexec'
 
 const {
   blue,
@@ -36,7 +36,7 @@ const argv = mri<{
 })
 const cwd = process.cwd()
 
-// prettier-ignore
+// oxfmt-ignore
 const helpMessage = `\
 Usage: create-vite [OPTION]... [DIRECTORY]
 
@@ -172,12 +172,20 @@ const FRAMEWORKS: Framework[] = [
         customCommand: 'npm create react-router@latest TARGET_DIR',
       },
       {
+        name: 'custom-tanstack-start-react',
+        display: 'TanStack Start ↗',
+        link: 'https://tanstack.com/start',
+        color: cyan,
+        customCommand:
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --interactive',
+      },
+      {
         name: 'custom-tanstack-router-react',
         display: 'TanStack Router ↗',
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --router-only --interactive',
       },
       {
         name: 'redwoodsdk-standard',
@@ -274,12 +282,20 @@ const FRAMEWORKS: Framework[] = [
         color: yellow,
       },
       {
+        name: 'custom-tanstack-start-solid',
+        display: 'TanStack Start ↗',
+        link: 'https://tanstack.com/start',
+        color: cyan,
+        customCommand:
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --interactive',
+      },
+      {
         name: 'custom-tanstack-router-solid',
         display: 'TanStack Router ↗',
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --router-only --interactive',
       },
       {
         name: 'custom-vike-solid',
@@ -399,15 +415,17 @@ const renameFiles: Record<string, string | undefined> = {
 const defaultTargetDir = 'vite-project'
 
 function run([command, ...args]: string[], options?: SpawnOptions) {
-  const { status, error } = spawn.sync(command, args, options)
-  if (status != null && status > 0) {
-    process.exit(status)
-  }
-
-  if (error) {
+  let exitCode: number | undefined
+  try {
+    ;({ exitCode } = xSync(command, args, { nodeOptions: options }))
+  } catch (error) {
     console.error(`\n${command} ${args.join(' ')} error!`)
     console.error(error)
     process.exit(1)
+  }
+
+  if (exitCode != null && exitCode > 0) {
+    process.exit(exitCode)
   }
 }
 
@@ -621,10 +639,10 @@ async function init() {
     const replacedArgs = args.map((arg) =>
       arg.replace('TARGET_DIR', () => targetDir),
     )
-    const { status } = spawn.sync(command, replacedArgs, {
-      stdio: 'inherit',
+    const { exitCode } = xSync(command, replacedArgs, {
+      nodeOptions: { stdio: 'inherit' },
     })
-    process.exit(status ?? 0)
+    process.exit(exitCode ?? 0)
   }
 
   // 5. Ask whether to use ESLint instead of Oxlint (React templates only)
@@ -806,7 +824,7 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
 
 function setupReactCompiler(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@rolldown/plugin-babel
-  const babelPluginVersion = '0.2.3'
+  const babelPluginVersion = '0.2.4'
   // renovate: datasource=npm depName=babel-plugin-react-compiler
   const reactCompilerPluginVersion = '1.0.0'
   // renovate: datasource=npm depName=@babel/core
@@ -850,7 +868,9 @@ import babel from '@rolldown/plugin-babel'`,
   )
   updateReactCompilerReadme(
     root,
-    'The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.\n\nNote: This will impact Vite dev & build performances.',
+    'The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.\n\n' +
+      'Note: This will impact Vite dev & build performances.\n' +
+      'You can also try [the experimental native React Compiler support in plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md#rust-react-compiler) by using `compiler: true` in the plugin options instead of using the Babel plugin.',
   )
 }
 
@@ -858,15 +878,15 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@eslint/js
   const eslintJsVersion = '10.0.1'
   // renovate: datasource=npm depName=eslint
-  const eslintVersion = '10.8.0'
+  const eslintVersion = '10.11.0'
   // renovate: datasource=npm depName=eslint-plugin-react-hooks
   const eslintPluginReactHooksVersion = '7.1.1'
   // renovate: datasource=npm depName=eslint-plugin-react-refresh
-  const eslintPluginReactRefreshVersion = '0.5.3'
+  const eslintPluginReactRefreshVersion = '0.5.7'
   // renovate: datasource=npm depName=globals
-  const globalsVersion = '17.8.0'
+  const globalsVersion = '17.12.0'
   // renovate: datasource=npm depName=typescript-eslint
-  const typescriptEslintVersion = '8.65.0'
+  const typescriptEslintVersion = '8.70.1'
 
   const eslintConfigForTS = /* js */ `import js from '@eslint/js'
 import globals from 'globals'
@@ -1013,7 +1033,7 @@ If you are developing a production application, we recommend updating the config
 ${eslintTypeAwareConfig}
 \`\`\`
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
 
 \`\`\`js
 ${eslintReactConfig}
@@ -1060,6 +1080,10 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         if (pkgManager === 'bun') {
           return 'bun x create-'
         }
+        // nub has no `create` verb; `nubx` runs the create- package directly
+        if (pkgManager === 'nub') {
+          return 'nubx create-'
+        }
         // Deno uses `run -A npm:create-` instead of `create` or `init` to also provide needed perms
         if (pkgManager === 'deno') {
           return 'deno run -A npm:create-'
@@ -1086,6 +1110,9 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         }
         if (pkgManager === 'bun') {
           return 'bun x '
+        }
+        if (pkgManager === 'nub') {
+          return 'nubx '
         }
         if (pkgManager === 'deno') {
           return 'deno run -A npm:'

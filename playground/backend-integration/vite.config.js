@@ -1,7 +1,7 @@
 import path from 'node:path'
+import tailwind from '@tailwindcss/vite'
 import { globSync } from 'tinyglobby'
 import { defineConfig, normalizePath } from 'vite'
-import tailwind from '@tailwindcss/vite'
 
 /**
  * @returns {import('vite').Plugin}

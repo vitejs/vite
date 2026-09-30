@@ -1,12 +1,13 @@
 import type { ErrorPayload, HotPayload } from '#types/hmrPayload'
 import type { ViteHotContext } from '#types/hot'
+import { setupForwardConsoleHandler } from '../shared/forwardConsole'
 import { HMRClient, HMRContext } from '../shared/hmr'
+import { createHMRHandler } from '../shared/hmrHandler'
 import {
   createWebSocketModuleRunnerTransport,
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
-import { createHMRHandler } from '../shared/hmrHandler'
-import { setupForwardConsoleHandler } from '../shared/forwardConsole'
+import { wrapId } from '../shared/utils'
 import type { BundledDevHMRClient } from './bundledDevHmrClient'
 import { ErrorOverlay, cspNonce, overlayId } from './overlay'
 // @ts-expect-error internal virtual module
@@ -139,6 +140,10 @@ const debounceReload = (time: number) => {
 }
 export const pageReload = debounceReload(20)
 
+function wrapIdIfNeeded(id: string): string {
+  return id[0] === '.' || id[0] === '/' ? id : wrapId(id)
+}
+
 const hmrClient = new HMRClient(
   {
     error: (err) => console.error('[vite]', err),
@@ -152,10 +157,11 @@ const hmrClient = new HMRClient(
     isWithinCircularImport,
   }) {
     const [acceptedPathWithoutQuery, query] = acceptedPath.split(`?`)
+    const browserPath = wrapIdIfNeeded(acceptedPathWithoutQuery)
     const importPromise = import(
       /* @vite-ignore */
       base +
-        acceptedPathWithoutQuery.slice(1) +
+        browserPath.slice(1) +
         `?${explicitImportRequired ? 'import&' : ''}t=${timestamp}${
           query ? `&${query}` : ''
         }`

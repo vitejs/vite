@@ -4,10 +4,10 @@ import type {
   TerserMinifyOptions,
   TerserMinifyOutput,
 } from '#types/internal/terserOptions'
-import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
-import { _dirname, generateCodeFrame } from '../utils'
 import { nodeResolveWithVite } from '../nodeResolve'
+import type { Plugin } from '../plugin'
+import { _dirname, generateCodeFrame } from '../utils'
 
 export interface TerserOptions extends TerserMinifyOptions {
   /**
