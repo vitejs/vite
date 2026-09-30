@@ -39,8 +39,8 @@ export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadHelperId = '\0vite/preload-helper.js'
 const preloadMarkerRE = new RegExp(preloadMarker, 'g')
 
-export function isCssPreloadUrl(url: string): boolean {
-  return new URL(url).pathname.endsWith('.css')
+export function isCssPreloadUrl(url: URL): boolean {
+  return url.pathname.endsWith('.css')
 }
 
 function toRelativePath(filename: string, importer: string) {
@@ -150,24 +150,24 @@ function preload(
       )
     }
 
-    function importMetaResolve(specifier: string): string {
+    function importMetaResolve(specifier: string): URL {
       // @ts-expect-error import.meta.resolve is not supported by all browsers we support
       // But `import.meta.resolve` is only needed when build.chunkImportMap is enabled,
       // and that option requires `import.meta.resolve` support.
       if (import.meta.resolve) {
-        return import.meta.resolve(specifier)
+        return new URL(import.meta.resolve(specifier))
       }
-      return new URL(specifier, /** #__KEEP__ */ import.meta.url).href
+      return new URL(specifier, /** #__KEEP__ */ import.meta.url)
     }
 
     promise = allSettled(
       deps
-        .map((dep) => {
+        .map((depString) => {
           // @ts-expect-error assetsURL is declared before preload.toString()
-          dep = assetsURL(dep, importerUrl)
-          dep = importMetaResolve(dep)
-          if (dep in seen) return
-          seen[dep] = true
+          depString = assetsURL(depString, importerUrl)
+          const dep = importMetaResolve(depString)
+          if (dep.href in seen) return
+          seen[dep.href] = true
           const isCss = isCssPreloadUrl(dep)
 
           // check if the file is already preloaded by SSR markup
@@ -176,7 +176,10 @@ function preload(
             const link = links[i]
             // The `links[i].href` is an absolute URL thanks to browser doing the work
             // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
-            if (link.href === dep && (!isCss || link.rel === 'stylesheet')) {
+            if (
+              link.href === dep.href &&
+              (!isCss || link.rel === 'stylesheet')
+            ) {
               return
             }
           }
@@ -187,7 +190,7 @@ function preload(
             link.as = 'script'
           }
           link.crossOrigin = ''
-          link.href = dep
+          link.href = dep.href
           if (cspNonce) {
             link.setAttribute('nonce', cspNonce)
           }

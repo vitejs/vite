@@ -69,15 +69,15 @@ describe('matchImportsToPreloadMarkers', () => {
 
 describe('isCssPreloadUrl', () => {
   test('detects css assets with query strings or hashes', () => {
-    expect(isCssPreloadUrl('https://example.com/assets/lazy.css')).toBe(true)
-    expect(isCssPreloadUrl('https://example.com/assets/lazy.css?dpl=123')).toBe(
-      true,
-    )
-    expect(isCssPreloadUrl('https://example.com/assets/lazy.css#hash')).toBe(
-      true,
-    )
-    expect(
-      isCssPreloadUrl('https://example.com/assets/lazy.js?file=.css'),
-    ).toBe(false)
+    const cases: ReadonlyArray<[string, boolean]> = [
+      ['https://example.com/assets/lazy.css', true],
+      ['https://example.com/assets/lazy.css?dpl=123', true],
+      ['https://example.com/assets/lazy.css#hash', true],
+      ['https://example.com/assets/lazy.js?file=.css', false],
+    ]
+    for (const [input, expected] of cases) {
+      const inputUrl = new URL(input)
+      expect(isCssPreloadUrl(inputUrl)).toBe(expected)
+    }
   })
 })
