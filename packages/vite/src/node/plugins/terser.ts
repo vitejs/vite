@@ -83,17 +83,18 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
     },
 
     async renderChunk(code, chunk, outputOptions) {
-      // This plugin is included for any non-false value of config.build.minify,
-      // so that normal chunks can use the preferred minifier, and legacy chunks
-      // can use terser when coordinated Oxc minification isn't available
+      // This plugin is included for any non-false value of
+      // this.environment.config.build.minify, so that normal chunks can use the
+      //  preferred minifier, and legacy chunks can use terser when coordinated
+      // Oxc minification isn't available
+      const minify = this.environment.config.build.minify
       const usesOxcMinifier =
-        (config.build.minify === true || config.build.minify === 'oxc') &&
-        outputOptions.minify !== false
+        (minify === true || minify === 'oxc') && outputOptions.minify !== false
       const minifyLegacyWithTerser =
         this.environment.config.isOutputOptionsForLegacyChunks?.(
           outputOptions,
         ) && !usesOxcMinifier
-      if (config.build.minify !== 'terser' && !minifyLegacyWithTerser) {
+      if (minify !== 'terser' && !minifyLegacyWithTerser) {
         return null
       }
 
