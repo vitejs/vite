@@ -402,26 +402,18 @@ export async function startDefaultServe(): Promise<void> {
 export async function notifyRebuildComplete(
   watcher: RolldownWatcher,
 ): Promise<void> {
-  return new Promise<void>((resolve) => {
-    let timeout: ReturnType<typeof setTimeout> | undefined
-    const callback = (event: RolldownWatcherEvent): void => {
-      if (event.code === 'START' || event.code === 'BUNDLE_START') {
-        if (timeout) {
-          clearTimeout(timeout)
-          timeout = undefined
-        }
-      } else if (event.code === 'END' || event.code === 'ERROR') {
-        if (timeout) {
-          clearTimeout(timeout)
-        }
-        timeout = setTimeout(() => {
-          watcher.off('event', callback)
-          resolve()
-        }, 100)
-      }
+  let resolveFn: undefined | (() => void)
+  const callback = (event: RolldownWatcherEvent): void => {
+    if (event.code === 'END') {
+      resolveFn?.()
     }
-    watcher.on('event', callback)
+  }
+  watcher.on('event', callback)
+  await new Promise<void>((resolve) => {
+    resolveFn = resolve
   })
+
+  watcher.off('event', callback)
 }
 
 export function createInMemoryLogger(logs: string[]): Logger {
