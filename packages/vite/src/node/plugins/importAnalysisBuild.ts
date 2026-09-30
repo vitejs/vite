@@ -127,9 +127,7 @@ function preload(
     Promise.resolve()
   // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
   if (__VITE_IS_MODERN__ && deps && deps.length > 0) {
-    let preloadedHrefs:
-      | { scripts: Set<string>; styles: Set<string> }
-      | undefined
+    let preloadedHrefs: { all: Set<string>; styles: Set<string> } | undefined
     const cspNonceMeta = document.querySelector<HTMLMetaElement>(
       'meta[property=csp-nonce]',
     )
@@ -173,17 +171,16 @@ function preload(
           const isCss = isCssPreloadUrl(dep)
 
           if (preloadedHrefs === undefined) {
-            preloadedHrefs = { scripts: new Set(), styles: new Set() }
+            preloadedHrefs = { all: new Set(), styles: new Set() }
             const links = document.getElementsByTagName('link')
             for (let i = links.length - 1; i >= 0; i--) {
               const link = links[i]
-              const set =
-                link.rel === 'stylesheet'
-                  ? preloadedHrefs.styles
-                  : preloadedHrefs.scripts
               // The `links[i].href` is an absolute URL thanks to browser doing the work
               // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
-              set.add(link.href)
+              preloadedHrefs.all.add(link.href)
+              if (link.rel === 'stylesheet') {
+                preloadedHrefs.styles.add(link.href)
+              }
             }
           }
 
@@ -191,7 +188,7 @@ function preload(
           // `importMetaResolve` converts `dep` to an absolute URL
           const preloadedHrefSet = isCss
             ? preloadedHrefs.styles
-            : preloadedHrefs.scripts
+            : preloadedHrefs.all
           if (preloadedHrefSet.has(dep.href)) {
             return
           }
