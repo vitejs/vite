@@ -134,6 +134,34 @@ export class EnvironmentModuleGraph {
     return this.urlToModuleMap.get(url)
   }
 
+  /**
+   * Resolve a URL and look up its module in one pass.
+   *
+   * This is used by the transform pipeline when it needs both the module and
+   * the resolved id. Keeping the resolved result lets the caller pass it to
+   * `_ensureEntryFromUrl` without invoking the resolver a second time.
+   *
+   * @internal
+   */
+  async _getModuleByUrlAndResolved(rawUrl: string): Promise<{
+    module: EnvironmentModuleNode | undefined
+    resolved: PartialResolvedId | null | undefined
+  }> {
+    // Quick path, if we already have a module for this rawUrl (even without extension)
+    rawUrl = removeImportQuery(removeTimestampQuery(rawUrl))
+    const mod = this._getUnresolvedUrlToModule(rawUrl)
+    if (mod) {
+      return { module: await mod, resolved: undefined }
+    }
+
+    const resolved = await this._resolveId(rawUrl)
+    const [url] = await this._resolveUrl(rawUrl, resolved)
+    return {
+      module: this.urlToModuleMap.get(url),
+      resolved,
+    }
+  }
+
   getModuleById(id: string): EnvironmentModuleNode | undefined {
     return this.idToModuleMap.get(removeTimestampQuery(id))
   }
@@ -344,7 +372,7 @@ export class EnvironmentModuleGraph {
     rawUrl: string,
     setIsSelfAccepting = true,
     // Optimization, avoid resolving the same url twice if the caller already did it
-    resolved?: PartialResolvedId,
+    resolved?: PartialResolvedId | null,
   ): Promise<EnvironmentModuleNode> {
     // Quick path, if we already have a module for this rawUrl (even without extension)
     rawUrl = removeImportQuery(removeTimestampQuery(rawUrl))
@@ -467,9 +495,12 @@ export class EnvironmentModuleGraph {
    */
   async _resolveUrl(
     url: string,
-    alreadyResolved?: PartialResolvedId,
+    alreadyResolved?: PartialResolvedId | null,
   ): Promise<ResolvedUrl> {
-    const resolved = alreadyResolved ?? (await this._resolveId(url))
+    const resolved =
+      alreadyResolved === undefined
+        ? await this._resolveId(url)
+        : alreadyResolved
     const resolvedId = resolved?.id || url
     if (
       url !== resolvedId &&

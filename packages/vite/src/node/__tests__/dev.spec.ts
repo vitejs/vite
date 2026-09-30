@@ -31,6 +31,31 @@ describe('the dev server', () => {
     await server?.close()
   })
 
+  test('does not resolve a new transform request twice', async () => {
+    const root = path.join(import.meta.dirname, 'fixtures', 'input-option')
+    const resolveId = vi.fn((id: string) => {
+      if (id === '/entry.js') return normalizePath(path.join(root, 'entry.js'))
+    })
+
+    server = await createServer({
+      configFile: false,
+      root,
+      logLevel: 'silent',
+      optimizeDeps: { noDiscovery: true },
+      server: { middlewareMode: true, watch: null, ws: false },
+      plugins: [{ name: 'count-entry-resolves', enforce: 'pre', resolveId }],
+    })
+
+    const callsBeforeTransform = resolveId.mock.calls.length
+    await server.environments.client.transformRequest('/entry.js')
+
+    expect(
+      resolveId.mock.calls
+        .slice(callsBeforeTransform)
+        .filter(([id]) => id.endsWith('/entry.js')),
+    ).toHaveLength(1)
+  })
+
   test('resolves each environment input as a safe module', async () => {
     const root = path.join(import.meta.dirname, 'fixtures', 'input-option')
     const clientEntry = normalizePath(path.join(root, 'client-entry.js'))
