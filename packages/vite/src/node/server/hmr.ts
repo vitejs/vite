@@ -1133,25 +1133,36 @@ function error(pos: number) {
 }
 
 // vitejs/vite#610 when hot-reloading Vue files, we read immediately on file
-// change event and sometimes this can be too early and get an empty buffer.
-// Poll until the file's modified time has changed before reading again.
+// change event and sometimes this can be too early. Poll until the file has
+// stopped changing before reading it so plugins don't receive partial content.
 async function readModifiedFile(file: string): Promise<string> {
-  const content = await fsp.readFile(file, 'utf-8')
-  if (!content) {
-    const mtime = (await fsp.stat(file)).mtimeMs
+  const start = Date.now()
+  let stat = await fsp.stat(file)
 
-    for (let n = 0; n < 10; n++) {
-      await new Promise((r) => setTimeout(r, 10))
-      const newMtime = (await fsp.stat(file)).mtimeMs
-      if (newMtime !== mtime) {
-        break
+  // Some editors write files in multiple chunks. Wait until the file has been
+  // stable for one poll interval so plugins don't process an incomplete copy.
+  // Keep the wait bounded to avoid blocking HMR indefinitely.
+  while (Date.now() - start < 100) {
+    await new Promise((resolve) => setTimeout(resolve, 10))
+
+    const nextStat = await fsp.stat(file)
+    if (nextStat.size === stat.size && nextStat.mtimeMs === stat.mtimeMs) {
+      const content = await fsp.readFile(file, 'utf-8')
+      const finalStat = await fsp.stat(file)
+      if (
+        finalStat.size === nextStat.size &&
+        finalStat.mtimeMs === nextStat.mtimeMs
+      ) {
+        return content
       }
+      stat = finalStat
+    } else {
+      stat = nextStat
     }
-
-    return await fsp.readFile(file, 'utf-8')
-  } else {
-    return content
   }
+
+  // Fall back to the latest contents if the file never became stable.
+  return await fsp.readFile(file, 'utf-8')
 }
 
 export type ServerHotChannelApi = {
