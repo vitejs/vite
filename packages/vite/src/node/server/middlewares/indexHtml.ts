@@ -507,12 +507,17 @@ export function indexHtmlMiddleware(
       }
 
       let filePath: string
-      if (isDev && url.startsWith(FS_PREFIX)) {
-        filePath = decodeURIComponent(fsPathFromId(url))
-      } else {
-        filePath = normalizePath(
-          path.resolve(path.join(root, decodeURIComponent(url))),
-        )
+      try {
+        if (isDev && url.startsWith(FS_PREFIX)) {
+          filePath = decodeURIComponent(fsPathFromId(url))
+        } else {
+          filePath = normalizePath(
+            path.resolve(path.join(root, decodeURIComponent(url))),
+          )
+        }
+      } catch {
+        // ignore malformed URI
+        return next()
       }
 
       if (isDev) {
