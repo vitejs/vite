@@ -1,0 +1,41 @@
+playground/js-sourcemap/__tests__/js-sourcemap.spec.ts
+  s_3714e83e9c5051::t_f6a38e91c13163 364,379
+packages/vite/src/node/__tests__/plugins/importAnalysisBuild.spec.ts
+  s_3714e83e9c5051::t_3775c6691d7f37 4,69-83
+packages/vite/src/node/optimizer/rolldownDepPlugin.ts
+  s_3714e83e9c5051::t_df2c02c8cb0388 4,124-128,263,269-271
+packages/vite/src/node/plugins/html.ts
+  s_3714e83e9c5051::t_01f6eb688ba9ec 657
+playground/assets/__tests__/assets.spec.ts
+  s_3714e83e9c5051::t_07826a64a7ae89 675-682
+playground/assets/index.html
+  s_3714e83e9c5051::t_9d128270aaa2fe 222-225
+playground/optimize-deps/__tests__/optimize-deps.spec.ts
+  s_3714e83e9c5051::t_d46c1dbd65c593 272-285
+playground/optimize-deps/dep-browser-false/index.js
+  s_3714e83e9c5051::t_63e879f54fcc22 1-4
+playground/optimize-deps/dep-browser-false/package.json
+  s_3714e83e9c5051::t_e0d31af29373f9 1-9
+playground/optimize-deps/index.html
+  s_3714e83e9c5051::t_d2404f28cb76ef 351-356
+playground/optimize-deps/package.json
+  s_3714e83e9c5051::t_16b11325643bc0 42
+pnpm-lock.yaml
+  s_3714e83e9c5051::t_9200e1b2b097ca 1237-1239,1411-1412,4710-4712,10915-10916
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "bc6bd61db99956a8a077f7065d4e5b0908efd68d",
+  "prompts": {},
+  "sessions": {
+    "s_3714e83e9c5051": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f097-90aa-70f2-90ae-57daf4a5a431",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
