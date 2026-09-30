@@ -579,6 +579,60 @@ describe('resolveBuildOutputs', () => {
       )
     })
   })
+
+  describe('output minify and comments resolution in resolveRolldownOptions', () => {
+    const buildProjectRoot = resolve(dirname, 'packages/build-project')
+
+    test('merges a partial output.minify object with the lib defaults', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+        build: {
+          minify: 'oxc',
+          lib: { ...baseLibOptions, formats: ['es'] },
+          rolldownOptions: {
+            output: {
+              minify: { mangle: { keepNames: true } },
+            },
+          },
+        },
+      })
+      const options = resolveRolldownOptions(
+        builder.environments.client,
+        new ChunkMetadataMap(),
+      )
+      const outputs = options.output!
+      const output = Array.isArray(outputs) ? outputs[0] : outputs
+      expect(output.minify).toStrictEqual({
+        compress: true,
+        mangle: { keepNames: true },
+        codegen: false,
+      })
+    })
+
+    test('keeps an explicit boolean output.minify untouched', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+        build: {
+          minify: 'oxc',
+          lib: { ...baseLibOptions, formats: ['es'] },
+          rolldownOptions: {
+            output: {
+              minify: false,
+            },
+          },
+        },
+      })
+      const options = resolveRolldownOptions(
+        builder.environments.client,
+        new ChunkMetadataMap(),
+      )
+      const outputs = options.output!
+      const output = Array.isArray(outputs) ? outputs[0] : outputs
+      expect(output.minify).toBe(false)
+    })
+  })
 })
 
 describe('resolveLibFilename', () => {
