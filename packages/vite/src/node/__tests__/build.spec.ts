@@ -571,7 +571,7 @@ describe('resolveBuildOutputs', () => {
           lib: { ...baseLibOptions, formats: ['es'] },
           rolldownOptions: {
             output: {
-              minify: { mangle: { props: true } },
+              minify: { mangle: { keepNames: true } },
             },
           },
         },
@@ -584,7 +584,7 @@ describe('resolveBuildOutputs', () => {
       const output = Array.isArray(outputs) ? outputs[0] : outputs
       expect(output.minify).toStrictEqual({
         compress: true,
-        mangle: { props: true },
+        mangle: { keepNames: true },
         codegen: false,
       })
     })
