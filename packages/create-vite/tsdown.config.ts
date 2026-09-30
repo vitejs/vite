@@ -22,6 +22,11 @@ export default defineConfig(() => ({
         '\n\n',
     ),
   ],
+  inputOptions: {
+    resolve: {
+      mainFields: ['module', 'main'],
+    },
+  },
 }))
 
 const cc0LicenseText = `

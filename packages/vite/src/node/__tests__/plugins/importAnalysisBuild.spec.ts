@@ -1,6 +1,7 @@
 import { init, parse as parseImports } from 'es-module-lexer'
 import { beforeAll, describe, expect, test } from 'vitest'
 import {
+  isCssPreloadUrl,
   matchImportsToPreloadMarkers,
   preloadMarker,
 } from '../../plugins/importAnalysisBuild'
@@ -63,5 +64,20 @@ describe('matchImportsToPreloadMarkers', () => {
     const code = `const x = ${preloadMarker};import('a')`
     const [marker] = markerPositions(code)
     expect(match(code)).toStrictEqual([marker])
+  })
+})
+
+describe('isCssPreloadUrl', () => {
+  test('detects css assets with query strings or hashes', () => {
+    const cases: ReadonlyArray<[string, boolean]> = [
+      ['https://example.com/assets/lazy.css', true],
+      ['https://example.com/assets/lazy.css?dpl=123', true],
+      ['https://example.com/assets/lazy.css#hash', true],
+      ['https://example.com/assets/lazy.js?file=.css', false],
+    ]
+    for (const [input, expected] of cases) {
+      const inputUrl = new URL(input)
+      expect(isCssPreloadUrl(inputUrl)).toBe(expected)
+    }
   })
 })
