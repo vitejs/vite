@@ -127,9 +127,9 @@ function preload(
     Promise.resolve()
   // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
   if (__VITE_IS_MODERN__ && deps && deps.length > 0) {
-    const preloadedHref = new Set<string>()
-    const preloadedStyleHref = new Set<string>()
-    let scannedLinks = false
+    let preloadedHrefs:
+      | { scripts: Set<string>; styles: Set<string> }
+      | undefined
     const cspNonceMeta = document.querySelector<HTMLMetaElement>(
       'meta[property=csp-nonce]',
     )
@@ -169,29 +169,30 @@ function preload(
           depString = assetsURL(depString, importerUrl)
           const dep = importMetaResolve(depString)
           if (dep.href in seen) return
-          if (!scannedLinks) {
-            scannedLinks = true
-            const links = document.getElementsByTagName('link')
-            for (let i = links.length - 1; i >= 0; i--) {
-              const link = links[i]
-              // The `links[i].href` is an absolute URL thanks to browser doing the work
-              // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
-              preloadedHref.add(link.href)
-              if (link.rel === 'stylesheet') {
-                preloadedStyleHref.add(link.href)
-              }
-            }
-          }
           seen[dep.href] = true
           const isCss = isCssPreloadUrl(dep)
 
+          if (preloadedHrefs === undefined) {
+            preloadedHrefs = { scripts: new Set(), styles: new Set() }
+            const links = document.getElementsByTagName('link')
+            for (let i = links.length - 1; i >= 0; i--) {
+              const link = links[i]
+              const set =
+                link.rel === 'stylesheet'
+                  ? preloadedHrefs.styles
+                  : preloadedHrefs.scripts
+              // The `links[i].href` is an absolute URL thanks to browser doing the work
+              // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
+              set.add(link.href)
+            }
+          }
+
           // check if the file is already preloaded by SSR markup
           // `importMetaResolve` converts `dep` to an absolute URL
-          if (
-            isCss
-              ? preloadedStyleHref.has(dep.href)
-              : preloadedHref.has(dep.href)
-          ) {
+          const preloadedHrefSet = isCss
+            ? preloadedHrefs.styles
+            : preloadedHrefs.scripts
+          if (preloadedHrefSet.has(dep.href)) {
             return
           }
 
