@@ -179,6 +179,20 @@ test('dep with optional peer dep (cjs)', async () => {
     .toMatch(`[success]`)
 })
 
+test.runIf(isServe)(
+  'optimized CJS dep preserves fallback for excluded optional peer',
+  async () => {
+    const metadata = readDepOptimizationMetadata()
+    expect(Object.keys(metadata.optimized)).toContain(
+      '@vitejs/test-dep-with-excluded-optional-peer-dep-cjs',
+    )
+
+    await expect
+      .poll(() => page.textContent('.dep-with-excluded-optional-peer-dep-cjs'))
+      .toMatch(`[success]`)
+  },
+)
+
 test('dep with css import', async () => {
   await expect.poll(() => getColor('.dep-linked-include')).toBe('red')
 })
