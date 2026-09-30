@@ -14,11 +14,6 @@ export default defineConfig({
     },
     rolldownOptions: {
       output: {
-        // manualChunks(id) {
-        //   if (id.includes('chunk.js')) {
-        //     return 'chunk'
-        //   }
-        // },
         codeSplitting: {
           groups: [
             {
