@@ -127,7 +127,7 @@ function preload(
     Promise.resolve()
   // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
   if (__VITE_IS_MODERN__ && deps && deps.length > 0) {
-    const links = document.getElementsByTagName('link')
+    let preloadedHrefs: { all: Set<string>; styles: Set<string> } | undefined
     const cspNonceMeta = document.querySelector<HTMLMetaElement>(
       'meta[property=csp-nonce]',
     )
@@ -170,18 +170,27 @@ function preload(
           seen[dep.href] = true
           const isCss = isCssPreloadUrl(dep)
 
-          // check if the file is already preloaded by SSR markup
-          // `dep` is already converted to an absolute URL by the `assetsURL` function
-          for (let i = links.length - 1; i >= 0; i--) {
-            const link = links[i]
-            // The `links[i].href` is an absolute URL thanks to browser doing the work
-            // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
-            if (
-              link.href === dep.href &&
-              (!isCss || link.rel === 'stylesheet')
-            ) {
-              return
+          if (preloadedHrefs === undefined) {
+            preloadedHrefs = { all: new Set(), styles: new Set() }
+            const links = document.getElementsByTagName('link')
+            for (let i = links.length - 1; i >= 0; i--) {
+              const link = links[i]
+              // The `links[i].href` is an absolute URL thanks to browser doing the work
+              // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
+              preloadedHrefs.all.add(link.href)
+              if (link.rel === 'stylesheet') {
+                preloadedHrefs.styles.add(link.href)
+              }
             }
+          }
+
+          // check if the file is already preloaded by SSR markup
+          // `importMetaResolve` converts `dep` to an absolute URL
+          const preloadedHrefSet = isCss
+            ? preloadedHrefs.styles
+            : preloadedHrefs.all
+          if (preloadedHrefSet.has(dep.href)) {
+            return
           }
 
           const link = document.createElement('link')
