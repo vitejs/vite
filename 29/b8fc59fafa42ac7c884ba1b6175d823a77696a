@@ -1,0 +1,19 @@
+playground/js-sourcemap/__tests__/js-sourcemap.spec.ts
+  s_3714e83e9c5051::t_f4364e60760c4e 364,379
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "29b8fc59fafa42ac7c884ba1b6175d823a77696a",
+  "prompts": {},
+  "sessions": {
+    "s_3714e83e9c5051": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f097-90aa-70f2-90ae-57daf4a5a431",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
