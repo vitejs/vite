@@ -67,16 +67,14 @@ test.runIf(isServe)('removes the command record on process exit', async () => {
   await expect
     .poll(
       () =>
-        readCommandLockRecords().some(
-          (record) => record.pid === buildProcess.pid,
-        ),
+        readCommandLockRecords().some((record) => record.command === 'build'),
       { interval: 10 },
     )
     .toBe(true)
 
   await buildProcess
   expect(
-    readCommandLockRecords().some((record) => record.pid === buildProcess.pid),
+    readCommandLockRecords().some((record) => record.command === 'build'),
   ).toBe(false)
 })
 
