@@ -57,6 +57,7 @@ export type ExportsData = {
 
 export interface DepsOptimizer {
   init: () => Promise<void>
+  initState: 'idle' | 'initializing' | 'initialized'
 
   metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
@@ -832,7 +833,7 @@ async function prepareRolldownOptimizerRun(
 
   const plugins = await asyncFlatten(arraify(pluginsFromConfig))
   if (external.length) {
-    plugins.push(rolldownCjsExternalPlugin(external, platform))
+    plugins.push(rolldownCjsExternalPlugin(external, platform, environment))
   }
   plugins.push(...rolldownDepPlugin(environment, flatIdDeps, external))
 
