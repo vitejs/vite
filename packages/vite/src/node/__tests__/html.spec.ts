@@ -239,4 +239,47 @@ describe('getCssFilesForChunk', () => {
       'a.css',
     ])
   })
+
+  test.for([false, true])(
+    'circular dependency CSS is output for each entry point (reverse: %s)',
+    (reverse) => {
+      const shared = createChunk('shared.js', ['feature.js'], ['shared.css'])
+      const feature = createChunk('feature.js', ['shared.js'], ['feature.css'])
+      const entryA = createChunk('a.js', ['shared.js'], ['a.css'])
+      const entryB = createChunk('b.js', ['feature.js'], ['b.css'])
+      const bundle = createBundle(entryA, entryB, shared, feature)
+      const cache = new Map<OutputChunk, string[]>()
+      const entries = [
+        [entryA, ['feature.css', 'shared.css', 'a.css']],
+        [entryB, ['shared.css', 'feature.css', 'b.css']],
+      ] as const
+
+      for (const [entry, css] of reverse ? entries.toReversed() : entries) {
+        expect(getCssFilesForChunk(entry, bundle, cache)).toStrictEqual(css)
+      }
+    },
+  )
+
+  test('circular dependency CSS is not lost through a cached parent', () => {
+    const shared = createChunk('shared.js', ['feature.js'], ['shared.css'])
+    const feature = createChunk('feature.js', ['shared.js'], ['feature.css'])
+    const parent = createChunk('parent.js', ['feature.js'], ['parent.css'])
+    const entryA = createChunk('a.js', ['shared.js', 'parent.js'], ['a.css'])
+    const entryB = createChunk('b.js', ['parent.js'], ['b.css'])
+    const bundle = createBundle(entryA, entryB, parent, shared, feature)
+    const cache = new Map<OutputChunk, string[]>()
+
+    expect(getCssFilesForChunk(entryA, bundle, cache)).toStrictEqual([
+      'feature.css',
+      'shared.css',
+      'parent.css',
+      'a.css',
+    ])
+    expect(getCssFilesForChunk(entryB, bundle, cache)).toStrictEqual([
+      'shared.css',
+      'feature.css',
+      'parent.css',
+      'b.css',
+    ])
+  })
 })

@@ -376,8 +376,13 @@ export function getCssFilesForChunk(
   analyzedImportedCssFiles: Map<OutputChunk, string[]>,
   seenChunks: Set<string> = new Set(),
   seenCss: Set<string> = new Set(),
+  incompleteChunks: Set<string> = new Set(),
 ): string[] {
   if (seenChunks.has(chunk.fileName)) {
+    // An uncached visited chunk is part of a cycle or depends on one.
+    if (!analyzedImportedCssFiles.has(chunk)) {
+      incompleteChunks.add(chunk.fileName)
+    }
     return []
   }
   seenChunks.add(chunk.fileName)
@@ -401,8 +406,12 @@ export function getCssFilesForChunk(
         analyzedImportedCssFiles,
         seenChunks,
         seenCss,
+        incompleteChunks,
       )
       filteredFiles.push(...importeeCss)
+      if (incompleteChunks.has(importee.fileName)) {
+        incompleteChunks.add(chunk.fileName)
+      }
       // For cache: use the importee's full cached list
       if (analyzedImportedCssFiles.has(importee)) {
         allFiles.push(...analyzedImportedCssFiles.get(importee)!)
@@ -420,7 +429,9 @@ export function getCssFilesForChunk(
     }
   })
 
-  analyzedImportedCssFiles.set(chunk, unique(allFiles))
+  if (!incompleteChunks.has(chunk.fileName)) {
+    analyzedImportedCssFiles.set(chunk, unique(allFiles))
+  }
 
   return filteredFiles
 }
