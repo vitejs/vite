@@ -11,7 +11,7 @@
     "resolveJsonModule": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "erasableSyntaxOnly": true,
+    "erasableSyntaxOnly": false,
     "skipLibCheck": true,
     "noUnusedLocals": true,
     "jsx": "preserve",

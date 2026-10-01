@@ -1,7 +1,6 @@
 import path, { posix } from 'node:path'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
-import { init, parse as parseImports } from 'es-module-lexer'
-import type { ImportSpecifier } from 'es-module-lexer'
+import { type Import, init, parse as parseImports } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { viteDynamicImportVarsPlugin as nativeDynamicImportVarsPlugin } from 'rolldown/experimental'
 import { exactRegex } from 'rolldown/filter'
@@ -242,9 +241,9 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
           return
         }
 
-        await init
+        await init()
 
-        let imports: readonly ImportSpecifier[] = []
+        let imports: readonly Import[] = []
         try {
           imports = parseImports(source)[0]
         } catch {
@@ -260,15 +259,15 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         let needDynamicImportHelper = false
 
         for (let index = 0; index < imports.length; index++) {
+          const importSpecifier = imports[index]
           const {
-            s: start,
-            e: end,
-            ss: expStart,
-            se: expEnd,
-            d: dynamicIndex,
-          } = imports[index]
+            start,
+            end,
+            importStart: expStart,
+            importEnd: expEnd,
+          } = importSpecifier
 
-          if (dynamicIndex === -1 || source[start] !== '`') {
+          if (importSpecifier.type !== 'dynamic' || source[start] !== '`') {
             continue
           }
 

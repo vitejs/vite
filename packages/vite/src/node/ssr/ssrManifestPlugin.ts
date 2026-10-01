@@ -1,8 +1,8 @@
 import { basename, dirname, join, relative } from 'node:path'
 import { parse as parseImports } from 'es-module-lexer'
 import type {
+  DynamicImport,
   ParseError as EsModuleLexerParseError,
-  ImportSpecifier,
 } from 'es-module-lexer'
 import type { OutputChunk } from 'rolldown'
 import { perEnvironmentState } from '../environment'
@@ -55,9 +55,12 @@ export function ssrManifestPlugin(): Plugin {
           if (chunk.code.includes(preloadMethod)) {
             // generate css deps map
             const code = chunk.code
-            let imports: ImportSpecifier[] = []
+            let imports: DynamicImport[] = []
             try {
-              imports = parseImports(code)[0].filter((i) => i.n && i.d > -1)
+              imports = parseImports(code)[0].filter(
+                (i): i is DynamicImport =>
+                  i.type === 'dynamic' && !i.glob && i.specifier !== undefined,
+              )
             } catch (_e: unknown) {
               const e = _e as EsModuleLexerParseError
               const loc = numberToPos(code, e.idx)
@@ -73,7 +76,7 @@ export function ssrManifestPlugin(): Plugin {
             }
             if (imports.length) {
               for (let index = 0; index < imports.length; index++) {
-                const { s: start, e: end, n: name } = imports[index]
+                const { start, end, specifier: name } = imports[index]
                 // check the chunk being imported
                 const url = code.slice(start, end)
                 const deps: string[] = []
