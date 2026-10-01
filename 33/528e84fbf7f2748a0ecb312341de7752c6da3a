@@ -1,0 +1,29 @@
+packages/vite/src/node/__tests__/plugins/worker.spec.ts
+  s_d36abab05d14a9::t_7d45eb82e03b25 32,42-43,84-85
+packages/vite/src/node/plugins/terser.ts
+  s_6a8f1deb4d5a71::t_799c9af7686faa 86-88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "33528e84fbf7f2748a0ecb312341de7752c6da3a",
+  "prompts": {},
+  "sessions": {
+    "s_6a8f1deb4d5a71": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0d81c-e6bd-7523-923c-5071c95bcc02",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_d36abab05d14a9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f6c2-6f04-7043-8ff4-ede3eb70b3dc",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
