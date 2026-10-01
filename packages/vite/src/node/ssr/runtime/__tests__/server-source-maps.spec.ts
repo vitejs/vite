@@ -158,6 +158,21 @@ describe('module runner initialization', async () => {
     ])
   })
 
+  it('maps stack traces when the module path contains a space', async ({
+    runner,
+    server,
+  }) => {
+    const methodError = await getError(async () => {
+      const mod = await runner.import('/fixtures/with space/has-error-deep.ts')
+      mod.main()
+    })
+    expect(serializeStackDeep(server, methodError).slice(0, 3)).toEqual([
+      'Error: crash',
+      '    at crash (<root>/fixtures/with space/has-error-deep.ts:2:9)',
+      '    at Module.main (<root>/fixtures/with space/has-error-deep.ts:6:3)',
+    ])
+  })
+
   it('should not crash when sourceMappingURL pattern appears in string literals', async ({
     runner,
     server,
