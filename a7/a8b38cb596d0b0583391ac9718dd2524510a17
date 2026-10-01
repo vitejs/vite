@@ -1,0 +1,23 @@
+playground/fs-serve/__tests__/commonTests.ts
+  s_c995c59696c392::t_bdf312d00f156e 211-217,269-274
+playground/fs-serve/root/matrixTestResultPlugin.ts
+  s_c995c59696c392::t_819a7a5f20c3b4 27,36
+playground/fs-serve/root/src/index.html
+  s_c995c59696c392::t_f163b7b3aacef7 127-131,163-167
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "a7a8b38cb596d0b0583391ac9718dd2524510a17",
+  "prompts": {},
+  "sessions": {
+    "s_c995c59696c392": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0d732-dd7e-7262-b86d-8c90f60eb326",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
