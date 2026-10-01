@@ -371,6 +371,47 @@ describe('plugin container', () => {
         }
       `)
     })
+
+    it('accepts an indexed (sections) sourcemap without crashing (#14573)', async () => {
+      const entryUrl = '/zoo.js'
+      const originalCode = `export const zoo = 'zoo'\n`
+
+      // a valid "index map" per the source map spec has no top-level
+      // `sources`/`mappings` - each section nests its own map instead.
+      // Tools like ClojureScript's compiler emit this shape.
+      const indexedMap = {
+        version: 3,
+        sections: [
+          {
+            offset: { line: 0, column: 0 },
+            map: {
+              version: 3,
+              sources: ['zoo.orig.js'],
+              names: [],
+              mappings: 'AAAA',
+            },
+          },
+        ],
+      }
+
+      const plugin: Plugin = {
+        name: 'p1',
+        transform(code, id) {
+          if (id === entryUrl) {
+            return { code, map: indexedMap }
+          }
+        },
+      }
+
+      const environment = await getDevEnvironment({ plugins: [plugin] })
+      await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      const result = await environment.pluginContainer.transform(
+        originalCode,
+        entryUrl,
+      )
+
+      expect(result.map).toStrictEqual(indexedMap)
+    })
   })
 
   describe('resolveId', () => {
