@@ -152,7 +152,7 @@ test.runIf(isServe && !isWindows)(
             stale: records.some((record) => record.pid === staleProcess.pid),
           }
         })
-        .toEqual({ replacement: true, stale: false })
+        .toStrictEqual({ replacement: true, stale: false })
     } finally {
       if (staleProcess.exitCode == null && staleProcess.signalCode == null) {
         staleProcess.kill('SIGKILL')
