@@ -29,7 +29,7 @@ describe('splitWorkerRequest', () => {
   }
 })
 
-test.for([
+for (const { name, environments } of [
   { name: 'default minifier', environments: undefined },
   {
     name: 'oxc client minifier',
@@ -39,9 +39,8 @@ test.for([
     name: 'terser client minifier',
     environments: { client: { build: { minify: 'terser' } } },
   },
-] as { name: string; environments: InlineConfig['environments'] }[])(
-  '?worker&url should produce the same hash in client and SSR builds with $name',
-  async ({ environments }) => {
+] as { name: string; environments: InlineConfig['environments'] }[]) {
+  test(`?worker&url should produce the same hash in client and SSR builds with ${name}`, async () => {
     const root = resolve(fixturesDir, 'worker-url')
 
     const clientResult = (await build({
@@ -82,5 +81,5 @@ test.for([
     expect(clientWorkerUrls.length).toBeGreaterThan(0)
     expect(ssrWorkerUrls.length).toBeGreaterThan(0)
     expect(ssrWorkerUrls).toEqual(clientWorkerUrls)
-  },
-)
+  })
+}
