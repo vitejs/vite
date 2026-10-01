@@ -1,4 +1,6 @@
 import fs from 'node:fs'
+import http from 'node:http'
+import type { AddressInfo } from 'node:net'
 import path from 'node:path'
 import { describe, expect, onTestFinished, test } from 'vitest'
 import { FS_PREFIX } from '../../../constants'
@@ -126,5 +128,25 @@ describe('indexHtml middleware — HMR timestamp injection with non-root base', 
     // the timestamp — two different URLs for the same module, executing the
     // entry twice.
     expect(transformed).toContain(`src="/ui/src/main.ts?t=${timestamp}"`)
+  })
+})
+
+describe('indexHtml middleware — malformed URI', () => {
+  test('responds 404 to an .html URL with a malformed escape', async () => {
+    const server = await createTestServer()
+    const httpServer = http.createServer(server.middlewares)
+    await new Promise<void>((resolve) =>
+      httpServer.listen(0, '127.0.0.1', resolve),
+    )
+    onTestFinished(() => {
+      httpServer.close()
+    })
+    const { port } = httpServer.address() as AddressInfo
+
+    for (const url of ['/%E0%A4%A.html', `${FS_PREFIX}%E0%A4%A.html`]) {
+      const res = await fetch(`http://127.0.0.1:${port}${url}`)
+      expect(res.status, url).toBe(404)
+    }
+    expect((await fetch(`http://127.0.0.1:${port}/`)).status).toBe(200)
   })
 })
