@@ -1437,7 +1437,7 @@ See [7.1.0-beta.0 changelog](https://github.com/vitejs/vite/blob/v7.1.0-beta.0/p
 
 ## [7.0.0](https://github.com/vitejs/vite/compare/v7.0.0-beta.2...v7.0.0) (2025-06-24)
 
-![Vite 7 is out!](../../docs/public/og-image-announcing-vite7.png)
+![Vite 7 is out!](../../docs/public/og-image-announcing-vite7.webp)
 
 Today, we're excited to announce the release of the next Vite major:
 
@@ -2094,7 +2094,7 @@ See [6.1.0-beta.0 changelog](https://github.com/vitejs/vite/blob/v6.0.0-beta.10/
 
 ## [6.0.0](https://github.com/vitejs/vite/compare/v6.0.0-beta.10...v6.0.0) (2024-11-26)
 
-![Vite 6 is out!](../../docs/public/og-image-announcing-vite6.png)
+![Vite 6 is out!](../../docs/public/og-image-announcing-vite6.webp)
 
 Today, we're taking another big step in Vite's story. The Vite [team](https://vite.dev/team), [contributors](https://github.com/vitejs/vite/graphs/contributors), and ecosystem partners are excited to announce the release of the next Vite major:
 
