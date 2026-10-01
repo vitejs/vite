@@ -1,8 +1,8 @@
 import { LitElement, css, html } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
+import heroImg from './assets/hero.png'
 import litLogo from './assets/lit.svg'
 import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 
 /**
  * An example element.
@@ -33,7 +33,12 @@ export class MyElement extends LitElement {
             <code>HMR</code>
           </p>
         </div>
-        <button class="counter" @click=${this._onClick} part="button">
+        <button
+          type="button"
+          class="counter"
+          @click=${this._onClick}
+          part="button"
+        >
           Count is ${this.count}
         </button>
       </section>

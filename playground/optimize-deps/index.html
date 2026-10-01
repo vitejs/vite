@@ -15,6 +15,10 @@
 
 <script type="module" src="./cjs.js"></script>
 
+<h2>Named import injected into an optimized dep by a plugin</h2>
+<div class="injected-import-in-optimized-dep"></div>
+<script type="module" src="./injected-import.js"></script>
+
 <h2>CommonJS dynamic import default + named (react)</h2>
 <div class="cjs-dynamic"></div>
 <h2>CommonJS dynamic import named (phoenix)</h2>
@@ -29,6 +33,14 @@
 <div class="cjs-dynamic-dep-cjs-with-es-module-flag"></div>
 
 <script type="module" src="./cjs-dynamic.js"></script>
+
+<h2>CommonJS dynamic import from format-ambiguous importer</h2>
+<div class="cjs-dynamic-importer-ambiguous"></div>
+<h2>CommonJS dynamic import from explicit CJS importer (package.json type)</h2>
+<div class="cjs-dynamic-importer-cjs"></div>
+
+<script type="module" src="./cjs-dynamic-importer-ambiguous/index.js"></script>
+<script type="module" src="./cjs-dynamic-importer-cjs/index.js"></script>
 
 <h2>Dedupe (dep in linked & optimized package)</h2>
 <div class="dedupe"></div>
@@ -51,6 +63,9 @@
 
 <h2>CJS Dep with CSS</h2>
 <div class="cjs-with-assets">This should be blue</div>
+
+<h2>CJS Dep requiring dep with CSS main field</h2>
+<div class="cjs-require-css-main-field">This should be coral</div>
 
 <h2>import * as ...</h2>
 <div class="import-star"></div>
@@ -82,6 +97,9 @@
 <div class="dep-with-optional-peer-dep-cjs"></div>
 <div class="dep-with-optional-peer-dep-cjs-error"></div>
 
+<h2>Import from optimized dependency with excluded optional peer dep (cjs)</h2>
+<div class="dep-with-excluded-optional-peer-dep-cjs"></div>
+
 <h2>Externalize known non-js files in optimize included dep</h2>
 <div class="externalize-known-non-js"></div>
 
@@ -109,6 +127,7 @@
 <h2>Flatten Id</h2>
 <div class="clonedeep-slash"></div>
 <div class="clonedeep-dot"></div>
+<div class="dep-with-plus-subpath"></div>
 
 <h2>Non Optimized Module isn't duplicated</h2>
 <div class="non-optimized-module-is-not-duplicated"></div>
@@ -170,6 +189,7 @@
   }
 
   import '@vitejs/test-dep-cjs-with-assets'
+  import '@vitejs/test-dep-cjs-require-css-main-field'
   import '@vitejs/test-dep-css-require'
   import cssModuleRequire from '@vitejs/test-dep-css-require/mod.cjs'
   document
@@ -295,6 +315,15 @@
 </script>
 
 <script type="module">
+  import { callPeerDep } from '@vitejs/test-dep-with-excluded-optional-peer-dep-cjs'
+
+  text(
+    '.dep-with-excluded-optional-peer-dep-cjs',
+    callPeerDep() === 'fallback' ? '[success]' : `[failed]: did not fallback`,
+  )
+</script>
+
+<script type="module">
   // should error on builtin modules (named import)
   // no node: protocol intentionally
   import { Buffer } from 'buffer'
@@ -319,6 +348,12 @@
   }
 </script>
 
+<p class="browser-false-optimized">[pending]</p>
+<script type="module">
+  import browserFalse from '@vitejs/test-dep-browser-false'
+  text('.browser-false-optimized', browserFalse)
+</script>
+
 <script type="module">
   // should error on builtin modules from dep
   import { read } from '@vitejs/test-dep-with-builtin-module-cjs'
@@ -328,11 +363,13 @@
 </script>
 
 <script type="module">
-  import cloneDeepSlash from 'lodash/cloneDeep'
-  import cloneDeepDot from 'lodash.clonedeep'
+  import cloneDeepSlash from '@vitejs/test-dep-lodash/cloneDeep'
+  import cloneDeepDot from '@vitejs/test-dep-lodash.clonedeep'
+  import { msg as plusSubpath } from '@vitejs/test-dep-with-plus-subpath/core+feature'
 
   text('.clonedeep-slash', cloneDeepSlash({ name: 'clonedeep-slash' }).name)
   text('.clonedeep-dot', cloneDeepDot({ name: 'clonedeep-dot' }).name)
+  text('.dep-with-plus-subpath', plusSubpath)
 </script>
 
 <script type="module">

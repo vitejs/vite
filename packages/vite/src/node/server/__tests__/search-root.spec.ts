@@ -31,6 +31,18 @@ describe('searchForWorkspaceRoot', () => {
     expect(resolved).toBe(resolve(dirname, 'fixtures/yarn'))
   })
 
+  test('deno', () => {
+    const resolved = searchForWorkspaceRoot(
+      resolve(dirname, 'fixtures/deno/nested'),
+    )
+    expect(resolved).toBe(resolve(dirname, 'fixtures/deno'))
+  })
+
+  test('deno at root', () => {
+    const resolved = searchForWorkspaceRoot(resolve(dirname, 'fixtures/deno'))
+    expect(resolved).toBe(resolve(dirname, 'fixtures/deno'))
+  })
+
   test('none', () => {
     const resolved = searchForWorkspaceRoot(
       resolve(dirname, 'fixtures/none/nested'),

@@ -1,18 +1,23 @@
 <script setup>
 // these components live in @voidzero-dev/vitepress-theme
-import Hero from './Hero.vue'
+import Footer from '@components/oss/Footer.vue'
+import HeadingSection from '@components/oss/HeadingSection.vue'
+import Sponsors from '@components/oss/Sponsors.vue'
+import TrustedBy from '@components/oss/TrustedBy.vue'
+import Spacer from '@components/shared/Spacer.vue'
+import { computed } from 'vue'
+import { useSponsor } from '../composables/sponsor'
+import ViteCommunity from './Community.vue'
 import ViteFeatureGrid1 from './FeatureGrid1.vue'
 import ViteFeatureGrid2 from './FeatureGrid2.vue'
 import ViteFrameworks from './Frameworks.vue'
-import ViteCommunity from './Community.vue'
-import TrustedBy from '@components/oss/TrustedBy.vue'
-import HeadingSection from '@components/oss/HeadingSection.vue'
-import Sponsors from '@components/oss/Sponsors.vue'
-import Spacer from '@components/shared/Spacer.vue'
-import Footer from '@components/oss/Footer.vue'
-import { useSponsor } from '../composables/sponsor'
+import Hero from './Hero.vue'
 
-const { data: sponsors } = useSponsor()
+const data = useSponsor()
+
+const sponsors = computed(
+  () => data.value?.filter((s) => s.tier !== 'Brought to you by') ?? [],
+)
 </script>
 
 <template>

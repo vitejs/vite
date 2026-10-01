@@ -1,18 +1,16 @@
-import path from 'node:path'
-import fs from 'node:fs'
+import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
+import type { FooterLink } from '@voidzero-dev/vitepress-theme'
+import { extendConfig } from '@voidzero-dev/vitepress-theme/config'
 import type { HeadConfig } from 'vitepress'
 import { defineConfig } from 'vitepress'
-import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
+import { graphvizMarkdownPlugin } from 'vitepress-plugin-graphviz'
 import {
   groupIconMdPlugin,
   groupIconVitePlugin,
 } from 'vitepress-plugin-group-icons'
 import llmstxt from 'vitepress-plugin-llms'
-import { markdownItImageSize } from 'markdown-it-image-size'
-import { extendConfig } from '@voidzero-dev/vitepress-theme/config'
-import type { FooterLink } from '@voidzero-dev/vitepress-theme'
 import packageJson from '../../packages/vite/package.json' with { type: 'json' }
-import { buildEnd } from './buildEnd.config'
+import { buildEnd } from './buildEnd.config.ts'
 
 const viteVersion = packageJson.version
 const viteMajorVersion = +viteVersion.split('.')[0]
@@ -74,17 +72,6 @@ const versionLinks = (() => {
   return links
 })()
 
-function inlineScript(file: string): HeadConfig {
-  return [
-    'script',
-    {},
-    fs.readFileSync(
-      path.resolve(import.meta.dirname, `./inlined-scripts/${file}`),
-      'utf-8',
-    ),
-  ]
-}
-
 const config = defineConfig({
   title: `Vite${additionalTitle}`,
   description: 'Next Generation Frontend Tooling',
@@ -102,7 +89,6 @@ const config = defineConfig({
       { rel: 'alternate', type: 'application/rss+xml', href: '/blog.rss' },
     ],
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
-    inlineScript('banner.js'),
     ['link', { rel: 'me', href: 'https://m.webtoo.ls/@vite' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: ogTitle }],
@@ -113,15 +99,6 @@ const config = defineConfig({
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
     ['meta', { name: 'twitter:site', content: '@vite_js' }],
     ['meta', { name: 'theme-color', content: '#646cff' }],
-    [
-      'script',
-      {
-        src: 'https://cdn.usefathom.com/script.js',
-        'data-site': 'CBDFBSLI',
-        'data-spa': 'auto',
-        defer: '',
-      },
-    ],
   ],
 
   locales: {
@@ -129,20 +106,16 @@ const config = defineConfig({
     zh: { label: '简体中文', link: 'https://cn.vite.dev' },
     ja: { label: '日本語', link: 'https://ja.vite.dev' },
     es: { label: 'Español', link: 'https://es.vite.dev' },
-    pt: { label: 'Português', link: 'https://pt.vite.dev' },
     ko: { label: '한국어', link: 'https://ko.vite.dev' },
     de: { label: 'Deutsch', link: 'https://de.vite.dev' },
-    fa: { label: 'فارسی', link: 'https://fa.vite.dev' },
   },
 
   themeConfig: {
     variant: 'vite',
-    logo: '/logo.svg',
-
     banner: {
-      id: 'vite+',
-      text: 'Announcing Vite+ | The Unified Toolchain for the Web',
-      url: 'https://voidzero.dev/posts/announcing-vite-plus?utm_source=vite&utm_content=top_banner',
+      id: 'viteconf-2026',
+      text: 'ViteConf 2026 - October 15, Online',
+      url: 'https://viteconf.org/',
     },
 
     editLink: {
@@ -158,14 +131,20 @@ const config = defineConfig({
       { icon: 'github', link: 'https://github.com/vitejs/vite' },
     ],
 
-    algolia: {
-      appId: '7H67QR5P0A',
-      apiKey: '208bb9c14574939326032b937431014b',
-      indexName: 'vitejs',
-      searchParameters: {
-        facetFilters: ['tags:en'],
+    search: {
+      provider: 'local',
+      options: {
+        miniSearch: {
+          searchOptions: {
+            boostDocument(page) {
+              if (page.startsWith('/guide/')) return 2 // Prefer guide pages
+              if (page.startsWith('/config/')) return 1.5 // Then config pages
+              if (page.startsWith('/blog/')) return 0 // Do not index blog posts
+              return 1
+            },
+          },
+        },
       },
-      insights: true,
     },
 
     carbonAds: {
@@ -219,6 +198,14 @@ const config = defineConfig({
           { text: 'Blog', link: '/blog' },
           { text: 'Releases', link: '/releases' },
           { text: 'Acknowledgements', link: '/acknowledgements' },
+          {
+            text: 'Code of Conduct',
+            link: 'https://github.com/vitejs/.github/blob/main/CODE_OF_CONDUCT.md',
+          },
+          {
+            text: 'Plugin Registry',
+            link: 'https://registry.vite.dev/plugins',
+          },
           {
             text: 'The Documentary',
             link: 'https://www.youtube.com/watch?v=bmWQqAKLgT4',
@@ -519,7 +506,14 @@ const config = defineConfig({
     // languages used for twoslash and jsdocs in twoslash
     languages: ['ts', 'js', 'json'],
     codeTransformers: [
-      transformerTwoslash(),
+      transformerTwoslash({
+        twoslashOptions: {
+          compilerOptions: {
+            moduleResolution: 100, // bundler
+            ignoreDeprecations: '6.0', // remove the options entirely when twoslash doesn't set `baseUrl`
+          },
+        },
+      }),
       // add `style:*` support
       {
         root(hast) {
@@ -539,15 +533,13 @@ const config = defineConfig({
         },
       },
     ],
-    config(md) {
+    async config(md) {
       md.use(groupIconMdPlugin, {
         titleBar: {
           includeSnippet: true,
         },
       })
-      md.use(markdownItImageSize, {
-        publicDir: path.resolve(import.meta.dirname, '../public'),
-      })
+      await graphvizMarkdownPlugin(md)
     },
   },
   vite: {
@@ -569,11 +561,11 @@ const config = defineConfig({
 - 🔩 Universal Plugin Interface
 - 🔑 Fully Typed APIs
 
-Vite is a new breed of frontend build tooling that significantly improves the frontend development experience. It consists of two major parts:
+Vite is a build tool that aims to provide a faster and leaner development experience for modern web projects. It consists of two major parts:
 
-- A dev server that serves your source files over [native ES modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules), with [rich built-in features](https://vite.dev/guide/features.md) and astonishingly fast [Hot Module Replacement (HMR)](https://vite.dev/guide/features.md#hot-module-replacement).
+- A dev server that provides [rich feature enhancements](https://vite.dev/guide/features.md) over [native ES modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules), for example extremely fast [Hot Module Replacement (HMR)](https://vite.dev/guide/features.md#hot-module-replacement).
 
-- A [build command](https://vite.dev/guide/build.md) that bundles your code with [Rollup](https://rollupjs.org), pre-configured to output highly optimized static assets for production.
+- A build command that bundles your code with [Rolldown](https://rolldown.rs), pre-configured to output highly optimized static assets for production.
 
 In addition, Vite is highly extensible via its [Plugin API](https://vite.dev/guide/api-plugin.md) and [JavaScript API](https://vite.dev/guide/api-javascript.md) with full typing support.`,
       }),

@@ -3,7 +3,13 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import {
+  fromComment,
+  fromMapFileComment,
+  removeComments,
+} from 'convert-source-map'
 import colors from 'css-color-names'
+import type { ResultPromise as ExecaResultPromise } from 'execa'
 import type {
   ConsoleMessage,
   ElementHandle,
@@ -11,9 +17,7 @@ import type {
 } from 'playwright-chromium'
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
-import { fromComment, removeComments } from 'convert-source-map'
 import { expect } from 'vitest'
-import type { ResultPromise as ExecaResultPromise } from 'execa'
 import { isWindows, page, sourcemapSnapshot, testDir } from './vitestSetup'
 
 export * from './vitestSetup'
@@ -34,6 +38,7 @@ export const ports = {
   'ssr-html': 9602,
   'ssr-noexternal': 9603,
   'ssr-pug': 9604,
+  'ssr-wasm': 9608,
   'ssr-webworker': 9605,
   'proxy-bypass': 9606, // not imported but used in `proxy-hmr/vite.config.js`
   'proxy-bypass/non-existent-app': 9607, // not imported but used in `proxy-hmr/other-app/vite.config.js`
@@ -57,6 +62,7 @@ export const hmrPorts = {
   'ssr-html': 24683,
   'ssr-noexternal': 24684,
   'ssr-pug': 24685,
+  'ssr-wasm': 24691,
   'css/lightningcss-proxy': 24686,
   json: 24687,
   'ssr-conditions': 24688,
@@ -119,6 +125,25 @@ export async function getBg(
   return el.evaluate((el) => getComputedStyle(el as Element).backgroundImage)
 }
 
+/**
+ * Unlike `getBg`, this function returns the raw value of the `background-image` CSS property.
+ *
+ * `getBg` returns the resolved value, which has the hostname and port prepended due to `computedStyle` call.
+ */
+export async function getCssRuleBg(selector: string): Promise<string> {
+  return page.evaluate((sel) => {
+    for (const sheet of document.styleSheets) {
+      try {
+        for (const rule of sheet.cssRules) {
+          if (rule instanceof CSSStyleRule && rule.selectorText === sel) {
+            return rule.style.backgroundImage
+          }
+        }
+      } catch (_e) {}
+    }
+  }, selector)
+}
+
 export async function getBgColor(
   el: string | ElementHandle | Locator,
 ): Promise<string> {
@@ -166,6 +191,16 @@ export function editFile(
   const modified = (replacer as (content: string | Buffer) => string | Buffer)(
     content,
   )
+  if (Buffer.byteLength(modified) === Buffer.byteLength(content)) {
+    const e = new Error(
+      `editFile("${filename}") did not change the file size. The polling ` +
+        `watcher used in tests may miss same-length edits and cause flaky ` +
+        `failures; change the edit so the file's byte length changes. See ` +
+        `https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md#test-env-and-helpers`,
+    )
+    Error.captureStackTrace(e, editFile)
+    throw e
+  }
   fs.writeFileSync(filename, modified)
 }
 
@@ -348,9 +383,28 @@ async function untilBrowserLog(
   return logs
 }
 
-export const extractSourcemap = (content: string): any => {
+export function extractSourcemap(content: string): any
+export function extractSourcemap(
+  content: string,
+  read: (filename: string) => Promise<string>,
+): Promise<any>
+export function extractSourcemap(
+  content: string,
+  read?: (filename: string) => Promise<string>,
+): any {
   const lines = content.trim().split('\n')
-  return fromComment(lines[lines.length - 1]).toObject()
+  const lastLine = lines.at(-1)
+  if (read) {
+    const result = fromMapFileComment(lastLine, async (url) => {
+      if (url.startsWith('data:')) {
+        throw new Error(`Omit read argument when sourcemap is inline`)
+      }
+      const content = await read(url)
+      return content
+    })
+    return result.then((r) => r.toObject())
+  }
+  return fromComment(lastLine).toObject()
 }
 
 export const formatSourcemapForSnapshot = (
@@ -364,6 +418,9 @@ export const formatSourcemapForSnapshot = (
   if (m.names && m.names.length === 0) {
     delete m.names
   }
+  if (m.ignoreList && m.ignoreList.length === 0) {
+    delete m.ignoreList
+  }
   if (m.debugId) {
     m.debugId = '00000000-0000-0000-0000-000000000000'
   }
@@ -371,8 +428,14 @@ export const formatSourcemapForSnapshot = (
   if (m.sourceRoot) {
     m.sourceRoot = m.sourceRoot.replace(root, '/root')
   }
+  const normalized = Object.fromEntries(
+    Object.keys(m)
+      .filter((key) => m[key] != null)
+      .sort()
+      .map((key) => [key, m[key]]),
+  )
   const c = removeComments(code.replace(/\?v=[\da-f]{8}/g, '?v=00000000'))
-  return { map: m, code: c, [sourcemapSnapshot]: { withoutContent } }
+  return { map: normalized, code: c, [sourcemapSnapshot]: { withoutContent } }
 }
 
 // helper function to kill process, uses taskkill on windows to ensure child process is killed too

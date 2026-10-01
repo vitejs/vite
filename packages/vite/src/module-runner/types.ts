@@ -1,17 +1,16 @@
 import type { ViteHotContext } from '#types/hot'
 import type { HMRLogger } from '../shared/hmr'
 import type {
-  DefineImportMetadata,
-  SSRImportMetadata,
-} from '../shared/ssrTransform'
-import type {
   ExternalFetchResult,
   FetchFunctionOptions,
   FetchResult,
   ViteFetchResult,
 } from '../shared/invokeMethods'
 import type { ModuleRunnerTransport } from '../shared/moduleRunnerTransport'
-import type { EvaluatedModuleNode, EvaluatedModules } from './evaluatedModules'
+import type {
+  DefineImportMetadata,
+  SSRImportMetadata,
+} from '../shared/ssrTransform'
 import type {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -20,14 +19,19 @@ import type {
   ssrImportMetaKey,
   ssrModuleExportsKey,
 } from './constants'
+import type { EvaluatedModuleNode, EvaluatedModules } from './evaluatedModules'
 import type { InterceptorOptions } from './sourcemap/interceptor'
 
 export type { DefineImportMetadata, SSRImportMetadata }
 
-export interface ModuleRunnerImportMeta extends ImportMeta {
+export interface ModuleRunnerImportMeta {
   url: string
   env: ImportMetaEnv
   hot?: ViteHotContext
+  dirname: string
+  filename: string
+  glob: (...args: any[]) => any
+  resolve(specifier: string, parent?: string): string
   [key: string]: any
 }
 

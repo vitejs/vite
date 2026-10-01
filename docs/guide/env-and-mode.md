@@ -31,16 +31,16 @@ Some built-in constants are available in all cases:
 
 ## Env Variables
 
-Vite exposes env variables under `import.meta.env` object as strings automatically.
+Vite exposes env variables under the `import.meta.env` object as strings automatically.
 
-To prevent accidentally leaking env variables to the client, only variables prefixed with `VITE_` are exposed to your Vite-processed code. e.g. for the following env variables:
+Variables prefixed with `VITE_` will be exposed in client-side source code after Vite bundling. To prevent accidentally leaking env variables to the client, avoid using this prefix. As an example, consider the following:
 
 ```[.env]
 VITE_SOME_KEY=123
 DB_PASSWORD=foobar
 ```
 
-Only `VITE_SOME_KEY` will be exposed as `import.meta.env.VITE_SOME_KEY` to your client source code, but `DB_PASSWORD` will not.
+The parsed value of `VITE_SOME_KEY` – `"123"` – will be exposed on the client, but the value of `DB_PASSWORD` will not. You can test this by adding the following to your code:
 
 ```js
 console.log(import.meta.env.VITE_SOME_KEY) // "123"
@@ -51,6 +51,12 @@ If you want to customize the env variables prefix, see the [envPrefix](/config/s
 
 :::tip Env parsing
 As shown above, `VITE_SOME_KEY` is a number but returns a string when parsed. The same would also happen for boolean env variables. Make sure to convert to the desired type when using it in your code.
+:::
+
+:::warning Protecting secrets
+
+`VITE_*` variables should _not_ contain sensitive information such as API keys. The values of these variables are bundled into your source code at build time. For production deployments, consider a backend server or serverless/edge functions to properly secure secrets.
+
 :::
 
 ### `.env` Files
@@ -93,14 +99,6 @@ NEW_KEY2=test\$foo  # test$foo
 NEW_KEY3=test$KEY   # test123
 ```
 
-:::warning SECURITY NOTES
-
-- `.env.*.local` files are local-only and can contain sensitive variables. You should add `*.local` to your `.gitignore` to avoid them being checked into git.
-
-- Since any variables exposed to your Vite source code will end up in your client bundle, `VITE_*` variables should _not_ contain any sensitive information.
-
-:::
-
 ::: details Expanding variables in reverse order
 
 Vite supports expanding variables in reverse order.
@@ -115,6 +113,12 @@ This does not work in shell scripts and other tools like `docker compose`.
 That said, Vite supports this behavior as this has been supported by `dotenv-expand` for a long time and other tools in JavaScript ecosystem use older versions that support this behavior.
 
 To avoid interop issues, it is recommended to avoid relying on this behavior. Vite may start emitting warnings for this behavior in the future.
+
+:::
+
+:::warning Ignoring local `.env` files
+
+`.env.*.local` files are local-only and can contain sensitive variables. You should add `*.local` to your `.gitignore` to avoid them being checked into git.
 
 :::
 

@@ -33,8 +33,10 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import { join } from 'node:path'
 import { performance } from 'node:perf_hooks'
-import { parseAst as rolldownParseAst } from 'rolldown/parseAst'
-import type { Program } from '@oxc-project/types'
+import type { RawSourceMap } from '@jridgewell/remapping'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
+import MagicString from 'magic-string'
+import colors from 'picocolors'
 import type {
   AsyncPluginHooks,
   CustomPluginOptions,
@@ -47,7 +49,6 @@ import type {
   ModuleOptions,
   ModuleType,
   NormalizedInputOptions,
-  OutputOptions,
   ParallelPluginHooks,
   PartialNull,
   PartialResolvedId,
@@ -63,12 +64,24 @@ import type {
   SourceMap,
   TransformResult,
 } from 'rolldown'
-import type { RawSourceMap } from '@jridgewell/remapping'
-import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
-import MagicString from 'magic-string'
-import colors from 'picocolors'
+import { parseAst as rolldownParseAst } from 'rolldown/parseAst'
+import type { ESTree } from 'rolldown/utils'
 import type { FSWatcher } from '#dep-types/chokidar'
+import { cleanUrl, unwrapId } from '../../shared/utils'
+import type { PluginHookUtils } from '../config'
+import { FS_PREFIX, VERSION as viteVersion } from '../constants'
+import {
+  isFutureDeprecationEnabled,
+  warnFutureDeprecation,
+} from '../deprecations'
+import type { Environment } from '../environment'
+import type { Logger } from '../logger'
 import type { Plugin } from '../plugin'
+import {
+  createPluginHookUtils,
+  getCachedFilterForPlugin,
+  getHookHandler,
+} from '../plugins'
 import {
   combineSourcemaps,
   createDebugger,
@@ -83,20 +96,6 @@ import {
   rollupVersion,
   timeFrom,
 } from '../utils'
-import { FS_PREFIX, VERSION as viteVersion } from '../constants'
-import {
-  createPluginHookUtils,
-  getCachedFilterForPlugin,
-  getHookHandler,
-} from '../plugins'
-import { cleanUrl, unwrapId } from '../../shared/utils'
-import type { PluginHookUtils } from '../config'
-import type { Environment } from '../environment'
-import type { Logger } from '../logger'
-import {
-  isFutureDeprecationEnabled,
-  warnFutureDeprecation,
-} from '../deprecations'
 import type { DevEnvironment } from './environment'
 import { buildErrorMessage } from './middlewares/error'
 import type {
@@ -135,13 +134,6 @@ export function throwClosedServerError(): never {
   throw err
 }
 
-export interface PluginContainerOptions {
-  cwd?: string
-  output?: OutputOptions
-  modules?: Map<string, { info: ModuleInfo }>
-  writeFile?: (name: string, source: string | Uint8Array) => void
-}
-
 /**
  * Create a plugin container with a set of plugins. We pass them as a parameter
  * instead of using environment.plugins to allow the creation of different
@@ -161,7 +153,7 @@ export async function createEnvironmentPluginContainer<
     watcher,
     autoStart,
   )
-  await container.resolveRollupOptions()
+  await container.resolveRolldownOptions()
   return container
 }
 
@@ -174,7 +166,7 @@ export type SkipInformation = {
 
 class EnvironmentPluginContainer<Env extends Environment = Environment> {
   private _pluginContextMap = new Map<Plugin, PluginContext>()
-  private _resolvedRollupOptions?: InputOptions
+  private _resolvedRolldownOptions?: InputOptions
   private _processesing = new Set<Promise<any>>()
   private _seenResolves: Record<string, true | undefined> = {}
 
@@ -273,12 +265,12 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   }
 
   get options(): InputOptions {
-    return this._resolvedRollupOptions!
+    return this._resolvedRolldownOptions!
   }
 
-  async resolveRollupOptions(): Promise<InputOptions> {
-    if (!this._resolvedRollupOptions) {
-      let options = this.environment.config.build.rollupOptions
+  async resolveRolldownOptions(): Promise<InputOptions> {
+    if (!this._resolvedRolldownOptions) {
+      let options = this.environment.config.build.rolldownOptions
       for (const optionsHook of this.getSortedPluginHooks('options')) {
         if (this._closed) {
           throwClosedServerError()
@@ -288,9 +280,9 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
             optionsHook.call(this.minimalContext, options),
           )) || options
       }
-      this._resolvedRollupOptions = options
+      this._resolvedRolldownOptions = options
     }
-    return this._resolvedRollupOptions
+    return this._resolvedRolldownOptions
   }
 
   private _getPluginContext(plugin: Plugin) {
@@ -334,7 +326,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     }
     this._started = true
     const config = this.environment.getTopLevelConfig()
-    this._buildStartPromise = this.handleHookPromise(
+    const hookPromise = this.handleHookPromise(
       this.hookParallel(
         'buildStart',
         (plugin) => this._getPluginContext(plugin),
@@ -345,6 +337,12 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
           plugin.perEnvironmentStartEndDuringDev,
       ),
     ) as Promise<void>
+    this._buildStartPromise = (async () => {
+      await hookPromise
+      if (this.environment.mode === 'dev') {
+        await this.environment._registerInputsAsSafeModules()
+      }
+    })()
     await this._buildStartPromise
     this._buildStartPromise = undefined
   }
@@ -638,22 +636,30 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   async close(): Promise<void> {
     if (this._closed) return
     this._closed = true
-    await Promise.allSettled(Array.from(this._processesing))
+    await Promise.allSettled([...this._processesing])
     const config = this.environment.getTopLevelConfig()
-    await this.hookParallel(
-      'buildEnd',
-      (plugin) => this._getPluginContext(plugin),
-      () => [],
-      (plugin) =>
-        this.environment.name === 'client' ||
-        config.server.perEnvironmentStartEndDuringDev ||
-        plugin.perEnvironmentStartEndDuringDev,
-    )
+    let buildEndError: Error | undefined
+    try {
+      await this.hookParallel(
+        'buildEnd',
+        (plugin) => this._getPluginContext(plugin),
+        () => [],
+        (plugin) =>
+          this.environment.name === 'client' ||
+          config.server.perEnvironmentStartEndDuringDev ||
+          plugin.perEnvironmentStartEndDuringDev,
+      )
+    } catch (error) {
+      buildEndError = error as Error
+    }
     await this.hookParallel(
       'closeBundle',
       (plugin) => this._getPluginContext(plugin),
-      () => [],
+      () => [buildEndError],
     )
+    if (buildEndError) {
+      throw buildEndError
+    }
   }
 }
 
@@ -765,7 +771,7 @@ class PluginContext
 
   fs: RollupFsModule = fsModule
 
-  parse(code: string, opts: any): Program {
+  parse(code: string, opts: any): ESTree.Program {
     return rolldownParseAst(code, opts)
   }
 
@@ -918,7 +924,7 @@ class PluginContext
 
   private _formatLog<E extends RollupLog>(
     e: string | E,
-    position?: number | { column: number; line: number } | undefined,
+    position?: number | { column: number; line: number },
   ): E {
     const err = (typeof e === 'string' ? new Error(e) : e) as E
     if (err.pluginCode) {

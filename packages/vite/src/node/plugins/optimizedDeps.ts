@@ -1,19 +1,19 @@
 import fsp from 'node:fs/promises'
 import colors from 'picocolors'
 import type { DevEnvironment } from '..'
-import type { Plugin } from '../plugin'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
+import { cleanUrl } from '../../shared/utils'
 import {
   DEP_VERSION_RE,
   ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
   ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
 } from '../constants'
-import { createDebugger } from '../utils'
 import {
   isDepOptimizationDisabled,
   optimizedDepInfoFromFile,
 } from '../optimizer'
-import { cleanUrl } from '../../shared/utils'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
+import type { Plugin } from '../plugin'
+import { createDebugger } from '../utils'
 
 const debug = createDebugger('vite:optimize-deps')
 
@@ -22,6 +22,9 @@ export function optimizedDepsPlugin(): Plugin {
     name: 'vite:optimized-deps',
 
     applyToEnvironment(environment) {
+      if (environment.config.isBundled) {
+        return false
+      }
       return !isDepOptimizationDisabled(environment.config.optimizeDeps)
     },
 
@@ -59,6 +62,11 @@ export function optimizedDepsPlugin(): Plugin {
           }
           try {
             // This is an entry point, it may still not be bundled
+            if (info.processing && depsOptimizer.initState === 'idle') {
+              debug?.(
+                `transforming ${colors.cyan(file)} is waiting for the dependency optimizer to initialize`,
+              )
+            }
             await info.processing
           } catch {
             // If the refresh has not happened after timeout, Vite considers
@@ -82,7 +90,20 @@ export function optimizedDepsPlugin(): Plugin {
         // load hooks to avoid race conditions, once processing is resolved,
         // we are sure that the file has been properly save to disk
         try {
-          return await fsp.readFile(file, 'utf-8')
+          const [code, map] = await Promise.all([
+            fsp.readFile(file, 'utf-8'),
+            fsp
+              .readFile(`${file}.map`, 'utf-8')
+              .then((map) => JSON.parse(map))
+              .catch(() => null),
+          ])
+          if (map) {
+            return {
+              code,
+              map,
+            }
+          }
+          return code
         } catch {
           if (
             browserHash &&

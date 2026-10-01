@@ -74,13 +74,38 @@ Note that these settings persist but a **restart is required**.
 Alternatively, if the server is running inside a VS Code devcontainer, the request may appear to be stalled. To fix this issue, see
 [Dev Containers / VS Code Port Forwarding](#dev-containers-vs-code-port-forwarding).
 
+### Vite crashes with ENOSPC error
+
+If you see an error like this on Linux:
+
+> Error: ENOSPC: System limit for number of file watchers reached
+
+This happens when you have too many files in your project directory (e.g., many images or assets) and exceed the system's file watcher limit. Linux has a default limit of around 8,192-10,000 file watchers.
+
+To solve this, you can:
+
+- Increase the system file watcher limit:
+
+  ```shell
+  # Check current limit
+  $ cat /proc/sys/fs/inotify/max_user_watches
+  # Increase limit (temporary)
+  $ sudo sysctl fs.inotify.max_user_watches=524288
+  # Make it permanent - add to /etc/sysctl.conf (or edit if it already exists)
+  $ echo "fs.inotify.max_user_watches=524288" | sudo tee -a /etc/sysctl.conf
+  $ sudo sysctl -p
+  ```
+
+- Exclude directories with many files from file watching using [`server.watch.ignored`](/config/server-options#server-watch)
+- Use polling instead of file system events with [`server.watch.usePolling`](/config/server-options#server-watch). Note that polling uses more CPU resources
+
 ### Network requests stop loading
 
 When using a self-signed SSL certificate, Chrome ignores all caching directives and reloads the content. Vite relies on these caching directives.
 
 To resolve the problem use a trusted SSL cert.
 
-See: [Cache problems](https://helpx.adobe.com/mt/experience-manager/kb/cache-problems-on-chrome-with-SSL-certificate-errors.html), [Chrome issue](https://bugs.chromium.org/p/chromium/issues/detail?id=110649#c8)
+See: [Chrome issue](https://bugs.chromium.org/p/chromium/issues/detail?id=110649#c8)
 
 #### macOS
 
@@ -193,7 +218,7 @@ It might be possible to work around by selecting a different chunk name by [`bui
 
 ### Outdated pre-bundled deps when linking to a local package
 
-The hash key used to invalidate optimized dependencies depends on the package lock contents, the patches applied to dependencies, and the options in the Vite config file that affects the bundling of node modules. This means that Vite will detect when a dependency is overridden using a feature as [npm overrides](https://docs.npmjs.com/cli/v9/configuring-npm/package-json#overrides), and re-bundle your dependencies on the next server start. Vite won't invalidate the dependencies when you use a feature like [npm link](https://docs.npmjs.com/cli/v9/commands/npm-link). In case you link or unlink a dependency, you'll need to force re-optimization on the next server start by using `vite --force`. We recommend using overrides instead, which are supported now by every package manager (see also [pnpm overrides](https://pnpm.io/9.x/package_json#pnpmoverrides) and [yarn resolutions](https://yarnpkg.com/configuration/manifest/#resolutions)).
+The hash key used to invalidate optimized dependencies depends on the package lock contents, the patches applied to dependencies, and the options in the Vite config file that affects the bundling of node modules. This means that Vite will detect when a dependency is overridden using a feature as [npm overrides](https://docs.npmjs.com/cli/v9/configuring-npm/package-json#overrides), and re-bundle your dependencies on the next server start. Vite won't invalidate the dependencies when you use a feature like [npm link](https://docs.npmjs.com/cli/v9/commands/npm-link). In case you link or unlink a dependency, you'll need to force re-optimization on the next server start by using `vite --force`. We recommend using overrides instead, which are supported now by every package manager (see also [pnpm overrides](https://pnpm.io/settings#overrides) and [yarn resolutions](https://yarnpkg.com/configuration/manifest/#resolutions)).
 
 ## Performance Bottlenecks
 
@@ -215,7 +240,7 @@ vite build --profile
 Once your application is opened in the browser, just await finish loading it and then go back to the terminal and press `p` key (will stop the Node.js inspector) then press `q` key to stop the dev server.
 :::
 
-Node.js inspector will generate `vite-profile-0.cpuprofile` in the root folder, go to https://www.speedscope.app/, and upload the CPU profile using the `BROWSE` button to inspect the result.
+Node.js inspector will generate `vite-profile-0.cpuprofile` in the root folder. You can pass `--profile <name>` (or `--profile=<name>`) to write `<name>.cpuprofile` instead. Go to https://www.speedscope.app/, and upload the CPU profile using the `BROWSE` button to inspect the result.
 
 You can install [vite-plugin-inspect](https://github.com/antfu/vite-plugin-inspect), which lets you inspect the intermediate state of Vite plugins and can also help you to identify which plugins or middlewares are the bottleneck in your applications. The plugin can be used in both dev and build modes. Check the readme file for more details.
 
@@ -268,6 +293,18 @@ An example of cross drive links are:
 - A VirtualBox shared folder
 
 Related issue: [#10802](https://github.com/vitejs/vite/issues/10802)
+
+### Default import unexpectedly returns an object
+
+The default import returns the `module.exports` object for CJS modules, while you may expect it to return the `module.exports.default` value.
+
+This may cause errors like:
+
+> Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: object.
+
+> foo is not a function
+
+See Rolldown's docs about this problem for more details: [Ambiguous `default` import from CJS modules - Bundling CJS | Rolldown](https://rolldown.rs/in-depth/bundling-cjs#ambiguous-default-import-from-cjs-modules).
 
 <script setup lang="ts">
 // redirect old links with hash to old version docs

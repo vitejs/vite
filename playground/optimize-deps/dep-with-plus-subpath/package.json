@@ -1,0 +1,8 @@
+{
+  "name": "@vitejs/test-dep-with-plus-subpath",
+  "private": true,
+  "version": "0.0.0",
+  "exports": {
+    "./core+feature": "./core+feature.js"
+  }
+}

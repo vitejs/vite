@@ -1,22 +1,22 @@
-import path from 'node:path'
+import crypto from 'node:crypto'
 import type { IncomingMessage, Server } from 'node:http'
 import { STATUS_CODES, createServer as createHttpServer } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import { createServer as createHttpsServer } from 'node:https'
 import type { Socket } from 'node:net'
+import path from 'node:path'
 import type { Duplex } from 'node:stream'
-import crypto from 'node:crypto'
+import { isHostAllowed } from 'host-validation-middleware'
 import colors from 'picocolors'
 import type { WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
-import { isHostAllowed } from 'host-validation-middleware'
 import type { WebSocket as WebSocketTypes } from '#dep-types/ws'
+import type { InferCustomEventPayload } from '#types/customEvent'
 import type {
   ErrorPayload,
   FullReloadPayload,
   HotPayload,
 } from '#types/hmrPayload'
-import type { InferCustomEventPayload } from '#types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
 import type { NormalizedHotChannel, NormalizedHotChannelClient } from './hmr'
@@ -146,12 +146,12 @@ export function createWebSocketServer(
 
   let wsHttpServer: Server | undefined = undefined
 
-  const hmr = isObject(config.server.hmr) && config.server.hmr
-  const hmrServer = hmr && hmr.server
-  const hmrPort = hmr && hmr.port
+  const wsOptions = isObject(config.server.ws) ? config.server.ws : undefined
+  const wsCustomServer = wsOptions?.server
+  const wsPort = wsOptions?.port
   // TODO: the main server port may not have been chosen yet as it may use the next available
-  const portsAreCompatible = !hmrPort || hmrPort === config.server.port
-  const wsServer = hmrServer || (portsAreCompatible && server)
+  const portsAreCompatible = !wsPort || wsPort === config.server.port
+  const wsServer = wsCustomServer || (portsAreCompatible && server)
   let hmrServerWsListener: (
     req: InstanceType<typeof IncomingMessage>,
     socket: Duplex,
@@ -159,8 +159,8 @@ export function createWebSocketServer(
   ) => void
   const customListeners = new Map<string, Set<WebSocketCustomListener<any>>>()
   const clientsMap = new WeakMap<WebSocketRaw, WebSocketClient>()
-  const port = hmrPort || 24678
-  const host = (hmr && hmr.host) || undefined
+  const port = wsPort || 24678
+  const host = wsOptions?.host || undefined
   const allowedHosts =
     config.server.allowedHosts === true
       ? config.server.allowedHosts
@@ -219,9 +219,9 @@ export function createWebSocketServer(
 
   if (wsServer) {
     let hmrBase = config.base
-    const hmrPath = hmr ? hmr.path : undefined
-    if (hmrPath) {
-      hmrBase = path.posix.join(hmrBase, hmrPath)
+    const wsPath = wsOptions?.path
+    if (wsPath) {
+      hmrBase = path.posix.join(hmrBase, wsPath)
     }
     hmrServerWsListener = (req, socket, head) => {
       const protocol = req.headers['sec-websocket-protocol']!
@@ -461,7 +461,7 @@ export function createWebSocketServer(
 
     [isWebSocketServer]: true,
     get clients() {
-      return new Set(Array.from(wss.clients).map(getSocketClient))
+      return new Set([...wss.clients].map(getSocketClient))
     },
   }
 }

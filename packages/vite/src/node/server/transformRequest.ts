@@ -1,17 +1,20 @@
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
+import { init, parse as parseImports } from 'es-module-lexer'
 import getEtag from 'etag'
 import MagicString from 'magic-string'
-import { init, parse as parseImports } from 'es-module-lexer'
+import colors from 'picocolors'
 import type {
   ModuleType,
   PartialResolvedId,
   SourceDescription,
   SourceMap,
 } from 'rolldown'
-import colors from 'picocolors'
+import { cleanUrl, slash, unwrapId } from '../../shared/utils'
+import { checkPublicFile } from '../publicDir'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
+import { ssrTransform } from '../ssr/ssrTransform'
 import {
   createDebugger,
   ensureWatchedFile,
@@ -24,17 +27,15 @@ import {
   stripBase,
   timeFrom,
 } from '../utils'
-import { ssrTransform } from '../ssr/ssrTransform'
-import { checkPublicFile } from '../publicDir'
-import { cleanUrl, slash, unwrapId } from '../../shared/utils'
+import type { DevEnvironment } from './environment'
+import { isFileLoadingAllowed } from './middlewares/static'
+import { isServerAccessDeniedForTransform } from './middlewares/transform'
+import { throwClosedServerError } from './pluginContainer'
 import {
   applySourcemapIgnoreList,
   extractSourcemapFromFile,
   injectSourcesContent,
 } from './sourcemap'
-import { isFileLoadingAllowed } from './middlewares/static'
-import { throwClosedServerError } from './pluginContainer'
-import type { DevEnvironment } from './environment'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
@@ -60,11 +61,11 @@ export interface TransformOptions {
   ssr?: boolean
 }
 
-export interface TransformOptionsInternal {
+interface TransformOptionsInternal {
   /**
-   * @internal
+   * Whether to skip the `server.fs` check.
    */
-  allowId?: (id: string) => boolean
+  skipFsCheck: boolean
 }
 
 // TODO: This function could be moved to the DevEnvironment class.
@@ -77,7 +78,7 @@ export interface TransformOptionsInternal {
 export function transformRequest(
   environment: DevEnvironment,
   url: string,
-  options: TransformOptionsInternal = {},
+  options: TransformOptionsInternal,
 ): Promise<TransformResult | null> {
   if (environment._closing && environment.config.dev.recoverable)
     throwClosedServerError()
@@ -248,7 +249,11 @@ async function loadAndTransform(
 
   const moduleGraph = environment.moduleGraph
 
-  if (options.allowId && !options.allowId(id)) {
+  if (
+    !options.skipFsCheck &&
+    id[0] !== '\0' &&
+    isServerAccessDeniedForTransform(config, id)
+  ) {
     const err: any = new Error(`Denied ID ${id}`)
     err.code = ERR_DENIED_ID
     err.id = id
@@ -272,7 +277,7 @@ async function loadAndTransform(
     // only try the fallback if access is allowed, skip for out of root url
     // like /service-worker.js or /api/users
     if (
-      environment.config.consumer === 'server' ||
+      options.skipFsCheck ||
       isFileLoadingAllowed(environment.getTopLevelConfig(), slash(file))
     ) {
       try {
@@ -293,7 +298,7 @@ async function loadAndTransform(
     }
     if (code) {
       try {
-        const extracted = await extractSourcemapFromFile(code, file)
+        const extracted = extractSourcemapFromFile(code, file, logger)
         if (extracted) {
           code = extracted.code
           map = extracted.map
@@ -486,15 +491,15 @@ async function handleModuleSoftInvalidation(
       }
 
       const urlWithoutTimestamp = removeTimestampQuery(rawUrl)
-      // hmrUrl must be derived the same way as importAnalysis
-      const hmrUrl = unwrapId(
+      // moduleUrl must be derived the same way as importAnalysis
+      const moduleUrl = unwrapId(
         stripBase(
           removeImportQuery(urlWithoutTimestamp),
           environment.config.base,
         ),
       )
       for (const importedMod of mod.importedModules) {
-        if (importedMod.url !== hmrUrl) continue
+        if (importedMod.url !== moduleUrl) continue
         if (importedMod.lastHMRTimestamp > 0) {
           const replacedUrl = injectQuery(
             urlWithoutTimestamp,
@@ -507,7 +512,7 @@ async function handleModuleSoftInvalidation(
 
         if (imp.d === -1 && environment.config.dev.preTransformRequests) {
           // pre-transform known direct imports
-          environment.warmupRequest(hmrUrl)
+          environment.warmupRequest(moduleUrl)
         }
 
         break

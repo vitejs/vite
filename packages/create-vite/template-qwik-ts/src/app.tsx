@@ -1,8 +1,8 @@
 import { component$, useSignal } from '@builder.io/qwik'
 
+import heroImg from './assets/hero.png'
 import qwikLogo from './assets/qwik.svg'
 import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 import './app.css'
 
 export const App = component$(() => {
@@ -22,7 +22,7 @@ export const App = component$(() => {
             Edit <code>src/app.tsx</code> and save to test <code>HMR</code>
           </p>
         </div>
-        <button class="counter" onClick$={() => count.value++}>
+        <button type="button" class="counter" onClick$={() => count.value++}>
           Count is {count.value}
         </button>
       </section>

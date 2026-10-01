@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import githubIcon from '@assets/social/github-light.svg'
+import { Icon } from '@iconify/vue'
 
 interface Testimonial {
   name: string
@@ -106,16 +106,16 @@ const testimonials: Testimonial[] = [
       >
         <!-- GitHub Stars -->
         <div class="flex flex-col gap-3">
-          <h2 class="text-white">75k+</h2>
+          <h2 class="text-white">80k+</h2>
           <p class="text-grey flex items-center gap-2">
-            <img :src="githubIcon" alt="" class="size-6" />
+            <Icon icon="simple-icons:github" width="20px" height="20px" />
             Github Stars
           </p>
         </div>
 
         <!-- NPM Downloads -->
         <div class="flex flex-col gap-3">
-          <h2 class="text-white">40m+</h2>
+          <h2 class="text-white">80m+</h2>
           <p class="text-grey">Weekly NPM downloads</p>
         </div>
       </div>

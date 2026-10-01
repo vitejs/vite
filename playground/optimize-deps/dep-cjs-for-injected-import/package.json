@@ -1,0 +1,6 @@
+{
+  "name": "@vitejs/test-dep-cjs-for-injected-import",
+  "private": true,
+  "version": "0.0.0",
+  "main": "index.js"
+}

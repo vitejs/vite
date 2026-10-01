@@ -4,14 +4,14 @@ If you are migrating from `rolldown-vite`, the technical preview release for Rol
 
 ## Default Browser Target Change [<Badge text="NRV" type="warning" />](#migration-from-v7)
 
-The default browser value of `build.target` and `'baseline-widely-available'`, is updated to newer browser version:
+The default browser values of `build.target` and `'baseline-widely-available'` are updated to newer browser versions:
 
 - Chrome 107 → 111
 - Edge 107 → 111
 - Firefox 104 → 114
 - Safari 16.0 → 16.4
 
-These browser versions align with [Baseline Widely Available](https://web-platform-dx.github.io/web-features/) feature sets as of 2026-01-01. In other words, they were all released about two and a half years ago.
+These browser versions align with [Baseline Widely Available](https://web-platform-dx.github.io/baseline/) feature sets as of 2026-01-01. In other words, they were all released about two and a half years ago.
 
 ## Rolldown
 
@@ -19,7 +19,7 @@ Vite 8 uses [Rolldown](https://rolldown.rs/) and [Oxc](https://oxc.rs/) based to
 
 ### Gradual Migration
 
-The `rolldown-vite` package implements Vite 7 with Rolldown, without other Vite 8 changes. This can be used as a intermediate step to migrate to Vite 8. See [the Rolldown Integration guide](https://v7.vite.dev/guide/rolldown) in the Vite 7 docs to switch to `rolldown-vite` from Vite 7.
+The `rolldown-vite` package implements Vite 7 with Rolldown, without other Vite 8 changes. This can be used as an intermediate step to migrate to Vite 8. See [the Rolldown Integration guide](https://v7.vite.dev/guide/rolldown) in the Vite 7 docs to switch to `rolldown-vite` from Vite 7.
 
 For users migrating from `rolldown-vite` to Vite 8, you can undo the dependency changes in `package.json` and update to Vite 8:
 
@@ -100,60 +100,54 @@ Currently, the Oxc transformer does not support lowering native decorators as we
 
 :::: details Workaround for lowering native decorators
 
-You can use [Babel](https://babeljs.io/) or [SWC](https://swc.rs/) to lower native decorators for the time being. While SWC is faster than Babel, it does **not support the latest decorator spec** that esbuild supports.
-
-The decorator spec has been updated multiple times since it reached stage 3. The versions supported by each tool are:
-
-- `"2023-11"` (esbuild, TypeScript 5.4+ and Babel support this version)
-- `"2023-05"` (TypeScript 5.2+ supports this version)
-- `"2023-01"` (TypeScript 5.0+ supports this version)
-- `"2022-03"` (SWC supports this version)
-
-See the [Babel decorators versions guide](https://babeljs.io/docs/babel-plugin-proposal-decorators#version) for differences between each version.
+You can use [Babel](https://babeljs.io/) or [SWC](https://swc.rs/) to lower native decorators for the time being.
 
 **Using Babel:**
 
 ::: code-group
 
 ```bash [npm]
-$ npm install -D @rollup/plugin-babel @babel/plugin-proposal-decorators
+$ npm install -D @rolldown/plugin-babel @babel/plugin-proposal-decorators
 ```
 
 ```bash [Yarn]
-$ yarn add -D @rollup/plugin-babel @babel/plugin-proposal-decorators
+$ yarn add -D @rolldown/plugin-babel @babel/plugin-proposal-decorators
 ```
 
 ```bash [pnpm]
-$ pnpm add -D @rollup/plugin-babel @babel/plugin-proposal-decorators
+$ pnpm add -D @rolldown/plugin-babel @babel/plugin-proposal-decorators
 ```
 
 ```bash [Bun]
-$ bun add -D @rollup/plugin-babel @babel/plugin-proposal-decorators
+$ bun add -D @rolldown/plugin-babel @babel/plugin-proposal-decorators
 ```
 
 ```bash [Deno]
-$ deno add -D npm:@rollup/plugin-babel npm:@babel/plugin-proposal-decorators
+$ deno add -D npm:@rolldown/plugin-babel npm:@babel/plugin-proposal-decorators
 ```
 
 :::
 
 ```ts [vite.config.ts]
-import { defineConfig, withFilter } from 'vite'
-import { babel } from '@rollup/plugin-babel'
+import { defineConfig } from 'vite'
+import babel from '@rolldown/plugin-babel'
+
+function decoratorPreset(options: Record<string, unknown>) {
+  return {
+    preset: () => ({
+      plugins: [['@babel/plugin-proposal-decorators', options]],
+    }),
+    rolldown: {
+      // Only run this transform if the file contains a decorator.
+      filter: {
+        code: '@',
+      },
+    },
+  }
+}
 
 export default defineConfig({
-  plugins: [
-    withFilter(
-      babel({
-        configFile: false,
-        plugins: [
-          ['@babel/plugin-proposal-decorators', { version: '2023-11' }],
-        ],
-      }),
-      // Only run this transform if the file contains a decorator.
-      { transform: { code: '@' } },
-    ),
-  ],
+  plugins: [babel({ presets: [decoratorPreset({ version: '2023-11' })] })],
 })
 ```
 
@@ -185,6 +179,7 @@ $ deno add -D npm:@rollup/plugin-swc npm:@swc/core
 
 ```js
 import { defineConfig, withFilter } from 'vite'
+import swc from '@rollup/plugin-swc'
 
 export default defineConfig({
   // ...
@@ -194,8 +189,7 @@ export default defineConfig({
         swc: {
           jsc: {
             parser: { decorators: true, decoratorsBeforeExport: true },
-            // NOTE: SWC doesn't support the '2023-11' version yet.
-            transform: { decoratorVersion: '2022-03' },
+            transform: { decoratorVersion: '2023-11' },
           },
         },
       }),
@@ -223,7 +217,7 @@ Property mangling and its related options ([`mangleProps`, `reserveProps`, `mang
 esbuild and Oxc Minifier make slightly different assumptions about source code. In case you suspect the minifier is causing breakage in your code, you can compare these assumptions here:
 
 - [esbuild minify assumptions](https://esbuild.github.io/api/#minify-considerations)
-- [Oxc Minifier assumptions](https://oxc.rs/docs/guide/usage/minifier.html#assumptions)
+- [Oxc Minifier assumptions](https://github.com/oxc-project/oxc/blob/main/crates/oxc_minifier/docs/ASSUMPTIONS.md)
 
 Please report any issues you find related to minification in your JavaScript apps.
 
@@ -241,7 +235,7 @@ If it matches one of the following conditions, the `default` import is the `modu
 
 - The importer is `.mjs` or `.mts`.
 - The closest `package.json` for the importer has a `type` field set to `module`.
-- The `module.exports.__esModule` value of the importee CJS module is not set to true.
+- The `module.exports.__esModule` value of the importee CJS module is not set to `true`.
 
 ::: details The previous behavior
 
@@ -249,11 +243,11 @@ In development, if it matches one of the following conditions, the `default` imp
 
 - _The importer is included in the dependency optimization_ and `.mjs` or `.mts`.
 - _The importer is included in the dependency optimization_ and the closest `package.json` for the importer has a `type` field set to `module`.
-- The `module.exports.__esModule` value of the importee CJS module is not set to true.
+- The `module.exports.__esModule` value of the importee CJS module is not set to `true`.
 
 In build, the conditions were:
 
-- The `module.exports.__esModule` value of the importee CJS module is not set to true.
+- The `module.exports.__esModule` value of the importee CJS module is not set to `true`.
 - _`default` property of `module.exports` does not exist_.
 
 (assuming [`build.commonjsOptions.defaultIsModuleExports`](https://github.com/rollup/plugins/tree/master/packages/commonjs#defaultismoduleexports) is not changed from the default `'auto'`)
@@ -293,11 +287,29 @@ See Rolldown's docs for more details: [`require` external modules - Bundling CJS
 
 ### Removed `build.rollupOptions.watch.chokidar` option
 
-The `build.rollupOptions.watch.chokidar` option was removed. Please migrate to the [`build.rolldownOptions.watch.notify`](https://rolldown.rs/reference/InputOptions.watch#notify) option.
+The `build.rollupOptions.watch.chokidar` option was removed. Please migrate to the [`build.rolldownOptions.watch.watcher`](https://rolldown.rs/reference/InputOptions.watch#watcher) option.
 
 ### Removed object form `build.rollupOptions.output.manualChunks` and deprecate function form one
 
 The object form `output.manualChunks` option is not supported anymore. The function form `output.manualChunks` is deprecated. Rolldown has the more flexible [`codeSplitting`](https://rolldown.rs/reference/OutputOptions.codeSplitting) option. See Rolldown's docs for more details about `codeSplitting`: [Manual Code Splitting - Rolldown](https://rolldown.rs/in-depth/manual-code-splitting).
+
+### `build()` Throws `BundleError`
+
+_This change only affects JS API users._
+
+`build()` now throws a [`BundleError`](https://rolldown.rs/reference/TypeAlias.BundleError) instead of the raw error thrown in the plugin. `BundleError` is typed as `Error & { errors?: RolldownError[] }` and it wraps the individual errors in an `errors` array. If you need the individual errors, you need to access `.errors`:
+
+```js
+try {
+  await build()
+} catch (e) {
+  if (e.errors) {
+    for (const error of e.errors) {
+      console.log(error.code) // error code
+    }
+  }
+}
+```
 
 ### Module Type Support and Auto Detection
 
@@ -332,7 +344,7 @@ The following options are deprecated and will be removed in the future:
 
 ## Removed Deprecated Features [<Badge text="NRV" type="warning" />](#migration-from-v7)
 
-- Passing an URL to `import.meta.hot.accept` is no longer supported. Please pass an id instead. ([#21382](https://github.com/vitejs/vite/pull/21382))
+- Passing a URL to `import.meta.hot.accept` is no longer supported. Please pass an id instead. ([#21382](https://github.com/vitejs/vite/pull/21382))
 
 ## Advanced
 
@@ -345,19 +357,20 @@ These breaking changes are expected to only affect a minority of use cases:
   - Assigning to `bundle[foo]` is not supported. This is discouraged by Rollup as well. Please use `this.emitFile()` instead.
   - the reference is not shared across the hooks ([rolldown-vite#410](https://github.com/vitejs/rolldown-vite/issues/410))
   - `structuredClone(bundle)` errors with `DataCloneError: #<Object> could not be cloned`. This is not supported anymore. Please clone it with `structuredClone({ ...bundle })`. ([rolldown-vite#128](https://github.com/vitejs/rolldown-vite/issues/128))
-- All parallel hooks in Rollup works as sequential hooks. See [Rolldown's documentation](https://rolldown.rs/apis/plugin-api#sequential-hook-execution) for more details.
+- All parallel hooks in Rollup work as sequential hooks. See [Rolldown's documentation](https://rolldown.rs/apis/plugin-api#sequential-hook-execution) for more details.
 - `"use strict";` is not injected sometimes. See [Rolldown's documentation](https://rolldown.rs/in-depth/directives) for more details.
-- Transforming to lower than ES5 with plugin-legacy is not supported ([rolldown-vite#452](https://github.com/vitejs/rolldown-vite/issues/452))
+- Transforming to ES5 and below with plugin-legacy is not supported ([rolldown-vite#452](https://github.com/vitejs/rolldown-vite/issues/452))
 - Passing the same browser with multiple versions of it to `build.target` option now errors: esbuild selects the latest version of it, which was probably not what you intended.
-- Missing support by Rolldown: The following features are not supported by Rolldown and is no longer supported by Vite.
+- Missing support by Rolldown: The following features are not supported by Rolldown and are no longer supported by Vite.
   - `build.rollupOptions.output.format: 'system'` ([rolldown#2387](https://github.com/rolldown/rolldown/issues/2387))
-  - `build.rollupOptions.output.format: 'amd'` ([rolldown#2387](https://github.com/rolldown/rolldown/issues/2528))
+  - `build.rollupOptions.output.format: 'amd'` ([rolldown#2528](https://github.com/rolldown/rolldown/issues/2528))
   - `shouldTransformCachedModule` hook ([rolldown#4389](https://github.com/rolldown/rolldown/issues/4389))
   - `resolveImportMeta` hook ([rolldown#1010](https://github.com/rolldown/rolldown/issues/1010))
   - `renderDynamicImport` hook ([rolldown#4532](https://github.com/rolldown/rolldown/issues/4532))
   - `resolveFileUrl` hook
 - `parseAst` / `parseAstAsync` functions are now deprecated in favor of `parseSync` / `parse` functions which have more features.
-- (bug) `@vite-ignore` comment edge case ([rolldown-vite#426](https://github.com/vitejs/rolldown-vite/issues/426))
+- comments are removed before the `renderChunk` hook instead of after the `renderChunk` hook
+- comments other than the ones listed [here](https://rolldown.rs/reference/OutputOptions.comments) are moved, while Rollup only removes comments if the adjacent code is removed
 
 ## Migration from v6
 

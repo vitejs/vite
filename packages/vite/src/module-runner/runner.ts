@@ -1,22 +1,12 @@
 import type { ViteHotContext } from '#types/hot'
+import { createIsBuiltin } from '../shared/builtin'
 import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
-import { cleanUrl, isPrimitive } from '../shared/utils'
-import { analyzeImportedModDifference } from '../shared/ssrTransform'
 import {
   type NormalizedModuleRunnerTransport,
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
-import { createIsBuiltin } from '../shared/builtin'
-import type { EvaluatedModuleNode } from './evaluatedModules'
-import { EvaluatedModules } from './evaluatedModules'
-import type {
-  ModuleEvaluator,
-  ModuleRunnerContext,
-  ModuleRunnerOptions,
-  ResolvedResult,
-  SSRImportMetadata,
-} from './types'
-import { posixDirname, posixPathToFileHref, posixResolve } from './utils'
+import { analyzeImportedModDifference } from '../shared/ssrTransform'
+import { cleanUrl, isPrimitive } from '../shared/utils'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -25,11 +15,21 @@ import {
   ssrImportMetaKey,
   ssrModuleExportsKey,
 } from './constants'
-import { hmrLogger, silentConsole } from './hmrLogger'
-import { createHMRHandlerForRunner } from './hmrHandler'
-import { enableSourceMapSupport } from './sourcemap/index'
-import { ESModulesEvaluator } from './esmEvaluator'
 import { createDefaultImportMeta } from './createImportMeta'
+import { ESModulesEvaluator } from './esmEvaluator'
+import type { EvaluatedModuleNode } from './evaluatedModules'
+import { EvaluatedModules } from './evaluatedModules'
+import { createHMRHandlerForRunner } from './hmrHandler'
+import { hmrLogger, silentConsole } from './hmrLogger'
+import { enableSourceMapSupport } from './sourcemap/index'
+import type {
+  ModuleEvaluator,
+  ModuleRunnerContext,
+  ModuleRunnerOptions,
+  ResolvedResult,
+  SSRImportMetadata,
+} from './types'
+import { posixDirname, posixPathToFileHref, posixResolve } from './utils'
 
 interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
@@ -133,37 +133,32 @@ export class ModuleRunner {
     return exports
   }
 
-  private isCircularModule(mod: EvaluatedModuleNode) {
-    for (const importedFile of mod.imports) {
-      if (mod.importers.has(importedFile)) {
-        return true
-      }
-    }
-    return false
-  }
-
-  private isCircularImport(
-    importers: Set<string>,
-    moduleUrl: string,
+  private isCircularRequest(
+    mod: EvaluatedModuleNode,
+    callstack: string[],
     visited = new Set<string>(),
-  ) {
-    for (const importer of importers) {
-      if (visited.has(importer)) {
+  ): boolean {
+    if (visited.has(mod.id)) {
+      return false
+    }
+    visited.add(mod.id)
+
+    for (const importedModuleId of mod.imports) {
+      const importedModule =
+        this.evaluatedModules.getModuleById(importedModuleId)
+      if (!importedModule?.promise || importedModule.evaluated) {
         continue
       }
-      visited.add(importer)
-      if (importer === moduleUrl) {
+
+      if (callstack.includes(importedModuleId)) {
         return true
       }
-      const mod = this.evaluatedModules.getModuleById(importer)
-      if (
-        mod &&
-        mod.importers.size &&
-        this.isCircularImport(mod.importers, moduleUrl, visited)
-      ) {
+
+      if (this.isCircularRequest(importedModule, callstack, visited)) {
         return true
       }
     }
+
     return false
   }
 
@@ -176,19 +171,23 @@ export class ModuleRunner {
     const meta = mod.meta!
     const moduleId = meta.id
 
-    const { importers } = mod
+    const importee = callstack.at(-1)
 
-    const importee = callstack[callstack.length - 1]
+    if (importee) mod.importers.add(importee)
 
-    if (importee) importers.add(importee)
+    // fast path: already evaluated modules can't deadlock
+    if (mod.evaluated && mod.promise) {
+      return this.processImport(await mod.promise, meta, metadata)
+    }
 
-    // check circular dependency
-    if (
-      callstack.includes(moduleId) ||
-      this.isCircularModule(mod) ||
-      this.isCircularImport(importers, moduleId)
-    ) {
-      if (mod.exports) return this.processImport(mod.exports, meta, metadata)
+    if (mod.promise) {
+      if (
+        mod.exports &&
+        (callstack.includes(moduleId) || this.isCircularRequest(mod, callstack))
+      ) {
+        return this.processImport(mod.exports, meta, metadata)
+      }
+      return this.processImport(await mod.promise, meta, metadata)
     }
 
     let debugTimer: any
@@ -207,10 +206,6 @@ export class ModuleRunner {
     }
 
     try {
-      // cached module
-      if (mod.promise)
-        return this.processImport(await mod.promise, meta, metadata)
-
       const promise = this.directRequest(url, mod, callstack)
       mod.promise = promise
       mod.evaluated = false

@@ -4,6 +4,7 @@ import { stripVTControlCharacters } from 'node:util'
 import { describe, expect, onTestFinished, test } from 'vitest'
 import {
   isBuild,
+  isBundledDev,
   page,
   readDepOptimizationMetadata,
   readFile,
@@ -19,7 +20,9 @@ test('basic', async () => {
 })
 
 describe.runIf(!isBuild)('pre-bundling', () => {
-  test('client', async () => {
+  // bundled dev by design: the client environment has no dep optimizer, so
+  // there is no .vite/deps folder to read. Dependencies come from the bundle.
+  test.skipIf(isBundledDev)('client', async () => {
     const metaJson = readDepOptimizationMetadata()
 
     expect(metaJson.optimized['react']).toBeTruthy()
@@ -52,7 +55,9 @@ describe.runIf(!isBuild)('pre-bundling', () => {
     expect(depsFilesWithProcessEnvNodeEnv.length).toBeGreaterThan(0)
   })
 
-  test('deps reload', async () => {
+  // bundled dev by design: there is no client dep-optimizer metadata to
+  // compare before and after. The reload this test checks cannot happen.
+  test.skipIf(isBundledDev)('deps reload', async () => {
     const envs = ['client', 'server'] as const
 
     const clientMeta = readDepOptimizationMetadata('client')
@@ -81,7 +86,7 @@ describe.runIf(!isBuild)('pre-bundling', () => {
           .map(
             (log) =>
               stripVTControlCharacters(log).match(
-                /new dependencies optimized: (react-fake-.*)/,
+                /dependenc(?:y|ies) optimized: (react-fake-.*)/,
               )?.[1],
           )
           .filter(Boolean),

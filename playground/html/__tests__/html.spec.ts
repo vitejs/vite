@@ -4,6 +4,7 @@ import {
   editFile,
   getColor,
   isBuild,
+  isBundled,
   isServe,
   page,
   serverLogs,
@@ -44,9 +45,9 @@ function testPage(isNested: boolean) {
   })
 
   test('server only transform', async () => {
-    if (!isBuild) {
+    if (!isBundled) {
       expect(await page.textContent('body p.server')).toMatch(
-        'injected only during dev',
+        'injected only when unbundled',
       )
     } else {
       expect(await page.innerHTML('body')).not.toMatch('p class="server"')
@@ -54,9 +55,9 @@ function testPage(isNested: boolean) {
   })
 
   test('build only transform', async () => {
-    if (isBuild) {
+    if (isBundled) {
       expect(await page.textContent('body p.build')).toMatch(
-        'injected only during build',
+        'injected only when bundled',
       )
     } else {
       expect(await page.innerHTML('body')).not.toMatch('p class="build"')
@@ -80,8 +81,8 @@ function testPage(isNested: boolean) {
   })
 
   test('css', async () => {
-    expect(await getColor('h1')).toBe(isNested ? 'red' : 'blue')
-    expect(await getColor('p')).toBe('grey')
+    await expect.poll(() => getColor('h1')).toBe(isNested ? 'red' : 'blue')
+    await expect.poll(() => getColor('p')).toBe('grey')
   })
 
   if (isNested) {
@@ -123,7 +124,7 @@ describe('main', () => {
   })
 
   test.runIf(isBuild)(
-    'external paths by rollupOptions.external works',
+    'external paths by rolldownOptions.external works',
     async () => {
       expect(await page.textContent('.external-path-by-rollup-options')).toBe(
         'works',
@@ -283,7 +284,7 @@ describe.runIf(isServe)('SPA fallback', () => {
   })
 })
 
-describe.runIf(isServe)('invalid', () => {
+describe.runIf(!isBundled)('invalid', () => {
   test('should be 500 with overlay', async () => {
     const response = await page.goto(viteTestUrl + '/invalid.html')
     expect(response.status()).toBe(500)
@@ -426,12 +427,12 @@ describe('relative input', () => {
     await page.goto(viteTestUrl + '/relative-input.html')
   })
 
-  test('passing relative path to rollupOptions.input works', async () => {
+  test('passing relative path to rolldownOptions.input works', async () => {
     await expect.poll(() => page.textContent('.relative-input')).toBe('OK')
   })
 })
 
-describe.runIf(isServe)('warmup', () => {
+describe.runIf(!isBundled)('warmup', () => {
   test('should warmup /warmup/warm.js', async () => {
     // warmup transform files async during server startup, so the module check
     // here might take a while to load

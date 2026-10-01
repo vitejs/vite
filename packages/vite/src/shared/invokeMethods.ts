@@ -10,36 +10,36 @@ export type FetchResult =
 
 export interface CachedFetchResult {
   /**
-   * If module cached in the runner, we can just confirm
-   * it wasn't invalidated on the server side.
+   * If the module is cached in the runner, this confirms
+   * it was not invalidated on the server side.
    */
   cache: true
 }
 
 export interface ExternalFetchResult {
   /**
-   * The path to the externalized module starting with file://,
-   * by default this will be imported via a dynamic "import"
-   * instead of being transformed by vite and loaded with vite runner
+   * The path to the externalized module starting with file://.
+   * By default this will be imported via a dynamic "import"
+   * instead of being transformed by Vite and loaded with the Vite runner.
    */
   externalize: string
   /**
-   * Type of the module. Will be used to determine if import statement is correct.
-   * For example, if Vite needs to throw an error if variable is not actually exported
+   * Type of the module. Used to determine if the import statement is correct.
+   * For example, if Vite needs to throw an error if a variable is not actually exported.
    */
   type: 'module' | 'commonjs' | 'builtin' | 'network'
 }
 
 export interface ViteFetchResult {
   /**
-   * Code that will be evaluated by vite runner
-   * by default this will be wrapped in an async function
+   * Code that will be evaluated by the Vite runner.
+   * By default this will be wrapped in an async function.
    */
   code: string
   /**
    * File path of the module on disk.
-   * This will be resolved as import.meta.url/filename
-   * Will be equal to `null` for virtual modules
+   * This will be resolved as import.meta.url/filename.
+   * Will be `null` for virtual modules.
    */
   file: string | null
   /**

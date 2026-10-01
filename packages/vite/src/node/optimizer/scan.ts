@@ -2,16 +2,28 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
-import { scan, transformSync } from 'rolldown/experimental'
-import type { PartialResolvedId, Plugin } from 'rolldown'
 import colors from 'picocolors'
+import type { PartialResolvedId, Plugin } from 'rolldown'
+import { scan } from 'rolldown/experimental'
+import type { TransformOptions as OxcTransformOptions } from 'rolldown/utils'
+import { transformSync } from 'rolldown/utils'
 import { glob } from 'tinyglobby'
+import { cleanUrl } from '../../shared/utils'
+import { BaseEnvironment } from '../baseEnvironment'
 import {
   CSS_LANGS_RE,
   JS_TYPES_RE,
   KNOWN_ASSET_TYPES,
   SPECIAL_QUERY_RE,
 } from '../constants'
+import { transformGlobImport } from '../plugins/importMetaGlob'
+import { getRollupJsxPresets } from '../plugins/oxc'
+import type { DevEnvironment } from '../server/environment'
+import type { EnvironmentPluginContainer } from '../server/pluginContainer'
+import {
+  ERR_CLOSED_SERVER,
+  createEnvironmentPluginContainer,
+} from '../server/pluginContainer'
 import {
   arraify,
   asyncFlatten,
@@ -29,13 +41,6 @@ import {
   virtualModulePrefix,
   virtualModuleRE,
 } from '../utils'
-import type { EnvironmentPluginContainer } from '../server/pluginContainer'
-import { createEnvironmentPluginContainer } from '../server/pluginContainer'
-import { BaseEnvironment } from '../baseEnvironment'
-import type { DevEnvironment } from '../server/environment'
-import { transformGlobImport } from '../plugins/importMetaGlob'
-import { cleanUrl } from '../../shared/utils'
-import { getRollupJsxPresets } from '../plugins/oxc'
 
 export class ScanEnvironment extends BaseEnvironment {
   mode = 'scan' as const
@@ -106,7 +111,7 @@ const htmlTypesRE = /\.(?:html|vue|svelte|astro|imba)$/
 // since even missed imports can be caught at runtime, and false positives will
 // simply be ignored.
 export const importsRE: RegExp =
-  /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
+  /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type\b)(?:[\w*{}\n\r\t, ]+from)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
 
 export function scanImports(environment: ScanEnvironment): {
   cancel: () => Promise<void>
@@ -126,10 +131,14 @@ export function scanImports(environment: ScanEnvironment): {
   async function scan() {
     const entries = await computeEntries(environment)
     if (!entries.length) {
-      if (!config.optimizeDeps.entries && !config.optimizeDeps.include) {
+      if (
+        !config.optimizeDeps.entries &&
+        !config.optimizeDeps.include &&
+        !config.input
+      ) {
         environment.logger.warn(
           colors.yellow(
-            '(!) Could not auto-determine entry point from rollupOptions or html files ' +
+            '(!) Could not auto-determine entry point from rolldownOptions or html files ' +
               'and there are no explicit optimizeDeps.include patterns. ' +
               'Skipping dependency pre-bundling.',
           ),
@@ -163,6 +172,17 @@ export function scanImports(environment: ScanEnvironment): {
         missing,
       }
     } catch (e) {
+      // The scanner runs in the background and may still be crawling when the
+      // server is closed. In that case resolutions reject with
+      // `ERR_CLOSED_SERVER` and the scan build fails.
+      if (
+        e.errors?.some(
+          (error: { pluginCode?: string }) =>
+            error.pluginCode === ERR_CLOSED_SERVER,
+        )
+      ) {
+        return
+      }
       const prependMessage = colors.red(`\
   Failed to scan for dependencies from entries:
   ${entries.join('\n')}
@@ -194,38 +214,34 @@ async function computeEntries(environment: ScanEnvironment) {
   let entries: string[] = []
 
   const explicitEntryPatterns = environment.config.optimizeDeps.entries
-  const buildInput = environment.config.build.rollupOptions.input
+  const input =
+    environment.config.input ?? environment.config.build.rolldownOptions.input
 
   if (explicitEntryPatterns) {
     entries = await globEntries(explicitEntryPatterns, environment)
-  } else if (buildInput) {
+  } else if (input) {
     const resolvePath = async (p: string) => {
-      // rollup resolves the input from process.cwd()
       const id = (
-        await environment.pluginContainer.resolveId(
-          p,
-          path.join(process.cwd(), '*'),
-          {
-            isEntry: true,
-            scan: true,
-          },
-        )
+        await environment.pluginContainer.resolveId(p, undefined, {
+          isEntry: true,
+          scan: true,
+        })
       )?.id
       if (id === undefined) {
         throw new Error(
-          `failed to resolve rollupOptions.input value: ${JSON.stringify(p)}.`,
+          `failed to resolve rolldownOptions.input value: ${JSON.stringify(p)}.`,
         )
       }
       return id
     }
-    if (typeof buildInput === 'string') {
-      entries = [await resolvePath(buildInput)]
-    } else if (Array.isArray(buildInput)) {
-      entries = await Promise.all(buildInput.map(resolvePath))
-    } else if (isObject(buildInput)) {
-      entries = await Promise.all(Object.values(buildInput).map(resolvePath))
+    if (typeof input === 'string') {
+      entries = [await resolvePath(input)]
+    } else if (Array.isArray(input)) {
+      entries = await Promise.all(input.map(resolvePath))
+    } else if (isObject(input)) {
+      entries = await Promise.all(Object.values(input).map(resolvePath))
     } else {
-      throw new Error('invalid rollupOptions.input value.')
+      throw new Error('invalid rolldownOptions.input value.')
     }
   } else {
     entries = await globEntries('**/*.html', environment)
@@ -251,9 +267,6 @@ async function prepareRolldownScanner(
   const { plugins: pluginsFromConfig = [], ...rolldownOptions } =
     environment.config.optimizeDeps.rolldownOptions ?? {}
 
-  const plugins = await asyncFlatten(arraify(pluginsFromConfig))
-  plugins.push(...rolldownScanPlugin(environment, deps, missing, entries))
-
   const transformOptions = deepClone(rolldownOptions.transform) ?? {}
   if (transformOptions.jsx === undefined) {
     transformOptions.jsx = {}
@@ -266,6 +279,19 @@ async function prepareRolldownScanner(
   if (typeof transformOptions.jsx === 'object') {
     transformOptions.jsx.development ??= !environment.config.isProduction
   }
+  const transformSyncJsxOptions: OxcTransformOptions['jsx'] =
+    transformOptions.jsx === false ? undefined : transformOptions.jsx
+
+  const plugins = await asyncFlatten(arraify(pluginsFromConfig))
+  plugins.push(
+    ...rolldownScanPlugin(
+      environment,
+      deps,
+      missing,
+      entries,
+      transformSyncJsxOptions,
+    ),
+  )
 
   async function build() {
     await scan({
@@ -342,24 +368,34 @@ function rolldownScanPlugin(
   depImports: Record<string, string>,
   missing: Record<string, string>,
   entries: string[],
+  jsxOptions: OxcTransformOptions['jsx'],
 ): Plugin[] {
   const seen = new Map<string, string | undefined>()
   async function resolveId(
     id: string,
     importer?: string,
+    options?: Parameters<EnvironmentPluginContainer['resolveId']>[2],
   ): Promise<PartialResolvedId | null> {
     return environment.pluginContainer.resolveId(
       id,
       importer && normalizePath(importer),
-      { scan: true },
+      { scan: true, ...options },
     )
   }
-  const resolve = async (id: string, importer?: string) => {
-    const key = id + (importer && path.dirname(importer))
+  const resolve = async (
+    id: string,
+    importer?: string,
+    options?: Parameters<typeof resolveId>[2],
+  ) => {
+    const key = JSON.stringify([
+      id,
+      importer && path.dirname(importer),
+      options,
+    ])
     if (seen.has(key)) {
       return seen.get(key)
     }
-    const resolved = await resolveId(id, importer)
+    const resolved = await resolveId(id, importer, options)
     const res = resolved?.id
     seen.set(key, res)
     return res
@@ -386,7 +422,11 @@ function rolldownScanPlugin(
     let transpiledContents: string
     // transpile because `transformGlobImport` only expects js
     if (loader !== 'js') {
-      const result = transformSync(id, contents, { lang: loader })
+      const result = transformSync(id, contents, {
+        ...(jsxOptions !== undefined ? { jsx: jsxOptions } : {}),
+        lang: loader,
+        tsconfig: false,
+      })
       if (result.errors.length > 0) {
         throw new AggregateError(result.errors, 'oxc transform error')
       }

@@ -1,9 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import type { Plugin } from '../plugin'
-import { isInNodeModules, sortObjectKeys } from '../utils'
 import type { PackageCache } from '../packages'
 import { findNearestMainPackageData } from '../packages'
+import type { Plugin } from '../plugin'
+import { isInNodeModules, sortObjectKeys } from '../utils'
 
 export interface LicenseEntry {
   /**
@@ -45,7 +45,7 @@ export function licensePlugin(): Plugin {
   return {
     name: 'vite:license',
 
-    async generateBundle(_, bundle) {
+    generateBundle(_, bundle) {
       const licenseOption = this.environment.config.build.license
       if (licenseOption === false) return
 

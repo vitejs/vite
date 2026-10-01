@@ -1,9 +1,23 @@
-import path from 'node:path'
 import fsp from 'node:fs/promises'
+import path from 'node:path'
 import colors from 'picocolors'
 import type { ExistingRawSourceMap } from 'rolldown'
 import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '..'
+import {
+  ERR_OUTDATED_OPTIMIZED_DEP,
+  NULL_BYTE_PLACEHOLDER,
+} from '../../../shared/constants'
+import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
+import type { ResolvedConfig } from '../../config'
+import {
+  DEP_VERSION_RE,
+  ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
+  ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
+  FS_PREFIX,
+} from '../../constants'
+import { isDirectCSSRequest, isDirectRequest } from '../../plugins/css'
+import { isHTMLProxy } from '../../plugins/html'
 import {
   createDebugger,
   fsPathFromId,
@@ -16,24 +30,10 @@ import {
   removeImportQuery,
   removeTimestampQuery,
 } from '../../utils'
-import { send } from '../send'
-import { ERR_DENIED_ID, ERR_LOAD_URL } from '../transformRequest'
-import { applySourcemapIgnoreList } from '../sourcemap'
-import { isHTMLProxy } from '../../plugins/html'
-import {
-  DEP_VERSION_RE,
-  ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
-  ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
-  FS_PREFIX,
-} from '../../constants'
-import { isDirectCSSRequest, isDirectRequest } from '../../plugins/css'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
-import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
-import {
-  ERR_OUTDATED_OPTIMIZED_DEP,
-  NULL_BYTE_PLACEHOLDER,
-} from '../../../shared/constants'
-import type { ResolvedConfig } from '../../config'
+import { send } from '../send'
+import { applySourcemapIgnoreList } from '../sourcemap'
+import { ERR_DENIED_ID, ERR_LOAD_URL } from '../transformRequest'
 import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 const debugCache = createDebugger('vite:cache')
@@ -57,9 +57,15 @@ const rawRE = /[?&]raw\b/
 const inlineRE = /[?&]inline\b/
 const svgRE = /\.svg\b/
 
-function isServerAccessDeniedForTransform(config: ResolvedConfig, id: string) {
+export function isServerAccessDeniedForTransform(
+  config: ResolvedConfig,
+  id: string,
+): boolean {
   if (rawRE.test(id) || urlRE.test(id) || inlineRE.test(id) || svgRE.test(id)) {
-    return checkLoadingAccess(config, id) !== 'allowed'
+    return (
+      checkLoadingAccess(config, cleanUrl(id)) !== 'allowed' ||
+      checkLoadingAccess(config, id) !== 'allowed'
+    )
   }
   return false
 }
@@ -155,6 +161,10 @@ export function transformMiddleware(
           const sourcemapPath = url.startsWith(FS_PREFIX)
             ? fsPathFromId(url)
             : normalizePath(path.resolve(server.config.root, url.slice(1)))
+          // url may contain relative path that may resolve outside of the optimized deps directory
+          if (!depsOptimizer.isOptimizedDepFile(sourcemapPath)) {
+            return next()
+          }
           try {
             const map = JSON.parse(
               await fsp.readFile(sourcemapPath, 'utf-8'),
@@ -244,14 +254,7 @@ export function transformMiddleware(
         }
 
         // resolve, load and transform using the plugin container
-        const result = await environment.transformRequest(url, {
-          allowId(id) {
-            return (
-              id[0] === '\0' ||
-              !isServerAccessDeniedForTransform(server.config, id)
-            )
-          },
-        })
+        const result = await environment.transformRequest(url)
         if (result) {
           const depsOptimizer = environment.depsOptimizer
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
@@ -323,7 +326,13 @@ export function transformMiddleware(
       }
       if (e?.code === ERR_DENIED_ID) {
         const id: string = e.id
-        const servingAccessResult = checkLoadingAccess(server.config, id)
+        let servingAccessResult = checkLoadingAccess(
+          server.config,
+          cleanUrl(id),
+        )
+        if (servingAccessResult === 'allowed') {
+          servingAccessResult = checkLoadingAccess(server.config, id)
+        }
         if (servingAccessResult === 'denied') {
           respondWithAccessDenied(id, server, res)
           return true

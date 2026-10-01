@@ -127,6 +127,10 @@ import(`@/${base}.js`).then((mod) => {
   text('.dynamic-import-with-vars-alias', mod.hi())
 })
 
+import(`#alias/${base}.js`).then((mod) => {
+  text('.dynamic-import-with-vars-subpath-imports', mod.hi())
+})
+
 base = 'self'
 import(`../nested/${base}.js`).then((mod) => {
   text('.dynamic-import-self', mod.self)
@@ -199,6 +203,19 @@ import(`../nested/nested/${base}.js`).then((mod) => {
 
 import(`../nested/static.js`).then((mod) => {
   text('.dynamic-import-static', mod.self)
+})
+
+// #22700: in a nested `import().then(() => import())`, the outer import's CSS
+// dep used to be dropped to `void 0` in the build output, orphaning the CSS.
+import('./then-css/outer.js').then((outerMod) => {
+  text('.then-css-outer', outerMod.outer)
+  return import('./then-css/inner.js').then((innerMod) => {
+    text('.then-css-inner', innerMod.inner)
+  })
+})
+
+import('./rest-destructure.js').then(({ a, ...rest }) => {
+  text('.dynamic-import-rest', `${a} ${rest.b} ${rest.c}`)
 })
 
 console.log('index.js')

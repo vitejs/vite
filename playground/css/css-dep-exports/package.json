@@ -10,6 +10,7 @@
     },
     "./foo.scss": {
       "sass": "./foo1.scss"
-    }
+    },
+    "./styles/*": "./styles/*.scss"
   }
 }

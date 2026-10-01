@@ -28,7 +28,7 @@ export default defineConfig({
   },
   build: {
     minify: false,
-    rollupOptions: {
+    rolldownOptions: {
       external: ['vue', 'slash3', 'slash5'],
       transform: {
         inject: {

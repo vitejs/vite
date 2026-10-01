@@ -1,6 +1,6 @@
 import moduleCondition from '@vite/test-config-plugin-module-condition'
-import { array } from '../siblings/foo'
 import importsField from '#imports-field'
+import { array } from '../siblings/foo.js'
 
 export default {
   array,

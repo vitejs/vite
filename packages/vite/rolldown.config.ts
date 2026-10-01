@@ -1,16 +1,15 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { writeFileSync } from 'node:fs'
 import path from 'node:path'
+import { ImportType, init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import type { Plugin } from 'rolldown'
 import { defineConfig } from 'rolldown'
-import { init, parse } from 'es-module-lexer'
+import pkg from './package.json' with { type: 'json' }
 import licensePlugin from './rollupLicensePlugin'
 
 // eslint-disable-next-line n/no-unsupported-features/node-builtins
 const dirname = import.meta.dirname
-const pkg = JSON.parse(
-  readFileSync(new URL('./package.json', import.meta.url)).toString(),
-)
+
 const disableSourceMap = !!process.env.DEBUG_DISABLE_SOURCE_MAP
 
 const envConfig = defineConfig({
@@ -26,7 +25,7 @@ const envConfig = defineConfig({
 })
 
 const clientConfig = defineConfig({
-  input: path.resolve(dirname, 'src/client/client.ts'),
+  input: path.resolve(dirname, 'src/client/clientEntry.ts'),
   platform: 'browser',
   transform: {
     target: 'es2020',
@@ -35,6 +34,21 @@ const clientConfig = defineConfig({
   output: {
     dir: path.resolve(dirname, 'dist'),
     entryFileNames: 'client/client.mjs',
+  },
+})
+
+// separate entry so the full-bundle-mode HMR code is never bundled into `client.mjs`
+const bundledDevClientConfig = defineConfig({
+  input: path.resolve(dirname, 'src/client/bundledDevClient.ts'),
+  platform: 'browser',
+  transform: {
+    target: 'es2020',
+  },
+  // the runtime is served from the installed rolldown at dev time (`getRolldownDevRuntimeFiles`)
+  external: ['@vite/env', 'rolldown/experimental/runtime'],
+  output: {
+    dir: path.resolve(dirname, 'dist'),
+    entryFileNames: 'client/bundledDevClient.mjs',
   },
 })
 
@@ -61,12 +75,6 @@ const sharedNodeOptions = defineConfig({
     format: 'esm',
     externalLiveBindings: false,
   },
-  onwarn(warning, warn) {
-    if (warning.message.includes('Circular dependency')) {
-      return
-    }
-    warn(warning)
-  },
 })
 
 const nodeConfig = defineConfig({
@@ -81,12 +89,12 @@ const nodeConfig = defineConfig({
     'fsevents',
     /^rolldown\//,
     /^tsx\//,
+    /^@vitejs\/devtools\//,
     /^#/,
     'sugarss', // postcss-import -> sugarss
     'supports-color',
     'utf-8-validate', // ws
     'bufferutil', // ws
-    '@vitejs/devtools/cli-commands',
     ...Object.keys(pkg.dependencies),
     ...Object.keys(pkg.peerDependencies),
   ],
@@ -144,10 +152,9 @@ const moduleRunnerConfig = defineConfig({
     'fsevents',
     'lightningcss',
     /^rolldown\//,
-    '@vitejs/devtools/cli-commands',
     ...Object.keys(pkg.dependencies),
   ],
-  plugins: [bundleSizeLimit(54), enableSourceMapsInWatchModePlugin()],
+  plugins: [bundleSizeLimit(55), enableSourceMapsInWatchModePlugin()],
   output: {
     ...sharedNodeOptions.output,
     minify: {
@@ -161,6 +168,7 @@ const moduleRunnerConfig = defineConfig({
 export default defineConfig([
   envConfig,
   clientConfig,
+  bundledDevClientConfig,
   nodeConfig,
   moduleRunnerConfig,
 ])
@@ -181,7 +189,7 @@ function enableSourceMapsInWatchModePlugin(): Plugin {
 function writeTypesPlugin(): Plugin {
   return {
     name: 'write-types',
-    async writeBundle() {
+    writeBundle() {
       if (this.meta.watchMode) {
         writeFileSync(
           'dist/node/index.d.ts',
@@ -204,9 +212,10 @@ function externalizeDepsInWatchPlugin(): Plugin {
         options.external ||= []
         if (!Array.isArray(options.external))
           throw new Error('external must be an array')
-        options.external = options.external.concat(
-          Object.keys(pkg.devDependencies),
-        )
+        options.external = [
+          ...options.external,
+          ...Object.keys(pkg.devDependencies),
+        ]
       }
     },
   }
@@ -321,7 +330,10 @@ function buildTimeImportMetaUrlPlugin(): Plugin {
         const s = new MagicString(code)
         const [imports] = parse(code)
         for (const { t, ss, se } of imports) {
-          if (t === 3 && code.slice(se, se + 4) === '.url') {
+          if (
+            t === ImportType.ImportMeta &&
+            code.slice(se, se + 4) === '.url'
+          ) {
             // ignore import.meta.url with /** #__KEEP__ */ comment
             if (keepCommentRE.test(code.slice(0, ss))) {
               keepCommentRE.lastIndex = 0

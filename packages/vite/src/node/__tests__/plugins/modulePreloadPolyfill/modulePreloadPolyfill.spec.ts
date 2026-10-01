@@ -1,5 +1,5 @@
-import { describe, it } from 'vitest'
 import type { ModuleFormat, RolldownOutput } from 'rolldown'
+import { describe, it } from 'vitest'
 import { build } from '../../../build'
 import { modulePreloadPolyfillId } from '../../../plugins/modulePreloadPolyfill'
 
@@ -8,7 +8,7 @@ const buildProject = ({ format = 'es' as ModuleFormat } = {}) =>
     logLevel: 'silent',
     build: {
       write: false,
-      rollupOptions: {
+      rolldownOptions: {
         input: 'main.js',
         output: {
           format,

@@ -1,5 +1,14 @@
 import path from 'node:path'
 import { URL } from 'node:url'
+import escapeHtml from 'escape-html'
+import MagicString from 'magic-string'
+import type {
+  DefaultTreeAdapterMap,
+  ErrorCodes,
+  ParserError,
+  Token,
+} from 'parse5'
+import colors from 'picocolors'
 import type {
   OutputAsset,
   OutputBundle,
@@ -7,17 +16,17 @@ import type {
   RollupError,
   SourceMapInput,
 } from 'rolldown'
-import MagicString from 'magic-string'
-import colors from 'picocolors'
-import type {
-  DefaultTreeAdapterMap,
-  ErrorCodes,
-  ParserError,
-  Token,
-} from 'parse5'
 import { stripLiteral } from 'strip-literal'
-import escapeHtml from 'escape-html'
+import { cleanUrl } from '../../shared/utils'
+import { getNodeAssetAttributes } from '../assetSource'
+import { toOutputFilePathInHtml } from '../build'
+import type { ResolvedConfig, ResolvedEnvironmentOptions } from '../config'
+import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
+import { resolveEnvPrefix } from '../env'
+import { perEnvironmentState } from '../environment'
+import type { Logger } from '../logger'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from '../plugin'
+import { checkPublicFile } from '../publicDir'
 import type { ViteDevServer } from '../server'
 import {
   decodeURIIfPossible,
@@ -33,16 +42,9 @@ import {
   removeLeadingSlash,
   unique,
 } from '../utils'
-import type { ResolvedConfig } from '../config'
-import { checkPublicFile } from '../publicDir'
-import { toOutputFilePathInHtml } from '../build'
-import { resolveEnvPrefix } from '../env'
-import { cleanUrl } from '../../shared/utils'
-import { perEnvironmentState } from '../environment'
-import { getNodeAssetAttributes } from '../assetSource'
-import type { Logger } from '../logger'
 import {
   assetUrlRE,
+  getAssetUrlPostfix,
   getPublicAssetFilename,
   publicAssetUrlRE,
   urlToBuiltUrl,
@@ -72,7 +74,7 @@ const importMapRE =
 const moduleScriptRE =
   /[ \t]*<script[^>]*type\s*=\s*(?:"module"|'module'|module)[^>]*>/i
 const modulePreloadLinkRE =
-  /[ \t]*<link[^>]*rel\s*=\s*(?:"modulepreload"|'modulepreload'|modulepreload)[\s\S]*?\/>/i
+  /[ \t]*<link[^>]*rel\s*=\s*(?:"modulepreload"|'modulepreload'|modulepreload)[\s\S]*?>/i
 const importMapAppendRE = new RegExp(
   [moduleScriptRE, modulePreloadLinkRE].map((r) => r.source).join('|'),
   'i',
@@ -167,7 +169,23 @@ const noInlineLinkRels = new Set([
   'apple-touch-icon',
   'apple-touch-startup-image',
   'manifest',
+  'modulepreload',
+  'preload',
+  'prefetch',
 ])
+
+// If the node is a link, check if it can be inlined. If not, return `false` to
+// force no inline. `undefined` leaves it to the default heuristics.
+function getLinkShouldInline(
+  node: DefaultTreeAdapterMap['element'],
+  attributes: Record<string, string>,
+): false | undefined {
+  const isNoInlineLink =
+    node.nodeName === 'link' &&
+    attributes.rel &&
+    parseRelAttr(attributes.rel).some((v) => noInlineLinkRels.has(v))
+  return isNoInlineLink ? false : undefined
+}
 
 export const isAsyncScriptMap: WeakMap<
   ResolvedConfig,
@@ -206,13 +224,13 @@ export async function traverseHtml(
   visitor: (node: DefaultTreeAdapterMap['node']) => void,
 ): Promise<void> {
   // lazy load compiler
-  const { parse } = await import('parse5')
+  const { parse, ErrorCodes } = await import('parse5')
   const warnings: ParseWarnings = {}
   const ast = parse(html, {
     scriptingEnabled: false, // parse inside <noscript>
     sourceCodeLocationInfo: true,
     onParseError: (e: ParserError) => {
-      handleParseError(e, html, filePath, warnings)
+      handleParseError(e, ErrorCodes, html, filePath, warnings)
     },
   })
   traverseNodes(ast, visitor)
@@ -239,7 +257,7 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
     if (p.name === 'src') {
       if (!src) {
         src = p
-        srcSourceCodeLocation = node.sourceCodeLocation?.attrs!['src']
+        srcSourceCodeLocation = node.sourceCodeLocation?.attrs!.src
       }
     } else if (p.name === 'type' && p.value === 'module') {
       isModule = true
@@ -316,25 +334,26 @@ function formatParseError(parserError: ParserError, id: string, html: string) {
 
 function handleParseError(
   parserError: ParserError,
+  errorCodes: typeof ErrorCodes,
   html: string,
   filePath: string,
   warnings: ParseWarnings,
 ) {
   switch (parserError.code) {
-    case 'missing-doctype':
+    case errorCodes.missingDoctype:
       // ignore missing DOCTYPE
       return
-    case 'abandoned-head-element-child':
+    case errorCodes.abandonedHeadElementChild:
       // Accept elements without closing tag in <head>
       return
-    case 'duplicate-attribute':
+    case errorCodes.duplicateAttribute:
       // Accept duplicate attributes #5966
       // The first attribute is used, browsers silently ignore duplicates
       return
-    case 'non-void-html-element-start-tag-with-trailing-solidus':
+    case errorCodes.nonVoidHtmlElementStartTagWithTrailingSolidus:
       // Allow self closing on non-void elements #10439
       return
-    case 'unexpected-question-mark-instead-of-tag-name':
+    case errorCodes.unexpectedQuestionMarkInsteadOfTagName:
       // Allow <?xml> declaration and <?> empty elements
       // lit generates <?>: https://github.com/lit/lit/issues/2470
       return
@@ -344,6 +363,66 @@ function handleParseError(
     `Unable to parse HTML; ${parseError.message}\n` +
     ` at ${parseError.loc.file}:${parseError.loc.line}:${parseError.loc.column}\n` +
     parseError.frame
+}
+
+/**
+ * Collects CSS files for a chunk by traversing its imports depth-first,
+ * using a cache to avoid re-analyzing chunks while still returning the
+ * correct files when the same chunk is reached via different entry points.
+ */
+export function getCssFilesForChunk(
+  chunk: OutputChunk,
+  bundle: OutputBundle,
+  analyzedImportedCssFiles: Map<OutputChunk, string[]>,
+  seenChunks: Set<string> = new Set(),
+  seenCss: Set<string> = new Set(),
+): string[] {
+  if (seenChunks.has(chunk.fileName)) {
+    return []
+  }
+  seenChunks.add(chunk.fileName)
+
+  if (analyzedImportedCssFiles.has(chunk)) {
+    const files = analyzedImportedCssFiles.get(chunk)!
+    const additionals = files.filter((file) => !seenCss.has(file))
+    additionals.forEach((file) => seenCss.add(file))
+    return additionals
+  }
+
+  // Collect all CSS from imports (unfiltered for caching, filtered for return)
+  const allFiles: string[] = []
+  const filteredFiles: string[] = []
+  chunk.imports.forEach((file) => {
+    const importee = bundle[file]
+    if (importee?.type === 'chunk') {
+      const importeeCss = getCssFilesForChunk(
+        importee,
+        bundle,
+        analyzedImportedCssFiles,
+        seenChunks,
+        seenCss,
+      )
+      filteredFiles.push(...importeeCss)
+      // For cache: use the importee's full cached list
+      if (analyzedImportedCssFiles.has(importee)) {
+        allFiles.push(...analyzedImportedCssFiles.get(importee)!)
+      } else {
+        allFiles.push(...importeeCss)
+      }
+    }
+  })
+
+  chunk.viteMetadata!.importedCss.forEach((file) => {
+    allFiles.push(file)
+    if (!seenCss.has(file)) {
+      seenCss.add(file)
+      filteredFiles.push(file)
+    }
+  })
+
+  analyzedImportedCssFiles.set(chunk, unique(allFiles))
+
+  return filteredFiles
 }
 
 /**
@@ -357,7 +436,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   preHooks.unshift(preImportMapHook(config))
   preHooks.push(htmlEnvHook(config))
   postHooks.push(injectNonceAttributeTagHook(config))
-  postHooks.push(postImportMapHook())
+  postHooks.push(postImportMapHook(config))
   const processedHtml = perEnvironmentState(() => new Map<string, string>())
 
   const isExcludedUrl = (url: string) =>
@@ -368,6 +447,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:build-html',
+
+    applyToEnvironment(environment) {
+      return environment.config.isBundled
+    },
 
     transform: {
       filter: { id: /\.html$/ },
@@ -444,7 +527,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // for each encountered asset url, rewrite original html so that it
         // references the post-build location, ignoring empty attributes and
         // attributes that directly reference named output.
-        const namedOutput = Object.keys(config.build.rollupOptions.input || {})
+        const namedOutput = Object.keys(
+          config.build.rolldownOptions.input || {},
+        )
         const processAssetUrl = async (url: string, shouldInline?: boolean) => {
           if (
             url !== '' && // Empty attribute
@@ -549,7 +634,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // For asset references in index.html, also generate an import
           // statement for each - this will be handled by the asset plugin
-          const assetAttributes = getNodeAssetAttributes(node)
+          const assetAttributes = getNodeAssetAttributes(
+            node,
+            config.html?.additionalAssetSources,
+          )
           for (const attr of assetAttributes) {
             if (attr.type === 'remove') {
               s.remove(attr.location.startOffset, attr.location.endOffset)
@@ -565,7 +653,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                         decodedUrl !== undefined &&
                         !isExcludedUrl(decodedUrl)
                       ) {
-                        const result = await processAssetUrl(url)
+                        const result = await processAssetUrl(
+                          decodedUrl,
+                          getLinkShouldInline(node, attr.attributes),
+                        )
                         return result !== decodedUrl
                           ? encodeURIPath(result)
                           : url
@@ -604,20 +695,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   })
                   js += importExpression
                 } else {
-                  // If the node is a link, check if it can be inlined. If not, set `shouldInline`
-                  // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
-                  const isNoInlineLink =
-                    node.nodeName === 'link' &&
-                    attr.attributes.rel &&
-                    parseRelAttr(attr.attributes.rel).some((v) =>
-                      noInlineLinkRels.has(v),
-                    )
-                  const shouldInline = isNoInlineLink ? false : undefined
                   assetUrlsPromises.push(
                     (async () => {
                       const processedUrl = await processAssetUrl(
                         url,
-                        shouldInline,
+                        getLinkShouldInline(node, attr.attributes),
                       )
                       if (processedUrl !== url) {
                         overwriteAttrValue(
@@ -743,7 +825,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         // Force rollup to keep this module from being shared between other entry points.
         // If the resulting chunk is empty, it will be removed in generateBundle.
-        return { code: js, moduleSideEffects: 'no-treeshake' }
+        return {
+          code: js,
+          map: { mappings: '' },
+          moduleSideEffects: 'no-treeshake',
+        }
       },
     },
 
@@ -820,48 +906,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         },
       })
 
-      const getCssFilesForChunk = (
-        chunk: OutputChunk,
-        seenChunks: Set<string> = new Set(),
-        seenCss: Set<string> = new Set(),
-      ): string[] => {
-        if (seenChunks.has(chunk.fileName)) {
-          return []
-        }
-        seenChunks.add(chunk.fileName)
-
-        if (analyzedImportedCssFiles.has(chunk)) {
-          const files = analyzedImportedCssFiles.get(chunk)!
-          const additionals = files.filter((file) => !seenCss.has(file))
-          additionals.forEach((file) => seenCss.add(file))
-          return additionals
-        }
-
-        const files: string[] = []
-        chunk.imports.forEach((file) => {
-          const importee = bundle[file]
-          if (importee?.type === 'chunk') {
-            files.push(...getCssFilesForChunk(importee, seenChunks, seenCss))
-          }
-        })
-        analyzedImportedCssFiles.set(chunk, files)
-
-        chunk.viteMetadata!.importedCss.forEach((file) => {
-          if (!seenCss.has(file)) {
-            seenCss.add(file)
-            files.push(file)
-          }
-        })
-
-        return files
-      }
-
       const getCssTagsForChunk = (
         chunk: OutputChunk,
         toOutputPath: (filename: string) => string,
       ) =>
-        getCssFilesForChunk(chunk).map((file) =>
-          toStyleSheetLinkTag(file, toOutputPath),
+        getCssFilesForChunk(chunk, bundle, analyzedImportedCssFiles).map(
+          (file) => toStyleSheetLinkTag(file, toOutputPath),
         )
 
       for (const [normalizedId, html] of processedHtml(this)) {
@@ -953,6 +1003,30 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           result = injectToHead(result, assetTags)
         }
 
+        // prepend dev client runtime for bundled client build before other chunk scripts
+        if (
+          config.command === 'serve' &&
+          this.environment.config.consumer === 'client' &&
+          this.environment.config.isBundled
+        ) {
+          result = injectToHead(
+            result,
+            [
+              {
+                tag: 'script',
+                attrs: {
+                  type: 'module',
+                  src: path.posix.join(
+                    config.base,
+                    BUNDLED_DEV_CLIENT_FILENAME,
+                  ),
+                },
+              },
+            ],
+            true,
+          )
+        }
+
         // inject css link when cssCodeSplit is false
         if (!this.environment.config.build.cssCodeSplit) {
           const cssBundleName = cssBundleNameCache.get(config)
@@ -1001,12 +1075,15 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           },
         )
         // resolve asset url references
-        result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
+        result = result.replace(assetUrlRE, (_, fileHash, urlId) => {
           const file = this.getFileName(fileHash)
           if (chunk) {
             chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
           }
-          return encodeURIPath(toOutputAssetFilePath(file)) + postfix
+          return (
+            encodeURIPath(toOutputAssetFilePath(file)) +
+            getAssetUrlPostfix(this.environment, urlId)
+          )
         })
 
         result = result.replace(publicAssetUrlRE, (_, fileHash) => {
@@ -1061,7 +1138,7 @@ export function findNeedTransformStyleAttribute(
       (prop.value.includes('url(') || prop.value.includes('image-set(')),
   )
   if (!attr) return undefined
-  const location = node.sourceCodeLocation?.attrs?.['style']
+  const location = node.sourceCodeLocation?.attrs?.style
   return { attr, location }
 }
 
@@ -1075,7 +1152,7 @@ export function extractImportExpressionFromClassicScript(
   let match: RegExpExecArray | null
   inlineImportRE.lastIndex = 0
   while ((match = inlineImportRE.exec(cleanCode))) {
-    const [, [urlStart, urlEnd]] = match.indices!
+    const [, [urlStart, urlEnd]] = match.indices as Array<[number, number]>
     const start = urlStart + 1
     const end = urlEnd - 1
     scriptUrls.push({
@@ -1164,21 +1241,59 @@ export function preImportMapHook(
 /**
  * Move importmap before the first module script and modulepreload link
  */
-export function postImportMapHook(): IndexHtmlTransformHook {
-  return (html) => {
-    if (!importMapAppendRE.test(html)) return
+export function postImportMapHook(
+  config: ResolvedConfig,
+): IndexHtmlTransformHook {
+  const decoder = new TextDecoder()
+  return function (html, { bundle }) {
+    const chunkImportMapEnabled =
+      config.command === 'build' &&
+      config.environments.client.build.chunkImportMap
 
-    let importMap: string | undefined
-    html = html.replace(importMapRE, (match) => {
-      importMap = match
-      return ''
-    })
+    if (importMapAppendRE.test(html)) {
+      let importMap: string | undefined
+      html = html.replace(importMapRE, (match) => {
+        importMap = match
+        return ''
+      })
 
-    if (importMap) {
-      html = html.replace(
-        importMapAppendRE,
-        (match) => `${importMap}\n${match}`,
-      )
+      if (importMap) {
+        html = html.replace(
+          importMapAppendRE,
+          (match) => `${importMap}\n${match}`,
+        )
+        if (chunkImportMapEnabled) {
+          // https://caniuse.com/mdn-html_elements_script_type_importmap_multiple_import_maps
+          this.warn(
+            `The \`build.chunkImportMap\` option is enabled but an import map also exists in the input HTML file.` +
+              ` This leads to multiple import maps generated in the output HTML, which is not supported by older browsers and Firefox.`,
+          )
+        }
+      }
+    }
+
+    if (chunkImportMapEnabled) {
+      const nonce = config.html?.cspNonce
+      const importMap = bundle![
+        getImportMapFilename(config.environments.client)
+      ] as OutputAsset
+      const importMapHtml = serializeTag({
+        tag: 'script',
+        attrs: { type: 'importmap', ...(nonce ? { nonce } : {}) },
+        children:
+          typeof importMap.source === 'string'
+            ? importMap.source
+            : decoder.decode(importMap.source),
+      })
+      if (importMapAppendRE.test(html)) {
+        // NOTE: insert before the existing import map so that our import map takes precedence
+        html = html.replace(
+          importMapAppendRE,
+          (match) => `${importMapHtml}\n${match}`,
+        )
+      } else {
+        html = `${importMapHtml}\n${html}`
+      }
     }
 
     return html
@@ -1420,12 +1535,20 @@ export async function applyHtmlTransforms(
   return html
 }
 
-const entirelyImportRE =
-  /^(?:import\s*(?:"[^"\n]*[^\\\n]"|'[^'\n]*[^\\\n]');*|\/\*[\s\S]*?\*\/|\/\/.*[$\n])*$/
+const importOrCommentRE =
+  /\s+|\/\*[\s\S]*?\*\/|\/\/[^\n]*(?:\n|$)|import\s*(?:"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')\s*;*/y
+
 function isEntirelyImport(code: string) {
   // only consider "side-effect" imports, which match <script type=module> semantics exactly
-  // the regexes will remove too little in some exotic cases, but false-negatives are alright
-  return entirelyImportRE.test(code.trim())
+  // the regexes will remove too little in some exotic cases, but false-negatives are alright.
+  // Consume one token at a time to avoid backtracking over the whole chunk.
+  importOrCommentRE.lastIndex = 0
+  while (importOrCommentRE.lastIndex < code.length) {
+    if (!importOrCommentRE.test(code)) {
+      return false
+    }
+  }
+  return true
 }
 
 function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
@@ -1578,4 +1701,57 @@ function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
 
 function incrementIndent(indent: string = '') {
   return `${indent}${indent[0] === '\t' ? '\t' : '  '}`
+}
+
+export function getImportMapFilename(
+  options: ResolvedEnvironmentOptions,
+): string {
+  const chunkImportMap =
+    options.build.rolldownOptions.experimental?.chunkImportMap
+  if (typeof chunkImportMap === 'object' && chunkImportMap.fileName) {
+    return chunkImportMap.fileName
+  }
+  return 'importmap.json'
+}
+
+function getImportMapBaseUrl(options: ResolvedEnvironmentOptions): string {
+  const chunkImportMap =
+    options.build.rolldownOptions.experimental?.chunkImportMap
+  if (typeof chunkImportMap === 'object' && chunkImportMap.baseUrl) {
+    return chunkImportMap.baseUrl
+  }
+  return '/'
+}
+
+/**
+ * Read and parse the chunk import map asset from the bundle.
+ * Returns `undefined` when the import map is not present in the bundle.
+ */
+export function getImportMap(
+  bundle: OutputBundle,
+  options: ResolvedEnvironmentOptions & ResolvedConfig,
+):
+  | {
+      asset: OutputAsset
+      content: { imports: Record<string, string> }
+      /** import map entries with the base stripped (placeholder name -> real name) */
+      mapping: Record<string, string>
+    }
+  | undefined {
+  const asset = bundle[getImportMapFilename(options)] as OutputAsset | undefined
+  if (!asset) return undefined
+
+  const content: { imports: Record<string, string> } = JSON.parse(
+    typeof asset.source === 'string'
+      ? asset.source
+      : new TextDecoder().decode(asset.source),
+  )
+  const baseUrl = getImportMapBaseUrl(options)
+  const mapping = Object.fromEntries(
+    Object.entries(content.imports).map(([k, v]) => [
+      k.slice(baseUrl.length),
+      v.slice(baseUrl.length),
+    ]),
+  )
+  return { asset, content, mapping }
 }

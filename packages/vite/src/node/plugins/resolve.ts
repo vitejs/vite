@@ -1,11 +1,16 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'picocolors'
+import { exports, imports } from 'resolve.exports'
 import type { PartialResolvedId } from 'rolldown'
 import { viteResolvePlugin } from 'rolldown/experimental'
-import { exports, imports } from 'resolve.exports'
-import { hasESMSyntax } from 'mlly'
-import type { Plugin } from '../plugin'
+import type { Environment } from '..'
+import {
+  cleanUrl,
+  splitFileAndPostfix,
+  withTrailingSlash,
+} from '../../shared/utils'
+import type { ResolvedConfig, ResolvedEnvironmentOptions } from '../config'
 import {
   CLIENT_ENTRY,
   DEP_VERSION_RE,
@@ -14,6 +19,21 @@ import {
   FS_PREFIX,
   SPECIAL_QUERY_RE,
 } from '../constants'
+import { canExternalizeFile } from '../external'
+import {
+  isDepOptimizationDisabled,
+  optimizedDepInfoFromFile,
+  optimizedDepInfoFromId,
+} from '../optimizer'
+import type { DepsOptimizer } from '../optimizer'
+import type { PackageCache, PackageData } from '../packages'
+import {
+  findNearestMainPackageData,
+  findNearestPackageData,
+  loadPackageData,
+  resolvePackageData,
+} from '../packages'
+import type { Plugin } from '../plugin'
 import {
   bareImportRE,
   createDebugger,
@@ -31,27 +51,6 @@ import {
   safeRealpathSync,
   tryStatSync,
 } from '../utils'
-import {
-  isDepOptimizationDisabled,
-  optimizedDepInfoFromFile,
-  optimizedDepInfoFromId,
-} from '../optimizer'
-import type { DepsOptimizer } from '../optimizer'
-import type { Environment } from '..'
-import type { PackageCache, PackageData } from '../packages'
-import { canExternalizeFile } from '../external'
-import {
-  findNearestMainPackageData,
-  findNearestPackageData,
-  loadPackageData,
-  resolvePackageData,
-} from '../packages'
-import {
-  cleanUrl,
-  splitFileAndPostfix,
-  withTrailingSlash,
-} from '../../shared/utils'
-import type { ResolvedConfig, ResolvedEnvironmentOptions } from '../config'
 
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
 const normalizedEnvEntry = normalizePath(ENV_ENTRY)
@@ -113,7 +112,6 @@ export interface ResolveOptions extends EnvironmentResolveOptions {
    * Enable tsconfig paths resolution
    *
    * @default false
-   * @experimental
    */
   tsconfigPaths?: boolean
 }
@@ -224,6 +222,7 @@ const perEnvironmentOrWorkerPlugin = (
 export function oxcResolvePlugin(
   resolveOptions: ResolvePluginOptionsWithOverrides,
   overrideEnvConfig: (ResolvedConfig & ResolvedEnvironmentOptions) | undefined,
+  isJsPluginContainer = false,
 ): Plugin[] {
   return [
     ...(resolveOptions.optimizeDeps && !resolveOptions.isBuild
@@ -238,7 +237,7 @@ export function oxcResolvePlugin(
         const depsOptimizerEnabled =
           resolveOptions.optimizeDeps &&
           !resolveOptions.isBuild &&
-          !partialEnv.config.experimental.bundledDev &&
+          !partialEnv.config.isBundled &&
           !isDepOptimizationDisabled(partialEnv.config.optimizeDeps)
         const getDepsOptimizer = () => {
           const env = getEnv()
@@ -259,6 +258,7 @@ export function oxcResolvePlugin(
             : [options.noExternal]
 
         const plugin = viteResolvePlugin({
+          tsconfig: partialEnv.config.tsconfig,
           resolveOptions: {
             isBuild: options.isBuild,
             isProduction: options.isProduction,
@@ -270,7 +270,7 @@ export function oxcResolvePlugin(
 
             mainFields: options.skipMainField
               ? options.mainFields
-              : options.mainFields.concat(['main']),
+              : [...options.mainFields, 'main'],
             conditions: options.conditions,
             externalConditions: options.externalConditions,
             extensions: options.extensions,
@@ -351,18 +351,19 @@ export function oxcResolvePlugin(
                 )
                 return newResolvedId === resolvedId ? undefined : newResolvedId
               },
-          resolveSubpathImports(id, importer, isRequire, scan) {
+          resolveSubpathImports(id, importer, isRequire) {
             return resolveSubpathImports(id, importer, {
               ...options,
               isRequire: resolveOptions.isRequire ?? isRequire,
-              scan,
             })
           },
 
-          ...(partialEnv.config.command === 'serve'
+          ...(partialEnv.config.command === 'serve' || isJsPluginContainer
             ? {
                 async onWarn(msg) {
-                  getEnv().logger.warn(`warning: ${msg}`, {
+                  // use `partialEnv` instead of `getEnv()` because `buildStart` is
+                  // not called for plugin container used by `createIdResolver`
+                  partialEnv.config.logger.warn(`warning: ${msg}`, {
                     clear: true,
                     timestamp: true,
                   })
@@ -393,7 +394,7 @@ function optimizerResolvePlugin(
     name: 'vite:resolve-dev',
     applyToEnvironment(environment) {
       return (
-        !environment.config.experimental.bundledDev &&
+        !environment.config.isBundled &&
         !isDepOptimizationDisabled(environment.config.optimizeDeps)
       )
     },
@@ -488,11 +489,18 @@ function optimizerResolvePlugin(
   }
 }
 
-function resolveSubpathImports(
+export function resolveSubpathImports(
   id: string,
   importer: string | undefined,
-  options: InternalResolveOptions,
-) {
+  options: Pick<
+    InternalResolveOptions,
+    | 'packageCache'
+    | 'conditions'
+    | 'externalConditions'
+    | 'isProduction'
+    | 'isRequire'
+  >,
+): string | undefined {
   if (!importer || !id.startsWith(subpathImportsPrefix)) return
   const basedir = path.dirname(importer)
   const pkgData = findNearestPackageData(basedir, options.packageCache)
@@ -516,6 +524,7 @@ function resolveSubpathImports(
     }
   }
 
+  if (importsPath == null) return
   return importsPath + postfix
 }
 
@@ -931,14 +940,15 @@ export function resolvePackageEntry(
     // fallback to mainFields if still not resolved
     if (!entryPoint) {
       for (const field of options.mainFields) {
-        if (field === 'browser') {
-          entryPoint = tryResolveBrowserEntry(dir, data, options)
-          if (entryPoint) {
-            break
-          }
-        } else if (typeof data[field] === 'string') {
+        if (typeof data[field] === 'string') {
           entryPoint = data[field]
           break
+        } else if (field === 'browser') {
+          const browser = data[field]
+          if (isObject(browser) && browser['.']) {
+            entryPoint = browser['.']
+            break
+          }
         }
       }
     }
@@ -1024,7 +1034,10 @@ function getConditions(
 function resolveExportsOrImports(
   pkg: PackageData['data'],
   key: string,
-  options: InternalResolveOptions,
+  options: Pick<
+    InternalResolveOptions,
+    'conditions' | 'externalConditions' | 'isProduction' | 'isRequire'
+  >,
   type: 'imports' | 'exports',
   externalize?: boolean,
 ) {
@@ -1104,53 +1117,6 @@ function resolveDeepImport(
       )
       setResolvedCache(id, resolved, options)
       return resolved
-    }
-  }
-}
-
-function tryResolveBrowserEntry(
-  dir: string,
-  data: PackageData['data'],
-  options: InternalResolveOptions,
-) {
-  // handle edge case with browser and module field semantics
-
-  // check browser field
-  // https://github.com/defunctzombie/package-browser-field-spec
-  const browserEntry =
-    typeof data.browser === 'string'
-      ? data.browser
-      : isObject(data.browser) && data.browser['.']
-  if (browserEntry) {
-    // check if the package also has a "module" field.
-    if (
-      !options.isRequire &&
-      options.mainFields.includes('module') &&
-      typeof data.module === 'string' &&
-      data.module !== browserEntry
-    ) {
-      // if both are present, we may have a problem: some package points both
-      // to ESM, with "module" targeting Node.js, while some packages points
-      // "module" to browser ESM and "browser" to UMD/IIFE.
-      // the heuristics here is to actually read the browser entry when
-      // possible and check for hints of ESM. If it is not ESM, prefer "module"
-      // instead; Otherwise, assume it's ESM and use it.
-      const resolvedBrowserEntry = tryFsResolve(
-        path.join(dir, browserEntry),
-        options,
-      )
-      if (resolvedBrowserEntry) {
-        const content = fs.readFileSync(resolvedBrowserEntry, 'utf-8')
-        if (hasESMSyntax(content)) {
-          // likely ESM, prefer browser
-          return browserEntry
-        } else {
-          // non-ESM, UMD or IIFE or CJS(!!! e.g. firebase 7.x), prefer module
-          return data.module
-        }
-      }
-    } else {
-      return browserEntry
     }
   }
 }

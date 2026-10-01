@@ -14,7 +14,8 @@ import type { ModuleEvaluator, ModuleRunnerContext } from './types'
 
 export class ESModulesEvaluator implements ModuleEvaluator {
   public readonly startOffset: number =
-    getAsyncFunctionDeclarationPaddingLineCount()
+    // +1 for the `"use strict";` directive placed on its own line below
+    getAsyncFunctionDeclarationPaddingLineCount() + 1
 
   async runInlinedModule(
     context: ModuleRunnerContext,
@@ -28,8 +29,9 @@ export class ESModulesEvaluator implements ModuleEvaluator {
       ssrDynamicImportKey,
       ssrExportAllKey,
       ssrExportNameKey,
-      // source map should already be inlined by Vite
-      '"use strict";' + code,
+      // source map should already be inlined by Vite.
+      // Place "use strict" on its own line to avoid shifting the column numbers
+      '"use strict";\n' + code,
     )
 
     await initModule(

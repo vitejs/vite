@@ -1,6 +1,6 @@
 # JavaScript API
 
-Vite's JavaScript APIs are fully typed, and it's recommended to use TypeScript or enable JS type checking in VS Code to leverage the intellisense and validation.
+Vite's JavaScript APIs are fully typed, and it's recommended to use TypeScript or enable JS type checking in VS Code to leverage the IntelliSense and validation.
 
 ## `createServer`
 
@@ -190,7 +190,7 @@ interface ViteDevServer {
 ```
 
 :::info
-`waitForRequestsIdle` is meant to be used as a escape hatch to improve DX for features that can't be implemented following the on-demand nature of the Vite dev server. It can be used during startup by tools like Tailwind to delay generating the app CSS classes until the app code has been seen, avoiding flashes of style changes. When this function is used in a load or transform hook, and the default HTTP1 server is used, one of the six http channels will be blocked until the server processes all static imports. Vite's dependency optimizer currently uses this function to avoid full-page reloads on missing dependencies by delaying loading of pre-bundled dependencies until all imported dependencies have been collected from static imported sources. Vite may switch to a different strategy in a future major release, setting `optimizeDeps.crawlUntilStaticImports: false` by default to avoid the performance hit in large applications during cold start.
+`waitForRequestsIdle` is meant to be used as an escape hatch to improve DX for features that can't be implemented following the on-demand nature of the Vite dev server. It can be used during startup by tools like Tailwind to delay generating the app CSS classes until the app code has been seen, avoiding flashes of style changes. When this function is used in a load or transform hook, and the default HTTP1 server is used, one of the six http channels will be blocked until the server processes all static imports. Vite's dependency optimizer currently uses this function to avoid full-page reloads on missing dependencies by delaying loading of pre-bundled dependencies until all imported dependencies have been collected from static imported sources. Vite may switch to a different strategy in a future major release, setting `optimizeDeps.holdUntilCrawlEnd: false` by default to avoid the performance hit in large applications during cold start.
 :::
 
 ## `build`
@@ -200,12 +200,12 @@ interface ViteDevServer {
 ```ts
 async function build(
   inlineConfig?: InlineConfig,
-): Promise<RollupOutput | RollupOutput[]>
+): Promise<RolldownOutput | RolldownOutput[] | RolldownWatcher>
 ```
 
 **Example Usage:**
 
-```ts twoslash [vite.config.js]
+```ts twoslash
 import path from 'node:path'
 import { build } from 'vite'
 
@@ -213,7 +213,7 @@ await build({
   root: path.resolve(import.meta.dirname, './project'),
   base: '/foo/',
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       // ...
     },
   },
@@ -312,6 +312,8 @@ function mergeConfig(
 
 Deeply merge two Vite configs. `isRoot` represents the level within the Vite config which is being merged. For example, set `false` if you're merging two `build` options.
 
+Note that `null` and `undefined` values in `overrides` are skipped and not merged. If you need to explicitly clear a value from `defaults`, modify the result of `mergeConfig` directly.
+
 ::: tip NOTE
 `mergeConfig` accepts only config in object form. If you have a config in callback form, you should call it before passing into `mergeConfig`.
 
@@ -369,7 +371,7 @@ function loadEnv(
 
 **Related:** [`.env` Files](./env-and-mode.md#env-files)
 
-Load `.env` files within the `envDir`. By default, only env variables prefixed with `VITE_` are loaded, unless `prefixes` is changed.
+Load `.env` files within the `envDir` and merge them with the matching variables already present in `process.env`. By default, only env variables prefixed with `VITE_` are loaded, unless `prefixes` is changed.
 
 ## `normalizePath`
 
@@ -433,7 +435,7 @@ async function loadConfigFromFile(
 } | null>
 ```
 
-Load a Vite config file manually with esbuild.
+Load a Vite config file manually with Rolldown.
 
 ## `preprocessCSS`
 
@@ -461,3 +463,27 @@ Pre-processes `.css`, `.scss`, `.sass`, `.less`, `.styl` and `.stylus` files to 
 The pre-processor used is inferred from the `filename` extension. If the `filename` ends with `.module.{ext}`, it is inferred as a [CSS module](https://github.com/css-modules/css-modules) and the returned result will include a `modules` object mapping the original class names to the transformed ones.
 
 Note that pre-processing will not resolve URLs in `url()` or `image-set()`.
+
+## `version`
+
+**Type:** `string`
+
+The current version of Vite as a string (e.g. `"8.0.0"`).
+
+## `rolldownVersion`
+
+**Type:** `string`
+
+The version of Rolldown used by Vite as a string (e.g. `"1.0.0"`). A re-export of [`VERSION`](https://rolldown.rs/reference/Variable.VERSION) from `rolldown`.
+
+## `esbuildVersion`
+
+**Type:** `string`
+
+Only kept for backward compatibility.
+
+## `rollupVersion`
+
+**Type:** `string`
+
+Only kept for backward compatibility.

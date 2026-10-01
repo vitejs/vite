@@ -1,17 +1,14 @@
 import * as mrmime from 'mrmime'
 import type { Connect } from '#dep-types/connect'
-import { cleanUrl } from '../../../shared/utils'
 import type { ViteDevServer } from '..'
-import { FullBundleDevEnvironment } from '../environments/fullBundleEnvironment'
+import { cleanUrl } from '../../../shared/utils'
 
 export function memoryFilesMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  const memoryFiles =
-    server.environments.client instanceof FullBundleDevEnvironment
-      ? server.environments.client.memoryFiles
-      : undefined
-  if (!memoryFiles) {
+  const bundledDev = server.environments.client.bundledDev
+  const memoryFiles = bundledDev?.memoryFiles
+  if (!bundledDev || !memoryFiles) {
     throw new Error('memoryFilesMiddleware can only be used for fullBundleMode')
   }
   const headers = server.config.server.headers
@@ -22,7 +19,13 @@ export function memoryFilesMiddleware(
       return next()
     }
 
-    const pathname = decodeURIComponent(cleanedUrl)
+    let pathname
+    try {
+      pathname = decodeURIComponent(cleanedUrl)
+    } catch {
+      // ignore malformed URI
+      return next()
+    }
     const filePath = pathname.slice(1) // remove first /
 
     const file = memoryFiles.get(filePath)

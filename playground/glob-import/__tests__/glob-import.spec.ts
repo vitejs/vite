@@ -1,11 +1,12 @@
-import path from 'node:path'
 import { readdir } from 'node:fs/promises'
+import path from 'node:path'
 import { expect, test } from 'vitest'
 import {
   addFile,
   editFile,
   findAssetFile,
   isBuild,
+  isBundledDev,
   page,
   removeFile,
 } from '~utils'
@@ -88,15 +89,12 @@ const baseRawResult = {
 }
 
 test('should work', async () => {
-  // TODO: extglobs are not supported yet: https://github.com/vitejs/rolldown-vite/issues/365
-  if (process.env._VITE_TEST_JS_PLUGIN) {
-    await expect
-      .poll(async () => JSON.parse(await page.textContent('.result')))
-      .toStrictEqual(allResult)
-    await expect
-      .poll(async () => JSON.parse(await page.textContent('.result-eager')))
-      .toStrictEqual(allResult)
-  }
+  await expect
+    .poll(async () => JSON.parse(await page.textContent('.result')))
+    .toStrictEqual(allResult)
+  await expect
+    .poll(async () => JSON.parse(await page.textContent('.result-eager')))
+    .toStrictEqual(allResult)
   await expect
     .poll(async () =>
       JSON.parse(await page.textContent('.result-node_modules')),
@@ -135,10 +133,10 @@ test('import glob in package', async () => {
 })
 
 if (!isBuild) {
-  test('hmr for adding/removing files', async () => {
+  test.skipIf(isBundledDev)('hmr for adding/removing files', async () => {
     const resultElement = page.locator('.result')
 
-    addFile('dir/a.js', '')
+    addFile('root/dir/a.js', '')
     await expect
       .poll(async () => {
         const actualAdd = await resultElement.textContent()
@@ -157,7 +155,7 @@ if (!isBuild) {
       })
 
     // edit the added file
-    editFile('dir/a.js', () => 'export const msg ="a"')
+    editFile('root/dir/a.js', () => 'export const msg ="a"')
     await expect
       .poll(async () => {
         const actualEdit = await resultElement.textContent()
@@ -179,7 +177,7 @@ if (!isBuild) {
         },
       })
 
-    removeFile('dir/a.js')
+    removeFile('root/dir/a.js')
     await expect
       .poll(async () => {
         const actualRemove = await resultElement.textContent()
@@ -190,54 +188,88 @@ if (!isBuild) {
 
   test('no hmr for adding/removing files', async () => {
     let request = page.waitForResponse(/dir\/index\.js$/, { timeout: 200 })
-    addFile('nohmr.js', '')
+    addFile('root/nohmr.js', '')
     let response = await request.catch(() => ({ status: () => -1 }))
     expect(response.status()).toBe(-1)
 
     request = page.waitForResponse(/dir\/index\.js$/, { timeout: 200 })
-    removeFile('nohmr.js')
+    removeFile('root/nohmr.js')
     response = await request.catch(() => ({ status: () => -1 }))
     expect(response.status()).toBe(-1)
   })
 
-  test('hmr for adding/removing files in package', async () => {
-    const resultElement = page.locator('.in-package')
+  test.skipIf(isBundledDev)(
+    'hmr for adding/removing files in package',
+    async () => {
+      const resultElement = page.locator('.in-package')
 
-    addFile('pkg-pages/bar.js', '// empty')
-    await expect
-      .poll(async () => JSON.parse(await resultElement.textContent()))
-      .toStrictEqual(['/pkg-pages/foo.js', '/pkg-pages/bar.js'].sort())
+      addFile('root/pkg-pages/bar.js', '// empty')
+      await expect
+        .poll(async () => JSON.parse(await resultElement.textContent()))
+        .toStrictEqual(['/pkg-pages/foo.js', '/pkg-pages/bar.js'].sort())
 
-    removeFile('pkg-pages/bar.js')
-    await expect
-      .poll(async () => JSON.parse(await resultElement.textContent()))
-      .toStrictEqual(['/pkg-pages/foo.js'])
-  })
+      removeFile('root/pkg-pages/bar.js')
+      await expect
+        .poll(async () => JSON.parse(await resultElement.textContent()))
+        .toStrictEqual(['/pkg-pages/foo.js'])
+    },
+  )
 
-  test('hmr for adding/removing files with array patterns and exclusions', async () => {
-    const resultElement = page.locator('.array-result')
-    await expect
-      .poll(async () => JSON.parse(await resultElement.textContent()))
-      .toStrictEqual({
-        './array-test-dir/included.js': 'included',
-      })
+  test.skipIf(isBundledDev)(
+    'hmr for adding/removing files with array patterns and exclusions',
+    async () => {
+      const resultElement = page.locator('.array-result')
+      await expect
+        .poll(async () => JSON.parse(await resultElement.textContent()))
+        .toStrictEqual({
+          './array-test-dir/included.js': 'included',
+        })
 
-    addFile('array-test-dir/new-file.js', 'export default "new"')
-    await expect
-      .poll(async () => JSON.parse(await resultElement.textContent()))
-      .toStrictEqual({
-        './array-test-dir/included.js': 'included',
-        './array-test-dir/new-file.js': 'new',
-      })
+      addFile('root/array-test-dir/new-file.js', 'export default "new"')
+      await expect
+        .poll(async () => JSON.parse(await resultElement.textContent()))
+        .toStrictEqual({
+          './array-test-dir/included.js': 'included',
+          './array-test-dir/new-file.js': 'new',
+        })
 
-    removeFile('array-test-dir/new-file.js')
-    await expect
-      .poll(async () => JSON.parse(await resultElement.textContent()))
-      .toStrictEqual({
-        './array-test-dir/included.js': 'included',
-      })
-  })
+      removeFile('root/array-test-dir/new-file.js')
+      await expect
+        .poll(async () => JSON.parse(await resultElement.textContent()))
+        .toStrictEqual({
+          './array-test-dir/included.js': 'included',
+        })
+    },
+  )
 }
+
+test('follow symlinks', async () => {
+  await expect
+    .poll(async () => JSON.parse(await page.textContent('.follow-symlinks')))
+    .toStrictEqual({
+      './follow-symlinks/linked/my-lib/components/a.js': 'a',
+      './follow-symlinks/linked/my-lib/components/b.js': 'b',
+    })
+})
+
+test('follow symlinks same reference', async () => {
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.follow-symlinks-same-ref')),
+    )
+    .toStrictEqual({
+      a: true,
+      b: true,
+    })
+})
+
+test('alias exclusion', async () => {
+  await expect
+    .poll(async () => JSON.parse(await page.textContent('.alias-exclusion')))
+    .toSatisfy((keys: string[]) => {
+      return keys.length > 0 && keys.every((k) => !k.includes('alias'))
+    })
+})
 
 test('array pattern with exclusions', async () => {
   await expect
@@ -247,13 +279,25 @@ test('array pattern with exclusions', async () => {
     })
 })
 
+// https://github.com/vitejs/vite/issues/22170
+test('array pattern with sibling directories sharing a prefix', async () => {
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.array-common-base-result')),
+    )
+    .toStrictEqual({
+      '/array-common-base/pattern1/a.js': 'a',
+      '/array-common-base/pattern2/b.js': 'b',
+    })
+})
+
 test('tree-shake eager css', async () => {
   expect(await page.textContent('.no-tree-shake-eager-css-result')).toMatch(
     '.no-tree-shake-eager-css',
   )
 
   if (isBuild) {
-    const content = findAssetFile(/index-[-\w]+\.js/)
+    const content = findAssetFile(/index-[-\w]+\.js/, '../root/dist')
     expect(content).not.toMatch('.tree-shake-eager-css')
   }
 })
@@ -265,9 +309,12 @@ test('escapes special chars in globs without mangling user supplied glob suffix'
   // index.html has a script that loads all these glob.js files and prints the globs that returned the expected result
   // this test finally compares the printed output of index.js with the list of directories with special chars,
   // expecting that they all work
-  const files = await readdir(path.join(import.meta.dirname, '..', 'escape'), {
-    withFileTypes: true,
-  })
+  const files = await readdir(
+    path.join(import.meta.dirname, '..', 'root', 'escape'),
+    {
+      withFileTypes: true,
+    },
+  )
   const expectedNames = files
     .filter((f) => f.isDirectory())
     .map((f) => `/escape/${f.name}/glob.js`)
@@ -286,9 +333,25 @@ test('escapes special chars in globs without mangling user supplied glob suffix'
     .toEqual(expectedNames)
 })
 
+test('escape literal parenthesis in glob pattern', async () => {
+  // https://github.com/vitejs/vite/issues/22166
+  // Backslash-escaped parens must match literal "(" / ")" in both dev and build.
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.escape-literal-parenthesis')),
+    )
+    .toStrictEqual(['/escape/(parenthesis)/mod/index.js'])
+})
+
 test('subpath imports', async () => {
   await expect
     .poll(async () => await page.textContent('.subpath-imports'))
+    .toMatch('bar foo')
+})
+
+test('subpath imports (sub dir)', async () => {
+  await expect
+    .poll(async () => await page.textContent('.subpath-imports-sub-dir'))
     .toMatch('bar foo')
 })
 
@@ -310,4 +373,31 @@ test('import.meta.glob and dynamic import vars transformations should be visible
     .toBe(
       JSON.stringify({ globTransformed: true, dynamicImportTransformed: true }),
     )
+})
+
+test('caseSensitiveMatch option', async () => {
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.case-sensitive-true')),
+    )
+    .toStrictEqual(['./case-sensitive-dir/data-test.js'])
+
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.case-sensitive-false')),
+    )
+    .toStrictEqual([
+      './case-sensitive-dir/DATA-other.js',
+      './case-sensitive-dir/data-test.js',
+    ])
+})
+test('absolute base with files outside of root', async () => {
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.absolute-base-outside-root')),
+    )
+    .toStrictEqual({
+      '../external/x.js': 'hello from x',
+      '../external/y.js': 'hello from y',
+    })
 })

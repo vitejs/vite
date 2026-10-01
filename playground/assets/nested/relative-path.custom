@@ -1,0 +1,1 @@
+export default 'this file should be treated as an asset, not as JS'

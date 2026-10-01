@@ -1,0 +1,6 @@
+{
+  "name": "@vitejs/test-optimize-deps-cjs-dynamic-importer-ambiguous",
+  "private": true,
+  "version": "0.0.0",
+  "//": "intentionally no \"type\" field: the importer's module format is ambiguous"
+}

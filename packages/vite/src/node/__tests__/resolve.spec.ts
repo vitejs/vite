@@ -1,9 +1,9 @@
 import { join } from 'node:path'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
+import { build } from '../build'
+import type { EnvironmentOptions, InlineConfig } from '../config'
 import { createServer } from '../server'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
-import type { EnvironmentOptions, InlineConfig } from '../config'
-import { build } from '../build'
 
 describe('import and resolveId', () => {
   async function createTestServer() {
@@ -11,6 +11,11 @@ describe('import and resolveId', () => {
       configFile: false,
       root: import.meta.dirname,
       logLevel: 'error',
+      // the scanner would otherwise crawl every HTML fixture under `__tests__`
+      optimizeDeps: {
+        noDiscovery: true,
+        include: [],
+      },
       server: {
         middlewareMode: true,
         ws: false,
@@ -207,9 +212,7 @@ describe('file url', () => {
 
     test('non declared builtin', async () => {
       const resolved = await run({
-        builtins: [
-          /* empty */
-        ],
+        builtins: [/* empty */],
         idToResolve: 'my-env:custom-builtin',
       })
       expect(resolved).toBeNull()
@@ -218,9 +221,7 @@ describe('file url', () => {
     test('non declared node builtin', async () => {
       await expect(
         run({
-          builtins: [
-            /* empty */
-          ],
+          builtins: [/* empty */],
           idToResolve: 'node:fs',
         }),
       ).rejects.toThrowError(
@@ -285,7 +286,7 @@ describe('file url', () => {
       build: {
         ssr: true,
         outDir: 'dist/basic',
-        rollupOptions: {
+        rolldownOptions: {
           input: { index: fileUrl.href },
         },
       },
@@ -300,7 +301,7 @@ describe('file url', () => {
       build: {
         ssr: true,
         outDir: 'dist/virtual',
-        rollupOptions: {
+        rolldownOptions: {
           input: { index: 'virtual:test-dep/static' },
         },
       },

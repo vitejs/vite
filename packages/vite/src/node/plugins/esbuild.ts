@@ -1,27 +1,26 @@
 import path from 'node:path'
-import colors from 'picocolors'
 import type { RawSourceMap } from '@jridgewell/remapping'
+import colors from 'picocolors'
 import type { InternalModuleFormat, SourceMap } from 'rolldown'
-import type { TSConfckParseResult } from 'tsconfck'
-import { TSConfckCache, TSConfckParseError, parse } from 'tsconfck'
+import { resolveTsconfig } from 'rolldown/experimental'
+import { TsconfigCache } from 'rolldown/utils'
+import type { FSWatcher } from '#dep-types/chokidar'
 import type {
   EsbuildLoader,
   EsbuildMessage,
   EsbuildTransformOptions,
   EsbuildTransformResult as RawEsbuildTransformResult,
 } from '#types/internal/esbuildOptions'
-import type { FSWatcher } from '#dep-types/chokidar'
+import { cleanUrl } from '../../shared/utils'
+import type { ResolvedConfig } from '../config'
+import type { Plugin } from '../plugin'
+import type { ViteDevServer } from '../server'
 import {
   combineSourcemaps,
   createDebugger,
-  createFilter,
   ensureWatchedFile,
   generateCodeFrame,
 } from '../utils'
-import type { ViteDevServer } from '../server'
-import type { ResolvedConfig } from '../config'
-import type { Plugin } from '../plugin'
-import { cleanUrl } from '../../shared/utils'
 
 const debug = createDebugger('vite:esbuild')
 
@@ -31,7 +30,6 @@ const IIFE_BEGIN_RE =
   /(?:const|var)\s+\S+\s*=\s*\(?function\([^()]*\)\s*\{\s*"use strict";/
 
 const validExtensionRE = /\.\w+$/
-const jsxExtensionsRE = /\.(?:j|t)sx\b/
 
 // the final build should always support dynamic import and import.meta.
 // if they need to be polyfilled, plugin-legacy should be used.
@@ -145,13 +143,19 @@ export async function transformWithEsbuild(
     ]
     const compilerOptionsForFile: TSCompilerOptions = {}
     if (loader === 'ts' || loader === 'tsx') {
-      try {
-        const { tsconfig: loadedTsconfig, tsconfigFile } =
-          await loadTsconfigJsonForFile(filename, config)
+      const result = resolveTsconfig(
+        filename,
+        getTSConfigResolutionCache(config),
+      )
+      if (result) {
+        const { tsconfig: loadedTsconfig, tsconfigFilePaths } = result
         // tsconfig could be out of root, make sure it is watched on dev
-        if (watcher && tsconfigFile && config) {
-          ensureWatchedFile(watcher, tsconfigFile, config.root)
+        if (watcher && config) {
+          for (const tsconfigFile of tsconfigFilePaths) {
+            ensureWatchedFile(watcher, tsconfigFile, config.root)
+          }
         }
+
         const loadedCompilerOptions = loadedTsconfig.compilerOptions ?? {}
 
         for (const field of meaningfulFields) {
@@ -160,14 +164,6 @@ export async function transformWithEsbuild(
             compilerOptionsForFile[field] = loadedCompilerOptions[field]
           }
         }
-      } catch (e) {
-        if (e instanceof TSConfckParseError) {
-          // tsconfig could be out of root, make sure it is watched on dev
-          if (watcher && e.tsconfigFile && config) {
-            ensureWatchedFile(watcher, e.tsconfigFile, config.root)
-          }
-        }
-        throw e
       }
     }
 
@@ -274,67 +270,6 @@ export async function transformWithEsbuild(
       e.loc = e.errors[0].location
     }
     throw e
-  }
-}
-
-export function esbuildPlugin(config: ResolvedConfig): Plugin {
-  const options = config.esbuild as ESBuildOptions
-  const { jsxInject, include, exclude, ...esbuildTransformOptions } = options
-
-  const filter = createFilter(include || /\.(m?ts|[jt]sx)$/, exclude || /\.js$/)
-
-  // Remove optimization options for dev as we only need to transpile them,
-  // and for build as the final optimization is in `buildEsbuildPlugin`
-  const transformOptions: EsbuildTransformOptions = {
-    target: 'esnext',
-    ...esbuildTransformOptions,
-    minify: false,
-    minifyIdentifiers: false,
-    minifySyntax: false,
-    minifyWhitespace: false,
-    treeShaking: false,
-    // keepNames is not needed when minify is disabled.
-    // Also transforming multiple times with keepNames enabled breaks
-    // tree-shaking. (#9164)
-    keepNames: false,
-    supported: {
-      ...defaultEsbuildSupported,
-      ...esbuildTransformOptions.supported,
-    },
-  }
-
-  let server: ViteDevServer | undefined
-
-  return {
-    name: 'vite:esbuild',
-    configureServer(_server) {
-      server = _server
-    },
-    async transform(code, id) {
-      if (filter(id) || filter(cleanUrl(id))) {
-        const result = await transformWithEsbuild(
-          code,
-          id,
-          transformOptions,
-          undefined,
-          config,
-          server?.watcher,
-        )
-        if (result.warnings.length) {
-          result.warnings.forEach((m) => {
-            this.warn(prettifyMessage(m, code))
-          })
-        }
-        if (jsxInject && jsxExtensionsRE.test(id)) {
-          result.code = jsxInject + ';' + result.code
-        }
-        return {
-          code: result.code,
-          map: result.map,
-          moduleType: 'js',
-        }
-      }
-    },
   }
 }
 
@@ -522,47 +457,32 @@ function prettifyMessage(m: EsbuildMessage, code: string): string {
   return res + `\n`
 }
 
-let globalTSConfckCache: TSConfckCache<TSConfckParseResult> | undefined
-const tsconfckCacheMap = new WeakMap<
-  ResolvedConfig,
-  TSConfckCache<TSConfckParseResult>
->()
+let globalTSConfigResolutionCache: TsconfigCache | undefined
+const tsconfigResolutionCacheMap = new WeakMap<ResolvedConfig, TsconfigCache>()
 
-function getTSConfckCache(config?: ResolvedConfig) {
+export function getTSConfigResolutionCache(
+  config?: ResolvedConfig,
+): TsconfigCache {
   if (!config) {
-    return (globalTSConfckCache ??= new TSConfckCache<TSConfckParseResult>())
+    return (globalTSConfigResolutionCache ??= new TsconfigCache())
   }
-  let cache = tsconfckCacheMap.get(config)
+  let cache = tsconfigResolutionCacheMap.get(config)
   if (!cache) {
-    cache = new TSConfckCache<TSConfckParseResult>()
-    tsconfckCacheMap.set(config, cache)
+    cache = new TsconfigCache(config.tsconfig)
+    tsconfigResolutionCacheMap.set(config, cache)
   }
   return cache
 }
 
-export async function loadTsconfigJsonForFile(
-  filename: string,
-  config?: ResolvedConfig,
-): Promise<{ tsconfigFile: string; tsconfig: TSConfigJSON }> {
-  const { tsconfig, tsconfigFile } = await parse(filename, {
-    cache: getTSConfckCache(config),
-    ignoreNodeModules: true,
-  })
-  return { tsconfigFile, tsconfig }
-}
-
-export async function reloadOnTsconfigChange(
+export function reloadOnTsconfigChange(
   server: ViteDevServer,
   changedFile: string,
-): Promise<void> {
+): void {
   // any tsconfig.json that's added in the workspace could be closer to a code file than a previously cached one
   // any json file in the tsconfig cache could have been used to compile ts
   if (changedFile.endsWith('.json')) {
-    const cache = getTSConfckCache(server.config)
-    if (
-      changedFile.endsWith('/tsconfig.json') ||
-      cache.hasParseResult(changedFile)
-    ) {
+    const cache = getTSConfigResolutionCache(server.config)
+    if (changedFile.endsWith('/tsconfig.json')) {
       server.config.logger.info(
         `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
         { clear: server.config.clearScreen, timestamp: true },
@@ -575,7 +495,7 @@ export async function reloadOnTsconfigChange(
         environment.moduleGraph.invalidateAll()
       }
 
-      // reset tsconfck cache so that recompile works with up2date configs
+      // reset the cache so that recompile works with up2date configs
       cache.clear()
 
       // reload environments

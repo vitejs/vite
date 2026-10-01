@@ -6,12 +6,12 @@ import type {
   ModuleRunnerOptions,
 } from 'vite/module-runner'
 import type { HotPayload } from '#types/hmrPayload'
+import type { ModuleRunnerTransport } from '../../../shared/moduleRunnerTransport'
 import type { DevEnvironment } from '../../server/environment'
 import type {
   HotChannelClient,
   NormalizedServerHotChannel,
 } from '../../server/hmr'
-import type { ModuleRunnerTransport } from '../../../shared/moduleRunnerTransport'
 
 /**
  * @experimental
@@ -42,8 +42,21 @@ function createHMROptions(
     return false
   }
   if (!('api' in environment.hot)) return false
+
+  const defaultLogger: ModuleRunnerHmr['logger'] = {
+    debug: (...msg) =>
+      environment.logger.info(msg.join(' '), {
+        timestamp: true,
+      }),
+    error: (err) =>
+      environment.logger.error(
+        err instanceof Error ? err.message : String(err),
+        { timestamp: true },
+      ),
+  }
+
   return {
-    logger: options.hmr?.logger,
+    logger: options.hmr?.logger ?? defaultLogger,
   }
 }
 

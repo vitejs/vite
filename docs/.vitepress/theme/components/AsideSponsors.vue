@@ -1,29 +1,25 @@
 <script setup lang="ts">
+import {
+  VPDocAsideSponsors,
+  type Sponsors,
+} from '@voidzero-dev/vitepress-theme'
 import { computed } from 'vue'
-import { VPDocAsideSponsors } from '@voidzero-dev/vitepress-theme'
-import { useSponsor, voidZero } from '../composables/sponsor'
+import { useSponsor } from '../composables/sponsor'
 
-const { data } = useSponsor()
+const data = useSponsor()
 
 const sponsors = computed(() => {
-  return [
-    { size: 'small' as const, items: [voidZero] },
-    ...(data.value?.map((sponsor) => {
-      return {
-        size: (sponsor.size === 'big' ? 'mini' : 'xmini') as 'mini' | 'xmini',
-        items: sponsor.items,
-      }
-    }) ?? []),
-  ]
+  return data.value?.map<Sponsors>((s, i) => {
+    return {
+      size: i === 0 ? 'small' : s.size === 'big' ? 'mini' : 'xmini',
+      items: s.items,
+    }
+  })
 })
 </script>
 
 <template>
-  <a
-    class="viteconf"
-    href="https://www.youtube.com/playlist?list=PLqGQbXn_GDmkJaoykvHCUmXUPjhgH2bVr"
-    target="_blank"
-  >
+  <a class="viteconf" href="https://viteconf.org/" target="_blank">
     <img
       width="22"
       height="22"
@@ -32,8 +28,8 @@ const sponsors = computed(() => {
     />
     <span>
       <p class="extra-info">Building Together</p>
-      <p class="heading">ViteConf 2025</p>
-      <p class="extra-info">View the replays</p>
+      <p class="heading">ViteConf 2026</p>
+      <p class="extra-info">October 15, Online</p>
     </span>
   </a>
   <VPDocAsideSponsors v-if="data" :data="sponsors" />

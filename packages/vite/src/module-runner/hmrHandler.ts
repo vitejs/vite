@@ -1,7 +1,7 @@
 import type { HotPayload } from '#types/hmrPayload'
-import { slash, unwrapId } from '../shared/utils'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../shared/constants'
 import { createHMRHandler } from '../shared/hmrHandler'
+import { slash } from '../shared/utils'
 import type { ModuleRunner } from './runner'
 
 export function createHMRHandlerForRunner(
@@ -19,9 +19,6 @@ export function createHMRHandlerForRunner(
         await Promise.all(
           payload.updates.map(async (update): Promise<void> => {
             if (update.type === 'js-update') {
-              // runner always caches modules by their full path without /@id/ prefix
-              update.acceptedPath = unwrapId(update.acceptedPath)
-              update.path = unwrapId(update.path)
               return hmrClient.queueUpdate(update)
             }
 
@@ -50,9 +47,11 @@ export function createHMRHandlerForRunner(
         runner.evaluatedModules.clear()
 
         for (const url of clearEntrypointUrls) {
+          if (runner.isClosed()) break
           try {
             await runner.import(url)
           } catch (err) {
+            if (runner.isClosed()) break
             if (err.code !== ERR_OUTDATED_OPTIMIZED_DEP) {
               hmrClient.logger.error(
                 `An error happened during full reload\n${err.message}\n${err.stack}`,
@@ -75,6 +74,8 @@ export function createHMRHandlerForRunner(
         break
       }
       case 'ping': // noop
+        break
+      case 'bundled-dev-update': // todo
         break
       default: {
         const check: never = payload

@@ -45,16 +45,14 @@ export default defineConfig((env) => ({
       },
     },
     ssr: {
+      input: {
+        index: '/src/entry-server',
+      },
       optimizeDeps: {
         noDiscovery: false,
       },
       build: {
         outDir: 'dist/server',
-        rollupOptions: {
-          input: {
-            index: '/src/entry-server',
-          },
-        },
       },
     },
   },

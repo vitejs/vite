@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
-import { port } from './serve'
 import { findAssetFile, isBuild, page } from '~utils'
+import { port } from './serve'
 
 const url = `http://localhost:${port}`
 
@@ -28,6 +28,12 @@ test('supports nodejs_compat', async () => {
   expect(await page.textContent('.nodejs-compat')).toMatch(
     '[success] nodejs compat',
   )
+})
+
+test.runIf(isBuild)('build output does not contain createRequire', async () => {
+  const workerContent = findAssetFile(/entry-worker/, 'worker', '')
+  expect(workerContent).toBeDefined()
+  expect(workerContent).not.toContain('createRequire')
 })
 
 test.runIf(isBuild)('codeSplitting: false', () => {

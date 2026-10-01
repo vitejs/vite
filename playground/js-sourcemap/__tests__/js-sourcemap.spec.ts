@@ -1,23 +1,139 @@
-import { URL, fileURLToPath } from 'node:url'
-import { promisify } from 'node:util'
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { describe, expect, test } from 'vitest'
+import { URL, fileURLToPath } from 'node:url'
+import { promisify } from 'node:util'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import { mapFileCommentRegex } from 'convert-source-map'
-import { commentSourceMap } from '../foo-with-sourcemap-plugin'
+import { describe, expect, test, vi } from 'vitest'
 import {
   extractSourcemap,
   findAssetFile,
   formatSourcemapForSnapshot,
   isBuild,
+  isBundledDev,
   listAssets,
   page,
   readFile,
   serverLogs,
 } from '~utils'
+import { commentSourceMap } from '../foo-with-sourcemap-plugin'
+
+const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
+function escapeRegex(str: string): string {
+  return str.replace(escapeRegexRE, '\\$&')
+}
+
+async function getDepJs(entry: string, depIdFragment: string) {
+  const res = await page.request.get(new URL(entry, page.url()).href)
+  const js = await res.text()
+  const depUrlMatch = js.match(
+    new RegExp(`from\\s+"([^"]*${depIdFragment}[^"]*)"`),
+  )
+  expect(depUrlMatch).toBeTruthy()
+
+  const depUrl = depUrlMatch![1]
+  expect(depUrl).toContain('/deps/')
+
+  const depRes = await page.request.get(new URL(depUrl, page.url()).href)
+  return depRes.text()
+}
+
+function expectConsoleLogArgumentMapsToOriginalX(
+  depJs: string,
+  generatedName: string,
+) {
+  const map = extractSourcemap(depJs)
+  const depLines = depJs.split('\n')
+  const consoleLogCallRE = new RegExp(
+    `console[\\w$]*\\.\\s*log[\\w$]*\\(${escapeRegex(generatedName)}\\)`,
+  )
+  const generatedLine =
+    depLines.findIndex((line) => consoleLogCallRE.test(line)) + 1
+  expect(generatedLine).toBeGreaterThan(0)
+
+  const generatedColumn = depLines[generatedLine - 1].indexOf(generatedName)
+  expect(generatedColumn).toBeGreaterThanOrEqual(0)
+
+  const position = originalPositionFor(new TraceMap(map), {
+    line: generatedLine,
+    column: generatedColumn,
+  })
+
+  expect(depJs).toMatch(
+    /^\/\/# sourceMappingURL=data:application\/json;base64,/m,
+  )
+  expect(position).toMatchObject({
+    line: 6,
+    column: 16,
+    name: 'x',
+  })
+}
+
+async function getServedEntryChunk() {
+  const srcMatches = await vi.waitFor(
+    async () => {
+      const html = await (await page.request.get(page.url())).text()
+      const matches = [...html.matchAll(/<script[^>]* src="([^"]+)"/g)]
+        // the server also injects its client runtime as a script tag (vitejs/vite#23161)
+        .filter(([, src]) => !src.endsWith('/bundledDevClient.mjs'))
+      expect(matches.length).toBeGreaterThan(0)
+      return matches
+    },
+    { timeout: 10_000 },
+  )
+  // every bundled-dev check reads the map of this one chunk. Fail here and now
+  // if the dev bundle ever starts splitting the entry into more chunks.
+  expect(srcMatches).toHaveLength(1)
+  const entryUrl = new URL(srcMatches[0][1], page.url())
+  const js = await (await page.request.get(entryUrl.href)).text()
+  const mapUrlMatch = js.match(/^\/\/# sourceMappingURL=(\S+)$/m)
+  expect(mapUrlMatch).toBeTruthy()
+  const mapRes = await page.request.get(new URL(mapUrlMatch![1], entryUrl).href)
+  expect(mapRes.status()).toBe(200)
+  return { js, map: await mapRes.json() }
+}
+
+function expectMapHasSource(map: any, fileName: string, content: string) {
+  const index = map.sources.findIndex(
+    (source: string) => source === fileName || source.endsWith(`/${fileName}`),
+  )
+  expect(
+    index,
+    `map.sources should contain ${fileName}`,
+  ).toBeGreaterThanOrEqual(0)
+  expect(map.sourcesContent[index]).toBe(content)
+}
+
+// check the mapping of a variable
+function expectVarInitMapsBackToExportConst(
+  js: string,
+  map: any,
+  name: string,
+  fileName: string,
+) {
+  const lines = js.split('\n')
+  const varRE = new RegExp(
+    `^var ${escapeRegex(name)}\\S* = "${escapeRegex(name)}"`,
+  )
+  const lineIndex = lines.findIndex((line) => varRE.test(line))
+  expect(lineIndex).toBeGreaterThanOrEqual(0)
+  const position = originalPositionFor(new TraceMap(map), {
+    line: lineIndex + 1,
+    column: 'var '.length,
+  })
+  expect(position.source).toMatch(new RegExp(`(^|/)${escapeRegex(fileName)}$`))
+  expect(position.line).toBe(1)
+  expect(position.column).toBe(13)
+}
 
 if (!isBuild) {
   test('js', async () => {
+    if (isBundledDev) {
+      const { js, map } = await getServedEntryChunk()
+      expectMapHasSource(map, 'foo.js', readFile('foo.js'))
+      expectVarInitMapsBackToExportConst(js, map, 'foo', 'foo.js')
+      return
+    }
     const res = await page.request.get(new URL('./foo.js', page.url()).href)
     const js = await res.text()
     const map = extractSourcemap(js)
@@ -34,61 +150,47 @@ if (!isBuild) {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#MjUAZXhwb3J0IGNvbnN0IGZvbyA9ICdmb28nCjE1MQB7InZlcnNpb24iOjMsInNvdXJjZXMiOlsiZm9vLmpzIl0sInNvdXJjZXNDb250ZW50IjpbImV4cG9ydCBjb25zdCBmb28gPSAnZm9vJ1xuIl0sIm1hcHBpbmdzIjoiQUFBQSxNQUFNLENBQUMsS0FBSyxDQUFDLEdBQUcsQ0FBQyxDQUFDLENBQUMsQ0FBQyxHQUFHOyJ9"
+        visualization: "https://evanw.github.io/source-map-visualization/#MjUAZXhwb3J0IGNvbnN0IGZvbyA9ICdmb28nCjE1MQB7Im1hcHBpbmdzIjoiQUFBQSxNQUFNLENBQUMsS0FBSyxDQUFDLEdBQUcsQ0FBQyxDQUFDLENBQUMsQ0FBQyxHQUFHOyIsInNvdXJjZXMiOlsiZm9vLmpzIl0sInNvdXJjZXNDb250ZW50IjpbImV4cG9ydCBjb25zdCBmb28gPSAnZm9vJ1xuIl0sInZlcnNpb24iOjN9"
       }
     `)
   })
 
-  test('plugin return sourcemap with `sources: [""]`', async () => {
-    const res = await page.request.get(new URL('./zoo.js', page.url()).href)
-    const js = await res.text()
-    expect(js).toContain('// add comment')
+  // bundled dev does not inject fallback sourcemap, so this test is irrelevant
+  test.skipIf(isBundledDev)(
+    'js with inline sourcemap injected by a plugin',
+    async () => {
+      const res = await page.request.get(
+        new URL('./foo-with-sourcemap.js', page.url()).href,
+      )
+      const js = await res.text()
 
-    const map = extractSourcemap(js)
-    expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
-      SourceMap {
-        content: {
-          "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;",
-          "sources": [
-            "zoo.js",
-          ],
-          "sourcesContent": [
-            "export const zoo = 'zoo'
-      ",
-          ],
-          "version": 3,
-        },
-        visualization: "https://evanw.github.io/source-map-visualization/#NDAAZXhwb3J0IGNvbnN0IHpvbyA9ICd6b28nCi8vIGFkZCBjb21tZW50CjIxNgB7InZlcnNpb24iOjMsInNvdXJjZXMiOlsiem9vLmpzIl0sInNvdXJjZXNDb250ZW50IjpbImV4cG9ydCBjb25zdCB6b28gPSAnem9vJ1xuIl0sIm1hcHBpbmdzIjoiQUFBQSxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUM7In0="
-      }
-    `)
-  })
+      expect(js).toContain(commentSourceMap)
+      const sourcemapComments = js.match(mapFileCommentRegex).length
+      expect(sourcemapComments).toBe(1)
 
-  test('js with inline sourcemap injected by a plugin', async () => {
-    const res = await page.request.get(
-      new URL('./foo-with-sourcemap.js', page.url()).href,
-    )
-    const js = await res.text()
-
-    expect(js).toContain(commentSourceMap)
-    const sourcemapComments = js.match(mapFileCommentRegex).length
-    expect(sourcemapComments).toBe(1)
-
-    const map = extractSourcemap(js)
-    expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
-      SourceMap {
-        content: {
-          "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG",
-          "sources": [
-            "",
-          ],
-          "version": 3,
-        },
-        visualization: "https://evanw.github.io/source-map-visualization/#NzMAZXhwb3J0IGNvbnN0IGZvbyA9ICdmb28nCi8vIGRlZmF1bHQgYm91bmRhcnkgc291cmNlbWFwIHdpdGggbWFnaWMtc3RyaW5nCjk2AHsidmVyc2lvbiI6Mywic291cmNlcyI6WyIiXSwibWFwcGluZ3MiOiJBQUFBLE1BQU0sQ0FBQyxLQUFLLENBQUMsR0FBRyxDQUFDLENBQUMsQ0FBQyxDQUFDLEdBQUcifQ=="
-      }
-    `)
-  })
+      const map = extractSourcemap(js)
+      expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
+        SourceMap {
+          content: {
+            "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG",
+            "sources": [
+              "",
+            ],
+            "version": 3,
+          },
+          visualization: "https://evanw.github.io/source-map-visualization/#NzMAZXhwb3J0IGNvbnN0IGZvbyA9ICdmb28nCi8vIGRlZmF1bHQgYm91bmRhcnkgc291cmNlbWFwIHdpdGggbWFnaWMtc3RyaW5nCjk2AHsibWFwcGluZ3MiOiJBQUFBLE1BQU0sQ0FBQyxLQUFLLENBQUMsR0FBRyxDQUFDLENBQUMsQ0FBQyxDQUFDLEdBQUciLCJzb3VyY2VzIjpbIiJdLCJ2ZXJzaW9uIjozfQ=="
+        }
+      `)
+    },
+  )
 
   test('ts', async () => {
+    if (isBundledDev) {
+      const { js, map } = await getServedEntryChunk()
+      expectMapHasSource(map, 'bar.ts', readFile('bar.ts'))
+      expectVarInitMapsBackToExportConst(js, map, 'bar', 'bar.ts')
+      return
+    }
     const res = await page.request.get(new URL('./bar.ts', page.url()).href)
     const js = await res.text()
     const map = extractSourcemap(js)
@@ -105,12 +207,14 @@ if (!isBuild) {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#MjYAZXhwb3J0IGNvbnN0IGJhciA9ICJiYXIiOwoxMTUAeyJtYXBwaW5ncyI6IkFBQUEsT0FBTyxNQUFNLE1BQU0iLCJzb3VyY2VzIjpbImJhci50cyJdLCJ2ZXJzaW9uIjozLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgY29uc3QgYmFyID0gJ2JhcidcbiJdfQ=="
+        visualization: "https://evanw.github.io/source-map-visualization/#MjYAZXhwb3J0IGNvbnN0IGJhciA9ICJiYXIiOwoxMTUAeyJtYXBwaW5ncyI6IkFBQUEsT0FBTyxNQUFNLE1BQU0iLCJzb3VyY2VzIjpbImJhci50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgY29uc3QgYmFyID0gJ2JhcidcbiJdLCJ2ZXJzaW9uIjozfQ=="
       }
     `)
   })
 
-  test('multiline import', async () => {
+  // This test is for the import-analysis plugin (#14232), which does not run
+  // in bundled dev.
+  test.skipIf(isBundledDev)('multiline import', async () => {
     const res = await page.request.get(
       new URL('./with-multiline-import.ts', page.url()).href,
     )
@@ -119,7 +223,7 @@ if (!isBuild) {
     expect(formatSourcemapForSnapshot(map, js)).toMatchInlineSnapshot(`
       SourceMap {
         content: {
-          "mappings": ";AACA,SACE,WACK;AAEP,QAAQ,IAAI,yBAAyB,IAAI",
+          "mappings": ";AACA,SACE,WACK;AAEP,QAAQ,IAAI,yBAAyB,GAAG",
           "sources": [
             "with-multiline-import.ts",
           ],
@@ -134,7 +238,7 @@ if (!isBuild) {
           ],
           "version": 3,
         },
-        visualization: "https://evanw.github.io/source-map-visualization/#MjQ4AC8vIHByZXR0aWVyLWlnbm9yZQppbXBvcnQgX192aXRlX19janNJbXBvcnQwX192aXRlanNfdGVzdEltcG9ydGVlUGtnIGZyb20gIi9ub2RlX21vZHVsZXMvLnZpdGUvZGVwcy9Adml0ZWpzX3Rlc3QtaW1wb3J0ZWUtcGtnLmpzP3Y9MDAwMDAwMDAiOyBjb25zdCBmb28gPSBfX3ZpdGVfX2Nqc0ltcG9ydDBfX3ZpdGVqc190ZXN0SW1wb3J0ZWVQa2dbImZvbyJdOwpjb25zb2xlLmxvZygid2l0aC1tdWx0aWxpbmUtaW1wb3J0IiwgZm9vKTsKMjQ4AHsibWFwcGluZ3MiOiI7QUFDQSxTQUNFLFdBQ0s7QUFFUCxRQUFRLElBQUkseUJBQXlCLElBQUkiLCJzb3VyY2VzIjpbIndpdGgtbXVsdGlsaW5lLWltcG9ydC50cyJdLCJ2ZXJzaW9uIjozLCJzb3VyY2VzQ29udGVudCI6WyIvLyBwcmV0dGllci1pZ25vcmVcbmltcG9ydCB7XG4gIGZvb1xufSBmcm9tICdAdml0ZWpzL3Rlc3QtaW1wb3J0ZWUtcGtnJ1xuXG5jb25zb2xlLmxvZygnd2l0aC1tdWx0aWxpbmUtaW1wb3J0JywgZm9vKVxuIl19"
+        visualization: "https://evanw.github.io/source-map-visualization/#MjQ3AGNvbnN0IGZvbyA9IF9fdml0ZV9fY2pzSW1wb3J0MF9fdml0ZWpzX3Rlc3RJbXBvcnRlZVBrZ1siZm9vIl07Ly8gcHJldHRpZXItaWdub3JlCmltcG9ydCBfX3ZpdGVfX2Nqc0ltcG9ydDBfX3ZpdGVqc190ZXN0SW1wb3J0ZWVQa2cgZnJvbSAiL25vZGVfbW9kdWxlcy8udml0ZS9kZXBzL0B2aXRlanNfdGVzdC1pbXBvcnRlZS1wa2cuanM/dj0wMDAwMDAwMCI7CmNvbnNvbGUubG9nKCJ3aXRoLW11bHRpbGluZS1pbXBvcnQiLCBmb28pOwoyNDgAeyJtYXBwaW5ncyI6IjtBQUNBLFNBQ0UsV0FDSztBQUVQLFFBQVEsSUFBSSx5QkFBeUIsR0FBRyIsInNvdXJjZXMiOlsid2l0aC1tdWx0aWxpbmUtaW1wb3J0LnRzIl0sInNvdXJjZXNDb250ZW50IjpbIi8vIHByZXR0aWVyLWlnbm9yZVxuaW1wb3J0IHtcbiAgZm9vXG59IGZyb20gJ0B2aXRlanMvdGVzdC1pbXBvcnRlZS1wa2cnXG5cbmNvbnNvbGUubG9nKCd3aXRoLW11bHRpbGluZS1pbXBvcnQnLCBmb28pXG4iXSwidmVyc2lvbiI6M30="
       }
     `)
   })
@@ -144,6 +248,102 @@ if (!isBuild) {
       expect(log).not.toMatch(/Sourcemap for .+ points to missing source files/)
     })
   })
+
+  test('should not leak file contents via sourcemap path traversal in node_modules', async () => {
+    if (isBundledDev) {
+      // bundled-dev does not parse input sourcemaps,
+      // it copies them as the input source as a whole into `sourcesContent`,
+      // whereas unbundled-dev extracts the input sourcemaps
+      const { map } = await getServedEntryChunk()
+      expect(map.sources).toContainEqual(
+        expect.stringContaining('test-dep-malicious-sourcemap'),
+      )
+      expect(map.sources).toContainEqual(
+        expect.stringContaining('test-dep-optimized-malicious'),
+      )
+      expect(map.sourcesContent).toBeDefined()
+      expect(map.sourcesContent).not.toContainEqual(
+        expect.stringContaining('defineConfig'),
+      )
+      return
+    }
+    const res = await page.request.get(
+      new URL('./malicious-import.js', page.url()).href,
+    )
+    const js = await res.text()
+    // Find the rewritten import URL for the malicious dep
+    const depUrlMatch = js.match(/from\s+"([^"]*malicious-sourcemap[^"]*)"/)
+    expect(depUrlMatch).toBeTruthy()
+    const depUrl = depUrlMatch![1]
+    const depRes = await page.request.get(new URL(depUrl, page.url()).href)
+    const depJs = await depRes.text()
+    const map = extractSourcemap(depJs)
+    expect(map.sourcesContent).toBeDefined()
+    expect(map.sourcesContent).not.toContainEqual(
+      expect.stringContaining('defineConfig'),
+    )
+  })
+
+  // bundled dev has no dep optimizer by design, so `/node_modules/.vite/deps/`
+  // does not exist. The dep is still bundled, and the test above scans the
+  // whole map, so the no-leak check still covers it.
+  test.skipIf(isBundledDev)(
+    'should not leak file contents via sourcemap path traversal in optimized deps',
+    async () => {
+      const res = await page.request.get(
+        new URL('./optimized-malicious-import.js', page.url()).href,
+      )
+      const js = await res.text()
+      // Find the rewritten import URL for the optimized malicious dep
+      const depUrlMatch = js.match(/from\s+"([^"]*optimized-malicious[^"]*)"/)
+      expect(depUrlMatch).toBeTruthy()
+      const depUrl = depUrlMatch![1]
+      // Ensure the dep was actually optimized (served from .vite/deps)
+      expect(depUrl).toContain('.vite/deps')
+      const depRes = await page.request.get(new URL(depUrl, page.url()).href)
+      const depJs = await depRes.text()
+      expect(depJs).toMatch(
+        /^\/\/# sourceMappingURL=data:application\/json;base64,/m,
+      )
+      const map = extractSourcemap(depJs)
+      expect(map.sourcesContent).toBeDefined()
+      expect(map.sourcesContent).not.toContainEqual(
+        expect.stringContaining('defineConfig'),
+      )
+    },
+  )
+
+  // bundled dev: these cases only apply with the dep optimizer. The test
+  // plugins act on `/deps/` URLs, which do not exist under bundled dev.
+  test.skipIf(isBundledDev)(
+    'babel-transformed downleveled optimized dep maps to the correct original name',
+    async () => {
+      const depJs = await getDepJs(
+        './optimized-class-field-import-babel.js',
+        'test-dep-class-field-sourcemap-babel',
+      )
+
+      expect(depJs).toContain('x = () => 1')
+      expect(depJs).toContain('constructor(_x)')
+      expect(depJs).toContain('console.log(_x)')
+      expectConsoleLogArgumentMapsToOriginalX(depJs, '_x')
+    },
+  )
+
+  test.skipIf(isBundledDev)(
+    'oxc-transformed downleveled optimized dep maps to the correct original name',
+    async () => {
+      const depJs = await getDepJs(
+        './optimized-class-field-import-oxc.js',
+        'test-dep-class-field-sourcemap-oxc',
+      )
+
+      expect(depJs).toContain('x$$$ = () => 1')
+      expect(depJs).toContain('constructor$$$(_x$$$)')
+      expect(depJs).toContain('console$$$.log$$$(_x$$$)')
+      expectConsoleLogArgumentMapsToOriginalX(depJs, '_x$$$')
+    },
+  )
 }
 
 describe.runIf(isBuild)('build tests', () => {
@@ -156,51 +356,29 @@ describe.runIf(isBuild)('build tests', () => {
   test('sourcemap is correct when preload information is injected', async () => {
     const js = findAssetFile(/after-preload-dynamic-[-\w]{8}\.js$/)
     const map = findAssetFile(/after-preload-dynamic-[-\w]{8}\.js\.map/)
-    if (process.env._VITE_TEST_JS_PLUGIN) {
-      expect(formatSourcemapForSnapshot(JSON.parse(map), js))
-        .toMatchInlineSnapshot(`
-          SourceMap {
-            content: {
-              "debugId": "00000000-0000-0000-0000-000000000000",
-              "ignoreList": [],
-              "mappings": ";sqCAAA,OAAO,6BAAuB,wBAE9B,QAAQ,IAAI,wBAAuB",
-              "sources": [
-                "../../after-preload-dynamic.js",
-              ],
-              "sourcesContent": [
-                "import('./dynamic/dynamic-foo')
+    expect(formatSourcemapForSnapshot(JSON.parse(map), js))
+      .toMatchInlineSnapshot(`
+        SourceMap {
+          content: {
+            "debugId": "00000000-0000-0000-0000-000000000000",
+            "mappings": ";w1CAAAA,MAAA,OAAO,qDAEP,QAAQ,IAAI,uBAAuB",
+            "names": [
+              "__vitePreload",
+            ],
+            "sources": [
+              "../../after-preload-dynamic.js",
+            ],
+            "sourcesContent": [
+              "import('./dynamic/dynamic-foo')
 
-          console.log('after preload dynamic')
-          ",
-              ],
-              "version": 3,
-            },
-            visualization: "https://evanw.github.io/source-map-visualization/#MTU1NQBjb25zdCBfX3ZpdGVfX21hcERlcHM9KGksbT1fX3ZpdGVfX21hcERlcHMsZD0obS5mfHwobS5mPVsiYXNzZXRzL2R5bmFtaWMtZm9vLXRpUHBTUURiLmpzIiwiYXNzZXRzL2R5bmFtaWMtZm9vLURzcUtSckV5LmNzcyJdKSkpPT5pLm1hcChpPT5kW2ldKTsKdmFyIGU9YG1vZHVsZXByZWxvYWRgLHQ9ZnVuY3Rpb24oZSl7cmV0dXJuYC9gK2V9LG49e307Y29uc3Qgcj1mdW5jdGlvbihyLGksYSl7bGV0IG89UHJvbWlzZS5yZXNvbHZlKCk7aWYoaSYmaS5sZW5ndGg+MCl7bGV0IHI9ZG9jdW1lbnQuZ2V0RWxlbWVudHNCeVRhZ05hbWUoYGxpbmtgKSxzPWRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoYG1ldGFbcHJvcGVydHk9Y3NwLW5vbmNlXWApLGM9cz8ubm9uY2V8fHM/LmdldEF0dHJpYnV0ZShgbm9uY2VgKTtmdW5jdGlvbiBsKGUpe3JldHVybiBQcm9taXNlLmFsbChlLm1hcChlPT5Qcm9taXNlLnJlc29sdmUoZSkudGhlbihlPT4oe3N0YXR1czpgZnVsZmlsbGVkYCx2YWx1ZTplfSksZT0+KHtzdGF0dXM6YHJlamVjdGVkYCxyZWFzb246ZX0pKSkpfW89bChpLm1hcChpPT57aWYoaT10KGksYSksaSBpbiBuKXJldHVybjtuW2ldPSEwO2xldCBvPWkuZW5kc1dpdGgoYC5jc3NgKSxzPW8/YFtyZWw9InN0eWxlc2hlZXQiXWA6YGA7aWYoYSlmb3IobGV0IGU9ci5sZW5ndGgtMTtlPj0wO2UtLSl7bGV0IHQ9cltlXTtpZih0LmhyZWY9PT1pJiYoIW98fHQucmVsPT09YHN0eWxlc2hlZXRgKSlyZXR1cm59ZWxzZSBpZihkb2N1bWVudC5xdWVyeVNlbGVjdG9yKGBsaW5rW2hyZWY9IiR7aX0iXSR7c31gKSlyZXR1cm47bGV0IGw9ZG9jdW1lbnQuY3JlYXRlRWxlbWVudChgbGlua2ApO2lmKGwucmVsPW8/YHN0eWxlc2hlZXRgOmUsb3x8KGwuYXM9YHNjcmlwdGApLGwuY3Jvc3NPcmlnaW49YGAsbC5ocmVmPWksYyYmbC5zZXRBdHRyaWJ1dGUoYG5vbmNlYCxjKSxkb2N1bWVudC5oZWFkLmFwcGVuZENoaWxkKGwpLG8pcmV0dXJuIG5ldyBQcm9taXNlKChlLHQpPT57bC5hZGRFdmVudExpc3RlbmVyKGBsb2FkYCxlKSxsLmFkZEV2ZW50TGlzdGVuZXIoYGVycm9yYCwoKT0+dChFcnJvcihgVW5hYmxlIHRvIHByZWxvYWQgQ1NTIGZvciAke2l9YCkpKX0pfSkpfWZ1bmN0aW9uIHMoZSl7bGV0IHQ9bmV3IEV2ZW50KGB2aXRlOnByZWxvYWRFcnJvcmAse2NhbmNlbGFibGU6ITB9KTtpZih0LnBheWxvYWQ9ZSx3aW5kb3cuZGlzcGF0Y2hFdmVudCh0KSwhdC5kZWZhdWx0UHJldmVudGVkKXRocm93IGV9cmV0dXJuIG8udGhlbihlPT57Zm9yKGxldCB0IG9mIGV8fFtdKXQuc3RhdHVzPT09YHJlamVjdGVkYCYmcyh0LnJlYXNvbik7cmV0dXJuIHIoKS5jYXRjaChzKX0pfTtyKCgpPT5pbXBvcnQoYC4vZHluYW1pYy1mb28tdGlQcFNRRGIuanNgKSxfX3ZpdGVfX21hcERlcHMoWzAsMV0pKSxjb25zb2xlLmxvZyhgYWZ0ZXIgcHJlbG9hZCBkeW5hbWljYCk7ZXhwb3J0e3IgYXMgdH07Ci8vIyBkZWJ1Z0lkPTk5MWIzYWRkLWY2MWQtNDhiNy1hZDY1LThhZjVhODBmMzhkNwovLyMgc291cmNlTWFwcGluZ1VSTD1hZnRlci1wcmVsb2FkLWR5bmFtaWMtQ1pHenJkOWguanMubWFwMjc1AHsidmVyc2lvbiI6MywibWFwcGluZ3MiOiI7c3FDQUFBLE9BQU8sNkJBQXVCLHdCQUU5QixRQUFRLElBQUksd0JBQXVCIiwiaWdub3JlTGlzdCI6W10sInNvdXJjZXMiOlsiLi4vLi4vYWZ0ZXItcHJlbG9hZC1keW5hbWljLmpzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCgnLi9keW5hbWljL2R5bmFtaWMtZm9vJylcblxuY29uc29sZS5sb2coJ2FmdGVyIHByZWxvYWQgZHluYW1pYycpXG4iXSwiZGVidWdJZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMCJ9"
-          }
-        `)
-    } else {
-      expect(formatSourcemapForSnapshot(JSON.parse(map), js))
-        .toMatchInlineSnapshot(`
-          SourceMap {
-            content: {
-              "debugId": "00000000-0000-0000-0000-000000000000",
-              "ignoreList": [],
-              "mappings": ";sqCAAA,OAAO,qDAEP,QAAQ,IAAI,wBAAwB",
-              "sources": [
-                "../../after-preload-dynamic.js",
-              ],
-              "sourcesContent": [
-                "import('./dynamic/dynamic-foo')
-
-          console.log('after preload dynamic')
-          ",
-              ],
-              "version": 3,
-            },
-            visualization: "https://evanw.github.io/source-map-visualization/#MTU1NQBjb25zdCBfX3ZpdGVfX21hcERlcHM9KGksbT1fX3ZpdGVfX21hcERlcHMsZD0obS5mfHwobS5mPVsiYXNzZXRzL2R5bmFtaWMtZm9vLXRpUHBTUURiLmpzIiwiYXNzZXRzL2R5bmFtaWMtZm9vLURzcUtSckV5LmNzcyJdKSkpPT5pLm1hcChpPT5kW2ldKTsKdmFyIGU9YG1vZHVsZXByZWxvYWRgLHQ9ZnVuY3Rpb24oZSl7cmV0dXJuYC9gK2V9LG49e307Y29uc3Qgcj1mdW5jdGlvbihyLGksYSl7bGV0IG89UHJvbWlzZS5yZXNvbHZlKCk7aWYoaSYmaS5sZW5ndGg+MCl7bGV0IHI9ZG9jdW1lbnQuZ2V0RWxlbWVudHNCeVRhZ05hbWUoYGxpbmtgKSxzPWRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoYG1ldGFbcHJvcGVydHk9Y3NwLW5vbmNlXWApLGM9cz8ubm9uY2V8fHM/LmdldEF0dHJpYnV0ZShgbm9uY2VgKTtmdW5jdGlvbiBsKGUpe3JldHVybiBQcm9taXNlLmFsbChlLm1hcChlPT5Qcm9taXNlLnJlc29sdmUoZSkudGhlbihlPT4oe3N0YXR1czpgZnVsZmlsbGVkYCx2YWx1ZTplfSksZT0+KHtzdGF0dXM6YHJlamVjdGVkYCxyZWFzb246ZX0pKSkpfW89bChpLm1hcChpPT57aWYoaT10KGksYSksaSBpbiBuKXJldHVybjtuW2ldPSEwO2xldCBvPWkuZW5kc1dpdGgoYC5jc3NgKSxzPW8/YFtyZWw9InN0eWxlc2hlZXQiXWA6YGA7aWYoYSlmb3IobGV0IGU9ci5sZW5ndGgtMTtlPj0wO2UtLSl7bGV0IHQ9cltlXTtpZih0LmhyZWY9PT1pJiYoIW98fHQucmVsPT09YHN0eWxlc2hlZXRgKSlyZXR1cm59ZWxzZSBpZihkb2N1bWVudC5xdWVyeVNlbGVjdG9yKGBsaW5rW2hyZWY9IiR7aX0iXSR7c31gKSlyZXR1cm47bGV0IGw9ZG9jdW1lbnQuY3JlYXRlRWxlbWVudChgbGlua2ApO2lmKGwucmVsPW8/YHN0eWxlc2hlZXRgOmUsb3x8KGwuYXM9YHNjcmlwdGApLGwuY3Jvc3NPcmlnaW49YGAsbC5ocmVmPWksYyYmbC5zZXRBdHRyaWJ1dGUoYG5vbmNlYCxjKSxkb2N1bWVudC5oZWFkLmFwcGVuZENoaWxkKGwpLG8pcmV0dXJuIG5ldyBQcm9taXNlKChlLHQpPT57bC5hZGRFdmVudExpc3RlbmVyKGBsb2FkYCxlKSxsLmFkZEV2ZW50TGlzdGVuZXIoYGVycm9yYCwoKT0+dChFcnJvcihgVW5hYmxlIHRvIHByZWxvYWQgQ1NTIGZvciAke2l9YCkpKX0pfSkpfWZ1bmN0aW9uIHMoZSl7bGV0IHQ9bmV3IEV2ZW50KGB2aXRlOnByZWxvYWRFcnJvcmAse2NhbmNlbGFibGU6ITB9KTtpZih0LnBheWxvYWQ9ZSx3aW5kb3cuZGlzcGF0Y2hFdmVudCh0KSwhdC5kZWZhdWx0UHJldmVudGVkKXRocm93IGV9cmV0dXJuIG8udGhlbihlPT57Zm9yKGxldCB0IG9mIGV8fFtdKXQuc3RhdHVzPT09YHJlamVjdGVkYCYmcyh0LnJlYXNvbik7cmV0dXJuIHIoKS5jYXRjaChzKX0pfTtyKCgpPT5pbXBvcnQoYC4vZHluYW1pYy1mb28tdGlQcFNRRGIuanNgKSxfX3ZpdGVfX21hcERlcHMoWzAsMV0pKSxjb25zb2xlLmxvZyhgYWZ0ZXIgcHJlbG9hZCBkeW5hbWljYCk7ZXhwb3J0e3IgYXMgdH07Ci8vIyBkZWJ1Z0lkPTk5MWIzYWRkLWY2MWQtNDhiNy1hZDY1LThhZjVhODBmMzhkNwovLyMgc291cmNlTWFwcGluZ1VSTD1hZnRlci1wcmVsb2FkLWR5bmFtaWMtQ1pHenJkOWguanMubWFwMjY3AHsidmVyc2lvbiI6MywibWFwcGluZ3MiOiI7c3FDQUFBLE9BQU8scURBRVAsUUFBUSxJQUFJLHdCQUF3QiIsImlnbm9yZUxpc3QiOltdLCJzb3VyY2VzIjpbIi4uLy4uL2FmdGVyLXByZWxvYWQtZHluYW1pYy5qcyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQoJy4vZHluYW1pYy9keW5hbWljLWZvbycpXG5cbmNvbnNvbGUubG9nKCdhZnRlciBwcmVsb2FkIGR5bmFtaWMnKVxuIl0sImRlYnVnSWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAifQ=="
-          }
-        `)
-    }
+        console.log('after preload dynamic')
+        ",
+            ],
+            "version": 3,
+          },
+          visualization: "https://evanw.github.io/source-map-visualization/#MTczOQBjb25zdCBfX3ZpdGVfX21hcERlcHM9KGksbT1fX3ZpdGVfX21hcERlcHMsZD0obS5mfHwobS5mPVsiYXNzZXRzL2R5bmFtaWMtZm9vLUJ3aFpUa3RCLmpzIiwiYXNzZXRzL2R5bmFtaWMtZm9vLURzcUtSckV5LmNzcyJdKSkpPT5pLm1hcChpPT5kW2ldKTsKdmFyIGU9ZnVuY3Rpb24oZSl7cmV0dXJuYC9gK2V9LHQ9e30sbj1mdW5jdGlvbihlKXtyZXR1cm4gZS5wYXRobmFtZS5lbmRzV2l0aChgLmNzc2ApfSxyPWZ1bmN0aW9uKHIsaSxhKXtsZXQgbz1Qcm9taXNlLnJlc29sdmUoKTtpZihpJiZpLmxlbmd0aD4wKXtsZXQgcixzPWRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoYG1ldGFbcHJvcGVydHk9Y3NwLW5vbmNlXWApLGM9cz8ubm9uY2V8fHM/LmdldEF0dHJpYnV0ZShgbm9uY2VgKTtmdW5jdGlvbiBsKGUpe3JldHVybiBQcm9taXNlLmFsbChlLm1hcChlPT5Qcm9taXNlLnJlc29sdmUoZSkudGhlbihlPT4oe3N0YXR1czpgZnVsZmlsbGVkYCx2YWx1ZTplfSksZT0+KHtzdGF0dXM6YHJlamVjdGVkYCxyZWFzb246ZX0pKSkpfWZ1bmN0aW9uIHUoZSl7cmV0dXJuIGltcG9ydC5tZXRhLnJlc29sdmU/bmV3IFVSTChpbXBvcnQubWV0YS5yZXNvbHZlKGUpKTpuZXcgVVJMKGUsaW1wb3J0Lm1ldGEudXJsKX1vPWwoaS5tYXAoaT0+e2k9ZShpLGEpO2xldCBvPXUoaSk7aWYoby5ocmVmIGluIHQpcmV0dXJuO3Rbby5ocmVmXT0hMDtsZXQgcz1uKG8pO2lmKHI9PT12b2lkIDApe3I9e2FsbDpuZXcgU2V0LHN0eWxlczpuZXcgU2V0fTtsZXQgZT1kb2N1bWVudC5nZXRFbGVtZW50c0J5VGFnTmFtZShgbGlua2ApO2ZvcihsZXQgdD1lLmxlbmd0aC0xO3Q+PTA7dC0tKXtsZXQgbj1lW3RdO3IuYWxsLmFkZChuLmhyZWYpLG4ucmVsPT09YHN0eWxlc2hlZXRgJiZyLnN0eWxlcy5hZGQobi5ocmVmKX19aWYoKHM/ci5zdHlsZXM6ci5hbGwpLmhhcyhvLmhyZWYpKXJldHVybjtsZXQgbD1kb2N1bWVudC5jcmVhdGVFbGVtZW50KGBsaW5rYCk7aWYobC5yZWw9cz9gc3R5bGVzaGVldGA6YG1vZHVsZXByZWxvYWRgLHN8fChsLmFzPWBzY3JpcHRgKSxsLmNyb3NzT3JpZ2luPWBgLGwuaHJlZj1vLmhyZWYsYyYmbC5zZXRBdHRyaWJ1dGUoYG5vbmNlYCxjKSxkb2N1bWVudC5oZWFkLmFwcGVuZENoaWxkKGwpLHMpcmV0dXJuIG5ldyBQcm9taXNlKChlLHQpPT57bC5hZGRFdmVudExpc3RlbmVyKGBsb2FkYCxlKSxsLmFkZEV2ZW50TGlzdGVuZXIoYGVycm9yYCwoKT0+dChFcnJvcihgVW5hYmxlIHRvIHByZWxvYWQgQ1NTIGZvciAke299YCkpKX0pfSkuZmlsdGVyKGU9PmUhPT12b2lkIDApKX1mdW5jdGlvbiBzKGUpe2xldCB0PW5ldyBFdmVudChgdml0ZTpwcmVsb2FkRXJyb3JgLHtjYW5jZWxhYmxlOiEwfSk7aWYodC5wYXlsb2FkPWUsd2luZG93LmRpc3BhdGNoRXZlbnQodCksIXQuZGVmYXVsdFByZXZlbnRlZCl0aHJvdyBlfXJldHVybiBvLnRoZW4oZT0+e2ZvcihsZXQgdCBvZiBlfHxbXSl0LnN0YXR1cz09PWByZWplY3RlZGAmJnModC5yZWFzb24pO3JldHVybiByKCkuY2F0Y2gocyl9KX07cigoKT0+aW1wb3J0KGAuL2R5bmFtaWMtZm9vLUJ3aFpUa3RCLmpzYCksX192aXRlX19tYXBEZXBzKFswLDFdKSksY29uc29sZS5sb2coYGFmdGVyIHByZWxvYWQgZHluYW1pY2ApO2V4cG9ydHtyIGFzIHR9OwovLyMgZGVidWdJZD1lOTgwYmM3Ny00NzY2LTRlODctYTgxMS1hNjZlZGFmZGI2NDIKLy8jIHNvdXJjZU1hcHBpbmdVUkw9YWZ0ZXItcHJlbG9hZC1keW5hbWljLURwZ0x4M1IyLmpzLm1hcDI4MwB7ImRlYnVnSWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAiLCJtYXBwaW5ncyI6Ijt3MUNBQUFBLE1BQUEsT0FBTyxxREFFUCxRQUFRLElBQUksdUJBQXVCIiwibmFtZXMiOlsiX192aXRlUHJlbG9hZCJdLCJzb3VyY2VzIjpbIi4uLy4uL2FmdGVyLXByZWxvYWQtZHluYW1pYy5qcyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQoJy4vZHluYW1pYy9keW5hbWljLWZvbycpXG5cbmNvbnNvbGUubG9nKCdhZnRlciBwcmVsb2FkIGR5bmFtaWMnKVxuIl0sInZlcnNpb24iOjN9"
+        }
+      `)
     // verify sourcemap comment is preserved at the last line
     expect(js).toMatch(
       /\n\/\/# sourceMappingURL=after-preload-dynamic-[-\w]{8}\.js\.map\n?$/,
@@ -245,7 +423,12 @@ describe.runIf(isBuild)('build tests', () => {
         SourceMap {
           content: {
             "debugId": "00000000-0000-0000-0000-000000000000",
-            "mappings": "AAEA,SAAS,GAAO,CACd,GAAW,CAGb,SAAS,GAAY,CAEnB,QAAQ,MAAM,qBAAA,CAAA,MAAA,OAAA,CAAyC,CAGzD,GAAM",
+            "mappings": "AAEA,SAASA,GAAO,CACdC,EAAU,CACZ,CAEA,SAASA,GAAY,CAEnB,QAAQ,MAAM,qBAAA,CAAAC,MAAA,MAAA,CAAwC,CACxD,CAEAF,EAAK",
+            "names": [
+              "main",
+              "mainInner",
+              ""hello"",
+            ],
             "sources": [
               "../../with-define-object.ts",
             ],
@@ -266,7 +449,7 @@ describe.runIf(isBuild)('build tests', () => {
             ],
             "version": 3,
           },
-          visualization: "https://evanw.github.io/source-map-visualization/#MTkwAGZ1bmN0aW9uIGUoKXt0KCl9ZnVuY3Rpb24gdCgpe2NvbnNvbGUudHJhY2UoYHdpdGgtZGVmaW5lLW9iamVjdGAse2hlbGxvOmB0ZXN0YH0pfWUoKTsKLy8jIGRlYnVnSWQ9NTBlZDE3M2ItOTIxYS00ZjMyLTk0MTAtMzBlZjc3ZmVlMGI5Ci8vIyBzb3VyY2VNYXBwaW5nVVJMPXdpdGgtZGVmaW5lLW9iamVjdC1CUTdSYzdraC5qcy5tYXA1MDAAeyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3dpdGgtZGVmaW5lLW9iamVjdC50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvLyB0ZXN0IGNvbXBsaWNhdGVkIHN0YWNrIHNpbmNlIGJyb2tlbiBzb3VyY2VtYXBcbi8vIG1pZ2h0IHN0aWxsIGxvb2sgY29ycmVjdCB3aXRoIGEgc2ltcGxlIGNhc2VcbmZ1bmN0aW9uIG1haW4oKSB7XG4gIG1haW5Jbm5lcigpXG59XG5cbmZ1bmN0aW9uIG1haW5Jbm5lcigpIHtcbiAgLy8gQHRzLWV4cGVjdC1lcnJvciBcImRlZmluZVwiXG4gIGNvbnNvbGUudHJhY2UoJ3dpdGgtZGVmaW5lLW9iamVjdCcsIF9fdGVzdERlZmluZU9iamVjdClcbn1cblxubWFpbigpXG4iXSwibWFwcGluZ3MiOiJBQUVBLFNBQVMsR0FBTyxDQUNkLEdBQVcsQ0FHYixTQUFTLEdBQVksQ0FFbkIsUUFBUSxNQUFNLHFCQUFBLENBQUEsTUFBQSxPQUFBLENBQXlDLENBR3pELEdBQU0iLCJkZWJ1Z0lkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIn0="
+          visualization: "https://evanw.github.io/source-map-visualization/#MTkwAGZ1bmN0aW9uIGUoKXt0KCl9ZnVuY3Rpb24gdCgpe2NvbnNvbGUudHJhY2UoYHdpdGgtZGVmaW5lLW9iamVjdGAse2hlbGxvOmB0ZXN0YH0pfWUoKTsKLy8jIGRlYnVnSWQ9NjRlNzI1NTUtMTk0Zi00MTRkLTk1MzUtOWVmYjI1ZTQyZmI2Ci8vIyBzb3VyY2VNYXBwaW5nVVJMPXdpdGgtZGVmaW5lLW9iamVjdC1CazV5VlZHVS5qcy5tYXA1NTYAeyJkZWJ1Z0lkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIiwibWFwcGluZ3MiOiJBQUVBLFNBQVNBLEdBQU8sQ0FDZEMsRUFBVSxDQUNaLENBRUEsU0FBU0EsR0FBWSxDQUVuQixRQUFRLE1BQU0scUJBQUEsQ0FBQUMsTUFBQSxNQUFBLENBQXdDLENBQ3hELENBRUFGLEVBQUsiLCJuYW1lcyI6WyJtYWluIiwibWFpbklubmVyIiwiXCJoZWxsb1wiIl0sInNvdXJjZXMiOlsiLi4vLi4vd2l0aC1kZWZpbmUtb2JqZWN0LnRzIl0sInNvdXJjZXNDb250ZW50IjpbIi8vIHRlc3QgY29tcGxpY2F0ZWQgc3RhY2sgc2luY2UgYnJva2VuIHNvdXJjZW1hcFxuLy8gbWlnaHQgc3RpbGwgbG9vayBjb3JyZWN0IHdpdGggYSBzaW1wbGUgY2FzZVxuZnVuY3Rpb24gbWFpbigpIHtcbiAgbWFpbklubmVyKClcbn1cblxuZnVuY3Rpb24gbWFpbklubmVyKCkge1xuICAvLyBAdHMtZXhwZWN0LWVycm9yIFwiZGVmaW5lXCJcbiAgY29uc29sZS50cmFjZSgnd2l0aC1kZWZpbmUtb2JqZWN0JywgX190ZXN0RGVmaW5lT2JqZWN0KVxufVxuXG5tYWluKClcbiJdLCJ2ZXJzaW9uIjozfQ=="
         }
       `)
   })

@@ -1,11 +1,12 @@
 import path from 'node:path'
-import { describe, expect, onTestFinished, test } from 'vitest'
-import { build } from '../../build'
-import type { Plugin } from '../../plugin'
-import { resolveConfig } from '../../config'
-import { createServer } from '../../server'
-import { preview } from '../../preview'
+import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { promiseWithResolvers } from '../../../shared/utils'
+import { build } from '../../build'
+import { resolveConfig } from '../../config'
+import { type Logger, createLogger } from '../../logger'
+import type { Plugin } from '../../plugin'
+import { preview } from '../../preview'
+import { createServer } from '../../server'
 
 const resolveConfigWithPlugin = (
   plugin: Plugin,
@@ -33,12 +34,16 @@ const resolveEntryPlugin: Plugin = {
   },
 }
 
-const createServerWithPlugin = async (plugin: Plugin) => {
+const createServerWithPlugin = async (
+  plugin: Plugin,
+  customLogger?: Logger,
+) => {
   const server = await createServer({
     configFile: false,
     root: import.meta.dirname,
     plugins: [plugin, resolveEntryPlugin],
     logLevel: 'error',
+    customLogger,
     server: {
       middlewareMode: true,
       ws: false,
@@ -344,5 +349,266 @@ describe('supports plugin context', () => {
     })
     await server.transformRequest(ENTRY_ID)
     await server.close()
+  })
+})
+
+describe('watcher add/unlink error handling', () => {
+  test("'add' event logs error when watchChange throws", async () => {
+    const { promise, resolve } = promiseWithResolvers<void>()
+    const error = new Error('async watchChange error')
+
+    const logError = vi.fn()
+    const logger = createLogger('error')
+    logger.error = (...args) => {
+      logError(...args)
+      resolve()
+    }
+
+    const server = await createServerWithPlugin(
+      {
+        name: 'test',
+        watchChange() {
+          return Promise.reject(error)
+        },
+      },
+      logger,
+    )
+
+    server.watcher.emit(
+      'add',
+      path.resolve(import.meta.dirname, 'some-file.js'),
+    )
+
+    await promise
+    expect(logError).toHaveBeenCalled()
+    expect(logError).toHaveBeenCalledWith(error)
+  })
+
+  test("'change' event logs error when watchChange throws", async () => {
+    const { promise, resolve } = promiseWithResolvers<void>()
+    const error = new Error('async watchChange error')
+
+    const logError = vi.fn()
+    const logger = createLogger('error')
+    logger.error = (...args) => {
+      logError(...args)
+      resolve()
+    }
+
+    const server = await createServerWithPlugin(
+      {
+        name: 'test',
+        watchChange() {
+          return Promise.reject(error)
+        },
+      },
+      logger,
+    )
+
+    server.watcher.emit(
+      'change',
+      path.resolve(import.meta.dirname, 'some-file.js'),
+    )
+
+    await promise
+    expect(logError).toHaveBeenCalled()
+    expect(logError).toHaveBeenCalledWith(error)
+  })
+
+  test("'unlink' event logs error when watchChange throws", async () => {
+    const { promise, resolve } = promiseWithResolvers<void>()
+    const error = new Error('async watchChange error')
+
+    const logError = vi.fn()
+    const logger = createLogger('error')
+    logger.error = (...args) => {
+      logError(...args)
+      resolve()
+    }
+
+    const server = await createServerWithPlugin(
+      {
+        name: 'test',
+        watchChange() {
+          return Promise.reject(error)
+        },
+      },
+      logger,
+    )
+
+    server.watcher.emit(
+      'unlink',
+      path.resolve(import.meta.dirname, 'some-file.js'),
+    )
+
+    await promise
+    expect(logError).toHaveBeenCalled()
+    expect(logError).toHaveBeenCalledWith(error)
+  })
+})
+
+describe('closeServer hook', () => {
+  test('is called with reason "close" on server.close()', async () => {
+    const closeServer = vi.fn()
+    const server = await createServerWithPlugin({
+      name: 'test',
+      closeServer,
+    })
+
+    await server.close()
+
+    expect(closeServer).toHaveBeenCalledTimes(1)
+    expect(closeServer).toHaveBeenCalledWith({ reason: 'close' })
+  })
+
+  test('receives a minimal plugin context as `this`', async () => {
+    expect.assertions(2)
+
+    const server = await createServerWithPlugin({
+      name: 'test',
+      closeServer() {
+        expect(this).toMatchObject({
+          debug: expect.any(Function),
+          info: expect.any(Function),
+          warn: expect.any(Function),
+          error: expect.any(Function),
+          meta: expect.any(Object),
+        })
+        // Global hooks don't have an environment.
+        expect(this).not.toHaveProperty('environment')
+      },
+    })
+
+    await server.close()
+  })
+
+  test('is awaited before server.close() resolves', async () => {
+    let hookDone = false
+    const server = await createServerWithPlugin({
+      name: 'test',
+      async closeServer() {
+        await new Promise((r) => setTimeout(r, 10))
+        hookDone = true
+      },
+    })
+
+    await server.close()
+
+    // `server.close()` does not resolve until the async hook has completed.
+    expect(hookDone).toBe(true)
+  })
+
+  test('runs after the server is torn down (after closeBundle)', async () => {
+    const order: string[] = []
+    const server = await createServerWithPlugin({
+      name: 'test',
+      closeBundle() {
+        order.push('closeBundle')
+      },
+      closeServer() {
+        order.push('closeServer')
+      },
+    })
+
+    await server.close()
+
+    // `closeBundle` runs as part of teardown (once per environment); the
+    // `closeServer` hook runs afterwards, so it is the last event.
+    expect(order.at(-1)).toBe('closeServer')
+    expect(order.indexOf('closeBundle')).toBeLessThan(
+      order.indexOf('closeServer'),
+    )
+  })
+
+  test('runs hooks in parallel', async () => {
+    const events: string[] = []
+    const server = await createServer({
+      configFile: false,
+      root: import.meta.dirname,
+      plugins: [
+        {
+          name: 'a',
+          async closeServer() {
+            events.push('a:start')
+            await new Promise((r) => setTimeout(r, 20))
+            events.push('a:end')
+          },
+        },
+        {
+          name: 'b',
+          async closeServer() {
+            events.push('b:start')
+            await new Promise((r) => setTimeout(r, 20))
+            events.push('b:end')
+          },
+        },
+        resolveEntryPlugin,
+      ],
+      logLevel: 'error',
+      server: { middlewareMode: true, ws: false },
+    })
+
+    await server.close()
+
+    // Both hooks start before either finishes.
+    expect(events.slice(0, 2)).toStrictEqual(['a:start', 'b:start'])
+  })
+
+  test('is called only once even if close() is called multiple times', async () => {
+    const closeServer = vi.fn()
+    const server = await createServerWithPlugin({
+      name: 'test',
+      closeServer,
+    })
+
+    await Promise.all([server.close(), server.close()])
+    await server.close()
+
+    expect(closeServer).toHaveBeenCalledTimes(1)
+  })
+
+  test('is called with reason "restart" on server.restart()', async () => {
+    const closeServer = vi.fn()
+    const server = await createServerWithPlugin({
+      name: 'test',
+      closeServer,
+    })
+
+    await server.restart()
+
+    expect(closeServer).toHaveBeenCalledTimes(1)
+    expect(closeServer).toHaveBeenCalledWith({ reason: 'restart' })
+
+    await server.close()
+  })
+})
+
+describe('closePreviewServer hook', () => {
+  test('is called on preview server.close()', async () => {
+    const closePreviewServer = vi.fn()
+    const server = await createPreviewServerWithPlugin({
+      name: 'test',
+      closePreviewServer,
+    })
+
+    await server.close()
+
+    expect(closePreviewServer).toHaveBeenCalledTimes(1)
+  })
+
+  test('is awaited before server.close() resolves', async () => {
+    let hookDone = false
+    const server = await createPreviewServerWithPlugin({
+      name: 'test',
+      async closePreviewServer() {
+        await new Promise((r) => setTimeout(r, 10))
+        hookDone = true
+      },
+    })
+
+    await server.close()
+
+    // `server.close()` does not resolve until the async hook has completed.
+    expect(hookDone).toBe(true)
   })
 })

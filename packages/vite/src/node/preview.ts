@@ -1,16 +1,14 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import sirv from 'sirv'
 import compression from '@polka/compression'
+import { disableCache } from '@voidzero-dev/vite-task-client'
 import connect from 'connect'
 import corsMiddleware from 'cors'
+import sirv from 'sirv'
 import type { Connect } from '#dep-types/connect'
-import type {
-  HttpServer,
-  ResolvedServerOptions,
-  ResolvedServerUrls,
-} from './server'
-import { createServerCloseFn } from './server'
+import { resolveConfig } from './config'
+import type { InlineConfig, ResolvedConfig } from './config'
+import { DEFAULT_PREVIEW_PORT } from './constants'
 import type { CommonServerOptions } from './http'
 import {
   httpServerStart,
@@ -18,12 +16,28 @@ import {
   resolveHttpsConfig,
   setClientErrorHandler,
 } from './http'
-import { openBrowser } from './server/openBrowser'
+import { printServerUrls } from './logger'
+import type { MinimalPluginContextWithoutEnvironment } from './plugin'
+import type {
+  HttpServer,
+  ResolvedServerOptions,
+  ResolvedServerUrls,
+} from './server'
+import { createServerCloseFn } from './server'
 import { baseMiddleware } from './server/middlewares/base'
+import { hostValidationMiddleware } from './server/middlewares/hostCheck'
 import { htmlFallbackMiddleware } from './server/middlewares/htmlFallback'
 import { indexHtmlMiddleware } from './server/middlewares/indexHtml'
 import { notFoundMiddleware } from './server/middlewares/notFound'
 import { proxyMiddleware } from './server/middlewares/proxy'
+import { openBrowser } from './server/openBrowser'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from './server/pluginContainer'
+import { bindCLIShortcuts } from './shortcuts'
+import type { BindCLIShortcutsOptions, ShortcutsState } from './shortcuts'
+import type { RequiredExceptFor } from './typeUtils'
 import {
   getServerUrlByHost,
   normalizePath,
@@ -33,19 +47,6 @@ import {
   shouldServeFile,
   teardownSIGTERMListener,
 } from './utils'
-import { printServerUrls } from './logger'
-import { bindCLIShortcuts } from './shortcuts'
-import type { BindCLIShortcutsOptions, ShortcutsState } from './shortcuts'
-import { resolveConfig } from './config'
-import type { InlineConfig, ResolvedConfig } from './config'
-import { DEFAULT_PREVIEW_PORT } from './constants'
-import type { RequiredExceptFor } from './typeUtils'
-import { hostValidationMiddleware } from './server/middlewares/hostCheck'
-import {
-  BasicMinimalPluginContext,
-  basePluginContextMeta,
-} from './server/pluginContainer'
-import type { MinimalPluginContextWithoutEnvironment } from './plugin'
 
 export interface PreviewOptions extends CommonServerOptions {}
 
@@ -120,12 +121,20 @@ export type PreviewServerHook = (
   server: PreviewServer,
 ) => (() => void) | void | Promise<(() => void) | void>
 
+export type ClosePreviewServerHook = (
+  this: MinimalPluginContextWithoutEnvironment,
+) => void | Promise<void>
+
 /**
  * Starts the Vite server in preview mode, to simulate a production deployment
  */
 export async function preview(
   inlineConfig: InlineConfig = {},
 ): Promise<PreviewServer> {
+  // The preview server is a long-running, interactive process whose
+  // responses cannot be replayed from a cache.
+  disableCache()
+
   const config = await resolveConfig(
     inlineConfig,
     'serve',
@@ -164,8 +173,20 @@ export async function preview(
   let closeServerPromise: Promise<void> | undefined
   const closeServer = async () => {
     teardownSIGTERMListener(closeServerAndExit)
+
     await closeHttpServer()
     server.resolvedUrls = null
+
+    // Run `closePreviewServer` plugin hooks after the server has been torn down.
+    const closePreviewServerContext = new BasicMinimalPluginContext(
+      { ...basePluginContextMeta, watchMode: false },
+      config.logger,
+    )
+    await Promise.all(
+      config
+        .getSortedPluginHooks('closePreviewServer')
+        .map((hook) => hook.call(closePreviewServerContext)),
+    )
   }
 
   const server: PreviewServer = {
@@ -183,7 +204,7 @@ export async function preview(
       if (server.resolvedUrls) {
         printServerUrls(server.resolvedUrls, options.host, logger.info)
       } else {
-        throw new Error('cannot print server URLs before server is listening.')
+        throw new Error('Cannot print server URLs before server is listening.')
       }
     },
     bindCLIShortcuts(options) {

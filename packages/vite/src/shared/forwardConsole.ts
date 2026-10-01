@@ -1,0 +1,221 @@
+import type { ForwardConsolePayload } from '#types/customEvent'
+import {
+  type NormalizedModuleRunnerTransport,
+  SendBeforeConnectError,
+} from './moduleRunnerTransport'
+import { prettyFormat } from './pretty-format'
+
+export type ForwardConsoleLogLevel =
+  | 'error'
+  | 'warn'
+  | 'info'
+  | 'log'
+  | 'debug'
+  | (string & {})
+
+export interface ForwardConsoleOptions {
+  unhandledErrors?: boolean
+  logLevels?: ForwardConsoleLogLevel[]
+}
+
+export interface ResolvedForwardConsoleOptions {
+  enabled: boolean
+  unhandledErrors: boolean
+  logLevels: ForwardConsoleLogLevel[]
+}
+
+export function setupForwardConsoleHandler(
+  transport: NormalizedModuleRunnerTransport,
+  options: ResolvedForwardConsoleOptions,
+  console: Console = globalThis.console,
+): void {
+  if (!options.enabled) {
+    return
+  }
+
+  async function sendError(type: 'error' | 'unhandled-rejection', error: any) {
+    await transport.send({
+      type: 'custom',
+      event: 'vite:forward-console',
+      data: {
+        type,
+        data: {
+          name: error?.name || 'Unknown Error',
+          message: error?.message || String(error),
+          stack: error?.stack,
+        },
+      } satisfies ForwardConsolePayload,
+    })
+  }
+
+  async function sendLog(level: ForwardConsoleLogLevel, args: unknown[]) {
+    try {
+      await transport.send({
+        type: 'custom',
+        event: 'vite:forward-console',
+        data: {
+          type: 'log',
+          data: {
+            level,
+            message: truncateConsoleMessage(formatConsoleArgs(args)),
+          },
+        } satisfies ForwardConsolePayload,
+      })
+    } catch (err) {
+      try {
+        await sendError('unhandled-rejection', err)
+      } catch (err) {
+        if (!(err instanceof SendBeforeConnectError)) {
+          originalConsoleError('Failed to send error to Vite server:', err)
+        }
+      }
+    }
+  }
+
+  const originalConsoleError = console.error
+
+  for (const level of options.logLevels) {
+    const original = (console as any)[level]
+    if (typeof original !== 'function') {
+      continue
+    }
+    ;(console as any)[level] = (...args: unknown[]) => {
+      original(...args)
+      sendLog(level, args)
+    }
+  }
+
+  if (options.unhandledErrors && typeof window !== 'undefined') {
+    window.addEventListener('error', async (event) => {
+      // `ErrorEvent` doesn't necessarily have `ErrorEvent.error`.
+      // Use `ErrorEvent.message` as fallback e.g. for ResizeObserver error.
+      // https://developer.mozilla.org/en-US/docs/Web/API/ErrorEvent/error
+      // https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver#observation_errors
+      const error =
+        event.error ?? (event.message ? new Error(event.message) : event)
+      try {
+        await sendError('error', error)
+      } catch (err) {
+        if (!(err instanceof SendBeforeConnectError)) {
+          originalConsoleError('Failed to send error to Vite server:', err)
+        }
+      }
+    })
+
+    window.addEventListener('unhandledrejection', async (event) => {
+      try {
+        await sendError('unhandled-rejection', event.reason)
+      } catch (err) {
+        if (!(err instanceof SendBeforeConnectError)) {
+          originalConsoleError('Failed to send error to Vite server:', err)
+        }
+      }
+    })
+  }
+}
+
+// Zero dep version of Vitest's console formatter
+// https://github.com/vitest-dev/vitest/blob/a2d650e00dbd8220397c5c25aef05c850100e446/packages/utils/src/display.ts#L129
+export function formatConsoleArgs(args: unknown[]): string {
+  if (args.length === 0) {
+    return ''
+  }
+
+  if (typeof args[0] !== 'string') {
+    return args.map((arg) => stringifyConsoleArg(arg)).join(' ')
+  }
+
+  const len = args.length
+  let i = 1
+  let message = args[0].replace(/%[sdjifoOc%]/g, (specifier) => {
+    if (specifier === '%%') {
+      return '%'
+    }
+    if (i >= len) {
+      return specifier
+    }
+
+    const arg = args[i++]
+    switch (specifier) {
+      case '%s':
+        if (typeof arg === 'bigint') {
+          return `${arg.toString()}n`
+        }
+        return typeof arg === 'object' && arg != null
+          ? stringifyConsoleArg(arg)
+          : String(arg)
+      case '%d':
+        if (typeof arg === 'bigint') {
+          return `${arg.toString()}n`
+        }
+        if (typeof arg === 'symbol') {
+          return 'NaN'
+        }
+        return Number(arg).toString()
+      case '%i':
+        if (typeof arg === 'bigint') {
+          return `${arg.toString()}n`
+        }
+        return Number.parseInt(String(arg), 10).toString()
+      case '%f':
+        return Number.parseFloat(String(arg)).toString()
+      case '%o':
+      case '%O':
+        return stringifyConsoleArg(arg)
+      case '%j':
+        try {
+          const serialized = JSON.stringify(arg)
+          return serialized ?? 'undefined'
+        } catch {
+          return '[Circular]'
+        }
+      case '%c':
+        return ''
+      default:
+        return specifier
+    }
+  })
+
+  for (let arg = args[i]; i < len; arg = args[++i]) {
+    if (arg == null || typeof arg !== 'object') {
+      message += ` ${typeof arg === 'symbol' ? arg.toString() : String(arg)}`
+    } else {
+      message += ` ${stringifyConsoleArg(arg)}`
+    }
+  }
+
+  return message
+}
+
+function stringifyConsoleArg(value: unknown): string {
+  if (typeof value === 'string') {
+    return value
+  }
+  if (value instanceof Error) {
+    return value.stack || `${value.name}: ${value.message}`
+  }
+
+  try {
+    return prettyFormat(value)
+  } catch {
+    return String(value)
+  }
+}
+
+// hard-truncate the generated string in addition to pretty-format-level structural truncation
+const MAX_CONSOLE_MESSAGE_LENGTH = 10_000
+
+function truncateConsoleMessage(message: string): string {
+  if (message.length <= MAX_CONSOLE_MESSAGE_LENGTH) {
+    return message
+  }
+  let end = MAX_CONSOLE_MESSAGE_LENGTH - 1
+  if (isHighSurrogate(message[end - 1])) {
+    end--
+  }
+  return `${message.slice(0, end)}…`
+}
+
+function isHighSurrogate(value: string): boolean {
+  return value >= '\uD800' && value <= '\uDBFF'
+}

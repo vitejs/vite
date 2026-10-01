@@ -108,7 +108,7 @@ pre.frame {
 
 .message {
   line-height: 1.3;
-  font-weight: 600;
+  font-weight: 400;
   white-space: pre-wrap;
 }
 

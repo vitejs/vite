@@ -5,12 +5,15 @@ import {
   getBg,
   getColor,
   isBuild,
+  isBundled,
   page,
+  readFile,
   viteTestUrl,
 } from '~utils'
 
 // note: tests should retrieve the element at the beginning of test and reuse it
 // in later assertions to ensure CSS HMR doesn't reload the page
+
 test('linked css', async () => {
   const linked = await page.$('.linked')
   const atImport = await page.$('.linked-at-import')
@@ -45,6 +48,13 @@ test('css import from js', async () => {
   await expect.poll(() => getColor(atImport)).toBe('blue')
 })
 
+test('@import external css', async () => {
+  const icon = page.locator('.icon--mdi-light--help-circle')
+  await expect
+    .poll(() => icon.evaluate((span) => getComputedStyle(span).maskImage))
+    .toContain('data:image/svg+xml,')
+})
+
 test('css modules', async () => {
   const imported = await page.$('.modules')
   expect(await getColor(imported)).toBe('turquoise')
@@ -70,6 +80,22 @@ test.runIf(isBuild)('minify css', async () => {
   expect(cssFile).not.toMatch('#ffff00b3')
 })
 
+test.runIf(isBuild)('minify inline style', () => {
+  expect(readFile('dist/index.html')).toContain(
+    '<style>.inline-style{color:red}</style>',
+  )
+})
+
+test.runIf(isBuild)('escapes closing style tags in inline CSS', () => {
+  expect(readFile('dist/index.html')).toContain(
+    '<style>.escaped-closing-style{content:"<\\/style>"}</style>',
+  )
+})
+
+test.runIf(isBuild)('does not run the visitor again during minify', () => {
+  expect(readFile('dist/media-query-visits.txt')).toBe('2')
+})
+
 test('css with external url', async () => {
   const css = await page.$('.external')
   expect(await getBg(css)).toMatch('url("https://vite.dev/logo.svg")')
@@ -78,7 +104,7 @@ test('css with external url', async () => {
 test('nested css with relative asset', async () => {
   const css = await page.$('.nested-css-relative-asset')
   expect(await getBg(css)).toMatch(
-    isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+    isBundled ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
 })
 

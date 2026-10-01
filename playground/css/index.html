@@ -24,6 +24,9 @@
     <span class="nesting">PostCSS nesting plugin: this should be pink</span>
   </p>
   <p class="inject-url">PostCSS plugin: this should have a background image</p>
+  <p class="inject-url-once-exit">
+    PostCSS plugin injecting at OnceExit: this should have a background image
+  </p>
 
   <p class="sass">SASS: This should be orange</p>
   <p class="sass-at-import">
@@ -158,6 +161,11 @@
     <span class="layers-green">green</span>
   </p>
 
+  <p>
+    External CSS:
+    <span class="icon--mdi-light icon--mdi-light--help-circle"></span>
+  </p>
+
   <p class="css-dep">
     @import dependency w/ style entrypoints: this should be purple
   </p>
@@ -173,6 +181,10 @@
   </p>
   <p class="css-dep-exports-deep-sass">
     @import dependency w/ sass export mapping (deep): this should be orange
+  </p>
+  <p class="css-dep-exports-partial-sass">
+    @import dependency w/ sass export wildcard mapping to a `_partial.scss`:
+    this should be orange
   </p>
 
   <p class="css-proxy-dep">

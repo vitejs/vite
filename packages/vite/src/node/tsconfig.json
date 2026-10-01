@@ -5,7 +5,7 @@
   "compilerOptions": {
     // https://github.com/microsoft/TypeScript/wiki/Node-Target-Mapping#node-20
     "lib": ["ES2023", "DOM"], // DOM because we have client code that gets inlined via function.toString()
-    "target": "ES2023",
+    "target": "es2023",
     "skipLibCheck": true, // lib check is done on final types
     "stripInternal": true,
     "paths": {

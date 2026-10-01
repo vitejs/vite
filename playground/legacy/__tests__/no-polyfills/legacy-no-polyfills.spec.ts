@@ -14,3 +14,11 @@ test.runIf(isBuild)('includes a script tag for SystemJS', async () => {
     .poll(() => page.getAttribute('#vite-legacy-entry', 'data-src'))
     .toMatch(/.\/assets\/index-legacy-(.+)\.js/)
 })
+
+test.runIf(isBuild)(
+  'does not emit modulepreload links for legacy-only output',
+  async () => {
+    await page.goto(viteTestUrl + '/no-polyfills.html')
+    expect(await page.content()).not.toContain('modulepreload')
+  },
+)

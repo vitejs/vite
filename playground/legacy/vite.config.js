@@ -4,6 +4,10 @@ import legacy from '@vitejs/plugin-legacy'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
+  input: {
+    index: path.resolve(import.meta.dirname, 'index.html'),
+    nested: path.resolve(import.meta.dirname, 'nested/index.html'),
+  },
   base: './',
   plugins: [
     legacy({
@@ -17,11 +21,8 @@ export default defineConfig({
     manifest: true,
     sourcemap: true,
     assetsInlineLimit: 100, // keep SVG as assets URL
-    rollupOptions: {
-      input: {
-        index: path.resolve(import.meta.dirname, 'index.html'),
-        nested: path.resolve(import.meta.dirname, 'nested/index.html'),
-      },
+    emptyOutDir: false, // the dist directory is shared with other configs
+    rolldownOptions: {
       output: {
         chunkFileNames(chunkInfo) {
           if (chunkInfo.name === 'immutable-chunk') {

@@ -1,12 +1,12 @@
-import { defineConfig } from 'vite'
 import { composeVisitors } from 'lightningcss'
-import baseConfig from './vite.config.js'
+import { defineConfig } from 'vite'
 import {
   nestedLikePlugin,
   testDirDep,
   testInjectUrl,
   testSourceInput,
-} from './lightningcss-plugins'
+} from './lightningcss-plugins.js'
+import baseConfig from './vite.config.js'
 
 export default defineConfig({
   ...baseConfig,
@@ -19,7 +19,7 @@ export default defineConfig({
       },
       visitor: composeVisitors([
         nestedLikePlugin(),
-        testDirDep(),
+        testDirDep,
         testSourceInput(),
         testInjectUrl(),
       ]),

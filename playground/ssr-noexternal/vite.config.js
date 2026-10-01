@@ -12,7 +12,7 @@ export default defineConfig({
   build: {
     target: 'esnext',
     minify: false,
-    rollupOptions: {
+    rolldownOptions: {
       external: ['@vitejs/test-external-cjs'],
     },
   },

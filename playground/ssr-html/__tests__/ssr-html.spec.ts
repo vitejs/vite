@@ -1,10 +1,11 @@
 import { execFile } from 'node:child_process'
-import { promisify } from 'node:util'
 import path from 'node:path'
+import { setTimeout } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
+import { promisify } from 'node:util'
 import { describe, expect, test } from 'vitest'
-import { port } from './serve'
 import { editFile, isServe, page } from '~utils'
+import { port, serverLogs } from './serve'
 
 const url = `http://localhost:${port}`
 
@@ -40,6 +41,32 @@ describe.runIf(isServe)('injected inline scripts', () => {
     for (const code of scriptContents) {
       expect(code).toBeTruthy()
     }
+  })
+})
+
+describe.runIf(isServe)('trailing slash html paths', () => {
+  test('pre-transforms relative module scripts from the trailing slash directory', async () => {
+    serverLogs.length = 0
+
+    const response = await fetch(`${url}/trailing-slash/dir/`)
+    expect(response.status).toBe(200)
+    await response.text()
+
+    await setTimeout(100) // wait for pre-transform to happen
+    expect(serverLogs).not.toEqual(
+      expect.arrayContaining([expect.stringContaining('Pre-transform error')]),
+    )
+  })
+
+  test('loads relative module scripts from the trailing slash directory', async () => {
+    await page.goto(`${url}/trailing-slash/dir/`)
+
+    await expect
+      .poll(() => page.textContent('.relative-script'))
+      .toBe('relative module loaded')
+    await expect
+      .poll(() => page.textContent('.relative-parent-script'))
+      .toBe('relative parent module loaded')
   })
 })
 
