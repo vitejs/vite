@@ -4,7 +4,7 @@ import colors from 'picocolors'
 import { glob, isDynamicPattern } from 'tinyglobby'
 import { FS_PREFIX } from '../constants'
 import type { ViteDevServer } from '../index'
-import { normalizePath } from '../utils'
+import { isHTMLRequest, normalizePath } from '../utils'
 import type { DevEnvironment } from './environment'
 
 export function warmupFiles(
@@ -27,7 +27,7 @@ async function warmupFile(
   // transform html with the `transformIndexHtml` hook as Vite internals would
   // pre-transform the imported JS modules linked. this may cause `transformIndexHtml`
   // plugins to be executed twice, but that's probably fine.
-  if (file.endsWith('.html')) {
+  if (isHTMLRequest(file)) {
     const url = htmlFileToUrl(file, server.config.root)
     if (url) {
       try {
