@@ -25,6 +25,7 @@ import {
   isCSSRequest,
   isImportRequest,
   isJSRequest,
+  joinUrlSegments,
   normalizePath,
   prettifyUrl,
   removeImportQuery,
@@ -158,12 +159,25 @@ export function transformMiddleware(
         if (depsOptimizer?.isOptimizedDepUrl(url)) {
           // If the browser is requesting a source map for an optimized dep, it
           // means that the dependency has already been pre-bundled and loaded
-          const sourcemapPath = url.startsWith(FS_PREFIX)
-            ? fsPathFromId(url)
-            : normalizePath(path.resolve(server.config.root, url.slice(1)))
+          const sourcemapPath = withoutQuery.startsWith(FS_PREFIX)
+            ? fsPathFromId(withoutQuery)
+            : normalizePath(
+                path.resolve(server.config.root, withoutQuery.slice(1)),
+              )
           // url may contain relative path that may resolve outside of the optimized deps directory
           if (!depsOptimizer.isOptimizedDepFile(sourcemapPath)) {
             return next()
+          }
+          // prefer the transform result's map, which includes follow-up transforms
+          const originalUrl =
+            withoutQuery.replace(/\.map$/, '') + url.slice(withoutQuery.length)
+          const transformResultMap = (
+            await environment.moduleGraph.getModuleByUrl(originalUrl)
+          )?.transformResult?.map
+          if (transformResultMap && transformResultMap.mappings) {
+            return send(req, res, JSON.stringify(transformResultMap), 'json', {
+              headers: server.config.server.headers,
+            })
           }
           try {
             const map = JSON.parse(
@@ -260,12 +274,21 @@ export function transformMiddleware(
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
           const isDep =
             DEP_VERSION_RE.test(url) || depsOptimizer?.isOptimizedDepUrl(url)
+          // serve dep sourcemaps as external files instead of inlining them
+          // (https://github.com/vitejs/vite/issues/23549)
+          const sourcemapUrl = isDep
+            ? joinUrlSegments(
+                server.config.base,
+                `${withoutQuery}.map${url.slice(withoutQuery.length)}`,
+              )
+            : undefined
           return send(req, res, result.code, type, {
             etag: result.etag,
             // allow browser to cache npm deps!
             cacheControl: isDep ? 'max-age=31536000,immutable' : 'no-cache',
             headers: server.config.server.headers,
             map: result.map,
+            sourcemapUrl,
           })
         }
       }

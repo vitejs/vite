@@ -9,7 +9,7 @@ import getEtag from 'etag'
 import MagicString from 'magic-string'
 import type { SourceMap } from 'rolldown'
 import { createDebugger, removeTimestampQuery } from '../utils'
-import { getCodeWithSourcemap } from './sourcemap'
+import { getCodeWithSourcemap, getCodeWithSourcemapUrl } from './sourcemap'
 
 const debug = createDebugger('vite:send', {
   onlyWhenFocused: true,
@@ -27,6 +27,8 @@ export interface SendOptions {
   cacheControl?: string
   headers?: OutgoingHttpHeaders
   map?: SourceMap | { mappings: '' } | null
+  /** when set, reference the sourcemap via this URL instead of inlining it */
+  sourcemapUrl?: string
 }
 
 export function send(
@@ -41,6 +43,7 @@ export function send(
     cacheControl = 'no-cache',
     headers,
     map,
+    sourcemapUrl,
   } = options
 
   if (res.writableEnded) {
@@ -66,7 +69,9 @@ export function send(
   // inject source map reference
   if (map && 'version' in map && map.mappings) {
     if (type === 'js' || type === 'css') {
-      content = getCodeWithSourcemap(type, content.toString(), map)
+      content = sourcemapUrl
+        ? getCodeWithSourcemapUrl(type, content.toString(), sourcemapUrl)
+        : getCodeWithSourcemap(type, content.toString(), map)
     }
   }
   // inject fallback sourcemap for js for improved debugging
