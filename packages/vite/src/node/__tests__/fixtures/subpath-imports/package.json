@@ -1,0 +1,10 @@
+{
+  "name": "@vitejs/test-subpath-imports",
+  "private": true,
+  "version": "0.0.0",
+  "imports": {
+    "#/*": "./root-slash/*",
+    "##/*": "./double-hash/*",
+    "#query": "./query.json"
+  }
+}

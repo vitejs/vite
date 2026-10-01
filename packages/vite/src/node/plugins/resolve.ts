@@ -506,8 +506,12 @@ export function resolveSubpathImports(
   const pkgData = findNearestPackageData(basedir, options.packageCache)
   if (!pkgData) return
 
-  let { file: idWithoutPostfix, postfix } = splitFileAndPostfix(id.slice(1))
-  idWithoutPostfix = '#' + idWithoutPostfix
+  // keep the leading `#` run so that `##/foo` is not cut at the second `#`
+  const hashes = id.match(/^#+/)![0]
+  let { file: idWithoutPostfix, postfix } = splitFileAndPostfix(
+    id.slice(hashes.length),
+  )
+  idWithoutPostfix = hashes + idWithoutPostfix
 
   let importsPath = resolveExportsOrImports(
     pkgData.data,
