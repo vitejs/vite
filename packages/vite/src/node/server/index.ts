@@ -94,7 +94,7 @@ import {
   serveRawFsMiddleware,
   serveStaticMiddleware,
 } from './middlewares/static'
-import { timeMiddleware } from './middlewares/time'
+import { isTimeDebugEnabled, timeMiddleware } from './middlewares/time'
 import {
   cachedTransformMiddleware,
   transformMiddleware,
@@ -989,7 +989,7 @@ export async function _createServer(
   // Pre applied internal middlewares ------------------------------------------
 
   // request timer
-  if (process.env.DEBUG) {
+  if (isTimeDebugEnabled) {
     middlewares.use(timeMiddleware(root))
   }
 
