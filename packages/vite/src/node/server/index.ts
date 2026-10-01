@@ -625,6 +625,8 @@ export async function _createServer(
     ),
   )
 
+  // Release previous environments after initialization to prevent memory leaks
+  // from retaining old server graphs across restarts.
   options.previousEnvironments = undefined
 
   // Backward compatibility
