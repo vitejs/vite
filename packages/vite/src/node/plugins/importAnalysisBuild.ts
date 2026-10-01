@@ -604,7 +604,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           if (s.hasChanged()) {
             chunk.code = s.toString()
             if (buildSourcemap && chunk.map) {
-              // Avoid encoding mappings only for combineSourcemaps to decode them.
               const nextMap = s.generateDecodedMap({
                 source: chunk.fileName,
                 hires: 'boundary',
