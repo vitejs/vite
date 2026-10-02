@@ -1,13 +1,19 @@
 import { EventEmitter } from 'node:events'
 import path from 'node:path'
 import colors from 'picocolors'
+import picomatch from 'picomatch'
 import type { OutputOptions, WatcherOptions } from 'rolldown'
 import type { DevWatchOptions } from 'rolldown/experimental'
 import { escapePath } from 'tinyglobby'
 import type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
 import { withTrailingSlash } from '../shared/utils'
 import type { Logger } from './logger'
-import { arraify, normalizePath } from './utils'
+import {
+  arraify,
+  isParentDirectory,
+  isSameFilePath,
+  normalizePath,
+} from './utils'
 
 export function getResolvedOutDirs(
   root: string,
@@ -58,11 +64,35 @@ export function resolveEmptyOutDir(
 export type ServerWatchOptions = WatchOptions &
   Omit<DevWatchOptions, 'enabled' | 'skipWrite'>
 
+/**
+ * The default ignored directories (`.git`, `node_modules` and Playwright's
+ * `test-results`). Inside the project root they are matched against the path
+ * relative to the root, so that they do not apply when the project itself is
+ * located in a directory with one of these names.
+ */
+function createDefaultIgnored(root: string): (filePath: string) => boolean {
+  const isIgnored = picomatch(
+    ['**/.git/**', '**/node_modules/**', '**/test-results/**'],
+    { dot: true },
+  )
+  const normalizedRoot = normalizePath(root)
+  const rootWithSlash = withTrailingSlash(normalizedRoot)
+  return (filePath) => {
+    const normalizedPath = normalizePath(filePath)
+    if (isSameFilePath(normalizedRoot, normalizedPath)) return false
+    if (isParentDirectory(normalizedRoot, normalizedPath)) {
+      return isIgnored(normalizedPath.slice(rootWithSlash.length))
+    }
+    return isIgnored(normalizedPath)
+  }
+}
+
 export function resolveChokidarOptions(
   options: ServerWatchOptions | undefined,
   resolvedOutDirs: Set<string>,
   emptyOutDir: boolean,
   cacheDir: string,
+  root: string,
 ): WatchOptions {
   const {
     ignored: ignoredList,
@@ -76,9 +106,7 @@ export function resolveChokidarOptions(
     ...otherOptions
   } = options ?? {}
   const ignored: WatchOptions['ignored'] = [
-    '**/.git/**',
-    '**/node_modules/**',
-    '**/test-results/**', // Playwright
+    createDefaultIgnored(root),
     escapePath(cacheDir) + '/**',
     ...arraify(ignoredList || []),
   ]
