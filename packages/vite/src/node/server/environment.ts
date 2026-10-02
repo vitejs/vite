@@ -169,6 +169,18 @@ export class DevEnvironment extends BaseEnvironment {
             : { type: 'RegExp', source: builtin.source, flags: builtin.flags },
         )
       },
+      resolveBundledModuleUrl: (url) => {
+        if (!this.bundledDev) {
+          throw new Error('full bundle mode is not enabled in this environment')
+        }
+        return this.bundledDev.resolveEntry(url)
+      },
+      resolveBundledModuleId: (url) => {
+        if (!this.bundledDev) {
+          throw new Error('full bundle mode is not enabled in this environment')
+        }
+        return this.bundledDev.resolveEntryModuleId(url)
+      },
     })
 
     this.hot.on(

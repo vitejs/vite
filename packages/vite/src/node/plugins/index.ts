@@ -103,6 +103,7 @@ export async function resolvePlugins(
             ...config,
             consumer: 'client',
             isBundled: true,
+            nativeModuleRunner: false,
             optimizeDepsPluginNames: [],
           }
         : undefined,
