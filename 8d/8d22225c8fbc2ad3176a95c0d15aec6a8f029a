@@ -1,0 +1,867 @@
+.git-blame-ignore-revs
+  s_55569f6eb811bb::t_a842a28431d49a 5-6
+.github/PULL_REQUEST_TEMPLATE.md
+  s_55569f6eb811bb::t_530cefd40472b3 10,14-19
+.github/actions/issues-helper/action.yml
+  s_55569f6eb811bb::t_4cb317b2a630a0 6,12,28,45,68,82-96,99,151
+.github/workflows/bot.yml
+  s_55569f6eb811bb::t_700b383f3889c8 1-148
+.github/workflows/ci.yml
+  s_55569f6eb811bb::t_f768f1d9783aa5 42,73,79,84-85,87-88,90-91,93-94,111,127,162,166-167,169-170
+.github/workflows/copilot-setup-steps.yml
+  s_55569f6eb811bb::t_1d8932145d45ed 17,21-22,24-25
+.github/workflows/ecosystem-ci-trigger.yml
+  s_55569f6eb811bb::t_9880d38dc416ba 17,58,114,140,152,173,243
+.github/workflows/prepare-release.yml
+  s_55569f6eb811bb::t_32ac31dd3e8134 6-10,39,53-61,63,65,69-70,72,85,92
+.github/workflows/preview-release.yml
+  s_55569f6eb811bb::t_06de44026660d2 26,33-36
+.github/workflows/publish.yml
+  s_55569f6eb811bb::t_714ebbe82a1ec4 7,23,27-28,30,49,66-69
+.github/workflows/semantic-pull-request.yml
+  s_55569f6eb811bb::t_89b532dadca2f4 10,21
+.github/workflows/semgrep.yml
+  s_55569f6eb811bb::t_6eb9455b03beff 17,19,34
+.github/workflows/zizmor.yml
+  s_55569f6eb811bb::t_4107f0c46acba6 25,30
+.gitignore
+  s_55569f6eb811bb::t_0955213641b960 18-19
+.oxfmtrc.json
+  s_55569f6eb811bb::t_e6c69c54e3c221 6-10
+CONTRIBUTING.md
+  s_55569f6eb811bb::t_a02ca0222074c7 61-62,103,224-234,355-358,363,372
+docs/.vitepress/buildEnd.config.ts
+  s_55569f6eb811bb::t_d51afce0d7a45f 2
+docs/.vitepress/config.ts
+  s_55569f6eb811bb::t_d86db525a83d46 1-3,6,116-118
+docs/.vitepress/theme/components/AsideSponsors.vue
+  s_55569f6eb811bb::t_40bbb479e63da6 6,22,31-32
+docs/.vitepress/theme/components/SupportedVersions.vue
+  s_55569f6eb811bb::t_9ef091b08b36fc 148-154
+docs/.vitepress/theme/composables/sponsor.ts
+  s_55569f6eb811bb::t_5ffc02d203603a 2
+docs/.vitepress/theme/index.ts
+  s_55569f6eb811bb::t_7e0ef5cb3e32f5 2,6,11,13-14
+docs/.vitepress/theme/landing/FeatureGrid1.vue
+  s_55569f6eb811bb::t_524b2e06690aa5 3
+docs/.vitepress/theme/landing/FeatureGrid2.vue
+  s_55569f6eb811bb::t_7675094629e437 3
+docs/.vitepress/theme/landing/Hero.vue
+  s_55569f6eb811bb::t_e020a8c1306a05 3
+docs/.vitepress/theme/landing/Layout.vue
+  s_55569f6eb811bb::t_01329bd6694730 3,6,8,10-14
+docs/.vitepress/theme/live/Layout.vue
+  s_55569f6eb811bb::t_6dced444620e5c 2-3,6
+docs/.vitepress/theme/live/VideoIframe.vue
+  s_55569f6eb811bb::t_88b3fd924f6550 3
+docs/_data/acknowledgements.data.ts
+  s_55569f6eb811bb::t_1c641ecfd5ac65 16
+docs/config/build-options.md
+  s_55569f6eb811bb::t_621bb011b6555c 89,130,169-170
+docs/config/index.md
+  s_55569f6eb811bb::t_083c2e3d1fdfc4 33,42
+docs/config/server-options.md
+  s_55569f6eb811bb::t_ff2e42ff02a127 470,476,481-482,484
+docs/config/shared-options.md
+  s_55569f6eb811bb::t_8323b2a7eea83f 627-642,646-659
+docs/guide/api-environment-frameworks.md
+  s_55569f6eb811bb::t_41d97948e9f13a 183,192,255,264,270,280,282
+docs/guide/api-environment-plugins.md
+  s_55569f6eb811bb::t_cfbe3dc4c9ce71 245-246
+docs/guide/api-environment.md
+  s_55569f6eb811bb::t_bf314664fa8c5f 29
+docs/guide/api-hmr.md
+  s_55569f6eb811bb::t_f85877cd88f032 172
+docs/guide/api-javascript.md
+  s_55569f6eb811bb::t_55258dfe6fcc50 3,208
+docs/guide/api-plugin.md
+  s_55569f6eb811bb::t_eeb96d25d07737 535,856
+docs/guide/features.md
+  s_55569f6eb811bb::t_70fa8866cb93cd 56
+docs/guide/ssr.md
+  s_55569f6eb811bb::t_f113db196e3a5c 105-150
+docs/guide/static-deploy-github-pages.yaml
+  s_55569f6eb811bb::t_43d716113f46ee 55
+docs/guide/troubleshooting.md
+  s_55569f6eb811bb::t_85b4a56efc325a 138-151
+docs/package.json
+  s_55569f6eb811bb::t_25502c8d3883c1 11,14,16,19-21
+docs/plugins/index.md
+  s_55569f6eb811bb::t_3335e884016f0f 45,47,49
+eslint.config.js
+  s_55569f6eb811bb::t_1e9957b2857341 2-3,6,10,58,160-165
+package.json
+  s_55569f6eb811bb::t_d3508e26b43f2f 44,52,56,59-60,62-64,66-67,69-70,72,74,93
+packages/create-vite/CHANGELOG.md
+  s_55569f6eb811bb::t_dce44382ff71a4 1-25
+packages/create-vite/LICENSE
+  s_55569f6eb811bb::t_630e0d4189f352 149,466,468-469,473,475-480,482-483,485-491,495,497-498,502
+packages/create-vite/package.json
+  s_55569f6eb811bb::t_7f8aaa690eb9e1 3,37,40-41
+packages/create-vite/src/index.ts
+  s_55569f6eb811bb::t_dad5175bd936a0 1,8-9,174-181,188,284-291,298,418-421,426-429,642-643,645,827,881,885,887,889,1083-1086,1114-1116
+packages/create-vite/template-lit-ts/package.json
+  s_55569f6eb811bb::t_9a024f6fc5c1fe 16
+packages/create-vite/template-lit-ts/src/my-element.ts
+  s_55569f6eb811bb::t_adb61ba4f32e9b 3
+packages/create-vite/template-lit/package.json
+  s_55569f6eb811bb::t_89200361f7fac7 15
+packages/create-vite/template-lit/src/my-element.js
+  s_55569f6eb811bb::t_72c6d0a0040ecb 2
+packages/create-vite/template-preact-ts/package.json
+  s_55569f6eb811bb::t_e2684e9068a08a 16,18
+packages/create-vite/template-preact-ts/src/app.tsx
+  s_55569f6eb811bb::t_78cbb8264811a4 2
+packages/create-vite/template-preact-ts/vite.config.ts
+  s_55569f6eb811bb::t_9b76569f55ff57 2
+packages/create-vite/template-preact/package.json
+  s_55569f6eb811bb::t_d27304d807bb0b 16
+packages/create-vite/template-preact/src/app.jsx
+  s_55569f6eb811bb::t_12394a699d1ffc 2
+packages/create-vite/template-preact/vite.config.js
+  s_55569f6eb811bb::t_72e777828acfe2 2
+packages/create-vite/template-qwik-ts/package.json
+  s_55569f6eb811bb::t_59f3fbe261aa92 12,15,18
+packages/create-vite/template-qwik-ts/src/app.tsx
+  s_55569f6eb811bb::t_bc6391ed7c4f7f 3
+packages/create-vite/template-qwik-ts/vite.config.ts
+  s_55569f6eb811bb::t_25395d74f8f213 2
+packages/create-vite/template-qwik/package.json
+  s_55569f6eb811bb::t_96177761a55819 13,16
+packages/create-vite/template-qwik/src/app.jsx
+  s_55569f6eb811bb::t_94218891a13613 3
+packages/create-vite/template-qwik/vite.config.js
+  s_55569f6eb811bb::t_99aace4fa4fa53 2
+packages/create-vite/template-react-ts/package.json
+  s_55569f6eb811bb::t_986a48199e23da 13-14,17-21,23
+packages/create-vite/template-react-ts/src/App.tsx
+  s_55569f6eb811bb::t_d271412208223f 2
+packages/create-vite/template-react-ts/vite.config.ts
+  s_55569f6eb811bb::t_07f87790d19301 2
+packages/create-vite/template-react/package.json
+  s_55569f6eb811bb::t_bf75d9c8883c4c 13-14,17-21
+packages/create-vite/template-react/src/App.jsx
+  s_55569f6eb811bb::t_effceb6d1c7868 2
+packages/create-vite/template-react/vite.config.js
+  s_55569f6eb811bb::t_423f4bde0352d4 2
+packages/create-vite/template-solid-ts/package.json
+  s_55569f6eb811bb::t_462bec7da97d4c 12,15,17
+packages/create-vite/template-solid-ts/src/App.tsx
+  s_55569f6eb811bb::t_6de06f2b28b4e9 2
+packages/create-vite/template-solid/package.json
+  s_55569f6eb811bb::t_0176a68cfe42bb 12,15
+packages/create-vite/template-solid/src/App.jsx
+  s_55569f6eb811bb::t_39ae9c64dc7293 2
+packages/create-vite/template-svelte-ts/package.json
+  s_55569f6eb811bb::t_3d4068828524e6 13,15-16,19
+packages/create-vite/template-svelte-ts/vite.config.ts
+  s_55569f6eb811bb::t_c83069f6ff9abd 2
+packages/create-vite/template-svelte/package.json
+  s_55569f6eb811bb::t_f5e37676c54f69 12-14
+packages/create-vite/template-svelte/vite.config.js
+  s_55569f6eb811bb::t_233c1b29a5dc60 2
+packages/create-vite/template-vanilla-ts/package.json
+  s_55569f6eb811bb::t_57417cc594d01e 13
+packages/create-vite/template-vanilla-ts/src/main.ts
+  s_55569f6eb811bb::t_f75bfa86745c78 2
+packages/create-vite/template-vanilla/package.json
+  s_55569f6eb811bb::t_c9363038e51538 12
+packages/create-vite/template-vanilla/src/main.js
+  s_55569f6eb811bb::t_48931ab75d05b8 2
+packages/create-vite/template-vue-ts/package.json
+  s_55569f6eb811bb::t_27e92d0a4f3711 12,15-16,19-20
+packages/create-vite/template-vue-ts/src/components/HelloWorld.vue
+  s_55569f6eb811bb::t_2422f9d6c36dcf 4
+packages/create-vite/template-vue-ts/vite.config.ts
+  s_55569f6eb811bb::t_b968e4da1e70db 2
+packages/create-vite/template-vue/package.json
+  s_55569f6eb811bb::t_db37c098b8a6f1 12,15-16
+packages/create-vite/template-vue/src/components/HelloWorld.vue
+  s_55569f6eb811bb::t_e5aa9abde5b698 4
+packages/create-vite/template-vue/vite.config.js
+  s_55569f6eb811bb::t_4af2582685fe8d 2
+packages/create-vite/tsconfig.json
+  s_55569f6eb811bb::t_4d6322e67d7602 8
+packages/create-vite/tsdown.config.ts
+  s_55569f6eb811bb::t_218e7d941342ff 25-29
+packages/plugin-legacy/CHANGELOG.md
+  s_55569f6eb811bb::t_32b3e8bf2dfe6d 40,60-65
+packages/plugin-legacy/package.json
+  s_55569f6eb811bb::t_43a82a2e8f7a02 43,46,57
+packages/plugin-legacy/src/__tests__/snippets.spec.ts
+  s_55569f6eb811bb::t_4faf984e8545fe 3
+packages/plugin-legacy/src/index.ts
+  s_55569f6eb811bb::t_24489342aac1e4 3,5-9,11-12,29
+packages/vite/CHANGELOG.md
+  s_55569f6eb811bb::t_537ca75e7155d1 1-138,219-220,239-245,261,268-277,389-390,412-420,443-445,450-455,1481,2138
+packages/vite/LICENSE.md
+  s_55569f6eb811bb::t_ed45c8175a64a8 2030-2058
+packages/vite/bin/vite.js
+  s_55569f6eb811bb::t_7f9910499b7608 3
+packages/vite/package.json
+  s_55569f6eb811bb::t_429a1762fa2793 3,73-75,79,89-90,92-93,100,109,124,127-128,131-132,134,138
+packages/vite/rolldown.config.ts
+  s_55569f6eb811bb::t_141b16e3630aae 3,8,47-48,215-218
+packages/vite/rolldown.dts.config.ts
+  s_55569f6eb811bb::t_19668e712192ae 2-4,13-14,420
+packages/vite/rollupLicensePlugin.ts
+  s_55569f6eb811bb::t_25217ee070ccf1 4-5,173
+packages/vite/src/client/bundledDevClient.ts
+  s_55569f6eb811bb::t_4b23be4d85b571 27-34
+packages/vite/src/client/client.ts
+  s_55569f6eb811bb::t_423b9cf51469bc 3-4,6,11
+packages/vite/src/module-runner/evaluatedModules.ts
+  s_55569f6eb811bb::t_b54a286fe44897 2,5
+packages/vite/src/module-runner/hmrHandler.ts
+  s_55569f6eb811bb::t_4555773fb7d71b 4
+packages/vite/src/module-runner/nativeRunner.ts
+  s_55569f6eb811bb::t_405b7754457f2a 10-14,103-113
+packages/vite/src/module-runner/runner.ts
+  s_55569f6eb811bb::t_69842e309a4429 2,8-9,18-21,23,25-32,174
+packages/vite/src/module-runner/sourcemap/interceptor.ts
+  s_55569f6eb811bb::t_4f23dd049a92ec 2-3,105,107,110
+packages/vite/src/module-runner/types.ts
+  s_55569f6eb811bb::t_315b5b810e543d 10-13,22
+packages/vite/src/module-runner/utils.ts
+  s_55569f6eb811bb::t_783c0885a321f4 53
+packages/vite/src/node/__tests__/__snapshots__/utils.spec.ts.snap
+  s_55569f6eb811bb::t_d92de1fdf6b87d 216-228
+packages/vite/src/node/__tests__/assetSource.spec.ts
+  s_55569f6eb811bb::t_7e9a18925c1deb 2
+packages/vite/src/node/__tests__/build.spec.ts
+  s_55569f6eb811bb::t_185b46a9ef5ba2 1,14-15,28,116-135,512-533,582-635,1642,1658,1665-1668,1675-1680
+packages/vite/src/node/__tests__/config.spec.ts
+  s_55569f6eb811bb::t_d8a82d3ef3718c 1,7-8,17-19,25-218,1076-1100,1376-1400,1414-1450,2012-2037
+packages/vite/src/node/__tests__/dev.spec.ts
+  s_55569f6eb811bb::t_9a08e756988292 3,8-9,36-66,190-224
+packages/vite/src/node/__tests__/environment.spec.ts
+  s_55569f6eb811bb::t_95068deff23d23 3,5-6
+packages/vite/src/node/__tests__/external.spec.ts
+  s_55569f6eb811bb::t_2349d388f9b170 3
+packages/vite/src/node/__tests__/fixtures/config/entry/vite.config.ts
+  s_55569f6eb811bb::t_69152f612ad654 3
+packages/vite/src/node/__tests__/fixtures/config/native-compat/json-named-import-bare/node_modules/some-pkg/package.json
+  s_55569f6eb811bb::t_e406d245b70a95 1-3
+packages/vite/src/node/__tests__/fixtures/config/native-compat/json-named-import-bare/vite.config.js
+  s_55569f6eb811bb::t_ced330000ce917 1-3
+packages/vite/src/node/__tests__/fixtures/config/native-compat/json-named-import-ok/data.json
+  s_55569f6eb811bb::t_5d877682b25207 1
+packages/vite/src/node/__tests__/fixtures/config/native-compat/json-named-import-ok/node_modules/some-pkg/package.json
+  s_55569f6eb811bb::t_c72ced156c3f26 1-4
+packages/vite/src/node/__tests__/fixtures/config/native-compat/json-named-import-ok/vite.config.js
+  s_55569f6eb811bb::t_f685ed67747e76 1-8
+packages/vite/src/node/__tests__/fixtures/config/native-compat/json-named-import/data.json
+  s_55569f6eb811bb::t_cc9933f863b8e9 1
+packages/vite/src/node/__tests__/fixtures/config/native-compat/json-named-import/vite.config.js
+  s_55569f6eb811bb::t_1472ed2028dfd7 1-3
+packages/vite/src/node/__tests__/html.spec.ts
+  s_55569f6eb811bb::t_2dc73383129df5 2
+packages/vite/src/node/__tests__/http.spec.ts
+  s_55569f6eb811bb::t_05b6543c1f96b4 6
+packages/vite/src/node/__tests__/optimizer/discoverBeforeListen.spec.ts
+  s_55569f6eb811bb::t_77a874c22da16b 93-161
+packages/vite/src/node/__tests__/oxc.spec.ts
+  s_55569f6eb811bb::t_17b494584d3599 3
+packages/vite/src/node/__tests__/packages.spec.ts
+  s_55569f6eb811bb::t_281d926e1b2755 1-112
+packages/vite/src/node/__tests__/plugins/__snapshots__/license.spec.ts.snap
+  s_55569f6eb811bb::t_36b79579d03f2c 17-22,49-54
+packages/vite/src/node/__tests__/plugins/assetImportMetaUrl.spec.ts
+  s_55569f6eb811bb::t_09bf99cc6f78a9 2,4-5
+packages/vite/src/node/__tests__/plugins/clientInjections.spec.ts
+  s_55569f6eb811bb::t_a42db05784937b 1-18
+packages/vite/src/node/__tests__/plugins/css.spec.ts
+  s_55569f6eb811bb::t_21034a939f398f 3-5
+packages/vite/src/node/__tests__/plugins/cssPreprocessorTeardown.spec.ts
+  s_55569f6eb811bb::t_e763597a4c1814 1
+packages/vite/src/node/__tests__/plugins/define.spec.ts
+  s_55569f6eb811bb::t_7925a412133242 2,4-5
+packages/vite/src/node/__tests__/plugins/dynamicImportVar/parse.spec.ts
+  s_55569f6eb811bb::t_64e125645aae89 3
+packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker/build/devtools/index.js
+  s_55569f6eb811bb::t_fed77a27fe6c27 1-4
+packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker/build/devtools/package.json
+  s_55569f6eb811bb::t_9bf3f59602d7f5 1-6
+packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker/build/esm/index.js
+  s_55569f6eb811bb::t_241ba093334060 1-5
+packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker/build/esm/package.json
+  s_55569f6eb811bb::t_6c3ffd776a8ed9 1-4
+packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker/license
+  s_55569f6eb811bb::t_4ecef660946fe1 1-3
+packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker/package.json
+  s_55569f6eb811bb::t_c307f7b49e20f7 1-9
+packages/vite/src/node/__tests__/plugins/fixtures/license/index.html
+  s_55569f6eb811bb::t_3c947543bb0dc0 4-5
+packages/vite/src/node/__tests__/plugins/fixtures/license/package.json
+  s_55569f6eb811bb::t_3f041be0b219a0 8
+packages/vite/src/node/__tests__/plugins/hooks.spec.ts
+  s_55569f6eb811bb::t_646f1018c7e97e 3,7-9
+packages/vite/src/node/__tests__/plugins/importAnalysisBuild.spec.ts
+  s_55569f6eb811bb::t_93a9545a64dd19 2,4,69-83
+packages/vite/src/node/__tests__/plugins/importGlob/fixture.spec.ts
+  s_55569f6eb811bb::t_b1b7b143dadf89 2
+packages/vite/src/node/__tests__/plugins/index.spec.ts
+  s_55569f6eb811bb::t_ab56ea1a048c7d 91,143,146-147,149-150,152-163
+packages/vite/src/node/__tests__/plugins/modulePreloadPolyfill/modulePreloadPolyfill.spec.ts
+  s_55569f6eb811bb::t_0f4c5ee1ea19c9 2
+packages/vite/src/node/__tests__/plugins/oxc.spec.ts
+  s_55569f6eb811bb::t_0a02773b9c3470 3,157-189
+packages/vite/src/node/__tests__/plugins/pluginFilter.spec.ts
+  s_55569f6eb811bb::t_1951aa067dc30c 2,4
+packages/vite/src/node/__tests__/plugins/terser.spec.ts
+  s_55569f6eb811bb::t_36457907016a9f 3-4
+packages/vite/src/node/__tests__/plugins/worker.spec.ts
+  s_55569f6eb811bb::t_a3f620a04f17d2 3,5,32-44,46-54,56,58-66,68-75,77-79,81-85
+packages/vite/src/node/__tests__/plugins/workerImportMetaUrl.spec.ts
+  s_55569f6eb811bb::t_28de733f0cc0bd 2,4-5
+packages/vite/src/node/__tests__/resolve.spec.ts
+  s_55569f6eb811bb::t_59ee998f946570 3-4
+packages/vite/src/node/__tests__/runnerImport.spec.ts
+  s_55569f6eb811bb::t_cdbb0882d4860e 3,5
+packages/vite/src/node/__tests__/scan.spec.ts
+  s_55569f6eb811bb::t_18bdb05006d2e7 3,88-95,97-104,106-116,119,121
+packages/vite/src/node/__tests__/shortcuts.spec.ts
+  s_55569f6eb811bb::t_447fb6c656cc50 4
+packages/vite/src/node/__tests__/utils.spec.ts
+  s_55569f6eb811bb::t_ecf5d1db9cadcd 2,4-6,8-10,25,32,89-111,225-251,336-339,422-440,672-691,729-740,907-928
+packages/vite/src/node/__tests_dts__/plugin.ts
+  s_55569f6eb811bb::t_eeb4cf94d3ed47 1,8
+packages/vite/src/node/baseEnvironment.ts
+  s_55569f6eb811bb::t_640920b9e8ff84 3
+packages/vite/src/node/build.ts
+  s_55569f6eb811bb::t_61812158199e3a 30,32-33,41-57,59-63,65-71,665-671,748-761,803-811,1909
+packages/vite/src/node/cli.ts
+  s_55569f6eb811bb::t_6dc3fda87e3984 2,4,9-10,13-14,104
+packages/vite/src/node/config.ts
+  s_55569f6eb811bb::t_6d8f2314e5c163 1,5-8,14,27,31,36-53,68-81,91-95,102-125,151-152,395-399,760,809-817,820-823,826-841,843-859,862,864,1598-1606,1608-1613,1621-1624,1651-1658,2105,2114-2116
+packages/vite/src/node/constants.ts
+  s_55569f6eb811bb::t_c4e2522e58c90a 134-135,193
+packages/vite/src/node/env.ts
+  s_55569f6eb811bb::t_1915e5cebe99e7 9
+packages/vite/src/node/environment.ts
+  s_55569f6eb811bb::t_de1ece26ff6a3e 2,5
+packages/vite/src/node/external.ts
+  s_55569f6eb811bb::t_6dddc9e630b987 2-3
+packages/vite/src/node/http.ts
+  s_55569f6eb811bb::t_77ab34e1545003 4-5,8,11
+packages/vite/src/node/idResolver.ts
+  s_55569f6eb811bb::t_998cb5ad5c7c0b 2-3,5,8-9
+packages/vite/src/node/index.ts
+  s_55569f6eb811bb::t_fd7a60843e49a5 128
+packages/vite/src/node/nativeConfigCompat.ts
+  s_55569f6eb811bb::t_62ca5b00cce444 2-3,15,35-36,62-74,79-91,117-134,150,152-156,158-160,166,175-179,184-190,198,259-260
+packages/vite/src/node/optimizer/index.ts
+  s_55569f6eb811bb::t_50cd5834d6c0bc 5,8,15,17,19-24,44,60,78-79,836
+packages/vite/src/node/optimizer/optimizer.ts
+  s_55569f6eb811bb::t_cb10dfa2e9596c 7,61,151-155,161-163,167-168,294,590,760,762,783-784,787
+packages/vite/src/node/optimizer/resolve.ts
+  s_55569f6eb811bb::t_102dc1b8b07b09 5,8-9
+packages/vite/src/node/optimizer/rolldownDepPlugin.ts
+  s_55569f6eb811bb::t_ae3cfd28e56a53 3-4,6,8-9,11-14,124-128,263,269-271,388,406-411,416,424-435
+packages/vite/src/node/optimizer/scan.ts
+  s_55569f6eb811bb::t_99e1e7352c2c81 5-6,11-12,19-26,114
+packages/vite/src/node/packages.ts
+  s_55569f6eb811bb::t_54e63423dfedae 3-5,161-175,181-194
+packages/vite/src/node/plugin.ts
+  s_55569f6eb811bb::t_e6b8beaed5d501 16-17,25-26,28-32,404-410,422-435
+packages/vite/src/node/plugins/asset.ts
+  s_55569f6eb811bb::t_e12c43e9f85a87 3-4,6,8-9,16-21,27-33,48-55,59,145,150,290-294,336,343-345,564-569,573-587,606-614,626,628
+packages/vite/src/node/plugins/assetImportMetaUrl.ts
+  s_55569f6eb811bb::t_7c9259274c9f07 4-5,7-10,19
+packages/vite/src/node/plugins/clientInjections.ts
+  s_55569f6eb811bb::t_486f5d5ea5fd0d 2-3,5-11,13-14,147-148,156,158-167,170-198
+packages/vite/src/node/plugins/css.ts
+  s_55569f6eb811bb::t_899e1a35790690 5-15,37,39-42,50,58-63,66-69,103,110,755-758
+packages/vite/src/node/plugins/define.ts
+  s_55569f6eb811bb::t_486013e2ce6a82 3
+packages/vite/src/node/plugins/dynamicImportVars.ts
+  s_55569f6eb811bb::t_957987176435a2 2,5,8-9,12-13,15
+packages/vite/src/node/plugins/esbuild.ts
+  s_55569f6eb811bb::t_863138ed99ab7d 3,7,14-17,471
+packages/vite/src/node/plugins/esbuildBannerFooterCompatPlugin.ts
+  s_55569f6eb811bb::t_250c26b01a628c 2,4
+packages/vite/src/node/plugins/forwardConsole.ts
+  s_55569f6eb811bb::t_5b4f6286e8f6d7 2
+packages/vite/src/node/plugins/html.ts
+  s_55569f6eb811bb::t_fde4f27d130501 3,11-18,20-27,29,47,172-174,177-189,656-659,702,1078,1083-1086
+packages/vite/src/node/plugins/importAnalysis.ts
+  s_55569f6eb811bb::t_75874b937ddbba 2,4,11,14,16,18-24,32-39,46,77,79-80
+packages/vite/src/node/plugins/importAnalysisBuild.ts
+  s_55569f6eb811bb::t_3e752a8918dee7 2-3,6,9-13,42-45,130,153,158,160,164-192,196-217,271,350-351,451-452,623,629
+packages/vite/src/node/plugins/importMetaGlob.ts
+  s_55569f6eb811bb::t_b3cb60edbbd00c 2,4,6,8-9,11,13-16,265
+packages/vite/src/node/plugins/index.ts
+  s_55569f6eb811bb::t_a7d830f6e0650b 8,10,17,19,22-25,27-29,36-40
+packages/vite/src/node/plugins/license.ts
+  s_55569f6eb811bb::t_53d177636e3729 5-6
+packages/vite/src/node/plugins/manifest.ts
+  s_55569f6eb811bb::t_2bac17361b104f 4-5
+packages/vite/src/node/plugins/modulePreloadPolyfill.ts
+  s_55569f6eb811bb::t_e407038e226247 2
+packages/vite/src/node/plugins/optimizedDeps.ts
+  s_55569f6eb811bb::t_c5633f80cde855 4-5,15-16,65-69
+packages/vite/src/node/plugins/oxc.ts
+  s_55569f6eb811bb::t_7ae081d05f1201 2-4,12-13,16-18,156-158,297
+packages/vite/src/node/plugins/pluginFilter.ts
+  s_55569f6eb811bb::t_1f1a3236e8ab76 5
+packages/vite/src/node/plugins/preAlias.ts
+  s_55569f6eb811bb::t_478506c06935b7 2,10-11,46
+packages/vite/src/node/plugins/prepareOutDir.ts
+  s_55569f6eb811bb::t_2a4e55ff14c4c0 5,7,9
+packages/vite/src/node/plugins/reporter.ts
+  s_55569f6eb811bb::t_7789f31b94403f 5
+packages/vite/src/node/plugins/resolve.ts
+  s_55569f6eb811bb::t_9d98af11a968c2 4,7-13,22-36,261,273
+packages/vite/src/node/plugins/terser.ts
+  s_55569f6eb811bb::t_bb1c57903c1084 9-10,86,89,91,96
+packages/vite/src/node/plugins/wasm.ts
+  s_55569f6eb811bb::t_7b5224cdcbdd9d 4
+packages/vite/src/node/plugins/worker.ts
+  s_55569f6eb811bb::t_c441cf06051e1a 2,4,13-19,22-24
+packages/vite/src/node/plugins/workerImportMetaUrl.ts
+  s_55569f6eb811bb::t_03b4a9c4607753 6-7,11-16
+packages/vite/src/node/preview.ts
+  s_55569f6eb811bb::t_0a1629c6868d5b 4,7,9-11,19-26,28,33-40
+packages/vite/src/node/server/__tests__/moduleGraph.spec.ts
+  s_55569f6eb811bb::t_d13b212ecae977 4
+packages/vite/src/node/server/__tests__/pluginContainer.spec.ts
+  s_55569f6eb811bb::t_9f9faa8d3fdc16 6
+packages/vite/src/node/server/__tests__/sourcemap.spec.ts
+  s_55569f6eb811bb::t_1e93becef07370 1,3-8,77-135
+packages/vite/src/node/server/__tests__/watcher.spec.ts
+  s_55569f6eb811bb::t_cf22c436f0132f 4,8-18,48-121
+packages/vite/src/node/server/bundledDev.ts
+  s_55569f6eb811bb::t_f968689ed586b5 4-7,15-18,20,22,70-71,141,148,180-182,398-410,414-417,458-476,601-602,668,691-700
+packages/vite/src/node/server/environment.ts
+  s_55569f6eb811bb::t_de583ead84c53f 5-6,20-22,29-31,37-38,40
+packages/vite/src/node/server/environments/fetchableEnvironments.ts
+  s_55569f6eb811bb::t_29e80786b5460b 2
+packages/vite/src/node/server/environments/runnableEnvironment.ts
+  s_55569f6eb811bb::t_ba1fd83080f51a 3,6-7,15-16
+packages/vite/src/node/server/hmr.ts
+  s_55569f6eb811bb::t_a301e9f2745fd4 1,7,13,15-23,32-33,862,950,966
+packages/vite/src/node/server/index.ts
+  s_55569f6eb811bb::t_7f9de6ecbfcc42 2,6-12,16,25-34,41-51,72,77-79,81-82,88-91,97-102,106-111,113-115,586-600,603-606,628-631,992
+packages/vite/src/node/server/middlewares/__tests__/indexHtml.spec.ts
+  s_55569f6eb811bb::t_ee1ea1ce21249d 5
+packages/vite/src/node/server/middlewares/base.ts
+  s_55569f6eb811bb::t_2fc4cca406f21a 3
+packages/vite/src/node/server/middlewares/error.ts
+  s_55569f6eb811bb::t_ec9614530012fc 9
+packages/vite/src/node/server/middlewares/htmlFallback.ts
+  s_55569f6eb811bb::t_b84983c39c461f 2,5
+packages/vite/src/node/server/middlewares/indexHtml.ts
+  s_55569f6eb811bb::t_ba66b3dc88e5c1 6,8-12,32,51-52,310-312
+packages/vite/src/node/server/middlewares/memoryFiles.ts
+  s_55569f6eb811bb::t_7fc9f77495e6cc 4
+packages/vite/src/node/server/middlewares/proxy.ts
+  s_55569f6eb811bb::t_da09a696589bb5 6-7,75-90,97,154-158,165-166,213-214
+packages/vite/src/node/server/middlewares/static.ts
+  s_55569f6eb811bb::t_377f7fc8365d52 2-3,7-12,15,181
+packages/vite/src/node/server/middlewares/time.ts
+  s_55569f6eb811bb::t_e9bf5efd7cfcbb 7-8
+packages/vite/src/node/server/middlewares/transform.ts
+  s_55569f6eb811bb::t_1970d032de6746 2,7-20,33,36
+packages/vite/src/node/server/mixedModuleGraph.ts
+  s_55569f6eb811bb::t_06e2d488e6e920 8
+packages/vite/src/node/server/moduleGraph.ts
+  s_55569f6eb811bb::t_4edc4b570b1771 3-4
+packages/vite/src/node/server/openBrowser.ts
+  s_55569f6eb811bb::t_0c4f764e0d79c3 13,17,19,44-47,52
+packages/vite/src/node/server/pluginContainer.ts
+  s_55569f6eb811bb::t_663436bb62d85f 36-39,67-68,70-78,80-84,639
+packages/vite/src/node/server/send.ts
+  s_55569f6eb811bb::t_6b50469e5cb153 10
+packages/vite/src/node/server/sourcemap.ts
+  s_55569f6eb811bb::t_d5d0b3f38fe965 3,6-7,12,53,75-78,90
+packages/vite/src/node/server/transformRequest.ts
+  s_55569f6eb811bb::t_100d4c347f365b 4,7,14-15,17,30-33
+packages/vite/src/node/server/warmup.ts
+  s_55569f6eb811bb::t_b78933b7800000 7
+packages/vite/src/node/server/ws.ts
+  s_55569f6eb811bb::t_3efd30cac66845 1,7,9,14,464
+packages/vite/src/node/shortcuts.ts
+  s_55569f6eb811bb::t_9b6f109d603230 3,7
+"packages/vite/src/node/ssr/__tests__/fixtures/modules/with space/has-error.js"
+  s_55569f6eb811bb::t_1c6628e103ced0 1-3
+packages/vite/src/node/ssr/__tests__/ssrLoadModule.spec.ts
+  s_55569f6eb811bb::t_a520f52bb523bf 2-3
+packages/vite/src/node/ssr/__tests__/ssrStacktrace.spec.ts
+  s_55569f6eb811bb::t_b7d4ccf3690b0b 31-48
+packages/vite/src/node/ssr/__tests__/ssrTransform.spec.ts
+  s_55569f6eb811bb::t_5efa9df6398169 4-6
+packages/vite/src/node/ssr/fetchModule.ts
+  s_55569f6eb811bb::t_a2bb816f5934a0 8-9,11-12,144-145,147,149-151
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/dynamic-import.js
+  s_55569f6eb811bb::t_69b30e8fef12dc 3
+"packages/vite/src/node/ssr/runtime/__tests__/fixtures/with space/has-error-deep.ts"
+  s_55569f6eb811bb::t_7c904de55cf14a 1-7
+packages/vite/src/node/ssr/runtime/__tests__/fixtures/worker.invoke.mjs
+  s_55569f6eb811bb::t_57d4ebd427f6f2 4
+packages/vite/src/node/ssr/runtime/__tests__/server-runtime.spec.ts
+  s_55569f6eb811bb::t_2c5df4322c33f5 4,6,8
+packages/vite/src/node/ssr/runtime/__tests__/server-source-maps.spec.ts
+  s_55569f6eb811bb::t_3227aa3e3ef4ed 2,161-175
+packages/vite/src/node/ssr/runtime/__tests__/server-worker-runner.invoke.spec.ts
+  s_55569f6eb811bb::t_2e37fb78353ff3 2,5
+packages/vite/src/node/ssr/runtime/__tests__/server-worker-runner.spec.ts
+  s_55569f6eb811bb::t_3cfd9bdc81822e 2,4
+packages/vite/src/node/ssr/runtime/__tests__/utils.ts
+  s_55569f6eb811bb::t_e4d0d90c0ded6f 4,8,11-12
+packages/vite/src/node/ssr/runtime/serverModuleRunner.ts
+  s_55569f6eb811bb::t_4c2365dc895d44 9
+packages/vite/src/node/ssr/ssrManifestPlugin.ts
+  s_55569f6eb811bb::t_870eb16e63d85f 8
+packages/vite/src/node/ssr/ssrModuleLoader.ts
+  s_55569f6eb811bb::t_4a2bb247507b83 8,10,15
+packages/vite/src/node/ssr/ssrStacktrace.ts
+  s_55569f6eb811bb::t_f46c78a125d42a 4,38-39,41
+packages/vite/src/node/ssr/ssrTransform.ts
+  s_55569f6eb811bb::t_fd9eee8d94d3f0 2-3,6,8-10,417,422-431,433,436-437
+packages/vite/src/node/utils.ts
+  s_55569f6eb811bb::t_72d01f4bbceff4 3-5,8,10-13,16-17,20,23,26-27,35-36,49-50,140-141,143,301,343,345,486-493,512-513,529,606,611,828,960,1482-1485
+packages/vite/src/node/watch.ts
+  s_55569f6eb811bb::t_ce67481f766dde 3,10,164-186
+packages/vite/src/shared/__tests__/forwardConsole.spec.ts
+  s_55569f6eb811bb::t_4d4aea4494b81f 29,66,69-82,153-173
+packages/vite/src/shared/__tests__/pretty-format.spec.ts
+  s_55569f6eb811bb::t_19ac8844c4d7af 1-27
+packages/vite/src/shared/bundledDevHmrClient.ts
+  s_55569f6eb811bb::t_0881741f5d0751 217,231
+packages/vite/src/shared/forwardConsole.ts
+  s_55569f6eb811bb::t_d66ea98e76f491 6,60,199,204-221
+packages/vite/src/shared/hmr.ts
+  s_55569f6eb811bb::t_a869fc196a6716 1
+packages/vite/src/shared/moduleRunnerTransport.ts
+  s_55569f6eb811bb::t_985967e1159283 8
+packages/vite/src/shared/pretty-format.ts
+  s_55569f6eb811bb::t_b9ac8f1268b689 1-157
+packages/vite/src/shared/ssrTransform.ts
+  s_55569f6eb811bb::t_6243e2aab87340 38
+packages/vite/src/shared/utils.ts
+  s_55569f6eb811bb::t_fca99b35ab6ab9 49,85-106
+packages/vite/src/types/chokidar.d.ts
+  s_55569f6eb811bb::t_31d7bad6f9f0ed 9
+packages/vite/types/customEvent.d.ts
+  s_55569f6eb811bb::t_0abf5eb9b4cb45 42,45
+packages/vite/types/hmrPayload.d.ts
+  s_55569f6eb811bb::t_250146795dabef 41,43
+packages/vite/types/internal/cssPreprocessorOptions.d.ts
+  s_55569f6eb811bb::t_e5320f9afbcd34 3-4
+packages/vite/types/internal/devtoolsOptions.d.ts
+  s_55569f6eb811bb::t_0494433d2ad56e 1-9
+playground/alias/package.json
+  s_55569f6eb811bb::t_9fefac27547542 14-15
+playground/alias/vite.config.js
+  s_55569f6eb811bb::t_951585a8111fe4 2
+playground/assets-sanitize/__tests__/assets-sanitize.spec.ts
+  s_55569f6eb811bb::t_77ba3b779b9c6f 2,41-46
+playground/assets/__tests__/assets.spec.ts
+  s_55569f6eb811bb::t_f1559eac333eaf 221-234,331-360,675-682
+playground/assets/__tests__/encoded-base/assets-encoded-base.spec.ts
+  s_55569f6eb811bb::t_04adb820982bf1 76-81
+playground/assets/__tests__/relative-base/assets-relative-base.spec.ts
+  s_55569f6eb811bb::t_9216c789f1f237 80-85
+playground/assets/__tests__/runtime-base/assets-runtime-base.spec.ts
+  s_55569f6eb811bb::t_35e3b138ec95e0 8,51,57,74-79,89,94,101,108,115,122,128,136,142,164,179,184,198,204,211,218-226,234
+playground/assets/__tests__/url-base/assets-url-base.spec.ts
+  s_55569f6eb811bb::t_511340fdc3ca7c 78-83
+playground/assets/asset/emitted-worker.js
+  s_55569f6eb811bb::t_26c58accfaacd0 1
+playground/assets/asset/main.js
+  s_55569f6eb811bb::t_d7deb9c4ccbffd 1-2,7-14
+playground/assets/index.html
+  s_55569f6eb811bb::t_694262fca922e8 7-24,75-78,222-225
+playground/assets/preload-module.js
+  s_55569f6eb811bb::t_3a0806cac2c60a 1-2
+playground/assets/vite.config-runtime-base.js
+  s_55569f6eb811bb::t_5d51fc24cdbc52 27
+playground/assets/vite.config.js
+  s_55569f6eb811bb::t_dffc9d4aed5626 19-38
+playground/backend-integration/__tests__/backend-integration.spec.ts
+  s_55569f6eb811bb::t_236c9fed4219b2 9,11,20,27,114,126-134,136-144,146-159
+playground/backend-integration/package.json
+  s_55569f6eb811bb::t_b6927a858bec90 14
+playground/backend-integration/vite.config.js
+  s_55569f6eb811bb::t_321f298435d9e8 2
+playground/chunk-importmap/__tests__/chunk-importmap.spec.ts
+  s_55569f6eb811bb::t_e178c467cced34 3
+playground/cli-module/__tests__/cli-module.spec.ts
+  s_55569f6eb811bb::t_f1078955f3d8c8 3
+playground/cli/__tests__/cli.spec.ts
+  s_55569f6eb811bb::t_f99908b98bb6ad 3
+playground/csp/__tests__/csp.spec.ts
+  s_55569f6eb811bb::t_b34e680348315d 2,4,12,16,20,24
+playground/csp/vite.config.js
+  s_55569f6eb811bb::t_fe3214c219a38d 1
+playground/css-lightningcss-proxy/__tests__/css-lightningcss-proxy.spec.ts
+  s_55569f6eb811bb::t_ddc4ffdacfddcb 3
+playground/css-sourcemap/package.json
+  s_55569f6eb811bb::t_167e5682b406e0 13,15-16
+playground/css-sourcemap/vite.config.js
+  s_55569f6eb811bb::t_a03b2cd55a45be 2
+playground/css/__tests__/tests.ts
+  s_55569f6eb811bb::t_16ca6e8e0e0ee3 17
+playground/css/async/async-3.js
+  s_55569f6eb811bb::t_063310fe0b2b09 1
+playground/css/lightningcss-plugins.js
+  s_55569f6eb811bb::t_90dfbb4d65af7d 4,141
+playground/css/package.json
+  s_55569f6eb811bb::t_20a2eb5ed6f7d4 24,27
+playground/css/postcss.config.js
+  s_55569f6eb811bb::t_72a91670a404b8 3
+playground/css/vite.config-lightningcss.js
+  s_55569f6eb811bb::t_3f09b4f23c385a 2,9
+playground/data-uri/main.js
+  s_55569f6eb811bb::t_c76f6ac91cb78d 3-4
+playground/define/__tests__/define.spec.ts
+  s_55569f6eb811bb::t_6763eba0a7474a 3
+playground/devtools/package.json
+  s_55569f6eb811bb::t_5e10937733040c 13,17-19
+playground/devtools/vite.config.ts
+  s_55569f6eb811bb::t_523f921e2135b0 8
+playground/dynamic-import/__tests__/dynamic-import.spec.ts
+  s_55569f6eb811bb::t_5f11d1decac00f 18-25,43-46
+playground/dynamic-import/vite.config.js
+  s_55569f6eb811bb::t_16348adf7e863c 7-10,18-37
+playground/environment-react-ssr/package.json
+  s_55569f6eb811bb::t_fb33a21c166af5 12-17
+playground/environment-react-ssr/src/entry-client.tsx
+  s_55569f6eb811bb::t_2cc964b224924f 2
+playground/extensions/__tests__/extensions.spec.ts
+  s_55569f6eb811bb::t_3b7bb81914c0c9 2,10
+playground/extensions/package.json
+  s_55569f6eb811bb::t_2723f8e83439e6 13
+playground/external/dep-that-imports/index.js
+  s_55569f6eb811bb::t_ec0482cbe33c49 2-3
+playground/external/dep-that-imports/package.json
+  s_55569f6eb811bb::t_11bd85b4c8c9be 8
+playground/external/dep-that-requires/package.json
+  s_55569f6eb811bb::t_8e4382d3d26a82 8
+playground/external/package.json
+  s_55569f6eb811bb::t_de49e4e0b17343 20
+playground/external/src/require-polyfill.js
+  s_55569f6eb811bb::t_8960093d2b2ba7 2
+playground/forward-console/__test__/forward-console.spec.ts
+  s_55569f6eb811bb::t_bdf5a54e9dadf7 3,20,35,58,62-68,80-81
+playground/fs-serve/__tests__/commonTests.ts
+  s_55569f6eb811bb::t_d0e793a5e439bb 1,5-6,16-23,25,27-32,41,62-64,345,411,415,422-423,439
+playground/fs-serve/__tests__/deny/fs-serve-deny.spec.ts
+  s_55569f6eb811bb::t_beef7006931310 2,21-23
+playground/fs-serve/__tests__/fs-serve.spec.ts
+  s_55569f6eb811bb::t_cd69fb273b479a 4,43-45,55-56,61-62,79,84,89,94,101,108-116,121
+playground/fs-serve/package.json
+  s_55569f6eb811bb::t_933b7de5ab73d3 21
+playground/fs-serve/root/matrixTestResultPlugin.ts
+  s_55569f6eb811bb::t_e95ed382726543 2
+playground/fs-serve/root/vite.config-base.js
+  s_55569f6eb811bb::t_916cab0ba6b783 4
+playground/fs-serve/root/vite.config.js
+  s_55569f6eb811bb::t_e10580b322e105 4
+playground/glob-import/__tests__/glob-import.spec.ts
+  s_55569f6eb811bb::t_98e4ffd8ecc155 2
+playground/hmr-full-bundle-mode/__tests__/hmr-full-bundle-mode.spec.ts
+  s_55569f6eb811bb::t_cc2c52cdc88772 39-57,320,323-338
+playground/hmr-ssr/__tests__/hmr-ssr.spec.ts
+  s_55569f6eb811bb::t_2e4e38d6bff224 1,4-11
+playground/hmr-ssr/accept-exports/main-accepted/main-accepted.ts
+  s_55569f6eb811bb::t_0ebcd005008d8d 2
+playground/hmr-ssr/accept-exports/main-non-accepted/main-non-accepted.ts
+  s_55569f6eb811bb::t_7ad70de4059056 2
+playground/hmr-ssr/file-delete-restore/index.js
+  s_55569f6eb811bb::t_a261b941b19831 2
+playground/hmr-ssr/hmr.ts
+  s_55569f6eb811bb::t_8d172b90a4c7ba 13
+playground/hmr/__tests__/hmr.spec.ts
+  s_55569f6eb811bb::t_d500b0e74a6bf2 3
+playground/hmr/accept-exports/main-accepted/main-accepted.ts
+  s_55569f6eb811bb::t_bbc3830d15f5c7 2
+playground/hmr/accept-exports/main-non-accepted/main-non-accepted.ts
+  s_55569f6eb811bb::t_76393bd881e358 2
+playground/hmr/file-delete-restore/index.js
+  s_55569f6eb811bb::t_f263f821a544ec 2
+playground/hmr/hmr.ts
+  s_55569f6eb811bb::t_36da21c2c10837 13
+playground/js-sourcemap/__tests__/js-sourcemap.spec.ts
+  s_55569f6eb811bb::t_483e5ad275d0b2 3-4,7,19,364-367,379,426-431,452
+playground/js-sourcemap/package.json
+  s_55569f6eb811bb::t_6653b1960a09d9 18-19
+playground/json/__tests__/csr/json-csr.spec.ts
+  s_55569f6eb811bb::t_8e8c31e11a3b52 5-6
+playground/json/package.json
+  s_55569f6eb811bb::t_912a3b7177ad28 15
+playground/lazy-compilation/__tests__/lazy-compilation.spec.ts
+  s_55569f6eb811bb::t_62cb54ed589e0f 1-35,39-114
+playground/lazy-compilation/index.html
+  s_55569f6eb811bb::t_06bd0444f96246 1-18
+playground/lazy-compilation/main.js
+  s_55569f6eb811bb::t_b7f9985b94dd4a 1-21
+playground/lazy-compilation/package.json
+  s_55569f6eb811bb::t_2266f83ca86eeb 1-12
+playground/lazy-compilation/page-a.js
+  s_55569f6eb811bb::t_bad71d3097a35d 1-3
+playground/lazy-compilation/page-b.js
+  s_55569f6eb811bb::t_310a74d42203cb 1-3
+playground/lazy-compilation/page-c.js
+  s_55569f6eb811bb::t_25c119e17e033b 1-3
+playground/lazy-compilation/shared.js
+  s_55569f6eb811bb::t_5129edb9852da2 1
+playground/lazy-compilation/vite.config.ts
+  s_55569f6eb811bb::t_a67b5aa8da6b59 1-9
+playground/legacy/__tests__/client-and-ssr/legacy-client-legacy-ssr-sequential-builds.spec.ts
+  s_55569f6eb811bb::t_1c1b0f9eee0b0a 3
+playground/legacy/__tests__/ssr/legacy-ssr.spec.ts
+  s_55569f6eb811bb::t_ab1e619c27aa57 3
+playground/legacy/package.json
+  s_55569f6eb811bb::t_567c777ce645ae 22
+playground/legacy/vite.config-custom-filename.js
+  s_55569f6eb811bb::t_327c547ac6a432 2
+playground/legacy/vite.config-multiple-output.js
+  s_55569f6eb811bb::t_883f7c5501f958 2
+playground/lib/__tests__/serve.ts
+  s_55569f6eb811bb::t_0c63d0e5aa12ad 5
+playground/multiple-entrypoints/package.json
+  s_55569f6eb811bb::t_b23f363f194efa 13
+playground/optimize-deps-no-discovery/package.json
+  s_55569f6eb811bb::t_3293b94e6a9139 14
+playground/optimize-deps/__tests__/optimize-deps.spec.ts
+  s_55569f6eb811bb::t_d1c62495cdec60 182-195,272-285
+playground/optimize-deps/cjs.js
+  s_55569f6eb811bb::t_83b08117d97158 1-6
+playground/optimize-deps/dep-browser-false/index.js
+  s_55569f6eb811bb::t_e12d98549880bb 1-4
+playground/optimize-deps/dep-browser-false/package.json
+  s_55569f6eb811bb::t_ba9b0c47a6a1a9 1-9
+playground/optimize-deps/dep-cjs-with-external-deps/index.js
+  s_55569f6eb811bb::t_b3172e416133d6 13
+playground/optimize-deps/dep-linked-include/package.json
+  s_55569f6eb811bb::t_279c5ffd80b9e5 7
+playground/optimize-deps/dep-with-excluded-optional-peer-dep-cjs/index.js
+  s_55569f6eb811bb::t_a39a1b73775542 1-9
+playground/optimize-deps/dep-with-excluded-optional-peer-dep-cjs/package.json
+  s_55569f6eb811bb::t_369521d904db20 1-11,14
+playground/optimize-deps/index.html
+  s_55569f6eb811bb::t_18fa3857071e74 100-102,317-325,351-356
+playground/optimize-deps/package.json
+  s_55569f6eb811bb::t_26d7ebef15ee85 42,45,58-60,63
+playground/optimize-deps/vite.config.js
+  s_55569f6eb811bb::t_afc3e66f5c0082 35
+playground/optimize-missing-deps/__test__/optimize-missing-deps.spec.ts
+  s_55569f6eb811bb::t_df6d563694a621 3
+playground/package.json
+  s_55569f6eb811bb::t_8409212210aa3e 13
+playground/preload/__tests__/preload.spec.ts
+  s_55569f6eb811bb::t_3cab15429b67f8 28-41
+playground/preload/package.json
+  s_55569f6eb811bb::t_d802934817e820 21
+playground/preload/src/about.js
+  s_55569f6eb811bb::t_2c6621b734ab3b 2,4
+playground/preload/vite.config.ts
+  s_55569f6eb811bb::t_d904de812c416a 17-24
+playground/resolve-tsconfig-paths/package.json
+  s_55569f6eb811bb::t_27d76e51af229e 13-14
+playground/resolve/__tests__/resolve.spec.ts
+  s_55569f6eb811bb::t_44ca7fa0727b27 287,289-291,300-314
+playground/resolve/browser-field/relative.js
+  s_55569f6eb811bb::t_1c3832218a993c 3,6-9
+playground/resolve/ts-extension/index-js.js
+  s_55569f6eb811bb::t_93478a3d6ce4d1 3,5
+playground/resolve/ts-extension/index.ts
+  s_55569f6eb811bb::t_6cc0e61cf9579d 3,5
+playground/ssr-alias/src/main.js
+  s_55569f6eb811bb::t_07029d54ae2712 3
+playground/ssr-conditions/__tests__/ssr-conditions.spec.ts
+  s_55569f6eb811bb::t_a63dbf1f76423a 3
+playground/ssr-conditions/src/app.js
+  s_55569f6eb811bb::t_037d998899843a 2
+playground/ssr-deps/__tests__/ssr-deps.spec.ts
+  s_55569f6eb811bb::t_7976c1b4b115bf 3
+playground/ssr-deps/package.json
+  s_55569f6eb811bb::t_4015be8991f382 12
+playground/ssr-deps/src/app.js
+  s_55569f6eb811bb::t_01960b88bbc20f 5,9-18,25-26
+playground/ssr-html/__tests__/ssr-html.spec.ts
+  s_55569f6eb811bb::t_333442952f8fc0 4-5,8
+playground/ssr-html/test-stacktrace-runtime.js
+  s_55569f6eb811bb::t_76c28754a8407c 2
+playground/ssr-noexternal/__tests__/ssr-noexternal.spec.ts
+  s_55569f6eb811bb::t_4db1ff5f6d27b6 3
+playground/ssr-pug/__tests__/ssr-pug.spec.ts
+  s_55569f6eb811bb::t_ef6bd492fe1d08 3
+playground/ssr-pug/server.js
+  s_55569f6eb811bb::t_e261dc93f165a3 4
+playground/ssr-resolve/main.js
+  s_55569f6eb811bb::t_19f2caac8f0e87 1-2,7
+playground/ssr-wasm/__tests__/ssr-wasm.spec.ts
+  s_55569f6eb811bb::t_aeec307a3bb382 3
+playground/ssr-wasm/src/direct-light.js
+  s_55569f6eb811bb::t_312f6a0be6bc94 2
+playground/ssr-webworker/__tests__/ssr-webworker.spec.ts
+  s_55569f6eb811bb::t_734547b7284c5d 3
+playground/ssr-webworker/package.json
+  s_55569f6eb811bb::t_a71f96eb2b2831 11
+playground/ssr-webworker/src/entry-worker.jsx
+  s_55569f6eb811bb::t_8242149b1d9e45 3
+playground/ssr/__tests__/ssr.spec.ts
+  s_55569f6eb811bb::t_5d0b4bd87e84fd 3
+playground/ssr/src/circular-dep-init/module-b.js
+  s_55569f6eb811bb::t_81bbb4bfb63e67 4
+playground/ssr/src/forked-deadlock/common-module.js
+  s_55569f6eb811bb::t_ebb01429df21c2 2
+playground/tailwind-v3/__test__/tailwind-v3.spec.ts
+  s_55569f6eb811bb::t_dde986c8e19738 2-9,15-19,21-32,34-47,49,71-75,77-90
+playground/tailwind-v3/package.json
+  s_55569f6eb811bb::t_15c8c605143e77 13,17
+playground/tailwind/__test__/tailwind.spec.ts
+  s_55569f6eb811bb::t_d97c336f124c42 2-9,15,31-35,37-48,50-63,65,87-91,93-106
+playground/tailwind/package.json
+  s_55569f6eb811bb::t_e204e881e249fc 17
+playground/tailwind/vite.config.ts
+  s_55569f6eb811bb::t_476d80cb0dde25 1
+playground/test-utils.ts
+  s_55569f6eb811bb::t_b49ea8e8db397c 6-10,12,396
+playground/transform-plugin/__tests__/transform-plugin.spec.ts
+  s_55569f6eb811bb::t_c343ef247771d5 3
+playground/tsconfig-json-load-error/__tests__/tsconfig-json-load-error.spec.ts
+  s_55569f6eb811bb::t_36b54ab11185f9 11
+playground/tsconfig-json/__tests__/tsconfig-json.spec.ts
+  s_55569f6eb811bb::t_5568e711576f54 2,5,7-11,13-16,18-22
+playground/vitestGlobalSetup.ts
+  s_55569f6eb811bb::t_6d2a6a1eff020e 1,6
+playground/vitestSetup.ts
+  s_55569f6eb811bb::t_5e5bb1357889dd 2,5-10
+playground/worker/__tests__/es/worker-es.spec.ts
+  s_55569f6eb811bb::t_32abe19a02ad72 4,6,24,30,34,38,44,50,56,60,64,70-83,85,172,187,201,212,218,224,236,242
+playground/worker/__tests__/iife/worker-iife.spec.ts
+  s_55569f6eb811bb::t_42381a775a70ea 8,16,33,39,43,47,53,57,61,67,132,147,161,167,179,185,191-198,200-212,215,221,224-225
+playground/worker/__tests__/relative-base-iife/worker-relative-base-iife.spec.ts
+  s_55569f6eb811bb::t_0e2001f2140384 2,4
+playground/worker/__tests__/relative-base/worker-relative-base.spec.ts
+  s_55569f6eb811bb::t_f60e85822aa3f0 4,6,105
+playground/worker/my-worker.ts
+  s_55569f6eb811bb::t_7036b10dac7e8f 4
+playground/worker/worker/main-module.js
+  s_55569f6eb811bb::t_c3ff21fed07637 6-7,10-11,14
+pnpm-lock.yaml
+  s_55569f6eb811bb::t_e79c04c606d94b 1-158,170,173-175,181-183,206-207,218-219,225,227-228,230-231,236-237,239-240,242-243,248-249,251-252,257-258,260-261,266-267,272-273,278-279,287-288,293-294,297,302-303,305-306,308-309,314-315,322-324,326-327,353-354,357,362-363,378-379,393-394,396-397,399-400,406-407,436-437,439-440,445-446,448-449,469-470,496-497,527,530,533,541-542,548,550-551,553-554,562-566,571-572,591,660-662,672-677,736-737,742-743,748-749,767-768,812-813,819,821-822,828,865-866,871-872,874-875,881,924-925,928-935,957-958,960-961,963-964,966-967,969-970,972-973,978-979,1000-1001,1015-1016,1027-1028,1047-1048,1094-1095,1097-1098,1119-1120,1126-1127,1137-1138,1162-1163,1237-1239,1339-1341,1367-1368,1370-1371,1373-1374,1379-1380,1383,1391-1392,1395,1411-1412,1465-1466,1506-1507,1557-1558,1653-1654,1656-1657,1759-1760,1986-1987,2010-2011,2025-2026,2029,2032-2033,2180-2181,2581-2582,2585-2586,2639-2640,2642,2644-2645,2647-2682,2686-2729,2731-2732,2735-2736,2739-2740,2744-2745,2748-2750,2753-2754,2758-2759,2762-2764,2767-2834,2841-2843,2847-2849,2853-2866,3107-3108,3119-3120,3309-3310,3318-3319,3321-3323,3325-3331,3336-3337,3342-3343,3348-3349,3354-3355,3360-3361,3366-3367,3372-3373,3379-3380,3386-3387,3393-3394,3400-3401,3406-3407,3412-3413,3418-3419,3434-3435,3440-3441,3446-3447,3452-3453,3458-3459,3464-3465,3470-3471,3476-3477,3483-3484,3490-3491,3497-3498,3504-3505,3511-3512,3518-3519,3525-3526,3532-3533,3538-3539,3544-3545,3550-3551,3556-3557,3559-3560,3565-3566,3571-3572,3577-3578,3583-3584,3589-3590,3595-3596,3601-3602,3608-3609,3615-3616,3622-3623,3629-3630,3636-3637,3643-3644,3650-3651,3657-3658,3663-3664,3669-3670,3675-3676,3789-3790,3799-3806,3811-3812,3817-3818,3823-3824,3829-3830,3835-3836,3842-3843,3849-3850,3856-3857,3863-3864,3870-3871,3877-3878,3883-3884,3889-3890,3895-3897,4093-4094,4344-4345,4359-4360,4362,4364-4365,4385-4386,4389,4393-4394,4400-4401,4406-4407,4409-4424,4426-4427,4432-4433,4439-4440,4443-4454,4459-4467,4473-4478,4596-4616,4618-4621,4623-4631,4633-4634,4637-4640,4662-4663,4710-4712,4773-4775,4851-4858,5015-5016,5026-5027,5029-5030,5032-5033,5039-5040,5050-5054,5061-5065,5070-5071,5076-5077,5082-5083,5088-5089,5103-5104,5109-5110,5115-5116,5121-5122,5129-5130,5135-5136,5193-5194,5198-5199,5203-5204,5208-5209,5213-5214,5219-5220,5225-5226,5231-5232,5237-5238,5243-5244,5249-5250,5254-5255,5259-5260,5264-5265,5269-5270,5274-5275,5279-5280,5285-5286,5291-5292,5297-5298,5303-5304,5309-5310,5315-5316,5320-5321,5325-5326,5394-5395,5412-5413,5448-5449,5463-5464,5491-5492,5527-5528,5682-5683,5740-5741,5749-5759,5770-5773,5807-5808,5844-5848,5864-5865,5925-5926,5938-5939,5963,6001-6008,6013-6014,6187-6188,6212-6213,6229-6230,6234-6235,6239,6428-6430,6444-6447,6499-6500,6666-6667,6711-6712,6907-6909,6965-6966,6976-6977,7012-7015,7044-7045,7048-7049,7135-7136,7145-7146,7157-7160,7167-7168,7172-7173,7274-7277,7315-7316,7388-7389,7391,7393-7394,7487-7488,7493-7494,7502-7503,7509-7510,7525-7526,7549-7550,7553-7554,7559-7560,7565-7566,7571-7572,7577-7578,7583-7584,7589-7590,7596-7597,7603-7604,7610-7611,7617-7618,7624-7625,7631-7632,7638-7639,7645-7646,7649-7650,7655-7656,7661-7662,7671-7672,7680-7681,7757-7758,7815-7816,7820-7821,7837-7838,7938-7939,7956-7958,7960-7961,7968-7969,7972-7973,8017-8019,8023-8024,8029,8054-8055,8080-8081,8101-8102,8166-8167,8193-8194,8216-8217,8220-8221,8232-8234,8239-8245,8277-8278,8281-8282,8284-8285,8287-8288,8309-8310,8323-8324,8345-8347,8386-8387,8418-8422,8445-8446,8448-8449,8451-8452,8460-8461,8479-8480,8497,8512,8526,8636,9125,9133,9147,9152,9154,9189-9215,9219-9220,9223-9237,9239-9264,9266,9268-9270,9272,9274,9277-9304,9308,9310,9312-9313,9316-9319,9321,9323,9325,9329-9361,9365-9366,9369-9370,9373-9382,9538,9542,9564,9580,9583,9710,9725,9730,9735-9739,9741,9743-9749,9751,9753,9755-9758,9767,9770,9773,9776,9779,9782,9785,9788,9791,9794,9797,9800,9803,9806,9808-9820,9825,9827,9829-9832,9834,9837,9840,9843,9846,9849,9852,9855,9858,9861,9864,9867,9870,9873,9876,9879,9882,9885,9888,9891,9893,9896,9899,9902,9905,9908,9911,9914,9917,9920,9923,9926,9929,9932,9935,9938,9941,9944,9947,9994,10030,10032,10040,10043,10046,10049,10052,10055,10058,10061,10064,10067,10070,10073,10076,10079,10082-10086,10108,10222,10224-10225,10244,10246,10255,10282-10283,10355,10372,10375,10386,10400,10410,10419,10437,10441,10479,10481,10491,10493,10495,10501,10506,10510,10518,10520,10523-10527,10536,10538-10541,10548-10558,10560-10561,10567-10578,10580-10581,10583,10587,10589-10591,10599-10618,10620,10622-10625,10635-10647,10650-10652,10658-10664,10666,10739,10741-10743,10746,10752-10800,10803,10805-10811,10813-10814,10816,10821-10824,10827-10858,10863,10867,10869,10877,10879,10915-10916,10966-10967,11004,11012,11032-11033,11144,11146-11147,11149,11153,11155,11157,11159,11161,11163,11167,11169-11172,11176-11179,11182,11184-11185,11206,11209-11210,11212-11213,11217,11220,11223-11224,11228-11229,11235,11237-11239,11249,11251-11252,11256-11257,11264,11267,11269-11274,11277,11285,11287-11288,11305,11308-11310,11314,11320,11322,11329,11331-11332,11341,11343-11345,11348,11352,11354,11356-11358,11362,11364,11368-11369,11371,11373-11375,11381,11383,11385,11388,11391,11394,11397,11400,11403,11406,11409,11412,11415,11418,11421,11424,11427,11430,11433,11436,11439,11442,11445,11448,11451,11454,11457,11510,11520,11522-11523,11526,11563,11571-11572,11605,11607,11610,11612-11616,11642,11679-11680,11729,11783,11798-11802,11804-11805,11840,11842,11844-11846,11848,11852-11866,11869,11878-11879,11902,11925-11926,11938,12000,12002,12013,12017,12027,12032,12121-12126,12142,12221,12223,12276,12279-12280,12347,12372,12384,12386-12387,12389,12460,12462,12555-12556,12567-12570,12614,12740,12742,12744,12746,12780,12782,12784,13134-13135,13180,13186,13197-13198,13212-13213,13252-13254,13256-13278,13280-13298,13357,13363,13369-13370,13383,13385,13387,13389,13391,13396,13398,13403,13406,13408,13413-13414,13417,13422-13423,13426,13428,13430,13432-13433,13437,13439,13442,13444-13445,13447,13450,13452-13456,13459,13461,13464,13466,13491-13497,13537,13539,13637,13639-13640,13642,13696,13699,13702-13704,13708,13761,13764-13769,13771-13772,13774,13778,13780,13783-13799,13802,13844,13872,13874,13877,13880,13883,13886,13889,13892,13895,13898,13901,13904,13907,13910,13913,13916,13919,13921,13924,13927,13930,13940-13957,13960,13970,14095,14149-14150,14152,14160,14226,14228,14252,14268-14272,14284,14303,14305,14309-14310,14312,14314,14342,14350-14353,14357,14359-14361,14367,14373,14383,14408,14410-14413,14430,14514,14516,14518,14539,14551,14554,14564,14583,14588-14589,14591,14593-14595,14601,14618-14625,14627-14630,14633,14635,14641,14643,14645-14646,14648,14650,14654,14656,14658,14660,14662,14664-14665,14673,14678,14680-14684,14688,14691,14699,14703,14734,14751-14753,14783,14785,14787,14789,14791-14807,14809-14820,14826
+pnpm-workspace.yaml
+  s_55569f6eb811bb::t_e24cebf15d43ce 37-45,58-59,63-64,66,68-70
+scripts/mergeChangelog.ts
+  s_55569f6eb811bb::t_4e9719d531a635 44-47,103,106,134,137
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "8d8d22225c8fbc2ad3176a95c0d15aec6a8f029a",
+  "prompts": {},
+  "sessions": {
+    "s_55569f6eb811bb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0fad2-4413-7d32-9bc8-790b7e22021a",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
