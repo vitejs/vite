@@ -1,3 +1,11 @@
+## <small>[8.2.3](https://github.com/vitejs/vite/compare/plugin-legacy%408.2.2...plugin-legacy%408.2.3) (2026-08-06)</small>
+### Bug Fixes
+
+* **build:** make client chunkImportMap work with `sharedPlugins: true` ([#23184](https://github.com/vitejs/vite/issues/23184)) ([15f0307](https://github.com/vitejs/vite/commit/15f03073c915d6ffb9a1fda447ef66b02bf5cde8))
+* **deps:** update all non-major dependencies ([#23069](https://github.com/vitejs/vite/issues/23069)) ([4c07b74](https://github.com/vitejs/vite/commit/4c07b74416f859d7e8bdace13409ef2d080edf76))
+* **deps:** update all non-major dependencies ([#23136](https://github.com/vitejs/vite/issues/23136)) ([14454fd](https://github.com/vitejs/vite/commit/14454fd8c9a399bc3fdc193e28465b6fcf001e4d))
+* **deps:** update rolldown-related dependencies ([#23070](https://github.com/vitejs/vite/issues/23070)) ([7ac6f7f](https://github.com/vitejs/vite/commit/7ac6f7f590747bbdab9958e2c016e3dd04f10542))
+
 ## <small>[8.2.2](https://github.com/vitejs/vite/compare/plugin-legacy%408.2.1...plugin-legacy%408.2.2) (2026-07-23)</small>
 ### Features
 
@@ -29,9 +37,8 @@
 
 * **legacy:** use `babel-plugin-polyfill-*` consistently ([#22874](https://github.com/vitejs/vite/issues/22874)) ([9dddae6](https://github.com/vitejs/vite/commit/9dddae69a214bd468223d33f9e64c580ef1bb0d6))
 
-## [8.1.0](https://github.com/vitejs/vite/compare/plugin-legacy@8.1.0-beta.0...plugin-legacy@8.1.0) (2026-06-23)
+## [8.1.0](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.2...plugin-legacy@8.1.0) (2026-06-23)
 
-## [8.1.0-beta.0](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.2...plugin-legacy@8.1.0-beta.0) (2026-06-15)
 ### Features
 
 * **build:** chunk importmap ([#21580](https://github.com/vitejs/vite/issues/21580)) ([e180312](https://github.com/vitejs/vite/commit/e1803128e5698202e22c6e5e17dc9ebd83d4f3f5))
@@ -49,6 +56,12 @@
 ### Code Refactoring
 
 * use rolldownOptions where possible ([#21205](https://github.com/vitejs/vite/issues/21205)) ([7ca7c1b](https://github.com/vitejs/vite/commit/7ca7c1bedf0a9754e7631cbe615e41231b0aeb80))
+
+### Beta Changelogs
+
+#### [8.1.0-beta.0](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.2...plugin-legacy@8.1.0-beta.0) (2026-06-15)
+
+See [8.1.0-beta.0 changelog](https://github.com/vitejs/vite/blob/plugin-legacy@8.1.0-beta.0/packages/plugin-legacy/CHANGELOG.md)
 
 ## <small>[8.0.2](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.1...plugin-legacy@8.0.2) (2026-05-14)</small>
 ### Bug Fixes

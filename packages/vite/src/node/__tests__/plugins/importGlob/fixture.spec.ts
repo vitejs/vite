@@ -1,8 +1,8 @@
-import { resolve } from 'node:path'
 import { promises as fs } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { transformGlobImport } from '../../../plugins/importMetaGlob'
-import { transformWithEsbuild } from '../../../plugins/esbuild'
+import { transformWithOxc } from '../../../plugins/oxc'
 
 describe('fixture', async () => {
   const resolveId = (id: string) => id
@@ -10,9 +10,8 @@ describe('fixture', async () => {
 
   it('transform', async () => {
     const id = resolve(import.meta.dirname, './fixture-a/index.ts')
-    const code = (
-      await transformWithEsbuild(await fs.readFile(id, 'utf-8'), id)
-    ).code
+    const code = (await transformWithOxc(await fs.readFile(id, 'utf-8'), id))
+      .code
 
     expect(
       (await transformGlobImport(code, id, root, resolveId))?.s.toString(),
@@ -81,9 +80,8 @@ describe('fixture', async () => {
 
   it('transform with restoreQueryExtension', async () => {
     const id = resolve(import.meta.dirname, './fixture-a/index.ts')
-    const code = (
-      await transformWithEsbuild(await fs.readFile(id, 'utf-8'), id)
-    ).code
+    const code = (await transformWithOxc(await fs.readFile(id, 'utf-8'), id))
+      .code
 
     expect(
       (

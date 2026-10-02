@@ -1,10 +1,12 @@
 import path from 'node:path'
-import { afterEach, describe, expect, test, vi } from 'vitest'
 import type { ResolvedServerUrls } from 'vite'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 import { createServer, resolveConfig } from '..'
 import type { ViteDevServer } from '..'
 import { promiseWithResolvers } from '../../shared/utils'
 import { createLogger } from '../logger'
+import { _createServer } from '../server'
+import { DevEnvironment } from '../server/environment'
 import { normalizePath } from '../utils'
 
 describe('resolveBuildEnvironmentOptions in dev', () => {
@@ -29,6 +31,37 @@ describe('the dev server', () => {
 
   afterEach(async () => {
     await server?.close()
+  })
+
+  test('releases previous environments after initialization', async () => {
+    const previousServer = await createServer({
+      configFile: false,
+      root: import.meta.dirname,
+      optimizeDeps: { noDiscovery: true },
+      server: { middlewareMode: true, ws: false },
+    })
+    const options = {
+      listen: false,
+      previousEnvironments: previousServer.environments,
+    }
+
+    try {
+      const config = await resolveConfig(
+        {
+          configFile: false,
+          root: import.meta.dirname,
+          optimizeDeps: { noDiscovery: true },
+          server: { middlewareMode: true, ws: false },
+        },
+        'serve',
+      )
+      const nextServer = await _createServer(config, options)
+
+      expect(options.previousEnvironments).toBeUndefined()
+      await nextServer.close()
+    } finally {
+      await previousServer.close()
+    }
   })
 
   test('resolves each environment input as a safe module', async () => {
@@ -152,6 +185,41 @@ describe('the dev server', () => {
     await expect(
       server.environments.ssr.pluginContainer.buildStart(),
     ).rejects.toThrow('buildStart failed')
+  })
+
+  test("logs watcher 'error' events during environment initialization", async () => {
+    const error = new Error('watch failed')
+    const logger = createLogger('error')
+    logger.error = vi.fn()
+
+    class WatcherErrorEnvironment extends DevEnvironment {
+      override async init(
+        options?: Parameters<DevEnvironment['init']>[0],
+      ): Promise<void> {
+        options?.watcher?.emit('error', error)
+        await super.init(options)
+      }
+    }
+
+    server = await createServer({
+      configFile: false,
+      root: import.meta.dirname,
+      customLogger: logger,
+      optimizeDeps: { noDiscovery: true },
+      environments: {
+        ssr: {
+          dev: {
+            createEnvironment: (name, config) =>
+              new WatcherErrorEnvironment(name, config, { hot: false }),
+          },
+        },
+      },
+      server: { middlewareMode: true, ws: false },
+    })
+
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining('file watcher error: watch failed'),
+    )
   })
 
   test('resolves the server URLs before the httpServer listening events are called', async () => {

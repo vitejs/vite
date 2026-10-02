@@ -3,8 +3,8 @@ import path from 'node:path'
 import colors from 'picocolors'
 import { glob, isDynamicPattern } from 'tinyglobby'
 import { FS_PREFIX } from '../constants'
-import { normalizePath } from '../utils'
 import type { ViteDevServer } from '../index'
+import { normalizePath } from '../utils'
 import type { DevEnvironment } from './environment'
 
 export function warmupFiles(

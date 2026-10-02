@@ -1,19 +1,20 @@
 import { setTimeout } from 'node:timers/promises'
+import getEtag from 'etag'
+import colors from 'picocolors'
+import type { OutputOptions, RolldownOptions, RolldownOutput } from 'rolldown'
 import {
   type BindingClientHmrUpdate,
   type DevEngine,
   dev,
 } from 'rolldown/experimental'
-import type { OutputOptions, RolldownOptions, RolldownOutput } from 'rolldown'
-import colors from 'picocolors'
-import getEtag from 'etag'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
-import { getHmrImplementation } from '../plugins/clientInjections'
+import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
 import {
-  asyncFlatten,
-  createDebugger,
-  formatAndTruncateFileList,
-} from '../utils'
+  getHmrImplementation,
+  getRolldownDevRuntimeFiles,
+} from '../plugins/clientInjections'
+import { createDebugger, formatAndTruncateFileList } from '../utils'
+import { convertToDevWatchOptions } from '../watch'
 import type { DevEnvironment } from './environment'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
 import { prepareError } from './middlewares/error'
@@ -62,6 +63,8 @@ export class MemoryFiles {
 
 export class BundledDev {
   private _devEngine!: DevEngine
+  /** the vite client and the rolldown runtime; set before the first build so `hasBuildOutput` can count them */
+  private staticFiles = new Map<string, MemoryFile>()
   private initialBuildCompleted = false
   private _closed = false
   private clients = new Clients()
@@ -102,10 +105,17 @@ export class BundledDev {
 
   private pendingPayloadFilenames = new Set<string>()
 
+  get hasBuildOutput(): boolean {
+    return this.memoryFiles.size > this.staticFiles.size
+  }
+
   async listen(): Promise<void> {
     this._closed = false
     debug?.('INITIAL: setup bundle options')
     const rolldownOptions = await this.getRolldownOptions()
+    if (this.environment.config.consumer !== 'server') {
+      await this.storeStaticFiles()
+    }
     // NOTE: only single outputOptions is supported here
     if (
       Array.isArray(rolldownOptions.output) &&
@@ -126,6 +136,9 @@ export class BundledDev {
         this.devEngine.registerClient(payload.clientId)
       },
     )
+    this.environment.hot.on('vite:bundled-dev:payload-delivered', (payload) => {
+      this.markPayloadDelivered(payload.filename)
+    })
     this.environment.hot.on('vite:client:connect', (_payload, client) => {
       // Replay the cached build error to freshly connected clients.
       if (this.lastBuildError) {
@@ -235,6 +248,7 @@ export class BundledDev {
       },
       watch: {
         skipWrite: true,
+        ...convertToDevWatchOptions(this.environment.config.server.watch),
       },
     })
     debug?.('INITIAL: setup dev engine')
@@ -279,7 +293,7 @@ export class BundledDev {
     if (this._closed) return
 
     let state = await this.devEngine.getBundleState()
-    while (this.memoryFiles.size === 0 && !state.lastBuildErrored) {
+    while (!this.hasBuildOutput && !state.lastBuildErrored) {
       await setTimeout(10)
       if (this._closed) return
       await this.devEngine.ensureCurrentBuildFinish()
@@ -339,13 +353,30 @@ export class BundledDev {
     )
     const result = await this.devEngine.compileEntry(moduleId, clientId)
     this.pendingPayloadFilenames.add(result.filename)
-    return result
+    // Serve the chunk's sourcemap, the same way an eager chunk's and an HMR
+    // patch's maps are served. The chunk's relative `sourceMappingURL` resolves
+    // against the URL it is imported from, `/@vite/lazy?...`, so register the map
+    // under that directory for the reference to reach it.
+    if (result.sourcemapFilename && result.sourcemap) {
+      this.memoryFiles.set(`@vite/${result.sourcemapFilename}`, {
+        source: result.sourcemap,
+      })
+    }
+    return {
+      filename: result.filename,
+      code:
+        result.code +
+        (this.environment.config.consumer === 'server'
+          ? ''
+          : payloadDeliveredAck(result.filename)),
+    }
   }
 
   /**
-   * Called by the serving middlewares when the response for a payload completed.
-   * Only delivered payloads are recorded on the server's per-client ship map, so
-   * later chunks may omit a module only if the payload carrying it was delivered.
+   * Called when the client reports that it evaluated a payload (the line appended
+   * by `payloadDeliveredAck`). Only then is the payload recorded on the server's
+   * per-client ship map, so later chunks may omit a module only if the client
+   * already registered it.
    *
    * Note: the payload filename is unique across all clients.
    */
@@ -362,7 +393,26 @@ export class BundledDev {
     this.initialBuildCompleted = false
   }
 
-  private storeOutputFiles(output: RolldownOutput['output']): void {
+  private async storeStaticFiles(): Promise<void> {
+    const sources = new Map<string, string>([
+      [
+        BUNDLED_DEV_CLIENT_FILENAME,
+        await getHmrImplementation(this.environment.getTopLevelConfig()),
+      ],
+      ...getRolldownDevRuntimeFiles(),
+    ])
+    this.staticFiles.clear()
+    for (const [fileName, source] of sources) {
+      const file = {
+        source,
+        etag: getEtag(Buffer.from(source), { weak: true }),
+      }
+      this.staticFiles.set(fileName, file)
+      this.memoryFiles.set(fileName, file)
+    }
+  }
+
+  private storeOutputFiles(output: RolldownOutput['output'][number][]): void {
     // NOTE: don't clear memoryFiles here as incremental build reuses the files
     for (const outputFile of output) {
       if (outputFile.type === 'chunk' && outputFile.facadeModuleId) {
@@ -386,48 +436,19 @@ export class BundledDev {
       chunkMetadataMap,
     )
     rolldownOptions.experimental ??= {}
-    // The module runner constructs the `DevRuntime` itself and hands it to each
-    // module as `__rolldown_runtime__`, so a server bundle needs neither the
-    // runtime classes nor a bootstrap prelude.
-    const isServerConsumer = this.environment.config.consumer === 'server'
     rolldownOptions.experimental.devMode = {
       lazy: true,
       ...(typeof rolldownOptions.experimental.devMode === 'object'
         ? rolldownOptions.experimental.devMode
         : {}),
-      implement: isServerConsumer
-        ? ''
-        : await getHmrImplementation(this.environment.getTopLevelConfig()),
-      skipCommonRuntimeInjection: isServerConsumer,
+      implement: '',
+      skipCommonRuntimeInjection: true,
     }
 
     // disable inlineConst optimization due to a bug in Rolldown
     // https://github.com/vitejs/vite/issues/21843
     rolldownOptions.optimization ??= {}
     rolldownOptions.optimization.inlineConst = false
-
-    // In bundledDev mode, Rolldown's DevEngine generates lazy-loading stub modules
-    // for dynamically imported files, appending `?rolldown-lazy=1` to the module ID.
-    // Skip all plugins for these stub modules as a workaround.
-    // https://github.com/vitejs/vite/issues/22651
-    const plugins = await asyncFlatten([rolldownOptions.plugins])
-    for (const plugin of plugins) {
-      const transform =
-        plugin && 'transform' in plugin ? plugin.transform : undefined
-      if (!transform) continue
-      const handler =
-        typeof transform === 'function' ? transform : transform.handler
-      const wrappedHandler: typeof handler = function (this, code, id, opts) {
-        if (id.includes('?rolldown-lazy=')) return null
-        return handler.call(this, code, id, opts)
-      }
-      if (typeof transform === 'function') {
-        ;(plugin as any).transform = wrappedHandler
-      } else {
-        transform.handler = wrappedHandler
-      }
-    }
-    rolldownOptions.plugins = plugins
 
     // set filenames to make output paths predictable so that `renderChunk` hook does not need to be used
     if (Array.isArray(rolldownOptions.output)) {
@@ -492,7 +513,12 @@ export class BundledDev {
       // https://green.sapphi.red/blog/local-server-security-best-practices#properly-check-the-request-origin
       // we can also use `Cross-Origin Resource Policy` header instead of this
       // but we cannot use `Sec-Fetch-*` headers as they are only sent to potentially-trustworthy origins
-      source: hmrOutput.code + '\n; export {}',
+      source:
+        hmrOutput.code +
+        (this.environment.config.consumer === 'server'
+          ? ''
+          : payloadDeliveredAck(hmrOutput.filename)) +
+        '\n; export {}',
     })
     if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
       this.memoryFiles.set(hmrOutput.sourcemapFilename, {
@@ -543,7 +569,7 @@ class Clients {
   }
 
   getAll(): NormalizedHotChannelClient[] {
-    return Array.from(this.idToClient.values())
+    return [...this.idToClient.values()]
   }
 
   delete(client: NormalizedHotChannelClient): string | undefined {
@@ -565,4 +591,14 @@ function debounce(time: number, cb: () => void) {
     }
     timer = globalThis.setTimeout(cb, time)
   }
+}
+
+/**
+ * The line appended to a lazy chunk or HMR patch so the client reports the
+ * payload as delivered once its factories are registered. Placed after the
+ * chunk's tail: if the tail throws, no report is sent and the next payload
+ * simply re-ships those factories, which is safe (registration overwrites).
+ */
+function payloadDeliveredAck(filename: string): string {
+  return `\n;__rolldown_runtime__.payloadDelivered(${JSON.stringify(filename)});`
 }

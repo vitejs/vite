@@ -1,7 +1,7 @@
-import { BroadcastChannel, Worker } from 'node:worker_threads'
 import path from 'node:path'
-import { describe, expect, it, onTestFinished } from 'vitest'
+import { BroadcastChannel, Worker } from 'node:worker_threads'
 import type { HotChannel, HotChannelListener, HotPayload } from 'vite'
+import { describe, expect, it, onTestFinished } from 'vitest'
 import { DevEnvironment } from '../../..'
 import { createServer } from '../../../server'
 

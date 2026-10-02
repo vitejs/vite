@@ -32,6 +32,7 @@ export default defineConfig({
       '@vitejs/test-dep-cjs-for-injected-import',
     ],
     exclude: [
+      '@vitejs/test-excluded-optional-peer',
       '@vitejs/test-nested-exclude',
       '@vitejs/test-dep-non-optimized',
       '@vitejs/test-dep-esm-external',

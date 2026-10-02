@@ -12,7 +12,6 @@ shellEmulator: true
 autoInstallPeers: false
 dedupeInjectedDeps: false
 overrides:
-  rolldown: $rolldown
   vite: 'workspace:*'
   debug: 'npm:obug@^1.0.2'
 patchedDependencies:
@@ -35,6 +34,15 @@ packageExtensions:
   '@volar/typescript':
     dependencies:
       '@volar/language-service': 2.4.28
+  '@vue/compiler-core':
+    dependencies:
+      '@babel/types': ^7.29.8
+  '@vue/compiler-sfc':
+    dependencies:
+      '@babel/types': ^7.29.8
+  '@vue/language-core':
+    dependencies:
+      '@vue/compiler-sfc': ^3.5.0
 allowBuilds:
   core-js: false
   vue-demi: false
@@ -47,17 +55,18 @@ allowBuilds:
   unrs-resolver: true
   workerd: true
 
-minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+minimumReleaseAgeExcludePrune: true
 minimumReleaseAgeExclude:
   - rolldown
   - '@rolldown/binding-*'
-  - '@voidzero-dev/vitepress-theme@5.0.2'
-blockExoticSubdeps: true
+  - '@vitejs/devtools'
+  - '@vitejs/devtools-*'
 trustPolicy: no-downgrade
+trustPolicyExcludePrune: true
 trustPolicyExclude:
-  - chokidar@4.0.3 # https://github.com/paulmillr/chokidar/issues/1440
-  - semver@5.7.2 || 6.3.1
-  - tailwindcss@3.4.18
-  - undici-types@6.21.0 # https://github.com/nodejs/undici/issues/4666
+  - '@vercel/detect-agent@1.2.5' # https://github.com/vercel/vercel/issues/17408
+  - semver@6.3.1
+  - why-is-node-running@3.2.2 # https://github.com/mafintosh/why-is-node-running/issues/90
 
 dedupePeers: true

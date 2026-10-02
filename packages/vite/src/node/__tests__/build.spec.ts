@@ -1,16 +1,18 @@
+import fsp from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
-import fsp from 'node:fs/promises'
 import colors from 'picocolors'
-import { afterEach, describe, expect, test, vi } from 'vitest'
 import type {
   LogLevel,
+  OutputAsset,
   OutputChunk,
   OutputOptions,
   RolldownOptions,
   RolldownOutput,
   RollupLog,
 } from 'rolldown'
+import { afterEach, describe, expect, assert, test, vi } from 'vitest'
+import { BuildEnvironment, normalizePath, resolveConfig } from '..'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import {
   ChunkMetadataMap,
@@ -23,7 +25,7 @@ import {
 } from '../build'
 import type { Logger } from '../logger'
 import { createLogger } from '../logger'
-import { BuildEnvironment, resolveConfig } from '..'
+import { injectQuery } from '../utils'
 
 const dirname = import.meta.dirname
 
@@ -81,6 +83,54 @@ describe('build', () => {
       }
     `)
     assertOutputHashContentChange(result[0], result[1])
+  })
+
+  test('file hash should change when renderBuiltUrl changes', async () => {
+    const createRenderBuiltUrl = (base: string) => (filename: string) =>
+      `${base}/${filename}`
+    const renderBuiltUrlA = createRenderBuiltUrl('/cdn-a')
+    const renderBuiltUrlB = createRenderBuiltUrl('/cdn-b')
+
+    expect(renderBuiltUrlA.toString()).toBe(renderBuiltUrlB.toString())
+
+    const result = await Promise.all([
+      buildProjectWithRenderBuiltUrl(renderBuiltUrlA),
+      buildProjectWithRenderBuiltUrl(renderBuiltUrlB),
+    ])
+
+    expect(getOutputHashChanges(result[0], result[1])).toMatchInlineSnapshot(`
+      {
+        "changed": [
+          "index",
+        ],
+        "unchanged": [
+          "_subentry",
+          "asset.txt",
+          "undefined",
+        ],
+      }
+    `)
+    assertOutputHashContentChange(result[0], result[1])
+  })
+
+  test('renderBuiltUrl receives asset postfixes in JS and CSS', async () => {
+    const result = await buildProjectWithRenderBuiltUrl(
+      (filename) => injectQuery(filename, 'dpl=id'),
+      true,
+    )
+    const entry = result.output.find(
+      (output): output is OutputChunk =>
+        output.type === 'chunk' && output.isEntry,
+    )
+    const css = result.output.find(
+      (output): output is OutputAsset =>
+        output.type === 'asset' && output.fileName.endsWith('.css'),
+    )
+
+    expect(entry?.code).toContain('?dpl=id&marker=value')
+    expect(entry?.code).toContain('?dpl=id&marker=other')
+    expect(css?.source.toString()).toContain('?dpl=id&marker=value')
+    expect(css?.source.toString()).toContain('?dpl=id&marker=other')
   })
 
   test('top-level input is used as the default build entry', async () => {
@@ -459,6 +509,28 @@ describe('resolveBuildOutputs', () => {
       expect(options.input).toBe('explicit-entry.js')
     })
 
+    test('top-level tsconfig applies to Rolldown options', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+        tsconfig: './custom.tsconfig.json',
+        build: {
+          rolldownOptions: {
+            tsconfig: './other.tsconfig.json',
+            resolve: { tsconfigFilename: './legacy.tsconfig.json' },
+          },
+        },
+      })
+      const options = resolveRolldownOptions(
+        builder.environments.client,
+        new ChunkMetadataMap(),
+      )
+      expect(options.tsconfig).toBe(
+        normalizePath(resolve(buildProjectRoot, 'custom.tsconfig.json')),
+      )
+      expect(options.resolve?.tsconfigFilename).toBeUndefined()
+    })
+
     test('falls back to index.html when no input is set', async () => {
       const builder = await createBuilder({
         root: buildProjectRoot,
@@ -505,6 +577,60 @@ describe('resolveBuildOutputs', () => {
       ).toThrow(
         /Either "build\.lib\.entry" or the top-level "input" option is required/,
       )
+    })
+  })
+
+  describe('output minify and comments resolution in resolveRolldownOptions', () => {
+    const buildProjectRoot = resolve(dirname, 'packages/build-project')
+
+    test('merges a partial output.minify object with the lib defaults', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+        build: {
+          minify: 'oxc',
+          lib: { ...baseLibOptions, formats: ['es'] },
+          rolldownOptions: {
+            output: {
+              minify: { mangle: { keepNames: true } },
+            },
+          },
+        },
+      })
+      const options = resolveRolldownOptions(
+        builder.environments.client,
+        new ChunkMetadataMap(),
+      )
+      const outputs = options.output!
+      const output = Array.isArray(outputs) ? outputs[0] : outputs
+      expect(output.minify).toStrictEqual({
+        compress: true,
+        mangle: { keepNames: true },
+        codegen: false,
+      })
+    })
+
+    test('keeps an explicit boolean output.minify untouched', async () => {
+      const builder = await createBuilder({
+        root: buildProjectRoot,
+        logLevel: 'silent',
+        build: {
+          minify: 'oxc',
+          lib: { ...baseLibOptions, formats: ['es'] },
+          rolldownOptions: {
+            output: {
+              minify: false,
+            },
+          },
+        },
+      })
+      const options = resolveRolldownOptions(
+        builder.environments.client,
+        new ChunkMetadataMap(),
+      )
+      const outputs = options.output!
+      const output = Array.isArray(outputs) ? outputs[0] : outputs
+      expect(output.minify).toBe(false)
     })
   })
 })
@@ -1020,6 +1146,183 @@ test.for([true, false])(
   },
 )
 
+test('chunkImportMap per environment with shared plugins', async () => {
+  const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
+  let client: RolldownOutput | undefined
+  let ssr: RolldownOutput | undefined
+  const builder = await createBuilder({
+    root,
+    logLevel: 'warn',
+    environments: {
+      client: {
+        build: {
+          chunkImportMap: true,
+          write: false,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+      ssr: {
+        build: {
+          chunkImportMap: false,
+          ssr: true,
+          write: false,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    builder: {
+      sharedPlugins: true,
+      async buildApp(builder) {
+        client = (await builder.build(
+          builder.environments.client,
+        )) as RolldownOutput
+        ssr = (await builder.build(builder.environments.ssr)) as RolldownOutput
+      },
+    },
+  })
+
+  await builder.buildApp()
+
+  const entry = client!.output.find(
+    (output): output is OutputChunk =>
+      output.type === 'chunk' && output.isEntry,
+  )!
+  const css = client!.output.find(
+    (output) => output.type === 'asset' && output.fileName.endsWith('.css'),
+  )!
+  const importMapAsset = client!.output.find(
+    (output): output is OutputAsset =>
+      output.type === 'asset' && output.fileName === 'importmap.json',
+  )!
+  expect(
+    ssr!.output.some(
+      (output) =>
+        output.type === 'asset' && output.fileName === 'importmap.json',
+    ),
+  ).toBe(false)
+  const importMap = JSON.parse(importMapAsset.source.toString())
+    .imports as Record<string, string>
+  const cssSpecifier = Object.entries(importMap).find(
+    ([, fileName]) => fileName === `/${css.fileName}`,
+  )![0]
+  expect(entry.code).toContain(JSON.stringify(cssSpecifier.slice(1)))
+})
+
+test('chunkImportMap is emitted when emitAssets is false', async () => {
+  const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'warn',
+    environments: {
+      ssr: {
+        build: {
+          ssr: true,
+          emitAssets: false,
+          write: false,
+          chunkImportMap: true,
+          rolldownOptions: {
+            input: '/entry.js',
+            experimental: {
+              chunkImportMap: {
+                fileName: 'custom-importmap.json',
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const result = (await builder.build(
+    builder.environments.ssr,
+  )) as RolldownOutput
+
+  expect(result.output).toContainEqual(
+    expect.objectContaining({
+      type: 'asset',
+      fileName: 'custom-importmap.json',
+    }),
+  )
+})
+
+test('chunkImportMap is emitted for SSR when enabled', async () => {
+  const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'warn',
+    environments: {
+      ssr: {
+        build: {
+          ssr: true,
+          chunkImportMap: true,
+          write: false,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+  })
+
+  const result = (await builder.build(
+    builder.environments.ssr,
+  )) as RolldownOutput
+
+  expect(result.output).toContainEqual(
+    expect.objectContaining({
+      type: 'asset',
+      fileName: 'importmap.json',
+    }),
+  )
+})
+
+test('importmap named asset is not emitted when chunkImportMap is false', async () => {
+  const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'warn',
+    plugins: [
+      {
+        name: 'emit-importmap-named-asset',
+        buildStart() {
+          this.emitFile({
+            type: 'asset',
+            fileName: 'importmap.json',
+            source: '{}',
+          })
+        },
+      },
+    ],
+    environments: {
+      ssr: {
+        build: {
+          ssr: true,
+          emitAssets: false,
+          write: false,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+  })
+
+  const result = (await builder.build(
+    builder.environments.ssr,
+  )) as RolldownOutput
+
+  expect(result.output).not.toContainEqual(
+    expect.objectContaining({
+      type: 'asset',
+      fileName: 'importmap.json',
+    }),
+  )
+})
+
 test('sharedConfigBuild and emitAssets', async () => {
   const root = resolve(dirname, 'fixtures/shared-config-build/emitAssets')
   const builder = await createBuilder({
@@ -1085,6 +1388,22 @@ test('sharedConfigBuild and emitAssets', async () => {
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
   ])
+})
+
+test('resolving lib entry from the top-level input does not mutate the user config', async () => {
+  const userLib: LibraryOptions = { formats: ['es'] }
+  const config = await resolveConfig(
+    {
+      configFile: false,
+      input: 'src/main.ts',
+      build: { lib: userLib },
+    },
+    'build',
+  )
+  const resolvedLib = config.environments.client.build.lib
+  assert(resolvedLib !== false)
+  expect(resolvedLib.entry).toBe('src/main.ts')
+  expect(userLib.entry).toBeUndefined()
 })
 
 describe('onRollupLog', () => {
@@ -1317,6 +1636,53 @@ test('copies public directory after building same environment with write false f
     fsp.readFile(resolve(root, 'dist/favicon.svg'), 'utf-8'),
   ).resolves.toBe('<svg></svg>')
 })
+
+async function buildProjectWithRenderBuiltUrl(
+  renderBuiltUrl: (filename: string) => string,
+  includePostfixes = false,
+) {
+  return (await build({
+    root: resolve(dirname, 'packages/build-project'),
+    logLevel: 'silent',
+    build: {
+      write: false,
+      assetsInlineLimit: 0,
+    },
+    experimental: {
+      renderBuiltUrl,
+    },
+    plugins: [
+      {
+        name: 'test',
+        resolveId(id) {
+          if (id === 'entry.js' || id === 'subentry.js' || id === 'style.css') {
+            return '\0' + id
+          }
+        },
+        load(id) {
+          if (id === '\0entry.js') {
+            return `
+              import assetUrl from '/asset.txt?url${includePostfixes ? '&marker=value' : ''}'
+              ${includePostfixes ? `import otherAssetUrl from '/asset.txt?url&marker=other'` : ''}
+              ${includePostfixes ? `import 'style.css'` : ''}
+              console.log(assetUrl${includePostfixes ? `, otherAssetUrl` : ''})
+              window.addEventListener('click', () => { import('subentry.js') })
+            `
+          }
+          if (id === '\0subentry.js') {
+            return `export default 'subentry'`
+          }
+          if (id === '\0style.css') {
+            return `
+              .asset-a { background: url('/asset.txt?marker=value') }
+              .asset-b { background: url('/asset.txt?marker=other') }
+            `
+          }
+        },
+      },
+    ],
+  })) as RolldownOutput
+}
 
 /**
  * for each chunks in output1, if there's a chunk in output2 with the same fileName,

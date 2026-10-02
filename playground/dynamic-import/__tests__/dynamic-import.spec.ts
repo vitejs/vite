@@ -4,6 +4,7 @@ import {
   findAssetFile,
   getColor,
   isBuild,
+  isBundled,
   isBundledDev,
   page,
   serverLogs,
@@ -14,17 +15,14 @@ test('should load literal dynamic import', async () => {
   await expect.poll(() => page.textContent('.view')).toMatch('Baz view')
 })
 
-test.skipIf(isBundledDev)(
-  'should load full dynamic import from public',
-  async () => {
-    await page.click('.qux')
-    await expect.poll(() => page.textContent('.view')).toMatch('Qux view')
-    // No warning should be logged as we are using @vite-ignore
-    expect(
-      serverLogs.some((log) => log.includes('cannot be analyzed by vite')),
-    ).toBe(false)
-  },
-)
+test('should load full dynamic import from public', async () => {
+  await page.click('.qux')
+  await expect.poll(() => page.textContent('.view')).toMatch('Qux view')
+  // No warning should be logged as we are using @vite-ignore
+  expect(
+    serverLogs.some((log) => log.includes('cannot be analyzed by vite')),
+  ).toBe(false)
+})
 
 test('should load data URL of `blob:`', async () => {
   await page.click('.issue-2658-1')
@@ -42,13 +40,10 @@ test('should have same reference on static and dynamic js import, .mxd', async (
 })
 
 // in this case, it is not possible to detect the correct module
-test.skipIf(isBundledDev)(
-  'should have same reference on static and dynamic js import, .mxd2',
-  async () => {
-    await page.click('.mxd2')
-    await expect.poll(() => page.textContent('.view')).toMatch('false')
-  },
-)
+test('should have same reference on static and dynamic js import, .mxd2', async () => {
+  await page.click('.mxd2')
+  await expect.poll(() => page.textContent('.view')).toMatch('false')
+})
 
 test('should have same reference on static and dynamic js import, .mxdjson', async () => {
   await page.click('.mxdjson')
@@ -107,21 +102,26 @@ test('should load dynamic import with vars alias', async () => {
     .toMatch('hi')
 })
 
+test('should load dynamic import with vars subpath imports', async () => {
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-vars-subpath-imports'))
+    .toMatch('hi')
+})
+
 test('should load dynamic import with vars raw', async () => {
   await expect
     .poll(() => page.textContent('.dynamic-import-with-vars-raw'))
     .toMatch('export function hello()')
 })
 
-test.skipIf(isBundledDev)(
-  'should load dynamic import with vars url',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.dynamic-import-with-vars-url'))
-      .toMatch(isBuild ? 'data:text/javascript' : '/alias/url.js')
-  },
-)
+test('should load dynamic import with vars url', async () => {
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-vars-url'))
+    .toMatch(isBundled ? 'data:text/javascript' : '/alias/url.js')
+})
 
+// bundled dev: workers created through the dynamic-import-vars glob aren't
+// bundled as worker entries yet
 test.skipIf(isBundledDev)(
   'should load dynamic import with vars worker',
   async () => {

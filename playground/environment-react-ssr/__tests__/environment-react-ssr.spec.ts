@@ -20,6 +20,8 @@ test('basic', async () => {
 })
 
 describe.runIf(!isBuild)('pre-bundling', () => {
+  // bundled dev by design: the client environment has no dep optimizer, so
+  // there is no .vite/deps folder to read. Dependencies come from the bundle.
   test.skipIf(isBundledDev)('client', async () => {
     const metaJson = readDepOptimizationMetadata()
 
@@ -53,6 +55,8 @@ describe.runIf(!isBuild)('pre-bundling', () => {
     expect(depsFilesWithProcessEnvNodeEnv.length).toBeGreaterThan(0)
   })
 
+  // bundled dev by design: there is no client dep-optimizer metadata to
+  // compare before and after. The reload this test checks cannot happen.
   test.skipIf(isBundledDev)('deps reload', async () => {
     const envs = ['client', 'server'] as const
 

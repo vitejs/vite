@@ -1,7 +1,8 @@
 import path from 'node:path'
-import { describe, expect, test } from 'vitest'
-import type { InternalModuleFormat } from 'rolldown'
 import MagicString from 'magic-string'
+import type { InternalModuleFormat } from 'rolldown'
+import { describe, expect, test } from 'vitest'
+import { PartialEnvironment } from '../../baseEnvironment'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
 import {
@@ -15,7 +16,6 @@ import {
   preprocessCSS,
   resolveLibCssFilename,
 } from '../../plugins/css'
-import { PartialEnvironment } from '../../baseEnvironment'
 import { normalizePath } from '../../utils'
 
 const dirname = import.meta.dirname
@@ -279,6 +279,15 @@ describe('convertTargets', () => {
 
   test('supports es6 as an alias of es2015', () => {
     expect(convertTargets('es6')).toStrictEqual(convertTargets('es2015'))
+  })
+
+  test('returns undefined when there is no constraint', () => {
+    expect(convertTargets('esnext')).toBeUndefined()
+    expect(convertTargets(['esnext'])).toBeUndefined()
+    expect(convertTargets(false)).toBeUndefined()
+    expect(convertTargets(['esnext', 'chrome148'])).toStrictEqual({
+      chrome: 0x94_00_00,
+    })
   })
 })
 

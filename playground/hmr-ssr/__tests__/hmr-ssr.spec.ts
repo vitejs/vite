@@ -1,15 +1,6 @@
+import EventEmitter from 'node:events'
 import fs from 'node:fs'
 import { posix, resolve } from 'node:path'
-import EventEmitter from 'node:events'
-import {
-  afterAll,
-  beforeAll,
-  describe,
-  expect,
-  onTestFinished,
-  test,
-  vi,
-} from 'vitest'
 import type {
   InlineConfig,
   Plugin,
@@ -19,10 +10,20 @@ import type {
 import { createRunnableDevEnvironment, createServer } from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
 import {
+  afterAll,
+  beforeAll,
+  describe,
+  expect,
+  onTestFinished,
+  test,
+  vi,
+} from 'vitest'
+import {
   addFile,
   createInMemoryLogger,
   editFile,
   isBuild,
+  isBundledDev,
   promiseWithResolvers,
   readFile,
   removeFile,
@@ -1185,6 +1186,9 @@ async function setupModuleRunner(
       disabled: true,
       noDiscovery: true,
       include: [],
+    },
+    experimental: {
+      bundledDev: isBundledDev,
     },
     ...serverOptions,
   })

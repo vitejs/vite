@@ -1,9 +1,23 @@
-import path from 'node:path'
 import fsp from 'node:fs/promises'
+import path from 'node:path'
 import colors from 'picocolors'
 import type { ExistingRawSourceMap } from 'rolldown'
 import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '..'
+import {
+  ERR_OUTDATED_OPTIMIZED_DEP,
+  NULL_BYTE_PLACEHOLDER,
+} from '../../../shared/constants'
+import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
+import type { ResolvedConfig } from '../../config'
+import {
+  DEP_VERSION_RE,
+  ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
+  ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
+  FS_PREFIX,
+} from '../../constants'
+import { isDirectCSSRequest, isDirectRequest } from '../../plugins/css'
+import { isHTMLProxy } from '../../plugins/html'
 import {
   createDebugger,
   fsPathFromId,
@@ -16,24 +30,10 @@ import {
   removeImportQuery,
   removeTimestampQuery,
 } from '../../utils'
-import { send } from '../send'
-import { ERR_DENIED_ID, ERR_LOAD_URL } from '../transformRequest'
-import { applySourcemapIgnoreList } from '../sourcemap'
-import { isHTMLProxy } from '../../plugins/html'
-import {
-  DEP_VERSION_RE,
-  ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
-  ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
-  FS_PREFIX,
-} from '../../constants'
-import { isDirectCSSRequest, isDirectRequest } from '../../plugins/css'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
-import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
-import {
-  ERR_OUTDATED_OPTIMIZED_DEP,
-  NULL_BYTE_PLACEHOLDER,
-} from '../../../shared/constants'
-import type { ResolvedConfig } from '../../config'
+import { send } from '../send'
+import { applySourcemapIgnoreList } from '../sourcemap'
+import { ERR_DENIED_ID, ERR_LOAD_URL } from '../transformRequest'
 import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 const debugCache = createDebugger('vite:cache')

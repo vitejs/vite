@@ -1,5 +1,5 @@
-import { onMounted, ref } from 'vue'
 import type { Sponsor, SponsorTier } from '@voidzero-dev/vitepress-theme'
+import { onMounted, ref } from 'vue'
 
 interface Sponsors {
   main: Sponsor[]

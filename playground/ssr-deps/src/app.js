@@ -1,29 +1,29 @@
 import path from 'node:path'
-import readFileContent from '@vitejs/test-read-file-content'
-import primitiveExport from '@vitejs/test-primitive-export'
-import tsDefaultExport, {
-  hello as tsNamedExport,
-} from '@vitejs/test-ts-transpiled-exports'
-import objectAssignedExports from '@vitejs/test-object-assigned-exports'
-import forwardedExport from '@vitejs/test-forwarded-export'
 import bcrypt from '@node-rs/bcrypt'
 import definePropertiesExports from '@vitejs/test-define-properties-exports'
 import definePropertyExports from '@vitejs/test-define-property-exports'
-import onlyObjectAssignedExports from '@vitejs/test-only-object-assigned-exports'
-import requireAbsolute from '@vitejs/test-require-absolute'
-import noExternalCjs from '@vitejs/test-no-external-cjs'
+import forwardedExport from '@vitejs/test-forwarded-export'
 import importBuiltinCjs from '@vitejs/test-import-builtin-cjs'
 import { hello as linkedNoExternal } from '@vitejs/test-linked-no-external'
-import virtualMessage from '@vitejs/test-pkg-exports/virtual'
 import moduleConditionMessage from '@vitejs/test-module-condition'
+import noExternalCjs from '@vitejs/test-no-external-cjs'
+import objectAssignedExports from '@vitejs/test-object-assigned-exports'
+import onlyObjectAssignedExports from '@vitejs/test-only-object-assigned-exports'
+import virtualMessage from '@vitejs/test-pkg-exports/virtual'
+import primitiveExport from '@vitejs/test-primitive-export'
+import readFileContent from '@vitejs/test-read-file-content'
+import requireAbsolute from '@vitejs/test-require-absolute'
+import tsDefaultExport, {
+  hello as tsNamedExport,
+} from '@vitejs/test-ts-transpiled-exports'
 import '@vitejs/test-css-lib'
 
 // This import will set a 'Hello World!" message in the nested-external non-entry dependency
 import '@vitejs/test-non-optimized-with-nested-external'
 
-import * as optimizedWithNestedExternal from '@vitejs/test-optimized-with-nested-external'
-import * as optimizedCjsWithNestedExternal from '@vitejs/test-optimized-cjs-with-nested-external'
 import * as optimizeDepsNestedInclude from '@vitejs/test-nested-exclude'
+import * as optimizedCjsWithNestedExternal from '@vitejs/test-optimized-cjs-with-nested-external'
+import * as optimizedWithNestedExternal from '@vitejs/test-optimized-with-nested-external'
 
 import { setMessage } from '@vitejs/test-external-entry/entry'
 setMessage('Hello World!')

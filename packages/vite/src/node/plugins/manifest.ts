@@ -1,10 +1,10 @@
 import path from 'node:path'
 import type { OutputChunk, RenderedChunk } from 'rolldown'
 import { viteManifestPlugin as nativeManifestPlugin } from 'rolldown/experimental'
+import { type Environment, perEnvironmentPlugin } from '..'
+import { perEnvironmentState } from '../environment'
 import type { Plugin } from '../plugin'
 import { normalizePath } from '../utils'
-import { perEnvironmentState } from '../environment'
-import { type Environment, perEnvironmentPlugin } from '..'
 import { cssEntriesMap } from './asset'
 
 const endsWithJSRE = /\.[cm]?js$/

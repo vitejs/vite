@@ -1,10 +1,10 @@
 import fs from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { test as base, onTestFinished } from 'vitest'
 import type { ModuleRunner } from 'vite/module-runner'
-import type { ViteDevServer } from '../../../server'
+import { test as base, onTestFinished } from 'vitest'
 import type { InlineConfig } from '../../../config'
+import type { ViteDevServer } from '../../../server'
 import { createServer } from '../../../server'
 import type { RunnableDevEnvironment } from '../../../server/environments/runnableEnvironment'
 import {

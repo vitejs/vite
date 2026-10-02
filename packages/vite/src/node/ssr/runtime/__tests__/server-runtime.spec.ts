@@ -1,11 +1,11 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { posix, resolve, win32 } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, vi } from 'vitest'
-import { isWindows, slash } from '../../../../shared/utils'
-import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
 import type { HMRLogger } from '../../../../module-runner'
+import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
+import { isWindows, slash } from '../../../../shared/utils'
 import { createServer } from '../../../server'
 import {
   createRunnableDevEnvironment,
@@ -42,6 +42,7 @@ describe.for([
       './fixtures/installed.js',
       './fixtures/virtual.js',
       './fixtures/cyclic/entry.js',
+      './fixtures/tla-circular/index.js',
       './fixtures/has-error.js',
       './fixtures/basic.js',
       './fixtures/simple.js?raw',
@@ -214,6 +215,17 @@ describe.for([
     const mod = await runner.import('/fixtures/native.js')
     expect(mod.readdirSync).toBe(readdirSync)
     expect(mod.existsSync).toBe(existsSync)
+  })
+
+  it('resolves circular imports between modules with top-level await', async ({
+    runner,
+  }) => {
+    const mod = await runner.import('/fixtures/tla-circular/index.js')
+
+    expect(mod.a).toBe('a')
+    expect(mod.b).toBe('b')
+    expect(mod.getA()).toBe('a')
+    expect(mod.getB()).toBe('b')
   })
 
   it('this of the exported function should be undefined', async ({

@@ -39,8 +39,10 @@
     "@vitejs/test-dep-with-asset-ext1.pdf": "file:./dep-with-asset-ext/dep1",
     "@vitejs/test-dep-with-asset-ext2.pdf": "file:./dep-with-asset-ext/dep2",
     "@vitejs/test-dep-with-builtin-module-cjs": "file:./dep-with-builtin-module-cjs",
+    "@vitejs/test-dep-browser-false": "file:./dep-browser-false",
     "@vitejs/test-dep-with-builtin-module-esm": "file:./dep-with-builtin-module-esm",
     "@vitejs/test-dep-with-dynamic-import": "file:./dep-with-dynamic-import",
+    "@vitejs/test-dep-with-excluded-optional-peer-dep-cjs": "file:./dep-with-excluded-optional-peer-dep-cjs",
     "@vitejs/test-dep-with-optional-peer-dep": "file:./dep-with-optional-peer-dep",
     "@vitejs/test-dep-with-optional-peer-dep-cjs": "file:./dep-with-optional-peer-dep-cjs",
     "@vitejs/test-dep-with-optional-peer-dep-submodule": "file:./dep-with-optional-peer-dep-submodule",
@@ -53,12 +55,12 @@
     "@vitejs/test-dep-lodash.clonedeep": "file:./dep-lodash-clonedeep",
     "@vitejs/test-dep-lodash-es": "file:./dep-lodash-es",
     "@vitejs/test-nested-exclude": "file:./nested-exclude",
-    "phoenix": "^1.8.9",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
+    "phoenix": "^1.8.15",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "@vitejs/test-resolve-linked": "workspace:0.0.0",
     "url": "^0.11.4",
-    "vue": "^3.5.40",
+    "vue": "^3.5.43",
     "vuex": "^4.1.0"
   }
 }

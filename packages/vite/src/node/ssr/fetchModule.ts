@@ -1,23 +1,23 @@
-import { fileURLToPath, pathToFileURL } from 'node:url'
 import path from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import type { FetchResult } from 'vite/module-runner'
 import type { TransformResult } from '..'
+import {
+  MODULE_RUNNER_SOURCEMAPPING_SOURCE,
+  SOURCEMAPPING_URL,
+} from '../../shared/constants'
+import type { ViteFetchResult } from '../../shared/invokeMethods'
+import { cleanUrl, encodeSourceURL, unwrapId } from '../../shared/utils'
 import { tryNodeResolve } from '../plugins/resolve'
+import type { BundledDev } from '../server/bundledDev'
+import type { DevEnvironment } from '../server/environment'
+import { genSourceMapUrl } from '../server/sourcemap'
 import {
   isBuiltin,
   isExternalUrl,
   isFilePathESM,
   normalizePath,
 } from '../utils'
-import { cleanUrl, unwrapId } from '../../shared/utils'
-import {
-  MODULE_RUNNER_SOURCEMAPPING_SOURCE,
-  SOURCEMAPPING_URL,
-} from '../../shared/constants'
-import { genSourceMapUrl } from '../server/sourcemap'
-import type { DevEnvironment } from '../server/environment'
-import type { ViteFetchResult } from '../../shared/invokeMethods'
-import type { BundledDev } from '../server/bundledDev'
 import { ssrTransform } from './ssrTransform'
 
 export interface FetchModuleOptions {
@@ -282,13 +282,14 @@ function inlineSourceMap(
     code = code.replace(OTHER_SOURCE_MAP_REGEXP, '')
 
   const sourceMap = startOffset
-    ? Object.assign({}, map, {
+    ? {
+        ...map,
         mappings: ';'.repeat(startOffset) + map.mappings,
-      })
+      }
     : map
-  result.code = `${code.trimEnd()}\n//# sourceURL=${
-    id
-  }\n${MODULE_RUNNER_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
+  result.code = `${code.trimEnd()}\n//# sourceURL=${encodeSourceURL(
+    id,
+  )}\n${MODULE_RUNNER_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
 
   return result
 }
