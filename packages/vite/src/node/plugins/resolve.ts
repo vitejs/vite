@@ -509,11 +509,9 @@ export function resolveSubpathImports(
   // A subpath imports key may itself contain `#` (e.g. `##/*`, `#a#b`), and
   // unlike URLs, `#` has no fragment semantics in import specifiers, so only
   // the query part is stripped from the key (#16085, #23622)
-  const sliced = id.slice(1)
-  const queryIndex = sliced.indexOf('?')
-  const idWithoutPostfix =
-    queryIndex === -1 ? `#${sliced}` : `#${sliced.slice(0, queryIndex)}`
-  const postfix = queryIndex === -1 ? '' : sliced.slice(queryIndex)
+  const queryIndex = id.indexOf('?')
+  const idWithoutPostfix = queryIndex === -1 ? id : id.slice(0, queryIndex)
+  const postfix = queryIndex === -1 ? '' : id.slice(queryIndex)
 
   let importsPath = resolveExportsOrImports(
     pkgData.data,
