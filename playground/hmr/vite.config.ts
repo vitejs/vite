@@ -9,7 +9,22 @@ export default defineConfig(({ command }) => ({
     path.resolve(import.meta.dirname, './index.html'),
     ...(command === 'build'
       ? []
-      : [path.resolve(import.meta.dirname, './missing-import/index.html')]),
+      : [
+          path.resolve(import.meta.dirname, './missing-import/index.html'),
+          ...[
+            'main-accepted',
+            'main-non-accepted',
+            'side-effects',
+            'unused-exports',
+            'star-imports',
+            'dynamic-imports',
+          ].map((dir) =>
+            path.resolve(
+              import.meta.dirname,
+              `./accept-exports/${dir}/index.html`,
+            ),
+          ),
+        ]),
     path.resolve(
       import.meta.dirname,
       './unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
