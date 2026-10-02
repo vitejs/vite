@@ -223,6 +223,17 @@ export class ModuleNode {
   get ssrInvalidationState(): TransformResult | 'HARD_INVALIDATED' | undefined {
     return this._ssrModule?.invalidationState
   }
+  get isDeleted(): boolean {
+    return Boolean(this._clientModule?.isDeleted || this._ssrModule?.isDeleted)
+  }
+  set isDeleted(value: boolean) {
+    if (this._clientModule) {
+      this._clientModule.isDeleted = value
+    }
+    if (this._ssrModule) {
+      this._ssrModule.isDeleted = value
+    }
+  }
 }
 
 function mapIterator<T, K = T>(
