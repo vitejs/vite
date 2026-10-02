@@ -279,6 +279,67 @@ test('export then import minified', async () => {
   `)
 })
 
+test('dedupes export star from an already imported source', async () => {
+  expect(
+    await ssrTransformSimpleCode(`
+import { createApp } from 'vue'
+export { client } from './client'
+export * from 'vue'
+export { createApp }
+`),
+  ).toMatchInlineSnapshot(`
+    "__vite_ssr_exportName__("client", () => { try { return __vite_ssr_import_1__.client } catch {} });
+    __vite_ssr_exportName__("createApp", () => { try { return __vite_ssr_import_0__.createApp } catch {} });
+    const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["createApp"]});
+    __vite_ssr_exportAll__(__vite_ssr_import_0__);
+    const __vite_ssr_import_1__ = await __vite_ssr_import__("./client", {"importedNames":["client"]});
+    ;
+
+
+    ;
+
+    "
+  `)
+})
+
+test('dedupes export star from an already re-exported source', async () => {
+  expect(
+    await ssrTransformSimpleCode(`
+export { createApp } from 'vue'
+export { client } from './client'
+export * from 'vue'
+`),
+  ).toMatchInlineSnapshot(`
+    "__vite_ssr_exportName__("createApp", () => { try { return __vite_ssr_import_0__.createApp } catch {} });
+    __vite_ssr_exportName__("client", () => { try { return __vite_ssr_import_1__.client } catch {} });
+    const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["createApp"]});
+    __vite_ssr_exportAll__(__vite_ssr_import_0__);
+    ;const __vite_ssr_import_1__ = await __vite_ssr_import__("./client", {"importedNames":["client"]});
+    ;
+
+
+
+    "
+  `)
+})
+
+test('does not dedupe export namespace from an already imported source', async () => {
+  expect(
+    await ssrTransformSimpleCode(`
+import { createApp } from 'vue'
+export * as ns from 'vue'
+`),
+  ).toMatchInlineSnapshot(`
+    "__vite_ssr_exportName__("ns", () => { try { return __vite_ssr_import_1__ } catch {} });
+    const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["createApp"]});
+    const __vite_ssr_import_1__ = await __vite_ssr_import__("vue");
+
+
+
+    "
+  `)
+})
+
 test('hoist import to top', async () => {
   expect(
     await ssrTransformSimpleCode(
