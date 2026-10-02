@@ -20,6 +20,49 @@ export default defineConfig({
   },
   plugins: [
     {
+      // the replacement the customResolver deprecation warning points users to
+      name: 'test-layers-resolver',
+      enforce: 'pre',
+      resolveId(id) {
+        if (id.startsWith('~layers/')) {
+          return path.resolve(
+            dirname,
+            'user-resolver',
+            id.slice('~layers/'.length),
+          )
+        }
+      },
+    },
+    {
+      // a pre plugin that marks things external must not break @import
+      name: 'test-layers-external',
+      enforce: 'pre',
+      resolveId(id, importer) {
+        if (
+          id === './external.css' &&
+          importer?.endsWith('external-layer.css')
+        ) {
+          return { id, external: true }
+        }
+      },
+    },
+    {
+      // same thing with the object hook form
+      name: 'test-layers-resolver-hook',
+      resolveId: {
+        order: 'pre',
+        handler(id) {
+          if (id.startsWith('~layers-hook/')) {
+            return path.resolve(
+              dirname,
+              'user-resolver',
+              id.slice('~layers-hook/'.length),
+            )
+          }
+        },
+      },
+    },
+    {
       // Emulate a UI framework component where a framework module would import
       // scoped CSS files that should treeshake if the default export is not used.
       name: 'treeshake-scoped-css',

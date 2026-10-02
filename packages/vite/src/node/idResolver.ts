@@ -3,6 +3,7 @@ import type { PartialResolvedId } from 'rolldown'
 import type { PartialEnvironment } from './baseEnvironment'
 import type { ResolvedConfig } from './config'
 import type { Environment } from './environment'
+import type { Plugin } from './plugin'
 import { oxcResolvePlugin } from './plugins/resolve'
 import type { InternalResolveOptions } from './plugins/resolve'
 import type { EnvironmentPluginContainer } from './server/pluginContainer'
@@ -35,6 +36,24 @@ export function createBackCompatIdResolver(
   }
 }
 
+// `@import` inlining needs a file, so a result a plugin marks as external is
+// dropped and resolution falls through to the next plugin.
+function withoutExternalResults(plugin: Plugin): Plugin {
+  const hook = plugin.resolveId!
+  const handler = typeof hook === 'object' ? hook.handler : hook
+  const wrapped = async function (this: any, ...args: any[]) {
+    const result = await (handler as any).apply(this, args)
+    return result && typeof result === 'object' && result.external
+      ? null
+      : result
+  }
+  return {
+    ...plugin,
+    resolveId:
+      typeof hook === 'object' ? { ...hook, handler: wrapped } : wrapped,
+  } as Plugin
+}
+
 /**
  * Create an internal resolver to be used in special scenarios, e.g.
  * optimizer and handling css @imports
@@ -44,6 +63,7 @@ export function createIdResolver(
   options?: Partial<InternalResolveOptions>,
 ): ResolveIdFn {
   const scan = options?.scan
+  const userPrePlugins = options?.userPrePlugins
 
   const pluginContainerMap = new Map<
     PartialEnvironment,
@@ -56,11 +76,26 @@ export function createIdResolver(
   ): Promise<PartialResolvedId | null> {
     let pluginContainer = pluginContainerMap.get(environment)
     if (!pluginContainer) {
+      // Same set of plugins the main pipeline runs before its own resolver
+      // (see `resolvePlugins`), so a `resolveId` hook that works for JS
+      // imports also works here.
+      const prePlugins = userPrePlugins
+        ? environment.config.plugins
+            .filter(
+              (plugin) =>
+                plugin.resolveId &&
+                (plugin.enforce === 'pre' ||
+                  (typeof plugin.resolveId === 'object' &&
+                    plugin.resolveId.order === 'pre')),
+            )
+            .map(withoutExternalResults)
+        : []
       pluginContainer = await createEnvironmentPluginContainer(
         environment as Environment,
         [
           // @ts-expect-error  the aliasPlugin uses rollup types
           aliasPlugin({ entries: environment.config.resolve.alias }),
+          ...prePlugins,
           ...oxcResolvePlugin(
             {
               root: config.root,

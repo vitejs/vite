@@ -245,6 +245,32 @@
   <pre class="aliased-content"></pre>
   <p class="aliased-module">import '#alias-module': this should be blue</p>
 
+  <h2>@import through a user resolveId plugin</h2>
+  <p class="user-resolver-layer">
+    import '~layers/layer.css': this should be blue
+  </p>
+  <p class="user-resolver-nested">
+    nested @import '~layers/nested.css': this should be green
+  </p>
+  <p class="user-resolver-scss">
+    import '~layers/layer.scss': this should be blue
+  </p>
+  <p class="user-resolver-scss-nested">
+    nested scss @import: this should be green
+  </p>
+  <p class="user-resolver-hook">
+    import '~layers-hook/hook-layer.css' (object hook): this should be blue
+  </p>
+  <p class="user-resolver-hook-nested">
+    nested @import via object hook: this should be green
+  </p>
+  <p class="user-resolver-external-layer">
+    import './user-resolver/external-layer.css': this should be blue
+  </p>
+  <p class="user-resolver-external">
+    @import marked external by a pre plugin still inlines: this should be green
+  </p>
+
   <p>Imports field</p>
   <p class="imports-field">import '#imports': this should be red</p>
 </div>
