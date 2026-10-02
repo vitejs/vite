@@ -842,9 +842,7 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
 
     editFile('asset/update.js', (code) => code.replace('hello', 'world2'))
     await notifyRebuildComplete(watcher)
-    if (process.platform === 'win32') {
-      await new Promise((r) => setTimeout(r, 150))
-    }
+    await new Promise((r) => setTimeout(r, 500))
     await page.reload()
     await expect.poll(() => page.textContent('.update-content')).toBe('world2')
 
@@ -859,9 +857,7 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
     expect(await getColor('#foo')).toBe('red')
     editFile('css/foo.module.css', (code) => code.replace('red', 'blue'))
     await notifyRebuildComplete(watcher)
-    if (process.platform === 'win32') {
-      await new Promise((r) => setTimeout(r, 150))
-    }
+    await new Promise((r) => setTimeout(r, 500))
     await page.reload()
     expect(await getColor('#foo')).toBe('blue')
   })
@@ -870,9 +866,7 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
     expect(await page.textContent('.raw-query')).toBe('foo')
     editFile('static/foo.txt', (code) => code.replace('foo', 'zoo2'))
     await notifyRebuildComplete(watcher)
-    if (process.platform === 'win32') {
-      await new Promise((r) => setTimeout(r, 150))
-    }
+    await new Promise((r) => setTimeout(r, 500))
     await page.reload()
     expect(await page.textContent('.raw-query')).toBe('zoo2')
   })
