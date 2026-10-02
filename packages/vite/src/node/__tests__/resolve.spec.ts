@@ -1,9 +1,9 @@
 import { join } from 'node:path'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
+import { build } from '../build'
+import type { EnvironmentOptions, InlineConfig } from '../config'
 import { createServer } from '../server'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
-import type { EnvironmentOptions, InlineConfig } from '../config'
-import { build } from '../build'
 
 describe('import and resolveId', () => {
   async function createTestServer() {

@@ -37,9 +37,8 @@
 
 * **legacy:** use `babel-plugin-polyfill-*` consistently ([#22874](https://github.com/vitejs/vite/issues/22874)) ([9dddae6](https://github.com/vitejs/vite/commit/9dddae69a214bd468223d33f9e64c580ef1bb0d6))
 
-## [8.1.0](https://github.com/vitejs/vite/compare/plugin-legacy@8.1.0-beta.0...plugin-legacy@8.1.0) (2026-06-23)
+## [8.1.0](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.2...plugin-legacy@8.1.0) (2026-06-23)
 
-## [8.1.0-beta.0](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.2...plugin-legacy@8.1.0-beta.0) (2026-06-15)
 ### Features
 
 * **build:** chunk importmap ([#21580](https://github.com/vitejs/vite/issues/21580)) ([e180312](https://github.com/vitejs/vite/commit/e1803128e5698202e22c6e5e17dc9ebd83d4f3f5))
@@ -57,6 +56,12 @@
 ### Code Refactoring
 
 * use rolldownOptions where possible ([#21205](https://github.com/vitejs/vite/issues/21205)) ([7ca7c1b](https://github.com/vitejs/vite/commit/7ca7c1bedf0a9754e7631cbe615e41231b0aeb80))
+
+### Beta Changelogs
+
+#### [8.1.0-beta.0](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.2...plugin-legacy@8.1.0-beta.0) (2026-06-15)
+
+See [8.1.0-beta.0 changelog](https://github.com/vitejs/vite/blob/plugin-legacy@8.1.0-beta.0/packages/plugin-legacy/CHANGELOG.md)
 
 ## <small>[8.0.2](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.1...plugin-legacy@8.0.2) (2026-05-14)</small>
 ### Bug Fixes

@@ -1,13 +1,13 @@
 import { EventEmitter } from 'node:events'
 import path from 'node:path'
+import colors from 'picocolors'
 import type { OutputOptions, WatcherOptions } from 'rolldown'
 import type { DevWatchOptions } from 'rolldown/experimental'
-import colors from 'picocolors'
 import { escapePath } from 'tinyglobby'
 import type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
 import { withTrailingSlash } from '../shared/utils'
-import { arraify, normalizePath } from './utils'
 import type { Logger } from './logger'
+import { arraify, normalizePath } from './utils'
 
 export function getResolvedOutDirs(
   root: string,
@@ -160,4 +160,27 @@ class NoopWatcher extends EventEmitter implements FSWatcher {
 
 export function createNoopWatcher(options: WatchOptions): FSWatcher {
   return new NoopWatcher(options)
+}
+
+/**
+ * Chokidar's `add()` reopens a closed watcher. It may be called after shutdown
+ * starts from an in-flight plugin hook or directly through the exposed watcher.
+ * This wrapper makes `close()` final so those calls cannot create new file
+ * system handles.
+ */
+export function makeWatcherCloseFinal(watcher: FSWatcher): FSWatcher {
+  let closed = false
+  const add = watcher.add
+  watcher.add = function (...args: Parameters<FSWatcher['add']>) {
+    if (closed) return this
+    return add.apply(this, args)
+  }
+
+  const close = watcher.close
+  watcher.close = function (...args: Parameters<FSWatcher['close']>) {
+    closed = true
+    return close.apply(this, args)
+  }
+
+  return watcher
 }

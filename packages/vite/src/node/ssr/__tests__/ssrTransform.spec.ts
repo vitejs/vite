@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { assert, expect, test } from 'vitest'
-import type { SourceMap } from 'rolldown'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
+import type { SourceMap } from 'rolldown'
+import { assert, expect, test } from 'vitest'
+import { createServer } from '../..'
 import { transformWithOxc } from '../../plugins/oxc'
 import { ssrTransform } from '../ssrTransform'
-import { createServer } from '../..'
 
 const ssrTransformSimple = async (code: string, url = '') =>
   ssrTransform(code, null, url, code)

@@ -2,42 +2,42 @@ import path from 'node:path'
 import colors from 'picocolors'
 import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
 import type { FSWatcher } from '#dep-types/chokidar'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
+import { cleanUrl, promiseWithResolvers, unwrapId } from '../../shared/utils'
 import { BaseEnvironment } from '../baseEnvironment'
 import type {
   EnvironmentOptions,
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from '../config'
-import { mergeConfig, monotonicDateNow } from '../utils'
-import { fetchModule } from '../ssr/fetchModule'
 import type { DepsOptimizer } from '../optimizer'
 import { isDepOptimizationDisabled } from '../optimizer'
 import {
   createDepsOptimizer,
   createExplicitDepsOptimizer,
 } from '../optimizer/optimizer'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
-import { cleanUrl, promiseWithResolvers, unwrapId } from '../../shared/utils'
 import type { ViteDevServer } from '../server'
-import { EnvironmentModuleGraph } from './moduleGraph'
-import type { EnvironmentModuleNode } from './moduleGraph'
+import { fetchModule } from '../ssr/fetchModule'
+import { mergeConfig, monotonicDateNow } from '../utils'
+import { BundledDev } from './bundledDev'
 import type {
   HotChannel,
   NormalizedHotChannel,
   NormalizedHotChannelClient,
 } from './hmr'
 import { getShortName, normalizeHotChannel, updateModules } from './hmr'
-import type { TransformResult } from './transformRequest'
-import { transformRequest } from './transformRequest'
+import { buildErrorMessage } from './middlewares/error'
+import { EnvironmentModuleGraph } from './moduleGraph'
+import type { EnvironmentModuleNode } from './moduleGraph'
 import type { EnvironmentPluginContainer } from './pluginContainer'
 import {
   ERR_CLOSED_SERVER,
   createEnvironmentPluginContainer,
 } from './pluginContainer'
-import { type WebSocketServer, isWebSocketServer } from './ws'
+import type { TransformResult } from './transformRequest'
+import { transformRequest } from './transformRequest'
 import { warmupFiles } from './warmup'
-import { buildErrorMessage } from './middlewares/error'
-import { BundledDev } from './bundledDev'
+import { type WebSocketServer, isWebSocketServer } from './ws'
 
 export interface DevEnvironmentContext {
   hot: boolean

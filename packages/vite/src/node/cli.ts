@@ -1,17 +1,17 @@
-import path from 'node:path'
 import fs from 'node:fs'
-import { inspect } from 'node:util'
+import path from 'node:path'
 import { performance } from 'node:perf_hooks'
+import { inspect } from 'node:util'
 import { cac } from 'cac'
 import colors from 'picocolors'
-import { VERSION } from './constants'
 import { createBuilder } from './build'
 import type { BuildEnvironmentOptions } from './build'
-import type { ServerOptions } from './server'
-import type { CLIShortcut } from './shortcuts'
+import type { InlineConfig } from './config'
+import { VERSION } from './constants'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
-import type { InlineConfig } from './config'
+import type { ServerOptions } from './server'
+import type { CLIShortcut } from './shortcuts'
 
 function checkNodeVersion(nodeVersion: string): boolean {
   const currentVersion = nodeVersion.split('.')
@@ -101,7 +101,7 @@ export const stopProfiler = (
 const filterDuplicateOptions = <T extends object>(options: T) => {
   for (const [key, value] of Object.entries(options)) {
     if (Array.isArray(value)) {
-      options[key as keyof T] = value[value.length - 1]
+      options[key as keyof T] = value.at(-1)
     }
   }
 }

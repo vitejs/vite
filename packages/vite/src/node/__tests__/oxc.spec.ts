@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { convertEsbuildConfigToOxcConfig } from '../plugins/oxc'
 import { createLogger } from '../logger'
+import { convertEsbuildConfigToOxcConfig } from '../plugins/oxc'
 
 describe('convertEsbuildConfigToOxcConfig', () => {
   const logger = createLogger('silent')

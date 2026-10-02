@@ -1,5 +1,7 @@
 import path from 'node:path'
+import { type ImportSpecifier, init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
+import colors from 'picocolors'
 import type {
   OutputAsset,
   OutputChunk,
@@ -7,13 +9,19 @@ import type {
   RolldownOutput,
   RollupError,
 } from 'rolldown'
-import colors from 'picocolors'
-import { type ImportSpecifier, init, parse } from 'es-module-lexer'
 import { viteWebWorkerPostPlugin as nativeWebWorkerPostPlugin } from 'rolldown/experimental'
+import { cleanUrl, splitFileAndPostfix } from '../../shared/utils'
+import {
+  BuildEnvironment,
+  ChunkMetadataMap,
+  injectEnvironmentToHooks,
+  onRollupLog,
+} from '../build'
 import type { ResolvedConfig } from '../config'
-import type { Plugin } from '../plugin'
-import type { Environment } from '../environment'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
+import type { Environment } from '../environment'
+import type { Logger } from '../logger'
+import type { Plugin } from '../plugin'
 import {
   injectQuery,
   normalizePath,
@@ -21,14 +29,6 @@ import {
   trailingSeparatorRE,
   urlRE,
 } from '../utils'
-import {
-  BuildEnvironment,
-  ChunkMetadataMap,
-  injectEnvironmentToHooks,
-  onRollupLog,
-} from '../build'
-import { cleanUrl, splitFileAndPostfix } from '../../shared/utils'
-import type { Logger } from '../logger'
 import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
 
 type WorkerBundle = {

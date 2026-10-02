@@ -1,14 +1,14 @@
 import type { ErrorPayload, HotPayload } from '#types/hmrPayload'
 import type { ViteHotContext } from '#types/hot'
+import type { BundledDevHMRClient } from '../shared/bundledDevHmrClient'
+import { setupForwardConsoleHandler } from '../shared/forwardConsole'
 import { HMRClient, HMRContext } from '../shared/hmr'
-import { wrapId } from '../shared/utils'
+import { createHMRHandler } from '../shared/hmrHandler'
 import {
   createWebSocketModuleRunnerTransport,
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
-import { createHMRHandler } from '../shared/hmrHandler'
-import { setupForwardConsoleHandler } from '../shared/forwardConsole'
-import type { BundledDevHMRClient } from '../shared/bundledDevHmrClient'
+import { wrapId } from '../shared/utils'
 import { ErrorOverlay, cspNonce, overlayId } from './overlay'
 // @ts-expect-error internal virtual module
 import '@vite/env'

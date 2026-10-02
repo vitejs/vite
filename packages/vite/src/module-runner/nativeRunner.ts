@@ -2,16 +2,16 @@ import { nanoid } from 'nanoid/non-secure'
 import { DevRuntime } from 'rolldown/experimental/runtime'
 import type { HotPayload } from '#types/hmrPayload'
 import {
-  type ModuleRunnerTransport,
-  type NormalizedModuleRunnerTransport,
-  normalizeModuleRunnerTransport,
-} from '../shared/moduleRunnerTransport'
-import {
   BundledDevHMRClient,
   BundledDevHMRContext,
 } from '../shared/bundledDevHmrClient'
 import type { HMRLogger } from '../shared/hmr'
 import { createHMRHandler } from '../shared/hmrHandler'
+import {
+  type ModuleRunnerTransport,
+  type NormalizedModuleRunnerTransport,
+  normalizeModuleRunnerTransport,
+} from '../shared/moduleRunnerTransport'
 
 export interface NativeModuleRunnerOptions {
   transport: ModuleRunnerTransport
@@ -100,7 +100,17 @@ export class NativeModuleRunner {
 
   private startClientSession(): void {
     const clientId = nanoid()
-    const runtime = new DevRuntime(clientId)
+    const transport = this.transport
+    class ViteDevRuntime extends DevRuntime {
+      payloadDelivered(filename: string): void {
+        transport.send({
+          type: 'custom',
+          event: 'vite:bundled-dev:payload-delivered',
+          data: { filename },
+        })
+      }
+    }
+    const runtime = new ViteDevRuntime(clientId)
     this.runtime = runtime
     ;(globalThis as any).__rolldown_runtime__ = runtime
     if (this.hmrEnabled) {

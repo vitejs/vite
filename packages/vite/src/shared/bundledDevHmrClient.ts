@@ -214,7 +214,7 @@ export class BundledDevHMRClient extends HMRClient {
         // Combined                      : [E, B, C, ACCEPTED, D, E]
         const importChain = [
           importer,
-          ...[...currentChain].reverse(),
+          ...currentChain.toReversed(),
           ...nodeChain.slice(importerIndex, -1).reverse(),
         ]
         this.logger.debug(
@@ -228,7 +228,7 @@ export class BundledDevHMRClient extends HMRClient {
         const result = this.isNodeWithinCircularImports(
           importer,
           nodeChain,
-          currentChain.concat(importer),
+          [...currentChain, importer],
           traversedModules,
         )
         if (result) return result

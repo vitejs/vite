@@ -38,15 +38,9 @@ export interface BundledDevUpdatePayload {
 
 export interface Update {
   type: 'js-update' | 'css-update'
-  /**
-   * Module URL of the HMR boundary.
-   * @remarks This changed from a browser-safe URL to a module URL.
-   */
+  /** Module URL of the HMR boundary */
   path: string
-  /**
-   * Module URL of the accepted module.
-   * @remarks This changed from a browser-safe URL to a module URL.
-   */
+  /** Module URL of the accepted module */
   acceptedPath: string
   timestamp: number
   /** @internal */

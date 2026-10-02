@@ -1,11 +1,13 @@
 import path from 'node:path'
-import MagicString from 'magic-string'
-import type { SourceMap } from 'rolldown'
-import type { ESTree } from 'rolldown/utils'
-import { extract_names as extractNames } from 'periscopic'
+import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
 import { walk as eswalk } from 'estree-walker'
-import type { RawSourceMap } from '@jridgewell/remapping'
+import MagicString from 'magic-string'
+import { extract_names as extractNames } from 'periscopic'
+import type { SourceMap } from 'rolldown'
 import { parseAstAsync as rolldownParseAstAsync } from 'rolldown/parseAst'
+import type { ESTree } from 'rolldown/utils'
+import type { DefineImportMetadata } from '../../shared/ssrTransform'
+import { isJSONRequest } from '../plugins/json'
 import type { TransformResult } from '../server/transformRequest'
 import {
   combineSourcemaps,
@@ -14,8 +16,6 @@ import {
   isDefined,
   numberToPos,
 } from '../utils'
-import { isJSONRequest } from '../plugins/json'
-import type { DefineImportMetadata } from '../../shared/ssrTransform'
 
 export interface ModuleRunnerTransformOptions {
   json?: {
@@ -414,21 +414,27 @@ async function ssrTransformScript(
   if (inMap?.mappings === '') {
     map = inMap
   } else {
-    map = s.generateMap({ hires: 'boundary' }) as SourceMap
-    map.sources = [path.basename(url)]
-    // needs to use originalCode instead of code
-    // because code might be already transformed even if map is null
-    map.sourcesContent = [originalCode]
-    if (
+    const shouldCombine = !!(
       inMap &&
       inMap.mappings &&
       'sources' in inMap &&
       inMap.sources.length > 0
-    ) {
+    )
+    const mapOptions = { hires: 'boundary' as const }
+    const nextMap = shouldCombine
+      ? s.generateDecodedMap(mapOptions)
+      : s.generateMap(mapOptions)
+    nextMap.sources = [path.basename(url)]
+    // needs to use originalCode instead of code
+    // because code might be already transformed even if map is null
+    nextMap.sourcesContent = [originalCode]
+    if (shouldCombine) {
       map = combineSourcemaps(url, [
-        map as RawSourceMap,
+        nextMap as DecodedSourceMap,
         inMap as RawSourceMap,
       ]) as SourceMap
+    } else {
+      map = nextMap as SourceMap
     }
   }
 

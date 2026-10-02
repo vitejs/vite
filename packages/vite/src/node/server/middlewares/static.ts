@@ -1,12 +1,18 @@
-import path from 'node:path'
 import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
+import path from 'node:path'
+import escapeHtml from 'escape-html'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
-import escapeHtml from 'escape-html'
 import type { Connect } from '#dep-types/connect'
-import type { ViteDevServer } from '../../server'
+import {
+  cleanUrl,
+  isWindows,
+  slash,
+  withTrailingSlash,
+} from '../../../shared/utils'
 import type { ResolvedConfig } from '../../config'
 import { FS_PREFIX } from '../../constants'
+import type { ViteDevServer } from '../../server'
 import {
   decodeURIIfPossible,
   fsPathFromUrl,
@@ -19,12 +25,6 @@ import {
   removeLeadingSlash,
   urlRE,
 } from '../../utils'
-import {
-  cleanUrl,
-  isWindows,
-  slash,
-  withTrailingSlash,
-} from '../../../shared/utils'
 
 const knownJavascriptExtensionRE = /\.(?:[tj]sx?|[cm][tj]s)$/
 const ERR_DENIED_FILE = 'ERR_DENIED_FILE'
@@ -178,7 +178,7 @@ export function serveStaticMiddleware(
 
     const resolvedPathname = redirectedPathname || pathname
     let fileUrl = path.resolve(dir, removeLeadingSlash(resolvedPathname))
-    if (resolvedPathname.endsWith('/') && fileUrl[fileUrl.length - 1] !== '/') {
+    if (resolvedPathname.endsWith('/') && fileUrl.at(-1) !== '/') {
       fileUrl = withTrailingSlash(fileUrl)
     }
     if (redirectedPathname) {

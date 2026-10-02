@@ -532,7 +532,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 ## Plugin Context Meta
 
-For plugin hooks that has access to the plugin context, Vite exposes additional properties on `this.meta`:
+For plugin hooks that have access to the plugin context, Vite exposes additional properties on `this.meta`:
 
 - `this.meta.viteVersion`: The current Vite version string (e.g. `"8.0.0"`).
 
@@ -853,7 +853,7 @@ export default defineConfig({
 Internally, vite infers the type of a payload from the `CustomEventMap` interface, it is possible to type custom events by extending the interface:
 
 :::tip Note
-Make sure to include the `.d.ts` extension when specifying TypeScript declaration files. Otherwise, Typescript may not know which file the module is trying to extend.
+Make sure to include the `.d.ts` extension when specifying TypeScript declaration files. Otherwise, TypeScript may not know which file the module is trying to extend.
 :::
 
 ```ts [events.d.ts]

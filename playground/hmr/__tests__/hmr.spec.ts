@@ -1,6 +1,6 @@
 import { stripVTControlCharacters } from 'node:util'
-import { beforeAll, describe, expect, it, test } from 'vitest'
 import type { Page } from 'playwright-chromium'
+import { beforeAll, describe, expect, it, test } from 'vitest'
 import {
   addFile,
   browser,

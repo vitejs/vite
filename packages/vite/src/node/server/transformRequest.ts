@@ -1,17 +1,20 @@
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
+import { init, parse as parseImports } from 'es-module-lexer'
 import getEtag from 'etag'
 import MagicString from 'magic-string'
-import { init, parse as parseImports } from 'es-module-lexer'
+import colors from 'picocolors'
 import type {
   ModuleType,
   PartialResolvedId,
   SourceDescription,
   SourceMap,
 } from 'rolldown'
-import colors from 'picocolors'
+import { cleanUrl, slash, unwrapId } from '../../shared/utils'
+import { checkPublicFile } from '../publicDir'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
+import { ssrTransform } from '../ssr/ssrTransform'
 import {
   createDebugger,
   ensureWatchedFile,
@@ -24,18 +27,15 @@ import {
   stripBase,
   timeFrom,
 } from '../utils'
-import { ssrTransform } from '../ssr/ssrTransform'
-import { checkPublicFile } from '../publicDir'
-import { cleanUrl, slash, unwrapId } from '../../shared/utils'
+import type { DevEnvironment } from './environment'
+import { isFileLoadingAllowed } from './middlewares/static'
+import { isServerAccessDeniedForTransform } from './middlewares/transform'
+import { throwClosedServerError } from './pluginContainer'
 import {
   applySourcemapIgnoreList,
   extractSourcemapFromFile,
   injectSourcesContent,
 } from './sourcemap'
-import { isFileLoadingAllowed } from './middlewares/static'
-import { throwClosedServerError } from './pluginContainer'
-import type { DevEnvironment } from './environment'
-import { isServerAccessDeniedForTransform } from './middlewares/transform'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'

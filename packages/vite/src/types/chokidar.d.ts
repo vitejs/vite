@@ -5,8 +5,8 @@
 
 /// <reference types="node" />
 
-import type * as fs from 'node:fs'
 import { EventEmitter } from 'node:events'
+import type * as fs from 'node:fs'
 import type { Matcher } from './anymatch'
 
 export class FSWatcher extends EventEmitter implements fs.FSWatcher {
