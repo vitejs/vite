@@ -94,7 +94,7 @@ import {
   serveRawFsMiddleware,
   serveStaticMiddleware,
 } from './middlewares/static'
-import { timeMiddleware } from './middlewares/time'
+import { isTimeDebugEnabled, timeMiddleware } from './middlewares/time'
 import {
   cachedTransformMiddleware,
   transformMiddleware,
@@ -600,6 +600,10 @@ export async function _createServer(
       )
     : createNoopWatcher(resolvedWatchOptions)
 
+  watcher.on('error', (error: Error) => {
+    config.logger.error(colors.red(`file watcher error: ${error.message}`))
+  })
+
   const environments: Record<string, DevEnvironment> = {}
 
   await Promise.all(
@@ -620,6 +624,10 @@ export async function _createServer(
       },
     ),
   )
+
+  // Release previous environments after initialization to prevent memory leaks
+  // from retaining old server graphs across restarts.
+  options.previousEnvironments = undefined
 
   // Backward compatibility
 
@@ -981,7 +989,7 @@ export async function _createServer(
   // Pre applied internal middlewares ------------------------------------------
 
   // request timer
-  if (process.env.DEBUG) {
+  if (isTimeDebugEnabled) {
     middlewares.use(timeMiddleware(root))
   }
 

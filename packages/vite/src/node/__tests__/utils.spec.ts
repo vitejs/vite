@@ -2,6 +2,8 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import os, { type NetworkInterfaceInfoIPv4 } from 'node:os'
 import path from 'node:path'
+import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
+import MagicString from 'magic-string'
 import { fileURLToPath } from 'mlly'
 import { describe, expect, test, vi, onTestFinished } from 'vitest'
 import type { CommonServerOptions, ResolvedServerUrls } from '..'
@@ -956,6 +958,28 @@ describe('combineSourcemaps', () => {
   const resolveFile = (file: string) => {
     return normalizePath(path.resolve(_dirname, file))
   }
+
+  test('composes decoded intermediate mappings identically', () => {
+    const filename = 'assets/index.js'
+    const s = new MagicString('export const value = 1')
+    const originalMap = s.generateMap({
+      source: filename,
+      hires: true,
+      includeContent: true,
+    })
+    const options = { source: filename, hires: 'boundary' as const }
+    const encoded = combineSourcemaps(filename, [
+      s.generateMap(options) as RawSourceMap,
+      originalMap as RawSourceMap,
+    ])
+    const decoded = combineSourcemaps(filename, [
+      s.generateDecodedMap(options) as DecodedSourceMap,
+      originalMap as RawSourceMap,
+    ])
+
+    expect(decoded).toStrictEqual(encoded)
+    expect(decoded.sourcesContent).toStrictEqual(originalMap.sourcesContent)
+  })
 
   test('should combine sourcemaps with single sources', () => {
     const sourcemaps = [

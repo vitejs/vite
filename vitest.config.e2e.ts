@@ -10,9 +10,6 @@ const isBundledDev = !isBuild && !!process.env.VITE_TEST_BUNDLED_DEV
 // listed here; those cases are marked `test.skipIf(isBundledDev)` instead.
 const bundledDevExclude = [
   './playground/chunk-importmap/__tests__/chunk-importmap.spec.ts',
-  './playground/fs-serve/__tests__/base/fs-serve-base.spec.ts',
-  './playground/fs-serve/__tests__/deny/fs-serve-deny.spec.ts',
-  './playground/fs-serve/__tests__/fs-serve.spec.ts',
   './playground/hmr-ssr/__tests__/hmr-ssr.spec.ts',
   './playground/legacy/__tests__/chunk-importmap/legacy-chunk-importmap.spec.ts',
   './playground/object-hooks/__tests__/object-hooks.spec.ts',
