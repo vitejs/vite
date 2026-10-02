@@ -506,8 +506,12 @@ export function resolveSubpathImports(
   const pkgData = findNearestPackageData(basedir, options.packageCache)
   if (!pkgData) return
 
-  let { file: idWithoutPostfix, postfix } = splitFileAndPostfix(id.slice(1))
-  idWithoutPostfix = '#' + idWithoutPostfix
+  // A subpath imports key may itself contain `#` (e.g. `##/*`, `#a#b`), and
+  // unlike URLs, `#` has no fragment semantics in import specifiers, so only
+  // the query part is stripped from the key (#16085, #23622)
+  const queryIndex = id.indexOf('?')
+  const idWithoutPostfix = queryIndex === -1 ? id : id.slice(0, queryIndex)
+  const postfix = queryIndex === -1 ? '' : id.slice(queryIndex)
 
   let importsPath = resolveExportsOrImports(
     pkgData.data,
