@@ -1,11 +1,10 @@
 import { expect, test } from 'vitest'
-import { port, serverLogs } from './serve'
 import { browserLogs, editFile, isServe, page } from '~utils'
+import { port, serverLogs } from './serve'
 
 const url = `http://localhost:${port}`
 
-// TODO: this crashes the server, not yet supported(?)
-test.skip(`circular dependencies modules doesn't throw`, async () => {
+test(`circular dependencies modules doesn't throw`, async () => {
   await page.goto(`${url}/circular-dep`)
 
   expect(await page.textContent('.circ-dep-init')).toMatch(
