@@ -1,7 +1,7 @@
 import { setTimeout } from 'node:timers/promises'
 import getEtag from 'etag'
 import colors from 'picocolors'
-import type { RolldownOutput } from 'rolldown'
+import type { OutputOptions, RolldownOptions, RolldownOutput } from 'rolldown'
 import {
   type BindingClientHmrUpdate,
   type DevEngine,
@@ -92,14 +92,9 @@ export class BundledDev {
   private lastBuildError: Error | null = null
 
   memoryFiles: MemoryFiles = new MemoryFiles()
+  facadeToChunk: Map<string, string> = new Map()
 
-  constructor(private environment: DevEnvironment) {
-    if (environment.name !== 'client') {
-      throw new Error(
-        'currently full bundle mode is only available for client environment',
-      )
-    }
-  }
+  constructor(private environment: DevEnvironment) {}
 
   private get devEngine(): DevEngine {
     if (!this._devEngine) {
@@ -118,7 +113,9 @@ export class BundledDev {
     this._closed = false
     debug?.('INITIAL: setup bundle options')
     const rolldownOptions = await this.getRolldownOptions()
-    await this.storeStaticFiles()
+    if (this.environment.config.consumer !== 'server') {
+      await this.storeStaticFiles()
+    }
     // NOTE: only single outputOptions is supported here
     if (
       Array.isArray(rolldownOptions.output) &&
@@ -277,6 +274,19 @@ export class BundledDev {
     })
   }
 
+  /**
+   * @internal
+   */
+  public async _waitForInitialBuildSuccess(): Promise<void> {
+    await this.devEngine.ensureCurrentBuildFinish()
+    const bundleState = await this.devEngine.getBundleState()
+    if (bundleState.lastBuildErrored) {
+      throw new Error(
+        `The last full bundle mode build has failed. See logs for more information.`,
+      )
+    }
+  }
+
   private async waitForInitialBuildFinish(): Promise<void> {
     if (this._closed) return
     await this.devEngine.ensureCurrentBuildFinish()
@@ -354,7 +364,11 @@ export class BundledDev {
     }
     return {
       filename: result.filename,
-      code: result.code + payloadDeliveredAck(result.filename),
+      code:
+        result.code +
+        (this.environment.config.consumer === 'server'
+          ? ''
+          : payloadDeliveredAck(result.filename)),
     }
   }
 
@@ -375,7 +389,7 @@ export class BundledDev {
   async close(): Promise<void> {
     this._closed = true
     this.memoryFiles.clear()
-    await this._devEngine?.close()
+    await this.devEngine?.close()
     this.initialBuildCompleted = false
   }
 
@@ -401,6 +415,9 @@ export class BundledDev {
   private storeOutputFiles(output: RolldownOutput['output'][number][]): void {
     // NOTE: don't clear memoryFiles here as incremental build reuses the files
     for (const outputFile of output) {
+      if (outputFile.type === 'chunk' && outputFile.facadeModuleId) {
+        this.facadeToChunk.set(outputFile.facadeModuleId, outputFile.fileName)
+      }
       this.memoryFiles.set(outputFile.fileName, () => {
         const source =
           outputFile.type === 'chunk' ? outputFile.code : outputFile.source
@@ -412,7 +429,7 @@ export class BundledDev {
     }
   }
 
-  private async getRolldownOptions() {
+  protected async getRolldownOptions(): Promise<RolldownOptions> {
     const chunkMetadataMap = new ChunkMetadataMap()
     const rolldownOptions = resolveRolldownOptions(
       this.environment,
@@ -436,22 +453,25 @@ export class BundledDev {
     // set filenames to make output paths predictable so that `renderChunk` hook does not need to be used
     if (Array.isArray(rolldownOptions.output)) {
       for (const output of rolldownOptions.output) {
-        output.entryFileNames = 'assets/[name].js'
-        output.chunkFileNames = 'assets/[name]-[hash].js'
-        output.assetFileNames = 'assets/[name]-[hash][extname]'
-        output.minify = false
-        output.sourcemap = true
+        Object.assign(output, this.getOutputOptions())
       }
     } else {
       rolldownOptions.output ??= {}
-      rolldownOptions.output.entryFileNames = 'assets/[name].js'
-      rolldownOptions.output.chunkFileNames = 'assets/[name]-[hash].js'
-      rolldownOptions.output.assetFileNames = 'assets/[name]-[hash][extname]'
-      rolldownOptions.output.minify = false
-      rolldownOptions.output.sourcemap = true
+      Object.assign(rolldownOptions.output, this.getOutputOptions())
     }
 
     return rolldownOptions
+  }
+
+  protected getOutputOptions(): OutputOptions {
+    return {
+      entryFileNames: 'assets/[name].js',
+      chunkFileNames: 'assets/[name]-[hash].js',
+      assetFileNames: 'assets/[name]-[hash][extname]',
+      minify: false,
+      sourcemap:
+        this.environment.config.consumer === 'server' ? 'inline' : true,
+    }
   }
 
   private handleHmrOutput(
@@ -495,7 +515,9 @@ export class BundledDev {
       // but we cannot use `Sec-Fetch-*` headers as they are only sent to potentially-trustworthy origins
       source:
         hmrOutput.code +
-        payloadDeliveredAck(hmrOutput.filename) +
+        (this.environment.config.consumer === 'server'
+          ? ''
+          : payloadDeliveredAck(hmrOutput.filename)) +
         '\n; export {}',
     })
     if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {

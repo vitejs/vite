@@ -46,6 +46,7 @@ export const ports = {
   'proxy-hmr': 9616, // not imported but used in `proxy-hmr/vite.config.js`
   'proxy-hmr/other-app': 9617, // not imported but used in `proxy-hmr/other-app/vite.config.js`
   'ssr-conditions': 9620,
+  'ssr-bundled-dev': 9621,
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006,
   'css/dynamic-import': 5007,
@@ -68,6 +69,7 @@ export const hmrPorts = {
   'ssr-conditions': 24688,
   'client-reload/hmr-port': 24689,
   'client-reload/cross-origin': 24690,
+  'ssr-bundled-dev': 24692,
 }
 
 const hexToNameMap: Record<string, string> = {}
