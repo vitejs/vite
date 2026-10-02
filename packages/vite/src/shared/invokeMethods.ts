@@ -92,5 +92,6 @@ export type InvokeMethods = {
 
   resolveBundledModuleUrl: (
     url: string,
-  ) => Promise<{ url: string; moduleId: string }>
+  ) => Promise<{ url: string; buildId: number }>
+  resolveBundledModuleId: (url: string) => Promise<string>
 }

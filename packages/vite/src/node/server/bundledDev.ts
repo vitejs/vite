@@ -122,7 +122,6 @@ export class BundledDev {
         getDevEngine: () => this.devEngine,
         isClosed: () => this._closed,
         getLastBuildError: () => this.lastBuildError,
-        hasActiveHmrClient: () => this.clients.getAll().length > 0,
         waitForInitialBuildFinish: () => this.waitForInitialBuildFinish(),
       })
     }
@@ -225,9 +224,6 @@ export class BundledDev {
               error: result,
             },
           )
-          // the patched runtime can no longer be kept current — the next
-          // import must rebuild (surfacing the error, or picking up a fix)
-          this.entryResolver?.markEntryStale()
           // TODO: send to the specific client
           for (const client of this.clients.getAll()) {
             client.send({
@@ -259,7 +255,7 @@ export class BundledDev {
         }
       },
       onOutput: (result) => {
-        this.entryResolver?.onBuildOutput()
+        this.entryResolver?.onBuildOutput(!(result instanceof Error))
         if (result instanceof Error) {
           this.environment.logger.error(
             colors.red(`✘ Build error: ${result.message}`),
@@ -428,13 +424,23 @@ export class BundledDev {
    * Resolve a url to the importable file url of its bundled entry chunk,
    * rebuilding stale output first. Only available with `nativeModuleRunner`.
    */
-  async resolveEntry(url: string): Promise<{ url: string; moduleId: string }> {
+  async resolveEntry(url: string): Promise<{ url: string; buildId: number }> {
     if (!this.entryResolver) {
       throw new Error(
         'bundledDev.resolveEntry() is only available with `nativeModuleRunner`',
       )
     }
     return this.entryResolver.resolve(url)
+  }
+
+  /** Resolve an input url to its rolldown runtime module id. */
+  async resolveEntryModuleId(url: string): Promise<string> {
+    if (!this.entryResolver) {
+      throw new Error(
+        'bundledDev.resolveEntryModuleId() is only available with `nativeModuleRunner`',
+      )
+    }
+    return this.entryResolver.resolveModuleId(url)
   }
 
   private writeServerFile(fileName: string, source: string | Uint8Array): void {
@@ -570,11 +576,8 @@ export class BundledDev {
       )
       if (this.nativeModuleRunner) {
         // fatal for the native runner: it cannot re-execute cached modules,
-        // so the consumer is expected to restart the process/worker. The
-        // engine rebuilds on its own after a FullReload update — marking the
-        // entry stale makes a resolve that lands before that rebuild's
-        // output wait for it instead of serving the pre-change entry.
-        this.entryResolver?.markEntryStale()
+        // so the consumer is expected to restart the process/worker. The new
+        // runner's first entry import regenerates stale full-bundle output.
         client.send({ type: 'full-reload', path: '*' })
         return
       }

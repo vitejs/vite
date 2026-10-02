@@ -1,21 +1,21 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { Worker } from 'node:worker_threads'
-import { afterAll, expect, onTestFinished, test } from 'vitest'
 import { NativeModuleRunner } from 'vite/module-runner'
 import type { ModuleRunner } from 'vite/module-runner'
+import { afterAll, expect, onTestFinished, test } from 'vitest'
 import type { HotPayload } from '#types/hmrPayload'
 import { createServer } from '../..'
 import { createServerModuleRunnerTransport } from '../../ssr/runtime/serverModuleRunner'
+import { DevEnvironment } from '../environment'
+import { createRunnableDevEnvironment } from '../environments/runnableEnvironment'
+import type { RunnableDevEnvironment } from '../environments/runnableEnvironment'
 import type {
   HotChannel,
   HotChannelClient,
   HotChannelListener,
   NormalizedServerHotChannel,
 } from '../hmr'
-import { DevEnvironment } from '../environment'
-import { createRunnableDevEnvironment } from '../environments/runnableEnvironment'
-import type { RunnableDevEnvironment } from '../environments/runnableEnvironment'
 
 const root = path.resolve(import.meta.dirname, 'fixtures/bundled-dev-ssr')
 
@@ -274,15 +274,7 @@ test('import() returns the updated module after an hmr patch', async () => {
   expect(mod.value).toBe('entry-v1')
 })
 
-// TODO: document how to resolve this
-
-// KNOWN GAP: while an HMR session is active, an edit to a never-executed
-// module is lost: the runner noops the patch (nothing executed to update)
-// and `refreshOutputIfStale` skips the rebuild (active session), so the
-// first import runs the stale on-disk chunk. The next edit of the file
-// heals it. A real fix needs per-entry freshness tracking — a blind
-// rebuild would re-execute the already-patched graph under new hashes.
-test.fails('an edit to a not-yet-imported entry is visible on its first import', async () => {
+test('a stale not-yet-imported entry requires a runtime restart', async () => {
   const entryFile = path.resolve(root, 'src/hot-entry.js')
   const hotFile = path.resolve(root, 'src/hot.js')
   const originalEntry = backupFile(entryFile)
@@ -306,7 +298,22 @@ test.fails('an edit to a not-yet-imported entry is visible on its first import',
     })
     .toBe('hot-v2')
 
-  const mod = await ssr.runner.import('/src/hot-entry.js')
+  // Resolving an unexecuted entry regenerates stale full-bundle output. The
+  // current runtime must not mix that new generation with its patched graph.
+  await expect(ssr.runner.import('/src/hot-entry.js')).rejects.toThrow(
+    /rebuilt the full bundle/,
+  )
+
+  // A replacement runtime has no previous graph and can consume the newly
+  // written generation.
+  await ssr.runner.close()
+  const restartedRunner = new NativeModuleRunner({
+    transport: createServerModuleRunnerTransport({
+      channel: server.environments.ssr.hot as NormalizedServerHotChannel,
+    }),
+  })
+  onTestFinished(() => restartedRunner.close())
+  const mod = await restartedRunner.import('/src/hot-entry.js')
   expect(mod.value).toBe('entry-v2')
 })
 

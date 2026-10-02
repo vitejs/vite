@@ -26,6 +26,10 @@ export class NativeModuleRunner {
   private hmrLogger: HMRLogger
   private hmrClient: BundledDevHMRClient | undefined
   private runtime!: DevRuntime
+  /** Full-bundle generation this runtime loaded. A newer one needs a restart. */
+  private buildId: number | undefined
+  /** Latest build error received from the server, cleared by a new update. */
+  private buildError: Error | undefined
   /**
    * Set when the dev server requests a full reload: we bail out expecting
    * the user to reload the runtime themselves (workerd or a process).
@@ -47,15 +51,25 @@ export class NativeModuleRunner {
     if (this.closed) {
       throw new Error('the module runner has been closed')
     }
-    if (this.fatalError) {
-      throw this.fatalError
+    this.throwIfUnavailable()
+    const moduleId = await this.transport.invoke('resolveBundledModuleId', [
+      url,
+    ])
+    this.throwIfUnavailable()
+    if (this.hmrClient && this.runtime.isExecuted(moduleId)) {
+      return this.runtime.loadExports(moduleId) as T
     }
     const resolved = await this.transport.invoke('resolveBundledModuleUrl', [
       url,
     ])
-    if (this.hmrClient && this.runtime.isExecuted(resolved.moduleId)) {
-      return this.runtime.loadExports(resolved.moduleId) as T
+    this.throwIfUnavailable()
+    if (this.buildId !== undefined && this.buildId !== resolved.buildId) {
+      throw this.requireRestart(
+        'the dev server rebuilt the full bundle — restart the process (or ' +
+          'worker) running this module runner before importing it',
+      )
     }
+    this.buildId = resolved.buildId
     return import(resolved.url) as Promise<T>
   }
 
@@ -72,6 +86,7 @@ export class NativeModuleRunner {
     if (this.closed) return
     switch (payload.type) {
       case 'bundled-dev-update':
+        this.buildError = undefined
         this.hmrClient?.handlePush(payload)
         break
       case 'full-reload':
@@ -79,16 +94,15 @@ export class NativeModuleRunner {
         // re-execute, so the runner cannot start over the way a browser
         // page reload does. Treat it as fatal and let the consumer restart
         // the process/worker.
-        this.fatalError = new Error(
+        this.requireRestart(
           'the dev server requested a full reload — the bundled output can ' +
             'no longer be patched in place. Restart the process (or worker) ' +
             'running this module runner.',
         )
-        this.hmrLogger.error(this.fatalError.message)
         break
       case 'error':
-        // the build error is also surfaced on the next import
-        this.hmrLogger.error(payload.err.message)
+        this.buildError = new Error(payload.err.message)
+        this.hmrLogger.error(this.buildError.message)
         break
       case 'custom':
         await this.hmrClient?.notifyListeners(payload.event, payload.data)
@@ -96,6 +110,19 @@ export class NativeModuleRunner {
       default:
         break
     }
+  }
+
+  private requireRestart(message: string): Error {
+    if (!this.fatalError) {
+      this.fatalError = new Error(message)
+      this.hmrLogger.error(message)
+    }
+    return this.fatalError
+  }
+
+  private throwIfUnavailable(): void {
+    if (this.fatalError) throw this.fatalError
+    if (this.buildError) throw this.buildError
   }
 
   private startClientSession(): void {
@@ -138,8 +165,8 @@ export class NativeModuleRunner {
         data: { clientId },
       })
     } else {
-      // HMR is not applied — stale output is rebuilt and re-imported under
-      // fresh urls instead — so the hot context is a stub
+      // HMR is not applied. A stale full-output rebuild requires a new runner,
+      // and until then imported modules receive a stub hot context.
       runtime.hooks = {
         createModuleHotContext: () => ({
           data: {},
