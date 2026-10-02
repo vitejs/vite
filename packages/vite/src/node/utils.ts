@@ -328,8 +328,8 @@ export function removeDirectQuery(url: string): string {
   return url.replace(directRequestRE, '$1').replace(trailingSeparatorRE, '')
 }
 
-export const urlRE: RegExp = /(\?|&)url(?:&|$)/
-export const rawRE: RegExp = /(\?|&)raw(?:&|$)/
+export const urlRE: RegExp = /(\?|&)url=?(?:&|$)/
+export const rawRE: RegExp = /(\?|&)raw=?(?:&|$)/
 export function removeUrlQuery(url: string): string {
   return url.replace(urlRE, '$1').replace(trailingSeparatorRE, '')
 }
@@ -340,9 +340,12 @@ export function injectQuery(url: string, queryToInject: string): string {
   return `${normalizedFile}?${queryToInject}${postfix[0] === '?' ? `&${postfix.slice(1)}` : /* hash only */ postfix}`
 }
 
-const timestampRE = /(\?|&)t=\d{13}(?:&|$)/
+const timestampRE = /(\?|&)t=\d{13}(?:&|$|(?=#))/
 export function removeTimestampQuery(url: string): string {
-  return url.replace(timestampRE, '$1').replace(trailingSeparatorRE, '')
+  return url
+    .replace(timestampRE, '$1')
+    .replace(/([?&])#/, '#')
+    .replace(trailingSeparatorRE, '')
 }
 
 export async function asyncReplace(

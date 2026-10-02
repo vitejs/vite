@@ -29,9 +29,12 @@ import {
   numberToPos,
   posToNumber,
   processSrcSetSync,
+  rawRE,
   removeTimestampQuery,
+  removeUrlQuery,
   resolveHostname,
   resolveServerUrls,
+  urlRE,
 } from '../utils'
 
 // Test certificate for SAN parsing (localhost, foo.localhost, *.vite.localhost)
@@ -246,6 +249,58 @@ describe('removeTimestampQuery', () => {
     expect(removeTimestampQuery('/foo.js#t=1712345678901')).toBe(
       '/foo.js#t=1712345678901',
     )
+  })
+
+  test('strips timestamp when followed by a hash fragment (fixes #23390)', () => {
+    expect(removeTimestampQuery('/icon.svg?t=1787868494725#shape')).toBe(
+      '/icon.svg#shape',
+    )
+    expect(removeTimestampQuery('/foo.js?bar=1&t=1712345678901#frag')).toBe(
+      '/foo.js?bar=1#frag',
+    )
+    expect(removeTimestampQuery('/foo.js?t=1712345678901&bar=1#frag')).toBe(
+      '/foo.js?bar=1#frag',
+    )
+  })
+})
+
+describe('rawRE and urlRE', () => {
+  test('matches plain ?raw and ?url', () => {
+    expect(rawRE.test('/foo.md?raw')).toBe(true)
+    expect(urlRE.test('/foo.txt?url')).toBe(true)
+  })
+
+  test('matches URL-normalized ?raw= and ?url= (fixes #22060)', () => {
+    // URLSearchParams normalizes valueless params to `?raw=` per URL spec
+    expect(rawRE.test('/foo.md?raw=')).toBe(true)
+    expect(urlRE.test('/foo.txt?url=')).toBe(true)
+  })
+
+  test('matches in various query positions', () => {
+    expect(rawRE.test('/foo.md?raw&bar=1')).toBe(true)
+    expect(rawRE.test('/foo.md?raw=&bar=1')).toBe(true)
+    expect(rawRE.test('/foo.md?bar=1&raw')).toBe(true)
+    expect(rawRE.test('/foo.md?bar=1&raw=')).toBe(true)
+    expect(urlRE.test('/foo.txt?url&bar=1')).toBe(true)
+    expect(urlRE.test('/foo.txt?url=&bar=1')).toBe(true)
+    expect(urlRE.test('/foo.txt?bar=1&url')).toBe(true)
+    expect(urlRE.test('/foo.txt?bar=1&url=')).toBe(true)
+  })
+
+  test('does not match partial names or values', () => {
+    expect(rawRE.test('/foo.md?rawdata=1')).toBe(false)
+    expect(rawRE.test('/foo.md?raw=foo')).toBe(false)
+    expect(urlRE.test('/foo.txt?urldata=1')).toBe(false)
+    expect(urlRE.test('/foo.txt?url=foo')).toBe(false)
+  })
+
+  test('removeUrlQuery handles normalized form', () => {
+    expect(removeUrlQuery('/foo.txt?url')).toBe('/foo.txt')
+    expect(removeUrlQuery('/foo.txt?url=')).toBe('/foo.txt')
+    expect(removeUrlQuery('/foo.txt?url&bar=1')).toBe('/foo.txt?bar=1')
+    expect(removeUrlQuery('/foo.txt?url=&bar=1')).toBe('/foo.txt?bar=1')
+    expect(removeUrlQuery('/foo.txt?bar=1&url')).toBe('/foo.txt?bar=1')
+    expect(removeUrlQuery('/foo.txt?bar=1&url=')).toBe('/foo.txt?bar=1')
   })
 })
 
