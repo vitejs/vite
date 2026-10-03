@@ -1125,9 +1125,15 @@ export function getDefaultEnvironmentOptions(
 }
 
 export interface PluginHookUtils {
+  /**
+   * @deprecated Use `config.environments` instead
+   */
   getSortedPlugins: <K extends keyof Plugin>(
     hookName: K,
   ) => PluginWithRequiredHook<K>[]
+  /**
+   * @deprecated Use `config.environments` instead
+   */
   getSortedPluginHooks: <K extends keyof Plugin>(
     hookName: K,
   ) => NonNullable<HookHandler<Plugin[K]>>[]
@@ -2237,7 +2243,6 @@ export async function resolveConfig(
   patchPlugins?.(resolvedPlugins)
   ;(resolved.plugins as Plugin[]) = resolvedPlugins
 
-  // TODO: Deprecate config.getSortedPlugins and config.getSortedPluginHooks
   Object.assign(resolved, createPluginHookUtils(resolved.plugins))
 
   // call configResolved hooks
