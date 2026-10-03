@@ -2,6 +2,7 @@ import { join } from 'node:path'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { build } from '../build'
 import type { EnvironmentOptions, InlineConfig } from '../config'
+import { resolveSubpathImports } from '../plugins/resolve'
 import { createServer } from '../server'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
 
@@ -310,5 +311,33 @@ describe('file url', () => {
       join(import.meta.dirname, 'fixtures/file-url/dist/virtual/index.js')
     )
     expect(mod2.default.default).toBe('ok')
+  })
+})
+
+describe('literal dollar sequences in package imports', () => {
+  const importer = join(import.meta.dirname, 'fixtures/dollar-imports/main.js')
+
+  test.each([
+    ['plain.js', 'plain.js'],
+    ['test$.js', 'test$.js'],
+    ['test$$.js', 'test$$.js'],
+    ['test$&.js', 'test$&.js'],
+    ['test$`.js', 'test$`.js'],
+    ["test$'.js", "test$'.js"],
+    ['exact$$.js', 'plain.js'],
+  ])('resolves #%s without changing the capture', (specifier, filename) => {
+    const options = {
+      conditions: [],
+      externalConditions: [],
+      isProduction: false,
+      isRequire: false,
+      packageCache: new Map(),
+    }
+    expect(resolveSubpathImports(`#${specifier}`, importer, options)).toBe(
+      `./${join('src', filename)}`,
+    )
+    expect(resolveSubpathImports(`#${specifier}?raw`, importer, options)).toBe(
+      `./${join('src', filename)}?raw`,
+    )
   })
 })

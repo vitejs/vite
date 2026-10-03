@@ -10,6 +10,7 @@
     "./deep.js": "./deep.js",
     "./deep.json": "./deep.json",
     "./dir/": "./dir/",
+    "./dir-mapped/exact$$.js": "./dir/exact.js",
     "./dir-mapped/*": {
       "import": "./dir/*",
       "require": "./dir-cjs/*"
