@@ -1296,34 +1296,34 @@ export async function resolveServerOptions(
 
   let allowDirs = server.fs.allow
 
-  const cwd = searchForPackageRoot(root)
-  if (process.versions.pnp) {
-    // running a command fails if cwd doesn't exist and root may not exist
-    // search for package root to find a path that exists
-    try {
-      const enableGlobalCache =
-        execSync('yarn config get enableGlobalCache', { cwd })
-          .toString()
-          .trim() === 'true'
-      const yarnCacheDir = execSync(
-        `yarn config get ${enableGlobalCache ? 'globalFolder' : 'cacheFolder'}`,
-        { cwd },
-      )
-        .toString()
-        .trim()
-      allowDirs.push(yarnCacheDir)
-    } catch (e) {
-      logger.warn(`Get yarn cache dir error: ${e.message}`, {
-        timestamp: true,
-      })
-    }
-  }
-
-  // The allow list is only used by the dev server. Skip the pnpm lookup below
-  // during build: .modules.yaml is rewritten on every install (e.g. its
-  // `prunedAt` timestamp), so reading it would make the build depend on that
-  // metadata.
+  // The allow list is only used by the dev server, so skip the package manager
+  // lookups below during build. They run `yarn` or read pnpm's .modules.yaml,
+  // which is rewritten on every install (e.g. its `prunedAt` timestamp), and
+  // would make the build depend on that metadata.
   if (!isBuild) {
+    const cwd = searchForPackageRoot(root)
+    if (process.versions.pnp) {
+      // running a command fails if cwd doesn't exist and root may not exist
+      // search for package root to find a path that exists
+      try {
+        const enableGlobalCache =
+          execSync('yarn config get enableGlobalCache', { cwd })
+            .toString()
+            .trim() === 'true'
+        const yarnCacheDir = execSync(
+          `yarn config get ${enableGlobalCache ? 'globalFolder' : 'cacheFolder'}`,
+          { cwd },
+        )
+          .toString()
+          .trim()
+        allowDirs.push(yarnCacheDir)
+      } catch (e) {
+        logger.warn(`Get yarn cache dir error: ${e.message}`, {
+          timestamp: true,
+        })
+      }
+    }
+
     // pnpm's global virtual store (GVS) may place package files outside workspace root.
     // Read node_modules/.modules.yaml which pnpm always writes on install — this works
     // unconditionally regardless of how Vite is launched (node / npx / pnpm run),
