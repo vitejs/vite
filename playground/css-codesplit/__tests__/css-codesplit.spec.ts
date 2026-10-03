@@ -11,21 +11,21 @@ import {
 test('should load all stylesheets', async () => {
   expect(await getColor('h1')).toBe('red')
   expect(await getColor('h2')).toBe('blue')
-  expect(await getColor('.dynamic')).toBe('green')
-  expect(await getColor('.async-js')).toBe('blue')
+  await expect.poll(() => getColor('.dynamic')).toBe('green')
+  await expect.poll(() => getColor('.async-js')).toBe('blue')
   expect(await getColor('.chunk')).toBe('magenta')
 })
 
 test('should load dynamic import with inline', async () => {
-  const css = await page.textContent('.dynamic-inline')
-  expect(css).toMatch('.inline')
+  await expect
+    .poll(() => page.textContent('.dynamic-inline'))
+    .toMatch('.inline')
 
   expect(await getColor('.inline')).not.toBe('yellow')
 })
 
 test('should load dynamic import with module', async () => {
-  const css = await page.textContent('.dynamic-module')
-  expect(css).toMatch('_mod_')
+  await expect.poll(() => page.textContent('.dynamic-module')).toMatch('_mod_')
 
   expect(await getColor('.mod')).toBe('yellow')
 })

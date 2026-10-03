@@ -1,4 +1,3 @@
-import { setTimeout } from 'node:timers/promises'
 import { expect, test } from 'vitest'
 import {
   editFile,
@@ -24,25 +23,32 @@ test.runIf(isBuild)('rebuilds styles only entry on change', async () => {
     originalContents.replace('#ff69b4', '#ffb6c1 '),
   )
   await notifyRebuildComplete(watcher)
-  // wait for both "output" to complete, workaround for https://github.com/rolldown/rolldown/issues/10613
-  await Promise.race([notifyRebuildComplete(watcher), setTimeout(100)])
-
-  const updatedManifest = readManifest('watch')
-  expect(Object.keys(updatedManifest)).toHaveLength(numberOfManifestEntries)
-
-  // We must use the file referenced in the manifest here,
-  // since there'll be different versions of the file with different hashes.
-  const reRenderedCssFile = findAssetFile(
-    updatedManifest['style-only-entry.css']!.file.substring('assets/'.length),
-    'watch',
-  )
-  expect(reRenderedCssFile).toContain('#ffb6c1')
-  const reRenderedCssLegacyFile = findAssetFile(
-    updatedManifest['style-only-entry-legacy.css']!.file.substring(
-      'assets/'.length,
-    ),
-    'watch',
-  )
-  expect(reRenderedCssLegacyFile).toContain('#ffb6c1')
-  expect(findAssetFile(/polyfills-legacy-.+\.js/, 'watch')).toBeTruthy()
+  // END can fire before both outputs finish: https://github.com/rolldown/rolldown/issues/10613
+  await expect
+    .poll(() => {
+      const updatedManifest = readManifest('watch')
+      // Read the files referenced by the manifest because hashes change on rebuild.
+      return {
+        manifestEntries: Object.keys(updatedManifest).length,
+        css: findAssetFile(
+          updatedManifest['style-only-entry.css']!.file.substring(
+            'assets/'.length,
+          ),
+          'watch',
+        ),
+        legacy: findAssetFile(
+          updatedManifest['style-only-entry-legacy.css']!.file.substring(
+            'assets/'.length,
+          ),
+          'watch',
+        ),
+        polyfills: !!findAssetFile(/polyfills-legacy-.+\.js/, 'watch'),
+      }
+    })
+    .toEqual({
+      manifestEntries: numberOfManifestEntries,
+      css: expect.stringContaining('#ffb6c1'),
+      legacy: expect.stringContaining('#ffb6c1'),
+      polyfills: true,
+    })
 })
