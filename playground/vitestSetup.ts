@@ -305,7 +305,10 @@ export async function startDefaultServe(): Promise<void> {
     // A playground whose first bundle fails keeps the fallback page, and its
     // tests are expected to handle that state themselves.
     // hmr-full-bundle-mode is exempt — it asserts the fallback page itself.
-    if (isBundledDev && testName !== 'hmr-full-bundle-mode') {
+    if (
+      server.environments.client.bundledDev &&
+      testName !== 'hmr-full-bundle-mode'
+    ) {
       // `initialBuildCompleted` / `lastBuildError` are private — the harness
       // reaches in rather than widening the public API for tests only.
       const bundledDev = server.environments.client.bundledDev as any

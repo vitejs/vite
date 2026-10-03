@@ -313,3 +313,22 @@ describe.runIf(isServe)('HEAD request handling', () => {
     },
   )
 })
+
+// Wildcard captures must remain literal, including String.replace tokens.
+test.each(['imports', 'exports'])(
+  'resolves literal dollar sequences in package %s',
+  async (field) => {
+    expect(await page.textContent(`.dollar-${field}`)).toBe(
+      JSON.stringify([
+        'plain.js',
+        'test$.js',
+        'test$$.js',
+        'test$&.js',
+        'test$`.js',
+        "test$'.js",
+        // Exact keys take precedence over wildcard keys.
+        'exact.js',
+      ]),
+    )
+  },
+)

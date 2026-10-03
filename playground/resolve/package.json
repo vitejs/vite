@@ -14,6 +14,7 @@
     "#same-level": "./imports-path/same-level.js",
     "#nested/path.js": "./imports-path/nested-path.js",
     "#star/*": "./imports-path/star/*",
+    "#star/exact$$.js": "./imports-path/star/exact.js",
     "#slash/": "./imports-path/slash/",
     "#other-pkg-slash/": "@vitejs/test-resolve-imports-pkg/nest/",
     "#query": "./imports-path/query.json",
