@@ -109,13 +109,35 @@ export function servePublicMiddleware(
     // in-memory set of known public files. This set is updated on restarts.
     // also skip import request and internal requests `/@fs/ /@vite-client` etc...
     if (
-      (publicFiles && !publicFiles.has(toFilePath(req.url!))) ||
       isImportRequest(req.url!) ||
       isInternalRequest(req.url!) ||
       // for `/public-file.js?url` to be transformed
       urlRE.test(req.url!)
     ) {
       return next()
+    }
+    const filePath = toFilePath(req.url!)
+    if (publicFiles && !publicFiles.has(filePath)) {
+      // Mirror htmlFallbackMiddleware so that public files behave the same
+      // in dev and preview: `/foo/` resolves to `/foo/index.html` and
+      // `/foo` to `/foo.html` for requests that accept html.
+      const fallbackPath = filePath.endsWith('/')
+        ? filePath + 'index.html'
+        : filePath + '.html'
+      if (
+        (req.method !== 'GET' && req.method !== 'HEAD') ||
+        !(
+          req.headers.accept === undefined || // equivalent to `Accept: */*`
+          req.headers.accept === '' || // equivalent to `Accept: */*`
+          req.headers.accept.includes('text/html') ||
+          req.headers.accept.includes('*/*')
+        ) ||
+        !publicFiles.has(fallbackPath)
+      ) {
+        return next()
+      }
+      const url = cleanUrl(req.url!)
+      req.url = url.endsWith('/') ? url + 'index.html' : url + '.html'
     }
     serve(req, res, next)
   }
