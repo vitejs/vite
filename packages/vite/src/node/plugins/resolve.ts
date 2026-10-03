@@ -509,9 +509,15 @@ export function resolveSubpathImports(
   let { file: idWithoutPostfix, postfix } = splitFileAndPostfix(id.slice(1))
   idWithoutPostfix = '#' + idWithoutPostfix
 
+  // resolve.exports uses String.replace() to substitute wildcard segments,
+  // where `$$` in the replacement string is treated as a literal `$`.
+  // Escape `$` in the id so the captured segment round-trips correctly.
+  // See: https://github.com/vitejs/vite/issues/23637
+  const idForImportsResolution = idWithoutPostfix.replace(/\$/g, '$$$$')
+
   let importsPath = resolveExportsOrImports(
     pkgData.data,
-    idWithoutPostfix,
+    idForImportsResolution,
     options,
     'imports',
   )
