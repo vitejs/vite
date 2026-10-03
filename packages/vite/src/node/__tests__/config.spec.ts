@@ -3,7 +3,15 @@ import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
-import { afterEach, assert, describe, expect, test, vi } from 'vitest'
+import {
+  afterEach,
+  assert,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from 'vitest'
 import type { InlineConfig, Plugin, PluginOption } from '..'
 import { isWindows } from '../../shared/utils'
 import type { UserConfig, UserConfigExport } from '../config'
@@ -24,6 +32,12 @@ import {
 } from '../utils'
 
 const devToolsIntegration = vi.hoisted(() => vi.fn())
+
+const execSyncMock = vi.hoisted(() => vi.fn())
+vi.mock('node:child_process', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('node:child_process')>()),
+  execSync: execSyncMock,
+}))
 
 vi.mock('@vitejs/devtools/integration', () => ({
   DevToolsIntegration: devToolsIntegration,
@@ -2466,5 +2480,101 @@ describe('resolveServerOptions', () => {
       )
       warnFn.mockClear()
     }
+  })
+})
+
+describe('pnpm virtual store in server.fs.allow', () => {
+  const logger = { warn: vi.fn() } as unknown as Logger
+  let tmpDir: string
+  let root: string
+  let modulesYaml: string
+
+  beforeEach(() => {
+    tmpDir = fs.realpathSync(
+      fs.mkdtempSync(path.join(os.tmpdir(), 'vite-pnpm-store-')),
+    )
+    root = path.join(tmpDir, 'workspace')
+    fs.mkdirSync(path.join(root, 'node_modules'), { recursive: true })
+    fs.writeFileSync(path.join(root, 'pnpm-workspace.yaml'), '')
+    modulesYaml = path.join(root, 'node_modules', '.modules.yaml')
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+  })
+
+  function writeModulesYaml(virtualStoreDir: string) {
+    fs.writeFileSync(
+      modulesYaml,
+      JSON.stringify({ virtualStoreDir, prunedAt: new Date().toUTCString() }),
+    )
+  }
+
+  test('allows a global virtual store at an absolute path', async () => {
+    const store = path.join(tmpDir, 'store', 'links')
+    fs.mkdirSync(store, { recursive: true })
+    writeModulesYaml(store)
+    const resolved = await resolveServerOptions(root, {}, logger)
+    expect(resolved.fs.allow).toContain(normalizePath(store))
+  })
+
+  test('allows a custom virtual store outside of the workspace', async () => {
+    const store = path.join(tmpDir, 'store')
+    fs.mkdirSync(store, { recursive: true })
+    writeModulesYaml('../../store')
+    const readFileSync = vi.spyOn(fs, 'readFileSync')
+    const resolved = await resolveServerOptions(root, {}, logger)
+    expect(resolved.fs.allow).toContain(normalizePath(store))
+    expect(readFileSync).toHaveBeenCalledWith(modulesYaml, 'utf-8')
+  })
+
+  test('does not add a virtual store inside node_modules', async () => {
+    writeModulesYaml('.pnpm')
+    const resolved = await resolveServerOptions(root, {}, logger)
+    expect(resolved.fs.allow).not.toContain(
+      normalizePath(path.join(root, 'node_modules', '.pnpm')),
+    )
+  })
+
+  test('does not read .modules.yaml during build', async () => {
+    const store = path.join(tmpDir, 'store')
+    fs.mkdirSync(store, { recursive: true })
+    writeModulesYaml('../../store')
+    const readFileSync = vi.spyOn(fs, 'readFileSync')
+    const resolved = await resolveServerOptions(root, {}, logger, true)
+    expect(resolved.fs.allow).not.toContain(normalizePath(store))
+    expect(readFileSync).not.toHaveBeenCalledWith(modulesYaml, 'utf-8')
+  })
+})
+
+describe('yarn PnP cache in server.fs.allow', () => {
+  const logger = { warn: vi.fn() } as unknown as Logger
+  const yarnCache = path.resolve('/yarn/cache')
+
+  beforeEach(() => {
+    // @ts-expect-error not typed
+    process.versions.pnp = '3'
+    execSyncMock
+      .mockReturnValueOnce(Buffer.from('false'))
+      .mockReturnValueOnce(Buffer.from(yarnCache))
+  })
+
+  afterEach(() => {
+    // @ts-expect-error not typed
+    delete process.versions.pnp
+    execSyncMock.mockReset()
+  })
+
+  test('allows the yarn cache when serving', async () => {
+    const resolved = await resolveServerOptions(process.cwd(), {}, logger)
+    expect(execSyncMock).toHaveBeenCalledTimes(2)
+    expect(resolved.fs.allow).toContain(normalizePath(yarnCache))
+  })
+
+  test('does not run yarn during build', async () => {
+    const resolved = await resolveServerOptions(process.cwd(), {}, logger, true)
+    expect(execSyncMock).not.toHaveBeenCalled()
+    expect(resolved.fs.allow).not.toContain(normalizePath(yarnCache))
   })
 })

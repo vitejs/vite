@@ -1266,6 +1266,7 @@ export async function resolveServerOptions(
   root: string,
   raw: ServerOptions | undefined,
   logger: Logger,
+  isBuild = false,
 ): Promise<ResolvedServerOptions> {
   const _server = mergeWithDefaults(
     {
@@ -1295,58 +1296,64 @@ export async function resolveServerOptions(
 
   let allowDirs = server.fs.allow
 
-  const cwd = searchForPackageRoot(root)
-  if (process.versions.pnp) {
-    // running a command fails if cwd doesn't exist and root may not exist
-    // search for package root to find a path that exists
-    try {
-      const enableGlobalCache =
-        execSync('yarn config get enableGlobalCache', { cwd })
-          .toString()
-          .trim() === 'true'
-      const yarnCacheDir = execSync(
-        `yarn config get ${enableGlobalCache ? 'globalFolder' : 'cacheFolder'}`,
-        { cwd },
-      )
-        .toString()
-        .trim()
-      allowDirs.push(yarnCacheDir)
-    } catch (e) {
-      logger.warn(`Get yarn cache dir error: ${e.message}`, {
-        timestamp: true,
-      })
-    }
-  }
-
-  // pnpm's global virtual store (GVS) may place package files outside workspace root.
-  // Read node_modules/.modules.yaml which pnpm always writes on install — this works
-  // unconditionally regardless of how Vite is launched (node / npx / pnpm run),
-  // avoiding the need for subprocess calls or user-agent sniffing.
-  // Use workspace root (not package root) because .modules.yaml lives at the
-  // monorepo root's node_modules/, not in nested workspace packages.
-  const pnpmModulesYaml = path.join(
-    workspaceRoot,
-    'node_modules',
-    '.modules.yaml',
-  )
-  try {
-    const content = fs.readFileSync(pnpmModulesYaml, 'utf-8')
-    const parsed = JSON.parse(content)
-    const virtualStoreDir = parsed.virtualStoreDir
-    if (virtualStoreDir) {
-      if (path.isAbsolute(virtualStoreDir)) {
-        allowDirs.push(virtualStoreDir)
-      } else if (virtualStoreDir.startsWith('..')) {
-        allowDirs.push(
-          path.resolve(
-            path.join(workspaceRoot, 'node_modules'),
-            virtualStoreDir,
-          ),
+  // The allow list is only used by the dev server, so skip the package manager
+  // lookups below during build. They run `yarn` or read pnpm's .modules.yaml,
+  // which is rewritten on every install (e.g. its `prunedAt` timestamp), and
+  // would make the build depend on that metadata.
+  if (!isBuild) {
+    const cwd = searchForPackageRoot(root)
+    if (process.versions.pnp) {
+      // running a command fails if cwd doesn't exist and root may not exist
+      // search for package root to find a path that exists
+      try {
+        const enableGlobalCache =
+          execSync('yarn config get enableGlobalCache', { cwd })
+            .toString()
+            .trim() === 'true'
+        const yarnCacheDir = execSync(
+          `yarn config get ${enableGlobalCache ? 'globalFolder' : 'cacheFolder'}`,
+          { cwd },
         )
+          .toString()
+          .trim()
+        allowDirs.push(yarnCacheDir)
+      } catch (e) {
+        logger.warn(`Get yarn cache dir error: ${e.message}`, {
+          timestamp: true,
+        })
       }
     }
-  } catch {
-    // .modules.yaml not found or unreadable — not a pnpm project, skip
+
+    // pnpm's global virtual store (GVS) may place package files outside workspace root.
+    // Read node_modules/.modules.yaml which pnpm always writes on install — this works
+    // unconditionally regardless of how Vite is launched (node / npx / pnpm run),
+    // avoiding the need for subprocess calls or user-agent sniffing.
+    // Use workspace root (not package root) because .modules.yaml lives at the
+    // monorepo root's node_modules/, not in nested workspace packages.
+    const pnpmModulesYaml = path.join(
+      workspaceRoot,
+      'node_modules',
+      '.modules.yaml',
+    )
+    try {
+      const content = fs.readFileSync(pnpmModulesYaml, 'utf-8')
+      const parsed = JSON.parse(content)
+      const virtualStoreDir = parsed.virtualStoreDir
+      if (virtualStoreDir) {
+        if (path.isAbsolute(virtualStoreDir)) {
+          allowDirs.push(virtualStoreDir)
+        } else if (virtualStoreDir.startsWith('..')) {
+          allowDirs.push(
+            path.resolve(
+              path.join(workspaceRoot, 'node_modules'),
+              virtualStoreDir,
+            ),
+          )
+        }
+      }
+    } catch {
+      // .modules.yaml not found or unreadable — not a pnpm project, skip
+    }
   }
 
   allowDirs = allowDirs.map((i) => resolvedAllowDir(root, i))
