@@ -39,7 +39,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # Assume PRs are less than 50 commits
           fetch-depth: 50
@@ -70,34 +70,28 @@ jobs:
           - os: macos-latest
             node_version: 24
           - os: windows-latest
-            # use older minor to workaround https://github.com/nodejs/node/issues/63638
-            node_version: 24.15.0
+            node_version: 24
       fail-fast: false
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
-
       - if: matrix.node_version != '20'
-        name: Set node version to ${{ matrix.node_version }}
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        name: Install pnpm and node ${{ matrix.node_version }}
+        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
         with:
-          node-version: ${{ matrix.node_version }}
-          cache: "pnpm"
+          runtime: node@${{ matrix.node_version }}
+          cache: true
       - if: matrix.node_version == '20' # use node 24 for builds
-        name: Set node version to 24 for builds
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        name: Install pnpm and node 24 for builds
+        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
         with:
-          node-version: 24
-
-      - name: Install deps
-        run: pnpm install
+          runtime: node@24
+          cache: true
 
       # Install playwright's binary under custom directory to cache
       - name: (non-windows) Set Playwright path and Get playwright version
@@ -114,7 +108,7 @@ jobs:
           echo "PLAYWRIGHT_VERSION=$env:PLAYWRIGHT_VERSION" >> $env:GITHUB_ENV
 
       - name: Cache Playwright's binary
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           key: ${{ runner.os }}-playwright-bin-v1-${{ env.PLAYWRIGHT_VERSION }}
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
@@ -130,10 +124,7 @@ jobs:
 
       - if: matrix.node_version == '20'
         name: Set node version to ${{ matrix.node_version }}
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
-        with:
-          node-version: ${{ matrix.node_version }}
-          cache: "pnpm"
+        run: pnpm runtime set node ${{ matrix.node_version }} -g
 
       - name: Test unit
         run: pnpm run test-unit
@@ -168,21 +159,15 @@ jobs:
     runs-on: ubuntu-latest
     name: "Lint: node-24, ubuntu-latest"
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
-
-      - name: Set node version to 24
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - name: Install pnpm and node 24
+        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
         with:
-          node-version: 24
-          cache: "pnpm"
-
-      - name: Install deps
-        run: pnpm install
+          runtime: node@24
+          cache: true
 
       - name: Build
         run: pnpm run build

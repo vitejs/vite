@@ -1,5 +1,5 @@
 import path from 'node:path'
-import type { RawSourceMap } from '@jridgewell/remapping'
+import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
@@ -38,6 +38,10 @@ export const preloadMarker = `__VITE_PRELOAD__`
 
 export const preloadHelperId = '\0vite/preload-helper.js'
 const preloadMarkerRE = new RegExp(preloadMarker, 'g')
+
+export function isCssPreloadUrl(url: URL): boolean {
+  return url.pathname.endsWith('.css')
+}
 
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.posix.relative(path.posix.dirname(importer), filename)
@@ -123,7 +127,7 @@ function preload(
     Promise.resolve()
   // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
   if (__VITE_IS_MODERN__ && deps && deps.length > 0) {
-    const links = document.getElementsByTagName('link')
+    let preloadedHrefs: { all: Set<string>; styles: Set<string> } | undefined
     const cspNonceMeta = document.querySelector<HTMLMetaElement>(
       'meta[property=csp-nonce]',
     )
@@ -146,56 +150,71 @@ function preload(
       )
     }
 
-    function importMetaResolve(specifier: string): string {
+    function importMetaResolve(specifier: string): URL {
       // @ts-expect-error import.meta.resolve is not supported by all browsers we support
       // But `import.meta.resolve` is only needed when build.chunkImportMap is enabled,
       // and that option requires `import.meta.resolve` support.
       if (import.meta.resolve) {
-        return import.meta.resolve(specifier)
+        return new URL(import.meta.resolve(specifier))
       }
-      return new URL(specifier, /** #__KEEP__ */ import.meta.url).href
+      return new URL(specifier, /** #__KEEP__ */ import.meta.url)
     }
 
     promise = allSettled(
-      deps.map((dep) => {
-        // @ts-expect-error assetsURL is declared before preload.toString()
-        dep = assetsURL(dep, importerUrl)
-        dep = importMetaResolve(dep)
-        if (dep in seen) return
-        seen[dep] = true
-        const isCss = dep.endsWith('.css')
+      deps
+        .map((depString) => {
+          // @ts-expect-error assetsURL is declared before preload.toString()
+          depString = assetsURL(depString, importerUrl)
+          const dep = importMetaResolve(depString)
+          if (dep.href in seen) return
+          seen[dep.href] = true
+          const isCss = isCssPreloadUrl(dep)
 
-        // check if the file is already preloaded by SSR markup
-        // `dep` is already converted to an absolute URL by the `assetsURL` function
-        for (let i = links.length - 1; i >= 0; i--) {
-          const link = links[i]
-          // The `links[i].href` is an absolute URL thanks to browser doing the work
-          // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
-          if (link.href === dep && (!isCss || link.rel === 'stylesheet')) {
+          if (preloadedHrefs === undefined) {
+            preloadedHrefs = { all: new Set(), styles: new Set() }
+            const links = document.getElementsByTagName('link')
+            for (let i = links.length - 1; i >= 0; i--) {
+              const link = links[i]
+              // The `links[i].href` is an absolute URL thanks to browser doing the work
+              // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
+              preloadedHrefs.all.add(link.href)
+              if (link.rel === 'stylesheet') {
+                preloadedHrefs.styles.add(link.href)
+              }
+            }
+          }
+
+          // check if the file is already preloaded by SSR markup
+          // `importMetaResolve` converts `dep` to an absolute URL
+          const preloadedHrefSet = isCss
+            ? preloadedHrefs.styles
+            : preloadedHrefs.all
+          if (preloadedHrefSet.has(dep.href)) {
             return
           }
-        }
 
-        const link = document.createElement('link')
-        link.rel = isCss ? 'stylesheet' : scriptRel
-        if (!isCss) {
-          link.as = 'script'
-        }
-        link.crossOrigin = ''
-        link.href = dep
-        if (cspNonce) {
-          link.setAttribute('nonce', cspNonce)
-        }
-        document.head.appendChild(link)
-        if (isCss) {
-          return new Promise((res, rej) => {
-            link.addEventListener('load', res)
-            link.addEventListener('error', () =>
-              rej(new Error(`Unable to preload CSS for ${dep}`)),
-            )
-          })
-        }
-      }),
+          const link = document.createElement('link')
+          link.rel = isCss ? 'stylesheet' : scriptRel
+          if (!isCss) {
+            link.as = 'script'
+          }
+          link.crossOrigin = ''
+          link.href = dep.href
+          if (cspNonce) {
+            link.setAttribute('nonce', cspNonce)
+          }
+          document.head.appendChild(link)
+          if (isCss) {
+            return new Promise((res, rej) => {
+              link.addEventListener('load', res)
+              link.addEventListener('error', () =>
+                rej(new Error(`Unable to preload CSS for ${dep}`)),
+              )
+            })
+          }
+        })
+        // skip undefined to be converted to Promise.resolve for performance
+        .filter((p) => p !== undefined),
     )
   }
 
@@ -249,7 +268,7 @@ function getPreloadCode(
         `function(dep) { return ${JSON.stringify(environment.config.base)}+dep }`
   // replace `import` as a workaround for stackblitz: https://stackblitz.com/edit/node-vqfvv8dy?file=index.js
   const preloadMethodCode = preload.toString().replaceAll('𝐢𝐦𝐩𝐨𝐫𝐭', 'import')
-  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preloadMethodCode}`
+  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};const isCssPreloadUrl = ${isCssPreloadUrl.toString()};export const ${preloadMethod} = ${preloadMethodCode}`
   return preloadCode
 }
 
@@ -328,8 +347,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                 if (!url) {
                   const rawUrl = code.slice(start, end)
                   if (
-                    (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`) ||
-                    (rawUrl[0] === '`' && rawUrl[rawUrl.length - 1] === '`')
+                    (rawUrl[0] === `"` && rawUrl.at(-1) === `"`) ||
+                    (rawUrl[0] === '`' && rawUrl.at(-1) === '`')
                   )
                     url = rawUrl.slice(1, -1)
                 }
@@ -429,8 +448,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
               if (!url) {
                 const rawUrl = code.slice(start, end)
                 if (
-                  (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`) ||
-                  (rawUrl[0] === '`' && rawUrl[rawUrl.length - 1] === '`')
+                  (rawUrl[0] === `"` && rawUrl.at(-1) === `"`) ||
+                  (rawUrl[0] === '`' && rawUrl.at(-1) === '`')
                 )
                   url = rawUrl.slice(1, -1)
               }
@@ -601,13 +620,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           if (s.hasChanged()) {
             chunk.code = s.toString()
             if (buildSourcemap && chunk.map) {
-              const nextMap = s.generateMap({
+              const nextMap = s.generateDecodedMap({
                 source: chunk.fileName,
                 hires: 'boundary',
               })
               const originalFile = chunk.map.file
               const map = combineSourcemaps(chunk.fileName, [
-                nextMap as RawSourceMap,
+                nextMap as DecodedSourceMap,
                 chunk.map as RawSourceMap,
               ]) as SourceMap
               map.toUrl = () => genSourceMapUrl(map)

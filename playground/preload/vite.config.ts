@@ -14,11 +14,14 @@ export default defineConfig({
     },
     rolldownOptions: {
       output: {
-        // manualChunks(id) {
-        //   if (id.includes('chunk.js')) {
-        //     return 'chunk'
-        //   }
-        // },
+        codeSplitting: {
+          groups: [
+            {
+              name: 'chunk',
+              test: 'chunk.js',
+            },
+          ],
+        },
       },
     },
   },

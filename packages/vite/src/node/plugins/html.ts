@@ -44,6 +44,7 @@ import {
 } from '../utils'
 import {
   assetUrlRE,
+  getAssetUrlPostfix,
   getPublicAssetFilename,
   publicAssetUrlRE,
   urlToBuiltUrl,
@@ -168,7 +169,23 @@ const noInlineLinkRels = new Set([
   'apple-touch-icon',
   'apple-touch-startup-image',
   'manifest',
+  'modulepreload',
+  'preload',
+  'prefetch',
 ])
+
+// If the node is a link, check if it can be inlined. If not, return `false` to
+// force no inline. `undefined` leaves it to the default heuristics.
+function getLinkShouldInline(
+  node: DefaultTreeAdapterMap['element'],
+  attributes: Record<string, string>,
+): false | undefined {
+  const isNoInlineLink =
+    node.nodeName === 'link' &&
+    attributes.rel &&
+    parseRelAttr(attributes.rel).some((v) => noInlineLinkRels.has(v))
+  return isNoInlineLink ? false : undefined
+}
 
 export const isAsyncScriptMap: WeakMap<
   ResolvedConfig,
@@ -636,7 +653,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                         decodedUrl !== undefined &&
                         !isExcludedUrl(decodedUrl)
                       ) {
-                        const result = await processAssetUrl(url)
+                        const result = await processAssetUrl(
+                          decodedUrl,
+                          getLinkShouldInline(node, attr.attributes),
+                        )
                         return result !== decodedUrl
                           ? encodeURIPath(result)
                           : url
@@ -675,20 +695,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   })
                   js += importExpression
                 } else {
-                  // If the node is a link, check if it can be inlined. If not, set `shouldInline`
-                  // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
-                  const isNoInlineLink =
-                    node.nodeName === 'link' &&
-                    attr.attributes.rel &&
-                    parseRelAttr(attr.attributes.rel).some((v) =>
-                      noInlineLinkRels.has(v),
-                    )
-                  const shouldInline = isNoInlineLink ? false : undefined
                   assetUrlsPromises.push(
                     (async () => {
                       const processedUrl = await processAssetUrl(
                         url,
-                        shouldInline,
+                        getLinkShouldInline(node, attr.attributes),
                       )
                       if (processedUrl !== url) {
                         overwriteAttrValue(
@@ -1064,12 +1075,15 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           },
         )
         // resolve asset url references
-        result = result.replace(assetUrlRE, (_, fileHash) => {
+        result = result.replace(assetUrlRE, (_, fileHash, urlId) => {
           const file = this.getFileName(fileHash)
           if (chunk) {
             chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
           }
-          return encodeURIPath(toOutputAssetFilePath(file))
+          return (
+            encodeURIPath(toOutputAssetFilePath(file)) +
+            getAssetUrlPostfix(this.environment, urlId)
+          )
         })
 
         result = result.replace(publicAssetUrlRE, (_, fileHash) => {
