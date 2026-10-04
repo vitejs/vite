@@ -1,5 +1,44 @@
-import { describe, expect, test } from 'vitest'
+import path from 'node:path'
+import { describe, expect, onTestFinished, test } from 'vitest'
+import { createServer } from '../../../server'
+import { normalizePath } from '../../../utils'
 import { isFileInTargetPath, looksLikeWindowsShortNamePath } from '../static'
+
+describe('static file aliases', () => {
+  test.each([
+    ['/images-extra/file.txt', 'original'],
+    ['/images/file.txt', 'aliased'],
+    ['/file.txt', 'aliased'],
+    ['/regex/file.txt', 'aliased'],
+  ])('serves %s', async (url, expected) => {
+    const root = normalizePath(
+      path.resolve(import.meta.dirname, 'fixtures/static'),
+    )
+    const server = await createServer({
+      configFile: false,
+      root,
+      logLevel: 'silent',
+      resolve: {
+        alias: [
+          { find: '/images', replacement: `${root}/aliased` },
+          {
+            find: '/file.txt',
+            replacement: `${root}/aliased/file.txt`,
+          },
+          { find: /^\/regex\//, replacement: `${root}/aliased/` },
+        ],
+      },
+      server: { host: '127.0.0.1', port: 0, ws: false },
+      optimizeDeps: { noDiscovery: true, include: [] },
+    })
+    onTestFinished(() => server.close())
+    await server.listen()
+
+    const response = await fetch(new URL(url, server.resolvedUrls!.local[0]))
+    expect(response.status).toBe(200)
+    expect(await response.text()).toBe(`${expected}\n`)
+  })
+})
 
 describe('isFileInTargetPath', () => {
   const cases = {
