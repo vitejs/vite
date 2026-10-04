@@ -364,13 +364,19 @@ function wrapCallSite(frame: CallSite, state: State) {
     const line = frame.getLineNumber() ?? 0
     const column = (frame.getColumnNumber() ?? 1) - 1
 
-    const position = mapSourcePosition({
-      name: null,
-      source,
-      line,
-      column,
-    })
+    const unmapped = { name: null, source, line, column }
+    const position = mapSourcePosition(unmapped)
     state.curPosition = position
+    // Most frames have no source map, and cloning one per frame dominates the cost of
+    // building the stack. Skip it when the clone would print the same thing anyway.
+    if (
+      position === unmapped &&
+      !state.nextPosition?.name &&
+      frame.getColumnNumber() != null &&
+      frame.getScriptNameOrSourceURL() === source
+    ) {
+      return { toString: () => CallSiteToString.call(frame) } as CallSite
+    }
     frame = cloneCallSite(frame)
     const originalFunctionName = frame.getFunctionName
     frame.getFunctionName = function () {
