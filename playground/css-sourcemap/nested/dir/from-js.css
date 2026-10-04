@@ -1,0 +1,5 @@
+@import './dep.css';
+
+.from-js {
+  color: red;
+}

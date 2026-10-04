@@ -1,16 +1,19 @@
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import convertSourceMap from 'convert-source-map'
 import colors from 'picocolors'
 import type { ExistingRawSourceMap, SourceMap } from 'rolldown'
-import { cleanUrl } from '../../shared/utils'
+import { cleanUrl, withTrailingSlash } from '../../shared/utils'
 import type { Logger } from '../logger'
 import {
   blankReplacer,
   createDebugger,
+  encodeURIPath,
   isExternalUrl,
   isParentDirectory,
+  joinUrlSegments,
   normalizePath,
 } from '../utils'
 
@@ -50,10 +53,71 @@ export function getNodeModulesPackageRoot(
 // prefixes used for special handling in esbuildDepPlugin.
 const virtualSourceRE = /^(?:dep:|browser-external:|virtual:)|\0/
 
+export function isNonFileSourcemapSource(source: string): boolean {
+  return (
+    virtualSourceRE.test(source) ||
+    isExternalUrl(source) ||
+    (!path.isAbsolute(source) && URL.canParse(source))
+  )
+}
+
 export interface SourceMapLike {
   sources: string[]
   sourcesContent?: (string | null)[]
   sourceRoot?: string
+}
+
+export function rebaseCssSourcemapSources(
+  map: SourceMapLike,
+  file: string,
+  root: string,
+  base: string,
+): void {
+  if (map.sourceRoot && isNonFileSourcemapSource(map.sourceRoot)) return
+
+  const rootUrl = pathToFileURL(withTrailingSlash(root))
+  const fileUrl = pathToFileURL(file)
+  const sourceRoot = map.sourceRoot ? withTrailingSlash(map.sourceRoot) : ''
+  if (
+    sourceRoot &&
+    path.isAbsolute(sourceRoot) &&
+    !isParentDirectory(rootUrl.pathname, new URL(sourceRoot, fileUrl).pathname)
+  ) {
+    // An absolute URL path outside the project may already be a public root.
+    return
+  }
+  map.sources = map.sources.map((source) => {
+    if (!source || isNonFileSourcemapSource(source)) {
+      return source
+    }
+
+    // Style tags use the hosting page as their base. Only in-root files have
+    // a page-independent URL; other sources remain labels with sourcesContent.
+    if (path.isAbsolute(source) && !sourceRoot) {
+      const sourcePath = normalizePath(source)
+      return isParentDirectory(root, sourcePath)
+        ? joinUrlSegments(
+            base,
+            encodeURIPath(normalizePath(path.relative(root, sourcePath))),
+          )
+        : source
+    }
+
+    // Relative sources from plugins are URL references. Resolving them as
+    // filesystem paths would double-encode escapes such as %20.
+    const sourceUrl = new URL(sourceRoot + source, fileUrl)
+    return sourceUrl.protocol === rootUrl.protocol &&
+      sourceUrl.host === rootUrl.host &&
+      isParentDirectory(rootUrl.pathname, sourceUrl.pathname)
+      ? joinUrlSegments(
+          base,
+          sourceUrl.pathname.slice(rootUrl.pathname.length) +
+            sourceUrl.search +
+            sourceUrl.hash,
+        )
+      : sourceUrl.href
+  })
+  delete map.sourceRoot
 }
 
 async function computeSourceRoute(map: SourceMapLike, file: string) {

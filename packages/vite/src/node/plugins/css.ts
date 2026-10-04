@@ -66,7 +66,12 @@ import { checkPublicFile } from '../publicDir'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import type { TransformPluginContext } from '../server/pluginContainer'
 import { searchForWorkspaceRoot } from '../server/searchRoot'
-import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
+import {
+  getCodeWithSourcemap,
+  injectSourcesContent,
+  isNonFileSourcemapSource,
+  rebaseCssSourcemapSources,
+} from '../server/sourcemap'
 import {
   _dirname,
   arraify,
@@ -599,7 +604,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (config.command === 'serve') {
           const getContentWithSourcemap = async (content: string) => {
             if (config.css.devSourcemap) {
-              const sourcemap = this.getCombinedSourcemap()
+              const sourcemap = { ...this.getCombinedSourcemap() }
               if (sourcemap.mappings) {
                 await injectSourcesContent(
                   sourcemap,
@@ -607,6 +612,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   config.logger,
                 )
               }
+              rebaseCssSourcemapSources(
+                sourcemap,
+                cleanUrl(id),
+                config.root,
+                config.base,
+              )
               return getCodeWithSourcemap('css', content, sourcemap)
             }
             return content
@@ -3298,7 +3309,7 @@ async function compileLightningCSS(
   urlResolver?: CssUrlResolver,
 ): Promise<{
   code: string
-  map?: string | undefined
+  map?: ExistingRawSourceMap | undefined
   modules?: Record<string, string>
 }> {
   const { config } = environment
@@ -3515,9 +3526,21 @@ async function compileLightningCSS(
     }
   }
 
+  let map: ExistingRawSourceMap | undefined
+  if ('map' in res && res.map) {
+    map = JSON.parse(res.map.toString()) as ExistingRawSourceMap
+    // Lightning CSS makes sources relative to projectRoot. Normalize them
+    // before the plugin container and transformRequest consume the map.
+    map.sources = map.sources!.map((source) =>
+      !source || isNonFileSourcemapSource(source)
+        ? source
+        : normalizePath(path.resolve(config.root, source)),
+    )
+  }
+
   return {
     code: css,
-    map: 'map' in res ? res.map?.toString() : undefined,
+    map,
     modules,
   }
 }

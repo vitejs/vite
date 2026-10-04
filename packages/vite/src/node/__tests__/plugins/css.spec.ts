@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import MagicString from 'magic-string'
 import type { InternalModuleFormat } from 'rolldown'
 import { describe, expect, test } from 'vitest'
@@ -16,6 +17,7 @@ import {
   preprocessCSS,
   resolveLibCssFilename,
 } from '../../plugins/css'
+import { createServer } from '../../server'
 import { normalizePath } from '../../utils'
 
 const dirname = import.meta.dirname
@@ -446,6 +448,128 @@ describe('preprocessCSS', () => {
     )
     expect(result.code).toContain('http://example.com/a.css?x=$&y')
   })
+
+  test.each([
+    'nested/dir/foo.css',
+    '../shared/foo.css',
+    'virtual:foo.css',
+    'sass:foo.css',
+    'webpack-internal:///foo.css',
+    '\0foo.css',
+  ])('normalizes lightningcss sourcemap sources for %s', async (source) => {
+    const root = normalizePath(path.resolve('project'))
+    const virtual = source.includes(':') || source[0] === '\0'
+    const filename = virtual
+      ? source
+      : normalizePath(path.resolve(root, source))
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        root,
+        css: { transformer: 'lightningcss', devSourcemap: true },
+      },
+      'serve',
+    )
+    const css = '.foo { color: red; }'
+    const result = await preprocessCSS(css, filename, config)
+    const map =
+      typeof result.map === 'string' ? JSON.parse(result.map) : result.map
+    expect(map.sources).toEqual([filename])
+    expect(map.sourcesContent).toEqual([css])
+  })
+})
+
+describe('plugin CSS sourcemaps', () => {
+  test.each([
+    { source: 'theme%20dark.scss', expected: '/nested/dir/theme%20dark.scss' },
+    {
+      source: 'theme.scss',
+      sourceRoot: '/public-sources',
+      expected: 'theme.scss',
+      expectedRoot: '/public-sources',
+    },
+    {
+      source: '/theme.scss',
+      sourceRoot: '../original%20styles',
+      expected: '/nested/original%20styles//theme.scss',
+    },
+    {
+      source: 'theme.scss',
+      sourceRoot: pathToFileURL(path.join(dirname, 'original styles')).pathname,
+      expected: '/original%20styles/theme.scss',
+    },
+    { source: 'sass:theme.scss', expected: 'sass:theme.scss' },
+    {
+      source: 'webpack-internal:///theme.scss',
+      expected: 'webpack-internal:///theme.scss',
+    },
+    {
+      source: 'theme.scss',
+      sourceRoot: 'custom:styles',
+      expected: 'theme.scss',
+      expectedRoot: 'custom:styles',
+    },
+    {
+      source: 'theme.scss',
+      sourceRoot: '../original%20styles',
+      expected: '/nested/original%20styles/theme.scss',
+    },
+  ])(
+    'preserves $source with sourceRoot $sourceRoot',
+    async ({ source, sourceRoot, expected, expectedRoot }) => {
+      const filename = normalizePath(
+        path.join(dirname, 'nested/dir/plugin.css'),
+      )
+      const css = '.original { color: red; }'
+      const server = await createServer({
+        root: dirname,
+        configFile: false,
+        css: { devSourcemap: true },
+        server: { middlewareMode: true, watch: null, hmr: false },
+        optimizeDeps: { noDiscovery: true, include: [] },
+        plugins: [
+          {
+            name: 'plugin-css-map',
+            resolveId(id) {
+              if (id === '/nested/dir/plugin.css') return filename
+            },
+            load(id) {
+              if (id === filename) return css
+            },
+            transform(code, id) {
+              if (id !== filename) return
+              return {
+                code: code + '\n.transformed {}',
+                map: {
+                  version: 3,
+                  names: [],
+                  mappings: 'AAAA',
+                  sources: [source],
+                  sourceRoot,
+                  sourcesContent: [css],
+                },
+              }
+            },
+          },
+        ],
+      })
+      try {
+        const result = await server.transformRequest('/nested/dir/plugin.css')
+        const cssContent = JSON.parse(
+          result!.code.match(/const __vite__css = (.+)/)![1],
+        )
+        const encoded = cssContent.match(
+          /sourceMappingURL=data:application\/json;base64,(\S+)/,
+        )[1]
+        const map = JSON.parse(Buffer.from(encoded, 'base64').toString())
+        expect(map.sources).toEqual([expected])
+        expect(map.sourceRoot).toBe(expectedRoot)
+        expect(map.sourcesContent).toEqual([css])
+      } finally {
+        await server.close()
+      }
+    },
+  )
 })
 
 // Sass does not consult the `main` field; see
