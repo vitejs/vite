@@ -328,7 +328,7 @@ export function isFileLoadingAllowed(
 
   const hasDriveLetter = isWindows && windowsDriveRE.test(filePath)
   const hasColon = (hasDriveLetter ? filePath.slice(2) : filePath).includes(':')
-  if (hasColon) {
+  if (isWindows && hasColon) {
     // the `:` is included in the path which may be used for NTFS ADS
     return false
   }
@@ -339,6 +339,20 @@ export function isFileLoadingAllowed(
     ? filePath.slice(0, -1)
     : filePath
   if (config.fsDenyGlob(filePathWithoutTrailingSlash)) return false
+
+  // A Windows NTFS alternate data stream path such as `.env::$DATA` can be
+  // accessed on POSIX when the volume is mounted there. Preserve deny rules
+  // for the streamless path while allowing ordinary POSIX filenames with `:`.
+  const filePathWithoutStream = filePathWithoutTrailingSlash.replace(
+    /:[^/]*$/,
+    '',
+  )
+  if (
+    filePathWithoutStream !== filePathWithoutTrailingSlash &&
+    config.fsDenyGlob(filePathWithoutStream)
+  ) {
+    return false
+  }
 
   if (config.safeModulePaths.has(filePath)) return true
 

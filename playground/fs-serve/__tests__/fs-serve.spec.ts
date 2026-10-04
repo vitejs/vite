@@ -1,3 +1,4 @@
+import { rm, writeFile } from 'node:fs/promises'
 import net from 'node:net'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
@@ -131,3 +132,23 @@ describe.runIf(isServe)('invalid request', () => {
     })
   }
 })
+
+test.skipIf(isWindows || isBundledDev || !isServe)(
+  'serves a file whose path contains a colon',
+  async () => {
+    const filePath = path.resolve(
+      import.meta.dirname.replace('playground', 'playground-temp'),
+      '../root/src',
+      `route:${process.pid}.js`,
+    )
+    await writeFile(filePath, 'export default "colon path"')
+
+    try {
+      const response = await fetch(`${viteTestUrl}/src/route:${process.pid}.js`)
+      expect(response.status).toBe(200)
+      expect(await response.text()).toContain('colon path')
+    } finally {
+      await rm(filePath, { force: true })
+    }
+  },
+)

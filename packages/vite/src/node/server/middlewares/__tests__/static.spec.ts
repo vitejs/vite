@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'vitest'
-import { isFileInTargetPath, looksLikeWindowsShortNamePath } from '../static'
+import { isWindows } from '../../../../shared/utils'
+import type { ResolvedConfig } from '../../../config'
+import {
+  isFileInTargetPath,
+  isFileLoadingAllowed,
+  looksLikeWindowsShortNamePath,
+} from '../static'
 
 describe('isFileInTargetPath', () => {
   const cases = {
@@ -61,4 +67,39 @@ describe('looksLikeWindowsShortNamePath', () => {
       expect(looksLikeWindowsShortNamePath(filePath)).toBe(false)
     })
   }
+})
+
+describe.skipIf(isWindows)('isFileLoadingAllowed with colon paths', () => {
+  const root = '/project'
+  const config = {
+    server: { fs: { strict: true, allow: [root] } },
+    fsDenyGlob: (filePath: string) => filePath === `${root}/.env`,
+    safeModulePaths: new Set<string>(),
+  } as unknown as ResolvedConfig
+
+  test('allows a file inside the root whose path contains a colon', () => {
+    expect(
+      isFileLoadingAllowed(config, `${root}/src/route:name/index.js`),
+    ).toBe(true)
+  })
+
+  test('keeps denying an alternate stream of a denied file', () => {
+    expect(isFileLoadingAllowed(config, `${root}/.env::$DATA`)).toBe(false)
+  })
+})
+
+describe.runIf(isWindows)('isFileLoadingAllowed with Windows ADS paths', () => {
+  const root = 'C:/project'
+  const config = {
+    server: { fs: { strict: true, allow: [root] } },
+    fsDenyGlob: (filePath: string) => filePath === `${root}/.env`,
+    safeModulePaths: new Set<string>(),
+  } as unknown as ResolvedConfig
+
+  test('denies NTFS alternate data streams', () => {
+    expect(isFileLoadingAllowed(config, `${root}/src/file.js:stream`)).toBe(
+      false,
+    )
+    expect(isFileLoadingAllowed(config, `${root}/.env::$DATA`)).toBe(false)
+  })
 })
