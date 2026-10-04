@@ -1,9 +1,32 @@
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
+import { PartialEnvironment } from '../../baseEnvironment'
 import { resolveConfig } from '../../config'
-import { transformWithOxc } from '../../plugins/oxc'
+import { oxcPlugin, transformWithOxc } from '../../plugins/oxc'
 
 describe('transformWithOxc', () => {
+  test('keeps the language of TSX virtual modules matched by the refresh filter', async () => {
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        oxc: { jsxRefreshInclude: /lang\.tsx$/ },
+      },
+      'serve',
+    )
+    const plugin = oxcPlugin(config)
+    const environment = new PartialEnvironment('client', config)
+    const transform = plugin.transform as any
+
+    const result = await transform.call(
+      { environment, warn: () => {} },
+      'const value: string = "hello"; export default <div>{value}</div>',
+      '/project/App.vue?vue&type=script&setup=true&lang.tsx',
+    )
+
+    expect(result.code).not.toContain(': string')
+    expect(result.code).toContain('jsx')
+  })
+
   test('correctly overrides TS configuration and applies automatic transform', async () => {
     const jsxImportSource = 'bar'
     const result = await transformWithOxc(

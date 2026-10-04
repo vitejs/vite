@@ -265,7 +265,8 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
     ) {
       result.jsx = { ...jsxOptions, refresh: false }
     }
-    if (jsxRefreshFilter?.(id) && !JS_TYPES_RE.test(cleanUrl(id))) {
+    const ext = path.extname(validExtensionRE.test(id) ? id : cleanUrl(id))
+    if (jsxRefreshFilter?.(id) && !JS_TYPES_RE.test(ext)) {
       result.lang = 'js'
     }
 
