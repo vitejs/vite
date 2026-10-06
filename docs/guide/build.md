@@ -135,6 +135,7 @@ Note that for HTML files, Vite ignores the name given to the entry in the `rolld
 ## Library Mode
 
 When you are developing a browser-oriented library, you are likely spending most of the time on a test/demo page that imports your actual library. With Vite, you can use your `index.html` for that purpose to get the smooth development experience.
+Library Mode is intended for browser libraries. Setting [`build.target`](/config/build-options.md#build-target) to a Node.js version only changes the JavaScript syntax target; it does not switch the build to a Node.js runtime or change how Node.js built-ins are handled. Vite does not currently have a dedicated `build.lib` platform option for Node.js libraries.
 
 When it is time to bundle your library for distribution, use the [`build.lib` config option](/config/build-options.md#build-lib). Make sure to also externalize any dependencies that you do not want to bundle into your library, e.g. `vue` or `react`:
 
