@@ -7,6 +7,7 @@ import { FS_PREFIX } from '../../../constants'
 const FIXTURE_DIR = path.resolve(import.meta.dirname, 'fixtures')
 const HTML_PATH = path.resolve(FIXTURE_DIR, 'root/index.html')
 const HTML_CONTENT = fs.readFileSync(HTML_PATH, 'utf-8')
+const VITE_PACKAGE_DIR = path.resolve(import.meta.dirname, '../../../../..')
 
 async function createTestServer(rootDir?: string) {
   const root = path.resolve(import.meta.dirname, rootDir ?? 'fixtures/root')
@@ -29,7 +30,7 @@ async function createTestServer(rootDir?: string) {
   return server
 }
 
-describe('indexHtml middleware — /@fs/ inline script proxy cache', () => {
+describe('indexHtml middleware — inline script proxy cache', () => {
   test('inline <script type="module"> in an /@fs/ HTML file is loadable via the html-proxy module', async () => {
     const server = await createTestServer()
     const fsUrl = path.posix.join(FS_PREFIX, HTML_PATH)
@@ -85,6 +86,25 @@ describe('indexHtml middleware — /@fs/ inline script proxy cache', () => {
     expect(result, 'proxy module should resolve without error').not.toBeNull()
     expect(result!.code).toContain('module loaded')
   })
+
+  for (const prefix of ['//', '///']) {
+    test(`does not preserve a protocol-relative request URL (${prefix}) as the inline module proxy URL`, async () => {
+      const server = await createTestServer(VITE_PACKAGE_DIR)
+      const url = prefix + 'evil.example.com/payload.js?/../../package.json'
+
+      const transformed = await server.transformIndexHtml(url, HTML_CONTENT)
+      const proxyUrlMatch = transformed.match(/src="([^"]*html-proxy[^"]*)"/)
+
+      expect(
+        proxyUrlMatch,
+        'devHtmlHook should have rewritten the inline <script> to a ?html-proxy src',
+      ).toBeTruthy()
+      expect(proxyUrlMatch![1]).toMatchInlineSnapshot(
+        `"/@id/__x00__/evil.example.com/payload.js?/../../package.json?html-proxy&index=0.js"`,
+      )
+      expect(proxyUrlMatch![1]).not.toMatch(/^\/\//)
+    })
+  }
 })
 
 describe('indexHtml middleware — HMR timestamp injection with non-root base', () => {
