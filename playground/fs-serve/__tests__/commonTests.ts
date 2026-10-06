@@ -208,6 +208,13 @@ describe.runIf(isServe)('matrix', () => {
       content: /403 Restricted/,
       status: '403',
     },
+    {
+      name: 'unsafe fetch with vite wasm instance query',
+      testId: 'unsafe-vite-wasm-instance',
+      content: /403 Restricted/,
+      status: '403',
+      disableVariants: [''],
+    },
     // It is 404 in `fs-serve/base` test, 403 in `fs-serve` test
     {
       name: 'unsafe fetch with relative path after query',
@@ -256,6 +263,12 @@ describe.runIf(isServe)('matrix', () => {
     {
       name: 'denied .env with import and raw query',
       testId: 'unsafe-dotenv-import-raw',
+      content: /403 Restricted/,
+      status: '403',
+    },
+    {
+      name: 'denied .env with vite wasm instance query',
+      testId: 'unsafe-dotenv-vite-wasm-instance',
       content: /403 Restricted/,
       status: '403',
     },
