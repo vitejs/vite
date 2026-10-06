@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { defineConfig } from 'vite'
 import svgVirtualModulePlugin from './svgVirtualModulePlugin'
+import safeModulePathPlugin from './safeModulePathPlugin'
 import matrixTestResultPlugin from './matrixTestResultPlugin'
 import { getWindows83ShortNameForDotEnv } from './windows83Filename'
 
@@ -38,5 +39,9 @@ export default defineConfig({
     BASE: JSON.stringify(BASE),
     DOTENV83SHORTNAME: JSON.stringify(getWindows83ShortNameForDotEnv()),
   },
-  plugins: [svgVirtualModulePlugin(), matrixTestResultPlugin()],
+  plugins: [
+    svgVirtualModulePlugin(),
+    safeModulePathPlugin(),
+    matrixTestResultPlugin(),
+  ],
 })
