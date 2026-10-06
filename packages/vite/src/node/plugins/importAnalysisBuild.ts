@@ -117,7 +117,7 @@ function detectScriptRel() {
 }
 
 declare const scriptRel: string
-declare const seen: Record<string, boolean>
+declare const seen: Record<string, Promise<unknown> | undefined>
 function preload(
   baseModule: () => Promise<unknown>,
   deps?: string[],
@@ -166,8 +166,8 @@ function preload(
           // @ts-expect-error assetsURL is declared before preload.toString()
           depString = assetsURL(depString, importerUrl)
           const dep = importMetaResolve(depString)
-          if (dep.href in seen) return
-          seen[dep.href] = true
+          if (dep.href in seen) return seen[dep.href]
+          seen[dep.href] = undefined
           const isCss = isCssPreloadUrl(dep)
 
           if (preloadedHrefs === undefined) {
@@ -205,12 +205,20 @@ function preload(
           }
           document.head.appendChild(link)
           if (isCss) {
-            return new Promise((res, rej) => {
+            return (seen[dep.href] = new Promise((res, rej) => {
               link.addEventListener('load', res)
               link.addEventListener('error', () =>
                 rej(new Error(`Unable to preload CSS for ${dep}`)),
               )
-            })
+            }).then(
+              () => {
+                seen[dep.href] = undefined
+              },
+              (err) => {
+                seen[dep.href] = undefined
+                throw err
+              },
+            ))
           }
         })
         // skip undefined to be converted to Promise.resolve for performance
@@ -238,11 +246,11 @@ function preload(
   })
 }
 
-function getPreloadCode(
+export function getPreloadCode(
   environment: PartialEnvironment,
   renderBuiltUrlBoolean: boolean,
   isRelativeBase: boolean,
-) {
+): string {
   const { modulePreload } = environment.config.build
 
   const scriptRel =
