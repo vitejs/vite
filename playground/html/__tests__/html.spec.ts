@@ -528,6 +528,32 @@ test('invalidate inline proxy module on reload', async () => {
   expect(await page.textContent('.test')).toContain('ok')
 })
 
+test.runIf(!isBuild)(
+  'normalizes protocol-relative HTML proxy URLs',
+  async () => {
+    const response = await fetchHtml('//protocol-relative.html')
+    const html = await response.text()
+
+    expect(response.status).toBe(200)
+    expect(html).toContain('url(./protocol-relative.png)')
+    expect(html).toContain(
+      'src="/protocol-relative.html?html-proxy&index=0.js"',
+    )
+    expect(html).not.toContain('url(//protocol-relative.png)')
+    expect(html).not.toContain('src="//protocol-relative.html?html-proxy')
+    expect(
+      viteServer.environments.client.moduleGraph.urlToModuleMap.has(
+        '/protocol-relative.html?html-proxy&direct&index=0.css',
+      ),
+    ).toBe(true)
+    expect(
+      viteServer.environments.client.moduleGraph.urlToModuleMap.has(
+        '//protocol-relative.html?html-proxy&direct&index=0.css',
+      ),
+    ).toBe(false)
+  },
+)
+
 test.runIf(isServe)(
   'malformed URLs in src attributes should show errors',
   async () => {
