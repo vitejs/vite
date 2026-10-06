@@ -89,6 +89,35 @@ describe('the dev server', () => {
     expect(server.config.safeModulePaths).not.toContain(externalEntry)
   })
 
+  test('does not mark unresolved SSR imports as safe', async () => {
+    const root = path.join(import.meta.dirname, 'fixtures', 'input-option')
+    const entry = normalizePath(path.join(root, 'unresolved-entry.js'))
+    const unresolvedImport = '/safe-module-path-unresolved'
+
+    server = await createServer({
+      configFile: false,
+      root,
+      optimizeDeps: { noDiscovery: true },
+      server: { middlewareMode: true, ws: false },
+      plugins: [
+        {
+          name: 'unresolved-ssr-import',
+          resolveId(id) {
+            if (id === '/unresolved-entry.js') return entry
+          },
+          load(id) {
+            if (id === entry)
+              return `import ${JSON.stringify(unresolvedImport)}`
+          },
+        },
+      ],
+    })
+
+    await server.environments.ssr.transformRequest('/unresolved-entry.js')
+
+    expect(server.config.safeModulePaths).not.toContain(unresolvedImport)
+  })
+
   test('silently resolves index.html as the fallback for every environment', async () => {
     const root = path.join(import.meta.dirname, 'fixtures', 'input-option')
     const clientEntry = normalizePath(path.join(root, 'client-index.html'))
