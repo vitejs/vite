@@ -106,7 +106,7 @@
     "fresh-import": "^0.2.1",
     "host-validation-middleware": "^0.1.4",
     "http-proxy-3": "^1.23.3",
-    "launch-editor-middleware": "^2.14.1",
+    "launch-editor-middleware": "^2.14.2",
     "magic-string": "^1.2.0",
     "mlly": "^1.8.2",
     "mrmime": "^2.0.1",
