@@ -8,7 +8,7 @@ describe.runIf(isServe)('safe module paths', () => {
   test('keeps root-relative module URLs separate from absolute filesystem paths', async () => {
     await expect
       .poll(() => page.textContent('.safe-module-path-status'))
-      .toBe('403')
+      .toBe(isBundledDev ? '404' : '403')
   })
 })
 
