@@ -1,3 +1,11 @@
+## <small>[8.2.3](https://github.com/vitejs/vite/compare/v8.2.2...v8.2.3) (2026-10-06)</small>
+### Bug Fixes
+
+* **deps:** update launch-editor to v2.14.2 ([#23654](https://github.com/vitejs/vite/issues/23654)) ([61b2171](https://github.com/vitejs/vite/commit/61b2171d9ba99a64478888eaa523084d87aedfe6))
+* **html:** filename passed to transformIndexHtml should not include queries ([#23653](https://github.com/vitejs/vite/issues/23653)) ([1203c62](https://github.com/vitejs/vite/commit/1203c620739b9385e160097b72607cdb3459b6a0))
+* **server:** check `fs.serve` for `?vite-wasm-instance` ([#23655](https://github.com/vitejs/vite/issues/23655)) ([b6c6d2f](https://github.com/vitejs/vite/commit/b6c6d2fb3f853aab4092dc25f0d6816a96c23dff))
+* **server:** store ids to `safeModulePaths` rather than URLs ([#23656](https://github.com/vitejs/vite/issues/23656)) ([45c0e33](https://github.com/vitejs/vite/commit/45c0e3392a298626955a0ab93a8e51232daac721))
+
 ## <small>[8.2.2](https://github.com/vitejs/vite/compare/v8.2.1...v8.2.2) (2026-08-20)</small>
 ### Features
 
