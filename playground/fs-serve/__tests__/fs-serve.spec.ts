@@ -2,10 +2,18 @@ import net from 'node:net'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
-import { isServe, isWindows, viteTestUrl } from '~utils'
+import { isServe, isWindows, page, viteTestUrl } from '~utils'
 import './commonTests'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+describe.runIf(isServe)('safe module paths', () => {
+  test('keeps root-relative module URLs separate from absolute filesystem paths', async () => {
+    await expect
+      .poll(() => page.textContent('.safe-module-path-status'))
+      .toBe(isWindows ? '404' : '403')
+  })
+})
 
 describe.runIf(isServe)('invalid request', () => {
   const sendRawRequest = async (baseUrl: string, requestTarget: string) => {

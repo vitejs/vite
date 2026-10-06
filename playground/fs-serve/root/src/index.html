@@ -4,6 +4,11 @@
 <pre class="full"></pre>
 <pre class="named"></pre>
 
+<div>
+  <h2>Safe Module Path Access Isolation</h2>
+  <pre class="safe-module-path-status"></pre>
+</div>
+
 <h2>Safe Fetch</h2>
 <pre class="safe-fetch-status"></pre>
 <pre class="safe-fetch"></pre>
@@ -70,6 +75,7 @@
 <script type="module">
   import '../../entry'
   import json, { msg } from '../../safe.json'
+  import 'virtual:safe-module-path-confusion'
   import './code.js'
 
   function joinUrlSegments(a, b) {
@@ -87,6 +93,13 @@
 
   text('.full', JSON.stringify(json))
   text('.named', msg)
+
+  if (import.meta.env.DEV) {
+    const base = typeof BASE !== 'undefined' ? BASE : '/'
+    const hostFileUrl = `${base}@fs${ROOT}/root/unsafe.txt`
+    const response = await fetch(hostFileUrl)
+    text('.safe-module-path-status', response.status)
+  }
 
   const base = typeof BASE !== 'undefined' ? BASE : ''
   const dotEnvWindows83ShortName = DOTENV83SHORTNAME
