@@ -1,0 +1,29 @@
+playground/fs-serve/__tests__/fs-serve.spec.ts
+  s_f84c3e7d8780fe::t_aeefbba8b7b02d 18-23
+playground/fs-serve/root/src/index.html
+  s_f84c3e7d8780fe::t_3297bdac69cff7 12-16,84,102
+playground/fs-serve/root/svgVirtualModulePlugin.ts
+  s_f84c3e7d8780fe::t_56126314556098 1-21
+playground/fs-serve/root/vite.config-base.js
+  s_f84c3e7d8780fe::t_4cd68a222325c8 4,41
+playground/fs-serve/root/vite.config-deny.js
+  s_f84c3e7d8780fe::t_ea4c81eb282557 4,25
+playground/fs-serve/root/vite.config.js
+  s_f84c3e7d8780fe::t_726cd2cbd2ff06 4,37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "2bb0a4a07da00ee1ef97b0379661e68e218196c4",
+  "prompts": {},
+  "sessions": {
+    "s_f84c3e7d8780fe": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10f8e-37f3-7f03-9d3b-3bcf95a84948",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
