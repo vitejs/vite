@@ -124,6 +124,11 @@
       testId: 'unsafe-import-inline-wasm-init',
       path: '/root/unsafe.txt?import&?inline=1.wasm?init',
     },
+    // outside of allowed dir, vite wasm instance query
+    {
+      testId: 'unsafe-vite-wasm-instance',
+      path: '/unsafe.json?import&vite-wasm-instance',
+    },
     // outside of allowed dir, relative path after query
     {
       testId: 'unsafe-relative-path-after-query',
@@ -155,6 +160,11 @@
     },
     // .env with ?import&raw
     { testId: 'unsafe-dotenv-import-raw', path: '/root/src/.env?import&raw' },
+    // .env with ?vite-wasm-instance
+    {
+      testId: 'unsafe-dotenv-vite-wasm-instance',
+      path: '/root/src/.env?vite-wasm-instance',
+    },
     // .env with NTFS ADS suffix
     { testId: 'unsafe-dotenv-ntfs-ads', path: '/root/src/.env::$DATA' },
     // .env with 8.3 short name
