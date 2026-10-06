@@ -1299,6 +1299,18 @@ const lockfileFormats = [
 })
 const lockfilePaths = lockfileFormats.map((l) => l.path)
 
+// Only used when none of the formats above is found, so it never changes which
+// lockfile is hashed for projects that already have one of them.
+// e.g. Yarn with `nodeLinker: pnpm` writes neither `.yarn-state.yml` nor `.pnp.cjs`.
+const fallbackLockfileFormats = [
+  {
+    path: 'yarn.lock',
+    checkPatchesDir: '.yarn/patches',
+    manager: 'yarn',
+  },
+]
+const fallbackLockfilePaths = fallbackLockfileFormats.map((l) => l.path)
+
 function getConfigHash(environment: Environment): string {
   // Take config into account
   // only a subset of config options that can affect dep optimization
@@ -1345,13 +1357,16 @@ function getConfigHash(environment: Environment): string {
 }
 
 function getLockfileHash(environment: Environment): string {
-  const lockfilePath = lookupFile(environment.config.root, lockfilePaths)
+  const lockfilePath =
+    lookupFile(environment.config.root, lockfilePaths) ??
+    lookupFile(environment.config.root, fallbackLockfilePaths)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
     const normalizedLockfilePath = lockfilePath.replaceAll('\\', '/')
-    const lockfileFormat = lockfileFormats.find((f) =>
-      normalizedLockfilePath.endsWith(f.path),
-    )!
+    const lockfileFormat = [
+      ...lockfileFormats,
+      ...fallbackLockfileFormats,
+    ].find((f) => normalizedLockfilePath.endsWith(f.path))!
     if (lockfileFormat.checkPatchesDir) {
       // Default of https://github.com/ds300/patch-package
       const baseDir = lockfilePath.slice(0, -lockfileFormat.path.length)
@@ -1368,7 +1383,7 @@ function getLockfileHash(environment: Environment): string {
   return getHash(content)
 }
 
-function getDepHash(environment: Environment): {
+export function getDepHash(environment: Environment): {
   lockfileHash: string
   configHash: string
   hash: string
