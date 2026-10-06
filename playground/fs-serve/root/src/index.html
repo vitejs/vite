@@ -9,6 +9,11 @@
   <pre class="safe-module-path-status"></pre>
 </div>
 
+<div>
+  <h2>Virtual SVG Module</h2>
+  <pre class="virtual-svg"></pre>
+</div>
+
 <h2>Safe Fetch</h2>
 <pre class="safe-fetch-status"></pre>
 <pre class="safe-fetch"></pre>
@@ -76,6 +81,7 @@
   import '../../entry'
   import json, { msg } from '../../safe.json'
   import 'virtual:safe-module-path-confusion'
+  import fooSvg from 'virtual:foo.svg'
   import './code.js'
 
   function joinUrlSegments(a, b) {
@@ -93,6 +99,7 @@
 
   text('.full', JSON.stringify(json))
   text('.named', msg)
+  text('.virtual-svg', fooSvg)
 
   if (import.meta.env.DEV) {
     const base = typeof BASE !== 'undefined' ? BASE : '/'

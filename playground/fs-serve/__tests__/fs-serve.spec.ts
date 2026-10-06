@@ -15,6 +15,12 @@ describe.runIf(isServe)('safe module paths', () => {
   })
 })
 
+describe.runIf(isServe)('virtual modules', () => {
+  test('loads a virtual module with an SVG extension', async () => {
+    await expect.poll(() => page.textContent('.virtual-svg')).toMatch('<svg')
+  })
+})
+
 describe.runIf(isServe)('invalid request', () => {
   const sendRawRequest = async (baseUrl: string, requestTarget: string) => {
     return new Promise<string>((resolve, reject) => {
