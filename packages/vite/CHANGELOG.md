@@ -1,3 +1,10 @@
+## <small>[7.3.7](https://github.com/vitejs/vite/compare/v7.3.6...v7.3.7) (2026-10-06)</small>
+### Bug Fixes
+
+* **deps:** update launch-editor to v2.14.2 ([#23654](https://github.com/vitejs/vite/issues/23654)) ([a0a3339](https://github.com/vitejs/vite/commit/a0a33391b1b02b61b5102dd2216934d83b678a73))
+* **html:** filename passed to transformIndexHtml should not include queries ([#23653](https://github.com/vitejs/vite/issues/23653)) ([8d479f9](https://github.com/vitejs/vite/commit/8d479f9dd8cbcb7631aac4a421e09ccd069d4786))
+* **server:** store ids to `safeModulePaths` rather than URLs ([#23656](https://github.com/vitejs/vite/issues/23656)) ([f0d76c7](https://github.com/vitejs/vite/commit/f0d76c7da13d5e794807b82f0b86c1931a8438e3))
+
 ## <small>[7.3.6](https://github.com/vitejs/vite/compare/v7.3.5...v7.3.6) (2026-06-25)</small>
 ### Features
 
