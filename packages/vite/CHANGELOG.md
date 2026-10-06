@@ -1,3 +1,5 @@
+## <small>[8.2.4](https://github.com/vitejs/vite/compare/v8.2.3...v8.2.4) (2026-10-06)</small>
+
 ## <small>[8.2.3](https://github.com/vitejs/vite/compare/v8.2.2...v8.2.3) (2026-10-06)</small>
 ### Bug Fixes
 
