@@ -9,11 +9,17 @@
   <pre class="virtual-svg"></pre>
 </div>
 
+<div>
+  <h2>Safe Module Path Access Isolation</h2>
+  <pre class="safe-module-path-status"></pre>
+</div>
+
 <!-- REPLACE WITH MATRIX TEST RESULT -->
 
 <script type="module">
   import '../../entry'
   import json, { msg } from '../../safe.json'
+  import 'virtual:safe-module-path-confusion'
   import './code.js'
 
   // Check virtual svg module still works
@@ -22,6 +28,13 @@
   text('.full', JSON.stringify(json))
   text('.named', msg)
   text('.virtual-svg', fooSvg)
+
+  if (import.meta.env.DEV) {
+    const base = typeof BASE !== 'undefined' ? BASE : '/'
+    const hostFileUrl = `${base}@fs${ROOT}/root/unsafe.txt`
+    const response = await fetch(hostFileUrl)
+    text('.safe-module-path-status', response.status)
+  }
 
   function text(sel, text) {
     document.querySelector(sel).textContent = text
