@@ -1,3 +1,12 @@
+## <small>6.4.4 (2026-10-06)</small>
+
+* fix(deps): update launch-editor to v2.14.2 (#23654) ([8afec69](https://github.com/vitejs/vite/commit/8afec69d6360857ebe35516781ef96e93df3f54e)), closes [#23654](https://github.com/vitejs/vite/issues/23654)
+* fix(html): filename passed to transformIndexHtml should not include queries (#23653) ([19902cf](https://github.com/vitejs/vite/commit/19902cfcfa3e02114bf8d6692fe638ace36b5ac9)), closes [#23653](https://github.com/vitejs/vite/issues/23653)
+* fix(server): check resolved ids for transform access (#20410) ([eec6464](https://github.com/vitejs/vite/commit/eec64641970af6f69c026c70bf547601218c9c12)), closes [#20410](https://github.com/vitejs/vite/issues/20410)
+* fix(server): store ids to `safeModulePaths` rather than URLs (#23656) ([e570d8d](https://github.com/vitejs/vite/commit/e570d8d016096b5f8f6f09808376ca6cf73f27d0)), closes [#23656](https://github.com/vitejs/vite/issues/23656)
+
+
+
 ## <small>6.4.3 (2026-06-01)</small>
 
 * fix: backport #22572, reject windows alternate paths (#22576) ([96b0c10](https://github.com/vitejs/vite/commit/96b0c10162e9c55485d922db2cfc6b8227cbc176)), closes [#22572](https://github.com/vitejs/vite/issues/22572) [#22576](https://github.com/vitejs/vite/issues/22576)
