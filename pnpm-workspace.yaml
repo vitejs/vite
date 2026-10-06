@@ -63,6 +63,8 @@ minimumReleaseAgeExclude:
   - '@rolldown/binding-*'
   - '@vitejs/devtools'
   - '@vitejs/devtools-*'
+  - launch-editor-middleware@2.14.2
+  - launch-editor@2.14.2
 trustPolicy: no-downgrade
 trustPolicyExcludePrune: true
 trustPolicyExclude:
