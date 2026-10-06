@@ -1,6 +1,5 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
-import type { ServerResponse } from 'node:http'
 import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
 import type { ExistingRawSourceMap } from 'rollup'
@@ -42,48 +41,17 @@ import {
   NULL_BYTE_PLACEHOLDER,
 } from '../../../shared/constants'
 import type { ResolvedConfig } from '../../config'
-import {
-  checkLoadingAccess,
-  checkServingAccess,
-  respondWithAccessDenied,
-} from './static'
+import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 const debugCache = createDebugger('vite:cache')
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
-const trailingQuerySeparatorsRE = /[?&]+$/
 
 // TODO: consolidate this regex pattern with the url, raw, and inline checks in plugins
 const urlRE = /[?&]url\b/
 const rawRE = /[?&]raw\b/
 const inlineRE = /[?&]inline\b/
 const svgRE = /\.svg\b/
-
-function deniedServingAccessForTransform(
-  url: string,
-  server: ViteDevServer,
-  res: ServerResponse,
-  next: Connect.NextFunction,
-) {
-  if (
-    rawRE.test(url) ||
-    urlRE.test(url) ||
-    inlineRE.test(url) ||
-    svgRE.test(url)
-  ) {
-    const servingAccessResult = checkServingAccess(url, server)
-    if (servingAccessResult === 'denied') {
-      respondWithAccessDenied(url, server, res)
-      return true
-    }
-    if (servingAccessResult === 'fallback') {
-      next()
-      return true
-    }
-    servingAccessResult satisfies 'allowed'
-  }
-  return false
-}
 
 export function isServerAccessDeniedForTransform(
   config: ResolvedConfig,
@@ -228,21 +196,6 @@ export function transformMiddleware(
 
       if (publicDirInRoot && url.startsWith(publicPath)) {
         warnAboutExplicitPublicPathInUrl(url)
-      }
-
-      const urlWithoutTrailingQuerySeparators = url.replace(
-        trailingQuerySeparatorsRE,
-        '',
-      )
-      if (
-        deniedServingAccessForTransform(
-          urlWithoutTrailingQuerySeparators,
-          server,
-          res,
-          next,
-        )
-      ) {
-        return
       }
 
       if (
