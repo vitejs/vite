@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { defineConfig } from 'vite'
+import safeModulePathPlugin from './safeModulePathPlugin'
 import { getWindows83ShortNameForDotEnv } from './windows83Filename'
 
 export default defineConfig({
@@ -32,4 +33,5 @@ export default defineConfig({
     ROOT: JSON.stringify(path.dirname(__dirname).replace(/\\/g, '/')),
     DOTENV83SHORTNAME: JSON.stringify(getWindows83ShortNameForDotEnv()),
   },
+  plugins: [safeModulePathPlugin()],
 })
