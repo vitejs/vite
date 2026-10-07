@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { exactRegex } from 'rolldown/filter'
 import { cleanUrl } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
 import {
@@ -223,7 +224,7 @@ export function bundledDevClientImportsPlugin(config: ResolvedConfig): Plugin {
       )
     },
     resolveId: {
-      filter: { id: new RegExp(`^${escapeRegex(clientUrl)}$`) },
+      filter: { id: exactRegex(clientUrl) },
       handler(id) {
         return { id, external: true }
       },
