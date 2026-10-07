@@ -1,0 +1,19 @@
+packages/vite/src/node/plugins/clientInjections.ts
+  s_0874792565739d::t_6d9c8ddf888624 4,227
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "40b3995dd328243b5a2fdc3d8090b8cf3f02e164",
+  "prompts": {},
+  "sessions": {
+    "s_0874792565739d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a114ff-abbd-7d31-a338-4f5549eff59a",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
