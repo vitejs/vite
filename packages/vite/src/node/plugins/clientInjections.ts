@@ -224,9 +224,14 @@ export function bundledDevClientImportsPlugin(config: ResolvedConfig): Plugin {
       )
     },
     resolveId: {
-      filter: { id: exactRegex(clientUrl) },
-      handler(id) {
-        return { id, external: true }
+      filter: {
+        id: [
+          exactRegex(clientUrl),
+          exactRegex(path.posix.join(config.base, CLIENT_PUBLIC_PATH)),
+        ],
+      },
+      handler() {
+        return { id: clientUrl, external: true }
       },
     },
     load: {
