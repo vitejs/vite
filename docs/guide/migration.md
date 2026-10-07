@@ -129,8 +129,8 @@ $ deno add -D npm:@rolldown/plugin-babel npm:@babel/plugin-proposal-decorators
 :::
 
 ```ts [vite.config.ts]
-import { defineConfig } from 'vite'
 import babel from '@rolldown/plugin-babel'
+import { defineConfig } from 'vite'
 
 function decoratorPreset(options: Record<string, unknown>) {
   return {
@@ -178,8 +178,8 @@ $ deno add -D npm:@rollup/plugin-swc npm:@swc/core
 :::
 
 ```js
-import { defineConfig, withFilter } from 'vite'
 import swc from '@rollup/plugin-swc'
+import { defineConfig, withFilter } from 'vite'
 
 export default defineConfig({
   // ...
