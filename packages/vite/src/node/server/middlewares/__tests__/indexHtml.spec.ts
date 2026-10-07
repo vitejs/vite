@@ -107,6 +107,34 @@ describe('indexHtml middleware — inline script proxy cache', () => {
   }
 })
 
+describe('indexHtml middleware — transformIndexHtml with a query on a directory URL', () => {
+  // https://github.com/vitejs/vite/issues/23679
+  test('does not watch the directory for an inline <style> proxy module', async () => {
+    const server = await createTestServer()
+    const watched: string[] = []
+    const add = server.watcher.add.bind(server.watcher)
+    server.watcher.add = (paths) => {
+      watched.push(...[paths].flat())
+      return add(paths)
+    }
+
+    await server.transformIndexHtml(
+      '/?foo=bar',
+      '<html><head><style>body { color: red; }</style></head></html>',
+    )
+
+    const watchedDirs = watched.filter((file) =>
+      fs.statSync(file, { throwIfNoEntry: false })?.isDirectory(),
+    )
+    expect(watchedDirs).toEqual([])
+    expect(
+      server.environments.client.moduleGraph.urlToModuleMap.has(
+        '/?foo=bar?html-proxy&direct&index=0.css',
+      ),
+    ).toBe(false)
+  })
+})
+
 describe('indexHtml middleware — HMR timestamp injection with non-root base', () => {
   test('entry script URL gets the lastHMRTimestamp query when base is not root', async () => {
     const root = path.resolve(import.meta.dirname, 'fixtures/base-root')

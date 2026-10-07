@@ -43,6 +43,7 @@ import {
   normalizePath,
   processSrcSetSync,
   stripBase,
+  tryStatSync,
 } from '../../utils'
 import {
   BasicMinimalPluginContext,
@@ -223,7 +224,9 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   let proxyModuleUrl: string
 
   const trailingSlash = htmlPath.endsWith('/')
-  if (!trailingSlash && fs.existsSync(filename)) {
+  // `filename` has no query, so `/?foo=bar` maps to the root directory, which
+  // is not an html file (#23679)
+  if (!trailingSlash && tryStatSync(filename)?.isFile()) {
     // If htmlPath is a /@fs/ URL (e.g. vitest-browser always uses this form
     // for testerHtmlPath), normalise to an absolute FS path so proxyCacheUrl
     // is always root-relative.
