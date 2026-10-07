@@ -268,7 +268,10 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
             value: await fileToDevUrl(this.environment, id),
           }
         } else {
-          resolved = await resolveBuiltAsset(this, id)
+          resolved = withServerOrigin(
+            this.environment,
+            await resolveBuiltAsset(this, id),
+          )
         }
 
         // Inherit HMR timestamp if this asset was invalidated
@@ -444,15 +447,35 @@ export async function fileToUrl(
     const value = await fileToDevUrl(environment, id, asFileUrl)
     return formatBuiltAsset({ type: 'string', value }, format)
   } else {
-    return fileToBuiltUrl(
-      pluginContext,
-      id,
+    const resolved = withServerOrigin(
+      environment,
+      await resolveBuiltAsset(pluginContext, id),
+    )
+    const urlId = addFileUrlMetadataForAsset(
+      environment,
+      resolved,
       format,
-      false,
-      undefined,
       asFileUrl,
     )
+    return formatBuiltAsset(resolved, format, urlId)
   }
+}
+
+/** Bundled-dev counterpart of the `server.origin` prefix in `fileToDevUrl`. */
+function withServerOrigin(
+  environment: Environment,
+  resolved: FileToBuiltUrlResult,
+): FileToBuiltUrlResult {
+  const { origin } = environment.getTopLevelConfig().server
+  if (
+    !origin ||
+    environment.config.command !== 'serve' ||
+    resolved.type !== 'string' ||
+    resolved.value.startsWith('data:')
+  ) {
+    return resolved
+  }
+  return { type: 'string', value: joinUrlSegments(origin, resolved.value) }
 }
 
 export async function fileToDevUrl(
@@ -553,7 +576,6 @@ async function fileToBuiltUrl(
   format: AssetUrlFormat,
   skipPublicCheck = false,
   forceInline?: boolean,
-  asFileUrl = false,
 ): Promise<string> {
   const resolved = await resolveBuiltAsset(
     pluginContext,
@@ -565,7 +587,6 @@ async function fileToBuiltUrl(
     pluginContext.environment,
     resolved,
     format,
-    asFileUrl,
   )
   return formatBuiltAsset(resolved, format, urlId)
 }
