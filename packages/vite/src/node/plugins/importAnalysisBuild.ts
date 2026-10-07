@@ -116,8 +116,36 @@ function detectScriptRel() {
     : 'preload'
 }
 
+type PreloadSeen = Record<string, Promise<unknown> | undefined>
+
+export function preloadOnce(
+  seen: PreloadSeen,
+  href: string,
+  preload: () => Promise<unknown> | undefined,
+): Promise<unknown> | undefined {
+  if (href in seen) return seen[href]
+
+  const promise = preload()
+  if (!promise) {
+    seen[href] = undefined
+    return
+  }
+
+  const preloadPromise = promise.then(
+    () => {
+      seen[href] = undefined
+    },
+    (err) => {
+      seen[href] = undefined
+      throw err
+    },
+  )
+  seen[href] = preloadPromise
+  return preloadPromise
+}
+
 declare const scriptRel: string
-declare const seen: Record<string, Promise<unknown> | undefined>
+declare const seen: PreloadSeen
 function preload(
   baseModule: () => Promise<unknown>,
   deps?: string[],
@@ -166,60 +194,52 @@ function preload(
           // @ts-expect-error assetsURL is declared before preload.toString()
           depString = assetsURL(depString, importerUrl)
           const dep = importMetaResolve(depString)
-          if (dep.href in seen) return seen[dep.href]
-          seen[dep.href] = undefined
           const isCss = isCssPreloadUrl(dep)
 
-          if (preloadedHrefs === undefined) {
-            preloadedHrefs = { all: new Set(), styles: new Set() }
-            const links = document.getElementsByTagName('link')
-            for (let i = links.length - 1; i >= 0; i--) {
-              const link = links[i]
-              // The `links[i].href` is an absolute URL thanks to browser doing the work
-              // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
-              preloadedHrefs.all.add(link.href)
-              if (link.rel === 'stylesheet') {
-                preloadedHrefs.styles.add(link.href)
+          return preloadOnce(seen, dep.href, () => {
+            if (preloadedHrefs === undefined) {
+              preloadedHrefs = { all: new Set(), styles: new Set() }
+              const links = document.getElementsByTagName('link')
+              for (let i = links.length - 1; i >= 0; i--) {
+                const link = links[i]
+                // The `links[i].href` is an absolute URL thanks to browser doing the work
+                // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
+                preloadedHrefs.all.add(link.href)
+                if (link.rel === 'stylesheet') {
+                  preloadedHrefs.styles.add(link.href)
+                }
               }
             }
-          }
 
-          // check if the file is already preloaded by SSR markup
-          // `importMetaResolve` converts `dep` to an absolute URL
-          const preloadedHrefSet = isCss
-            ? preloadedHrefs.styles
-            : preloadedHrefs.all
-          if (preloadedHrefSet.has(dep.href)) {
-            return
-          }
+            // check if the file is already preloaded by SSR markup
+            // `importMetaResolve` converts `dep` to an absolute URL
+            const preloadedHrefSet = isCss
+              ? preloadedHrefs.styles
+              : preloadedHrefs.all
+            if (preloadedHrefSet.has(dep.href)) {
+              return
+            }
 
-          const link = document.createElement('link')
-          link.rel = isCss ? 'stylesheet' : scriptRel
-          if (!isCss) {
-            link.as = 'script'
-          }
-          link.crossOrigin = ''
-          link.href = dep.href
-          if (cspNonce) {
-            link.setAttribute('nonce', cspNonce)
-          }
-          document.head.appendChild(link)
-          if (isCss) {
-            return (seen[dep.href] = new Promise((res, rej) => {
-              link.addEventListener('load', res)
-              link.addEventListener('error', () =>
-                rej(new Error(`Unable to preload CSS for ${dep}`)),
-              )
-            }).then(
-              () => {
-                seen[dep.href] = undefined
-              },
-              (err) => {
-                seen[dep.href] = undefined
-                throw err
-              },
-            ))
-          }
+            const link = document.createElement('link')
+            link.rel = isCss ? 'stylesheet' : scriptRel
+            if (!isCss) {
+              link.as = 'script'
+            }
+            link.crossOrigin = ''
+            link.href = dep.href
+            if (cspNonce) {
+              link.setAttribute('nonce', cspNonce)
+            }
+            document.head.appendChild(link)
+            if (isCss) {
+              return new Promise((res, rej) => {
+                link.addEventListener('load', res)
+                link.addEventListener('error', () =>
+                  rej(new Error(`Unable to preload CSS for ${dep}`)),
+                )
+              })
+            }
+          })
         })
         // skip undefined to be converted to Promise.resolve for performance
         .filter((p) => p !== undefined),
@@ -246,11 +266,11 @@ function preload(
   })
 }
 
-export function getPreloadCode(
+function getPreloadCode(
   environment: PartialEnvironment,
   renderBuiltUrlBoolean: boolean,
   isRelativeBase: boolean,
-): string {
+) {
   const { modulePreload } = environment.config.build
 
   const scriptRel =
@@ -276,7 +296,7 @@ export function getPreloadCode(
         `function(dep) { return ${JSON.stringify(environment.config.base)}+dep }`
   // replace `import` as a workaround for stackblitz: https://stackblitz.com/edit/node-vqfvv8dy?file=index.js
   const preloadMethodCode = preload.toString().replaceAll('𝐢𝐦𝐩𝐨𝐫𝐭', 'import')
-  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};const isCssPreloadUrl = ${isCssPreloadUrl.toString()};export const ${preloadMethod} = ${preloadMethodCode}`
+  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};const isCssPreloadUrl = ${isCssPreloadUrl.toString()};const preloadOnce = ${preloadOnce.toString()};export const ${preloadMethod} = ${preloadMethodCode}`
   return preloadCode
 }
 

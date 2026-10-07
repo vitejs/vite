@@ -1,11 +1,11 @@
-import vm from 'node:vm'
 import { init, parse as parseImports } from 'es-module-lexer'
 import { beforeAll, describe, expect, test } from 'vitest'
+import { promiseWithResolvers } from '../../../shared/utils'
 import {
-  getPreloadCode,
   isCssPreloadUrl,
   matchImportsToPreloadMarkers,
   preloadMarker,
+  preloadOnce,
 } from '../../plugins/importAnalysisBuild'
 
 beforeAll(async () => {
@@ -84,118 +84,40 @@ describe('isCssPreloadUrl', () => {
   })
 })
 
-describe('__vitePreload helper', () => {
-  function createPreloadHelper() {
-    const code = getPreloadCode(
-      {
-        config: {
-          base: '/',
-          build: { modulePreload: { polyfill: true } },
-        },
-      } as any,
-      false,
-      false,
-    )
-
-    const links: FakeLink[] = []
-    class FakeLink extends EventTarget {
-      rel = ''
-      as = ''
-      href = ''
-      crossOrigin = ''
-      setAttribute() {
-        // noop
-      }
+describe('preloadOnce', () => {
+  test('shares an in-flight preload and does not preload again after it settles', async () => {
+    const seen = {}
+    const { promise, resolve } = promiseWithResolvers<void>()
+    let preloadCount = 0
+    const preload = () => {
+      preloadCount++
+      return promise
     }
 
-    const context = vm.createContext({
-      __VITE_IS_MODERN__: true,
-      __vite_ssr_import_meta__: { url: 'http://localhost/assets/main.js' },
-      document: {
-        getElementsByTagName: () => links,
-        querySelector: () => null,
-        createElement: () => new FakeLink(),
-        head: {
-          appendChild: (link: FakeLink) => links.push(link),
-        },
-      },
-      window: new EventTarget(),
-      Event,
-      EventTarget,
-      Promise,
-      URL,
-      Error,
-    })
+    const first = preloadOnce(seen, 'style.css', preload)
+    const second = preloadOnce(seen, 'style.css', preload)
 
-    vm.runInContext(
-      code.replace('export const __vitePreload', 'globalThis.__vitePreload'),
-      context,
-    )
+    expect(second).toBe(first)
+    expect(preloadCount).toBe(1)
 
-    return {
-      preload: context.__vitePreload as (
-        baseModule: () => Promise<unknown>,
-        deps?: string[],
-      ) => Promise<unknown>,
-      links,
-    }
-  }
-
-  test('makes every dynamic import wait for in-flight stylesheets', async () => {
-    const { preload, links } = createPreloadHelper()
-    let firstSettled = false
-    let secondSettled = false
-
-    preload(() => Promise.resolve('chunk'), ['assets/lazy.css']).then(() => {
-      firstSettled = true
-    })
-    preload(() => Promise.resolve('chunk'), ['assets/lazy.css']).then(() => {
-      secondSettled = true
-    })
-
-    await new Promise((resolve) => setTimeout(resolve, 20))
-    expect(firstSettled).toBe(false)
-    expect(secondSettled).toBe(false)
-    expect(links).toHaveLength(1)
-    expect(links[0].href).toBe('http://localhost/assets/lazy.css')
-
-    links[0].dispatchEvent(new Event('load'))
-    await new Promise((resolve) => setTimeout(resolve, 20))
-    expect(firstSettled).toBe(true)
-    expect(secondSettled).toBe(true)
-
-    // A third import after the CSS has loaded resolves immediately
-    let thirdSettled = false
-    preload(() => Promise.resolve('chunk'), ['assets/lazy.css']).then(() => {
-      thirdSettled = true
-    })
-    await new Promise((resolve) => setTimeout(resolve, 20))
-    expect(thirdSettled).toBe(true)
-    expect(links).toHaveLength(1)
+    resolve()
+    await expect(first).resolves.toBeUndefined()
+    expect(preloadOnce(seen, 'style.css', preload)).toBeUndefined()
+    expect(preloadCount).toBe(1)
   })
 
-  test('fails all waiting imports when stylesheet fails to load', async () => {
-    const { preload, links } = createPreloadHelper()
-    let firstRejected: unknown = null
-    let secondRejected: unknown = null
+  test('shares a preload rejection with every waiter', async () => {
+    const seen = {}
+    const { promise, reject } = promiseWithResolvers<void>()
+    const error = new Error('failed to preload')
 
-    preload(() => Promise.resolve('chunk'), ['assets/lazy.css']).catch(
-      (err) => {
-        firstRejected = err
-      },
-    )
-    preload(() => Promise.resolve('chunk'), ['assets/lazy.css']).catch(
-      (err) => {
-        secondRejected = err
-      },
-    )
+    const first = preloadOnce(seen, 'style.css', () => promise)
+    const second = preloadOnce(seen, 'style.css', () => promise)
+    reject(error)
 
-    await new Promise((resolve) => setTimeout(resolve, 20))
-    expect(links).toHaveLength(1)
-
-    links[0].dispatchEvent(new Event('error'))
-    await new Promise((resolve) => setTimeout(resolve, 20))
-    expect(firstRejected).toBeInstanceOf(Error)
-    expect(secondRejected).toBeInstanceOf(Error)
+    expect(await Promise.allSettled([first, second])).toStrictEqual([
+      { status: 'rejected', reason: error },
+      { status: 'rejected', reason: error },
+    ])
   })
 })
