@@ -1,0 +1,23 @@
+playground/js-sourcemap/__tests__/js-sourcemap.spec.ts
+  s_1d2e6f021e011c::t_96f5ed4e621ec0 364,379
+packages/vite/src/node/__tests__/plugins/importAnalysisBuild.spec.ts
+  s_1d2e6f021e011c::t_6cec838d0c44e0 3,8,87-94,97-101,103-106,109-121
+packages/vite/src/node/plugins/importAnalysisBuild.ts
+  s_1d2e6f021e011c::t_4207adaf2ed0e8 119-146,148,199-210,213-242,269,273,299
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b0bda40e9daeb2d4acef16dbc4319c5afbbf93aa",
+  "prompts": {},
+  "sessions": {
+    "s_1d2e6f021e011c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11600-65bb-75b2-986e-0fce9634b646",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
