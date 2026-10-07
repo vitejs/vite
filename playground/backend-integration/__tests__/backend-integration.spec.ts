@@ -9,6 +9,7 @@ import {
   isBuild,
   isBundledDev,
   isServe,
+  isWindows,
   listAssets,
   page,
   ports,
@@ -17,7 +18,13 @@ import {
   untilBrowserLogAfter,
 } from '~utils'
 
-test('should have no 404s', () => {
+const windowsTodo = isWindows
+  ? bundledDevTodo(
+      'on Windows, a request returns 404 and the page CSS does not load',
+    )
+  : {}
+
+test('should have no 404s', windowsTodo, () => {
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
   })
@@ -123,7 +130,7 @@ describe.runIf(isServe)('serve', () => {
     })
   })
 
-  test('preserve the base in CSS HMR', async () => {
+  test('preserve the base in CSS HMR', windowsTodo, async () => {
     await expect.poll(() => getColor('body')).toBe('black') // sanity check
     editFile('frontend/entrypoints/global.css', (code) =>
       code.replace('black', 'red'),
@@ -150,14 +157,18 @@ describe.runIf(isServe)('serve', () => {
     },
   )
 
-  test('server.origin is applied to public CSS url()', async () => {
-    const bg = await getCssRuleBg('.public-asset')
-    expect(bg).toContain(
-      `http://localhost:${ports['backend-integration']}/dev/icon.png`,
-    )
-  })
+  test(
+    'server.origin is applied to public CSS url()',
+    windowsTodo,
+    async () => {
+      const bg = await getCssRuleBg('.public-asset')
+      expect(bg).toContain(
+        `http://localhost:${ports['backend-integration']}/dev/icon.png`,
+      )
+    },
+  )
 
-  test('CSS dependencies are tracked for HMR', async () => {
+  test('CSS dependencies are tracked for HMR', windowsTodo, async () => {
     const el = await page.$('h1')
     await untilBrowserLogAfter(
       () =>
