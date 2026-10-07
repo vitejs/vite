@@ -476,14 +476,14 @@ async function handleModuleSoftInvalidation(
   }
   // We need to transform each imports with new timestamps if available
   else {
-    await init
+    await init()
     const source = transformResult.code
     const s = new MagicString(source)
     const [imports] = parseImports(source, mod.id || undefined)
 
     for (const imp of imports) {
-      let rawUrl = source.slice(imp.s, imp.e)
-      if (rawUrl === 'import.meta') continue
+      let rawUrl = source.slice(imp.start, imp.end)
+      if (imp.type === 'import-meta') continue
 
       const hasQuotes = rawUrl[0] === '"' || rawUrl[0] === "'"
       if (hasQuotes) {
@@ -505,12 +505,15 @@ async function handleModuleSoftInvalidation(
             urlWithoutTimestamp,
             `t=${importedMod.lastHMRTimestamp}`,
           )
-          const start = hasQuotes ? imp.s + 1 : imp.s
-          const end = hasQuotes ? imp.e - 1 : imp.e
+          const start = hasQuotes ? imp.start + 1 : imp.start
+          const end = hasQuotes ? imp.end - 1 : imp.end
           s.overwrite(start, end, replacedUrl)
         }
 
-        if (imp.d === -1 && environment.config.dev.preTransformRequests) {
+        if (
+          imp.type !== 'dynamic' &&
+          environment.config.dev.preTransformRequests
+        ) {
           // pre-transform known direct imports
           environment.warmupRequest(moduleUrl)
         }
