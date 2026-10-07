@@ -8,9 +8,7 @@ import {
   base,
   clearOverlayOrReloadOnFirstUpdate,
   registerBundledDevClient,
-  removeStyle,
   transport,
-  updateStyle,
 } from './client'
 
 // keep the same public exports as `client.ts`, which this entry replaces when inlined
@@ -33,10 +31,7 @@ if (typeof DevRuntime !== 'undefined') {
     }
 
     override createModuleHotContext(moduleId: string) {
-      const ctx = new BundledDevHMRContext(bundledDevHmrClient, moduleId)
-      // @ts-expect-error TODO: support CSS properly
-      ctx._internal = { updateStyle, removeStyle }
-      return ctx
+      return new BundledDevHMRContext(bundledDevHmrClient, moduleId)
     }
   }
 
