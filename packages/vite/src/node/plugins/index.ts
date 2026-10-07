@@ -15,7 +15,10 @@ import {
 } from '../plugin'
 import { assetPlugin } from './asset'
 import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
-import { clientInjectionsPlugin } from './clientInjections'
+import {
+  bundledDevClientImportsPlugin,
+  clientInjectionsPlugin,
+} from './clientInjections'
 import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
 import { definePlugin } from './define'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
@@ -87,6 +90,8 @@ export async function resolvePlugins(
     modulePreload !== false && modulePreload.polyfill
       ? modulePreloadPolyfillPlugin()
       : null,
+    // before the resolver, which cannot resolve the client's public URL
+    bundledDevClientImportsPlugin(config),
     ...oxcResolvePlugin(
       {
         root: config.root,

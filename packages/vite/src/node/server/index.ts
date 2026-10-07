@@ -69,6 +69,7 @@ import {
 import {
   createNoopWatcher,
   getResolvedOutDirs,
+  makeWatcherCloseFinal,
   resolveChokidarOptions,
   resolveEmptyOutDir,
 } from '../watch'
@@ -93,7 +94,7 @@ import {
   serveRawFsMiddleware,
   serveStaticMiddleware,
 } from './middlewares/static'
-import { timeMiddleware } from './middlewares/time'
+import { isTimeDebugEnabled, timeMiddleware } from './middlewares/time'
 import {
   cachedTransformMiddleware,
   transformMiddleware,
@@ -594,20 +595,26 @@ export async function _createServer(
   // eslint-disable-next-line eqeqeq
   const watchEnabled = serverConfig.watch !== null
   const watcher = watchEnabled
-    ? (chokidar.watch(
-        // config file dependencies and env file might be outside of root
-        [
-          ...(config.experimental.bundledDev ? [] : [root]),
-          ...config.configFileDependencies,
-          ...envFiles,
-          // Watch the public directory explicitly because it might be outside
-          // of the root directory.
-          ...(publicDir && publicFiles ? [publicDir] : []),
-        ],
+    ? makeWatcherCloseFinal(
+        chokidar.watch(
+          // config file dependencies and env file might be outside of root
+          [
+            ...(config.experimental.bundledDev ? [] : [root]),
+            ...config.configFileDependencies,
+            ...envFiles,
+            // Watch the public directory explicitly because it might be outside
+            // of the root directory.
+            ...(publicDir && publicFiles ? [publicDir] : []),
+          ],
 
-        resolvedWatchOptions,
-      ) as FSWatcher)
+          resolvedWatchOptions,
+        ) as FSWatcher,
+      )
     : createNoopWatcher(resolvedWatchOptions)
+
+  watcher.on('error', (error: Error) => {
+    config.logger.error(colors.red(`file watcher error: ${error.message}`))
+  })
 
   const environments: Record<string, DevEnvironment> = {}
 
@@ -629,6 +636,10 @@ export async function _createServer(
       },
     ),
   )
+
+  // Release previous environments after initialization to prevent memory leaks
+  // from retaining old server graphs across restarts.
+  options.previousEnvironments = undefined
 
   // Backward compatibility
 
@@ -990,7 +1001,7 @@ export async function _createServer(
   // Pre applied internal middlewares ------------------------------------------
 
   // request timer
-  if (process.env.DEBUG) {
+  if (isTimeDebugEnabled) {
     middlewares.use(timeMiddleware(root))
   }
 

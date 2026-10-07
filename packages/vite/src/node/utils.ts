@@ -790,7 +790,7 @@ export function ensureWatchedFile(
   if (
     file &&
     // only need to watch if out of root
-    !file.startsWith(withTrailingSlash(root)) &&
+    !normalizePath(file).startsWith(withTrailingSlash(root)) &&
     // some rollup plugins use null bytes for private resolved Ids
     !file.includes('\0') &&
     fs.existsSync(file)
@@ -1479,11 +1479,10 @@ function mergeConfigRecursively(
   }
   if (rootPath === 'server.hmr') {
     for (const key of wsOptionKeys) {
-      Object.defineProperty(
-        merged,
-        key,
-        Object.getOwnPropertyDescriptor(defaults, key)!,
-      )
+      const descriptor = Object.getOwnPropertyDescriptor(defaults, key)
+      if (descriptor) {
+        Object.defineProperty(merged, key, descriptor)
+      }
     }
   }
 

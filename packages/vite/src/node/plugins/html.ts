@@ -44,6 +44,7 @@ import {
 } from '../utils'
 import {
   assetUrlRE,
+  getAssetUrlPostfix,
   getPublicAssetFilename,
   publicAssetUrlRE,
   urlToBuiltUrl,
@@ -653,7 +654,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                         !isExcludedUrl(decodedUrl)
                       ) {
                         const result = await processAssetUrl(
-                          url,
+                          decodedUrl,
                           getLinkShouldInline(node, attr.attributes),
                         )
                         return result !== decodedUrl
@@ -1074,12 +1075,15 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           },
         )
         // resolve asset url references
-        result = result.replace(assetUrlRE, (_, fileHash) => {
+        result = result.replace(assetUrlRE, (_, fileHash, urlId) => {
           const file = this.getFileName(fileHash)
           if (chunk) {
             chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
           }
-          return encodeURIPath(toOutputAssetFilePath(file))
+          return (
+            encodeURIPath(toOutputAssetFilePath(file)) +
+            getAssetUrlPostfix(this.environment, urlId)
+          )
         })
 
         result = result.replace(publicAssetUrlRE, (_, fileHash) => {
