@@ -418,7 +418,9 @@ export async function loadCachedDepOptimizationMetadata(
     } catch {}
     // hash is consistent, no need to re-bundle
     if (cachedMetadata) {
-      if (cachedMetadata.lockfileHash !== getLockfileHash(environment)) {
+      if (
+        cachedMetadata.lockfileHash !== getLockfileHash(environment.config.root)
+      ) {
         environment.logger.info(
           'Re-optimizing dependencies because lockfile has changed',
           {
@@ -1356,10 +1358,9 @@ function getConfigHash(environment: Environment): string {
   return getHash(content)
 }
 
-function getLockfileHash(environment: Environment): string {
+export function getLockfileHash(root: string): string {
   const lockfilePath =
-    lookupFile(environment.config.root, lockfilePaths) ??
-    lookupFile(environment.config.root, fallbackLockfilePaths)
+    lookupFile(root, lockfilePaths) ?? lookupFile(root, fallbackLockfilePaths)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
     const normalizedLockfilePath = lockfilePath.replaceAll('\\', '/')
@@ -1383,12 +1384,12 @@ function getLockfileHash(environment: Environment): string {
   return getHash(content)
 }
 
-export function getDepHash(environment: Environment): {
+function getDepHash(environment: Environment): {
   lockfileHash: string
   configHash: string
   hash: string
 } {
-  const lockfileHash = getLockfileHash(environment)
+  const lockfileHash = getLockfileHash(environment.config.root)
   const configHash = getConfigHash(environment)
   const hash = getHash(lockfileHash + configHash)
   return {
