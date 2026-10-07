@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { describe, expect, onTestFinished, test } from 'vitest'
+import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { FS_PREFIX } from '../../../constants'
 import { createServer } from '../../../server'
 
@@ -146,5 +146,27 @@ describe('indexHtml middleware — HMR timestamp injection with non-root base', 
     // the timestamp — two different URLs for the same module, executing the
     // entry twice.
     expect(transformed).toContain(`src="/ui/src/main.ts?t=${timestamp}"`)
+  })
+})
+
+describe('indexHtml middleware — query-only URLs', () => {
+  test('a query-only URL does not add the filesystem root to the watcher', async () => {
+    const server = await createTestServer()
+    const addSpy = vi.spyOn(server.watcher, 'add')
+
+    // `getHtmlFilename` strips the query, so this resolves to the project root
+    // directory. That directory exists, but it must not be treated as a real
+    // HTML file: doing so gives every inline proxy module `mod.file === <root>`
+    // and `ensureWatchedFile` then watches the filesystem root (#23679).
+    const transformed = await server.transformIndexHtml(
+      '/?foo=bar',
+      HTML_CONTENT,
+    )
+
+    expect(transformed).toContain('html-proxy')
+    expect(transformed).toContain('src="/@id/__x00__/?foo=bar?html-proxy')
+    expect(addSpy.mock.calls.map((c) => c[0]).flat()).not.toContain(
+      path.parse(server.config.root).root,
+    )
   })
 })

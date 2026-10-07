@@ -43,6 +43,7 @@ import {
   normalizePath,
   processSrcSetSync,
   stripBase,
+  tryStatSync,
 } from '../../utils'
 import {
   BasicMinimalPluginContext,
@@ -223,7 +224,12 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   let proxyModuleUrl: string
 
   const trailingSlash = htmlPath.endsWith('/')
-  if (!trailingSlash && fs.existsSync(filename)) {
+  // `filename` is derived from the query-stripped URL, so a query-only URL like
+  // `/?foo=bar` resolves to the root directory, which exists. Treating that as a
+  // real HTML file makes every inline proxy module share `mod.file === <root>`,
+  // and `ensureWatchedFile` then adds the filesystem root to the watcher
+  // (#23679). Only an actual file can back a real (non-virtual) proxy module.
+  if (!trailingSlash && tryStatSync(filename)?.isFile()) {
     // If htmlPath is a /@fs/ URL (e.g. vitest-browser always uses this form
     // for testerHtmlPath), normalise to an absolute FS path so proxyCacheUrl
     // is always root-relative.
