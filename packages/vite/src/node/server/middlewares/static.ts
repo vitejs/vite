@@ -158,17 +158,10 @@ export function serveStaticMiddleware(
     }
 
     // apply aliases to static requests as well
-    let redirectedPathname: string | undefined
-    for (const { find, replacement } of server.config.resolve.alias) {
-      const matches =
-        typeof find === 'string'
-          ? pathname === find || pathname.startsWith(`${find}/`)
-          : find.test(pathname)
-      if (matches) {
-        redirectedPathname = pathname.replace(find, replacement)
-        break
-      }
-    }
+    let redirectedPathname = applyStaticAlias(
+      pathname,
+      server.config.resolve.alias,
+    )
     if (redirectedPathname) {
       // dir is pre-normalized to posix style
       if (redirectedPathname.startsWith(withTrailingSlash(dir))) {
@@ -194,6 +187,21 @@ export function serveStaticMiddleware(
         return
       }
       throw e
+    }
+  }
+}
+
+export function applyStaticAlias(
+  pathname: string,
+  aliases: ResolvedConfig['resolve']['alias'],
+): string | undefined {
+  for (const { find, replacement } of aliases) {
+    const matches =
+      typeof find === 'string'
+        ? pathname === find || pathname.startsWith(`${find}/`)
+        : find.test(pathname)
+    if (matches) {
+      return pathname.replace(find, replacement)
     }
   }
 }

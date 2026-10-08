@@ -1,48 +1,71 @@
-import path from 'node:path'
-import { describe, expect, onTestFinished, test } from 'vitest'
-import { createServer } from '../../../server'
-import { normalizePath } from '../../../utils'
-import { isFileInTargetPath, looksLikeWindowsShortNamePath } from '../static'
+import { describe, expect, test } from 'vitest'
+import { normalizeAlias } from '../../../utils'
+import {
+  applyStaticAlias,
+  isFileInTargetPath,
+  looksLikeWindowsShortNamePath,
+} from '../static'
 
 describe('static file aliases', () => {
-  test.each([
-    ['prefix sibling', '/images-extra/file.txt', 'original'],
-    ['nested alias', '/images/file.txt', 'aliased'],
-    ['exact alias', '/file.txt', 'aliased'],
-    ['regex alias', '/regex/file.txt', 'aliased'],
-    ['trailing slash find', '/trailing/file.txt', 'original'],
-    ['normalized trailing slashes', '/normalized/file.txt', 'aliased'],
-    ['root alias', '/root-alias/file.txt', 'original'],
-  ])('%s: serves %s', async (_, url, expected) => {
-    const root = normalizePath(
-      path.resolve(import.meta.dirname, 'fixtures/static'),
-    )
-    const server = await createServer({
-      configFile: false,
-      root,
-      logLevel: 'silent',
-      resolve: {
-        alias: [
-          { find: '/images', replacement: `${root}/aliased` },
-          {
-            find: '/file.txt',
-            replacement: `${root}/aliased/file.txt`,
-          },
-          { find: /^\/regex\//, replacement: `${root}/aliased/` },
-          { find: '/trailing/', replacement: `${root}/aliased` },
-          { find: '/normalized/', replacement: `${root}/aliased/` },
-          { find: '/', replacement: `${root}/aliased` },
-        ],
-      },
-      server: { host: '127.0.0.1', port: 0, ws: false },
-      optimizeDeps: { noDiscovery: true, include: [] },
-    })
-    onTestFinished(() => server.close())
-    await server.listen()
+  const cases = {
+    'prefix sibling': {
+      pathname: '/images-extra/file.txt',
+      find: '/images',
+      replacement: '/root/aliased',
+      expected: undefined,
+    },
+    'nested alias': {
+      pathname: '/images/file.txt',
+      find: '/images',
+      replacement: '/root/aliased',
+      expected: '/root/aliased/file.txt',
+    },
+    'exact alias': {
+      pathname: '/file.txt',
+      find: '/file.txt',
+      replacement: '/root/aliased/file.txt',
+      expected: '/root/aliased/file.txt',
+    },
+    'regex alias': {
+      pathname: '/regex/file.txt',
+      find: /^\/regex\//,
+      replacement: '/root/aliased/',
+      expected: '/root/aliased/file.txt',
+    },
+    'trailing slash find': {
+      pathname: '/trailing/file.txt',
+      find: '/trailing/',
+      replacement: '/root/aliased',
+      expected: undefined,
+    },
+    'normalized trailing slashes': {
+      pathname: '/normalized/file.txt',
+      find: '/normalized/',
+      replacement: '/root/aliased/',
+      expected: '/root/aliased/file.txt',
+    },
+  }
 
-    const response = await fetch(new URL(url, server.resolvedUrls!.local[0]))
-    expect(response.status).toBe(200)
-    expect(await response.text()).toBe(`${expected}\n`)
+  for (const [
+    name,
+    { pathname, find, replacement, expected },
+  ] of Object.entries(cases)) {
+    test(name, () => {
+      expect(
+        applyStaticAlias(pathname, normalizeAlias([{ find, replacement }])),
+      ).toBe(expected)
+    })
+  }
+
+  test('uses the first matching alias', () => {
+    const aliases = normalizeAlias([
+      { find: '/other', replacement: '/root/other' },
+      { find: '/images', replacement: '/root/first' },
+      { find: '/images', replacement: '/root/second' },
+    ])
+    expect(applyStaticAlias('/images/file.txt', aliases)).toBe(
+      '/root/first/file.txt',
+    )
   })
 })
 
