@@ -76,6 +76,9 @@
 <h2>Resolving key containing # with imports field</h2>
 <p class="imports-mid-hash">fail</p>
 
+<h2>Resolving key containing ? with imports field</h2>
+<p class="imports-question-mark">fail</p>
+
 <h2>Resolve /index.*</h2>
 <p class="index">fail</p>
 
@@ -290,6 +293,9 @@
 
   import { msg as importsMidHash } from '#mid#hash'
   text('.imports-mid-hash', importsMidHash)
+
+  import { msg as importsQuestionMark } from '#question?mark'
+  text('.imports-question-mark', importsQuestionMark)
 
   // implicit index resolving
   import { foo } from './util'

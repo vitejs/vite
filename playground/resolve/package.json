@@ -20,7 +20,8 @@
     "#dot-prefixed": "./imports-path/.dot-prefixed/index.js",
     "#/*": "./imports-path/root-slash/*",
     "##double/*": "./imports-path/double-hash/*",
-    "#mid#hash": "./imports-path/mid-hash.js"
+    "#mid#hash": "./imports-path/mid-hash.js",
+    "#question?mark": "./imports-path/question-mark.js"
   },
   "dependencies": {
     "@babel/runtime": "^7.29.7",

@@ -254,6 +254,12 @@ test('Resolving key containing # with imports field', async () => {
   expect(await page.textContent('.imports-mid-hash')).toMatch('[success]')
 })
 
+test('Resolving key containing ? with imports field', async () => {
+  // subpath imports keys may contain `?` and are matched literally,
+  // taking precedence over stripping it as a query postfix
+  expect(await page.textContent('.imports-question-mark')).toMatch('[success]')
+})
+
 test("Resolve doesn't interrupt page request with trailing query and .css", async () => {
   await page.goto(viteTestUrl + '/?test.css')
   expect(await page.locator('vite-error-overlay').count()).toBe(0)
