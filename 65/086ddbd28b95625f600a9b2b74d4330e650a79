@@ -1,0 +1,27 @@
+packages/vite/src/node/optimizer/index.ts
+  s_aea7aa7f4ba4c1::t_5f588215e367fd 421-423,1361,1363,1387,1392
+packages/vite/src/node/__tests__/optimizer/fixtures/lockfile-hash/yarn-lock/yarn.lock
+  s_aea7aa7f4ba4c1::t_e2ab98950b967d 1
+packages/vite/src/node/__tests__/optimizer/fixtures/lockfile-hash/yarn-state/.gitignore
+  s_aea7aa7f4ba4c1::t_4e5c62835c638d 1
+packages/vite/src/node/__tests__/optimizer/fixtures/lockfile-hash/yarn-state/node_modules/.yarn-state.yml
+  s_aea7aa7f4ba4c1::t_b94f8ffc62e906 1
+packages/vite/src/node/__tests__/optimizer/fixtures/lockfile-hash/yarn-state/yarn.lock
+  s_aea7aa7f4ba4c1::t_d1894cb561da6f 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "65086ddbd28b95625f600a9b2b74d4330e650a79",
+  "prompts": {},
+  "sessions": {
+    "s_aea7aa7f4ba4c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11606-7d7f-74e3-b3b7-8a395d5fe9a8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
