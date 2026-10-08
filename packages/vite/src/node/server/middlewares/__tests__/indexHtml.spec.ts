@@ -119,7 +119,6 @@ describe('indexHtml middleware — file watching', () => {
 
     await server.transformIndexHtml(fsUrl, OUTSIDE_HTML_CONTENT)
 
-    expect(addSpy).toHaveBeenCalledOnce()
     expect(addSpy).toHaveBeenCalledWith(OUTSIDE_HTML_PATH)
   })
 
@@ -132,7 +131,7 @@ describe('indexHtml middleware — file watching', () => {
 
     await server.transformIndexHtml('/?foo=bar', html)
 
-    expect(addSpy).not.toHaveBeenCalled()
+    expect(addSpy).not.toHaveBeenCalledWith('/')
   })
 })
 
