@@ -162,7 +162,7 @@ export function serveStaticMiddleware(
     for (const { find, replacement } of server.config.resolve.alias) {
       const matches =
         typeof find === 'string'
-          ? pathname === find || pathname.startsWith(withTrailingSlash(find))
+          ? pathname === find || pathname.startsWith(`${find}/`)
           : find.test(pathname)
       if (matches) {
         redirectedPathname = pathname.replace(find, replacement)

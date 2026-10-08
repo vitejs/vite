@@ -6,11 +6,14 @@ import { isFileInTargetPath, looksLikeWindowsShortNamePath } from '../static'
 
 describe('static file aliases', () => {
   test.each([
-    ['/images-extra/file.txt', 'original'],
-    ['/images/file.txt', 'aliased'],
-    ['/file.txt', 'aliased'],
-    ['/regex/file.txt', 'aliased'],
-  ])('serves %s', async (url, expected) => {
+    ['prefix sibling', '/images-extra/file.txt', 'original'],
+    ['nested alias', '/images/file.txt', 'aliased'],
+    ['exact alias', '/file.txt', 'aliased'],
+    ['regex alias', '/regex/file.txt', 'aliased'],
+    ['trailing slash find', '/trailing/file.txt', 'original'],
+    ['normalized trailing slashes', '/normalized/file.txt', 'aliased'],
+    ['root alias', '/root-alias/file.txt', 'original'],
+  ])('%s: serves %s', async (_, url, expected) => {
     const root = normalizePath(
       path.resolve(import.meta.dirname, 'fixtures/static'),
     )
@@ -26,6 +29,9 @@ describe('static file aliases', () => {
             replacement: `${root}/aliased/file.txt`,
           },
           { find: /^\/regex\//, replacement: `${root}/aliased/` },
+          { find: '/trailing/', replacement: `${root}/aliased` },
+          { find: '/normalized/', replacement: `${root}/aliased/` },
+          { find: '/', replacement: `${root}/aliased` },
         ],
       },
       server: { host: '127.0.0.1', port: 0, ws: false },
