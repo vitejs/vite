@@ -318,6 +318,12 @@ export async function resolveForwardConsoleOptions(
   }
 }
 
+interface ServerRestartState {
+  promise: Promise<void> | null
+  pending: boolean
+  forceOptimize: boolean
+}
+
 export interface ViteDevServer {
   /**
    * The resolved vite config object
@@ -468,18 +474,6 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _restartPromise: Promise<void> | null
-  /**
-   * @internal
-   */
-  _pendingRestart: boolean
-  /**
-   * @internal
-   */
-  _forceOptimizeOnRestart: boolean
-  /**
-   * @internal
-   */
   _shortcutsState?: ShortcutsState<ViteDevServer>
   /**
    * @internal
@@ -519,13 +513,18 @@ export async function _createServer(
     listen: boolean
     previousEnvironments?: Record<string, DevEnvironment>
     previousShortcutsState?: ShortcutsState<ViteDevServer>
-    previousRestartPromise?: Promise<void> | null
-    previousForceOptimizeOnRestart?: boolean
+    restartState?: ServerRestartState
   },
 ): Promise<ViteDevServer> {
   // The dev server is a long-running, interactive process whose outputs
   // (network responses, HMR updates) cannot be replayed from a cache.
   disableCache()
+
+  const restartState = options.restartState ?? {
+    promise: null,
+    pending: false,
+    forceOptimize: false,
+  }
 
   const config = isResolvedConfig(inlineConfig)
     ? inlineConfig
@@ -844,22 +843,24 @@ export async function _createServer(
       bindCLIShortcuts(server, options)
     },
     async restart(forceOptimize?: boolean) {
-      if (server._restartPromise) {
-        server._pendingRestart = true
-        server._forceOptimizeOnRestart ||= !!forceOptimize
-        return server._restartPromise
+      restartState.forceOptimize ||= !!forceOptimize
+      if (restartState.promise) {
+        restartState.pending = true
+        return restartState.promise
       }
-      server._forceOptimizeOnRestart = !!forceOptimize
-      server._restartPromise = (async () => {
-        do {
-          server._pendingRestart = false
-          await restartServer(server)
-        } while (server._pendingRestart)
-      })().finally(() => {
-        server._restartPromise = null
-        server._forceOptimizeOnRestart = false
-      })
-      return server._restartPromise
+      restartState.promise = (async () => {
+        try {
+          do {
+            restartState.pending = false
+            await restartServer(server, restartState)
+          } while (restartState.pending)
+        } finally {
+          restartState.promise = null
+          restartState.pending = false
+          restartState.forceOptimize = false
+        }
+      })()
+      return restartState.promise
     },
 
     waitForRequestsIdle(ignoredId?: string): Promise<void> {
@@ -877,9 +878,6 @@ export async function _createServer(
       }
       return closeServerPromise
     },
-    _restartPromise: options.previousRestartPromise ?? null,
-    _pendingRestart: false,
-    _forceOptimizeOnRestart: options.previousForceOptimizeOnRestart ?? false,
     _shortcutsState: options.previousShortcutsState,
   }
 
@@ -1396,11 +1394,14 @@ export async function resolveServerOptions(
   return server
 }
 
-async function restartServer(server: ViteDevServer) {
+async function restartServer(
+  server: ViteDevServer,
+  restartState: ServerRestartState,
+) {
   global.__vite_start_time = performance.now()
 
   let inlineConfig = server.config.inlineConfig
-  if (server._forceOptimizeOnRestart) {
+  if (restartState.forceOptimize) {
     inlineConfig = mergeConfig(inlineConfig, {
       forceOptimizeDeps: true,
     })
@@ -1419,8 +1420,7 @@ async function restartServer(server: ViteDevServer) {
         listen: false,
         previousEnvironments: server.environments,
         previousShortcutsState: server._shortcutsState,
-        previousRestartPromise: server._restartPromise,
-        previousForceOptimizeOnRestart: server._forceOptimizeOnRestart,
+        restartState,
       })
     } catch (err: any) {
       server.config.logger.error(err.message, {
@@ -1441,8 +1441,6 @@ async function restartServer(server: ViteDevServer) {
     const middlewares = server.middlewares
     newServer._configServerPort = server._configServerPort
     newServer._currentServerPort = server._currentServerPort
-    newServer._pendingRestart ||= server._pendingRestart
-    newServer._forceOptimizeOnRestart ||= server._forceOptimizeOnRestart
     Object.assign(server, newServer)
 
     // Keep the same connect instance so app.use(vite.middlewares) works
