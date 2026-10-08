@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "8.3.2",
+  "version": "8.3.3",
   "description": "Native-ESM powered web dev build tool",
   "keywords": [
     "build-tool",
@@ -71,8 +71,8 @@
   "dependencies": {
     "lightningcss": "^1.33.0",
     "picomatch": "^4.0.7",
-    "postcss": "^8.5.28",
-    "rolldown": "~1.2.11",
+    "postcss": "^8.5.29",
+    "rolldown": "~1.2.12",
     "tinyglobby": "^0.2.17"
   },
   "devDependencies": {
@@ -90,7 +90,7 @@
     "@vitest/utils": "^4.1.11",
     "@voidzero-dev/vite-task-client": "^0.2.0",
     "artichokie": "^0.4.5",
-    "baseline-browser-mapping": "^2.11.26",
+    "baseline-browser-mapping": "^2.11.27",
     "cac": "^7.0.0",
     "chokidar": "^3.6.0",
     "connect": "^3.7.0",
@@ -105,8 +105,8 @@
     "fresh-import": "^0.2.1",
     "host-validation-middleware": "^0.1.4",
     "http-proxy-3": "^1.23.3",
-    "launch-editor-middleware": "^2.14.1",
-    "magic-string": "^1.4.2",
+    "launch-editor-middleware": "^2.14.2",
+    "magic-string": "^1.4.3",
     "mlly": "^1.8.2",
     "mrmime": "^2.0.1",
     "nanoid": "^5.1.16",
@@ -124,8 +124,8 @@
     "rolldown-plugin-dts": "^0.28.6",
     "rollup": "^4.59.0",
     "rollup-plugin-license": "^3.7.1",
-    "sass": "^1.105.0",
-    "sass-embedded": "^1.105.0",
+    "sass": "^1.105.1",
+    "sass-embedded": "^1.105.1",
     "sirv": "^3.0.2",
     "strip-literal": "^4.0.0",
     "terser": "^5.51.2",

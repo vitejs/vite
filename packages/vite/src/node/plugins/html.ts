@@ -392,6 +392,7 @@ export function getCssFilesForChunk(
   // Collect all CSS from imports (unfiltered for caching, filtered for return)
   const allFiles: string[] = []
   const filteredFiles: string[] = []
+  let complete = true
   chunk.imports.forEach((file) => {
     const importee = bundle[file]
     if (importee?.type === 'chunk') {
@@ -407,7 +408,11 @@ export function getCssFilesForChunk(
       if (analyzedImportedCssFiles.has(importee)) {
         allFiles.push(...analyzedImportedCssFiles.get(importee)!)
       } else {
-        allFiles.push(...importeeCss)
+        // The importee is still being analyzed (an import cycle), so its CSS
+        // is not known yet. The returned list is still right for this entry,
+        // which adds the importee's CSS further up the walk, but it must not
+        // be cached for other entries.
+        complete = false
       }
     }
   })
@@ -420,7 +425,9 @@ export function getCssFilesForChunk(
     }
   })
 
-  analyzedImportedCssFiles.set(chunk, unique(allFiles))
+  if (complete) {
+    analyzedImportedCssFiles.set(chunk, unique(allFiles))
+  }
 
   return filteredFiles
 }
@@ -1714,13 +1721,11 @@ export function getImportMapFilename(
   return 'importmap.json'
 }
 
-function getImportMapBaseUrl(options: ResolvedEnvironmentOptions): string {
-  const chunkImportMap =
-    options.build.rolldownOptions.experimental?.chunkImportMap
-  if (typeof chunkImportMap === 'object' && chunkImportMap.baseUrl) {
-    return chunkImportMap.baseUrl
-  }
-  return '/'
+function getImportMapBaseUrl(
+  options: ResolvedEnvironmentOptions & ResolvedConfig,
+): string {
+  // Vite overrides Rolldown's chunkImportMap.baseUrl with the resolved base.
+  return options.base
 }
 
 /**

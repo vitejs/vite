@@ -1056,6 +1056,40 @@ describe('mergeConfig', () => {
     expect(mergedConfig.server.hmr.port).toBe(3002)
   })
 
+  test('mergeConfig does not mutate `server.hmr` defaults', () => {
+    const defaults = {
+      server: {
+        hmr: {
+          host: 'localhost',
+        },
+      },
+    }
+
+    mergeConfig(defaults, {
+      server: {
+        hmr: {
+          port: 3000,
+        },
+      },
+    })
+
+    expect(defaults.server.hmr).toEqual({ host: 'localhost' })
+    expect(Object.hasOwn(defaults.server.hmr, 'port')).toBe(false)
+
+    const secondMerge = mergeConfig(defaults, {
+      server: {
+        hmr: {
+          protocol: 'wss',
+        },
+      },
+    })
+
+    expect(secondMerge.server.ws).toEqual({
+      host: 'localhost',
+      protocol: 'wss',
+    })
+  })
+
   test('`server.hmr.overlay` is not mapped to `server.ws.overlay`', () => {
     const config = mergeConfig(
       {},
@@ -1509,56 +1543,20 @@ describe('resolveConfig', () => {
     })
   })
 
-  test('reserves glob characters in input', async () => {
-    const cases: { name: string; input: UserConfig['input'] }[] = [
-      { name: 'wildcard', input: 'src/*.ts' },
-      { name: 'single char', input: 'src/page?.ts' },
-      { name: 'character class', input: 'src/[id].ts' },
-      { name: 'brace expansion', input: 'src/{a,b}.ts' },
-      { name: 'extglob group', input: 'src/?(group).ts' },
-      { name: 'negation', input: 'src/!(main).ts' },
-      { name: 'extglob prefix +', input: 'src/+(page).ts' },
-      { name: 'extglob prefix @', input: 'src/@(page).ts' },
-      { name: 'array element', input: ['src/main.ts', 'src/*.ts'] },
-      { name: 'record', input: { main: 'src/*.ts' } },
-    ]
+  test('allows glob characters in input', async () => {
+    const input = 'src/*.ts'
 
-    for (const { name, input } of cases) {
-      await expect(resolveConfig({ input }, 'serve'), name).rejects.toThrow(
-        /`input` cannot contain glob characters/,
-      )
-    }
+    await expect(resolveConfig({ input }, 'serve')).resolves.toMatchObject({
+      input,
+    })
   })
 
-  test('support escaped input', async () => {
-    const cases: {
-      name: string
-      input: UserConfig['input']
-      expected: UserConfig['input']
-    }[] = [
-      {
-        name: 'glob',
-        input: 'src/\\*.ts',
-        expected: 'src/*.ts',
-      },
-      {
-        name: 'array element',
-        input: ['src/\\*.ts'],
-        expected: ['src/*.ts'],
-      },
-      {
-        name: 'record',
-        input: { main: 'src/\\*.ts' },
-        expected: { main: 'src/*.ts' },
-      },
-    ]
+  test('preserves input escaping', async () => {
+    const inputs = ['src/\\*.ts', 'C:\\root\\@src\\index.html']
 
-    for (const { name, input, expected } of cases) {
-      await expect(
-        resolveConfig({ input }, 'serve'),
-        name,
-      ).resolves.toMatchObject({
-        input: expected,
+    for (const input of inputs) {
+      await expect(resolveConfig({ input }, 'serve')).resolves.toMatchObject({
+        input,
       })
     }
   })

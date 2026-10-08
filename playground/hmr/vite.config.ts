@@ -1,15 +1,29 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { globSync } from 'tinyglobby'
 import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
 import { TestCssLinkPlugin } from './css-link/plugin.ts'
+import { TestCssStylePlugin } from './css-style/plugin.ts'
+
+const acceptExportsPages = globSync('./accept-exports/*/index.html', {
+  absolute: true,
+  expandDirectories: false,
+  onlyFiles: true,
+  // not used by any test cases
+  ignore: ['**/export-from/**', '**/reexports.bak/**'],
+  cwd: import.meta.dirname,
+})
 
 export default defineConfig(({ command }) => ({
   input: [
     path.resolve(import.meta.dirname, './index.html'),
     ...(command === 'build'
       ? []
-      : [path.resolve(import.meta.dirname, './missing-import/index.html')]),
+      : [
+          path.resolve(import.meta.dirname, './missing-import/index.html'),
+          ...acceptExportsPages,
+        ]),
     path.resolve(
       import.meta.dirname,
       './unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
@@ -56,6 +70,7 @@ export default defineConfig(({ command }) => ({
     transformCountPlugin(),
     watchCssDepsPlugin(),
     TestCssLinkPlugin(),
+    TestCssStylePlugin(),
     hotEventsPlugin(),
   ],
 }))

@@ -517,6 +517,15 @@ test('@import scss', async () => {
   expect(await getColor('.at-import-scss')).toBe('red')
 })
 
+test('preprocessor imported from css resolves relative imports', async () => {
+  const color = await page.evaluate(() =>
+    getComputedStyle(document.documentElement)
+      .getPropertyValue('--preprocessor-import-color')
+      .trim(),
+  )
+  expect(color).toBe('cornflowerblue')
+})
+
 test.runIf(isBuild)('manual chunk path', async () => {
   // assert that the manual-chunk css is output in the directory specified in manualChunk (#12072)
   expect(
