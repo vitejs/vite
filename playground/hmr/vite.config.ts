@@ -1,19 +1,18 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { globSync } from 'tinyglobby'
 import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
 import { TestCssLinkPlugin } from './css-link/plugin.ts'
 
-const acceptExportsPages = [
-  'main-accepted',
-  'main-non-accepted',
-  'side-effects',
-  'unused-exports',
-  'star-imports',
-  'dynamic-imports',
-].map((dir) =>
-  path.resolve(import.meta.dirname, `./accept-exports/${dir}/index.html`),
-)
+const acceptExportsPages = globSync('./accept-exports/*/index.html', {
+  absolute: true,
+  expandDirectories: false,
+  onlyFiles: true,
+  // not used by any test cases
+  ignore: ['**/export-from/**', '**/reexports.bak/**'],
+  cwd: import.meta.dirname,
+})
 
 export default defineConfig(({ command }) => ({
   input: [

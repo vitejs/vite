@@ -1055,7 +1055,11 @@ importers:
 
   playground/glob-import/root/import-meta-glob-pkg: {}
 
-  playground/hmr: {}
+  playground/hmr:
+    devDependencies:
+      tinyglobby:
+        specifier: ^0.2.17
+        version: 0.2.17
 
   playground/hmr-full-bundle-mode: {}
 
