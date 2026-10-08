@@ -387,6 +387,8 @@ function waitForSuccessfulPing(socketUrl: string) {
   const blob = new Blob(
     [
       '"use strict";',
+      // the functions below are stringified, so module-scope values they use must be redeclared
+      `const logPrefix = ${JSON.stringify(logPrefix)};`,
       `const waitForSuccessfulPingInternal = ${waitForSuccessfulPingInternal.toString()};`,
       `const fn = ${pingWorkerContentMain.toString()};`,
       `fn(${JSON.stringify(socketUrl)})`,
