@@ -1,7 +1,33 @@
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
+import { PartialEnvironment } from '../../baseEnvironment'
 import { resolveConfig } from '../../config'
-import { transformWithOxc } from '../../plugins/oxc'
+import { oxcPlugin, transformWithOxc } from '../../plugins/oxc'
+
+describe('oxcPlugin', () => {
+  test('preserves the language of modules with extensions in queries', async () => {
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        oxc: { jsxRefreshInclude: /\.tsx$/ },
+      },
+      'serve',
+    )
+    const plugin = oxcPlugin(config)
+    const environment = new PartialEnvironment('client', config)
+    const transform = plugin.transform as any
+    const result = await transform.call(
+      { environment },
+      'const value: string = "hello"',
+      '/project/App.vue?vue&type=script&setup=true&lang.tsx',
+    )
+
+    expect(result.code).toMatchInlineSnapshot(`
+      "const value = "hello";
+      "
+    `)
+  })
+})
 
 describe('transformWithOxc', () => {
   test('correctly overrides TS configuration and applies automatic transform', async () => {
