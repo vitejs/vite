@@ -18,7 +18,14 @@ import type {
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { expect } from 'vitest'
-import { isWindows, page, sourcemapSnapshot, testDir } from './vitestSetup'
+import {
+  isBundledDev,
+  isWindows,
+  page,
+  sourcemapSnapshot,
+  testDir,
+  viteServer,
+} from './vitestSetup'
 
 export * from './vitestSetup'
 
@@ -271,6 +278,22 @@ export function readDepOptimizationMetadata(
       'utf-8',
     ),
   )
+}
+
+export async function gotoLatestBuild(url: string): Promise<void> {
+  if (isBundledDev) {
+    // Earlier HMR edits leave the bundled-dev output stale. Opening a page then
+    // serves the fallback page first, which reloads into the real page later.
+    const bundledDev = viteServer.environments.client.bundledDev as any
+    await bundledDev.devEngine.ensureLatestBuildOutput()
+  }
+  await page.goto(url)
+}
+
+export function hotUpdatedLog(file: string): string {
+  return isBundledDev
+    ? `[vite] hot updated: ${normalizePath(path.relative(process.cwd(), testDir))}/${file}`
+    : `[vite] hot updated: /${file}`
 }
 
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void
