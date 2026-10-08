@@ -43,6 +43,7 @@ import {
   normalizePath,
   processSrcSetSync,
   stripBase,
+  tryStatSync,
 } from '../../utils'
 import {
   BasicMinimalPluginContext,
@@ -223,7 +224,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   let proxyModuleUrl: string
 
   const trailingSlash = htmlPath.endsWith('/')
-  if (!trailingSlash && fs.existsSync(filename)) {
+  if (!trailingSlash && tryStatSync(filename)?.isFile()) {
+    ensureWatchedFile(watcher, filename, config.root)
     // If htmlPath is a /@fs/ URL (e.g. vitest-browser always uses this form
     // for testerHtmlPath), normalise to an absolute FS path so proxyCacheUrl
     // is always root-relative.
@@ -404,7 +406,6 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           url,
           false,
         )
-      ensureWatchedFile(watcher, mod.file, config.root)
 
       const result =
         await server!.environments.client.pluginContainer.transform(
@@ -431,7 +432,6 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           url,
           false,
         )
-      ensureWatchedFile(watcher, mod.file, config.root)
 
       await server?.environments.client.pluginContainer.transform(code, mod.id!)
 
