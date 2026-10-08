@@ -1,0 +1,73 @@
+import { escapeHtml } from './utils'
+
+const pathRenderers = {
+  '/': renderRoot,
+  '/circular-dep': renderCircularDep,
+  '/circular-import': renderCircularImport,
+  '/circular-import2': renderCircularImport2,
+  '/forked-deadlock-static-imports': renderForkedDeadlockStaticImports,
+  '/forked-deadlock-dynamic-imports': renderForkedDeadlockDynamicImports,
+  '/import-meta': renderImportMeta,
+}
+
+export async function render(url, rootDir) {
+  const pathname = url.replace(/#[^#]*$/, '').replace(/\?[^?]*$/, '')
+  const renderer = pathRenderers[pathname]
+  if (renderer) {
+    return await renderer(rootDir)
+  }
+  return '404'
+}
+
+async function renderRoot(rootDir) {
+  const paths = Object.keys(pathRenderers).filter((key) => key !== '/')
+  return `
+    <ul>
+      ${paths
+        .map(
+          (path) =>
+            `<li><a href="${escapeHtml(path)}">${escapeHtml(path)}</a></li>`,
+        )
+        .join('\n')}
+    </ul>
+  `
+}
+
+async function renderCircularDep(rootDir) {
+  const { getValueAB } = await import('./circular-dep-init/circular-dep-init')
+  return `<div class="circ-dep-init">${escapeHtml(getValueAB())}</div>`
+}
+
+async function renderCircularImport(rootDir) {
+  const { logA } = await import('./circular-import/index.js')
+  return `<div class="circ-import">${escapeHtml(logA())}</div>`
+}
+
+async function renderCircularImport2(rootDir) {
+  const { logA } = await import('./circular-import2/index.js')
+  return `<div class="circ-import">${escapeHtml(logA())}</div>`
+}
+
+async function renderForkedDeadlockStaticImports(rootDir) {
+  const { commonModuleExport } = await import('./forked-deadlock/common-module')
+  commonModuleExport()
+  return `<div class="forked-deadlock-static-imports">rendered</div>`
+}
+
+async function renderForkedDeadlockDynamicImports(rootDir) {
+  const { commonModuleExport } =
+    await import('./forked-deadlock/dynamic-imports/common-module')
+  await commonModuleExport()
+  return `<div class="forked-deadlock-dynamic-imports">rendered</div>`
+}
+
+async function renderImportMeta(rootDir) {
+  const metaUrl = import.meta.url
+  const resolveResult = import.meta.resolve('./app.js')
+  const metaMain = import.meta.main
+  return (
+    `<div class="import-meta-url">${escapeHtml(metaUrl)}</div>` +
+    `<div class="import-meta-resolve">${escapeHtml(resolveResult)}</div>` +
+    `<div class="import-meta-main">${escapeHtml(String(metaMain))}</div>`
+  )
+}
