@@ -23,6 +23,7 @@ export default defineConfig({
     outDir: 'dist/es',
     assetsInlineLimit: (filePath) =>
       filePath.endsWith('.svg') ? false : undefined,
+    manifest: true,
     rolldownOptions: {
       output: {
         assetFileNames: 'assets/[name]-[hash].[ext]',
