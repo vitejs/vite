@@ -127,6 +127,7 @@ async function createClientConfigValueReplacer(
   const hmrEnableOverlayReplacement = escapeReplacement(overlay)
   const hmrConfigNameReplacement = escapeReplacement(hmrConfigName)
   const wsTokenReplacement = escapeReplacement(config.webSocketToken)
+  const displayNameReplacement = escapeReplacement(config.displayName)
   const serverForwardConsoleReplacement = escapeReplacement(
     config.server.forwardConsole as any,
   )
@@ -146,6 +147,7 @@ async function createClientConfigValueReplacer(
       .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
       .replace(`__WS_TOKEN__`, wsTokenReplacement)
       .replace(`__SERVER_FORWARD_CONSOLE__`, serverForwardConsoleReplacement)
+      .replace(`__DISPLAY_NAME__`, displayNameReplacement)
 }
 
 const ROLLDOWN_DEV_RUNTIME_ENTRY = 'rolldown/experimental/runtime'

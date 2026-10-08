@@ -7,6 +7,7 @@ import {
 import {
   base,
   clearOverlayOrReloadOnFirstUpdate,
+  logPrefix,
   registerBundledDevClient,
   transport,
 } from './client'
@@ -48,8 +49,8 @@ if (typeof DevRuntime !== 'undefined') {
 
   const bundledDevHmrClient = new BundledDevHMRClient(
     {
-      error: (err) => console.error('[vite]', err),
-      debug: (...msg) => console.debug('[vite]', ...msg),
+      error: (err) => console.error(logPrefix, err),
+      debug: (...msg) => console.debug(logPrefix, ...msg),
     },
     transport,
     runtime,

@@ -570,6 +570,21 @@ export default defineConfig({
 })
 ```
 
+## displayName
+
+- **Type:** `string`
+- **Default:** `'vite'`
+
+The name shown in user-facing output in place of "vite". This covers the dev server and build banners, the default logger prefix (`[vite]`), and the messages the HMR client logs to the browser console. It is meant for tools built on top of Vite that want their own name in the output.
+
+It does not change plugin names (such as `vite:css`), [`envPrefix`](#envprefix), or internal URLs such as `/@vite/client`. When using [`customLogger`](#customlogger), pass the same name to `createLogger(level, { displayName })` to keep the prefix consistent.
+
+```js
+export default defineConfig({
+  displayName: 'my-tool',
+})
+```
+
 ## clearScreen
 
 - **Type:** `boolean`

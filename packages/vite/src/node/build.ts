@@ -852,7 +852,7 @@ async function buildEnvironment(
 
   logger.info(
     colors.cyan(
-      `vite v${VERSION} ${colors.green(
+      `${config.displayName} v${VERSION} ${colors.green(
         `building ${environment.name} environment for ${environment.config.mode}...`,
       )}`,
     ),
@@ -1146,7 +1146,7 @@ export function onRollupLog(
       // throw unless it's commonjs external...
       if (!id || !id.endsWith('?commonjs-external')) {
         throw new Error(
-          `[vite]: Rolldown failed to resolve import "${exporter}" from "${id}".\n` +
+          `[${environment.config.displayName}]: Rolldown failed to resolve import "${exporter}" from "${id}".\n` +
             `This is most likely unintended because it can break your application at runtime.\n` +
             `If you do want to externalize this module explicitly add it to\n` +
             `\`build.rolldownOptions.external\``,

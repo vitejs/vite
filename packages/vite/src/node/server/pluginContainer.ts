@@ -231,6 +231,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       return null
     }
     if (!module.info) {
+      const { displayName } = this.environment.config
       module.info = new Proxy(
         { id, meta: module.meta || EMPTY_OBJECT } as ModuleInfo,
         // throw when an unsupported ModuleInfo property is accessed,
@@ -245,7 +246,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
               return undefined
             }
             throw Error(
-              `[vite] The "${key}" property of ModuleInfo is not supported.`,
+              `[${displayName}] The "${key}" property of ModuleInfo is not supported.`,
             )
           },
         },

@@ -1723,3 +1723,30 @@ function getOutputHashChanges(
     unchanged: names.filter((name) => map1[name] === map2[name]),
   }
 }
+
+test('build banner uses displayName', async () => {
+  const logger = createLogger('silent')
+  const infos: string[] = []
+  logger.info = (msg) => {
+    infos.push(stripVTControlCharacters(msg))
+  }
+  await build({
+    root: resolve(dirname, 'packages/build-project'),
+    displayName: 'sitelo',
+    customLogger: logger,
+    build: { write: false },
+    plugins: [
+      {
+        name: 'test',
+        resolveId(id) {
+          if (id === 'entry.js') return '\0' + id
+        },
+        load(id) {
+          if (id === '\0entry.js') return 'export default 1'
+        },
+      },
+    ],
+    input: 'entry.js',
+  })
+  expect(infos[0]).toMatch(/^sitelo v\S+ building client environment/)
+})
