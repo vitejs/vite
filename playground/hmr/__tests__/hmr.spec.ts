@@ -1320,4 +1320,26 @@ if (!isBuild) {
       await expect.poll(() => getColor('.test-css-link')).toBe('black')
     },
   )
+
+  // bundled dev: /css-style/index.html is not a bundle input
+  test.skipIf(isBundledDev)(
+    'reuse server rendered style without rewriting unchanged css',
+    async () => {
+      await page.goto(viteTestUrl + '/css-style/index.html')
+      await page.waitForFunction(() => (window as any).__cssStyleLoaded)
+      await expect.poll(() => getColor('.test-css-style')).toBe('orange')
+      expect(
+        await page.evaluate(() => [
+          document.querySelectorAll('style[data-vite-dev-id]').length,
+          (window as any).__ssrStyleMutations,
+        ]),
+      ).toStrictEqual([1, 0])
+
+      editFile('css-style/styles.css', (code) =>
+        code.replace('color: orange;', 'color: blue;'),
+      )
+      await expect.poll(() => getColor('.test-css-style')).toBe('blue')
+      expect(await page.locator('style[data-vite-dev-id]').count()).toBe(1)
+    },
+  )
 }
