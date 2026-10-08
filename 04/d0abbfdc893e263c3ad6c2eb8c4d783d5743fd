@@ -1,0 +1,19 @@
+packages/vite/src/node/plugins/oxc.ts
+  s_82d940055a0297::t_b7e0b480a3ef82 268-272
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "04d0abbfdc893e263c3ad6c2eb8c4d783d5743fd",
+  "prompts": {},
+  "sessions": {
+    "s_82d940055a0297": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11628-2dd2-7bd0-aabc-f28ec44fc307",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
