@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "8.3.3",
+  "version": "8.3.4",
   "description": "Native-ESM powered web dev build tool",
   "keywords": [
     "build-tool",
