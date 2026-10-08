@@ -3,6 +3,7 @@ import path from 'node:path'
 import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
 import { TestCssLinkPlugin } from './css-link/plugin.ts'
+import { TestCssStylePlugin } from './css-style/plugin.ts'
 
 export default defineConfig(({ command }) => ({
   input: [
@@ -56,6 +57,7 @@ export default defineConfig(({ command }) => ({
     transformCountPlugin(),
     watchCssDepsPlugin(),
     TestCssLinkPlugin(),
+    TestCssStylePlugin(),
     hotEventsPlugin(),
   ],
 }))
