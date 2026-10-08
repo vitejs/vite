@@ -1446,7 +1446,7 @@ export function setupHmrWsOptionCompat(
   }
   serverConfig.ws = wsConfig
 
-  const hmrProxy = hmrConfig || {}
+  const hmrProxy = { ...hmrConfig }
   for (const key of wsOptionKeys) {
     Object.defineProperty(hmrProxy, key, {
       get() {
