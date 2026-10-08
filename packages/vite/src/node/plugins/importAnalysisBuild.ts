@@ -114,7 +114,7 @@ export const preloadMethod = `__vitePreload`
 export const preloadMarker = `__VITE_PRELOAD__`
 
 export const preloadHelperId = '\0vite/preload-helper.js'
-const preloadMarkerRE = new RegExp(preloadMarker, 'g')
+const preloadMarkerRE = /__VITE_PRELOAD__(?:[\da-f]{32})?/g
 
 export function isCssPreloadUrl(url: URL): boolean {
   return url.pathname.endsWith('.css')
@@ -125,10 +125,12 @@ function toRelativePath(filename: string, importer: string) {
   return relPath[0] === '.' ? relPath : `./${relPath}`
 }
 
-function findPreloadMarker(str: string, pos: number = 0): number {
+export function findPreloadMarker(
+  str: string,
+  pos: number = 0,
+): RegExpExecArray | null {
   preloadMarkerRE.lastIndex = pos
-  const result = preloadMarkerRE.exec(str)
-  return result?.index ?? -1
+  return preloadMarkerRE.exec(str)
 }
 
 /**
@@ -155,13 +157,11 @@ export function matchImportsToPreloadMarkers(
   const openImports: number[] = []
   let nextImport = 0
   for (
-    let markerStartPos = findPreloadMarker(code, imports[0].e);
-    markerStartPos !== -1;
-    markerStartPos = findPreloadMarker(
-      code,
-      markerStartPos + preloadMarker.length,
-    )
+    let marker = findPreloadMarker(code, imports[0].e);
+    marker;
+    marker = findPreloadMarker(code, marker.index + marker[0].length)
   ) {
+    const markerStartPos = marker.index
     while (
       nextImport < imports.length &&
       imports[nextImport].e <= markerStartPos
@@ -174,7 +174,7 @@ export function matchImportsToPreloadMarkers(
   }
   // #3051: a lone import whose marker isn't placed after it pairs with the only marker
   if (imports.length === 1 && importMarkerPos[0] === -1) {
-    importMarkerPos[0] = findPreloadMarker(code)
+    importMarkerPos[0] = findPreloadMarker(code)?.index ?? -1
   }
 
   return importMarkerPos
@@ -723,6 +723,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
               const markerStartPos = importMarkerPos[index]
 
               if (markerStartPos > 0) {
+                const marker = findPreloadMarker(code, markerStartPos)!
                 // the dep list includes the main chunk, so only need to reload when there are actual other deps.
                 let depsArray =
                   deps.size > 1 ||
@@ -790,7 +791,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
                 s.update(
                   markerStartPos,
-                  markerStartPos + preloadMarker.length,
+                  markerStartPos + marker[0].length,
                   renderedDeps.length > 0
                     ? `__vite__mapDeps([${renderedDeps.join(',')}])`
                     : `[]`,
@@ -819,19 +820,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless
-          let markerStartPos = findPreloadMarker(code)
-          while (markerStartPos >= 0) {
+          let marker = findPreloadMarker(code)
+          while (marker) {
+            const markerStartPos = marker.index
             if (!rewroteMarkerStartPos.has(markerStartPos)) {
               s.update(
                 markerStartPos,
-                markerStartPos + preloadMarker.length,
+                markerStartPos + marker[0].length,
                 'void 0',
               )
             }
-            markerStartPos = findPreloadMarker(
-              code,
-              markerStartPos + preloadMarker.length,
-            )
+            marker = findPreloadMarker(code, markerStartPos + marker[0].length)
           }
 
           if (s.hasChanged()) {
