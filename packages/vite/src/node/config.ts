@@ -23,7 +23,6 @@ import {
   type RolldownOutput,
   rolldown,
 } from 'rolldown'
-import { isDynamicPattern } from 'tinyglobby'
 import type { Alias, AliasOptions } from '#dep-types/alias'
 import type {
   DevToolsConfig,
@@ -959,39 +958,6 @@ const configDefaults = Object.freeze({
   appType: 'spa',
 } satisfies UserConfig)
 
-function normalizeInput(
-  input: InputOption | undefined,
-): InputOption | undefined {
-  if (input === undefined) {
-    return undefined
-  }
-  if (typeof input === 'string') {
-    return unescapeGlobCharacters(input)
-  }
-  if (Array.isArray(input)) {
-    return input.map(unescapeGlobCharacters)
-  }
-  const resolved: Record<string, string> = {}
-  for (const key in input) {
-    resolved[key] = unescapeGlobCharacters(input[key])
-  }
-  return resolved
-}
-
-const escapedGlobCharactersRE = /\\([*?[\]{}()!+@|])/g
-
-function unescapeGlobCharacters(value: string): string {
-  if (isDynamicPattern(value)) {
-    // so that it could later be changed to accept globs without a breaking change
-    throw new Error(
-      `\`input\` cannot contain glob characters. They are reserved, ` +
-        `so the ${JSON.stringify(value)} is not allowed. Please escape them with a backslash (\\)`,
-    )
-  }
-  // unescape glob characters
-  return value.replace(escapedGlobCharactersRE, '$1')
-}
-
 export function resolveDevEnvironmentOptions(
   dev: DevEnvironmentOptions | undefined,
   environmentName: string | undefined,
@@ -1073,7 +1039,7 @@ function resolveEnvironmentOptions(
     isSsrTargetWebworkerEnvironment,
   )
   return {
-    input: normalizeInput(options.input),
+    input: options.input,
     define: options.define,
     resolve,
     keepProcessEnv:
@@ -1919,7 +1885,6 @@ export async function resolveConfig(
         )
       : ''
 
-  const input = normalizeInput(config.input)
   const server = await resolveServerOptions(resolvedRoot, config.server, logger)
 
   const builder = resolveBuilderOptions(config.builder)
@@ -2163,7 +2128,7 @@ export async function resolveConfig(
 
     ssr,
 
-    input,
+    input: config.input,
     optimizeDeps: backwardCompatibleOptimizeDeps,
     resolve: resolvedDefaultResolve,
     dev: resolvedDevEnvironmentOptions,

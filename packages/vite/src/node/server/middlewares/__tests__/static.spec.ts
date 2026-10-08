@@ -1,5 +1,73 @@
 import { describe, expect, test } from 'vitest'
-import { isFileInTargetPath, looksLikeWindowsShortNamePath } from '../static'
+import { normalizeAlias } from '../../../utils'
+import {
+  applyStaticAlias,
+  isFileInTargetPath,
+  looksLikeWindowsShortNamePath,
+} from '../static'
+
+describe('static file aliases', () => {
+  const cases = {
+    'prefix sibling': {
+      pathname: '/images-extra/file.txt',
+      find: '/images',
+      replacement: '/root/aliased',
+      expected: undefined,
+    },
+    'nested alias': {
+      pathname: '/images/file.txt',
+      find: '/images',
+      replacement: '/root/aliased',
+      expected: '/root/aliased/file.txt',
+    },
+    'exact alias': {
+      pathname: '/file.txt',
+      find: '/file.txt',
+      replacement: '/root/aliased/file.txt',
+      expected: '/root/aliased/file.txt',
+    },
+    'regex alias': {
+      pathname: '/regex/file.txt',
+      find: /^\/regex\//,
+      replacement: '/root/aliased/',
+      expected: '/root/aliased/file.txt',
+    },
+    'trailing slash find': {
+      pathname: '/trailing/file.txt',
+      find: '/trailing/',
+      replacement: '/root/aliased',
+      expected: undefined,
+    },
+    'normalized trailing slashes': {
+      pathname: '/normalized/file.txt',
+      find: '/normalized/',
+      replacement: '/root/aliased/',
+      expected: '/root/aliased/file.txt',
+    },
+  }
+
+  for (const [
+    name,
+    { pathname, find, replacement, expected },
+  ] of Object.entries(cases)) {
+    test(name, () => {
+      expect(
+        applyStaticAlias(pathname, normalizeAlias([{ find, replacement }])),
+      ).toBe(expected)
+    })
+  }
+
+  test('uses the first matching alias', () => {
+    const aliases = normalizeAlias([
+      { find: '/other', replacement: '/root/other' },
+      { find: '/images', replacement: '/root/first' },
+      { find: '/images', replacement: '/root/second' },
+    ])
+    expect(applyStaticAlias('/images/file.txt', aliases)).toBe(
+      '/root/first/file.txt',
+    )
+  })
+})
 
 describe('isFileInTargetPath', () => {
   const cases = {

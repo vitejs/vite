@@ -1,7 +1,7 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
 import type { ImportKind, Plugin, RolldownPlugin } from 'rolldown'
-import { prefixRegex } from 'rolldown/filter'
+import { exactRegex, prefixRegex } from 'rolldown/filter'
 import { stripLiteral } from 'strip-literal'
 import { isWindows } from '../../shared/utils'
 import { JS_TYPES_RE, KNOWN_ASSET_TYPES } from '../constants'
@@ -121,6 +121,11 @@ export function rolldownDepPlugin(
   }
 
   const resolveResult = (id: string, resolved: string, kind: ImportKind) => {
+    // An exact browser-external id is an explicit browser:false mapping.
+    // Suffixed ids are unsupported Node builtins and still need the warning.
+    if (resolved === browserExternalId) {
+      return { id: browserExternalId }
+    }
     if (resolved.startsWith(browserExternalId)) {
       return {
         id: browserExternalNamespace + id,
@@ -255,11 +260,15 @@ export function rolldownDepPlugin(
       load: {
         filter: {
           id: [
+            exactRegex(browserExternalId),
             prefixRegex(browserExternalNamespace),
             prefixRegex(optionalPeerDepNamespace),
           ],
         },
         handler(id) {
+          if (id === browserExternalId) {
+            return { code: 'module.exports = {}' }
+          }
           if (id.startsWith(browserExternalNamespace)) {
             const path = id.slice(browserExternalNamespace.length)
             if (isProduction) {
@@ -376,6 +385,7 @@ const matchesEntireLine = (text: string) => `^${escapeRegex(text)}$`
 export function rolldownCjsExternalPlugin(
   externals: string[],
   platform: 'node' | 'browser' | 'neutral',
+  environment: Environment,
 ): Plugin | undefined {
   // Skip this plugin for `platform: 'node'` as `require` is available in Node
   // and that is more accurate than converting to `import`
@@ -393,11 +403,17 @@ export function rolldownCjsExternalPlugin(
 
   const filter = new RegExp(externals.map(matchesEntireLine).join('|'))
 
+  const packageCache: PackageCache = new Map()
+  const resolveRequire = createBackCompatIdResolver(
+    environment.getTopLevelConfig(),
+    { asSrc: false, isRequire: true, scan: true, packageCache },
+  )
+
   return {
     name: 'cjs-external',
     resolveId: {
       filter: { id: [prefixRegex(nonFacadePrefix), filter] },
-      handler(id, _importer, options) {
+      async handler(id, importer, options) {
         if (id.startsWith(nonFacadePrefix)) {
           return {
             id: id.slice(nonFacadePrefix.length),
@@ -405,6 +421,18 @@ export function rolldownCjsExternalPlugin(
           }
         }
         if (options.kind === 'require-call') {
+          // A missing optional peer must throw when require() runs, not when
+          // an eager ESM facade is evaluated. Reuse the pre-bundler's CJS stub
+          // so the dependency's try/catch can still select its fallback.
+          // Other excluded deps may intentionally be unresolvable until served.
+          const resolved = await resolveRequire(
+            environment,
+            id,
+            importer,
+          ).catch(() => undefined)
+          if (resolved?.startsWith(optionalPeerDepId)) {
+            return { id: optionalPeerDepNamespace + resolved }
+          }
           return {
             id: cjsExternalFacadeNamespace + id,
           }

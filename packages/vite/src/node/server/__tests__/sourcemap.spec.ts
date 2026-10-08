@@ -1,6 +1,11 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { isWindows } from '../../../shared/utils'
-import { getNodeModulesPackageRoot } from '../sourcemap'
+import { createLogger } from '../../logger'
+import {
+  getNodeModulesPackageRoot,
+  injectSourcesContent,
+  type SourceMapLike,
+} from '../sourcemap'
 
 describe('getNodeModulesPackageRoot', () => {
   const cases = [
@@ -68,4 +73,63 @@ describe('getNodeModulesPackageRoot', () => {
       expect(getNodeModulesPackageRoot(input)).toBe(expected)
     })
   }
+})
+
+describe('injectSourcesContent', () => {
+  function createMockLogger() {
+    const logger = createLogger()
+    logger.warnOnce = vi.fn()
+    return logger
+  }
+
+  test('leaves maps with a remote sourceRoot alone', async () => {
+    const map: SourceMapLike = {
+      sources: ['index.ts'],
+      sourceRoot: 'https://raw.githubusercontent.com/fb55/domutils/abc123/src/',
+    }
+    const logger = createMockLogger()
+
+    await injectSourcesContent(
+      map,
+      '/project/node_modules/domutils/lib/esm/index.js',
+      logger,
+    )
+
+    expect(logger.warnOnce).not.toHaveBeenCalled()
+    expect(map.sourcesContent).toBeUndefined()
+  })
+
+  test('does not inject content for remote sources', async () => {
+    const map: SourceMapLike = {
+      sources: [
+        'https://raw.githubusercontent.com/fb55/domutils/abc123/src/index.ts',
+      ],
+    }
+    const logger = createMockLogger()
+
+    await injectSourcesContent(
+      map,
+      '/project/node_modules/domutils/lib/esm/index.js',
+      logger,
+    )
+
+    expect(logger.warnOnce).not.toHaveBeenCalled()
+    expect(map.sourcesContent).toStrictEqual([])
+  })
+
+  test('warns for sources that resolve outside the package', async () => {
+    const map: SourceMapLike = {
+      sources: ['/outside/project/index.ts'],
+    }
+    const logger = createMockLogger()
+
+    await injectSourcesContent(
+      map,
+      '/project/node_modules/foo/dist/index.js',
+      logger,
+    )
+
+    expect(logger.warnOnce).toHaveBeenCalledOnce()
+    expect(map.sourcesContent).toStrictEqual([null])
+  })
 })
