@@ -375,7 +375,7 @@ function wrapCallSite(frame: CallSite, state: State) {
       frame.getColumnNumber() != null &&
       frame.getScriptNameOrSourceURL() === source
     ) {
-      return { toString: () => CallSiteToString.call(frame) } as CallSite
+      return frame
     }
     frame = cloneCallSite(frame)
     const originalFunctionName = frame.getFunctionName
