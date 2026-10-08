@@ -22,7 +22,11 @@ import type {
   ForwardConsoleOptions,
   ResolvedForwardConsoleOptions,
 } from '../../shared/forwardConsole'
-import type { InlineConfig, ResolvedConfig } from '../config'
+import type {
+  InlineConfig,
+  KnownEnvironmentNames,
+  ResolvedConfig,
+} from '../config'
 import { isResolvedConfig, resolveConfig } from '../config'
 import {
   CLIENT_DIR,
@@ -366,7 +370,7 @@ export interface ViteDevServer {
   /**
    * Module execution environments attached to the Vite server.
    */
-  environments: Record<'client' | 'ssr' | (string & {}), DevEnvironment>
+  environments: Record<KnownEnvironmentNames, DevEnvironment>
   /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.

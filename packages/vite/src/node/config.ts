@@ -343,6 +343,17 @@ export interface EnvironmentOptions extends SharedEnvironmentOptions {
   build?: BuildEnvironmentOptions
 }
 
+/**
+ * Known environment names. This interface can be augmented by frameworks and
+ * plugins to provide autocomplete for their custom environments.
+ */
+export interface KnownEnvironment extends Record<string & {}, never> {
+  client: never
+  ssr: never
+}
+
+export type KnownEnvironmentNames = keyof KnownEnvironment
+
 export type ResolvedResolveOptions = Required<ResolveOptions>
 
 export type ResolvedEnvironmentOptions = {
@@ -540,7 +551,8 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   /**
    * Environment overrides
    */
-  environments?: Record<string, EnvironmentOptions>
+  environments?: Partial<Record<KnownEnvironmentNames, EnvironmentOptions>> &
+    Record<string, EnvironmentOptions>
   /**
    * Whether your application is a Single Page Application (SPA),
    * a Multi-Page Application (MPA), or Custom Application (SSR
@@ -763,7 +775,7 @@ export interface ResolvedConfig extends Readonly<
     appType: AppType
     experimental: RequiredExceptFor<ExperimentalOptions, 'renderBuiltUrl'>
     future: FutureOptions | undefined
-    environments: Record<string, ResolvedEnvironmentOptions>
+    environments: Record<KnownEnvironmentNames, ResolvedEnvironmentOptions>
     /** @internal injected by legacy plugin */
     isOutputOptionsForLegacyChunks?(
       outputOptions: NormalizedOutputOptions,
@@ -1721,7 +1733,7 @@ export async function resolveConfig(
         : (deepClone(
             defaultNonClientEnvironmentOptions as object,
           ) as UserConfig),
-      config.environments[name],
+      config.environments[name]!,
     )
   }
 
@@ -1745,7 +1757,7 @@ export async function resolveConfig(
   const resolvedEnvironments: Record<string, ResolvedEnvironmentOptions> = {}
   for (const environmentName of Object.keys(config.environments)) {
     resolvedEnvironments[environmentName] = resolveEnvironmentOptions(
-      config.environments[environmentName],
+      config.environments[environmentName]!,
       resolvedDefaultResolve.alias,
       resolvedDefaultResolve.preserveSymlinks,
       inlineConfig.forceOptimizeDeps,

@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { Equal, ExpectTrue } from '@type-challenges/utils'
 import {
+  type KnownEnvironmentNames,
   type UserConfig,
   type UserConfigExport,
   type UserConfigFn,
@@ -9,7 +10,14 @@ import {
   type UserConfigFnPromise,
   defineConfig,
 } from '../config'
+import type { ViteDevServer } from '../server'
 import { mergeConfig } from '../utils'
+
+declare module '../config' {
+  interface KnownEnvironment {
+    custom: never
+  }
+}
 
 const configObjectDefined = defineConfig({})
 const configObjectPromiseDefined = defineConfig(Promise.resolve({}))
@@ -30,6 +38,25 @@ export type cases1 = [
   ExpectTrue<Equal<typeof configFnDefined, UserConfigFn>>,
   ExpectTrue<Equal<typeof configExportDefined, UserConfigExport>>,
 ]
+
+export type environmentCases = [
+  ExpectTrue<
+    Equal<'custom' extends KnownEnvironmentNames ? true : false, true>
+  >,
+  ExpectTrue<
+    Equal<
+      ViteDevServer['environments']['custom'],
+      ViteDevServer['environments']['client']
+    >
+  >,
+]
+
+defineConfig({
+  environments: {
+    custom: {},
+    arbitrary: {},
+  },
+})
 
 defineConfig({
   base: '',
