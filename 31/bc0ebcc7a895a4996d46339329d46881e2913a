@@ -1,0 +1,23 @@
+packages/vite/src/node/server/middlewares/__tests__/fixtures/outside.html
+  s_c81e3302ca117a::t_3c97f11e04ce33 1-6
+packages/vite/src/node/server/middlewares/__tests__/indexHtml.spec.ts
+  s_c81e3302ca117a::t_b75771221fbd23 3,10-11,112-138
+packages/vite/src/node/server/middlewares/indexHtml.ts
+  s_c81e3302ca117a::t_b3aa7e1f22ca67 46,227-228
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "31bc0ebcc7a895a4996d46339329d46881e2913a",
+  "prompts": {},
+  "sessions": {
+    "s_c81e3302ca117a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11976-a63b-77f3-958a-c0e2e4e0c553",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
