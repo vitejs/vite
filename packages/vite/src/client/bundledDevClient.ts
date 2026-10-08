@@ -12,6 +12,8 @@ import {
 } from './client'
 import { logPrefix } from './logPrefix'
 
+declare const __HMR_PARTIAL_ACCEPT__: boolean
+
 // keep the same public exports as `client.ts`, which this entry replaces when inlined
 export {
   createHotContext,
@@ -56,6 +58,7 @@ if (typeof DevRuntime !== 'undefined') {
     runtime,
     {
       base,
+      partialAccept: __HMR_PARTIAL_ACCEPT__,
       beforeApply: clearOverlayOrReloadOnFirstUpdate,
     },
   )

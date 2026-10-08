@@ -9,6 +9,7 @@ import type { NormalizedModuleRunnerTransport } from '../shared/moduleRunnerTran
 /** the subset of `__rolldown_runtime__` the HMR client uses */
 export interface RolldownRuntimeLike {
   getImporters(id: string): string[]
+  getImportedBindings(importer: string, id: string): string[] | undefined
   isExecuted(id: string): boolean
   hasFactory(id: string): boolean
   removeModuleCache(id: string): void
@@ -33,6 +34,7 @@ type HmrUpdate =
 
 export interface BundledDevHMRClientOptions {
   base: string
+  partialAccept: boolean
   /** returning `'reload'` aborts the apply — the hook reloads the page itself */
   beforeApply: () => 'reload' | 'continue'
 }
@@ -56,17 +58,43 @@ export class BundledDevHMRClient extends HMRClient {
   }
 
   isSelfAccepted(id: string): boolean {
-    return (
-      this.hotModulesMap.get(id)?.callbacks.some((c) => c.deps.includes(id)) ??
-      false
-    )
+    return this.acceptsDep(id, id)
   }
 
   acceptsDep(parent: string, id: string): boolean {
     return (
       this.hotModulesMap
         .get(parent)
-        ?.callbacks.some((c) => c.deps.includes(id)) ?? false
+        ?.callbacks.some((c) => !c.exports && c.deps.includes(id)) ?? false
+    )
+  }
+
+  private getAcceptedExports(id: string): Set<string> | undefined {
+    let accepted: Set<string> | undefined
+    for (const c of this.hotModulesMap.get(id)?.callbacks ?? []) {
+      if (!c.exports) continue
+      accepted ??= new Set()
+      for (const name of c.exports) accepted.add(name)
+    }
+    return accepted
+  }
+
+  private acceptsAllExports(id: string, accepted: Set<string>): boolean {
+    const exports = this.runtime.loadExports(id)
+    if (typeof exports !== 'object' || exports == null) return false
+    return Object.keys(exports).every((name) => accepted.has(name))
+  }
+
+  private importsOnlyAccepted(
+    parent: string,
+    id: string,
+    accepted: Set<string>,
+  ): boolean {
+    if (!this.options.partialAccept) return false
+    return (
+      this.runtime
+        .getImportedBindings(parent, id)
+        ?.every((name) => accepted.has(name)) ?? false
     )
   }
 
@@ -113,18 +141,23 @@ export class BundledDevHMRClient extends HMRClient {
         reason: `update propagated back to ${firstInvalidatedBy}, which already called \`import.meta.hot.invalidate()\``,
       }
     }
-    if (this.isSelfAccepted(id)) {
+    const acceptedExports = this.getAcceptedExports(id)
+    const selfAccepted =
+      this.isSelfAccepted(id) ||
+      (acceptedExports !== undefined &&
+        this.acceptsAllExports(id, acceptedExports))
+    if (selfAccepted || acceptedExports) {
       boundaries.push({
         boundary: id,
         acceptedVia: id,
         isWithinCircularImport: this.isNodeWithinCircularImports(id, stack),
       })
-      return
+      if (selfAccepted) return
     }
     const parents = this.runtime
       .getImporters(id)
       .filter((p) => this.runtime.isExecuted(p))
-    if (!parents.length) {
+    if (!acceptedExports && !parents.length) {
       return {
         type: 'full-reload',
         reason: `no hmr boundary found for module \`${id}\``,
@@ -141,6 +174,12 @@ export class BundledDevHMRClient extends HMRClient {
             subChain,
           ),
         })
+        continue
+      }
+      if (
+        acceptedExports &&
+        this.importsOnlyAccepted(parent, id, acceptedExports)
+      ) {
         continue
       }
       if (!stack.includes(parent)) {
