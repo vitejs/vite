@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
 import {
+  bundledDevTodo,
   editFile,
   findAssetFile,
   getBg,
@@ -8,13 +9,18 @@ import {
   getColor,
   isBuild,
   isBundled,
-  isBundledDev,
+  isServe,
   page,
   removeFile,
   serverLogs,
   viteTestUrl,
 } from '~utils'
 import { sassModuleTests, sassOtherTests, sassTest } from './sass-tests'
+
+const droppedEditTodo = bundledDevTodo(
+  'An edit that lands while the page is loading or before the HMR client connects is dropped, so the update never reaches the page',
+  { rolldown: [10039] },
+)
 
 // note: tests should retrieve the element at the beginning of test and reuse it
 // in later assertions to ensure CSS HMR doesn't reload the page
@@ -33,13 +39,11 @@ test('linked css', async () => {
 
   expect(await getColor(linked)).toBe('blue')
   expect(await getColor(atImport)).toBe('red')
+})
 
-  // bundled dev drops an edit that arrives at a bad moment. Two such moments:
-  // while the page is loading, and before the client has connected.
-  // The update is then lost and never reaches the page.
-  // That makes the edit steps below flaky when the suite runs in parallel
-  // (vitejs/vite#23028)
-  if (isBundled) return
+test.runIf(isServe)('linked css HMR', droppedEditTodo, async () => {
+  const linked = await page.$('.linked')
+  const atImport = await page.$('.linked-at-import')
 
   editFile('linked.css', (code) => code.replace('color: blue', 'color: red'))
   await expect.poll(() => getColor(linked)).toBe('red')
@@ -56,9 +60,11 @@ test('css import from js', async () => {
 
   expect(await getColor(imported)).toBe('green')
   expect(await getColor(atImport)).toBe('purple')
+})
 
-  // bundled dev: same dropped update as 'linked css' above
-  if (isBundled) return
+test.runIf(isServe)('css import from js HMR', droppedEditTodo, async () => {
+  const imported = await page.$('.imported')
+  const atImport = await page.$('.imported-at-import')
 
   editFile('imported.css', (code) => code.replace('color: green', 'color: red'))
   await expect.poll(() => getColor(imported)).toBe('red')
@@ -78,9 +84,10 @@ test('css import asset with space', async () => {
 test('postcss config', async () => {
   const imported = await page.$('.postcss .nesting')
   expect(await getColor(imported)).toBe('pink')
+})
 
-  // bundled dev: same dropped update as 'linked css' above
-  if (isBundled) return
+test.runIf(isServe)('postcss config HMR', droppedEditTodo, async () => {
+  const imported = await page.$('.postcss .nesting')
 
   editFile('imported.css', (code) => code.replace('color: pink', 'color: red'))
   await expect.poll(() => getColor(imported)).toBe('red')
@@ -414,13 +421,16 @@ test('minify css', async () => {
   expect(cssFile).not.toMatch('#ffff00b3')
 })
 
-// bundled dev turns css?url into a data: URI of the source file, without
-// running postcss on it. The rule this test looks for is never produced.
-// This is a real bug (vitejs/vite#22863).
-// The test passes again once it is fixed, with no change to the test.
-test.skipIf(isBundledDev)('?url', async () => {
-  expect(await getColor('.url-imported-css')).toBe('yellow')
-})
+test(
+  '?url',
+  bundledDevTodo(
+    '`?url` CSS skips the CSS pipeline and is inlined as raw bytes, so PostCSS does not run on it',
+    { vite: [22863] },
+  ),
+  async () => {
+    expect(await getColor('.url-imported-css')).toBe('yellow')
+  },
+)
 
 test('?raw', async () => {
   const rawImportCss = await page.$('.raw-imported-css')
@@ -428,17 +438,23 @@ test('?raw', async () => {
   expect(await rawImportCss.textContent()).toBe(
     readFileSync(require.resolve('../raw-imported.css'), 'utf-8'),
   )
+})
 
-  // bundled dev: editing a ?raw import does not reach the page (vitejs/vite#23028)
-  if (!isBundled) {
+test.runIf(isServe)(
+  '?raw HMR',
+  bundledDevTodo(
+    'This edit reloads the page. An edit that lands while the page is loading is dropped, so the later HMR edits in this file become flaky',
+    { rolldown: [10039] },
+  ),
+  async () => {
     editFile('raw-imported.css', (code) =>
       code.replace('color: yellow', 'color: blue'),
     )
     await expect
       .poll(() => page.textContent('.raw-imported-css'))
       .toMatch('color: blue')
-  }
-})
+  },
+)
 
 test('import css in less', async () => {
   expect(await getColor('.css-in-less')).toBe('yellow')
