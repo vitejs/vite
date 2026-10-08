@@ -3,6 +3,7 @@ import path from 'node:path'
 import escapeHtml from 'escape-html'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
+import type { Alias } from '#dep-types/alias'
 import type { Connect } from '#dep-types/connect'
 import {
   cleanUrl,
@@ -193,7 +194,7 @@ export function serveStaticMiddleware(
 
 export function applyStaticAlias(
   pathname: string,
-  aliases: ResolvedConfig['resolve']['alias'],
+  aliases: Alias[],
 ): string | undefined {
   for (const { find, replacement } of aliases) {
     const matches =
