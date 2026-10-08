@@ -7,10 +7,10 @@ import {
 import {
   base,
   clearOverlayOrReloadOnFirstUpdate,
-  logPrefix,
   registerBundledDevClient,
   transport,
 } from './client'
+import { logPrefix } from './logPrefix'
 
 // keep the same public exports as `client.ts`, which this entry replaces when inlined
 export {

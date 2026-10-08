@@ -9,6 +9,7 @@ import {
 } from '../shared/moduleRunnerTransport'
 import { wrapId } from '../shared/utils'
 import type { BundledDevHMRClient } from './bundledDevHmrClient'
+import { logPrefix } from './logPrefix'
 import { ErrorOverlay, cspNonce, overlayId } from './overlay'
 // @ts-expect-error internal virtual module
 import '@vite/env'
@@ -25,10 +26,6 @@ declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
 declare const __WS_TOKEN__: string
 declare const __SERVER_FORWARD_CONSOLE__: any
-declare const __DISPLAY_NAME__: string
-
-export const logPrefix = `[${__DISPLAY_NAME__}]`
-
 console.debug(`${logPrefix} connecting...`)
 
 const importMetaUrl = new URL(import.meta.url)
