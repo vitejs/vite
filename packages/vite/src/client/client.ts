@@ -580,7 +580,9 @@ export function updateStyle(id: string, content: string): void {
       lastInsertedStyle.insertAdjacentElement('afterend', style)
     }
     lastInsertedStyle = style
-  } else {
+  } else if (style.textContent !== content) {
+    // skip identical css, e.g. in a server rendered style: rewriting it still
+    // replaces the stylesheet, which can re-create the font faces it declares
     style.textContent = content
   }
   sheetsMap.set(id, style)

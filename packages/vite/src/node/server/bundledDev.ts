@@ -9,7 +9,11 @@ import {
 } from 'rolldown/experimental'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
 import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
-import { getHmrImplementation } from '../plugins/clientInjections'
+import {
+  getBundledDevClientAliases,
+  getHmrImplementation,
+  getRolldownDevRuntimeFiles,
+} from '../plugins/clientInjections'
 import { createDebugger, formatAndTruncateFileList } from '../utils'
 import { convertToDevWatchOptions } from '../watch'
 import type { DevEnvironment } from './environment'
@@ -23,6 +27,7 @@ type HmrOutput = BindingClientHmrUpdate['update']
 type MemoryFile = {
   source: string | Uint8Array
   etag?: string
+  contentType?: string
 }
 
 export class MemoryFiles {
@@ -60,7 +65,8 @@ export class MemoryFiles {
 
 export class BundledDev {
   private _devEngine!: DevEngine
-  private viteRuntime?: string
+  /** the vite client and the rolldown runtime; set before the first build so `hasBuildOutput` can count them */
+  private staticFiles = new Map<string, MemoryFile>()
   private initialBuildCompleted = false
   private _closed = false
   private clients = new Clients()
@@ -107,17 +113,14 @@ export class BundledDev {
   private pendingPayloadFilenames = new Set<string>()
 
   get hasBuildOutput(): boolean {
-    return (
-      this.memoryFiles.size > 1 ||
-      (this.memoryFiles.size === 1 &&
-        !this.memoryFiles.has(BUNDLED_DEV_CLIENT_FILENAME))
-    )
+    return this.memoryFiles.size > this.staticFiles.size
   }
 
   async listen(): Promise<void> {
     this._closed = false
     debug?.('INITIAL: setup bundle options')
     const rolldownOptions = await this.getRolldownOptions()
+    await this.storeStaticFiles()
     // NOTE: only single outputOptions is supported here
     if (
       Array.isArray(rolldownOptions.output) &&
@@ -262,10 +265,6 @@ export class BundledDev {
         debug?.('INITIAL: run error', e)
       },
     )
-    this.viteRuntime = await getHmrImplementation(
-      this.environment.getTopLevelConfig(),
-    )
-    this.storeOutputFiles([])
     this.waitForInitialBuildFinish().then(() => {
       if (this._closed) return
       debug?.('INITIAL: build done')
@@ -346,6 +345,15 @@ export class BundledDev {
     )
     const result = await this.devEngine.compileEntry(moduleId, clientId)
     this.pendingPayloadFilenames.add(result.filename)
+    // Serve the chunk's sourcemap, the same way an eager chunk's and an HMR
+    // patch's maps are served. The chunk's relative `sourceMappingURL` resolves
+    // against the URL it is imported from, `/@vite/lazy?...`, so register the map
+    // under that directory for the reference to reach it.
+    if (result.sourcemapFilename && result.sourcemap) {
+      this.memoryFiles.set(`@vite/${result.sourcemapFilename}`, {
+        source: result.sourcemap,
+      })
+    }
     return {
       filename: result.filename,
       code: result.code + payloadDeliveredAck(result.filename),
@@ -373,14 +381,31 @@ export class BundledDev {
     this.initialBuildCompleted = false
   }
 
+  private async storeStaticFiles(): Promise<void> {
+    const sources = new Map<string, string>([
+      [
+        BUNDLED_DEV_CLIENT_FILENAME,
+        await getHmrImplementation(this.environment.getTopLevelConfig()),
+      ],
+      ...getRolldownDevRuntimeFiles(),
+    ])
+    const aliases = getBundledDevClientAliases(
+      this.environment.getTopLevelConfig(),
+    )
+    this.staticFiles.clear()
+    for (const [fileName, source] of [...sources, ...aliases]) {
+      const file: MemoryFile = {
+        source,
+        etag: getEtag(Buffer.from(source), { weak: true }),
+        ...(aliases.has(fileName) ? { contentType: 'text/javascript' } : {}),
+      }
+      this.staticFiles.set(fileName, file)
+      this.memoryFiles.set(fileName, file)
+    }
+  }
+
   private storeOutputFiles(output: RolldownOutput['output'][number][]): void {
     // NOTE: don't clear memoryFiles here as incremental build reuses the files
-    if (this.viteRuntime) {
-      this.memoryFiles.set(BUNDLED_DEV_CLIENT_FILENAME, {
-        source: this.viteRuntime,
-        etag: getEtag(Buffer.from(this.viteRuntime), { weak: true }),
-      })
-    }
     for (const outputFile of output) {
       this.memoryFiles.set(outputFile.fileName, () => {
         const source =

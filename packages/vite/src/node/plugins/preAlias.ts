@@ -43,7 +43,7 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
         id !== '@vite/client' &&
         id !== '@vite/env'
       ) {
-        if (findPatterns.find((pattern) => matches(pattern, id))) {
+        if (findPatterns.some((pattern) => matches(pattern, id))) {
           const optimizedId = await tryOptimizedResolve(
             depsOptimizer,
             id,

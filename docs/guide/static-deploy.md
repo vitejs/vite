@@ -181,8 +181,8 @@ $ npm install --save-dev @cloudflare/vite-plugin
 ```
 
 ```js [vite.config.js]
-import { defineConfig } from 'vite'
 import { cloudflare } from '@cloudflare/vite-plugin'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [cloudflare()],
