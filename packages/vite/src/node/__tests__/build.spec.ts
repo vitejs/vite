@@ -1212,6 +1212,42 @@ test('chunkImportMap per environment with shared plugins', async () => {
   expect(entry.code).toContain(JSON.stringify(cssSpecifier.slice(1)))
 })
 
+test('chunkImportMap with a non-root base', async () => {
+  const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
+  const base = '/sub/'
+  const result = (await build({
+    root,
+    base,
+    logLevel: 'warn',
+    build: {
+      chunkImportMap: true,
+      write: false,
+      rolldownOptions: {
+        input: '/entry.js',
+      },
+    },
+  })) as RolldownOutput
+
+  const entry = result.output.find(
+    (output): output is OutputChunk =>
+      output.type === 'chunk' && output.isEntry,
+  )!
+  const css = result.output.find(
+    (output) => output.type === 'asset' && output.fileName.endsWith('.css'),
+  )!
+  const importMapAsset = result.output.find(
+    (output): output is OutputAsset =>
+      output.type === 'asset' && output.fileName === 'importmap.json',
+  )!
+  const importMap = JSON.parse(importMapAsset.source.toString())
+    .imports as Record<string, string>
+  const cssSpecifier = Object.entries(importMap).find(
+    ([, fileName]) => fileName === `${base}${css.fileName}`,
+  )![0]
+  // The import map maps the specifier without the base to the actual URL.
+  expect(entry.code).toContain(JSON.stringify(cssSpecifier.slice(base.length)))
+})
+
 test('chunkImportMap is emitted when emitAssets is false', async () => {
   const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
   const builder = await createBuilder({
