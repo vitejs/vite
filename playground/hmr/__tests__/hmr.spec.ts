@@ -1333,7 +1333,7 @@ if (!isBuild) {
           document.querySelectorAll('style[data-vite-dev-id]').length,
           (window as any).__ssrStyleMutations,
         ]),
-      ).toEqual([1, 0])
+      ).toStrictEqual([1, 0])
 
       editFile('css-style/styles.css', (code) =>
         code.replace('color: orange;', 'color: blue;'),

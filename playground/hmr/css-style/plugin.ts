@@ -16,19 +16,6 @@ export function TestCssStylePlugin(): Plugin {
             attrs: { 'data-vite-dev-id': normalizePath(file) },
             children: fs.readFileSync(file, 'utf-8'),
           },
-          {
-            tag: 'script',
-            children: `
-              window.__ssrStyleMutations = 0
-              new MutationObserver((records) => {
-                window.__ssrStyleMutations += records.length
-              }).observe(document.querySelector('style[data-vite-dev-id]'), {
-                childList: true,
-                characterData: true,
-                subtree: true,
-              })
-            `,
-          },
         ]
       },
     },

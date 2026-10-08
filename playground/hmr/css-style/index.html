@@ -1,2 +1,12 @@
 <div class="test-css-style">test-css-style</div>
+<script>
+  window.__ssrStyleMutations = 0
+  new MutationObserver((records) => {
+    window.__ssrStyleMutations += records.length
+  }).observe(document.querySelector('style[data-vite-dev-id]'), {
+    childList: true,
+    characterData: true,
+    subtree: true,
+  })
+</script>
 <script type="module" src="./main.js"></script>
