@@ -3,8 +3,8 @@ import type {
   Update,
   UpdatePayload,
 } from '#types/hmrPayload'
-import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
-import type { NormalizedModuleRunnerTransport } from '../shared/moduleRunnerTransport'
+import { HMRClient, HMRContext, type HMRLogger } from './hmr'
+import type { NormalizedModuleRunnerTransport } from './moduleRunnerTransport'
 
 /** the subset of `__rolldown_runtime__` the HMR client uses */
 export interface RolldownRuntimeLike {
@@ -32,7 +32,12 @@ type HmrUpdate =
     }
 
 export interface BundledDevHMRClientOptions {
-  base: string
+  /**
+   * Loads and executes the HMR patch chunk at `url`. The browser imports it
+   * from the dev server, the native module runner imports the patch file
+   * written next to the bundled output.
+   */
+  loadPatch: (url: string) => Promise<void>
   /** returning `'reload'` aborts the apply — the hook reloads the page itself */
   beforeApply: () => 'reload' | 'continue'
 }
@@ -282,7 +287,7 @@ export class BundledDevHMRClient extends HMRClient {
     if (this.options.beforeApply() === 'reload') return
 
     try {
-      await import(/* @vite-ignore */ this.options.base + url)
+      await this.options.loadPatch(url)
     } catch {
       this.requestFullReload(`failed to import hmr patch ${url}`)
       return

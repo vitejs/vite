@@ -1,4 +1,7 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { setTimeout } from 'node:timers/promises'
+import { pathToFileURL } from 'node:url'
 import getEtag from 'etag'
 import colors from 'picocolors'
 import type { RolldownOutput } from 'rolldown'
@@ -14,8 +17,9 @@ import {
   getHmrImplementation,
   getRolldownDevRuntimeFiles,
 } from '../plugins/clientInjections'
-import { createDebugger, formatAndTruncateFileList } from '../utils'
+import { createDebugger, emptyDir, formatAndTruncateFileList } from '../utils'
 import { convertToDevWatchOptions } from '../watch'
+import { BundledDevEntryResolver } from './bundledDevEntryResolver'
 import type { DevEnvironment } from './environment'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
 import { prepareError } from './middlewares/error'
@@ -95,11 +99,33 @@ export class BundledDev {
 
   memoryFiles: MemoryFiles = new MemoryFiles()
 
+  private nativeModuleRunner: boolean
+  private serverOutDir: string | undefined
+  private entryResolver: BundledDevEntryResolver | undefined
+
   constructor(private environment: DevEnvironment) {
-    if (environment.name !== 'client') {
+    this.nativeModuleRunner = environment.config.nativeModuleRunner
+    if (environment.name !== 'client' && !this.nativeModuleRunner) {
       throw new Error(
-        'currently full bundle mode is only available for client environment',
+        'currently full bundle mode is only available for the client environment and environments with `nativeModuleRunner` enabled',
       )
+    }
+    if (this.nativeModuleRunner) {
+      // scoped by pid so concurrent dev servers of the same project never
+      // wipe or overwrite each other's output.
+      this.serverOutDir = path.join(
+        environment.getTopLevelConfig().cacheDir,
+        'bundled-dev',
+        `${environment.name}-${process.pid}`,
+      )
+      this.entryResolver = new BundledDevEntryResolver({
+        root: environment.config.root,
+        outDir: this.serverOutDir,
+        getDevEngine: () => this.devEngine,
+        isClosed: () => this._closed,
+        getLastBuildError: () => this.lastBuildError,
+        waitForInitialBuildFinish: () => this.waitForInitialBuildFinish(),
+      })
     }
   }
 
@@ -133,6 +159,17 @@ export class BundledDev {
         ? rolldownOptions.output[0]
         : rolldownOptions.output
     )!
+
+    if (this.nativeModuleRunner) {
+      // native `import()` needs real files: write the bundle to the cache dir
+      // and mark it as ESM regardless of the project's package type
+      fs.mkdirSync(this.serverOutDir!, { recursive: true })
+      emptyDir(this.serverOutDir!)
+      fs.writeFileSync(
+        path.join(this.serverOutDir!, 'package.json'),
+        JSON.stringify({ type: 'module' }),
+      )
+    }
 
     this.environment.hot.on(
       'vite:client-connected',
@@ -220,6 +257,7 @@ export class BundledDev {
         }
       },
       onOutput: (result) => {
+        this.entryResolver?.onBuildOutput(!(result instanceof Error))
         if (result instanceof Error) {
           this.environment.logger.error(
             colors.red(`✘ Build error: ${result.message}`),
@@ -250,9 +288,19 @@ export class BundledDev {
       },
       onAdditionalAssets: (result) => {
         this.storeOutputFiles(result.output)
+        if (this.nativeModuleRunner) {
+          // assets emitted during HMR compilation don't go through the
+          // engine's watch write — persist them for native imports
+          for (const outputFile of result.output) {
+            this.writeServerFile(
+              outputFile.fileName,
+              outputFile.type === 'chunk' ? outputFile.code : outputFile.source,
+            )
+          }
+        }
       },
       watch: {
-        skipWrite: true,
+        skipWrite: !this.nativeModuleRunner,
         ...convertToDevWatchOptions(this.environment.config.server.watch),
       },
     })
@@ -269,7 +317,7 @@ export class BundledDev {
       if (this._closed) return
       debug?.('INITIAL: build done')
       this.initialBuildCompleted = true
-      if (!this.lastBuildError) {
+      if (!this.lastBuildError && !this.nativeModuleRunner) {
         this.environment.hot.send({
           type: 'full-reload',
           path: '*',
@@ -374,10 +422,44 @@ export class BundledDev {
     }
   }
 
+  /**
+   * Resolve a url to the importable file url of its bundled entry chunk,
+   * rebuilding stale output first. Only available with `nativeModuleRunner`.
+   */
+  async resolveEntry(url: string): Promise<{ url: string; buildId: number }> {
+    if (!this.entryResolver) {
+      throw new Error(
+        'bundledDev.resolveEntry() is only available with `nativeModuleRunner`',
+      )
+    }
+    return this.entryResolver.resolve(url)
+  }
+
+  /** Resolve an input url to its rolldown runtime module id. */
+  async resolveEntryModuleId(url: string): Promise<string> {
+    if (!this.entryResolver) {
+      throw new Error(
+        'bundledDev.resolveEntryModuleId() is only available with `nativeModuleRunner`',
+      )
+    }
+    return this.entryResolver.resolveModuleId(url)
+  }
+
+  private writeServerFile(fileName: string, source: string | Uint8Array): void {
+    const filePath = path.join(this.serverOutDir!, fileName)
+    fs.mkdirSync(path.dirname(filePath), { recursive: true })
+    fs.writeFileSync(filePath, source)
+  }
+
   async close(): Promise<void> {
     this._closed = true
+    this.entryResolver?.onClose()
     this.memoryFiles.clear()
     await this._devEngine?.close()
+    if (this.serverOutDir) {
+      // remove after the engine closed so its watcher no longer writes here
+      fs.rmSync(this.serverOutDir, { recursive: true, force: true })
+    }
     this.initialBuildCompleted = false
   }
 
@@ -406,6 +488,7 @@ export class BundledDev {
 
   private storeOutputFiles(output: RolldownOutput['output'][number][]): void {
     // NOTE: don't clear memoryFiles here as incremental build reuses the files
+    this.entryResolver?.registerChunks(output)
     for (const outputFile of output) {
       this.memoryFiles.set(outputFile.fileName, () => {
         const source =
@@ -457,6 +540,25 @@ export class BundledDev {
       rolldownOptions.output.sourcemap = true
     }
 
+    if (this.nativeModuleRunner) {
+      // lazy compilation emits stubs that fetch `/@vite/lazy` over HTTP with
+      // a browser clientId — dynamic imports must be compiled eagerly to
+      // keep the on-disk graph natively importable
+      rolldownOptions.experimental.devMode.lazy = false
+
+      const outputs = Array.isArray(rolldownOptions.output)
+        ? rolldownOptions.output
+        : [rolldownOptions.output]
+      for (const output of outputs) {
+        // write to a dedicated cache dir instead of the build outDir so dev
+        // output never clobbers a production build
+        output.dir = this.serverOutDir
+        output.sourcemap = 'inline'
+        // to keep builtin ESM cache happy, we also have a hash in the entry name.
+        output.entryFileNames = 'assets/[name]-[hash].js'
+      }
+    }
+
     return rolldownOptions
   }
 
@@ -478,6 +580,13 @@ export class BundledDev {
         colors.green(`trigger page reload `) + colors.dim(shortFile) + reason,
         { clear: true, timestamp: true },
       )
+      if (this.nativeModuleRunner) {
+        // fatal for the native runner: it cannot re-execute cached modules,
+        // so the consumer is expected to restart the process/worker. The new
+        // runner's first entry import regenerates stale full-bundle output.
+        client.send({ type: 'full-reload', path: '*' })
+        return
+      }
       // `import.meta.hot.invalidate()` is fully client-side now, so every server-sent
       // reload comes from a file change: defer it until the `onOutput` callback to
       // avoid error overlay flashes.
@@ -491,28 +600,40 @@ export class BundledDev {
     })
 
     this.pendingPayloadFilenames.add(hmrOutput.filename)
-    this.memoryFiles.set(hmrOutput.filename, {
-      // ensure that the generated hmr patch contains ESM syntax
-      // this is to avoid attacks like GHSA-4v9v-hfq4-rm2v
-      // https://github.com/webpack/webpack-dev-server/security/advisories/GHSA-4v9v-hfq4-rm2v
-      // https://green.sapphi.red/blog/local-server-security-best-practices#_2-using-xssi-and-modifying-the-prototype
-      // https://green.sapphi.red/blog/local-server-security-best-practices#properly-check-the-request-origin
-      // we can also use `Cross-Origin Resource Policy` header instead of this
-      // but we cannot use `Sec-Fetch-*` headers as they are only sent to potentially-trustworthy origins
-      source:
-        hmrOutput.code +
-        payloadDeliveredAck(hmrOutput.filename) +
-        '\n; export {}',
-    })
-    if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
-      this.memoryFiles.set(hmrOutput.sourcemapFilename, {
-        source: hmrOutput.sourcemap,
-      })
+    // ensure that the generated hmr patch contains ESM syntax
+    // this is to avoid attacks like GHSA-4v9v-hfq4-rm2v
+    // https://github.com/webpack/webpack-dev-server/security/advisories/GHSA-4v9v-hfq4-rm2v
+    // https://green.sapphi.red/blog/local-server-security-best-practices#_2-using-xssi-and-modifying-the-prototype
+    // https://green.sapphi.red/blog/local-server-security-best-practices#properly-check-the-request-origin
+    // we can also use `Cross-Origin Resource Policy` header instead of this
+    // but we cannot use `Sec-Fetch-*` headers as they are only sent to potentially-trustworthy origins
+    const patchSource =
+      hmrOutput.code + payloadDeliveredAck(hmrOutput.filename) + '\n; export {}'
+    let patchUrl = hmrOutput.filename
+
+    if (this.nativeModuleRunner) {
+      // the native runner imports patches from disk instead of the dev
+      // server, so the payload carries the importable file url directly.
+      this.writeServerFile(hmrOutput.filename, patchSource)
+      if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
+        this.writeServerFile(hmrOutput.sourcemapFilename, hmrOutput.sourcemap)
+      }
+      patchUrl = pathToFileURL(
+        path.join(this.serverOutDir!, hmrOutput.filename),
+      ).href
+    } else {
+      this.memoryFiles.set(hmrOutput.filename, { source: patchSource })
+      if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
+        this.memoryFiles.set(hmrOutput.sourcemapFilename, {
+          source: hmrOutput.sourcemap,
+        })
+      }
     }
+
     client.send({
       type: 'bundled-dev-update',
       changedIds: hmrOutput.changedIds,
-      url: hmrOutput.filename,
+      url: patchUrl,
       seq: hmrOutput.seq,
     })
     const { formatted, truncated } = formatAndTruncateFileList(
