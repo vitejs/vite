@@ -198,6 +198,21 @@ describe('hoist @ rules', () => {
     )
   })
 
+  test('preserve leading at-rules while hoisting @import', async () => {
+    expect(await hoistAtRules(`@import "bla";.foo{color:red;}`)).toBe(
+      `@import "bla";.foo{color:red;}`,
+    )
+
+    const css = `@charset "utf-8";.foo{color:red;}@import "bla";`
+    const result = await hoistAtRules(css)
+    expect(result).toBe(`@charset "utf-8";@import "bla";.foo{color:red;}`)
+
+    const mixed = `@import "foo";@charset "utf-8";@import "bar";`
+    expect(await hoistAtRules(mixed)).toBe(
+      `@charset "utf-8";@import "foo";@import "bar";`,
+    )
+  })
+
   test('dont hoist @import in comments', async () => {
     const css = `.foo{color:red;}/* @import "bla"; */@import "bar";`
     const result = await hoistAtRules(css)

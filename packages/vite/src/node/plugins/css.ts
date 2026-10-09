@@ -2627,16 +2627,15 @@ export function hoistAtRules(css: string): MagicString {
   const cleanCss = emptyCssComments(css)
   let match: RegExpExecArray | null
 
-  // #6333
-  // CSS @charset must be the top-first in the file, hoist the first to top
   atCharsetRE.lastIndex = 0
-  let foundCharset = false
-  while ((match = atCharsetRE.exec(cleanCss))) {
-    if (!foundCharset) {
-      s.move(match.index, match.index + match[0].length, 0)
-      foundCharset = true
+  const firstCharset = atCharsetRE.exec(cleanCss)
+  let hoistIndex = firstCharset?.index === 0 ? firstCharset[0].length : 0
+
+  const hoist = (start: number, end: number) => {
+    if (start === hoistIndex) {
+      hoistIndex = end
     } else {
-      s.remove(match.index, match.index + match[0].length)
+      s.move(start, end, hoistIndex)
     }
   }
 
@@ -2646,7 +2645,22 @@ export function hoistAtRules(css: string): MagicString {
   // match until semicolon that's not in quotes
   atImportRE.lastIndex = 0
   while ((match = atImportRE.exec(cleanCss))) {
-    s.move(match.index, match.index + match[0].length, 0)
+    hoist(match.index, match.index + match[0].length)
+  }
+
+  // #6333
+  // CSS @charset must be the top-first in the file, hoist the first to top
+  atCharsetRE.lastIndex = 0
+  let foundCharset = false
+  while ((match = atCharsetRE.exec(cleanCss))) {
+    if (!foundCharset) {
+      if (match.index !== 0) {
+        s.move(match.index, match.index + match[0].length, 0, 'left')
+      }
+      foundCharset = true
+    } else {
+      s.remove(match.index, match.index + match[0].length)
+    }
   }
 
   return s
