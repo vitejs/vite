@@ -35,6 +35,7 @@
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "dependencies": {
     "@babel/core": "^7.29.7",
+    "@babel/helper-compilation-targets": "^7.29.7",
     "@babel/plugin-transform-dynamic-import": "^7.29.7",
     "@babel/plugin-transform-modules-systemjs": "^7.29.8",
     "@babel/preset-env": "^7.29.7",
