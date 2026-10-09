@@ -40,6 +40,7 @@ const input = {
     process.cwd(),
     resolve(dirname, 'relative-input.html'),
   ),
+  htmExtension: resolve(dirname, 'htm-extension.htm'),
 }
 
 export default defineConfig({

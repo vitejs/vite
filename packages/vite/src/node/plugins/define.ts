@@ -2,8 +2,7 @@ import { transformSync } from 'rolldown/utils'
 import type { ResolvedConfig } from '../config'
 import type { Environment } from '../environment'
 import type { Plugin } from '../plugin'
-import { escapeRegex, isCSSRequest } from '../utils'
-import { isHTMLRequest } from './html'
+import { escapeRegex, isCSSRequest, isHTMLRequest } from '../utils'
 
 const nonJsRe = /\.json(?:$|\?)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
