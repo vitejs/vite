@@ -47,7 +47,16 @@ function clearScreen() {
 }
 
 export interface LoggerOptions {
+  /**
+   * Prefix shown before timestamped messages.
+   * @default `[${displayName}]`
+   */
   prefix?: string
+  /**
+   * Name used for the default prefix.
+   * @default 'vite'
+   */
+  displayName?: string
   allowClearScreen?: boolean
   customLogger?: Logger
   console?: Console
@@ -75,7 +84,8 @@ export function createLogger(
 
   const loggedErrors = new WeakSet<Error | RollupError>()
   const {
-    prefix = '[vite]',
+    displayName = 'vite',
+    prefix = `[${displayName}]`,
     allowClearScreen = true,
     console = globalThis.console,
   } = options

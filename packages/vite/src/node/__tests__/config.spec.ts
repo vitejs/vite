@@ -1294,6 +1294,17 @@ describe('resolveEnvPrefix', () => {
     consoleWarnSpy.mockRestore()
   })
 
+  test('uses displayName in the whitespace warning', () => {
+    const consoleWarnSpy = vi
+      .spyOn(console, 'warn')
+      .mockImplementation(() => {})
+    resolveEnvPrefix({ envPrefix: 'WITH SPACE', displayName: 'sitelo' })
+    expect(stripVTControlCharacters(consoleWarnSpy.mock.calls[0][0])).toMatch(
+      /^\[sitelo\] Warning:/,
+    )
+    consoleWarnSpy.mockRestore()
+  })
+
   test('should work correctly for valid envPrefix value', () => {
     const config: UserConfig = { envPrefix: ['CUSTOM_'] }
     expect(resolveEnvPrefix(config)).toMatchObject(['CUSTOM_'])
@@ -2464,5 +2475,20 @@ describe('resolveServerOptions', () => {
       )
       warnFn.mockClear()
     }
+  })
+})
+
+describe('displayName', () => {
+  test('defaults to vite', async () => {
+    const config = await resolveConfig({ configFile: false }, 'serve')
+    expect(config.displayName).toBe('vite')
+  })
+
+  test('can be set by the user', async () => {
+    const config = await resolveConfig(
+      { configFile: false, displayName: 'sitelo' },
+      'serve',
+    )
+    expect(config.displayName).toBe('sitelo')
   })
 })

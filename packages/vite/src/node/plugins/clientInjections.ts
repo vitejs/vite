@@ -130,6 +130,7 @@ async function createClientConfigValueReplacer(
     config.experimental.hmrPartialAccept,
   )
   const wsTokenReplacement = escapeReplacement(config.webSocketToken)
+  const displayNameReplacement = escapeReplacement(config.displayName)
   const serverForwardConsoleReplacement = escapeReplacement(
     config.server.forwardConsole as any,
   )
@@ -150,6 +151,7 @@ async function createClientConfigValueReplacer(
       .replace(`__HMR_PARTIAL_ACCEPT__`, hmrPartialAcceptReplacement)
       .replace(`__WS_TOKEN__`, wsTokenReplacement)
       .replace(`__SERVER_FORWARD_CONSOLE__`, serverForwardConsoleReplacement)
+      .replace(`__DISPLAY_NAME__`, displayNameReplacement)
 }
 
 const ROLLDOWN_DEV_RUNTIME_ENTRY = 'rolldown/experimental/runtime'

@@ -482,6 +482,16 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    */
   customLogger?: Logger
   /**
+   * Name shown in user-facing output instead of "vite": the startup and
+   * build banners, the default logger prefix, and the browser console
+   * messages of the HMR client. Useful for tools built on top of Vite.
+   *
+   * This does not change plugin names, `envPrefix`, or internal URLs such
+   * as `/@vite/client`.
+   * @default 'vite'
+   */
+  displayName?: string
+  /**
    * @default true
    */
   clearScreen?: boolean
@@ -745,6 +755,7 @@ export interface ResolvedConfig extends Readonly<
     assetsInclude: (file: string) => boolean
     rawAssetsInclude: (string | RegExp)[]
     logger: Logger
+    displayName: string
     /**
      * Create an internal resolver to be used in special scenarios, e.g.
      * optimizer & handling css `@imports`.
@@ -838,6 +849,7 @@ async function loadDevToolsIntegrationPlugins(
     const logger = createLogger(config.logLevel, {
       allowClearScreen: config.clearScreen,
       customLogger: config.customLogger,
+      displayName: config.displayName,
     })
     logger.error(
       colors.red(
@@ -926,6 +938,7 @@ const configDefaults = Object.freeze({
   },
   logLevel: 'info',
   customLogger: undefined,
+  displayName: 'vite',
   clearScreen: true,
   envDir: undefined,
   envPrefix: 'VITE_',
@@ -1586,6 +1599,7 @@ export async function resolveConfig(
   const logger = createLogger(config.logLevel, {
     allowClearScreen: config.clearScreen,
     customLogger: config.customLogger,
+    displayName: config.displayName,
   })
 
   if (devtoolsConfigChanged) {
@@ -2107,6 +2121,7 @@ export async function resolveConfig(
     },
     rawAssetsInclude: config.assetsInclude ? arraify(config.assetsInclude) : [],
     logger,
+    displayName: config.displayName ?? configDefaults.displayName,
     packageCache,
     worker: resolvedWorkerOptions,
     appType: config.appType ?? 'spa',
@@ -2821,6 +2836,7 @@ async function runConfigHook(
   const tempLogger = createLogger(config.logLevel, {
     allowClearScreen: config.clearScreen,
     customLogger: config.customLogger,
+    displayName: config.displayName,
   })
   const context = new BasicMinimalPluginContext<
     Omit<PluginContextMeta, 'watchMode'>
