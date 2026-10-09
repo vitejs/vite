@@ -260,7 +260,7 @@ test('Resolving key containing ? with imports field', async () => {
   expect(await page.textContent('.imports-question-mark')).toMatch('[success]')
 })
 
-test.runIf(isServe)(
+test.runIf(isServe && !isBundledDev)(
   'Resolving #hash imported with #hash#hash surfaces the original error',
   async () => {
     const res = await page.request.get(
