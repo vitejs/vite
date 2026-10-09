@@ -234,6 +234,8 @@ function preload(
             }
             if (failedCssLink) {
               delete failedCssLinks[dep.href]
+            }
+            if (failedCssLink?.isConnected) {
               failedCssLink.replaceWith(link)
             } else {
               document.head.appendChild(link)
