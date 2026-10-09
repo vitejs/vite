@@ -313,10 +313,22 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
     configureServer(_server) {
       server = _server
     },
-    async transform(code, id) {
-      if (filter(id) || filter(cleanUrl(id)) || jsxRefreshFilter?.(id)) {
+    async transform(code, id, options) {
+      const moduleType = options?.moduleType
+      if (
+        filter(id) ||
+        filter(cleanUrl(id)) ||
+        jsxRefreshFilter?.(id) ||
+        (moduleType && ['jsx', 'ts', 'tsx'].includes(moduleType))
+      ) {
         const modifiedOxcTransformOptions = getModifiedOxcTransformOptions(
-          oxcTransformOptions,
+          {
+            ...oxcTransformOptions,
+            lang:
+              moduleType && ['js', 'jsx', 'ts', 'tsx'].includes(moduleType)
+                ? (moduleType as OxcTransformOptions['lang'])
+                : undefined,
+          },
           id,
           code,
           this.environment,
