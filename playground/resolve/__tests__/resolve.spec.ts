@@ -260,6 +260,17 @@ test('Resolving key containing ? with imports field', async () => {
   expect(await page.textContent('.imports-question-mark')).toMatch('[success]')
 })
 
+test.runIf(isServe)(
+  'Resolving #hash imported with #hash#hash surfaces the original error',
+  async () => {
+    const res = await page.request.get(
+      viteTestUrl + '/imports-path/importer-hash-hash.js',
+    )
+    expect(res.status()).toBe(500)
+    expect(await res.text()).toContain('Missing \\"#hash#hash\\" specifier')
+  },
+)
+
 test("Resolve doesn't interrupt page request with trailing query and .css", async () => {
   await page.goto(viteTestUrl + '/?test.css')
   expect(await page.locator('vite-error-overlay').count()).toBe(0)

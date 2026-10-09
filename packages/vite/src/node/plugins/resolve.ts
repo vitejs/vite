@@ -513,10 +513,12 @@ export function resolveSubpathImports(
   // attempt needs to be guarded to allow the fallback
   let importsPath: string | undefined
   let postfix = ''
+  let fullIdError: unknown
   try {
     importsPath = resolveExportsOrImports(pkgData.data, id, options, 'imports')
-  } catch {
+  } catch (e) {
     // no key matches the full id, try without the query part below
+    fullIdError = e
   }
   if (importsPath === undefined) {
     const queryIndex = id.indexOf('?')
@@ -530,6 +532,8 @@ export function resolveSubpathImports(
       if (importsPath !== undefined) {
         postfix = id.slice(queryIndex)
       }
+    } else if (fullIdError) {
+      throw fullIdError
     }
   }
 
