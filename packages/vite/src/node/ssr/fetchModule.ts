@@ -183,7 +183,7 @@ async function fetchBundledModule(
 
   // Assume this is an entry point that was specified in rolldownOptions.input
   if (!importer) {
-    const resolvedEntry = resolveBundledEntryFilename(
+    const resolvedEntry = await resolveBundledEntryFilename(
       bundledDev,
       environment.config.root,
       url,
@@ -298,17 +298,21 @@ function isBundledChunkUrl(environment: DevEnvironment, url: string) {
   return environment.bundledDev?.memoryFiles.has(url)
 }
 
-function resolveBundledEntryFilename(
+async function resolveBundledEntryFilename(
   environment: BundledDev,
   root: string,
   url: string,
-): [facadeId: string | undefined, chunkName: string] | undefined {
+): Promise<[facadeId: string | undefined, chunkName: string] | undefined> {
   if (environment.memoryFiles.has(url)) {
     return [undefined, url]
   }
   // Already resolved by the user to be a url
   if (environment.facadeToChunk.has(url)) {
     return [url, environment.facadeToChunk.get(url)!]
+  }
+  const facadeId = await environment.resolveEntryFacade(url)
+  if (facadeId && environment.facadeToChunk.has(facadeId)) {
+    return [facadeId, environment.facadeToChunk.get(facadeId)!]
   }
   const moduleId = normalizePath(
     url.startsWith('file://')

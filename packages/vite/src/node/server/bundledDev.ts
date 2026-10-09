@@ -1,7 +1,12 @@
 import { setTimeout } from 'node:timers/promises'
 import getEtag from 'etag'
 import colors from 'picocolors'
-import type { OutputOptions, RolldownOptions, RolldownOutput } from 'rolldown'
+import type {
+  OutputOptions,
+  Plugin,
+  RolldownOptions,
+  RolldownOutput,
+} from 'rolldown'
 import {
   type BindingClientHmrUpdate,
   type DevEngine,
@@ -93,6 +98,7 @@ export class BundledDev {
 
   memoryFiles: MemoryFiles = new MemoryFiles()
   facadeToChunk: Map<string, string> = new Map()
+  private entryResolver?: (id: string) => Promise<string | undefined>
 
   constructor(private environment: DevEnvironment) {}
 
@@ -107,6 +113,10 @@ export class BundledDev {
 
   get hasBuildOutput(): boolean {
     return this.memoryFiles.size > this.staticFiles.size
+  }
+
+  async resolveEntryFacade(id: string): Promise<string | undefined> {
+    return this.entryResolver?.(id)
   }
 
   async listen(): Promise<void> {
@@ -389,8 +399,12 @@ export class BundledDev {
   async close(): Promise<void> {
     this._closed = true
     this.memoryFiles.clear()
-    await this.devEngine?.close()
-    this.initialBuildCompleted = false
+    try {
+      await this.devEngine?.close()
+    } finally {
+      this.entryResolver = undefined
+      this.initialBuildCompleted = false
+    }
   }
 
   private async storeStaticFiles(): Promise<void> {
@@ -415,7 +429,11 @@ export class BundledDev {
   private storeOutputFiles(output: RolldownOutput['output'][number][]): void {
     // NOTE: don't clear memoryFiles here as incremental build reuses the files
     for (const outputFile of output) {
-      if (outputFile.type === 'chunk' && outputFile.facadeModuleId) {
+      if (
+        outputFile.type === 'chunk' &&
+        outputFile.isEntry &&
+        outputFile.facadeModuleId
+      ) {
         this.facadeToChunk.set(outputFile.facadeModuleId, outputFile.fileName)
       }
       this.memoryFiles.set(outputFile.fileName, () => {
@@ -435,6 +453,20 @@ export class BundledDev {
       this.environment,
       chunkMetadataMap,
     )
+    const setEntryResolver = (
+      resolver: (id: string) => Promise<string | undefined>,
+    ) => {
+      this.entryResolver = resolver
+    }
+    const resolveEntriesPlugin: Plugin = {
+      name: 'vite:bundled-dev-resolve-entries',
+      buildStart() {
+        setEntryResolver(async (id) => {
+          return (await this.resolve(id, undefined, { isEntry: true }))?.id
+        })
+      },
+    }
+    rolldownOptions.plugins = [rolldownOptions.plugins, resolveEntriesPlugin]
     rolldownOptions.experimental ??= {}
     rolldownOptions.experimental.devMode = {
       lazy: true,

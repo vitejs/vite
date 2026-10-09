@@ -539,8 +539,9 @@ describe('resolveId absolute path entry', async () => {
         enforce: 'pre',
         resolveId(source) {
           if (
+            source === 'virtual:basic-alias' ||
             source ===
-            posix.join(this.environment.config.root, 'fixtures/basic.js')
+              posix.join(this.environment.config.root, 'fixtures/basic.js')
           ) {
             return '\0virtual:basic'
           }
@@ -569,14 +570,13 @@ describe('resolveId absolute path entry', async () => {
   })
 
   describe('in full bundle mode', async () => {
-    it.override('fullBundle', [
-      posix.join(slash(import.meta.dirname), 'fixtures/basic.js'),
-    ])
+    const entry = posix.join(slash(import.meta.dirname), 'fixtures/basic.js')
+    it.override('fullBundle', [entry])
 
-    it('runner', async ({ runner }) => {
-      // Unlike with dev mode, the ID is specified in the build options,
-      // And then we HAVE to use the resolved ID here to get the chunk name.
-      const mod = await runner.import('\0virtual:basic')
+    it('accepts any ID that resolves to an entry facade', async ({
+      runner,
+    }) => {
+      const mod = await runner.import('virtual:basic-alias')
       expect(mod.name).toMatchInlineSnapshot(`"virtual:basic"`)
     })
   })
