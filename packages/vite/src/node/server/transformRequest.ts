@@ -341,7 +341,13 @@ async function loadAndTransform(
     throw err
   }
   if (moduleType === undefined) {
-    const guessedModuleType = getModuleTypeFromId(id)
+    const guessedModuleType = getModuleTypeFromId(
+      id,
+      environment.config.build.rolldownOptions?.moduleTypes as Record<
+        string,
+        string
+      >,
+    )
     if (guessedModuleType && guessedModuleType !== 'js') {
       moduleType = guessedModuleType
     }
@@ -553,13 +559,36 @@ const defaultModuleTypes: Record<string, ModuleType | undefined> = {
 }
 
 // https://github.com/rolldown/rolldown/blob/bf53a100edf1780d5a5aa41f0bc0459c5696543e/crates/rolldown/src/utils/load_source.rs#L53-L89
-export function getModuleTypeFromId(id: string): ModuleType | undefined {
+export function getModuleTypeFromId(
+  id: string,
+  configModuleTypes?: Record<string, string>,
+): ModuleType | undefined {
+  const cleanId = cleanUrl(id)
   let pos = -1
-  while ((pos = id.indexOf('.', pos + 1)) >= 0) {
-    const ext = id.slice(pos + 1)
-    const moduleType = defaultModuleTypes[ext]
+  while ((pos = cleanId.indexOf('.', pos + 1)) >= 0) {
+    const ext = cleanId.slice(pos)
+    const moduleType =
+      configModuleTypes?.[ext] || defaultModuleTypes[ext.slice(1)]
     if (moduleType) {
-      return moduleType
+      return moduleType as ModuleType
+    }
+  }
+
+  // Fallback to full ID for proxy queries (e.g. ?html-proxy&index=0.css, ?vue&type=style&lang.css)
+  // only if the base file extension didn't match a module type.
+  pos = -1
+  while ((pos = id.indexOf('.', pos + 1)) >= 0) {
+    if (
+      pos > 0 &&
+      (id[pos - 1] === '=' || id[pos - 1] === '?' || id[pos - 1] === '&')
+    ) {
+      continue
+    }
+    const ext = id.slice(pos)
+    const moduleType =
+      configModuleTypes?.[ext] || defaultModuleTypes[ext.slice(1)]
+    if (moduleType) {
+      return moduleType as ModuleType
     }
   }
 }
