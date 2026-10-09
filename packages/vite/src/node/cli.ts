@@ -188,7 +188,7 @@ cli
   .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
   .option(
     '--configLoader <loader>',
-    `[string] use 'bundle' to bundle the config with Rolldown, or 'runner' (experimental) to process it on the fly, or 'native' (experimental) to load using the native runtime (default: bundle)`,
+    `[string] use 'bundle' to bundle the config with Rolldown, or 'native' to load using the native runtime (default: bundle)`,
   )
   .option(
     '--profile [name]',
