@@ -73,6 +73,7 @@ import {
   asyncReplace,
   combineSourcemaps,
   createSerialPromiseQueue,
+  decodeURIIfPossible,
   emptyCssComments,
   encodeURIPath,
   escapeRegex,
@@ -394,7 +395,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           idResolver(environment, url, importer)
 
         const urlResolver: CssUrlResolver = async (url, importer) => {
-          const decodedUrl = decodeURI(url)
+          // a `%` that doesn't start an escape sequence (e.g. `url(100%.png)`)
+          // is kept as is, like browsers do
+          const decodedUrl = decodeURIIfPossible(url) ?? url
           if (checkPublicFile(decodedUrl, config)) {
             if (encodePublicUrlsInCSS(config)) {
               return [publicFileToBuiltUrl(decodedUrl, config), undefined]

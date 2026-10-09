@@ -145,6 +145,17 @@ composes: bar from '@/css/bar.module.css';
   })
 })
 
+describe('url()', () => {
+  test('keeps a % that is not an escape sequence', async () => {
+    const { transform } = await createCssPluginTransform({ configFile: false })
+    const result = await transform(
+      `.foo { background: url(./100%.png) }`,
+      '/foo.css',
+    )
+    expect(result.code).toContain('100%.png')
+  })
+})
+
 describe('hoist @ rules', () => {
   test('hoist @import', async () => {
     const css = `.foo{color:red;}@import "bla";`
