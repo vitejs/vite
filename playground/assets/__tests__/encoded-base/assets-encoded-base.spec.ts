@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, test } from 'vitest'
 import {
   browserLogs,
+  bundledDevTodo,
   findAssetFile,
   getBg,
   getColor,
@@ -176,16 +177,26 @@ describe('image', () => {
 
 describe('svg fragments', () => {
   // 404 is checked already, so here we just ensure the urls end with #fragment
-  // bundled dev drops the #fragment postfix from hashed asset URLs (vitejs/vite#23028)
-  test.skipIf(isBundledDev)('img url', async () => {
-    const img = await page.$('.svg-frag-img')
-    expect(await img.getAttribute('src')).toMatch(/svg#icon-clock-view$/)
-  })
+  test(
+    'img url',
+    bundledDevTodo(
+      'bundled dev drops the postfix (`?query` / `#fragment`) from emitted asset URLs',
+    ),
+    async () => {
+      const img = await page.$('.svg-frag-img')
+      expect(await img.getAttribute('src')).toMatch(/svg#icon-clock-view$/)
+    },
+  )
 
-  // bundled dev: #fragment dropped (see 'img url')
-  test.skipIf(isBundledDev)('via css url()', async () => {
-    expect(await getBg('.icon')).toMatch(/svg#icon-clock-view"\)$/)
-  })
+  test(
+    'via css url()',
+    bundledDevTodo(
+      'bundled dev drops the postfix (`?query` / `#fragment`) from emitted asset URLs',
+    ),
+    async () => {
+      expect(await getBg('.icon')).toMatch(/svg#icon-clock-view"\)$/)
+    },
+  )
 
   test('from js import', async () => {
     const img = await page.$('.svg-frag-import')

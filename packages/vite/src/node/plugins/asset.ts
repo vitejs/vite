@@ -522,7 +522,8 @@ export function publicFileToBuiltUrl(
 ): string {
   if (config.command !== 'build') {
     // We don't need relative base or renderBuiltUrl support during dev
-    return joinUrlSegments(config.decodedBase, url)
+    const base = joinUrlSegments(config.server.origin ?? '', config.decodedBase)
+    return joinUrlSegments(base, url)
   }
   const hash = getHash(url)
   let cache = publicAssetUrlCache.get(config)
@@ -729,7 +730,10 @@ export function toOutputFilePathInJSForBundledDev(
   )
   // renderBuiltUrl is not supported in bundled dev
   if (typeof outputUrl === 'object') throw new Error('unreachable')
-  return outputUrl
+  return joinUrlSegments(
+    environment.getTopLevelConfig().server.origin ?? '',
+    outputUrl,
+  )
 }
 
 export async function urlToBuiltUrl(

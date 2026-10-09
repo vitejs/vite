@@ -14,7 +14,11 @@ import {
   getHmrImplementation,
   getRolldownDevRuntimeFiles,
 } from '../plugins/clientInjections'
-import { createDebugger, formatAndTruncateFileList } from '../utils'
+import {
+  createDebugger,
+  formatAndTruncateFileList,
+  normalizePath,
+} from '../utils'
 import { convertToDevWatchOptions } from '../watch'
 import type { DevEnvironment } from './environment'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
@@ -407,7 +411,7 @@ export class BundledDev {
   private storeOutputFiles(output: RolldownOutput['output'][number][]): void {
     // NOTE: don't clear memoryFiles here as incremental build reuses the files
     for (const outputFile of output) {
-      this.memoryFiles.set(outputFile.fileName, () => {
+      this.memoryFiles.set(normalizePath(outputFile.fileName), () => {
         const source =
           outputFile.type === 'chunk' ? outputFile.code : outputFile.source
         return {

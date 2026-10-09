@@ -2,13 +2,13 @@ import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import {
   browserLogs,
+  bundledDevTodo,
   editFile,
   findAssetFile,
   getBg,
   getColor,
   isBuild,
   isBundled,
-  isBundledDev,
   isServe,
   listAssets,
   notifyRebuildComplete,
@@ -36,16 +36,18 @@ const fetchPath = (p: string) => {
   })
 }
 
-// bundled dev turns a `?url` CSS import into a data URI, and it skips the CSS
-// pipeline while doing so. A `url()` inside that CSS keeps its original
-// relative path, which then points nowhere and gives a 404.
-// This is a real bug (vitejs/vite#22863), so the test must stay skipped here.
-// It will pass again once the bug is fixed, with no change to the test.
-test.skipIf(isBundledDev)('should have no 404s', () => {
-  browserLogs.forEach((msg) => {
-    expect(msg).not.toMatch('404')
-  })
-})
+test(
+  'should have no 404s',
+  bundledDevTodo(
+    '`?url` CSS skips the CSS pipeline and is inlined as raw bytes, so its relative `url()` gives a 404',
+    { vite: [22863] },
+  ),
+  () => {
+    browserLogs.forEach((msg) => {
+      expect(msg).not.toMatch('404')
+    })
+  },
+)
 
 test.runIf(isBuild)(
   'should not warn about VITE_ASSET tokens in image-set',
@@ -419,24 +421,26 @@ describe('css url() references', () => {
     expect(await getBg('.css-image-set-svg')).toMatch(/data:image\/svg\+xml,.+/)
   })
 
-  // bundled dev turns the `?url` CSS into a data URI, while build always
-  // writes a CSS file. The svg inside that CSS is therefore never processed:
-  // it is not inlined, and it does not get the base prefix.
-  // Same cause as '?url import on css' below: the CSS pipeline never runs on a
-  // `?url` import (vitejs/vite#22863)
-  test.skipIf(isBundledDev)('url() with svg in .css?url', async () => {
-    const bg = await getBg('.css-url-svg-in-url')
-    expect(bg).toMatch(/data:image\/svg\+xml,.+/)
-    expect(bg).toContain('blue')
-    expect(bg).not.toContain('red')
+  test(
+    'url() with svg in .css?url',
+    bundledDevTodo(
+      '`?url` CSS skips the CSS pipeline and is inlined as raw bytes, so the svg in its `url()` is not inlined',
+      { vite: [22863] },
+    ),
+    async () => {
+      const bg = await getBg('.css-url-svg-in-url')
+      expect(bg).toMatch(/data:image\/svg\+xml,.+/)
+      expect(bg).toContain('blue')
+      expect(bg).not.toContain('red')
 
-    if (isServe) {
-      editFile('nested/fragment-bg-hmr2.svg', (code) =>
-        code.replace('fill="blue"', 'fill="red"'),
-      )
-      await expect.poll(() => getBg('.css-url-svg')).toMatch('red')
-    }
-  })
+      if (isServe) {
+        editFile('nested/fragment-bg-hmr2.svg', (code) =>
+          code.replace('fill="blue"', 'fill="red"'),
+        )
+        await expect.poll(() => getBg('.css-url-svg')).toMatch('red')
+      }
+    },
+  )
 
   test.runIf(isServe)('non inlined url() HMR', async () => {
     const bg = await getBg('.css-url-non-inline-hmr')
@@ -514,16 +518,26 @@ describe('meta', () => {
 
 describe('svg fragments', () => {
   // 404 is checked already, so here we just ensure the urls end with #fragment
-  // bundled dev drops the #fragment postfix from hashed asset URLs (vitejs/vite#23028)
-  test.skipIf(isBundledDev)('img url', async () => {
-    const img = await page.$('.svg-frag-img')
-    expect(await img.getAttribute('src')).toMatch(/svg#icon-clock-view$/)
-  })
+  test(
+    'img url',
+    bundledDevTodo(
+      'bundled dev drops the postfix (`?query` / `#fragment`) from emitted asset URLs',
+    ),
+    async () => {
+      const img = await page.$('.svg-frag-img')
+      expect(await img.getAttribute('src')).toMatch(/svg#icon-clock-view$/)
+    },
+  )
 
-  // bundled dev: #fragment dropped (see 'img url')
-  test.skipIf(isBundledDev)('via css url()', async () => {
-    expect(await getBg('.icon')).toMatch(/svg#icon-clock-view"\)$/)
-  })
+  test(
+    'via css url()',
+    bundledDevTodo(
+      'bundled dev drops the postfix (`?query` / `#fragment`) from emitted asset URLs',
+    ),
+    async () => {
+      expect(await getBg('.icon')).toMatch(/svg#icon-clock-view"\)$/)
+    },
+  )
 
   test('from js import', async () => {
     const img = await page.$('.svg-frag-import')
@@ -533,12 +547,17 @@ describe('svg fragments', () => {
     )
   })
 
-  // bundled dev: #fragment dropped (see 'img url')
-  test.skipIf(isBundledDev)('url with an alias', async () => {
-    expect(await getBg('.icon-clock-alias')).toMatch(
-      /\.svg#icon-clock-view"\)$/,
-    )
-  })
+  test(
+    'url with an alias',
+    bundledDevTodo(
+      'bundled dev drops the postfix (`?query` / `#fragment`) from emitted asset URLs',
+    ),
+    async () => {
+      expect(await getBg('.icon-clock-alias')).toMatch(
+        /\.svg#icon-clock-view"\)$/,
+      )
+    },
+  )
 })
 
 test('Unknown extension assets import', async () => {
@@ -604,9 +623,11 @@ test('?no-inline svg import', async () => {
   )
 })
 
-// bundled dev drops the ?query postfix from hashed asset URLs (build keeps ?foo=bar) (vitejs/vite#23028)
-test.skipIf(isBundledDev)(
+test(
   '?no-inline svg import -- multiple postfix',
+  bundledDevTodo(
+    'bundled dev drops the postfix (`?query` / `#fragment`) from emitted asset URLs',
+  ),
   async () => {
     expect(await page.textContent('.no-inline-svg-mp')).toMatch(
       isBundled
@@ -643,18 +664,21 @@ test('?url import', async () => {
   )
 })
 
-// bundled dev turns the `?url` CSS into a data URI, while build always writes
-// a CSS file (vitejs/vite#22863).
-// After the fix, bundled dev returns the same URL shape as build. Then remove
-// the skip and change `isBuild` below to `isBundled`.
-test.skipIf(isBundledDev)('?url import on css', async () => {
-  const txt = await page.textContent('.url-css')
-  expect(txt).toMatch(
-    isBuild
-      ? /\/foo\/bar\/assets\/icons-[-\w]{8}\.css/
-      : '/foo/bar/css/icons.css',
-  )
-})
+test(
+  '?url import on css',
+  bundledDevTodo(
+    '`?url` CSS skips the CSS pipeline and is inlined as raw bytes, instead of being emitted as a CSS file',
+    { vite: [22863] },
+  ),
+  async () => {
+    const txt = await page.textContent('.url-css')
+    expect(txt).toMatch(
+      isBundled
+        ? /\/foo\/bar\/assets\/icons-[-\w]{8}\.css/
+        : '/foo/bar/css/icons.css',
+    )
+  },
+)
 
 describe('unicode url', () => {
   test('from js import', async () => {
@@ -749,9 +773,11 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
   )
 })
 
-// bundled dev: ?abc postfix dropped (see '?no-inline svg import -- multiple postfix')
-test.skipIf(isBundledDev)(
+test(
   'new URL(`./${dynamic}?abc`, import.meta.url)',
+  bundledDevTodo(
+    'bundled dev drops the postfix (`?query` / `#fragment`) from emitted asset URLs',
+  ),
   async () => {
     expect(await page.textContent('.dynamic-import-meta-url-1-query')).toMatch(
       isBundled ? 'data:image/png;base64' : '/foo/bar/nested/icon.png?abc',
@@ -764,9 +790,11 @@ test.skipIf(isBundledDev)(
   },
 )
 
-// bundled dev: ?abc postfix dropped (see '?no-inline svg import -- multiple postfix')
-test.skipIf(isBundledDev)(
+test(
   'new URL(`./${1 === 0 ? static : dynamic}?abc`, import.meta.url)',
+  bundledDevTodo(
+    'bundled dev drops the postfix (`?query` / `#fragment`) from emitted asset URLs',
+  ),
   async () => {
     expect(
       await page.textContent('.dynamic-import-meta-url-1-ternary'),
@@ -875,14 +903,21 @@ test('inline style test', async () => {
 })
 
 if (!isBuild) {
-  // bundled dev: editing a CSS file imported by an inline <style> @import does not apply (no reload/update) (vitejs/vite#23028)
-  test.skipIf(isBundledDev)('@import in html style tag hmr', async () => {
-    await expect.poll(() => getColor('.import-css')).toBe('rgb(0, 136, 255)')
-    const loadPromise = page.waitForEvent('load')
-    editFile('./css/import.css', (code) => code.replace('#0088ff', '#00ff88 '))
-    await loadPromise
-    await expect.poll(() => getColor('.import-css')).toBe('rgb(0, 255, 136)')
-  })
+  test(
+    '@import in html style tag hmr',
+    bundledDevTodo(
+      'editing a CSS file `@import`ed from an inline `<style>` does not reload the open page; the reload only reaches the next page that connects',
+    ),
+    async () => {
+      await expect.poll(() => getColor('.import-css')).toBe('rgb(0, 136, 255)')
+      const loadPromise = page.waitForEvent('load')
+      editFile('./css/import.css', (code) =>
+        code.replace('#0088ff', '#00ff88 '),
+      )
+      await loadPromise
+      await expect.poll(() => getColor('.import-css')).toBe('rgb(0, 255, 136)')
+    },
+  )
 }
 
 test('html import word boundary', async () => {
