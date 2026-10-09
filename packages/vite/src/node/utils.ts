@@ -1835,24 +1835,26 @@ export function isDevServer(
 export function createSerialPromiseQueue<T>(): {
   run(f: () => Promise<T>): Promise<T>
 } {
-  let previousTask: Promise<[unknown, Awaited<T>]> | undefined
+  let previousTask: Promise<void> | undefined
 
   return {
     async run(f) {
       const thisTask = f()
       // wait for both the previous task and this task
       // so that this function resolves in the order this function is called
-      const depTasks = Promise.all([previousTask, thisTask])
+      const depTasks = Promise.allSettled([previousTask, thisTask]).then(
+        () => {},
+      )
       previousTask = depTasks
 
-      const [, result] = await depTasks
+      await depTasks
 
       // this task was the last one, clear `previousTask` to free up memory
       if (previousTask === depTasks) {
         previousTask = undefined
       }
 
-      return result
+      return thisTask
     },
   }
 }
