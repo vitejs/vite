@@ -368,6 +368,17 @@ async function loadAndTransform(
   const originalCode = code
   if (transformResult.code === originalCode) {
     // no transform applied, keep code as-is
+    if (moduleType === 'json') {
+      try {
+        const parsed = JSON.parse(originalCode)
+        code = `export default ${JSON.stringify(parsed)}`
+      } catch {
+        throw new Error(`Failed to parse JSON file: ${id}`)
+      }
+    } else if (moduleType === 'text') {
+      code = `export default ${JSON.stringify(originalCode)}`
+    }
+
     debugTransform?.(
       timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`),
     )
