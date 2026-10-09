@@ -31,38 +31,37 @@ test.runIf(isBuild)('emit css sourcemap', () => {
 
   expect(formatSourcemapForSnapshot(removeSourceMappingURL(map), css))
     .toMatchInlineSnapshot(`
-    SourceMap {
-      content: {
-        "ignoreList": [],
-        "mappings": "AAAA,2JCCE,8BCDF,4BCAA",
-        "sources": [
-          "../../../linked.css",
-          "../../../imported.styl",
-          "../../../imported.sss",
-          "../../../input-map.css",
-        ],
-        "sourcesContent": [
-          ".linked {
-      color: red;
-    }
-    ",
-          ".imported
-      &-stylus
-        color blue-red-mixed
-    ",
-          ".imported-sugarss
-      color: red
-    ",
-          ".input-map {
-      color: #00f;
-    }
-    ",
-        ],
-        "version": 3,
-      },
-      visualization: "https://evanw.github.io/source-map-visualization/#MjgzAC5saW5rZWQsLmJlLWltcG9ydGVkLC5saW5rZWQtd2l0aC1pbXBvcnQsLmltcG9ydGVkLC5iZS1pbXBvcnRlZCwuaW1wb3J0ZWQtd2l0aC1pbXBvcnQsLmltcG9ydGVkLXNhc3MsLmhvUU10V19pbXBvcnRlZC1zYXNzLW1vZHVsZSwuaW1wb3J0ZWQtbGVzc3tjb2xvcjpyZWR9LmltcG9ydGVkLXN0eWx1c3tjb2xvcjpwdXJwbGV9LmltcG9ydGVkLXN1Z2Fyc3N7Y29sb3I6cmVkfS5pbnB1dC1tYXB7Y29sb3I6IzAwZn0KCi8qIyBzb3VyY2VNYXBwaW5nVVJMPWluZGV4LUNoc2RmUkJwLmNzcy5tYXAgKi8zNDgAeyJ2ZXJzaW9uIjozLCJtYXBwaW5ncyI6IkFBQUEsMkpDQ0UsOEJDREYsNEJDQUEiLCJpZ25vcmVMaXN0IjpbXSwic291cmNlcyI6WyIuLi8uLi8uLi9saW5rZWQuY3NzIiwiLi4vLi4vLi4vaW1wb3J0ZWQuc3R5bCIsIi4uLy4uLy4uL2ltcG9ydGVkLnNzcyIsIi4uLy4uLy4uL2lucHV0LW1hcC5jc3MiXSwic291cmNlc0NvbnRlbnQiOlsiLmxpbmtlZCB7XG4gIGNvbG9yOiByZWQ7XG59XG4iLCIuaW1wb3J0ZWRcbiAgJi1zdHlsdXNcbiAgICBjb2xvciBibHVlLXJlZC1taXhlZFxuIiwiLmltcG9ydGVkLXN1Z2Fyc3NcbiAgY29sb3I6IHJlZFxuIiwiLmlucHV0LW1hcCB7XG4gIGNvbG9yOiAjMDBmO1xufVxuIl19"
-    }
-  `)
+      SourceMap {
+        content: {
+          "mappings": "AAAA,2JCCE,8BCDF,4BCAA",
+          "sources": [
+            "../../../linked.css",
+            "../../../imported.styl",
+            "../../../imported.sss",
+            "../../../input-map.css",
+          ],
+          "sourcesContent": [
+            ".linked {
+        color: red;
+      }
+      ",
+            ".imported
+        &-stylus
+          color blue-red-mixed
+      ",
+            ".imported-sugarss
+        color: red
+      ",
+            ".input-map {
+        color: #00f;
+      }
+      ",
+          ],
+          "version": 3,
+        },
+        visualization: "https://evanw.github.io/source-map-visualization/#MjgzAC5saW5rZWQsLmJlLWltcG9ydGVkLC5saW5rZWQtd2l0aC1pbXBvcnQsLmltcG9ydGVkLC5iZS1pbXBvcnRlZCwuaW1wb3J0ZWQtd2l0aC1pbXBvcnQsLmltcG9ydGVkLXNhc3MsLmhvUU10V19pbXBvcnRlZC1zYXNzLW1vZHVsZSwuaW1wb3J0ZWQtbGVzc3tjb2xvcjpyZWR9LmltcG9ydGVkLXN0eWx1c3tjb2xvcjpwdXJwbGV9LmltcG9ydGVkLXN1Z2Fyc3N7Y29sb3I6cmVkfS5pbnB1dC1tYXB7Y29sb3I6IzAwZn0KCi8qIyBzb3VyY2VNYXBwaW5nVVJMPWluZGV4LUNoc2RmUkJwLmNzcy5tYXAgKi8zMzIAeyJtYXBwaW5ncyI6IkFBQUEsMkpDQ0UsOEJDREYsNEJDQUEiLCJzb3VyY2VzIjpbIi4uLy4uLy4uL2xpbmtlZC5jc3MiLCIuLi8uLi8uLi9pbXBvcnRlZC5zdHlsIiwiLi4vLi4vLi4vaW1wb3J0ZWQuc3NzIiwiLi4vLi4vLi4vaW5wdXQtbWFwLmNzcyJdLCJzb3VyY2VzQ29udGVudCI6WyIubGlua2VkIHtcbiAgY29sb3I6IHJlZDtcbn1cbiIsIi5pbXBvcnRlZFxuICAmLXN0eWx1c1xuICAgIGNvbG9yIGJsdWUtcmVkLW1peGVkXG4iLCIuaW1wb3J0ZWQtc3VnYXJzc1xuICBjb2xvcjogcmVkXG4iLCIuaW5wdXQtbWFwIHtcbiAgY29sb3I6ICMwMGY7XG59XG4iXSwidmVyc2lvbiI6M30="
+      }
+    `)
 })
 
 describe.runIf(isServe)('serve', () => {
