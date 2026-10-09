@@ -2,6 +2,7 @@ import { describe, expect, test, vi } from 'vitest'
 import {
   browserErrors,
   browserLogs,
+  bundledDevTodo,
   editFile,
   getColor,
   getCssRuleBg,
@@ -17,34 +18,52 @@ import {
   untilBrowserLogAfter,
 } from '~utils'
 
-test.skipIf(isBundledDev && isWindows)('should have no 404s', () => {
+const windowsTodo = isWindows
+  ? bundledDevTodo(
+      'on Windows, a request returns 404 and the page CSS does not load',
+    )
+  : {}
+
+test('should have no 404s', windowsTodo, () => {
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
   })
 })
 
 describe('asset imports from js', () => {
-  test.skipIf(isBundledDev)('file outside root', async () => {
-    // assert valid image src https://github.com/microsoft/playwright/issues/6046#issuecomment-1799585719
-    await vi.waitUntil(() =>
-      page
-        .locator('.asset-reference.outside-root .asset-preview')
-        .evaluate((el: HTMLImageElement) => el.naturalWidth > 0),
-    )
-
-    const text = await page.textContent(
-      '.asset-reference.outside-root .asset-url',
-    )
-    if (isBuild) {
-      expect(text).toMatch(/\/dev\/assets\/logo-[-\w]{8}\.png/)
-    } else {
-      // asset url is prefixed with server.origin
-      expect(text).toMatch(
-        `http://localhost:${ports['backend-integration']}/dev/@fs/`,
+  test(
+    'file outside root',
+    bundledDevTodo(
+      'bundled dev does not apply `server.origin` to emitted asset URLs',
+    ),
+    async () => {
+      // assert valid image src https://github.com/microsoft/playwright/issues/6046#issuecomment-1799585719
+      await vi.waitUntil(() =>
+        page
+          .locator('.asset-reference.outside-root .asset-preview')
+          .evaluate((el: HTMLImageElement) => el.naturalWidth > 0),
       )
-      expect(text).toMatch(/\/dev\/@fs\/.+?\/images\/logo\.png/)
-    }
-  })
+
+      const text = await page.textContent(
+        '.asset-reference.outside-root .asset-url',
+      )
+      if (isBuild) {
+        expect(text).toMatch(/\/dev\/assets\/logo-[-\w]{8}\.png/)
+      } else if (isBundledDev) {
+        // asset url is prefixed with server.origin
+        expect(text).toMatch(
+          `http://localhost:${ports['backend-integration']}/dev/assets/`,
+        )
+        expect(text).toMatch(/\/dev\/assets\/logo-[-\w]{8}\.png/)
+      } else {
+        // asset url is prefixed with server.origin
+        expect(text).toMatch(
+          `http://localhost:${ports['backend-integration']}/dev/@fs/`,
+        )
+        expect(text).toMatch(/\/dev\/@fs\/.+?\/images\/logo\.png/)
+      }
+    },
+  )
 })
 
 describe.runIf(isBuild)('build', () => {
@@ -111,20 +130,25 @@ describe.runIf(isServe)('serve', () => {
     })
   })
 
-  test.skipIf(isBundledDev)('preserve the base in CSS HMR', async () => {
+  test('preserve the base in CSS HMR', windowsTodo, async () => {
     await expect.poll(() => getColor('body')).toBe('black') // sanity check
     editFile('frontend/entrypoints/global.css', (code) =>
       code.replace('black', 'red'),
     )
     await expect.poll(() => getColor('body')).toBe('red') // successful HMR
 
+    // bundled dev injects CSS with `<style>`, so there is no `<link>` to re-request
+    if (isBundledDev) return
     // Verify that the base (/dev/) was added during the css-update
     const link = await page.$('link[rel="stylesheet"]:last-of-type')
     expect(await link.getAttribute('href')).toContain('/dev/global.css?t=')
   })
 
-  test.skipIf(isBundledDev)(
+  test(
     'server.origin is applied to non-public CSS url()',
+    bundledDevTodo(
+      'bundled dev does not apply `server.origin` to emitted asset URLs',
+    ),
     async () => {
       const bg = await getCssRuleBg('.outside-root--aliased')
       expect(bg).toContain(
@@ -133,8 +157,9 @@ describe.runIf(isServe)('serve', () => {
     },
   )
 
-  test.skipIf(isBundledDev && isWindows)(
+  test(
     'server.origin is applied to public CSS url()',
+    windowsTodo,
     async () => {
       const bg = await getCssRuleBg('.public-asset')
       expect(bg).toContain(
@@ -143,18 +168,17 @@ describe.runIf(isServe)('serve', () => {
     },
   )
 
-  test.skipIf(isBundledDev)(
-    'CSS dependencies are tracked for HMR',
-    async () => {
-      const el = await page.$('h1')
-      await untilBrowserLogAfter(
-        () =>
-          editFile('frontend/entrypoints/main.ts', (code) =>
-            code.replace('text-black', 'text-[rgb(204,0,0)]'),
-          ),
-        '[vite] css hot updated: /global.css',
-      )
-      await expect.poll(() => getColor(el)).toBe('rgb(204, 0, 0)')
-    },
-  )
+  test('CSS dependencies are tracked for HMR', windowsTodo, async () => {
+    const el = await page.$('h1')
+    await untilBrowserLogAfter(
+      () =>
+        editFile('frontend/entrypoints/main.ts', (code) =>
+          code.replace('text-black', 'text-[rgb(204,0,0)]'),
+        ),
+      isBundledDev
+        ? '[vite] hot updated: playground-temp/backend-integration/frontend/entrypoints/global.css'
+        : '[vite] css hot updated: /global.css',
+    )
+    await expect.poll(() => getColor(el)).toBe('rgb(204, 0, 0)')
+  })
 })
