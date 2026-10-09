@@ -232,6 +232,7 @@ export type {
   TransformOptions,
   TransformResult,
 } from './server/transformRequest'
+export type { PluginTraceContext, ModuleTraceContext } from './server/tracing'
 export type {
   HmrOptions,
   WsOptions,

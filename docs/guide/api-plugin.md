@@ -780,6 +780,31 @@ function accessImportMap() {
 }
 ```
 
+## Tracing Channels
+
+:::info Experimental
+
+This feature is experimental and may change in the future.
+
+:::
+
+During dev, Vite publishes [`TracingChannel`](https://nodejs.org/api/diagnostics_channel.html#class-tracingchannel)s that tools can subscribe to for timing information:
+
+- `vite.module`: wraps each module transform request in a dev environment. The context is `{ url, environment }` (`ModuleTraceContext`).
+- `vite.plugin`: wraps each plugin `resolveId`, `load` and `transform` hook call. The context is `{ plugin, hook, id, environment }` (`PluginTraceContext`).
+
+Plugin hook calls made while transforming a module run within the async context of its `vite.module` span, so stores bound with `start.bindStore()` propagate to them.
+
+```ts
+import { tracingChannel } from 'node:diagnostics_channel'
+import type { PluginTraceContext } from 'vite'
+
+tracingChannel('vite.plugin').start.subscribe((message) => {
+  const ctx = message as PluginTraceContext
+  console.log(`${ctx.plugin}:${ctx.hook}`, ctx.id)
+})
+```
+
 ## Client-server Communication
 
 Since Vite 2.9, we provide some utilities for plugins to help handle the communication with clients.

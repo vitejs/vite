@@ -36,6 +36,7 @@ import {
   extractSourcemapFromFile,
   injectSourcesContent,
 } from './sourcemap'
+import { moduleTracingChannel } from './tracing'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
@@ -126,7 +127,13 @@ export function transformRequest(
     })
   }
 
-  const request = doTransform(environment, url, options, timestamp)
+  const request =
+    moduleTracingChannel.hasSubscribers === false
+      ? doTransform(environment, url, options, timestamp)
+      : moduleTracingChannel.tracePromise(
+          () => doTransform(environment, url, options, timestamp),
+          { url, environment: environment.name },
+        )
 
   // Avoid clearing the cache of future requests if aborted
   let cleared = false
