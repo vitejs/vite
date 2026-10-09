@@ -65,7 +65,7 @@ test('ssr', async () => {
   expect(await page.textContent('.ssr')).toBe('false')
 })
 
-test.skipIf(isBundledDev)('env object', async () => {
+test('env object', async () => {
   const env = JSON.parse(await page.textContent('.env-object'))
   expect(env).not.toHaveProperty([
     'DEPEND_ENV',
