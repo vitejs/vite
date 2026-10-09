@@ -70,6 +70,15 @@
 <h2>Resolving #/ root alias pattern with imports field</h2>
 <p class="imports-root-slash">fail</p>
 
+<h2>Resolving ## prefixed pattern with imports field</h2>
+<p class="imports-double-hash">fail</p>
+
+<h2>Resolving key containing # with imports field</h2>
+<p class="imports-mid-hash">fail</p>
+
+<h2>Resolving key containing ? with imports field</h2>
+<p class="imports-question-mark">fail</p>
+
 <h2>Resolve /index.*</h2>
 <p class="index">fail</p>
 
@@ -278,6 +287,15 @@
 
   import { msg as importsRootSlash } from '#/index.js'
   text('.imports-root-slash', importsRootSlash)
+
+  import { msg as importsDoubleHash } from '##double/index.js'
+  text('.imports-double-hash', importsDoubleHash)
+
+  import { msg as importsMidHash } from '#mid#hash'
+  text('.imports-mid-hash', importsMidHash)
+
+  import { msg as importsQuestionMark } from '#question?mark'
+  text('.imports-question-mark', importsQuestionMark)
 
   // implicit index resolving
   import { foo } from './util'
