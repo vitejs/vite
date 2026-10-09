@@ -77,15 +77,23 @@ describe.runIf(isServe)('serve', () => {
       const css = await getStyleTagContentIncluding('.linked ')
       expect(formatSourcemapForSnapshot(extractSourcemap(css), css))
         .toMatchInlineSnapshot(`
-        SourceMap {
-          content: {
-            "mappings": "",
-            "sources": [],
-            "version": 3,
-          },
-          visualization: "https://evanw.github.io/source-map-visualization/#MjYALmxpbmtlZCB7CiAgY29sb3I6IHJlZDsKfQo0MAB7Im1hcHBpbmdzIjoiIiwic291cmNlcyI6W10sInZlcnNpb24iOjN9"
-        }
-      `)
+          SourceMap {
+            content: {
+              "mappings": "AAAA,CAAC,MAAM,CAAC;AACR,CAAC,CAAC,KAAK,CAAC,CAAC,GAAG;AACZ",
+              "sources": [
+                "/root/linked.css",
+              ],
+              "sourcesContent": [
+                ".linked {
+            color: red;
+          }
+          ",
+              ],
+              "version": 3,
+            },
+            visualization: "https://evanw.github.io/source-map-visualization/#MjYALmxpbmtlZCB7CiAgY29sb3I6IHJlZDsKfQoxNjgAeyJtYXBwaW5ncyI6IkFBQUEsQ0FBQyxNQUFNLENBQUM7QUFDUixDQUFDLENBQUMsS0FBSyxDQUFDLENBQUMsR0FBRztBQUNaIiwic291cmNlcyI6WyIvcm9vdC9saW5rZWQuY3NzIl0sInNvdXJjZXNDb250ZW50IjpbIi5saW5rZWQge1xuICBjb2xvcjogcmVkO1xufVxuIl0sInZlcnNpb24iOjN9"
+          }
+        `)
       return
     }
     const res = await page.request.get(
@@ -194,11 +202,19 @@ describe.runIf(isServe)('serve', () => {
       expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
         SourceMap {
           content: {
-            "mappings": "",
-            "sources": [],
+            "mappings": "AAAA,CAAC,QAAQ,CAAC;AACV,CAAC,CAAC,KAAK,CAAC,CAAC,GAAG;AACZ",
+            "sources": [
+              "/root/imported.css",
+            ],
+            "sourcesContent": [
+              ".imported {
+          color: red;
+        }
+        ",
+            ],
             "version": 3,
           },
-          visualization: "https://evanw.github.io/source-map-visualization/#MjgALmltcG9ydGVkIHsKICBjb2xvcjogcmVkOwp9CjQwAHsibWFwcGluZ3MiOiIiLCJzb3VyY2VzIjpbXSwidmVyc2lvbiI6M30="
+          visualization: "https://evanw.github.io/source-map-visualization/#MjgALmltcG9ydGVkIHsKICBjb2xvcjogcmVkOwp9CjE3MgB7Im1hcHBpbmdzIjoiQUFBQSxDQUFDLFFBQVEsQ0FBQztBQUNWLENBQUMsQ0FBQyxLQUFLLENBQUMsQ0FBQyxHQUFHO0FBQ1oiLCJzb3VyY2VzIjpbIi9yb290L2ltcG9ydGVkLmNzcyJdLCJzb3VyY2VzQ29udGVudCI6WyIuaW1wb3J0ZWQge1xuICBjb2xvcjogcmVkO1xufVxuIl0sInZlcnNpb24iOjN9"
         }
       `)
       return
