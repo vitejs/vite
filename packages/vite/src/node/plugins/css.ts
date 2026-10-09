@@ -2,6 +2,18 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import type { EncodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
+import { FlattenMap, encodedMap, type Section } from '@jridgewell/trace-mapping'
+import { dataToEsm } from '@rollup/pluginutils'
+import { WorkerWithFallback } from 'artichokie'
+import type Less from 'less'
+import type {
+  TransformAttributeResult as LightningCssTransformAttributeResult,
+  TransformResult as LightningCssTransformResult,
+} from 'lightningcss'
+import MagicString from 'magic-string'
+import colors from 'picocolors'
+import type * as PostCSS from 'postcss'
 import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
@@ -15,31 +27,21 @@ import type {
   SourceMap,
   SourceMapInput,
 } from 'rolldown'
-import { FlattenMap, encodedMap, type Section } from '@jridgewell/trace-mapping'
-import { dataToEsm } from '@rollup/pluginutils'
-import colors from 'picocolors'
-import MagicString from 'magic-string'
-import type * as PostCSS from 'postcss'
 import type Sass from 'sass'
 import type Stylus from 'stylus'
-import type Less from 'less'
-import type { EncodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
-import { WorkerWithFallback } from 'artichokie'
 import { globSync } from 'tinyglobby'
-import type {
-  TransformAttributeResult as LightningCssTransformAttributeResult,
-  TransformResult as LightningCssTransformResult,
-} from 'lightningcss'
-import type { LightningCSSOptions } from '#types/internal/lightningcssOptions'
 import type {
   LessPreprocessorBaseOptions,
   SassModernPreprocessBaseOptions,
   StylusPreprocessorBaseOptions,
 } from '#types/internal/cssPreprocessorOptions'
 import type { EsbuildTransformOptions } from '#types/internal/esbuildOptions'
+import type { LightningCSSOptions } from '#types/internal/lightningcssOptions'
 import type { CustomPluginOptionsVite } from '#types/metadata'
-import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
-import type { EnvironmentModuleNode } from '../server/moduleGraph'
+import { type DevEnvironment } from '..'
+import { NULL_BYTE_PLACEHOLDER } from '../../shared/constants'
+import { cleanUrl, isWindows, slash } from '../../shared/utils'
+import { PartialEnvironment } from '../baseEnvironment'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   resolveUserExternal,
@@ -47,6 +49,7 @@ import {
   toOutputFilePathInJS,
 } from '../build'
 import type { LibraryOptions } from '../build'
+import type { ResolvedConfig } from '../config'
 import {
   CLIENT_PUBLIC_PATH,
   CSS_LANGS_RE,
@@ -54,9 +57,18 @@ import {
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
   SPECIAL_QUERY_RE,
 } from '../constants'
-import type { ResolvedConfig } from '../config'
+import { createBackCompatIdResolver } from '../idResolver'
+import type { ResolveIdFn } from '../idResolver'
+import type { Logger } from '../logger'
+import { nodeResolveWithVite } from '../nodeResolve'
+import type { PackageCache } from '../packages'
+import { findNearestMainPackageData } from '../packages'
 import type { Plugin } from '../plugin'
 import { checkPublicFile } from '../publicDir'
+import type { EnvironmentModuleNode } from '../server/moduleGraph'
+import type { TransformPluginContext } from '../server/pluginContainer'
+import { searchForWorkspaceRoot } from '../server/searchRoot'
+import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import {
   _dirname,
   arraify,
@@ -86,29 +98,18 @@ import {
   stripBomTag,
   urlRE,
 } from '../utils'
-import type { Logger } from '../logger'
-import { cleanUrl, isWindows, slash } from '../../shared/utils'
-import { NULL_BYTE_PLACEHOLDER } from '../../shared/constants'
-import { createBackCompatIdResolver } from '../idResolver'
-import type { ResolveIdFn } from '../idResolver'
-import { PartialEnvironment } from '../baseEnvironment'
-import type { TransformPluginContext } from '../server/pluginContainer'
-import { searchForWorkspaceRoot } from '../server/searchRoot'
-import { type DevEnvironment } from '..'
-import type { PackageCache } from '../packages'
-import { findNearestMainPackageData } from '../packages'
-import { nodeResolveWithVite } from '../nodeResolve'
-import { addToHTMLProxyTransformResult, getImportMap } from './html'
 import {
   assetUrlRE,
   cssEntriesMap,
   fileToUrl,
+  getAssetUrlPostfix,
   publicAssetUrlCache,
   publicAssetUrlRE,
   publicFileToBuiltUrl,
   renderAssetUrlInJS,
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
+import { addToHTMLProxyTransformResult, getImportMap } from './html'
 import { getChunkOriginalFileName } from './manifest'
 import { IIFE_BEGIN_RE, UMD_BEGIN_RE } from './oxc'
 
@@ -250,6 +251,7 @@ const commonjsProxyRE = /[?&]commonjs-proxy/
 const inlineRE = /[?&]inline\b/
 const inlineCSSRE = /[?&]inline-css\b/
 const styleAttrRE = /[?&]style-attr\b/
+const styleTagCloseRE = /<\/style(?=[\t\n\f\r />])/gi
 const functionCallRE = /^[A-Z_][.\w-]*\(/i
 const transformOnlyRE = /[?&]transform-only\b/
 const nonEscapedDoubleQuoteRe = /(?<!\\)"/g
@@ -410,7 +412,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           let resolved = await resolveUrl(id, importer)
           if (resolved) {
             if (fragment) resolved += '#' + fragment
-            let url = await fileToUrl(this, resolved)
+            let url = await fileToUrl(this, resolved, 'string')
             // Inherit HMR timestamp if this asset was invalidated
             if (!url.startsWith('data:') && this.environment.mode === 'dev') {
               const mod = [
@@ -567,6 +569,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (inlineCSS && isHTMLProxy) {
           if (styleAttrRE.test(id)) {
             css = css.replace(/"/g, '&quot;')
+          } else {
+            if (config.command !== 'serve' && config.build.cssMinify) {
+              css = (await minifyCSS(css, config, true, id)).code
+            }
+            css = css.replace(styleTagCloseRE, '<\\/style')
           }
           const index = htmlProxyIndexRE.exec(id)?.[1]
           if (index == null) {
@@ -621,11 +628,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           const cssContent = await getContentWithSourcemap(css)
           const code = [
-            this.environment.config.isBundled
-              ? `const { updateStyle: __vite__updateStyle, removeStyle: __vite__removeStyle } = import.meta.hot._internal`
-              : `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
-                  path.posix.join(config.base, CLIENT_PUBLIC_PATH),
-                )}`,
+            `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
+              path.posix.join(config.base, CLIENT_PUBLIC_PATH),
+            )}`,
             `const __vite__id = ${JSON.stringify(id)}`,
             `const __vite__css = ${JSON.stringify(cssContent)}`,
             `__vite__updateStyle(__vite__id, __vite__css)`,
@@ -762,8 +767,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               }
 
               // replace asset url references with resolved url.
-              s.replace(assetUrlRE, (_, fileHash, postfix = '') => {
-                const filename = this.getFileName(fileHash) + postfix
+              s.replace(assetUrlRE, (_, fileHash, urlId) => {
+                const filename =
+                  this.getFileName(fileHash) +
+                  getAssetUrlPostfix(this.environment, urlId)
                 chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
                 return encodeURIPath(
                   toOutputFilePathInCss(
@@ -1131,11 +1138,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       // With `cssCodeSplit: false`, CSS is emitted as a single stylesheet in the HTML,
       // so this per-chunk import map handling is irrelevant.
-      if (config.build.chunkImportMap && chunkCssReferences.size) {
+      if (
+        this.environment.config.build.chunkImportMap &&
+        chunkCssReferences.size
+      ) {
         // The import map hash identifies the JS chunk independently of its content.
         // Since each chunk has at most one extracted CSS sidecar, we can reuse that
         // stable identity with a `.css` extension while mapping it to the CSS content hash.
-        const importMap = getImportMap(bundle, config)!
+        const importMap = getImportMap(bundle, this.environment.config)!
         const importMapReverseMapping = Object.fromEntries(
           Object.entries(importMap.mapping).map(([k, v]) => [v, k]),
         )
@@ -1183,8 +1193,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const pureCssChunkNameSet = new Set(pureCssChunkNames)
 
         let importMapReverseMapping: Record<string, string> | undefined
-        if (config.build.chunkImportMap) {
-          const importMap = getImportMap(bundle, config)!
+        if (this.environment.config.build.chunkImportMap) {
+          const importMap = getImportMap(bundle, this.environment.config)!
           importMapReverseMapping = Object.fromEntries(
             Object.entries(importMap.mapping).map(([k, v]) => [v, k]),
           )
@@ -2532,11 +2542,14 @@ async function minifyCSS(
     const { code, map, warnings } = (await importLightningCSS()).transform({
       ...config.css.lightningcss,
       targets: convertTargets(config.build.cssTarget),
-      cssModules: undefined,
       filename,
       code: Buffer.from(css),
       minify: true,
       sourceMap: enableSourcemap,
+      // the transforms should run in `compileLightningCSS` step
+      cssModules: undefined,
+      visitor: undefined,
+      customAtRules: undefined,
     })
 
     for (const warning of warnings) {
@@ -3537,7 +3550,7 @@ async function compileLightningCSS(
               if (isPreProcessor(lang)) {
                 const result = await compileCSSPreprocessors(
                   environment,
-                  id,
+                  filePath,
                   lang,
                   code,
                   workerController,
@@ -3546,7 +3559,11 @@ async function compileLightningCSS(
                 // TODO: support source map
                 return result.code
               } else if (lang === 'sss') {
-                const sssResult = await transformSugarSS(environment, id, code)
+                const sssResult = await transformSugarSS(
+                  environment,
+                  filePath,
+                  code,
+                )
                 // TODO: support source map
                 return sssResult.code
               }
@@ -3825,9 +3842,10 @@ const convertTargetsCache = new Map<
 export const convertTargets = (
   esbuildTarget: string | string[] | false,
 ): LightningCSSOptions['targets'] => {
-  if (!esbuildTarget) return {}
-  const cached = convertTargetsCache.get(esbuildTarget)
-  if (cached) return cached
+  if (!esbuildTarget) return undefined
+  if (convertTargetsCache.has(esbuildTarget)) {
+    return convertTargetsCache.get(esbuildTarget)
+  }
   const targets: LightningCSSOptions['targets'] = {}
 
   const entriesWithoutES = arraify(esbuildTarget).flatMap((e) => {
@@ -3861,8 +3879,10 @@ export const convertTargets = (
     throw new Error(`Unsupported target "${entry}"`)
   }
 
-  convertTargetsCache.set(esbuildTarget, targets)
-  return targets
+  // an empty object means "no browser supports anything" to lightningcss
+  const result = Object.keys(targets).length > 0 ? targets : undefined
+  convertTargetsCache.set(esbuildTarget, result)
+  return result
 }
 
 export function resolveLibCssFilename(

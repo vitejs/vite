@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vitest'
 import { type DefaultTreeAdapterMap, parseFragment } from 'parse5'
+import { describe, expect, test } from 'vitest'
 import { getNodeAssetAttributes } from '../assetSource'
 
 describe('getNodeAssetAttributes', () => {

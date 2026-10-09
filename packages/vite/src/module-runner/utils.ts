@@ -50,7 +50,7 @@ export function posixPathToFileHref(posixPath: string): string {
   if (
     (filePathLast === CHAR_FORWARD_SLASH ||
       (isWindows && filePathLast === CHAR_BACKWARD_SLASH)) &&
-    resolved[resolved.length - 1] !== '/'
+    resolved.at(-1) !== '/'
   )
     resolved += '/'
 

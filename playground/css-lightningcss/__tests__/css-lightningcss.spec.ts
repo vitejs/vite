@@ -7,6 +7,7 @@ import {
   isBuild,
   isBundled,
   page,
+  readFile,
   viteTestUrl,
 } from '~utils'
 
@@ -77,6 +78,22 @@ test.runIf(isBuild)('minify css', async () => {
   const cssFile = findAssetFile(/index-[-\w]+\.css$/)
   expect(cssFile).toMatch('rgba(')
   expect(cssFile).not.toMatch('#ffff00b3')
+})
+
+test.runIf(isBuild)('minify inline style', () => {
+  expect(readFile('dist/index.html')).toContain(
+    '<style>.inline-style{color:red}</style>',
+  )
+})
+
+test.runIf(isBuild)('escapes closing style tags in inline CSS', () => {
+  expect(readFile('dist/index.html')).toContain(
+    '<style>.escaped-closing-style{content:"<\\/style>"}</style>',
+  )
+})
+
+test.runIf(isBuild)('does not run the visitor again during minify', () => {
+  expect(readFile('dist/media-query-visits.txt')).toBe('2')
 })
 
 test('css with external url', async () => {

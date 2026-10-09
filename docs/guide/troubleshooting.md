@@ -135,6 +135,20 @@ This is because [the port forwarding feature in VS Code does not support IPv6](h
 
 See [#16522](https://github.com/vitejs/vite/issues/16522) for more details.
 
+### Illegal operation error when watching files
+
+If the file or directory is located on a file system that does not support file system events, Vite may be unable to watch it.
+
+An example error you may encounter is:
+
+```
+Error: EISDIR: illegal operation on a directory, watch 'C:/Users/me/project/vite.config.js'
+```
+
+For example, this can happen with a VirtualBox shared folder.
+
+To solve this, you can enable [`server.watch.usePolling`](/config/server-options#server-watch). Note that [`usePolling` leads to high CPU utilization](https://github.com/paulmillr/chokidar/tree/3.6.0#performance).
+
 ## HMR
 
 ### Vite detects a file change but the HMR is not working
@@ -240,7 +254,7 @@ vite build --profile
 Once your application is opened in the browser, just await finish loading it and then go back to the terminal and press `p` key (will stop the Node.js inspector) then press `q` key to stop the dev server.
 :::
 
-Node.js inspector will generate `vite-profile-0.cpuprofile` in the root folder, go to https://www.speedscope.app/, and upload the CPU profile using the `BROWSE` button to inspect the result.
+Node.js inspector will generate `vite-profile-0.cpuprofile` in the root folder. You can pass `--profile <name>` (or `--profile=<name>`) to write `<name>.cpuprofile` instead. Go to https://www.speedscope.app/, and upload the CPU profile using the `BROWSE` button to inspect the result.
 
 You can install [vite-plugin-inspect](https://github.com/antfu/vite-plugin-inspect), which lets you inspect the intermediate state of Vite plugins and can also help you to identify which plugins or middlewares are the bottleneck in your applications. The plugin can be used in both dev and build modes. Check the readme file for more details.
 

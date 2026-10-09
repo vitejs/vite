@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
+import { createServer, createServerModuleRunner } from '..'
 import {
   commentRE,
   devToScanEnvironment,
@@ -12,7 +13,6 @@ import {
   normalizePath,
   singlelineCommentsRE,
 } from '../utils'
-import { createServer, createServerModuleRunner } from '..'
 
 describe('optimizer-scan:script-test', () => {
   const scriptContent = `import { defineComponent } from 'vue'
@@ -85,28 +85,40 @@ describe('optimizer-scan:script-test', () => {
   })
 
   test('imports regex should work', () => {
-    const shouldMatchArray = [
-      `import 'vue'`,
-      `import { foo } from 'vue'`,
-      `import foo from 'vue'`,
-      `;import foo from 'vue'`,
-      `   import foo from 'vue'`,
-      `import { foo
+    const shouldMatchArray: [code: string, expected: string][] = [
+      [`import 'vue'`, `'vue'`],
+      [`import { foo } from 'vue'`, `'vue'`],
+      [`import foo from 'vue'`, `'vue'`],
+      [`;import foo from 'vue'`, `'vue'`],
+      [`   import foo from 'vue'`, `'vue'`],
+      [
+        `import { foo
       } from 'vue'`,
-      `import bar, { foo } from 'vue'`,
-      `import foo from 'vue';`,
-      `*/ import foo from 'vue';`,
-      `import foo from 'vue';//comment`,
-      `import foo from 'vue';/*comment
+        `'vue'`,
+      ],
+      [`import bar, { foo } from 'vue'`, `'vue'`],
+      [`import foo from 'vue';`, `'vue'`],
+      [`*/ import foo from 'vue';`, `'vue'`],
+      [`import foo from 'vue';//comment`, `'vue'`],
+      [
+        `import foo from 'vue';/*comment
       */`,
-      // Skipped, false negatives with current regex
-      // `import typescript from 'typescript'`,
-      // import type, {foo} from 'vue'
+        `'vue'`,
+      ],
+      // https://github.com/vitejs/vite/issues/23471
+      // bindings starting with "type" should not be treated as type-only imports
+      [`import typescript from 'typescript'`, `'typescript'`],
+      [`import typeorm from 'typeorm'`, `'typeorm'`],
+      [`import types from 'types'`, `'types'`],
+      // still a known false negative: a default binding literally named `type`
+      // (`import type, {foo} from 'vue'`, `import type from 'vue'`) is a valid
+      // value import, but the word boundary cannot tell it apart from the
+      // `import type` modifier. Missed deps are discovered again at runtime.
     ]
 
-    shouldMatchArray.forEach((str) => {
+    shouldMatchArray.forEach(([str, expected]) => {
       importsRE.lastIndex = 0
-      expect(importsRE.exec(str)![1]).toEqual("'vue'")
+      expect(importsRE.exec(str)![1]).toEqual(expected)
     })
 
     const shouldFailArray = [

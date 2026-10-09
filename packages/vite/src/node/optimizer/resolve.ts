@@ -1,12 +1,12 @@
 import path from 'node:path'
 import picomatch from 'picomatch'
 import { globSync } from 'tinyglobby'
-import type { ResolvedConfig } from '../config'
-import { escapeRegex, getNpmPackageName } from '../utils'
-import { resolvePackageData } from '../packages'
 import { slash } from '../../shared/utils'
+import type { ResolvedConfig } from '../config'
 import type { Environment } from '../environment'
 import { createBackCompatIdResolver } from '../idResolver'
+import { resolvePackageData } from '../packages'
+import { escapeRegex, getNpmPackageName } from '../utils'
 
 export function createOptimizeDepsIncludeResolver(
   environment: Environment,

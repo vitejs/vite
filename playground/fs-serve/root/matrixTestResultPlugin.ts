@@ -1,5 +1,5 @@
-import type { Plugin } from 'vite'
 import escapeHtml from 'escape-html'
+import type { Plugin } from 'vite'
 
 const testIds = [
   'safe',
@@ -24,6 +24,7 @@ const testIds = [
   'unsafe-query-dot-svg-import',
   'unsafe-svg',
   'unsafe-import-inline-wasm-init',
+  'unsafe-vite-wasm-instance',
   'unsafe-relative-path-after-query',
   'unsafe-dotenv',
   'unsafe-dotenv-casing',
@@ -32,6 +33,7 @@ const testIds = [
   'unsafe-dotenv-inline',
   'unsafe-dotenv-query-dot-svg-wasm-init',
   'unsafe-dotenv-import-raw',
+  'unsafe-dotenv-vite-wasm-instance',
   'unsafe-dotenv-ntfs-ads',
   'unsafe-dotenv-83-short-name',
 ]

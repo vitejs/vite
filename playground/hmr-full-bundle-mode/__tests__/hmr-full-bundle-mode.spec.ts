@@ -36,6 +36,25 @@ if (isBuild) {
     await expect.poll(() => page.textContent('.worker-url')).toBe('worker-url')
   })
 
+  // The runtime must be the installed rolldown's, served by the dev server
+  test('loads the rolldown runtime from the server', async () => {
+    const runtimeUrl = new URL(
+      '/@rolldown/experimental-runtime.mjs',
+      page.url(),
+    )
+    const client = await page.request.get(
+      new URL('/bundledDevClient.mjs', page.url()).href,
+    )
+    expect(await client.text()).toContain(`from "${runtimeUrl.pathname}"`)
+    const runtime = await page.request.get(runtimeUrl.href)
+    expect(runtime.status()).toBe(200)
+    expect(await runtime.text()).toContain('DevRuntime')
+    const loaded: string[] = await page.evaluate(() =>
+      performance.getEntriesByType('resource').map((entry) => entry.name),
+    )
+    expect(loaded).toContain(runtimeUrl.href)
+  })
+
   // BUNDLED -> GENERATE_HMR_PATCH -> BUNDLING -> BUNDLE_ERROR -> BUNDLING -> BUNDLED
   test('handle bundle error', async () => {
     editFile('main.js', (code) =>
@@ -298,8 +317,25 @@ if (isBuild) {
   })
 
   test('lazy bundling', async () => {
+    const responsePromise = page.waitForResponse(/\/@vite\/lazy\?/)
     await page.click('#load-dynamic')
     await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')
+
+    // the lazy chunk names a `.map` file that only exists in memory; the dev
+    // server has to register it, otherwise the reference 404s and the module
+    // cannot be mapped back to its source. The reference is relative and a lazy
+    // chunk is imported from `/@vite/lazy?...`, so it resolves under `/@vite/`.
+    const response = await responsePromise
+    const code = await response.text()
+    const url = code.match(/\/\/# sourceMappingURL=(.+)$/m)?.[1]
+    expect(url).toMatch(/^lazy_compile_\d+\.js\.map$/)
+
+    const mapResponse = await fetch(new URL(url!, response.url()))
+    expect(mapResponse.status).toBe(200)
+    const map = await mapResponse.json()
+    expect(map.version).toBe(3)
+    expect(map.sources.some((s: string) => s.endsWith('dynamic.js'))).toBe(true)
+    expect(map.mappings.length).toBeGreaterThan(0)
   })
 
   // placed before `invalidate` on purpose: that test's cleanup restores
@@ -446,6 +482,13 @@ if (isBuild) {
     await expect
       .poll(() => page.textContent('.worker-plain'))
       .toBe('worker-plain-updated')
+  })
+
+  test('lazy bundling errors return 500', async () => {
+    const response = await page.request.get(
+      new URL('/@vite/lazy?id=%2Ffoo%2Fbar&clientId=x', page.url()).href,
+    )
+    expect(response.status()).toBe(500)
   })
 
   // Blocked by https://github.com/rolldown/rolldown/issues/10340

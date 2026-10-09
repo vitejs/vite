@@ -3,7 +3,13 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import {
+  fromComment,
+  fromMapFileComment,
+  removeComments,
+} from 'convert-source-map'
 import colors from 'css-color-names'
+import type { ResultPromise as ExecaResultPromise } from 'execa'
 import type {
   ConsoleMessage,
   ElementHandle,
@@ -11,14 +17,15 @@ import type {
 } from 'playwright-chromium'
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
-import {
-  fromComment,
-  fromMapFileComment,
-  removeComments,
-} from 'convert-source-map'
 import { expect } from 'vitest'
-import type { ResultPromise as ExecaResultPromise } from 'execa'
-import { isWindows, page, sourcemapSnapshot, testDir } from './vitestSetup'
+import {
+  isBundledDev,
+  isWindows,
+  page,
+  sourcemapSnapshot,
+  testDir,
+  viteServer,
+} from './vitestSetup'
 
 export * from './vitestSetup'
 
@@ -273,6 +280,22 @@ export function readDepOptimizationMetadata(
   )
 }
 
+export async function gotoLatestBuild(url: string): Promise<void> {
+  if (isBundledDev) {
+    // Earlier HMR edits leave the bundled-dev output stale. Opening a page then
+    // serves the fallback page first, which reloads into the real page later.
+    const bundledDev = viteServer.environments.client.bundledDev as any
+    await bundledDev.devEngine.ensureLatestBuildOutput()
+  }
+  await page.goto(url)
+}
+
+export function hotUpdatedLog(file: string): string {
+  return isBundledDev
+    ? `[vite] hot updated: ${normalizePath(path.relative(process.cwd(), testDir))}/${file}`
+    : `[vite] hot updated: /${file}`
+}
+
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void
 
 export async function untilBrowserLogAfter(
@@ -393,7 +416,7 @@ export function extractSourcemap(
   read?: (filename: string) => Promise<string>,
 ): any {
   const lines = content.trim().split('\n')
-  const lastLine = lines[lines.length - 1]
+  const lastLine = lines.at(-1)
   if (read) {
     const result = fromMapFileComment(lastLine, async (url) => {
       if (url.startsWith('data:')) {
@@ -418,6 +441,9 @@ export const formatSourcemapForSnapshot = (
   if (m.names && m.names.length === 0) {
     delete m.names
   }
+  if (m.ignoreList && m.ignoreList.length === 0) {
+    delete m.ignoreList
+  }
   if (m.debugId) {
     m.debugId = '00000000-0000-0000-0000-000000000000'
   }
@@ -425,8 +451,14 @@ export const formatSourcemapForSnapshot = (
   if (m.sourceRoot) {
     m.sourceRoot = m.sourceRoot.replace(root, '/root')
   }
+  const normalized = Object.fromEntries(
+    Object.keys(m)
+      .filter((key) => m[key] != null)
+      .sort()
+      .map((key) => [key, m[key]]),
+  )
   const c = removeComments(code.replace(/\?v=[\da-f]{8}/g, '?v=00000000'))
-  return { map: m, code: c, [sourcemapSnapshot]: { withoutContent } }
+  return { map: normalized, code: c, [sourcemapSnapshot]: { withoutContent } }
 }
 
 // helper function to kill process, uses taskkill on windows to ensure child process is killed too

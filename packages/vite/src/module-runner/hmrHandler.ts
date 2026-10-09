@@ -1,7 +1,7 @@
 import type { HotPayload } from '#types/hmrPayload'
-import { slash, unwrapId } from '../shared/utils'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../shared/constants'
 import { createHMRHandler } from '../shared/hmrHandler'
+import { slash } from '../shared/utils'
 import type { ModuleRunner } from './runner'
 
 export function createHMRHandlerForRunner(
@@ -19,9 +19,6 @@ export function createHMRHandlerForRunner(
         await Promise.all(
           payload.updates.map(async (update): Promise<void> => {
             if (update.type === 'js-update') {
-              // runner always caches modules by their full path without /@id/ prefix
-              update.acceptedPath = unwrapId(update.acceptedPath)
-              update.path = unwrapId(update.path)
               return hmrClient.queueUpdate(update)
             }
 

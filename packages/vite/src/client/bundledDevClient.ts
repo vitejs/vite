@@ -8,10 +8,10 @@ import {
   base,
   clearOverlayOrReloadOnFirstUpdate,
   registerBundledDevClient,
-  removeStyle,
   transport,
-  updateStyle,
 } from './client'
+
+declare const __HMR_PARTIAL_ACCEPT__: boolean
 
 // keep the same public exports as `client.ts`, which this entry replaces when inlined
 export {
@@ -24,11 +24,16 @@ export {
 
 if (typeof DevRuntime !== 'undefined') {
   class ViteDevRuntime extends DevRuntime {
+    payloadDelivered(filename: string): void {
+      transport.send({
+        type: 'custom',
+        event: 'vite:bundled-dev:payload-delivered',
+        data: { filename },
+      })
+    }
+
     override createModuleHotContext(moduleId: string) {
-      const ctx = new BundledDevHMRContext(bundledDevHmrClient, moduleId)
-      // @ts-expect-error TODO: support CSS properly
-      ctx._internal = { updateStyle, removeStyle }
-      return ctx
+      return new BundledDevHMRContext(bundledDevHmrClient, moduleId)
     }
   }
 
@@ -52,6 +57,7 @@ if (typeof DevRuntime !== 'undefined') {
     runtime,
     {
       base,
+      partialAccept: __HMR_PARTIAL_ACCEPT__,
       beforeApply: clearOverlayOrReloadOnFirstUpdate,
     },
   )

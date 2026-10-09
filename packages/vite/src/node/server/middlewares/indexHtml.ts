@@ -2,9 +2,14 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { SourceMapInput } from 'rolldown'
 import type { DefaultTreeAdapterMap, Token } from 'parse5'
+import type { SourceMapInput } from 'rolldown'
 import type { Connect } from '#dep-types/connect'
+import type { PreviewServer, ResolvedConfig, ViteDevServer } from '../..'
+import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
+import { getNodeAssetAttributes } from '../../assetSource'
+import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
+import { getHmrImplementation } from '../../plugins/clientInjections'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
@@ -24,9 +29,7 @@ import {
   resolveHtmlTransforms,
   traverseHtml,
 } from '../../plugins/html'
-import type { PreviewServer, ResolvedConfig, ViteDevServer } from '../..'
-import { send } from '../send'
-import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
+import { checkPublicFile } from '../../publicDir'
 import {
   ensureWatchedFile,
   fsPathFromId,
@@ -40,16 +43,14 @@ import {
   normalizePath,
   processSrcSetSync,
   stripBase,
+  tryStatSync,
 } from '../../utils'
-import { checkPublicFile } from '../../publicDir'
-import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
-import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
-import { getNodeAssetAttributes } from '../../assetSource'
 import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from '../pluginContainer'
-import { getHmrImplementation } from '../../plugins/clientInjections'
+import { send } from '../send'
+import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 interface AssetNode {
@@ -106,11 +107,12 @@ export function createDevHtmlTransformFn(
 }
 
 function getHtmlFilename(url: string, server: ViteDevServer) {
-  if (url.startsWith(FS_PREFIX)) {
-    return decodeURIComponent(fsPathFromId(url))
+  const urlPath = cleanUrl(url)
+  if (urlPath.startsWith(FS_PREFIX)) {
+    return decodeURIComponent(fsPathFromId(urlPath))
   } else {
     return decodeURIComponent(
-      normalizePath(path.join(server.config.root, url.slice(1))),
+      normalizePath(path.join(server.config.root, urlPath.slice(1))),
     )
   }
 }
@@ -130,6 +132,8 @@ function isBareRelative(url: string) {
 function getHtmlDirnameForRelativeUrl(htmlPath: string): string {
   return htmlPath.endsWith('/') ? htmlPath : path.posix.dirname(htmlPath)
 }
+
+const multipleLeadingSlashesRE = /^\/{2,}/g
 
 const processNodeUrl = (
   url: string,
@@ -205,6 +209,13 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   html,
   { path: htmlPath, filename, server, originalUrl },
 ) => {
+  // There's no way to express a relative URL that starts with `//`. URLs starting with `//` is relative to the scheme.
+  // The relative URL is needed to generate the URL in script tags and link tags.
+  // We replace `//` with `/` here for workaround, which is the best we can do.
+  if (htmlPath.startsWith('//')) {
+    htmlPath = htmlPath.replace(multipleLeadingSlashesRE, '/')
+  }
+
   const { config, watcher } = server!
   const base = config.base || '/'
   const decodedBase = config.decodedBase || '/'
@@ -213,7 +224,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   let proxyModuleUrl: string
 
   const trailingSlash = htmlPath.endsWith('/')
-  if (!trailingSlash && fs.existsSync(filename)) {
+  if (!trailingSlash && tryStatSync(filename)?.isFile()) {
+    ensureWatchedFile(watcher, filename, config.root)
     // If htmlPath is a /@fs/ URL (e.g. vitest-browser always uses this form
     // for testerHtmlPath), normalise to an absolute FS path so proxyCacheUrl
     // is always root-relative.
@@ -307,9 +319,9 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       } else if (isModule && node.childNodes.length) {
         addInlineModule(node, 'js')
       } else if (node.childNodes.length) {
-        const scriptNode = node.childNodes[
-          node.childNodes.length - 1
-        ] as DefaultTreeAdapterMap['textNode']
+        const scriptNode = node.childNodes.at(
+          -1,
+        ) as DefaultTreeAdapterMap['textNode']
         for (const {
           url,
           start,
@@ -394,7 +406,6 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           url,
           false,
         )
-      ensureWatchedFile(watcher, mod.file, config.root)
 
       const result =
         await server!.environments.client.pluginContainer.transform(
@@ -421,7 +432,6 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           url,
           false,
         )
-      ensureWatchedFile(watcher, mod.file, config.root)
 
       await server?.environments.client.pluginContainer.transform(code, mod.id!)
 

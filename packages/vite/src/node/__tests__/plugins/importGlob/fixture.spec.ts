@@ -1,5 +1,5 @@
-import { resolve } from 'node:path'
 import { promises as fs } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { transformGlobImport } from '../../../plugins/importMetaGlob'
 import { transformWithOxc } from '../../../plugins/oxc'

@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import type { EnvironmentModuleGraph } from '..'
+import { decodeSourceURL } from '../../shared/utils'
 
 let offset: number
 
@@ -34,9 +35,10 @@ export function ssrRewriteStacktrace(
     .map((line) => {
       return line.replace(
         /^ {4}at (?:(\S.*?)\s\()?(.+?):(\d+)(?::(\d+))?\)?/,
-        (input, varName, id, originalLine, originalColumn) => {
-          if (!id) return input
+        (input, varName, rawId, originalLine, originalColumn) => {
+          if (!rawId) return input
 
+          const id = decodeSourceURL(rawId)
           const mod = moduleGraph.getModuleById(id)
           const rawSourceMap = mod?.transformResult?.map
 

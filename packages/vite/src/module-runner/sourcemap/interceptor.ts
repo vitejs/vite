@@ -1,8 +1,8 @@
 import type { OriginalMapping } from '@jridgewell/trace-mapping'
+import { decodeSourceURL, slash } from '../../shared/utils'
+import type { EvaluatedModules } from '../evaluatedModules'
 import type { ModuleRunner } from '../runner'
 import { decodeBase64, posixDirname, posixResolve } from '../utils'
-import type { EvaluatedModules } from '../evaluatedModules'
-import { slash } from '../../shared/utils'
 import { DecodedMap, getOriginalPosition } from './decoder'
 
 interface RetrieveFileHandler {
@@ -102,11 +102,12 @@ function supportRelativeURL(file: string, url: string) {
 }
 
 function getRunnerSourceMap(position: OriginalMapping): CachedMapEntry | null {
+  const id = decodeSourceURL(position.source!)
   for (const moduleGraph of evaluatedModulesCache) {
-    const sourceMap = moduleGraph.getModuleSourceMapById(position.source!)
+    const sourceMap = moduleGraph.getModuleSourceMapById(id)
     if (sourceMap) {
       return {
-        url: position.source,
+        url: id,
         map: sourceMap,
         vite: true,
       }
@@ -363,13 +364,19 @@ function wrapCallSite(frame: CallSite, state: State) {
     const line = frame.getLineNumber() ?? 0
     const column = (frame.getColumnNumber() ?? 1) - 1
 
-    const position = mapSourcePosition({
-      name: null,
-      source,
-      line,
-      column,
-    })
+    const unmapped = { name: null, source, line, column }
+    const position = mapSourcePosition(unmapped)
     state.curPosition = position
+    // Most frames have no source map, and cloning one per frame dominates the cost of
+    // building the stack. Skip it when the clone would print the same thing anyway.
+    if (
+      position === unmapped &&
+      !state.nextPosition?.name &&
+      frame.getColumnNumber() != null &&
+      frame.getScriptNameOrSourceURL() === source
+    ) {
+      return frame
+    }
     frame = cloneCallSite(frame)
     const originalFunctionName = frame.getFunctionName
     frame.getFunctionName = function () {

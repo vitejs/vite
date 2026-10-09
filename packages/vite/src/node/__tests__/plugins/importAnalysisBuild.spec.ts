@@ -1,8 +1,11 @@
-import { beforeAll, describe, expect, test } from 'vitest'
 import { init, parse as parseImports } from 'es-module-lexer'
+import { beforeAll, describe, expect, test } from 'vitest'
+import { promiseWithResolvers } from '../../../shared/utils'
 import {
+  isCssPreloadUrl,
   matchImportsToPreloadMarkers,
   preloadMarker,
+  preloadOnce,
 } from '../../plugins/importAnalysisBuild'
 
 beforeAll(async () => {
@@ -63,5 +66,58 @@ describe('matchImportsToPreloadMarkers', () => {
     const code = `const x = ${preloadMarker};import('a')`
     const [marker] = markerPositions(code)
     expect(match(code)).toStrictEqual([marker])
+  })
+})
+
+describe('isCssPreloadUrl', () => {
+  test('detects css assets with query strings or hashes', () => {
+    const cases: ReadonlyArray<[string, boolean]> = [
+      ['https://example.com/assets/lazy.css', true],
+      ['https://example.com/assets/lazy.css?dpl=123', true],
+      ['https://example.com/assets/lazy.css#hash', true],
+      ['https://example.com/assets/lazy.js?file=.css', false],
+    ]
+    for (const [input, expected] of cases) {
+      const inputUrl = new URL(input)
+      expect(isCssPreloadUrl(inputUrl)).toBe(expected)
+    }
+  })
+})
+
+describe('preloadOnce', () => {
+  test('shares an in-flight preload and does not preload again after it settles', async () => {
+    const seen = {}
+    const { promise, resolve } = promiseWithResolvers<void>()
+    let preloadCount = 0
+    const preload = () => {
+      preloadCount++
+      return promise
+    }
+
+    const first = preloadOnce(seen, 'style.css', preload)
+    const second = preloadOnce(seen, 'style.css', preload)
+
+    expect(second).toBe(first)
+    expect(preloadCount).toBe(1)
+
+    resolve()
+    await expect(first).resolves.toBeUndefined()
+    expect(preloadOnce(seen, 'style.css', preload)).toBeUndefined()
+    expect(preloadCount).toBe(1)
+  })
+
+  test('shares a preload rejection with every waiter', async () => {
+    const seen = {}
+    const { promise, reject } = promiseWithResolvers<void>()
+    const error = new Error('failed to preload')
+
+    const first = preloadOnce(seen, 'style.css', () => promise)
+    const second = preloadOnce(seen, 'style.css', () => promise)
+    reject(error)
+
+    expect(await Promise.allSettled([first, second])).toStrictEqual([
+      { status: 'rejected', reason: error },
+      { status: 'rejected', reason: error },
+    ])
   })
 })

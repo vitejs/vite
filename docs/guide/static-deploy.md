@@ -8,6 +8,8 @@
   2. Free tier offerings should host the site indefinitely and are not time-bound.
      Offering a limited number of computation resource or site counts in exchange is fine.
   3. The linked guides should not contain any malicious content.
+  4. The platform must be in operation for at least 1 year. Please show some evidence of
+     this in your PR description.
 
   New sections should be added last in the file. Please reference the existing sections at
   the bottom of this file for examples of how to format the new section.
@@ -179,8 +181,8 @@ $ npm install --save-dev @cloudflare/vite-plugin
 ```
 
 ```js [vite.config.js]
-import { defineConfig } from 'vite'
 import { cloudflare } from '@cloudflare/vite-plugin'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [cloudflare()],

@@ -11,7 +11,7 @@ The default browser values of `build.target` and `'baseline-widely-available'` a
 - Firefox 104 → 114
 - Safari 16.0 → 16.4
 
-These browser versions align with [Baseline Widely Available](https://web-platform-dx.github.io/web-features/) feature sets as of 2026-01-01. In other words, they were all released about two and a half years ago.
+These browser versions align with [Baseline Widely Available](https://web-platform-dx.github.io/baseline/) feature sets as of 2026-01-01. In other words, they were all released about two and a half years ago.
 
 ## Rolldown
 
@@ -129,8 +129,8 @@ $ deno add -D npm:@rolldown/plugin-babel npm:@babel/plugin-proposal-decorators
 :::
 
 ```ts [vite.config.ts]
-import { defineConfig } from 'vite'
 import babel from '@rolldown/plugin-babel'
+import { defineConfig } from 'vite'
 
 function decoratorPreset(options: Record<string, unknown>) {
   return {
@@ -178,6 +178,7 @@ $ deno add -D npm:@rollup/plugin-swc npm:@swc/core
 :::
 
 ```js
+import swc from '@rollup/plugin-swc'
 import { defineConfig, withFilter } from 'vite'
 
 export default defineConfig({
