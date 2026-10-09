@@ -136,7 +136,7 @@ export function preloadOnce(
       seen[href] = undefined
     },
     (err) => {
-      seen[href] = undefined
+      delete seen[href]
       throw err
     },
   )
@@ -146,6 +146,7 @@ export function preloadOnce(
 
 declare const scriptRel: string
 declare const seen: PreloadSeen
+declare const failedCssLinks: Record<string, HTMLLinkElement | undefined>
 function preload(
   baseModule: () => Promise<unknown>,
   deps?: string[],
@@ -216,7 +217,8 @@ function preload(
             const preloadedHrefSet = isCss
               ? preloadedHrefs.styles
               : preloadedHrefs.all
-            if (preloadedHrefSet.has(dep.href)) {
+            const failedCssLink = isCss ? failedCssLinks[dep.href] : undefined
+            if (!failedCssLink && preloadedHrefSet.has(dep.href)) {
               return
             }
 
@@ -230,13 +232,21 @@ function preload(
             if (cspNonce) {
               link.setAttribute('nonce', cspNonce)
             }
-            document.head.appendChild(link)
+            if (failedCssLink) {
+              delete failedCssLinks[dep.href]
+            }
+            if (failedCssLink?.isConnected) {
+              failedCssLink.replaceWith(link)
+            } else {
+              document.head.appendChild(link)
+            }
             if (isCss) {
               return new Promise((res, rej) => {
                 link.addEventListener('load', res)
-                link.addEventListener('error', () =>
-                  rej(new Error(`Unable to preload CSS for ${dep}`)),
-                )
+                link.addEventListener('error', () => {
+                  failedCssLinks[dep.href] = link
+                  rej(new Error(`Unable to preload CSS for ${dep}`))
+                })
               })
             }
           })
@@ -296,7 +306,7 @@ function getPreloadCode(
         `function(dep) { return ${JSON.stringify(environment.config.base)}+dep }`
   // replace `import` as a workaround for stackblitz: https://stackblitz.com/edit/node-vqfvv8dy?file=index.js
   const preloadMethodCode = preload.toString().replaceAll('𝐢𝐦𝐩𝐨𝐫𝐭', 'import')
-  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};const isCssPreloadUrl = ${isCssPreloadUrl.toString()};const preloadOnce = ${preloadOnce.toString()};export const ${preloadMethod} = ${preloadMethodCode}`
+  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};const failedCssLinks = {};const isCssPreloadUrl = ${isCssPreloadUrl.toString()};const preloadOnce = ${preloadOnce.toString()};export const ${preloadMethod} = ${preloadMethodCode}`
   return preloadCode
 }
 
