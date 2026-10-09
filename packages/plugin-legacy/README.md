@@ -46,6 +46,8 @@ export default {
 
   If it's not set, plugin-legacy will load [the browserslist config sources](https://github.com/browserslist/browserslist#queries) and then fallback to the default value.
 
+  When legacy chunks are enabled, the default `build.cssTarget` includes both legacy and modern browser targets so CSS minification retains the required vendor prefixes. Set `build.cssTarget` explicitly to override this behavior.
+
 ### `modernTargets`
 
 - **Type:** `string | string[]`

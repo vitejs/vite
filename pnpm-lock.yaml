@@ -334,6 +334,9 @@ importers:
       '@babel/core':
         specifier: ^7.29.7
         version: 7.29.7(ms@2.1.3)
+      '@babel/helper-compilation-targets':
+        specifier: ^7.29.7
+        version: 7.29.7
       '@babel/plugin-transform-dynamic-import':
         specifier: ^7.29.7
         version: 7.29.7(@babel/core@7.29.7)
