@@ -31,39 +31,33 @@ test('should have no 404s', windowsTodo, () => {
 })
 
 describe('asset imports from js', () => {
-  test(
-    'file outside root',
-    bundledDevTodo(
-      'bundled dev does not apply `server.origin` to emitted asset URLs',
-    ),
-    async () => {
-      // assert valid image src https://github.com/microsoft/playwright/issues/6046#issuecomment-1799585719
-      await vi.waitUntil(() =>
-        page
-          .locator('.asset-reference.outside-root .asset-preview')
-          .evaluate((el: HTMLImageElement) => el.naturalWidth > 0),
-      )
+  test('file outside root', windowsTodo, async () => {
+    // assert valid image src https://github.com/microsoft/playwright/issues/6046#issuecomment-1799585719
+    await vi.waitUntil(() =>
+      page
+        .locator('.asset-reference.outside-root .asset-preview')
+        .evaluate((el: HTMLImageElement) => el.naturalWidth > 0),
+    )
 
-      const text = await page.textContent(
-        '.asset-reference.outside-root .asset-url',
+    const text = await page.textContent(
+      '.asset-reference.outside-root .asset-url',
+    )
+    if (isBuild) {
+      expect(text).toMatch(/\/dev\/assets\/logo-[-\w]{8}\.png/)
+    } else if (isBundledDev) {
+      // asset url is prefixed with server.origin
+      expect(text).toMatch(
+        `http://localhost:${ports['backend-integration']}/dev/assets/`,
       )
-      if (isBuild) {
-        expect(text).toMatch(/\/dev\/assets\/logo-[-\w]{8}\.png/)
-      } else if (isBundledDev) {
-        // asset url is prefixed with server.origin
-        expect(text).toMatch(
-          `http://localhost:${ports['backend-integration']}/dev/assets/`,
-        )
-        expect(text).toMatch(/\/dev\/assets\/logo-[-\w]{8}\.png/)
-      } else {
-        // asset url is prefixed with server.origin
-        expect(text).toMatch(
-          `http://localhost:${ports['backend-integration']}/dev/@fs/`,
-        )
-        expect(text).toMatch(/\/dev\/@fs\/.+?\/images\/logo\.png/)
-      }
-    },
-  )
+      expect(text).toMatch(/\/dev\/assets\/logo-[-\w]{8}\.png/)
+    } else {
+      // asset url is prefixed with server.origin
+      expect(text).toMatch(
+        `http://localhost:${ports['backend-integration']}/dev/@fs/`,
+      )
+      expect(text).toMatch(/\/dev\/@fs\/.+?\/images\/logo\.png/)
+    }
+  })
 })
 
 describe.runIf(isBuild)('build', () => {
@@ -146,9 +140,7 @@ describe.runIf(isServe)('serve', () => {
 
   test(
     'server.origin is applied to non-public CSS url()',
-    bundledDevTodo(
-      'bundled dev does not apply `server.origin` to emitted asset URLs',
-    ),
+    windowsTodo,
     async () => {
       const bg = await getCssRuleBg('.outside-root--aliased')
       expect(bg).toContain(
