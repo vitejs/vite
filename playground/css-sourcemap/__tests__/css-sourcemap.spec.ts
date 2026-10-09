@@ -2,6 +2,7 @@ import { URL } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import {
   extractSourcemap,
+  findAssetFile,
   formatSourcemapForSnapshot,
   isBuild,
   isBundled,
@@ -10,11 +11,52 @@ import {
   page,
   serverLogs,
 } from '~utils'
+import { removeSourceMappingURL } from './utils'
 
 test.runIf(isBuild)('should not output sourcemap warning (#4939)', () => {
   serverLogs.forEach((log) => {
     expect(log).not.toMatch('Sourcemap is likely to be incorrect')
   })
+})
+
+test.runIf(isBuild)('emit css sourcemap', () => {
+  const css = findAssetFile(/index-[-\w]+\.css$/, 'default')!
+  const map = JSON.parse(findAssetFile(/index-[-\w]+\.css\.map$/, 'default')!)
+
+  expect(formatSourcemapForSnapshot(removeSourceMappingURL(map), css))
+    .toMatchInlineSnapshot(`
+      SourceMap {
+        content: {
+          "mappings": "AAAA,6JCCE,8BCDF,4BCAA",
+          "sources": [
+            "../../../linked.css",
+            "../../../imported.styl",
+            "../../../imported.sss",
+            "../../../input-map.css",
+          ],
+          "sourcesContent": [
+            ".linked {
+        color: red;
+      }
+      ",
+            ".imported
+        &-stylus
+          color blue-red-mixed
+      ",
+            ".imported-sugarss
+        color: red
+      ",
+            ".input-map {
+        color: #00f;
+      }
+      ",
+          ],
+          "version": 3,
+        },
+        visualization: "https://evanw.github.io/source-map-visualization/#Mjg1AC5saW5rZWQsLmJlLWltcG9ydGVkLC5saW5rZWQtd2l0aC1pbXBvcnQsLmltcG9ydGVkLC5iZS1pbXBvcnRlZCwuaW1wb3J0ZWQtd2l0aC1pbXBvcnQsLmltcG9ydGVkLXNhc3MsLl9pbXBvcnRlZC1zYXNzLW1vZHVsZV9yMXFjcF8xLC5pbXBvcnRlZC1sZXNze2NvbG9yOnJlZH0uaW1wb3J0ZWQtc3R5bHVze2NvbG9yOnB1cnBsZX0uaW1wb3J0ZWQtc3VnYXJzc3tjb2xvcjpyZWR9LmlucHV0LW1hcHtjb2xvcjojMDBmfQoKLyojIHNvdXJjZU1hcHBpbmdVUkw9aW5kZXgtRGtTREZEeEsuY3NzLm1hcCAqLzMzMgB7Im1hcHBpbmdzIjoiQUFBQSw2SkNDRSw4QkNERiw0QkNBQSIsInNvdXJjZXMiOlsiLi4vLi4vLi4vbGlua2VkLmNzcyIsIi4uLy4uLy4uL2ltcG9ydGVkLnN0eWwiLCIuLi8uLi8uLi9pbXBvcnRlZC5zc3MiLCIuLi8uLi8uLi9pbnB1dC1tYXAuY3NzIl0sInNvdXJjZXNDb250ZW50IjpbIi5saW5rZWQge1xuICBjb2xvcjogcmVkO1xufVxuIiwiLmltcG9ydGVkXG4gICYtc3R5bHVzXG4gICAgY29sb3IgYmx1ZS1yZWQtbWl4ZWRcbiIsIi5pbXBvcnRlZC1zdWdhcnNzXG4gIGNvbG9yOiByZWRcbiIsIi5pbnB1dC1tYXAge1xuICBjb2xvcjogIzAwZjtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ=="
+      }
+    `)
+  expect(css).toMatch(/\/\*# sourceMappingURL=index-[-\w]+\.css\.map \*\/\s*$/)
 })
 
 describe.runIf(isServe)('serve', () => {
@@ -35,15 +77,23 @@ describe.runIf(isServe)('serve', () => {
       const css = await getStyleTagContentIncluding('.linked ')
       expect(formatSourcemapForSnapshot(extractSourcemap(css), css))
         .toMatchInlineSnapshot(`
-        SourceMap {
-          content: {
-            "mappings": "",
-            "sources": [],
-            "version": 3,
-          },
-          visualization: "https://evanw.github.io/source-map-visualization/#MjYALmxpbmtlZCB7CiAgY29sb3I6IHJlZDsKfQo0MAB7Im1hcHBpbmdzIjoiIiwic291cmNlcyI6W10sInZlcnNpb24iOjN9"
-        }
-      `)
+          SourceMap {
+            content: {
+              "mappings": "AAAA,CAAC,MAAM,CAAC;AACR,CAAC,CAAC,KAAK,CAAC,CAAC,GAAG;AACZ",
+              "sources": [
+                "/root/linked.css",
+              ],
+              "sourcesContent": [
+                ".linked {
+            color: red;
+          }
+          ",
+              ],
+              "version": 3,
+            },
+            visualization: "https://evanw.github.io/source-map-visualization/#MjYALmxpbmtlZCB7CiAgY29sb3I6IHJlZDsKfQoxNjgAeyJtYXBwaW5ncyI6IkFBQUEsQ0FBQyxNQUFNLENBQUM7QUFDUixDQUFDLENBQUMsS0FBSyxDQUFDLENBQUMsR0FBRztBQUNaIiwic291cmNlcyI6WyIvcm9vdC9saW5rZWQuY3NzIl0sInNvdXJjZXNDb250ZW50IjpbIi5saW5rZWQge1xuICBjb2xvcjogcmVkO1xufVxuIl0sInZlcnNpb24iOjN9"
+          }
+        `)
       return
     }
     const res = await page.request.get(
@@ -152,11 +202,19 @@ describe.runIf(isServe)('serve', () => {
       expect(formatSourcemapForSnapshot(map, css)).toMatchInlineSnapshot(`
         SourceMap {
           content: {
-            "mappings": "",
-            "sources": [],
+            "mappings": "AAAA,CAAC,QAAQ,CAAC;AACV,CAAC,CAAC,KAAK,CAAC,CAAC,GAAG;AACZ",
+            "sources": [
+              "/root/imported.css",
+            ],
+            "sourcesContent": [
+              ".imported {
+          color: red;
+        }
+        ",
+            ],
             "version": 3,
           },
-          visualization: "https://evanw.github.io/source-map-visualization/#MjgALmltcG9ydGVkIHsKICBjb2xvcjogcmVkOwp9CjQwAHsibWFwcGluZ3MiOiIiLCJzb3VyY2VzIjpbXSwidmVyc2lvbiI6M30="
+          visualization: "https://evanw.github.io/source-map-visualization/#MjgALmltcG9ydGVkIHsKICBjb2xvcjogcmVkOwp9CjE3MgB7Im1hcHBpbmdzIjoiQUFBQSxDQUFDLFFBQVEsQ0FBQztBQUNWLENBQUMsQ0FBQyxLQUFLLENBQUMsQ0FBQyxHQUFHO0FBQ1oiLCJzb3VyY2VzIjpbIi9yb290L2ltcG9ydGVkLmNzcyJdLCJzb3VyY2VzQ29udGVudCI6WyIuaW1wb3J0ZWQge1xuICBjb2xvcjogcmVkO1xufVxuIl0sInZlcnNpb24iOjN9"
         }
       `)
       return
