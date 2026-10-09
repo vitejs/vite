@@ -106,18 +106,29 @@ describe('preloadOnce', () => {
     expect(preloadCount).toBe(1)
   })
 
-  test('shares a preload rejection with every waiter', async () => {
+  test('shares a preload rejection with every waiter and retries later', async () => {
     const seen = {}
     const { promise, reject } = promiseWithResolvers<void>()
     const error = new Error('failed to preload')
+    let preloadCount = 0
+    const preload = () => {
+      preloadCount++
+      return preloadCount === 1 ? promise : Promise.resolve()
+    }
 
-    const first = preloadOnce(seen, 'style.css', () => promise)
-    const second = preloadOnce(seen, 'style.css', () => promise)
+    const first = preloadOnce(seen, 'style.css', preload)
+    const second = preloadOnce(seen, 'style.css', preload)
     reject(error)
 
     expect(await Promise.allSettled([first, second])).toStrictEqual([
       { status: 'rejected', reason: error },
       { status: 'rejected', reason: error },
     ])
+    expect(preloadCount).toBe(1)
+
+    await expect(
+      preloadOnce(seen, 'style.css', preload),
+    ).resolves.toBeUndefined()
+    expect(preloadCount).toBe(2)
   })
 })
