@@ -8,10 +8,14 @@ async function createRolldownDepPluginTransform(cacheDir: string) {
     optimizeDeps: { extensions: [] },
     server: { fs: { allow: [] } },
     resolve: { builtins: [] },
-    createResolver: () => ({}),
+    createResolver: () => async (id: string) =>
+      id === 'the-dependency/worker.js'
+        ? '/root/node_modules/the-dependency/worker.js'
+        : undefined,
   }
 
   const mockEnvironment = {
+    name: 'client',
     config: baseConfig,
     getTopLevelConfig: () => baseConfig,
   } as any
@@ -72,6 +76,17 @@ describe('rolldownDepPlugin transform', async () => {
     expect(
       await transform(code, '/root/node_modules/my-lib/index.js'),
     ).toBeUndefined()
+  })
+
+  test('resolves bare asset URLs from optimized deps', async () => {
+    expect(
+      await transform(
+        "new URL('the-dependency/worker.js', import.meta.url)",
+        '/root/node_modules/my-lib/index.js',
+      ),
+    ).toMatchInlineSnapshot(
+      `"new URL('' + "../../node_modules/the-dependency/worker.js", import.meta.url)"`,
+    )
   })
 
   test('skips dynamic template strings', async () => {
