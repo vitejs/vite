@@ -1,5 +1,7 @@
 import { EventEmitter } from 'node:events'
+import fs from 'node:fs'
 import path from 'node:path'
+import ignore from 'ignore'
 import colors from 'picocolors'
 import type { OutputOptions, WatcherOptions } from 'rolldown'
 import type { DevWatchOptions } from 'rolldown/experimental'
@@ -56,16 +58,32 @@ export function resolveEmptyOutDir(
  * mode is enabled.
  */
 export type ServerWatchOptions = WatchOptions &
-  Omit<DevWatchOptions, 'enabled' | 'skipWrite'>
+  Omit<DevWatchOptions, 'enabled' | 'skipWrite'> & {
+    /**
+     * Ignore files and directories matched by the patterns in the `.gitignore`
+     * at the project root.
+     *
+     * Only the root `.gitignore` is read. Env files, the config file and its
+     * dependencies, and the public directory stay watched even when matched.
+     *
+     * @default false
+     */
+    ignoredFromGitignore?: boolean
+  }
 
 export function resolveChokidarOptions(
   options: ServerWatchOptions | undefined,
   resolvedOutDirs: Set<string>,
   emptyOutDir: boolean,
   cacheDir: string,
+  gitignoreOptions?: {
+    root: string
+    protectedPaths: string[]
+  },
 ): WatchOptions {
   const {
     ignored: ignoredList,
+    ignoredFromGitignore,
     pollInterval,
     useDebounce,
     debounceDuration,
@@ -84,8 +102,11 @@ export function resolveChokidarOptions(
   ]
   if (emptyOutDir) {
     ignored.push(
-      ...[...resolvedOutDirs].map((outDir) => escapePath(outDir) + '/**'),
+      ...Array.from(resolvedOutDirs, (outDir) => escapePath(outDir) + '/**'),
     )
+  }
+  if (ignoredFromGitignore && gitignoreOptions) {
+    ignored.push(createGitignoreIgnoreFunction(gitignoreOptions))
   }
 
   const resolvedWatchOptions: WatchOptions = {
@@ -96,6 +117,45 @@ export function resolveChokidarOptions(
   }
 
   return resolvedWatchOptions
+}
+
+/**
+ * Creates an anymatch-compatible matcher that ignores paths matched by the
+ * patterns in the `.gitignore` at the given root. Only the root `.gitignore`
+ * is read, matching git's behavior for that single file. Paths outside the
+ * root and protected paths (env files, config file dependencies, ...) are
+ * never ignored so that the dev server keeps watching the files it needs.
+ */
+function createGitignoreIgnoreFunction({
+  root,
+  protectedPaths,
+}: {
+  root: string
+  protectedPaths: string[]
+}): (file: string) => boolean {
+  const gitignore = ignore()
+  const gitignorePath = path.join(root, '.gitignore')
+  if (fs.existsSync(gitignorePath)) {
+    gitignore.add(fs.readFileSync(gitignorePath, 'utf8'))
+  }
+  const normalizedProtected = protectedPaths.map((p) => normalizePath(p))
+  const protectedFiles = new Set(normalizedProtected)
+  const rootWithSlash = withTrailingSlash(normalizePath(root))
+  return (file) => {
+    const normalizedFile = normalizePath(file)
+    if (!normalizedFile.startsWith(rootWithSlash)) {
+      return false
+    }
+    if (
+      protectedFiles.has(normalizedFile) ||
+      normalizedProtected.some((p) =>
+        normalizedFile.startsWith(withTrailingSlash(p)),
+      )
+    ) {
+      return false
+    }
+    return gitignore.ignores(normalizedFile.slice(rootWithSlash.length))
+  }
 }
 
 export function convertToWatcherOptions(
