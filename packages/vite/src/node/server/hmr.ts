@@ -484,6 +484,14 @@ export async function handleHMRUpdate(
 
   for (const environment of environments) {
     const mods = new Set(environment.moduleGraph.getModulesByFile(file))
+    if (type === 'create' || type === 'delete') {
+      for (const importer of collectSiblingImportersByBasename(
+        environment,
+        file,
+      )) {
+        mods.add(importer)
+      }
+    }
     if (type === 'create') {
       for (const mod of environment.moduleGraph._hasResolveFailedErrorModules) {
         mods.add(mod)
@@ -676,6 +684,35 @@ export async function handleHMRUpdate(
     })
 
   await hotUpdateEnvironments(server, hmr)
+}
+
+function collectSiblingImportersByBasename(
+  environment: DevEnvironment,
+  file: string,
+): Set<EnvironmentModuleNode> {
+  const importers = new Set<EnvironmentModuleNode>()
+  const parsed = path.posix.parse(file)
+  if (!parsed.ext) {
+    return importers
+  }
+
+  const extensions = environment.config.resolve.extensions
+  if (!extensions.includes(parsed.ext)) {
+    return importers
+  }
+
+  for (const ext of extensions) {
+    if (ext === parsed.ext) continue
+    const sibling = path.posix.join(parsed.dir, `${parsed.name}${ext}`)
+    const modules = environment.moduleGraph.getModulesByFile(sibling)
+    if (!modules) continue
+    for (const mod of modules) {
+      for (const importer of mod.importers) {
+        importers.add(importer)
+      }
+    }
+  }
+  return importers
 }
 
 type HasDeadEnd = string | boolean
