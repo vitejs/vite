@@ -66,7 +66,9 @@ export function resolvePreviewOptions(
     port: preview?.port ?? DEFAULT_PREVIEW_PORT,
     strictPort: preview?.strictPort ?? server.strictPort,
     host: preview?.host ?? server.host,
-    allowedHosts: preview?.allowedHosts ?? server.allowedHosts,
+    allowedHosts: Array.isArray(preview?.allowedHosts)
+      ? preview.allowedHosts.slice()
+      : (preview?.allowedHosts ?? server.allowedHosts),
     https: preview?.https ?? server.https,
     open: preview?.open ?? server.open,
     proxy: preview?.proxy ?? server.proxy,
