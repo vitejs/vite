@@ -88,6 +88,37 @@ function createProxyContextMatcher(context: string): (url: string) => boolean {
   return (url) => url.startsWith(context)
 }
 
+type FetchHeadersLike = {
+  getSetCookie?: () => string[]
+  raw?: () => Record<string, string[]>
+}
+
+// http-proxy-3's `stream2` path builds fakeProxyRes.headers from
+// `Object.fromEntries(response.headers.entries())`, which can only hold one
+// value per key. A Response carrying several `Set-Cookie` headers therefore
+// has all but the last value silently dropped before the outgoing passes
+// copy headers to the client. We capture the original values via the
+// `onAfterResponse` callback (which still sees the intact Response, before
+// the collapse), then restore them on fakeProxyRes in a `proxyRes` listener.
+// See https://github.com/vitejs/vite/issues/23450.
+export function captureSetCookieValues(response: Response): string[] | undefined {
+  const headers = response.headers as FetchHeadersLike
+  if (typeof headers.getSetCookie === 'function') {
+    const values = headers.getSetCookie()
+    return values.length > 1 ? values : undefined
+  }
+  const raw = headers.raw?.()
+  if (raw) {
+    for (const key of Object.keys(raw)) {
+      if (key.toLowerCase() === 'set-cookie') {
+        const values = raw[key]
+        return values.length > 1 ? values : undefined
+      }
+    }
+  }
+  return undefined
+}
+
 export function proxyMiddleware(
   httpServer: HttpServer | null,
   options: NonNullable<CommonServerOptions['proxy']>,
@@ -95,6 +126,12 @@ export function proxyMiddleware(
 ): Connect.NextHandleFunction {
   // lazy require only when proxy is used
   const proxies: Record<string, ProxyContextEntry> = {}
+  // Per-request stash of original Set-Cookie values from a `fetch` proxy
+  // target's Response. Auto-cleaned by the WeakMap once `req` is GC'd.
+  const fetchSetCookieByReq = new WeakMap<
+    http.IncomingMessage,
+    string[]
+  >()
 
   Object.keys(options).forEach((context) => {
     let opts = options[context]
@@ -103,6 +140,29 @@ export function proxyMiddleware(
     }
     if (typeof opts === 'string') {
       opts = { target: opts, changeOrigin: true }
+    } else if (opts.fetch) {
+      // http-proxy-3's stream2 builds fakeProxyRes.headers from
+      // Object.fromEntries(response.headers.entries()) BEFORE the
+      // `proxyRes` listener fires, so we can't recover multi-value Set-Cookie
+      // headers from there. Instead, register an `onAfterResponse` hook on
+      // `fetchOptions` (called earlier in stream2, with the still-intact
+      // Response and the connect IncomingMessage) and read the values back in
+      // the proxyRes listener via a per-request WeakMap.
+      const userFetchOptions = opts.fetchOptions ?? {}
+      const userOnAfterResponse = userFetchOptions.onAfterResponse
+      opts = {
+        ...opts,
+        fetchOptions: {
+          ...userFetchOptions,
+          onAfterResponse: async (response, req, res, options) => {
+            const values = captureSetCookieValues(response)
+            if (values) fetchSetCookieByReq.set(req, values)
+            if (userOnAfterResponse) {
+              await userOnAfterResponse(response, req, res, options)
+            }
+          },
+        },
+      }
     }
     const proxy = httpProxy.createProxyServer(opts)
 
@@ -149,6 +209,29 @@ export function proxyMiddleware(
         )
       })
     })
+
+    if (opts.fetch) {
+      proxy.on('proxyRes', (proxyRes, req) => {
+        const values = fetchSetCookieByReq.get(req)
+        if (!values) return
+        // Restore the original Set-Cookie values onto fakeProxyRes so the
+        // outgoing passes forward each one as a separate header.
+        proxyRes.headers['set-cookie'] = values
+        if (Array.isArray(proxyRes.rawHeaders)) {
+          const next: string[] = []
+          for (let i = 0; i < proxyRes.rawHeaders.length; i += 2) {
+            if (proxyRes.rawHeaders[i].toLowerCase() === 'set-cookie') {
+              continue
+            }
+            next.push(proxyRes.rawHeaders[i], proxyRes.rawHeaders[i + 1])
+          }
+          for (const value of values) {
+            next.push('set-cookie', value)
+          }
+          proxyRes.rawHeaders = next
+        }
+      })
+    }
 
     // clone before saving because http-proxy mutates the options
     proxies[context] = {
