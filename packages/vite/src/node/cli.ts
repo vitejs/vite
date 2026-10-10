@@ -75,13 +75,9 @@ export const stopProfiler = (
     profileSession!.post('Profiler.stop', (err, { profile }) => {
       // Write profile to disk, upload, etc.
       if (!err) {
-        const name = global.__vite_profile_name
+        const name = global.__vite_profile_name ?? 'vite-profile'
         const count = profileCount++
-        const fileName = name
-          ? count === 0
-            ? name
-            : `${name}-${count}`
-          : `vite-profile-${count}`
+        const fileName = count === 0 ? name : `${name}-${count}`
         const outPath = path.resolve(`./${fileName}.cpuprofile`)
         fs.writeFileSync(outPath, JSON.stringify(profile))
         log(
