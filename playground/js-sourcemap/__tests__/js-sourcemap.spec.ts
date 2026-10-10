@@ -35,14 +35,25 @@ async function getDepJs(entry: string, depIdFragment: string) {
   expect(depUrl).toContain('/deps/')
 
   const depRes = await page.request.get(new URL(depUrl, page.url()).href)
-  return depRes.text()
+  return {
+    depJs: await depRes.text(),
+    depUrl: new URL(depUrl, page.url()).href,
+  }
 }
 
-function expectConsoleLogArgumentMapsToOriginalX(
+async function expectConsoleLogArgumentMapsToOriginalX(
   depJs: string,
+  depUrl: string,
   generatedName: string,
 ) {
-  const map = extractSourcemap(depJs)
+  // deps serve their sourcemaps as external files
+  const mapUrlMatch = depJs.match(/^\/\/# sourceMappingURL=(\S+)$/m)
+  expect(mapUrlMatch).toBeTruthy()
+  expect(mapUrlMatch![1]).toMatch(/\.js\.map(\?|$)/)
+  const mapRes = await page.request.get(new URL(mapUrlMatch![1], depUrl).href)
+  expect(mapRes.status()).toBe(200)
+  const map = await mapRes.json()
+
   const depLines = depJs.split('\n')
   const consoleLogCallRE = new RegExp(
     `console[\\w$]*\\.\\s*log[\\w$]*\\(${escapeRegex(generatedName)}\\)`,
@@ -59,9 +70,6 @@ function expectConsoleLogArgumentMapsToOriginalX(
     column: generatedColumn,
   })
 
-  expect(depJs).toMatch(
-    /^\/\/# sourceMappingURL=data:application\/json;base64,/m,
-  )
   expect(position).toMatchObject({
     line: 6,
     column: 16,
@@ -277,7 +285,14 @@ if (!isBuild) {
     const depUrl = depUrlMatch![1]
     const depRes = await page.request.get(new URL(depUrl, page.url()).href)
     const depJs = await depRes.text()
-    const map = extractSourcemap(depJs)
+    // deps serve their sourcemaps as external files
+    const mapUrlMatch = depJs.match(/^\/\/# sourceMappingURL=(\S+)$/m)
+    expect(mapUrlMatch).toBeTruthy()
+    const mapRes = await page.request.get(
+      new URL(mapUrlMatch![1], new URL(depUrl, page.url())).href,
+    )
+    expect(mapRes.status()).toBe(200)
+    const map = await mapRes.json()
     expect(map.sourcesContent).toBeDefined()
     expect(map.sourcesContent).not.toContainEqual(
       expect.stringContaining('defineConfig'),
@@ -302,10 +317,13 @@ if (!isBuild) {
       expect(depUrl).toContain('.vite/deps')
       const depRes = await page.request.get(new URL(depUrl, page.url()).href)
       const depJs = await depRes.text()
-      expect(depJs).toMatch(
-        /^\/\/# sourceMappingURL=data:application\/json;base64,/m,
+      const mapUrlMatch = depJs.match(/^\/\/# sourceMappingURL=(\S+)$/m)
+      expect(mapUrlMatch).toBeTruthy()
+      const mapRes = await page.request.get(
+        new URL(mapUrlMatch![1], new URL(depUrl, page.url())).href,
       )
-      const map = extractSourcemap(depJs)
+      expect(mapRes.status()).toBe(200)
+      const map = await mapRes.json()
       expect(map.sourcesContent).toBeDefined()
       expect(map.sourcesContent).not.toContainEqual(
         expect.stringContaining('defineConfig'),
@@ -318,7 +336,7 @@ if (!isBuild) {
   test.skipIf(isBundledDev)(
     'babel-transformed downleveled optimized dep maps to the correct original name',
     async () => {
-      const depJs = await getDepJs(
+      const { depJs, depUrl } = await getDepJs(
         './optimized-class-field-import-babel.js',
         'test-dep-class-field-sourcemap-babel',
       )
@@ -326,14 +344,14 @@ if (!isBuild) {
       expect(depJs).toContain('x = () => 1')
       expect(depJs).toContain('constructor(_x)')
       expect(depJs).toContain('console.log(_x)')
-      expectConsoleLogArgumentMapsToOriginalX(depJs, '_x')
+      await expectConsoleLogArgumentMapsToOriginalX(depJs, depUrl, '_x')
     },
   )
 
   test.skipIf(isBundledDev)(
     'oxc-transformed downleveled optimized dep maps to the correct original name',
     async () => {
-      const depJs = await getDepJs(
+      const { depJs, depUrl } = await getDepJs(
         './optimized-class-field-import-oxc.js',
         'test-dep-class-field-sourcemap-oxc',
       )
@@ -341,7 +359,7 @@ if (!isBuild) {
       expect(depJs).toContain('x$$$ = () => 1')
       expect(depJs).toContain('constructor$$$(_x$$$)')
       expect(depJs).toContain('console$$$.log$$$(_x$$$)')
-      expectConsoleLogArgumentMapsToOriginalX(depJs, '_x$$$')
+      await expectConsoleLogArgumentMapsToOriginalX(depJs, depUrl, '_x$$$')
     },
   )
 }
