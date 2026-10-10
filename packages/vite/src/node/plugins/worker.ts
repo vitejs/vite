@@ -631,6 +631,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             for (const file of result.watchedFiles) {
               this.addWatchFile(file)
             }
+            // The entry is inlined, but assets referenced by the worker
+            // still need to be emitted during `load` since an HMR patch
+            // skips the generate phase.
+            if (this.environment.config.command === 'serve') {
+              emitWorkerAssetsForBundledDev(this, config)
+            }
 
             const jsContent = `const jsContent = ${JSON.stringify(result.entryCode)};`
 
