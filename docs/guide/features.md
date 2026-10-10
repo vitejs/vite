@@ -663,7 +663,7 @@ These rules are enforced to prevent accidentally importing files that are not in
 
 ## WebAssembly
 
-Vite supports importing pre-compiled `.wasm` files in two ways: directly as an [ES module](#esm-integration) when you only need the module's exports, or with [`?init`](#manual-initialization) when you need explicit control over instantiation.
+Vite supports importing pre-compiled `.wasm` files directly as an [ES module](#esm-integration) when you only need the module's exports. When you need explicit control over instantiation, import the compiled module with a [source phase import](#source-phase-imports), or use [`?init`](#manual-initialization).
 
 ### ESM Integration
 
@@ -679,6 +679,8 @@ If the WebAssembly module declares imports of its own, Vite resolves them from J
 
 This follows the [WebAssembly/ES Module Integration proposal](https://github.com/WebAssembly/esm-integration). Because a WebAssembly module is instantiated asynchronously, a directly imported `.wasm` file behaves as an async module and requires top-level `await` support.
 
+Modules are compiled with the [JS String Builtins](https://github.com/WebAssembly/js-string-builtins) and [Imported String Constants](https://github.com/WebAssembly/js-string-builtins) proposals enabled, matching the WebAssembly/ES Module Integration loader.
+
 ::: tip TypeScript support
 
 Since the types of `.wasm` files are unknown, TypeScript will report errors like `Module '"*.wasm"' has no exported member 'add'`. To fix this, enable [`allowArbitraryExtensions`](https://www.typescriptlang.org/tsconfig/#allowArbitraryExtensions) in your `tsconfig.json` and create a declaration file next to your `.wasm` file. With `allowArbitraryExtensions` enabled, TypeScript will look for a declaration file named `{filename}.d.wasm.ts` when resolving a `.wasm` import. For example, for `add.wasm`, create `add.d.wasm.ts`:
@@ -688,6 +690,38 @@ export function add(a: number, b: number): number
 ```
 
 :::
+
+#### Source Phase Imports
+
+The ESM Integration proposal also defines [source phase imports](https://github.com/tc39/proposal-source-phase-imports) for `.wasm` files, giving you the compiled [`WebAssembly.Module`](https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Module) without instantiating it, leaving instantiation entirely to you. This is the standard way to take control over instantiation and is the recommended alternative to [`?init`](#manual-initialization):
+
+```js
+import source mod from './example.wasm'
+
+// `mod` is a `WebAssembly.Module`; instantiate it whenever (and however) you like
+const instance = await WebAssembly.instantiate(mod)
+instance.exports.test()
+```
+
+Because you own the `WebAssembly.Instance`, you can satisfy the module's own imports and instantiate it as many times as needed:
+
+```js
+import source mod from './example.wasm'
+
+const instance = await WebAssembly.instantiate(mod, {
+  './imports.js': {
+    someFunc: () => {
+      /* ... */
+    },
+  },
+})
+```
+
+The dynamic form resolves to the `WebAssembly.Module` as well:
+
+```js
+const mod = await import.source('./example.wasm')
+```
 
 ### Manual Initialization
 
@@ -724,7 +758,7 @@ In the production build, `.wasm` files smaller than `assetsInlineLimit` will be 
 
 ::: warning For SSR build, Node.js compatible runtimes are only supported
 
-Due to the lack of a universal way to load a file, the internal implementation for both direct `.wasm` imports and `.wasm?init` relies on the `node:fs` module. This means that these features will only work in Node.js compatible runtimes for SSR builds.
+Due to the lack of a universal way to load a file, the internal implementation for direct `.wasm` imports, source phase imports, and `.wasm?init` relies on the `node:fs` module. This means that these features will only work in Node.js compatible runtimes for SSR builds.
 
 :::
 
