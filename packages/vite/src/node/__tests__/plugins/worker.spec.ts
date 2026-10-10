@@ -1,11 +1,84 @@
 import { resolve } from 'node:path'
-import type { OutputChunk, RolldownOutput } from 'rolldown'
-import { describe, expect, test } from 'vitest'
+import type { OutputAsset, OutputChunk, RolldownOutput } from 'rolldown'
+import { describe, expect, test, vi } from 'vitest'
 import { build } from '../../build'
 import type { InlineConfig } from '../../config'
+import { createLogger } from '../../logger'
 import { splitWorkerRequest } from '../../plugins/worker'
 
 const fixturesDir = resolve(import.meta.dirname, 'fixtures')
+
+test.each([
+  { sourcemap: true, enrich: false },
+  { sourcemap: true, enrich: true },
+  { sourcemap: 'hidden', enrich: false },
+  { sourcemap: 'hidden', enrich: true },
+] as const)(
+  'preserves parent and nested worker maps with sourcemap=$sourcemap and enrich=$enrich',
+  async ({ sourcemap, enrich }) => {
+    const root = resolve(fixturesDir, 'worker-sourcemap')
+    const logger = createLogger('silent')
+    const warn = vi.spyOn(logger, 'warn')
+    const result = (await build({
+      configFile: false,
+      root,
+      publicDir: false,
+      customLogger: logger,
+      build: {
+        write: false,
+        sourcemap,
+        rolldownOptions: { input: resolve(root, 'entry.js') },
+      },
+      worker: {
+        plugins: () =>
+          enrich
+            ? [
+                {
+                  name: 'enrich-worker-sourcemap',
+                  generateBundle(_, bundle) {
+                    for (const asset of Object.values(bundle)) {
+                      if (
+                        asset.type !== 'asset' ||
+                        !asset.fileName.endsWith('.js.map')
+                      ) {
+                        continue
+                      }
+                      expect(typeof asset.source).toBe('string')
+                      const map = JSON.parse(asset.source as string)
+                      asset.source = JSON.stringify({
+                        ...map,
+                        x_test_worker_metadata: 'preserved',
+                      })
+                    }
+                  },
+                },
+              ]
+            : [],
+      },
+    })) as RolldownOutput
+
+    const maps = result.output.filter(
+      (asset): asset is OutputAsset =>
+        asset.type === 'asset' && /\.worker-.*\.js\.map$/.test(asset.fileName),
+    )
+    expect(maps).toHaveLength(2)
+    for (const asset of maps) {
+      expect(typeof asset.source).toBe('string')
+      const map = JSON.parse(asset.source as string)
+      expect(map.version).toBe(3)
+      expect(map.mappings).not.toBe('')
+      expect(map.sourcesContent).toEqual(
+        expect.arrayContaining([expect.stringContaining('self.postMessage')]),
+      )
+      if (enrich) {
+        expect(map.x_test_worker_metadata).toBe('preserved')
+      } else {
+        expect(map).not.toHaveProperty('x_test_worker_metadata')
+      }
+    }
+    expect(warn).not.toHaveBeenCalled()
+  },
+)
 
 describe('splitWorkerRequest', () => {
   for (const [id, postfix] of [

@@ -450,9 +450,11 @@ async function bundleWorkerEntry(
           source: outputChunk.code,
         },
   )
+  // Plugins can enrich emitted sourcemaps with metadata absent from the raw chunk map.
   if (
     (config.build.sourcemap === 'hidden' || config.build.sourcemap === true) &&
-    outputChunk.map
+    outputChunk.map &&
+    !assets.some((asset) => asset.fileName === outputChunk.fileName + '.map')
   ) {
     assets.push({
       fileName: outputChunk.fileName + '.map',
