@@ -1384,7 +1384,10 @@ export function getLockfileHash(root: string): string {
     const baseDir = lockfilePath.slice(0, -lockfileFormat.path.length)
     if (lockfileFormat.checkPatchesDir) {
       // Default of https://github.com/ds300/patch-package
-      const fullPath = path.join(baseDir, lockfileFormat.checkPatchesDir as string)
+      const fullPath = path.join(
+        baseDir,
+        lockfileFormat.checkPatchesDir as string,
+      )
       const stat = tryStatSync(fullPath)
       if (stat?.isDirectory()) {
         content += stat.mtimeMs.toString()
