@@ -1,0 +1,9 @@
+{
+  "name": "t",
+  "dependencies": {
+    "fake-dep": "1.0.0"
+  },
+  "patchedDependencies": {
+    "fake-dep@1.0.0": "my-patches/fake-dep@1.0.0.patch"
+  }
+}
