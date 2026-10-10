@@ -958,7 +958,7 @@ async function buildEnvironment(
   }
 }
 
-export function enhanceRollupError(e: RollupError): void {
+function enhanceRollupError(e: RollupError): void {
   const stackOnly = extractStack(e)
 
   let msg = colors.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
@@ -1715,7 +1715,7 @@ export function createToImportMetaURLBasedRelativeRuntime(
   })
 }
 
-export function toOutputFilePathWithoutRuntime(
+function toOutputFilePathWithoutRuntime(
   filename: string,
   type: 'asset' | 'public',
   hostId: string,
