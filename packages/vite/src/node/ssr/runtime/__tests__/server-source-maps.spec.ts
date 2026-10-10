@@ -139,6 +139,38 @@ describe('module runner initialization', async () => {
     ])
   })
 
+  it('preserves async stack frame formatting', async ({ runner, server }) => {
+    const error = await getError(async () => {
+      const mod = await runner.import('/fixtures/has-error-async.ts')
+      await mod.main()
+    })
+    expect(serializeStackDeep(server, error).slice(0, 4)).toEqual([
+      'Error: crash',
+      '    at crash (<root>/fixtures/has-error-async.ts:3:9)',
+      '    at async Promise.all (index 0)',
+      '    at async Module.main (<root>/fixtures/has-error-async.ts:7:3)',
+    ])
+  })
+
+  it('matches V8 method name formatting', async ({ runner, server }) => {
+    const mod = await runner.import('/fixtures/has-error-method-names.ts')
+
+    const getterError = await getError(() => mod.callGetter())
+    expect(serializeStack(server, getterError)).toBe(
+      '    at get foo (<root>/fixtures/has-error-method-names.ts:3:11)',
+    )
+
+    const methodError = await getError(() => mod.callAliasedMethod())
+    expect(serializeStack(server, methodError)).toBe(
+      '    at F.Foo [as m] (<root>/fixtures/has-error-method-names.ts:9:11)',
+    )
+
+    const astralNameError = await getError(() => mod.callAstralNamedMethod())
+    expect(serializeStack(server, astralNameError)).toBe(
+      '    at 𐐀 [as m] (<root>/fixtures/has-error-method-names.ts:17:11)',
+    )
+  })
+
   it('prints the file name of a frame without a source map', async () => {
     // when a script's sourceURL differs from its file name, the file name is what gets printed
     const error = await getError(() =>
