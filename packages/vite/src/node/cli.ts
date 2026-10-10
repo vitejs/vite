@@ -6,6 +6,7 @@ import { cac } from 'cac'
 import colors from 'picocolors'
 import { createBuilder } from './build'
 import type { BuildEnvironmentOptions } from './build'
+import { commandLockPlugin, createCommandLock } from './commandLock'
 import type { InlineConfig } from './config'
 import { VERSION } from './constants'
 import type { LogLevel } from './logger'
@@ -234,6 +235,7 @@ cli
           configLoader: options.configLoader,
           logLevel: options.logLevel,
           clearScreen: options.clearScreen,
+          plugins: [commandLockPlugin()],
           server: cleanGlobalCLIOptions(options),
           forceOptimizeDeps: options.force,
           experimental: {
@@ -376,6 +378,7 @@ cli
           ...(options.app ? { builder: {} } : {}),
         }
         const builder = await createBuilder(inlineConfig, null)
+        await createCommandLock(builder.config, 'build', null)
         await builder.buildApp()
         await builder.runDevTools()
       } catch (e) {
@@ -469,6 +472,7 @@ cli
             open: options.open,
           },
         })
+        await createCommandLock(server.config, 'preview', server.resolvedUrls)
         server.printUrls()
         server.bindCLIShortcuts({ print: true })
       } catch (e) {
