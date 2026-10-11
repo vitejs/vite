@@ -24,8 +24,7 @@ test('should load dynamic import with inline', async () => {
 })
 
 test('should load dynamic import with module', async () => {
-  const css = await page.textContent('.dynamic-module')
-  expect(css).toMatch('_mod_')
+  await expect.poll(() => page.textContent('.dynamic-module')).toMatch('_mod_')
 
   expect(await getColor('.mod')).toBe('yellow')
 })
