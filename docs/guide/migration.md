@@ -322,14 +322,15 @@ import fs from 'node:fs'
 
 const plugin = {
   name: 'txt-loader',
-  load(id) {
-    if (id.endsWith('.txt')) {
+  load: {
+    filter: { id: /\.txt$/ },
+    handler(id) {
       const content = fs.readFileSync(id, 'utf-8')
       return {
         code: `export default ${JSON.stringify(content)}`,
         moduleType: 'js', // [!code ++]
       }
-    }
+    },
   },
 }
 ```
