@@ -998,9 +998,27 @@ test('inlined assets HMR', async () => {
 
 test('file edits trigger HMR when the modification time does not advance', async () => {
   const filename = resolve(testDir, 'unresolved.ts')
-  const timestamp = new Date(Math.floor(fs.statSync(filename).mtimeMs))
+  const timestamp = new Date(
+    Math.floor(fs.statSync(filename).mtimeMs / 1000) * 1000,
+  )
   fs.utimesSync(filename, timestamp, timestamp)
   await setupModuleRunner('/unresolved.ts')
+
+  // getWatched() can be populated before polling captures its initial stats.
+  let pollingStarted = false
+  const onRaw = (_event: string, path: string) => {
+    if (path === filename) pollingStarted = true
+  }
+  server.watcher.on('raw', onRaw)
+  onTestFinished(() => server.watcher.off('raw', onRaw))
+  await expect
+    .poll(() => {
+      // An access-time-only change starts polling without triggering HMR.
+      fs.utimesSync(filename, new Date(), timestamp)
+      return pollingStarted
+    })
+    .toBe(true)
+  server.watcher.off('raw', onRaw)
 
   const writeFileSync = fs.writeFileSync
   const writeSpy = vi
