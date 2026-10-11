@@ -112,6 +112,33 @@ describe('CSS browser compatibility', () => {
     expect(css).toContain('#00000080')
   })
 
+  test('respects an explicit cssTarget: false', async () => {
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        logLevel: 'silent',
+        plugins: [legacy()],
+        build: { cssTarget: false },
+      },
+      'build',
+    )
+    expect(config.build.cssTarget).toBe(false)
+    expect(config.environments.client.build.cssTarget).toBe(false)
+  })
+
+  test('includes custom modernTargets in the resolved CSS targets', async () => {
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        logLevel: 'silent',
+        plugins: [legacy({ polyfills: false, modernTargets: 'firefox 100' })],
+      },
+      'build',
+    )
+    expect(config.build.cssTarget).toContain('firefox100')
+    expect(config.environments.client.build.cssTarget).toContain('firefox100')
+  })
+
   test('respects CSS targets set by later configResolved hooks', async () => {
     const config = await resolveConfig(
       {
