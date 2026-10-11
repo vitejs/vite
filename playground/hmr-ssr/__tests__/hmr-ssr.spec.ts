@@ -1010,7 +1010,9 @@ test('file edits trigger HMR when the modification time does not advance', async
     if (path === filename) pollingStarted = true
   }
   server.watcher.on('raw', onRaw)
-  onTestFinished(() => server.watcher.off('raw', onRaw))
+  onTestFinished(() => {
+    server.watcher.off('raw', onRaw)
+  })
   await expect
     .poll(() => {
       // An access-time-only change starts polling without triggering HMR.
