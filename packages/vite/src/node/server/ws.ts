@@ -224,6 +224,10 @@ export function createWebSocketServer(
       hmrBase = path.posix.join(hmrBase, wsPath)
     }
     hmrServerWsListener = (req, socket, head) => {
+      // An upgrade request can be left unhandled when it isn't for Vite's HMR
+      // server. Keep a reset from becoming an uncaught socket error while other
+      // upgrade listeners still have a chance to handle the request.
+      socket.on('error', noop)
       const protocol = req.headers['sec-websocket-protocol']!
       const parsedUrl = new URL(`http://example.com${req.url!}`)
       if (

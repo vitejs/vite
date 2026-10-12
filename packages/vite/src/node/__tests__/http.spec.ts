@@ -13,6 +13,42 @@ const optimizeDeps: InlineConfig['optimizeDeps'] = {
   include: [],
 }
 
+test('handles socket errors for unmatched WebSocket upgrades', async () => {
+  const viteServer = await createServer({
+    root: import.meta.dirname,
+    optimizeDeps,
+    logLevel: 'silent',
+    server: { port: 0 },
+  })
+  await viteServer.listen()
+
+  try {
+    const httpServer = viteServer.httpServer!
+    const address = httpServer.address() as net.AddressInfo
+    const socketHasErrorHandler = new Promise<boolean>((resolve) => {
+      httpServer.once('upgrade', (_request, socket) => {
+        resolve(socket.listenerCount('error') > 0)
+      })
+    })
+    const client = net.createConnection(address.port, address.address, () => {
+      client.write(
+        'GET / HTTP/1.1\r\n' +
+          `Host: 127.0.0.1:${address.port}\r\n` +
+          'Connection: Upgrade\r\n' +
+          'Upgrade: websocket\r\n' +
+          'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n' +
+          'Sec-WebSocket-Version: 13\r\n\r\n',
+      )
+    })
+    client.on('error', () => {})
+
+    expect(await socketHasErrorHandler).toBe(true)
+    client.destroy()
+  } finally {
+    await viteServer.close()
+  }
+})
+
 describe('port detection', () => {
   let blockingServer: http.Server | null = null
   let viteServer: ViteDevServer | null = null
