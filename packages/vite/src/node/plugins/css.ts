@@ -3300,7 +3300,14 @@ async function compileLightningCSS(
   modules?: Record<string, string>
 }> {
   const { config } = environment
-  const filename = removeDirectQuery(id)
+  // Keep CSS Module names stable across stylesheet and string imports.
+  const filename = removeDirectQuery(id).replace(/\?.*$/, (query) => {
+    const params = query
+      .slice(1)
+      .split('&')
+      .filter((param) => param !== 'inline' && !param.startsWith('inline='))
+    return params.length ? `?${params.join('&')}` : ''
+  })
 
   let res: LightningCssTransformAttributeResult | LightningCssTransformResult
   try {
