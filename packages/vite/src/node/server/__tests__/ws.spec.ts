@@ -24,18 +24,24 @@ describe('ws upgrade', () => {
       root: import.meta.dirname,
       optimizeDeps,
       logLevel: 'silent',
-      server: { port: 0 },
+      // bind explicitly so the raw client below connects to the same address
+      // (`localhost` may resolve to `::1` only)
+      server: { host: '127.0.0.1', port: 0 },
     })
     await viteServer.listen()
-    const { port } = viteServer.httpServer!.address() as net.AddressInfo
+    const { address, port } =
+      viteServer.httpServer!.address() as net.AddressInfo
 
     const upgradeSocket = new Promise<Duplex>((resolve) => {
       viteServer!.httpServer!.once('upgrade', (_req, socket) => resolve(socket))
     })
 
-    const client = net.connect(port, '127.0.0.1')
+    const client = net.connect(port, address)
     try {
-      await new Promise<void>((resolve) => client.once('connect', resolve))
+      await new Promise<void>((resolve, reject) => {
+        client.once('connect', resolve)
+        client.once('error', reject)
+      })
       // no `Sec-WebSocket-Protocol`, so the HMR server does not take it over
       client.write(
         'GET / HTTP/1.1\r\n' +
