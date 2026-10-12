@@ -238,6 +238,7 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
     id: string,
     code: string,
     environment: Environment,
+    moduleType?: string,
   ): OxcTransformOptions => {
     const result: OxcTransformOptions = {
       ...oxcTransformOptions,
@@ -250,7 +251,8 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
     // disable refresh based by the same condition as @vitejs/plugin-react
     // https://github.com/vitejs/vite-plugin-react/blob/c8ecad052001b6fc42e508f18433e6b305bca641/packages/plugin-react/src/index.ts#L261-L269
     const [filepath] = id.split('?')
-    const isJSX = filepath.endsWith('x')
+    const isJSX =
+      filepath.endsWith('x') || moduleType === 'jsx' || moduleType === 'tsx'
 
     if (
       typeof jsxOptions === 'object' &&
@@ -266,6 +268,7 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
       result.jsx = { ...jsxOptions, refresh: false }
     }
     if (
+      !result.lang &&
       jsxRefreshFilter?.(id) &&
       !JS_TYPES_RE.test(id) &&
       !JS_TYPES_RE.test(cleanUrl(id))
@@ -332,6 +335,7 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
           id,
           code,
           this.environment,
+          moduleType,
         )
         const result = await transformWithOxc(
           code,
@@ -341,7 +345,12 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
           config,
           server?.watcher,
         )
-        if (jsxInject && jsxExtensionsRE.test(id)) {
+        if (
+          jsxInject &&
+          (jsxExtensionsRE.test(id) ||
+            moduleType === 'jsx' ||
+            moduleType === 'tsx')
+        ) {
           result.code = jsxInject + ';' + result.code
         }
         for (const warning of result.warnings) {

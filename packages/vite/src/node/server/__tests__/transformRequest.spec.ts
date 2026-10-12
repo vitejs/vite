@@ -32,10 +32,26 @@ describe('getModuleTypeFromId', () => {
       moduleTypes: { '.label': 'text' },
     },
     { id: 'foo.label', expected: 'text', moduleTypes: { '.label': 'text' } },
+    { id: 'foo.label', expected: 'text', moduleTypes: { label: 'text' } },
     {
       id: 'foo.jsonlabel',
       expected: 'json',
       moduleTypes: { '.jsonlabel': 'json' },
+    },
+    {
+      id: 'foo.jsonlabel',
+      expected: 'json',
+      moduleTypes: { jsonlabel: 'json' },
+    },
+    {
+      id: 'foo.custom.label',
+      expected: 'text',
+      moduleTypes: { 'custom.label': 'text' },
+    },
+    {
+      id: 'foo.custom.label',
+      expected: 'text',
+      moduleTypes: { '.custom.label': 'text' },
     },
   ]
 

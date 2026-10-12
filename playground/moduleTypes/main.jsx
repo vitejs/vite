@@ -1,8 +1,9 @@
 import { createRoot } from 'react-dom/client'
 import App from './comp.jsxlabel'
-import data from './data.jsonlabel'
+import data, { hello } from './data.jsonlabel'
 import label from './text.label'
+import nodot from './text.nodot'
 
 document.querySelector('#app').innerHTML =
-  `label: ${label}\ndata: ${data.hello}\njsx: <div id="jsx-root"></div>`
+  `label: ${label}\nnodot: ${nodot}\ndata: ${data.hello}\nnamed: ${hello}\njsx: <div id="jsx-root"></div>`
 createRoot(document.getElementById('jsx-root')).render(<App />)

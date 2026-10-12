@@ -7,6 +7,7 @@ export default defineConfig({
         '.label': 'text',
         '.jsonlabel': 'json',
         '.jsxlabel': 'jsx',
+        nodot: 'text',
       },
     },
   },

@@ -1,6 +1,7 @@
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
+import { dataToEsm } from '@rollup/pluginutils'
 import { init, parse as parseImports } from 'es-module-lexer'
 import getEtag from 'etag'
 import MagicString from 'magic-string'
@@ -361,17 +362,24 @@ async function loadAndTransform(
 
   // transform
   const transformStart = debugTransform ? performance.now() : 0
+  const originalCode = code
   const transformResult = await pluginContainer.transform(code, id, {
     inMap: map,
     moduleType,
   })
-  const originalCode = code
   if (transformResult.code === originalCode) {
     // no transform applied, keep code as-is
     if (moduleType === 'json') {
       try {
         const parsed = JSON.parse(originalCode)
-        code = `export default ${JSON.stringify(parsed)}`
+        if (environment.getTopLevelConfig().json.namedExports) {
+          code = dataToEsm(parsed, {
+            preferConst: true,
+            namedExports: true,
+          })
+        } else {
+          code = `export default ${JSON.stringify(parsed)}`
+        }
       } catch {
         throw new Error(`Failed to parse JSON file: ${id}`)
       }
@@ -579,7 +587,9 @@ export function getModuleTypeFromId(
   while ((pos = cleanId.indexOf('.', pos + 1)) >= 0) {
     const ext = cleanId.slice(pos)
     const moduleType =
-      configModuleTypes?.[ext] || defaultModuleTypes[ext.slice(1)]
+      configModuleTypes?.[ext] ||
+      configModuleTypes?.[ext.slice(1)] ||
+      defaultModuleTypes[ext.slice(1)]
     if (moduleType) {
       return moduleType as ModuleType
     }
@@ -597,7 +607,9 @@ export function getModuleTypeFromId(
     }
     const ext = id.slice(pos)
     const moduleType =
-      configModuleTypes?.[ext] || defaultModuleTypes[ext.slice(1)]
+      configModuleTypes?.[ext] ||
+      configModuleTypes?.[ext.slice(1)] ||
+      defaultModuleTypes[ext.slice(1)]
     if (moduleType) {
       return moduleType as ModuleType
     }
