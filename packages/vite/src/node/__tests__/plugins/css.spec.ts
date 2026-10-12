@@ -197,6 +197,32 @@ composes: bar from '@/css/bar.module.css';
     const other = await transform(css, otherId)
     expect(result.code).not.toBe(other.code)
   })
+
+  test.each([
+    { id: '/foo.css', cssModules: true },
+    { id: '/foo.module.css', cssModules: false },
+  ])(
+    'lightningcss preserves non-module queries for $id',
+    async ({ id, cssModules }) => {
+      const sources: string[] = []
+      const { transform } = await createCssPluginTransform({
+        configFile: false,
+        css: {
+          transformer: 'lightningcss',
+          lightningcss: {
+            cssModules,
+            visitor: {
+              StyleSheet(stylesheet) {
+                sources.push(...stylesheet.sources.map(normalizePath))
+              },
+            },
+          },
+        },
+      })
+      await transform('.foo { color: red; }', `${id}?inline&query=foo`)
+      expect(sources[0]).toContain(`${id}?inline&query=foo`)
+    },
+  )
 })
 
 describe('hoist @ rules', () => {
