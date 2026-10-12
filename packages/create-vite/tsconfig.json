@@ -5,7 +5,7 @@
     "outDir": "dist",
     "target": "es2023",
     "module": "preserve",
-    "types": [],
+    "types": ["node"],
     "noEmit": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,

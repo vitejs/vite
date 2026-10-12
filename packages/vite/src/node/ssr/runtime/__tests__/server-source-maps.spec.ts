@@ -139,6 +139,17 @@ describe('module runner initialization', async () => {
     ])
   })
 
+  it('prints the file name of a frame without a source map', async () => {
+    // when a script's sourceURL differs from its file name, the file name is what gets printed
+    const error = await getError(() =>
+      runInThisContext(
+        '(function inVm() { throw new Error("vm") })()\n//# sourceURL=renamed.js',
+        { filename: 'original.js', displayErrors: false },
+      ),
+    )
+    expect(error.stack!.split('\n')[1]).toBe('    at inVm (original.js:1:26)')
+  })
+
   it('call site of an imported binding matches Node column', async ({
     runner,
     server,
@@ -155,6 +166,21 @@ describe('module runner initialization', async () => {
       'Error: crash',
       '    at crash (<root>/fixtures/has-error-toplevel-dep.js:2:9)',
       '    at <root>/fixtures/has-error-toplevel.js:3:1',
+    ])
+  })
+
+  it('maps stack traces when the module path contains a space', async ({
+    runner,
+    server,
+  }) => {
+    const methodError = await getError(async () => {
+      const mod = await runner.import('/fixtures/with space/has-error-deep.ts')
+      mod.main()
+    })
+    expect(serializeStackDeep(server, methodError).slice(0, 3)).toEqual([
+      'Error: crash',
+      '    at crash (<root>/fixtures/with space/has-error-deep.ts:2:9)',
+      '    at Module.main (<root>/fixtures/with space/has-error-deep.ts:6:3)',
     ])
   })
 

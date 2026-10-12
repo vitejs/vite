@@ -111,7 +111,7 @@ const htmlTypesRE = /\.(?:html|vue|svelte|astro|imba)$/
 // since even missed imports can be caught at runtime, and false positives will
 // simply be ignored.
 export const importsRE: RegExp =
-  /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
+  /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type\b)(?:[\w*{}\n\r\t, ]+from)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
 
 export function scanImports(environment: ScanEnvironment): {
   cancel: () => Promise<void>
@@ -611,14 +611,14 @@ function rolldownScanPlugin(
           // If we can optimize this html type, skip it so it's handled by the
           // bare import resolve, and recorded as optimization dep.
           if (
-            isInNodeModules(resolved) &&
-            isOptimizable(resolved, optimizeDepsOptions)
-          )
-            return
-          if (shouldExternalizeDep(resolved, id)) {
-            return externalUnlessEntry({ path: id })
+            !isInNodeModules(resolved) ||
+            !isOptimizable(resolved, optimizeDepsOptions)
+          ) {
+            if (shouldExternalizeDep(resolved, id)) {
+              return externalUnlessEntry({ path: id })
+            }
+            return resolved
           }
-          return resolved
         }
 
         // bare imports: record and externalize ----------------------------------

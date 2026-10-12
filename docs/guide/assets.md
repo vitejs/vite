@@ -62,6 +62,7 @@ Assets can be explicitly imported with inlining or no inlining using the `?inlin
 ```js twoslash
 import 'vite/client'
 // ---cut---
+// prettier-ignore
 import imgUrl1 from './img.svg?no-inline'
 import imgUrl2 from './img.png?inline'
 ```
