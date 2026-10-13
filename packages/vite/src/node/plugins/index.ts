@@ -37,7 +37,7 @@ import {
   createIdFilter,
 } from './pluginFilter'
 import { preAliasPlugin } from './preAlias'
-import { oxcResolvePlugin } from './resolve'
+import { encodedSpecifierResolvePlugin, oxcResolvePlugin } from './resolve'
 import { wasmHelperPlugin } from './wasm'
 import { webWorkerPlugin } from './worker'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
@@ -112,6 +112,7 @@ export async function resolvePlugins(
           }
         : undefined,
     ),
+    encodedSpecifierResolvePlugin(),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     esbuildBannerFooterCompatPlugin(config),

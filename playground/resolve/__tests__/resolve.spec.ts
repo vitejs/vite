@@ -254,6 +254,15 @@ test('resolve non-normalized absolute path', async () => {
   expect(await page.textContent('.non-normalized')).toMatch('[success]')
 })
 
+test('resolve percent-encoded specifiers', async () => {
+  expect(await page.textContent('.encoded-percent')).toMatch('[success]')
+  expect(await page.textContent('.encoded-space')).toMatch('[success]')
+})
+
+test('resolve specifier matching a file name with a literal percent escape', async () => {
+  expect(await page.textContent('.encoded-literal')).toMatch('[success]')
+})
+
 test.runIf(!isWindows)(
   "Resolve doesn't interrupt page request that clashes with local project package.json",
   async () => {

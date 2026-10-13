@@ -62,6 +62,7 @@ import {
   joinUrlSegments,
   moduleListContains,
   normalizePath,
+  partialEncodeURIPath,
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
@@ -116,7 +117,7 @@ function normalizeResolvedIdToUrl(
   // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js'`
   if (resolved.id.startsWith(withTrailingSlash(root))) {
     // in root: infer short absolute path from root
-    url = resolved.id.slice(root.length)
+    url = partialEncodeURIPath(resolved.id.slice(root.length))
   } else if (
     depsOptimizer?.isOptimizedDepFile(resolved.id) ||
     // vite-plugin-react isn't following the leading \0 virtual module convention.
@@ -128,7 +129,7 @@ function normalizeResolvedIdToUrl(
   ) {
     // an optimized deps may not yet exists in the filesystem, or
     // a regular file exists but is out of root: rewrite to absolute /@fs/ paths
-    url = path.posix.join(FS_PREFIX, resolved.id)
+    url = partialEncodeURIPath(path.posix.join(FS_PREFIX, resolved.id))
   } else {
     url = resolved.id
   }

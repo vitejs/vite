@@ -37,6 +37,7 @@ import type { Plugin } from '../plugin'
 import {
   bareImportRE,
   createDebugger,
+  decodeURIIfPossible,
   deepImportRE,
   fsPathFromId,
   getNpmPackageName,
@@ -217,6 +218,26 @@ const perEnvironmentOrWorkerPlugin = (
       },
     },
   ]
+}
+
+const encodedPathSpecifierRE = /^(?:\.{1,2}\/|\/)[^?#]*%[\da-f]{2}/i
+
+export function encodedSpecifierResolvePlugin(): Plugin {
+  return {
+    name: 'vite:resolve-encoded-specifier',
+    resolveId: {
+      filter: { id: encodedPathSpecifierRE },
+      async handler(id, importer, options) {
+        const { file, postfix } = splitFileAndPostfix(id)
+        const decoded = decodeURIIfPossible(file)
+        if (decoded === undefined || decoded === file) return
+        return this.resolve(decoded + postfix, importer, {
+          ...options,
+          skipSelf: true,
+        })
+      },
+    },
+  }
 }
 
 export function oxcResolvePlugin(

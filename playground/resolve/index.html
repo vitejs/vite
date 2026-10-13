@@ -183,6 +183,11 @@
 <h2>resolve non normalized absolute path</h2>
 <p class="non-normalized"></p>
 
+<h2>resolve percent-encoded specifiers</h2>
+<p class="encoded-percent">fail</p>
+<p class="encoded-space">fail</p>
+<p class="encoded-literal">fail</p>
+
 <h2>utf8-bom-package</h2>
 <p class="utf8-bom-package">fail</p>
 
@@ -424,6 +429,13 @@
 
   import nonNormalizedAbsolute from '@non-normalized'
   text('.non-normalized', nonNormalizedAbsolute)
+
+  import encodedPercent from './encoded/100%25.js'
+  import encodedSpace from './encoded/with%20space.js'
+  import encodedLiteral from './encoded/50%25.js'
+  text('.encoded-percent', encodedPercent)
+  text('.encoded-space', encodedSpace)
+  text('.encoded-literal', encodedLiteral)
 
   import { msg as utf8BomPackage } from '@vitejs/test-utf8-bom-package'
   text('.utf8-bom-package', utf8BomPackage)
