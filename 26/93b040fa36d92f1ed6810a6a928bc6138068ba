@@ -1,0 +1,31 @@
+docs/guide/cli.md
+  s_9c214a0dd45cba::t_3eb9ec4822ff36 30,69,93-104,120-135
+packages/vite/src/node/cli.ts
+  s_24a2c571de01ac::t_2b35bbc5251b06 191
+packages/vite/src/node/config.ts
+  s_9c214a0dd45cba::t_305a19254c218c 681-687,2415-2421
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "2693b040fa36d92f1ed6810a6a928bc6138068ba",
+  "prompts": {},
+  "sessions": {
+    "s_24a2c571de01ac": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11fcf-020e-78a1-9204-7d1bf03a98e4",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_9c214a0dd45cba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11fc2-84c2-73c0-92f0-57607e130a8f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+scripts/extract-changelog.ts
+  s_b38dadacac32a8::t_f1abb56ba30dea 1-9
+scripts/tsconfig.json
+  s_b38dadacac32a8::t_05ed5506ba9ef1 8
+scripts/releaseUtils.ts
+  s_b49e0e1e676bb2::t_4f3c76977f4c6a 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "2f0d172416d80e8ba2acda4a6891f3b47ce360ec",
+  "prompts": {},
+  "sessions": {
+    "s_b38dadacac32a8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb3f1-4068-7b81-968f-a350329b15c3",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_b49e0e1e676bb2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb673-9081-7f92-a97e-c2bb05ea3839",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

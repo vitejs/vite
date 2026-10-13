@@ -1,0 +1,35 @@
+playground/css-sourcemap/__tests__/css-sourcemap.spec.ts
+  s_10468d0a3b9c87::t_d9a5cf9d3f0328 28-58
+playground/css-sourcemap/__tests__/esbuild/css-sourcemap-esbuild.spec.ts
+  s_de7b9dcb0b30bb::t_9663e7af5706eb 3,12-37,39-47,49-53,55-73,75-83,85
+playground/css-sourcemap/__tests__/hidden/css-sourcemap-hidden.spec.ts
+  s_de7b9dcb0b30bb::t_b905432ad7876e 3,13-43
+playground/css-sourcemap/__tests__/inline/css-sourcemap-inline.spec.ts
+  s_de7b9dcb0b30bb::t_0bab904fddfb33 8,52
+playground/css-sourcemap/__tests__/lightningcss/lightningcss.spec.ts
+  s_10468d0a3b9c87::t_2b6baf7c8ddf1b 34-64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "474a8100d5924bd6804f810512199c50ec46730c",
+  "prompts": {},
+  "sessions": {
+    "s_10468d0a3b9c87": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11ef1-c15c-7640-bc50-1c7564605eef",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_de7b9dcb0b30bb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11f92-02e6-76f0-9f64-57d19b7f00e0",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

@@ -1,0 +1,43 @@
+playground/worker/__tests__/iife/worker-iife.spec.ts
+  s_76d04c8475c07e::t_3b7cc8a4e34c4a 126,128-129,131-137
+docs/guide/backend-integration.md
+  s_76d04c8475c07e::t_4b6c12500375a1 164-171,191
+packages/vite/src/node/plugins/manifest.ts
+  s_06c1ab003f7b37::t_9fc623ed1e48ab 9,47-54,161-165
+playground/worker/__tests__/es/worker-es.spec.ts
+  s_76d04c8475c07e::t_06dd95c3e635d7 4,98-134
+playground/worker/vite.config-es.js
+  s_7e303a4fd61d59::t_04d73ffced12fe 26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "59488b4198c96458297690c210e7949d12415535",
+  "prompts": {},
+  "sessions": {
+    "s_06c1ab003f7b37": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11a84-ad06-7730-a7b6-25f78f781931",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_76d04c8475c07e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11a88-63d2-7ea3-8f59-bc8308997541",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_7e303a4fd61d59": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11a39-8292-7851-9910-b7060aa1b96d",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

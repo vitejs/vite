@@ -1,0 +1,19 @@
+docs/superpowers/specs/2026-07-31-pr-driven-release-design.md
+  s_09e560005eae14::t_c5887e35296549 1-92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "6a5e8dafb61a43922a4b9ed28db733973e54f59f",
+  "prompts": {},
+  "sessions": {
+    "s_09e560005eae14": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb617-df8c-7c13-b523-1bf55b89bedc",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

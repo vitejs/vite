@@ -1,0 +1,25 @@
+packages/vite/src/node/server/middlewares/__tests__/fixtures/static/root-alias/file.txt
+  s_c401ca5a3a61c5::t_1be78b47f9db6b 1
+packages/vite/src/node/server/middlewares/__tests__/fixtures/static/trailing/file.txt
+  s_c401ca5a3a61c5::t_4d3db8a58f38a9 1
+packages/vite/src/node/server/middlewares/__tests__/static.spec.ts
+  s_c401ca5a3a61c5::t_8042423734a778 9-16,32-34
+packages/vite/src/node/server/middlewares/static.ts
+  s_c401ca5a3a61c5::t_992c3f16a2f7f6 165
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "fff215f95cb1b032f7d164fe1cd3190876bddc1b",
+  "prompts": {},
+  "sessions": {
+    "s_c401ca5a3a61c5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11aec-42f5-7de1-b493-fe23a6220ba5",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+packages/vite/src/node/optimizer/rolldownDepPlugin.ts
+  s_29df64540fc8ea::t_6eebaaa899c5c3 4,127,263,269
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "55869ef55d518059b13ac883c21189b0e736bc27",
+  "prompts": {},
+  "sessions": {
+    "s_29df64540fc8ea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f035-09c9-7563-8524-4ffab4c73b6e",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

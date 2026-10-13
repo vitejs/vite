@@ -1,0 +1,39 @@
+packages/vite/src/node/optimizer/scan.ts
+  s_e1c0eb810e7f2c::t_88c756dab26a50 614-620
+playground/optimize-deps/dep-not-js/deep-import.svelte
+  s_0874792565739d::t_e9fb6529ce06d0 1-5
+playground/optimize-deps/dep-not-js/relative.svelte
+  s_0874792565739d::t_f883f6c303bd65 1-3
+playground/optimize-deps/__tests__/optimize-deps.spec.ts
+  s_0874792565739d::t_b9a1a75243c49a 427-438
+playground/optimize-deps/index.html
+  s_0874792565739d::t_8667d9d28c78e7 79-82
+playground/optimize-deps/svelte-deep-import.js
+  s_0874792565739d::t_621b0acb8fb87e 1-3
+playground/optimize-deps/vite.config.js
+  s_0874792565739d::t_e9e16dad0928ed 64,107-144
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "ce7d4b719968621a07ad535da13668ff108c21fd",
+  "prompts": {},
+  "sessions": {
+    "s_0874792565739d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a114ff-abbd-7d31-a338-4f5549eff59a",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_e1c0eb810e7f2c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a115a7-e8a3-78e2-b9d0-c93174cf420d",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

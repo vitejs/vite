@@ -1,0 +1,21 @@
+packages/vite/src/node/server/middlewares/__tests__/static.spec.ts
+  s_c401ca5a3a61c5::t_8f368ec5265d87 1-7,10-56,58,60-68
+packages/vite/src/node/server/middlewares/static.ts
+  s_c401ca5a3a61c5::t_4e5b229981909b 161-164,194-208
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "9e7f916d7a611bb32d1eebcbadcb4a5732f8ba20",
+  "prompts": {},
+  "sessions": {
+    "s_c401ca5a3a61c5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11aec-42f5-7de1-b493-fe23a6220ba5",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+packages/vite/src/node/server/middlewares/transform.ts
+  s_f84c3e7d8780fe::t_230b27a47d5767 44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "74a52fb9b4e6c07ce028d8abd7456a084667543c",
+  "prompts": {},
+  "sessions": {
+    "s_f84c3e7d8780fe": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10f8e-37f3-7f03-9d3b-3bcf95a84948",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

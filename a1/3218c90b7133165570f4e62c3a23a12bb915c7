@@ -1,0 +1,19 @@
+playground/hmr/css-style/index.html
+  s_2642a085431cf1::t_0330afdda00f4a 2-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "a13218c90b7133165570f4e62c3a23a12bb915c7",
+  "prompts": {},
+  "sessions": {
+    "s_2642a085431cf1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11ae0-22a1-7e53-a265-9fb676161246",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
