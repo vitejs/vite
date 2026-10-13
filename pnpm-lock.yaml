@@ -170,7 +170,7 @@ overrides:
 packageExtensionsChecksum: sha256-ALP5Ia6zsiM9yjyXFaKKa/8ZJft4ePXCKiURYJcKc6g=
 
 patchedDependencies:
-  chokidar@3.6.0: e17269188c54412478078f7ac7877c1d5a475a2f2438328e3a7e725513ccbf1f
+  chokidar@3.6.0: 9aa5d975fb0b9c80823a3ba29f40794979a0ca9f732c04a4c786377571d16a45
   dotenv-expand@13.0.0: 49330a663821151418e003e822a82a6a61d2f0f8a6e3cab00c1c94815a112889
   sirv@3.0.2: c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95
 
@@ -452,7 +452,7 @@ importers:
         version: 7.1.0
       chokidar:
         specifier: ^3.6.0
-        version: 3.6.0(patch_hash=e17269188c54412478078f7ac7877c1d5a475a2f2438328e3a7e725513ccbf1f)
+        version: 3.6.0(patch_hash=9aa5d975fb0b9c80823a3ba29f40794979a0ca9f732c04a4c786377571d16a45)
       connect:
         specifier: ^3.7.0
         version: 3.7.0(ms@2.1.3)
@@ -11221,7 +11221,7 @@ snapshots:
     dependencies:
       is-regex: 1.2.1
 
-  chokidar@3.6.0(patch_hash=e17269188c54412478078f7ac7877c1d5a475a2f2438328e3a7e725513ccbf1f):
+  chokidar@3.6.0(patch_hash=9aa5d975fb0b9c80823a3ba29f40794979a0ca9f732c04a4c786377571d16a45):
     dependencies:
       anymatch: 3.1.3
       braces: 3.0.3
@@ -13782,7 +13782,7 @@ snapshots:
     dependencies:
       '@alloc/quick-lru': 5.2.0
       arg: 5.0.2
-      chokidar: 3.6.0(patch_hash=e17269188c54412478078f7ac7877c1d5a475a2f2438328e3a7e725513ccbf1f)
+      chokidar: 3.6.0(patch_hash=9aa5d975fb0b9c80823a3ba29f40794979a0ca9f732c04a4c786377571d16a45)
       didyoumean: 1.2.2
       dlv: 1.1.3
       fast-glob: 3.3.3

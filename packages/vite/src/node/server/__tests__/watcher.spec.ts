@@ -1,5 +1,8 @@
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import os from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import chokidar from 'chokidar'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { promiseWithResolvers } from '../../../shared/utils'
 import { type ViteDevServer, createServer } from '../index'
@@ -43,6 +46,34 @@ describe('watcher configuration', () => {
       },
     })
     expect(server.watcher.add.toString()).not.toMatch(stubGetWatchedCode)
+  })
+
+  it('replays a file change suppressed by the throttle window', async () => {
+    const dir = await mkdtemp(join(os.tmpdir(), 'vite-watcher-'))
+    const file = join(dir, 'watched.txt')
+    await writeFile(file, 'initial')
+    const watcher = chokidar.watch(file, {
+      ignoreInitial: true,
+      usePolling: true,
+      interval: 5,
+      binaryInterval: 5,
+    })
+    const changes: number[] = []
+    watcher.on('change', (_changedFile, stats) => changes.push(stats.size))
+
+    try {
+      await new Promise<void>((resolve) => watcher.once('ready', resolve))
+      await writeFile(file, 'first change')
+      await new Promise((resolve) => setTimeout(resolve, 20))
+      await writeFile(file, 'second change')
+
+      await vi.waitFor(() => expect(changes).toEqual([12, 13]), {
+        timeout: 500,
+      })
+    } finally {
+      await watcher.close()
+      await rm(dir, { recursive: true, force: true })
+    }
   })
 
   it('keeps the watcher closed when add is called after server close', async () => {

@@ -1,36 +1,69 @@
 diff --git a/index.js b/index.js
-index 8752893ca4986cf05103a46c438223b7ee4e1907..9185d79f6ee5194bf259dd252b8105d9846cda6c 100644
+index 8752893..c1f1322 100644
 --- a/index.js
 +++ b/index.js
-@@ -915,6 +915,8 @@ _closePath(path) {
-  * @param {Path} path
-  */
- _closeFile(path) {
+@@ -304,0 +305,2 @@ constructor(_opts) {
++  /** @type {Map<Path, { args: Array<any>, stats: *, replay: boolean }>} */
++  this._pendingChanges = new Map();
+@@ -518 +520 @@ close() {
+-  ['closers', 'watched', 'streams', 'symlinkPaths', 'throttled'].forEach(key => {
++  ['closers', 'watched', 'streams', 'symlinkPaths', 'throttled', 'pendingChanges'].forEach(key => {
+@@ -568,0 +571,6 @@ async _emit(event, path, val1, val2, val3) {
++  if (event === EV_UNLINK || event === EV_UNLINK_DIR) {
++    this._pendingChanges.delete(path);
++    const throttler = this._throttled.get(EV_CHANGE)?.get(path);
++    if (throttler) throttler.clear(false);
++  }
++
+@@ -616,2 +624,24 @@ async _emit(event, path, val1, val2, val3) {
+-    const isThrottled = !this._throttle(EV_CHANGE, path, 50);
+-    if (isThrottled) return this;
++    const throttler = this._throttle(EV_CHANGE, path, 50, (suppressedCount) => {
++      const pending = this._pendingChanges.get(path);
++      this._pendingChanges.delete(path);
++      if (suppressedCount > 0 && pending && pending.replay && !this.closed) {
++        this._emit(...pending.args);
++      }
++    });
++    if (!throttler) {
++      const pending = this._pendingChanges.get(path);
++      if (pending && (!pending.stats || !val1 ||
++        pending.stats.size !== val1.size ||
++        pending.stats.mtimeMs !== val1.mtimeMs ||
++        pending.stats.ino !== val1.ino)) {
++        pending.args = [event, path, val1, val2, val3];
++        pending.stats = val1;
++        pending.replay = true;
++      }
++      return this;
++    }
++    this._pendingChanges.set(path, {
++      args: [event, path, val1, val2, val3],
++      stats: val1,
++      replay: false,
++    });
+@@ -659 +689 @@ _handleError(error) {
+-_throttle(actionType, path, timeout) {
++_throttle(actionType, path, timeout, onRelease) {
+@@ -675 +705 @@ _throttle(actionType, path, timeout) {
+-  const clear = () => {
++  const clear = (invokeRelease = true) => {
+@@ -680,0 +711 @@ _throttle(actionType, path, timeout) {
++    if (invokeRelease && item && onRelease) onRelease(count);
+@@ -683 +714 @@ _throttle(actionType, path, timeout) {
+-  timeoutObject = setTimeout(clear, timeout);
++  timeoutObject = setTimeout(() => clear(), timeout);
+@@ -917,0 +949,2 @@ _closeFile(path) {
 +  // normalize the key so the closer is found on removal (https://github.com/paulmillr/chokidar/pull/1467)
 +  path = sysPath.normalize(path);
-   const closers = this._closers.get(path);
-   if (!closers) return;
-   closers.forEach(closer => closer());
-@@ -928,6 +930,8 @@ _closeFile(path) {
-  */
- _addPathCloser(path, closer) {
-   if (!closer) return;
+@@ -930,0 +964,2 @@ _addPathCloser(path, closer) {
 +  // normalize the key so the closer is found on removal (https://github.com/paulmillr/chokidar/pull/1467)
 +  path = sysPath.normalize(path);
-   let list = this._closers.get(path);
-   if (!list) {
-     list = [];
 diff --git a/lib/fsevents-handler.js b/lib/fsevents-handler.js
-index fe29393c179d3d6673f996ca6f95bbc83f9a0699..0a341f3d6a2f1497486a23ea99b3c6da003c026f 100644
+index fe29393..0a341f3 100644
 --- a/lib/fsevents-handler.js
 +++ b/lib/fsevents-handler.js
-@@ -305,7 +305,8 @@ _watchWithFsEvents(watchPath, realPath, transform, globFilter) {
-   if (this.fsw.closed || this.fsw._isIgnored(watchPath)) return;
-   const opts = this.fsw.options;
-   const watchCallback = async (fullPath, flags, info) => {
+@@ -308 +308,2 @@ _watchWithFsEvents(watchPath, realPath, transform, globFilter) {
 -    if (this.fsw.closed) return;
 +    // PATCH: bypass the callback for better perf when fullPath hit the ignored file list
 +    if (this.fsw.closed || this.fsw._isIgnored(fullPath)) return;
-     if (
-       opts.depth !== undefined &&
-       calcDepth(fullPath, realPath) > opts.depth
