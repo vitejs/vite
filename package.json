@@ -49,7 +49,7 @@
     "@types/convert-source-map": "^2.0.3",
     "@types/etag": "^1.8.4",
     "@types/less": "^3.0.8",
-    "@types/node": "^24.19.1",
+    "@types/node": "^24.19.2",
     "@types/picomatch": "^4.0.3",
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.18.2",
@@ -63,7 +63,7 @@
     "lint-staged": "^17.6.0",
     "oxfmt": "^0.72.0",
     "picocolors": "^1.1.1",
-    "playwright-chromium": "^1.63.0",
+    "playwright-chromium": "^1.64.0",
     "rolldown": "~1.2.13",
     "rollup": "^4.59.0",
     "simple-git-hooks": "^2.14.0",
@@ -90,7 +90,7 @@
       "eslint --cache --fix --concurrency auto"
     ]
   },
-  "packageManager": "pnpm@12.9.1",
+  "packageManager": "pnpm@12.11.2",
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"
   }
