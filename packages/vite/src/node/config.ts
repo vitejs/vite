@@ -137,6 +137,7 @@ import {
   isNodeLikeBuiltin,
   isObject,
   isParentDirectory,
+  isSameFilePath,
   lineTerminatorRE,
   mergeAlias,
   mergeConfig,
@@ -1452,6 +1453,39 @@ export function isResolvedConfig(
   )
 }
 
+const absolutePatternRE = /^(?:\/|[a-z]:[\\/])/i
+
+function createFsDenyGlob(patterns: string[], root: string): AnymatchFn {
+  // matchBase: true does not work as it's documented, so normalize basename
+  // patterns before creating the matchers.
+  const normalizedPatterns = patterns.map((pattern) =>
+    pattern.includes('/') ? pattern : `**/${pattern}`,
+  )
+  const options = { matchBase: false, nocase: true, dot: true }
+  const isAbsolutePattern = (pattern: string) => absolutePatternRE.test(pattern)
+  const matchAll = picomatch(normalizedPatterns, options)
+  const matchAbsolute = picomatch(
+    normalizedPatterns.filter(isAbsolutePattern),
+    options,
+  )
+  const matchRelative = picomatch(
+    normalizedPatterns.filter((pattern) => !isAbsolutePattern(pattern)),
+    options,
+  )
+  const rootWithSlash = withTrailingSlash(root)
+
+  return (filePath: string) => {
+    if (isSameFilePath(root, filePath)) return false
+    if (isParentDirectory(root, filePath)) {
+      return (
+        matchAbsolute(filePath) ||
+        matchRelative(filePath.slice(rootWithSlash.length))
+      )
+    }
+    return matchAll(filePath)
+  }
+}
+
 export async function resolveConfig(
   inlineConfig: InlineConfig,
   command: 'build' | 'serve',
@@ -2163,19 +2197,7 @@ export async function resolveConfig(
         )
       }
     },
-    fsDenyGlob: picomatch(
-      // matchBase: true does not work as it's documented
-      // https://github.com/micromatch/picomatch/issues/89
-      // convert patterns without `/` on our side for now
-      server.fs.deny.map((pattern) =>
-        pattern.includes('/') ? pattern : `**/${pattern}`,
-      ),
-      {
-        matchBase: false,
-        nocase: true,
-        dot: true,
-      },
-    ),
+    fsDenyGlob: createFsDenyGlob(server.fs.deny, resolvedRoot),
     safeModulePaths: new Set<string>(),
     [SYMBOL_RESOLVED_CONFIG]: true,
   }
