@@ -1459,9 +1459,9 @@ export async function resolveConfig(
   defaultNodeEnv = 'development',
   isPreview = false,
   /** @internal */
-  patchConfig: ((config: ResolvedConfig) => void) | undefined = undefined,
+  patchConfig: ((config: ResolvedConfig) => void) | undefined,
   /** @internal */
-  patchPlugins: ((resolvedPlugins: Plugin[]) => void) | undefined = undefined,
+  patchPlugins: ((resolvedPlugins: Plugin[]) => void) | undefined,
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   config.build ??= {}

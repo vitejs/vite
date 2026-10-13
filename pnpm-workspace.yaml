@@ -7,7 +7,6 @@ packages:
 hoistPattern:
   - postcss # package/vite
   - pug # playground/tailwind: @vue/compiler-sfc
-  - eslint-import-resolver-* # eslint-plugin-import-x
 shellEmulator: true
 autoInstallPeers: false
 dedupeInjectedDeps: false
