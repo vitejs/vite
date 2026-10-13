@@ -67,7 +67,6 @@ minimumReleaseAgeExclude:
 trustPolicy: no-downgrade
 trustPolicyExcludePrune: true
 trustPolicyExclude:
-  - '@vercel/detect-agent@1.2.6' # https://github.com/vercel/vercel/issues/17408
   - semver@6.3.1
 
 dedupePeers: true
