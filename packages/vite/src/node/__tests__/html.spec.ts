@@ -229,6 +229,32 @@ describe('getCssFilesForChunk', () => {
     ])
   })
 
+  test('chunk reached through an import cycle is not cached with a partial list (#23628)', () => {
+    //   index        dashboard
+    //     |              |
+    //   shared  <-->  feature
+    const shared = createChunk('shared.js', ['feature.js'], ['shared.css'])
+    const feature = createChunk('feature.js', ['shared.js'], ['feature.css'])
+    const index = createChunk('index.js', ['shared.js'], ['index.css'])
+    const dashboard = createChunk(
+      'dashboard.js',
+      ['feature.js'],
+      ['dashboard.css'],
+    )
+    const bundle = createBundle(index, dashboard, shared, feature)
+    const cache = new Map<OutputChunk, string[]>()
+    expect(getCssFilesForChunk(index, bundle, cache)).toStrictEqual([
+      'feature.css',
+      'shared.css',
+      'index.css',
+    ])
+    expect(getCssFilesForChunk(dashboard, bundle, cache)).toStrictEqual([
+      'shared.css',
+      'feature.css',
+      'dashboard.css',
+    ])
+  })
+
   test('circular imports do not cause infinite loop', () => {
     const a = createChunk('a.js', ['b.js'], ['a.css'])
     const b = createChunk('b.js', ['a.js'], ['b.css'])

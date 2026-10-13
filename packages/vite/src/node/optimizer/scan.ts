@@ -611,14 +611,14 @@ function rolldownScanPlugin(
           // If we can optimize this html type, skip it so it's handled by the
           // bare import resolve, and recorded as optimization dep.
           if (
-            isInNodeModules(resolved) &&
-            isOptimizable(resolved, optimizeDepsOptions)
-          )
-            return
-          if (shouldExternalizeDep(resolved, id)) {
-            return externalUnlessEntry({ path: id })
+            !isInNodeModules(resolved) ||
+            !isOptimizable(resolved, optimizeDepsOptions)
+          ) {
+            if (shouldExternalizeDep(resolved, id)) {
+              return externalUnlessEntry({ path: id })
+            }
+            return resolved
           }
-          return resolved
         }
 
         // bare imports: record and externalize ----------------------------------

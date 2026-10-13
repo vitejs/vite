@@ -10,10 +10,15 @@ import {
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
 import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
 import {
+  getBundledDevClientAliases,
   getHmrImplementation,
   getRolldownDevRuntimeFiles,
 } from '../plugins/clientInjections'
-import { createDebugger, formatAndTruncateFileList } from '../utils'
+import {
+  createDebugger,
+  formatAndTruncateFileList,
+  normalizePath,
+} from '../utils'
 import { convertToDevWatchOptions } from '../watch'
 import type { DevEnvironment } from './environment'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
@@ -26,6 +31,7 @@ type HmrOutput = BindingClientHmrUpdate['update']
 type MemoryFile = {
   source: string | Uint8Array
   etag?: string
+  contentType?: string
 }
 
 export class MemoryFiles {
@@ -387,11 +393,15 @@ export class BundledDev {
       ],
       ...getRolldownDevRuntimeFiles(),
     ])
+    const aliases = getBundledDevClientAliases(
+      this.environment.getTopLevelConfig(),
+    )
     this.staticFiles.clear()
-    for (const [fileName, source] of sources) {
-      const file = {
+    for (const [fileName, source] of [...sources, ...aliases]) {
+      const file: MemoryFile = {
         source,
         etag: getEtag(Buffer.from(source), { weak: true }),
+        ...(aliases.has(fileName) ? { contentType: 'text/javascript' } : {}),
       }
       this.staticFiles.set(fileName, file)
       this.memoryFiles.set(fileName, file)
@@ -401,7 +411,7 @@ export class BundledDev {
   private storeOutputFiles(output: RolldownOutput['output'][number][]): void {
     // NOTE: don't clear memoryFiles here as incremental build reuses the files
     for (const outputFile of output) {
-      this.memoryFiles.set(outputFile.fileName, () => {
+      this.memoryFiles.set(normalizePath(outputFile.fileName), () => {
         const source =
           outputFile.type === 'chunk' ? outputFile.code : outputFile.source
         return {
