@@ -1,11 +1,12 @@
 import fs from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
 import { afterAll, describe, expect, test } from 'vitest'
 import { isFileLoadingAllowed, resolveConfig } from '../..'
 import { normalizePath } from '../../utils'
 
-const tmpDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'vite-')))
+// Windows runners may expose the OS temp directory through an 8.3 short path
+// (e.g. `RUNNER~1`), which Vite intentionally rejects before checking fs.deny.
+const tmpDir = fs.mkdtempSync(path.join(process.cwd(), '.vite-fs-deny-'))
 
 afterAll(() => {
   fs.rmSync(tmpDir, { recursive: true, force: true })
