@@ -1,12 +1,15 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { parseErrorStacktrace } from '@vitest/utils/source-map'
+import convertSourceMap from 'convert-source-map'
 import c from 'picocolors'
 import type { ForwardConsolePayload } from '#types/customEvent'
 import type { DevEnvironment, Plugin } from '..'
 import { normalizePath } from '..'
+import { cleanUrl } from '../../shared/utils'
+import type { MemoryFiles } from '../server/bundledDev'
 import { extractSourcemapFromFile } from '../server/sourcemap'
-import { generateCodeFrame } from '../utils'
+import { generateCodeFrame, isInNodeModules } from '../utils'
 
 export function forwardConsolePlugin(pluginOpts: {
   environments: string[]
@@ -60,8 +63,12 @@ function formatError(
   sourceMapCache: Map<string, any>,
 ) {
   const error = payload.data
+  const memoryFiles = environment.bundledDev?.memoryFiles
   const stacks = parseErrorStacktrace(error, {
     getUrlId(id) {
+      if (memoryFiles) {
+        return getBundledDevChunkPath(environment, memoryFiles, id) ?? id
+      }
       const moduleGraph = environment.moduleGraph
       const mod = moduleGraph.getModuleById(id)
       if (mod) {
@@ -83,6 +90,9 @@ function formatError(
       return id
     },
     getSourceMap(id) {
+      if (memoryFiles) {
+        return getBundledDevSourceMap(environment, memoryFiles, id)
+      }
       if (sourceMapCache.has(id)) {
         return sourceMapCache.get(id)
       }
@@ -114,6 +124,9 @@ function formatError(
   })
 
   const nearest = stacks.find((stack) => {
+    if (memoryFiles) {
+      return !isInNodeModules(stack.file) && fs.existsSync(stack.file)
+    }
     const modules = environment.moduleGraph.getModulesByFile(stack.file)
     return (
       [...(modules || [])].some((m) => m.transformResult) &&
@@ -141,4 +154,63 @@ function formatError(
     }
   }
   return output
+}
+
+// Under bundled dev, the client module graph is empty and the browser runs
+// bundle chunks served from `memoryFiles`. Their source maps list the sources
+// relative to the output dir, so chunk URLs are turned into paths inside it.
+function getBundledDevOutDir(environment: DevEnvironment): string {
+  return normalizePath(
+    path.resolve(environment.config.root, environment.config.build.outDir),
+  )
+}
+
+function getBundledDevChunkPath(
+  environment: DevEnvironment,
+  memoryFiles: MemoryFiles,
+  url: string,
+): string | undefined {
+  const { decodedBase } = environment.config
+  url = cleanUrl(url)
+  if (!url.startsWith(decodedBase)) return
+  const fileName = url.slice(decodedBase.length)
+  if (memoryFiles.has(fileName)) {
+    return `${getBundledDevOutDir(environment)}/${fileName}`
+  }
+}
+
+function getBundledDevSourceMap(
+  environment: DevEnvironment,
+  memoryFiles: MemoryFiles,
+  chunkPath: string,
+) {
+  const outDir = getBundledDevOutDir(environment)
+  if (!chunkPath.startsWith(`${outDir}/`)) return null
+  const chunkFileName = chunkPath.slice(outDir.length + 1)
+  const readFile = (fileName: string) => {
+    const source = memoryFiles.get(fileName)?.source
+    return typeof source === 'string'
+      ? source
+      : source && Buffer.from(source).toString('utf-8')
+  }
+  const code = readFile(chunkFileName)
+  if (code === undefined) return null
+  try {
+    const converter =
+      convertSourceMap.fromSource(code) ||
+      convertSourceMap.fromMapFileSource(code, (mapFileName: string) => {
+        const mapFilePath = path.posix.join(
+          path.posix.dirname(chunkFileName),
+          mapFileName,
+        )
+        const map = readFile(mapFilePath)
+        if (map === undefined) {
+          throw new Error(`${mapFilePath} is not in memoryFiles`)
+        }
+        return map
+      })
+    return converter?.toObject() ?? null
+  } catch {
+    return null
+  }
 }
