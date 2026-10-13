@@ -64,6 +64,7 @@ minimumReleaseAgeExclude:
   - '@vitejs/devtools-*'
   - launch-editor-middleware@2.14.2
   - launch-editor@2.14.2
+  - resolve.exports@2.0.4
 trustPolicy: no-downgrade
 trustPolicyExcludePrune: true
 trustPolicyExclude:
