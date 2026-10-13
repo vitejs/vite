@@ -764,6 +764,10 @@ export function runOptimizeDeps(
       optimizerContext.cancelled = true
       const { context } = await preparedRun
       context?.cancel()
+      // `context.cancel()` only prevents a Rolldown build from starting its
+      // write. If the write has already started, wait for it to finish before
+      // removing the processing directory so it cannot recreate it afterward.
+      await runResult.catch(() => {})
       cleanUp()
     },
     result: runResult,
