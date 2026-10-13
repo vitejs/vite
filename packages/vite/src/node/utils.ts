@@ -1327,9 +1327,8 @@ export function setupRollupOptionCompat<
 ): asserts buildConfig is T & {
   rolldownOptions: Exclude<T['rolldownOptions'], undefined>
 } {
-  // if both rollupOptions and rolldownOptions are present,
-  // ignore rollupOptions and use rolldownOptions
-  buildConfig.rolldownOptions ??= buildConfig.rollupOptions
+  // check before falling back below, otherwise rollupOptions would always
+  // equal rolldownOptions when only rollupOptions is set
   if (
     runtimeDeprecatedPath.has(path) &&
     buildConfig.rollupOptions &&
@@ -1337,6 +1336,9 @@ export function setupRollupOptionCompat<
   ) {
     rollupOptionsDeprecationCall()
   }
+  // if both rollupOptions and rolldownOptions are present,
+  // ignore rollupOptions and use rolldownOptions
+  buildConfig.rolldownOptions ??= buildConfig.rollupOptions
 
   // proxy rolldownOptions to rollupOptions
   Object.defineProperty(buildConfig, 'rollupOptions', {
