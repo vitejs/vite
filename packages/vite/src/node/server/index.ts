@@ -587,19 +587,50 @@ export async function _createServer(
   const watchEnabled = serverConfig.watch !== null
   const watcher = watchEnabled
     ? makeWatcherCloseFinal(
-        chokidar.watch(
-          // config file dependencies and env file might be outside of root
-          [
-            ...(config.experimental.bundledDev ? [] : [root]),
-            ...config.configFileDependencies,
-            ...getEnvFilesForMode(config.mode, config.envDir),
-            // Watch the public directory explicitly because it might be outside
-            // of the root directory.
-            ...(publicDir && publicFiles ? [publicDir] : []),
-          ],
+        (() => {
+          const w = chokidar.watch(
+            // config file dependencies and env file might be outside of root
+            [
+              ...(config.experimental.bundledDev ? [] : [root]),
+              ...config.configFileDependencies,
+              ...getEnvFilesForMode(config.mode, config.envDir),
+              // Watch the public directory explicitly because it might be outside
+              // of the root directory.
+              ...(publicDir && publicFiles ? [publicDir] : []),
+            ],
 
-          resolvedWatchOptions,
-        ) as FSWatcher,
+            resolvedWatchOptions,
+          ) as FSWatcher
+
+          // Workaround for https://github.com/vitejs/vite/issues/23719
+          // Chokidar 3.6.0 throttles changes per-path, dropping events
+          // within 50ms window without trailing emit.
+          const pendingChange = new Map<string, NodeJS.Timeout>()
+          w.on('raw', (event, pathStr) => {
+            if (event === 'change') {
+              const absPath = normalizePath(path.resolve(root, pathStr))
+              if (pendingChange.has(absPath)) {
+                clearTimeout(pendingChange.get(absPath)!)
+              }
+              pendingChange.set(
+                absPath,
+                setTimeout(() => {
+                  pendingChange.delete(absPath)
+                  w.emit('change', absPath)
+                }, 60),
+              ) // > 50ms throttle window
+            }
+          })
+          w.on('change', (pathStr) => {
+            const absPath = normalizePath(path.resolve(pathStr))
+            if (pendingChange.has(absPath)) {
+              clearTimeout(pendingChange.get(absPath)!)
+              pendingChange.delete(absPath)
+            }
+          })
+
+          return w
+        })(),
       )
     : createNoopWatcher(resolvedWatchOptions)
 
