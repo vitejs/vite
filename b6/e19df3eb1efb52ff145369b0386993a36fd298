@@ -1,0 +1,33 @@
+packages/create-vite/LICENSE
+  s_de3a7e18460823::t_dd8746d12dddb1 149,270-297
+packages/vite/LICENSE.md
+  s_de3a7e18460823::t_34ccd7d8c49f17 28,1790-1817
+docs/config/server-options.md
+  s_de3a7e18460823::t_c6eaad991f89c4 251
+packages/create-vite/package.json
+  s_de3a7e18460823::t_5a8e0c7d5eff5d 39
+packages/create-vite/src/index.ts
+  s_de3a7e18460823::t_b5ec596a752188 8,477
+packages/vite/package.json
+  s_de3a7e18460823::t_7fb14e6fdc5af3 129
+packages/vite/src/node/server/index.ts
+  s_de3a7e18460823::t_d3e4f9b1379532 17,294
+pnpm-lock.yaml
+  s_de3a7e18460823::t_ff2bf610235109 319-321,555-557
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b6e19df3eb1efb52ff145369b0386993a36fd298",
+  "prompts": {},
+  "sessions": {
+    "s_de3a7e18460823": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a134ab-f762-7500-90cb-bb2ade79b263",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
