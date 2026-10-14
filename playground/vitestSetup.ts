@@ -67,9 +67,9 @@ export const isBuild = !!process.env.VITE_TEST_BUILD
 export const isServe = !isBuild
 /**
  * Serve mode with `experimental.bundledDev` force-enabled for every playground
- * (`VITE_TEST_BUNDLED_DEV=1`). `isServe` stays `true` in this mode; use
- * `test.skipIf(isBundledDev)` / `describe.skipIf(isBundledDev)` for cases that
- * don't pass under bundled dev yet.
+ * (`VITE_TEST_BUNDLED_DEV=1`). `isServe` stays `true` in this mode; mark cases
+ * that don't pass under bundled dev with `bundledDevTodo()` or
+ * `bundledDevUnsupported()` from `test-utils.ts`.
  */
 export const isBundledDev = isServe && !!process.env.VITE_TEST_BUNDLED_DEV
 export const isBundled = isBuild || isBundledDev
@@ -481,5 +481,11 @@ declare module 'vite' {
 declare module 'vitest' {
   export interface ProvidedContext {
     wsEndpoint: string
+  }
+  export interface TaskMeta {
+    /** Why a `bundled-dev/*` tagged test does not pass under bundled dev. */
+    reason?: string
+    /** Issue numbers that track the gap, in vitejs/vite and rolldown/rolldown. */
+    issues?: { vite?: number[]; rolldown?: number[] }
   }
 }
