@@ -79,12 +79,7 @@ export class ModuleRunner {
     // at all, so the runtime exists even when HMR is disabled
     let runtime: DevRuntime | undefined
     if (options.rolldownRuntime) {
-      runtime = this.rolldownDevRuntime = new DevRuntime(nanoid())
-      runtime.hooks = {
-        createModuleHotContext: (id) => this.ensureModuleHotContext(id),
-        onModuleCacheRemoval: (id) =>
-          this._bundledDevHmrClient?.handleModuleCacheRemoval(id),
-      }
+      runtime = this.rolldownDevRuntime = this.createRolldownDevRuntime()
     }
     if (options.hmr !== false) {
       const optionsHmr = options.hmr ?? true
@@ -174,6 +169,21 @@ export class ModuleRunner {
   public clearCache(): void {
     this.evaluatedModules.clear()
     this.hmrClient?.clear()
+  }
+
+  /** @internal */
+  public async _resetBundledDevRuntime(): Promise<void> {
+    this.evaluatedModules.clear()
+    this.moduleHotContexts.clear()
+
+    const oldClientId = this.rolldownDevRuntime!.clientId
+    const runtime = this.createRolldownDevRuntime()
+    await this._bundledDevHmrClient!.resetForFullReload(runtime)
+    this.rolldownDevRuntime = runtime
+    await this.transport.invoke('resetBundledDevClient', [
+      oldClientId,
+      runtime.clientId,
+    ])
   }
 
   /**
@@ -501,6 +511,16 @@ export class ModuleRunner {
   }
 
   private moduleHotContexts = new Map<string, HMRContext>()
+
+  private createRolldownDevRuntime(): DevRuntime {
+    const runtime = new DevRuntime(nanoid())
+    runtime.hooks = {
+      createModuleHotContext: (id) => this.ensureModuleHotContext(id),
+      onModuleCacheRemoval: (id) =>
+        this._bundledDevHmrClient?.handleModuleCacheRemoval(id),
+    }
+    return runtime
+  }
 
   private ensureModuleHotContext(url: string) {
     if (!this.hmrClient) {

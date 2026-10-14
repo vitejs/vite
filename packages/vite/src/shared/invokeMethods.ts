@@ -95,4 +95,9 @@ export type InvokeMethods = {
       | { type: 'RegExp'; source: string; flags: string }
     >
   >
+
+  resetBundledDevClient: (
+    oldClientId: string,
+    newClientId: string,
+  ) => Promise<void>
 }

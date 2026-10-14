@@ -84,7 +84,11 @@ async function reimportEntrypoints(
   runner: ModuleRunner,
   entrypointUrls: Set<string>,
 ): Promise<void> {
-  runner.evaluatedModules.clear()
+  if (runner._bundledDevHmrClient) {
+    await runner._resetBundledDevRuntime()
+  } else {
+    runner.evaluatedModules.clear()
+  }
 
   for (const url of entrypointUrls) {
     if (runner.isClosed()) break

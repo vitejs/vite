@@ -143,7 +143,7 @@ export class BundledDev {
       'vite:client-connected',
       async (payload, client) => {
         this.clients.setupIfNeeded(client, payload.clientId)
-        this.devEngine.registerClient(payload.clientId)
+        await this.devEngine.registerClient(payload.clientId)
       },
     )
     this.environment.hot.on('vite:bundled-dev:payload-delivered', (payload) => {
@@ -382,6 +382,17 @@ export class BundledDev {
     }
   }
 
+  async resetClient(oldClientId: string, newClientId: string): Promise<void> {
+    const client = this.clients.get(oldClientId)
+    if (!client) {
+      throw new Error(`bundled dev client ${oldClientId} is not registered`)
+    }
+    this.clients.replace(client, newClientId)
+    this.reloadNeededClientIds.delete(oldClientId)
+    await this.devEngine.removeClient(oldClientId)
+    await this.devEngine.registerClient(newClientId)
+  }
+
   /**
    * Called when the client reports that it evaluated a payload (the line appended
    * by `payloadDeliveredAck`). Only then is the payload recorded on the server's
@@ -588,6 +599,13 @@ class Clients {
         'client ID conflict detected. Please restart the dev server.',
       )
     }
+    this.clientToId.set(client, clientId)
+    this.idToClient.set(clientId, client)
+  }
+
+  replace(client: NormalizedHotChannelClient, clientId: string): void {
+    const previousClientId = this.clientToId.get(client)
+    if (previousClientId) this.idToClient.delete(previousClientId)
     this.clientToId.set(client, clientId)
     this.idToClient.set(clientId, client)
   }

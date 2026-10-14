@@ -11,7 +11,7 @@ import {
   createRunnableDevEnvironment,
   isRunnableDevEnvironment,
 } from '../../../server/environments/runnableEnvironment'
-import { runnerTest as it } from './utils'
+import { createFixtureEditor, runnerTest as it } from './utils'
 
 const _URL = URL
 
@@ -637,6 +637,65 @@ describe('virtual module hmr', async () => {
       expect(moduleNode.id).toMatch(/^\//) // /
       expect(moduleNode.file).toMatch(/^\//) // /
     }
+  })
+})
+
+describe('full reload in full bundle mode', () => {
+  const hmrLogs: string[] = []
+  it.override('fullBundle', ['./fixtures/full-reload.js'])
+  it.override('runnerOptions', {
+    hmr: {
+      logger: {
+        debug: (...messages) => hmrLogs.push(messages.join(' ')),
+        error: (error) => hmrLogs.push(String(error)),
+      },
+    },
+  })
+  it.override('config', {
+    server: {
+      hmr: true,
+      watch: { usePolling: true, interval: 10 },
+    },
+  })
+
+  it('continues HMR after re-importing the entrypoint', async ({ runner }) => {
+    const filename = resolve(import.meta.dirname, './fixtures/full-reload.js')
+    const { editFile } = createFixtureEditor()
+
+    expect(await runner.import('/fixtures/full-reload.js')).toHaveProperty(
+      'value',
+      'initial',
+    )
+
+    editFile(
+      filename,
+      (code) =>
+        code.replace('initial', 'updated') + '\nimport.meta.hot?.accept()\n',
+    )
+    await vi.waitFor(
+      () => {
+        expect(
+          [...runner.evaluatedModules.idToModuleMap.values()].find(
+            (module) => module.exports?.value === 'updated',
+          )?.exports,
+        ).toHaveProperty('value', 'updated')
+      },
+      { timeout: 3_000 },
+    )
+
+    editFile(filename, (code) => code.replace('updated', 'updated-again'))
+    await vi.waitFor(
+      () => {
+        expect(
+          hmrLogs.some((log) => /hot updated: .*full-reload\.js/.test(log)),
+        ).toBe(true)
+      },
+      { timeout: 3_000 },
+    )
+    expect(await runner.import('/fixtures/full-reload.js')).toHaveProperty(
+      'value',
+      'updated-again',
+    )
   })
 })
 

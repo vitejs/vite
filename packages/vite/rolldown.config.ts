@@ -154,7 +154,7 @@ const moduleRunnerConfig = defineConfig({
     /^rolldown\//,
     ...Object.keys(pkg.dependencies),
   ],
-  plugins: [bundleSizeLimit(67), enableSourceMapsInWatchModePlugin()],
+  plugins: [bundleSizeLimit(68), enableSourceMapsInWatchModePlugin()],
   output: {
     ...sharedNodeOptions.output,
     minify: {

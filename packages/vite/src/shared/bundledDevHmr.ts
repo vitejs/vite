@@ -71,6 +71,17 @@ export class BundledDevHMRClient extends HMRClient {
     )
   }
 
+  resetForFullReload(runtime: RolldownRuntimeLike): Promise<void> {
+    this.applyQueue = this.applyQueue.then(() => {
+      this.runtime = runtime
+      this.lastSeq = 0
+      this.reloadPending = false
+      this.currentFirstInvalidatedBy = undefined
+      this.clear()
+    })
+    return this.applyQueue
+  }
+
   isSelfAccepted(id: string): boolean {
     return (
       this.hotModulesMap.get(id)?.callbacks.some((c) => c.deps.includes(id)) ??
