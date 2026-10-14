@@ -1,0 +1,6 @@
+{
+  "name": "@vitejs/test-cjs-node-builtin",
+  "private": true,
+  "version": "0.0.0",
+  "exports": "./index.cjs"
+}

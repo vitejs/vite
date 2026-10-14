@@ -1985,6 +1985,9 @@ importers:
       '@vitejs/test-browser-exports':
         specifier: file:./browser-exports
         version: file:playground/ssr-webworker/browser-exports
+      '@vitejs/test-cjs-node-builtin':
+        specifier: file:./cjs-node-builtin
+        version: file:playground/ssr-webworker/cjs-node-builtin
       '@vitejs/test-worker-exports':
         specifier: file:./worker-exports
         version: file:playground/ssr-webworker/worker-exports
@@ -2000,6 +2003,8 @@ importers:
         version: 4.20260730.0
 
   playground/ssr-webworker/browser-exports: {}
+
+  playground/ssr-webworker/cjs-node-builtin: {}
 
   playground/ssr-webworker/worker-exports: {}
 
@@ -4532,6 +4537,9 @@ packages:
 
   '@vitejs/test-browser-exports@file:playground/ssr-webworker/browser-exports':
     resolution: {directory: playground/ssr-webworker/browser-exports, type: directory}
+
+  '@vitejs/test-cjs-node-builtin@file:playground/ssr-webworker/cjs-node-builtin':
+    resolution: {directory: playground/ssr-webworker/cjs-node-builtin, type: directory}
 
   '@vitejs/test-commonjs-dep@file:playground/define/commonjs-dep':
     resolution: {directory: playground/define/commonjs-dep, type: directory}
@@ -10485,6 +10493,8 @@ snapshots:
   '@vitejs/test-aliased-module@file:playground/alias/dir/module': {}
 
   '@vitejs/test-browser-exports@file:playground/ssr-webworker/browser-exports': {}
+
+  '@vitejs/test-cjs-node-builtin@file:playground/ssr-webworker/cjs-node-builtin': {}
 
   '@vitejs/test-commonjs-dep@file:playground/define/commonjs-dep': {}
 
