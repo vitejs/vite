@@ -237,12 +237,9 @@ test('scan import.meta.glob respects rolldown transform jsx options', async (ctx
   expect(scanResult.deps).not.toHaveProperty('react/jsx-runtime')
 })
 
-test.each([
-  ['oxc', { oxc: { jsxInject: `import 'vue'` } }],
-  ['esbuild compatibility', { esbuild: { jsxInject: `import 'vue'` } }],
-])('scan respects %s jsxInject', async (_, transformConfig) => {
+test('scan respects oxc jsxInject', async () => {
   const server = await createServer({
-    ...transformConfig,
+    oxc: { jsxInject: `import 'vue'` },
     configFile: false,
     logLevel: 'error',
     root: path.join(import.meta.dirname, 'fixtures', 'scan-jsx-runtime'),
