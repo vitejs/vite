@@ -1,0 +1,33 @@
+packages/vite/src/node/config.ts
+  s_9863e80e9758ea::t_d65bb9e44e55dc 278,280,968,986,994-1002,1012,1074,1102-1108,1619-1626,1784,1802-1803
+packages/vite/src/node/plugins/css.ts
+  s_82207904ebea35::t_070365a403bba9 175,220,602,1448,1456,1563,1570,1600,1756,1776,3407
+playground/css-sourcemap/vite.config.js
+  s_82207904ebea35::t_58e43e880745fd 5-7
+playground/tailwind-sourcemap/vite.config.js
+  s_82207904ebea35::t_05389d4dadfd07 4-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "014c091a2ecc22644d3d453dc830954882bebc11",
+  "prompts": {},
+  "sessions": {
+    "s_82207904ebea35": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1399a-af78-7301-9b8a-d0e5fce93afe",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_9863e80e9758ea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a139e0-d53b-7950-974d-0230ac9a3cc0",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
