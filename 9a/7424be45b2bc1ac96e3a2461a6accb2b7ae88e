@@ -1,0 +1,23 @@
+playground/hmr/__tests__/ws.spec.ts
+  s_1a0a1aca69a6d3::t_ddc86e79e5ad2a 1-3,5-7,9-20,22-31,33-34,36-39,41-43,45-46,48-49
+playground/hmr/package.json
+  s_1a0a1aca69a6d3::t_57c596345cdc55 13-14
+pnpm-lock.yaml
+  s_1a0a1aca69a6d3::t_4a00d190916faf 1063-1065
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "9a7424be45b2bc1ac96e3a2461a6accb2b7ae88e",
+  "prompts": {},
+  "sessions": {
+    "s_1a0a1aca69a6d3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1389a-3465-7302-89f5-90196451c81c",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
