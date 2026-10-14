@@ -15,7 +15,12 @@ export function createHMRHandlerForRunner(
         hmrClient.logger.debug(`connected.`)
         break
       case 'update':
-        await hmrClient.notifyListeners('vite:beforeUpdate', payload)
+      case 'update-batch': {
+        const updatePayload = {
+          type: 'update' as const,
+          updates: payload.updates,
+        }
+        await hmrClient.notifyListeners('vite:beforeUpdate', updatePayload)
         await Promise.all(
           payload.updates.map(async (update): Promise<void> => {
             if (update.type === 'js-update') {
@@ -25,8 +30,9 @@ export function createHMRHandlerForRunner(
             hmrClient.logger.error('css hmr is not supported in runner mode.')
           }),
         )
-        await hmrClient.notifyListeners('vite:afterUpdate', payload)
+        await hmrClient.notifyListeners('vite:afterUpdate', updatePayload)
         break
+      }
       case 'custom': {
         await hmrClient.notifyListeners(payload.event, payload.data)
         break
@@ -75,7 +81,8 @@ export function createHMRHandlerForRunner(
       }
       case 'ping': // noop
         break
-      case 'bundled-dev-update': // todo
+      case 'bundled-dev-update':
+      case 'bundled-dev-update-batch':
         break
       default: {
         const check: never = payload

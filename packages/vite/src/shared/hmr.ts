@@ -186,7 +186,7 @@ export class HMRClient {
     public logger: HMRLogger,
     private transport: NormalizedModuleRunnerTransport,
     // This allows implementing reloading via different methods depending on the environment
-    private importUpdatedModule: (update: Update) => Promise<ModuleNamespace>,
+    protected importUpdatedModule: (update: Update) => Promise<ModuleNamespace>,
   ) {}
 
   public async notifyListeners<T extends string>(

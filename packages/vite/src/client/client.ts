@@ -1,5 +1,5 @@
-import type { ErrorPayload, HotPayload } from '#types/hmrPayload'
-import type { ViteHotContext } from '#types/hot'
+import type { ErrorPayload, HotPayload, Update } from '#types/hmrPayload'
+import type { ModuleNamespace, ViteHotContext } from '#types/hot'
 import { setupForwardConsoleHandler } from '../shared/forwardConsole'
 import { HMRClient, HMRContext } from '../shared/hmr'
 import { createHMRHandler } from '../shared/hmrHandler'
@@ -144,7 +144,112 @@ function wrapIdIfNeeded(id: string): string {
   return id[0] === '.' || id[0] === '/' ? id : wrapId(id)
 }
 
-const hmrClient = new HMRClient(
+interface BrowserHotCallback {
+  deps: string[]
+  fn: (modules: Array<ModuleNamespace | undefined>) => void
+}
+
+type BrowserFetchedUpdate = [
+  Update,
+  BrowserHotCallback[],
+  ModuleNamespace | undefined,
+]
+
+class BrowserHMRClient extends HMRClient {
+  private reloadAfterFailedBatch = false
+
+  override async queueUpdate(update: Update): Promise<void> {
+    if (this.reloadAfterFailedBatch) {
+      this.reloadAfterFailedBatch = false
+      pageReload()
+      return
+    }
+    return super.queueUpdate(update)
+  }
+
+  async queueUpdateBatch(updates: Update[]): Promise<boolean> {
+    if (this.reloadAfterFailedBatch) {
+      this.reloadAfterFailedBatch = false
+      pageReload()
+      return false
+    }
+
+    try {
+      const fetched = (
+        await Promise.all(
+          updates.map((update) => this.fetchBrowserUpdate(update)),
+        )
+      ).filter(
+        (fetched): fetched is BrowserFetchedUpdate => fetched !== undefined,
+      )
+      this.applyBrowserFetchedUpdates(fetched)
+      return true
+    } catch {
+      this.reloadAfterFailedBatch = true
+      return false
+    }
+  }
+
+  private async fetchBrowserUpdate(
+    update: Update,
+  ): Promise<BrowserFetchedUpdate | undefined> {
+    const { path, acceptedPath } = update
+    const mod = this.hotModulesMap.get(path)
+    if (!mod) return
+
+    const callbacks = mod.callbacks.filter(({ deps }) =>
+      deps.includes(acceptedPath),
+    )
+    let fetchedModule: ModuleNamespace | undefined
+    if (path === acceptedPath || callbacks.length > 0) {
+      const disposer = this.disposeMap.get(acceptedPath)
+      if (disposer) await disposer(this.dataMap.get(acceptedPath))
+      try {
+        fetchedModule = await this.importUpdatedModule(update)
+      } catch (error) {
+        this.warnFailedUpdate(error as Error, acceptedPath)
+        throw error
+      }
+    }
+    return [update, callbacks, fetchedModule]
+  }
+
+  private applyBrowserFetchedUpdates(updates: BrowserFetchedUpdate[]): void {
+    const callbacks = new Map<
+      BrowserHotCallback,
+      [Map<string, ModuleNamespace | undefined>, string | undefined]
+    >()
+    for (const [update, qualifiedCallbacks, fetchedModule] of updates) {
+      for (const callback of qualifiedCallbacks) {
+        let pending = callbacks.get(callback)
+        if (!pending) {
+          pending = [new Map(), update.firstInvalidatedBy]
+          callbacks.set(callback, pending)
+        }
+        pending[0].set(update.acceptedPath, fetchedModule)
+      }
+    }
+
+    for (const [callback, [modules, firstInvalidatedBy]] of callbacks) {
+      try {
+        this.currentFirstInvalidatedBy = firstInvalidatedBy
+        callback.fn(callback.deps.map((dep) => modules.get(dep)))
+      } finally {
+        this.currentFirstInvalidatedBy = undefined
+      }
+    }
+
+    for (const [update] of updates) {
+      const loggedPath =
+        update.path === update.acceptedPath
+          ? update.path
+          : `${update.acceptedPath} via ${update.path}`
+      this.logger.debug(`hot updated: ${loggedPath}`)
+    }
+  }
+}
+
+const hmrClient = new BrowserHMRClient(
   {
     error: (err) => console.error('[vite]', err),
     debug: (...msg) => console.debug('[vite]', ...msg),
@@ -206,6 +311,44 @@ export function clearOverlayOrReloadOnFirstUpdate(): 'reload' | 'continue' {
   return 'continue'
 }
 
+function updateStyleLink(update: Update): Promise<void> | undefined {
+  const { path, timestamp } = update
+  const searchUrl = cleanUrl(path)
+  // can't use querySelector with `[href*=]` here since the link may be
+  // using relative paths so we need to use link.href to grab the full
+  // URL for the include check.
+  const el = Array.from(
+    document.querySelectorAll<HTMLLinkElement>('link'),
+  ).find(
+    (e) => !outdatedLinkTags.has(e) && cleanUrl(e.href).includes(searchUrl),
+  )
+
+  if (!el) return
+
+  const newPath = `${base}${searchUrl.slice(1)}${
+    searchUrl.includes('?') ? '&' : '?'
+  }t=${timestamp}`
+
+  // rather than swapping the href on the existing tag, we will
+  // create a new link tag. Once the new stylesheet has loaded we
+  // will remove the existing link tag. This removes a Flash Of
+  // Unstyled Content that can occur when swapping out the tag href
+  // directly, as the new stylesheet has not yet been loaded.
+  return new Promise((resolve) => {
+    const newLinkTag = el.cloneNode() as HTMLLinkElement
+    newLinkTag.href = new URL(newPath, el.href).href
+    const removeOldEl = () => {
+      el.remove()
+      console.debug(`[vite] css hot updated: ${searchUrl}`)
+      resolve()
+    }
+    newLinkTag.addEventListener('load', removeOldEl)
+    newLinkTag.addEventListener('error', removeOldEl)
+    outdatedLinkTags.add(el)
+    el.after(newLinkTag)
+  })
+}
+
 async function handleMessage(payload: HotPayload) {
   const activeHmrClient = bundledDevClient ?? hmrClient
   switch (payload.type) {
@@ -215,6 +358,31 @@ async function handleMessage(payload: HotPayload) {
     case 'bundled-dev-update':
       bundledDevClient!.handlePush(payload)
       break
+    case 'bundled-dev-update-batch':
+      bundledDevClient!.handlePushBatch(payload.updates)
+      break
+    case 'update-batch': {
+      const listenerPayload = {
+        type: 'update' as const,
+        updates: payload.updates,
+      }
+      await activeHmrClient.notifyListeners(
+        'vite:beforeUpdate',
+        listenerPayload,
+      )
+      if (clearOverlayOrReloadOnFirstUpdate() === 'reload') return
+      const applied = await hmrClient.queueUpdateBatch(
+        payload.updates.filter((update) => update.type === 'js-update'),
+      )
+      if (!applied) return
+      await Promise.all(
+        payload.updates
+          .filter((update) => update.type === 'css-update')
+          .map(updateStyleLink),
+      )
+      await activeHmrClient.notifyListeners('vite:afterUpdate', listenerPayload)
+      break
+    }
     case 'update':
       await activeHmrClient.notifyListeners('vite:beforeUpdate', payload)
       if (clearOverlayOrReloadOnFirstUpdate() === 'reload') {
@@ -226,46 +394,8 @@ async function handleMessage(payload: HotPayload) {
             return hmrClient.queueUpdate(update)
           }
 
-          // css-update
-          // this is only sent when a css file referenced with <link> is updated
-          const { path, timestamp } = update
-          const searchUrl = cleanUrl(path)
-          // can't use querySelector with `[href*=]` here since the link may be
-          // using relative paths so we need to use link.href to grab the full
-          // URL for the include check.
-          const el = Array.from(
-            document.querySelectorAll<HTMLLinkElement>('link'),
-          ).find(
-            (e) =>
-              !outdatedLinkTags.has(e) && cleanUrl(e.href).includes(searchUrl),
-          )
-
-          if (!el) {
-            return
-          }
-
-          const newPath = `${base}${searchUrl.slice(1)}${
-            searchUrl.includes('?') ? '&' : '?'
-          }t=${timestamp}`
-
-          // rather than swapping the href on the existing tag, we will
-          // create a new link tag. Once the new stylesheet has loaded we
-          // will remove the existing link tag. This removes a Flash Of
-          // Unstyled Content that can occur when swapping out the tag href
-          // directly, as the new stylesheet has not yet been loaded.
-          return new Promise((resolve) => {
-            const newLinkTag = el.cloneNode() as HTMLLinkElement
-            newLinkTag.href = new URL(newPath, el.href).href
-            const removeOldEl = () => {
-              el.remove()
-              console.debug(`[vite] css hot updated: ${searchUrl}`)
-              resolve()
-            }
-            newLinkTag.addEventListener('load', removeOldEl)
-            newLinkTag.addEventListener('error', removeOldEl)
-            outdatedLinkTags.add(el)
-            el.after(newLinkTag)
-          })
+          // css-update, only sent for a CSS file referenced with <link>
+          return updateStyleLink(update)
         }),
       )
       await activeHmrClient.notifyListeners('vite:afterUpdate', payload)
