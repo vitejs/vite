@@ -231,6 +231,12 @@ export function createWebSocketServer(
         parsedUrl.pathname === hmrBase
       ) {
         handleUpgrade(req, socket as Socket, head, protocol === 'vite-ping')
+      } else {
+        // Unrecognised upgrade request — not ours to handle. Attach a no-op
+        // error listener so that a subsequent ECONNRESET from the client does
+        // not become an unhandled Node.js 'error' event that crashes the
+        // process. See https://github.com/vitejs/vite/issues/23727
+        socket.on('error', () => {})
       }
     }
     wsServer.on('upgrade', hmrServerWsListener)
