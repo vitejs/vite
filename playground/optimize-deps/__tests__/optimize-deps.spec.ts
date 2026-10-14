@@ -470,3 +470,10 @@ test('should fix relative worker paths in optimized dependencies', async () => {
   const res = await page.request.get(url)
   expect(res.status()).toBe(200)
 })
+
+test.runIf(isServe)(
+  'loads dependencies with duplicate entry chunk names',
+  async () => {
+    await expect.poll(() => page.textContent('.duplicate-entry')).toBe('loaded')
+  },
+)

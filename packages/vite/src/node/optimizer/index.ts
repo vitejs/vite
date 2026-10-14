@@ -688,11 +688,24 @@ export function runOptimizeDeps(
           if (chunk.type !== 'chunk') continue
 
           if (chunk.isEntry) {
-            const { exportsData, file, id, ...info } =
-              depForEntryFileName[chunk.fileName]
+            const depForChunkFileName = depForEntryFileName[chunk.fileName]
+            const dep =
+              depForChunkFileName ?? depForEntryFileName[`${chunk.name}.js`]
+            if (!dep) {
+              throw new Error(
+                `Unable to find optimized dependency for entry chunk "${chunk.fileName}"`,
+              )
+            }
+            const { exportsData, file, id, ...info } = dep
             addOptimizedDepInfo(metadata, 'optimized', {
               id,
-              file,
+              // Rolldown may append a suffix to the file name when an entry
+              // duplicates another entry's facade module ID.
+              file: depForChunkFileName
+                ? file
+                : normalizePath(
+                    path.resolve(getDepsCacheDir(environment), chunk.fileName),
+                  ),
               ...info,
               // We only need to hash the chunk.imports in to check for stability, but adding the hash
               // and file path gives us a unique hash that may be useful for other things in the future

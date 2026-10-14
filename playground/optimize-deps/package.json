@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "clipboard": "^2.0.11",
+    "effect": "4.0.3",
     "@vitejs/test-dep-cjs-browser-field": "file:./dep-cjs-browser-field",
     "@vitejs/longfilename-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": "file:./longfilename",
     "@vitejs/test-dep-alias-using-absolute-path": "file:./dep-alias-using-absolute-path",
