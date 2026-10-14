@@ -1062,6 +1062,9 @@ importers:
       tinyglobby:
         specifier: ^0.2.17
         version: 0.2.17
+      ws:
+        specifier: ^8.22.0
+        version: 8.22.0
 
   playground/hmr-full-bundle-mode: {}
 
