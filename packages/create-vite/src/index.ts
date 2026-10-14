@@ -410,6 +410,7 @@ const TEMPLATES = FRAMEWORKS.map((f) => f.variants.map((v) => v.name)).reduce(
 const renameFiles: Record<string, string | undefined> = {
   _gitignore: '.gitignore',
   '_oxlintrc.json': '.oxlintrc.json',
+  '_eslint.config.js': 'eslint.config.js',
 }
 
 const defaultTargetDir = 'vite-project'
@@ -712,7 +713,14 @@ async function init() {
   }
 
   const files = fs.readdirSync(templateDir)
-  for (const file of files.filter((f) => f !== 'package.json')) {
+  for (const file of files) {
+    if (
+      file === 'package.json' ||
+      file === '_eslint.config.js' ||
+      file === '_oxlintrc.json'
+    ) {
+      continue
+    }
     write(file)
   }
 
@@ -728,8 +736,13 @@ async function init() {
     setupReactCompiler(root, template.endsWith('-ts'))
   }
 
-  if (eslint) {
-    setupEslint(root, template.endsWith('-ts'))
+  if (isReactTemplate) {
+    if (eslint) {
+      write('_eslint.config.js')
+      setupEslint(root, template.endsWith('-ts'))
+    } else {
+      write('_oxlintrc.json')
+    }
   }
 
   if (immediate) {
@@ -888,59 +901,13 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=typescript-eslint
   const typescriptEslintVersion = '8.71.1'
 
-  const eslintConfigForTS = /* js */ `import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import tseslint from 'typescript-eslint'
-import { defineConfig, globalIgnores } from 'eslint/config'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      js.configs.recommended,
-      tseslint.configs.recommended,
-      reactHooks.configs.flat.recommended,
-      reactRefresh.configs.vite,
-    ],
-    languageOptions: {
-      globals: globals.browser,
-    },
-  },
-])
-`
-  const eslintConfigForJS = /* js */ `import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import { defineConfig, globalIgnores } from 'eslint/config'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{js,jsx}'],
-    extends: [
-      js.configs.recommended,
-      reactHooks.configs.flat.recommended,
-      reactRefresh.configs.vite,
-    ],
-    languageOptions: {
-      globals: globals.browser,
-      parserOptions: { ecmaFeatures: { jsx: true } },
-    },
-  },
-])
-`
-
-  fs.rmSync(path.resolve(root, '.oxlintrc.json'))
-
-  const eslintConfig = isTs ? eslintConfigForTS : eslintConfigForJS
-  fs.writeFileSync(path.resolve(root, 'eslint.config.js'), eslintConfig)
-
   editFile(path.resolve(root, 'package.json'), (content) => {
     const asObject = JSON.parse(content)
+    if (isTs) {
+      // Keep TypeScript 6 until typescript-eslint supports TypeScript 7.
+      // https://github.com/typescript-eslint/typescript-eslint/issues/10940
+      asObject.devDependencies.typescript = '~6.0.2'
+    }
     const devDepsEntries = Object.entries(asObject.devDependencies).filter(
       ([name]) => name !== 'oxlint',
     )

@@ -47,6 +47,7 @@ const templateFiles = fs
 // React starter template
 const templateFilesReact = fs
   .readdirSync(path.join(CLI_PATH, 'template-react'))
+  .filter((file) => file !== '_eslint.config.js')
   .map((filePath) => fileNameMap[filePath] ?? filePath)
   .sort()
 
