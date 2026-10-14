@@ -46,7 +46,6 @@ import {
 import type { TransformPluginContext } from '../server/pluginContainer'
 import {
   createDebugger,
-  fsPathFromUrl,
   generateCodeFrame,
   getFileStartIndex,
   getHash,
@@ -587,12 +586,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
             // normalize
             let [url, resolvedId] = await normalizeUrl(specifier, start)
+            if (resolvedId) {
+              config.safeModulePaths.add(cleanUrl(resolvedId))
+            }
             resolvedId = resolvedId || url
-
-            // record as safe modules
-            // safeModulesPath should not include the base prefix.
-            // See https://github.com/vitejs/vite/issues/9438#issuecomment-1465270409
-            config.safeModulePaths.add(fsPathFromUrl(stripBase(url, base)))
 
             if (url !== specifier) {
               let rewriteDone = false

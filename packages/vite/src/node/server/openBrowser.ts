@@ -11,10 +11,10 @@
 import { exec } from 'node:child_process'
 import type { ExecOptions } from 'node:child_process'
 import { join } from 'node:path'
-import spawn from 'cross-spawn'
 import open from 'open'
 import type { Options } from 'open'
 import colors from 'picocolors'
+import { x } from 'tinyexec'
 import { VITE_PACKAGE_DIR } from '../constants'
 import type { Logger } from '../logger'
 
@@ -41,16 +41,15 @@ export function openBrowser(
 
 function executeNodeScript(scriptPath: string, url: string, logger: Logger) {
   const extraArgs = process.argv.slice(2)
-  const child = spawn(process.execPath, [scriptPath, ...extraArgs, url], {
-    stdio: 'inherit',
-  })
-  child.on('close', (code) => {
-    if (code !== 0) {
+  x(process.execPath, [scriptPath, ...extraArgs, url], {
+    nodeOptions: { stdio: 'inherit' },
+  }).then(({ exitCode }) => {
+    if (exitCode !== 0) {
       logger.error(
         colors.red(
           `\nThe script specified as BROWSER environment variable failed.\n\n${colors.cyan(
             scriptPath,
-          )} exited with code ${code}.`,
+          )} exited with code ${exitCode}.`,
         ),
         { error: null },
       )

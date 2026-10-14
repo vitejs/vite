@@ -161,3 +161,26 @@ class NoopWatcher extends EventEmitter implements FSWatcher {
 export function createNoopWatcher(options: WatchOptions): FSWatcher {
   return new NoopWatcher(options)
 }
+
+/**
+ * Chokidar's `add()` reopens a closed watcher. It may be called after shutdown
+ * starts from an in-flight plugin hook or directly through the exposed watcher.
+ * This wrapper makes `close()` final so those calls cannot create new file
+ * system handles.
+ */
+export function makeWatcherCloseFinal(watcher: FSWatcher): FSWatcher {
+  let closed = false
+  const add = watcher.add
+  watcher.add = function (...args: Parameters<FSWatcher['add']>) {
+    if (closed) return this
+    return add.apply(this, args)
+  }
+
+  const close = watcher.close
+  watcher.close = function (...args: Parameters<FSWatcher['close']>) {
+    closed = true
+    return close.apply(this, args)
+  }
+
+  return watcher
+}
