@@ -237,6 +237,37 @@ test('scan import.meta.glob respects rolldown transform jsx options', async (ctx
   expect(scanResult.deps).not.toHaveProperty('react/jsx-runtime')
 })
 
+test.each([
+  ['oxc', { oxc: { jsxInject: `import 'vue'` } }],
+  ['esbuild compatibility', { esbuild: { jsxInject: `import 'vue'` } }],
+])('scan respects %s jsxInject', async (_, transformConfig) => {
+  const server = await createServer({
+    ...transformConfig,
+    configFile: false,
+    logLevel: 'error',
+    root: path.join(import.meta.dirname, 'fixtures', 'scan-jsx-runtime'),
+    optimizeDeps: {
+      entries: ['./entry-jsx.tsx'],
+    },
+  })
+
+  const { cancel, result } = scanImports(
+    devToScanEnvironment(server.environments.client),
+  )
+
+  try {
+    await expect(result).resolves.toMatchObject({
+      deps: {
+        vue: expect.any(String),
+      },
+      missing: {},
+    })
+  } finally {
+    cancel()
+    await server.close()
+  }
+})
+
 test('top-level input is used as the entry for dep scanning', async (ctx) => {
   const server = await createServer({
     configFile: false,
