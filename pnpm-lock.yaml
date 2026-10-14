@@ -6,6 +6,9 @@ importers:
   .:
     configDependencies: {}
     packageManagerDependencies:
+      '@pnpm/exe':
+        specifier: 12.11.2
+        version: 12.11.2
       pnpm:
         specifier: 12.11.2
         version: 12.11.2
@@ -89,6 +92,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@pnpm/exe@12.11.2':
+    resolution: {integrity: sha512-uUudrvXShgp6yYRL/6XjeB2B2kbjE/alBdVWjFBP0jDiOnV5R83OpCWuGtc+Tn4stk0DEgO/x+vhEUTUf4x+Yw==}
+    engines: {node: '>=18.*'}
+    hasBin: true
+
   pnpm@12.11.2:
     resolution: {integrity: sha512-JaUWUqGWeFr18ovabf6NxYLr76SsHRgCIc4TkCMcX7dmN4IupLbkYzznSs3LCnf3Ja8RutOBd/3t2u6BipVcuQ==}
     engines: {node: '>=18.*'}
@@ -138,6 +146,23 @@ snapshots:
   '@pnpm/exe.win32-x64@12.11.2':
     optional: true
 
+  '@pnpm/exe@12.11.2':
+    optionalDependencies:
+      '@pnpm/exe.android-arm64': 12.11.2
+      '@pnpm/exe.android-x64': 12.11.2
+      '@pnpm/exe.darwin-arm64': 12.11.2
+      '@pnpm/exe.darwin-x64': 12.11.2
+      '@pnpm/exe.freebsd-x64': 12.11.2
+      '@pnpm/exe.linux-arm64': 12.11.2
+      '@pnpm/exe.linux-arm64-musl': 12.11.2
+      '@pnpm/exe.linux-ppc64': 12.11.2
+      '@pnpm/exe.linux-riscv64': 12.11.2
+      '@pnpm/exe.linux-s390x': 12.11.2
+      '@pnpm/exe.linux-x64': 12.11.2
+      '@pnpm/exe.linux-x64-musl': 12.11.2
+      '@pnpm/exe.win32-arm64': 12.11.2
+      '@pnpm/exe.win32-x64': 12.11.2
+
   pnpm@12.11.2:
     optionalDependencies:
       '@pnpm/exe.android-arm64': 12.11.2
@@ -170,7 +195,7 @@ overrides:
 packageExtensionsChecksum: sha256-ALP5Ia6zsiM9yjyXFaKKa/8ZJft4ePXCKiURYJcKc6g=
 
 patchedDependencies:
-  chokidar@3.6.0: e17269188c54412478078f7ac7877c1d5a475a2f2438328e3a7e725513ccbf1f
+  chokidar@3.6.0: 9254a838713e8d5abe8666e69c507ac0776c029e6162a2166b893e6888ace941
   dotenv-expand@13.0.0: 49330a663821151418e003e822a82a6a61d2f0f8a6e3cab00c1c94815a112889
   sirv@3.0.2: c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95
 
@@ -452,7 +477,7 @@ importers:
         version: 7.1.0
       chokidar:
         specifier: ^3.6.0
-        version: 3.6.0(patch_hash=e17269188c54412478078f7ac7877c1d5a475a2f2438328e3a7e725513ccbf1f)
+        version: 3.6.0(patch_hash=9254a838713e8d5abe8666e69c507ac0776c029e6162a2166b893e6888ace941)
       connect:
         specifier: ^3.7.0
         version: 3.7.0(ms@2.1.3)
@@ -11224,7 +11249,7 @@ snapshots:
     dependencies:
       is-regex: 1.2.1
 
-  chokidar@3.6.0(patch_hash=e17269188c54412478078f7ac7877c1d5a475a2f2438328e3a7e725513ccbf1f):
+  chokidar@3.6.0(patch_hash=9254a838713e8d5abe8666e69c507ac0776c029e6162a2166b893e6888ace941):
     dependencies:
       anymatch: 3.1.3
       braces: 3.0.3
@@ -13785,7 +13810,7 @@ snapshots:
     dependencies:
       '@alloc/quick-lru': 5.2.0
       arg: 5.0.2
-      chokidar: 3.6.0(patch_hash=e17269188c54412478078f7ac7877c1d5a475a2f2438328e3a7e725513ccbf1f)
+      chokidar: 3.6.0(patch_hash=9254a838713e8d5abe8666e69c507ac0776c029e6162a2166b893e6888ace941)
       didyoumean: 1.2.2
       dlv: 1.1.3
       fast-glob: 3.3.3
