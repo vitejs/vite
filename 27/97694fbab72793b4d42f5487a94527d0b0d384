@@ -1,0 +1,21 @@
+playground/ssr-webworker/cjs-node-builtin/index.cjs
+  s_014066244b3995::t_10160ffc344529 1-4
+playground/ssr-webworker/cjs-node-builtin/package.json
+  s_014066244b3995::t_79876361518686 1-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "2797694fbab72793b4d42f5487a94527d0b0d384",
+  "prompts": {},
+  "sessions": {
+    "s_014066244b3995": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1385f-e2b5-7241-bd3d-726cf2c2ee48",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
