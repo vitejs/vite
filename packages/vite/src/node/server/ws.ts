@@ -231,6 +231,12 @@ export function createWebSocketServer(
         parsedUrl.pathname === hmrBase
       ) {
         handleUpgrade(req, socket as Socket, head, protocol === 'vite-ping')
+      } else if (req.headers.upgrade?.toLowerCase() === 'websocket') {
+        // Other upgrade listeners (for example, a proxy middleware) may still
+        // handle this socket. Keep it open for them, but make sure a client
+        // resetting an otherwise-unhandled upgrade cannot crash the server.
+        socket.on('error', noop)
+        socket.once('close', () => socket.off('error', noop))
       }
     }
     wsServer.on('upgrade', hmrServerWsListener)
