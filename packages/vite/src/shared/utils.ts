@@ -46,7 +46,7 @@ export function isPrimitive(value: unknown): boolean {
 }
 
 export function withTrailingSlash(path: string): string {
-  if (path[path.length - 1] !== '/') {
+  if (path.at(-1) !== '/') {
     return `${path}/`
   }
   return path
@@ -81,4 +81,26 @@ export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
     reject = _reject
   })
   return { promise, resolve, reject }
+}
+
+const whitespaceRE = /\s/g
+const percentEncodedRE = /(?:%[0-9a-f]{2})+/gi
+const whitespaceOnlyRE = /^\s+$/
+
+/** Percent-encodes whitespace, which terminates a `//# sourceURL=` value in V8. */
+export function encodeSourceURL(id: string): string {
+  return id.replace(whitespaceRE, encodeURIComponent)
+}
+
+/** Reverses {@link encodeSourceURL}. */
+export function decodeSourceURL(url: string): string {
+  return url.replace(percentEncodedRE, (match) => {
+    let decoded: string
+    try {
+      decoded = decodeURIComponent(match)
+    } catch {
+      return match
+    }
+    return whitespaceOnlyRE.test(decoded) ? decoded : match
+  })
 }

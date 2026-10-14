@@ -202,8 +202,8 @@ export default defineConfig({
 The entry file would contain exports that can be imported by users of your package:
 
 ```js [lib/main.js]
-import Foo from './Foo.vue'
 import Bar from './Bar.vue'
+import Foo from './Foo.vue'
 export { Foo, Bar }
 ```
 
@@ -334,8 +334,8 @@ experimental: {
 If the hashed assets and public files aren't deployed together, options for each group can be defined independently using asset `type` included in the second `context` param given to the function.
 
 ```ts twoslash
-import type { UserConfig } from 'vite'
 import path from 'node:path'
+import type { UserConfig } from 'vite'
 // prettier-ignore
 const config: UserConfig = {
 // ---cut-before---

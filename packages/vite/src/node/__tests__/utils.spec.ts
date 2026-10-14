@@ -2,6 +2,8 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import os, { type NetworkInterfaceInfoIPv4 } from 'node:os'
 import path from 'node:path'
+import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
+import MagicString from 'magic-string'
 import { fileURLToPath } from 'mlly'
 import { describe, expect, test, vi, onTestFinished } from 'vitest'
 import type { CommonServerOptions, ResolvedServerUrls } from '..'
@@ -20,6 +22,7 @@ import {
   getServerUrlByHost,
   injectQuery,
   isFileReadable,
+  isInNodeModules,
   isParentDirectory,
   mergeWithDefaults,
   normalizePath,
@@ -80,6 +83,29 @@ describe('bareImportRE', () => {
   test('should work with relative path', () => {
     expect(bareImportRE.test('./foo')).toBe(false)
     expect(bareImportRE.test('.\\foo')).toBe(false)
+  })
+})
+
+describe('isInNodeModules', () => {
+  test('should detect node_modules path segments', () => {
+    expect(isInNodeModules('/project/node_modules/foo/index.js')).toBe(true)
+    expect(isInNodeModules('node_modules/foo/index.js')).toBe(true)
+    expect(
+      isInNodeModules(
+        '/project/node_modules/.pnpm/foo@1/node_modules/foo/i.js',
+      ),
+    ).toBe(true)
+    expect(isInNodeModules('C:\\project\\node_modules\\foo\\index.js')).toBe(
+      true,
+    )
+    expect(isInNodeModules('/project/node_modules')).toBe(true)
+  })
+
+  test('should not match node_modules as part of a directory name', () => {
+    expect(isInNodeModules('/project/node_modules_bug/src/main.js')).toBe(false)
+    expect(isInNodeModules('/project/my_node_modules/src/main.js')).toBe(false)
+    expect(isInNodeModules('/project/src/node_modules.js')).toBe(false)
+    expect(isInNodeModules('C:\\node_modules_bug\\src\\main.js')).toBe(false)
   })
 })
 
@@ -307,6 +333,10 @@ describe('posToNumber', () => {
     const actual = posToNumber('a\n\nb', { line: 3, column: 0 })
     expect(actual).toBe(3)
   })
+  test('crlf', () => {
+    const actual = posToNumber('a\r\nb', { line: 2, column: 0 })
+    expect(actual).toBe(3)
+  })
   test('out of range', () => {
     const actual = posToNumber('a\nb', { line: 4, column: 0 })
     expect(actual).toBe(4)
@@ -387,6 +417,25 @@ foo()
 
   test('works with CRLF', () => {
     expectSnapshot(generateCodeFrame(sourceCrLf, { line: 2, column: 0 }))
+  })
+
+  test('works with CRLF given an offset', () => {
+    const longSourceCrLf = longSource.replaceAll('\n', '\r\n')
+    // the frame should point to the same location regardless of the line endings
+    expect(
+      generateCodeFrame(longSourceCrLf, longSourceCrLf.indexOf('// 3')),
+    ).toBe(generateCodeFrame(longSource, longSource.indexOf('// 3')))
+  })
+
+  test('works with CRLF given a range', () => {
+    const longSourceCrLf = longSource.replaceAll('\n', '\r\n')
+    expectSnapshot(
+      generateCodeFrame(
+        longSourceCrLf,
+        longSourceCrLf.indexOf('foo()'),
+        longSourceCrLf.indexOf('// 2'),
+      ),
+    )
   })
 
   test('end', () => {
@@ -854,6 +903,28 @@ describe('combineSourcemaps', () => {
   const resolveFile = (file: string) => {
     return normalizePath(path.resolve(_dirname, file))
   }
+
+  test('composes decoded intermediate mappings identically', () => {
+    const filename = 'assets/index.js'
+    const s = new MagicString('export const value = 1')
+    const originalMap = s.generateMap({
+      source: filename,
+      hires: true,
+      includeContent: true,
+    })
+    const options = { source: filename, hires: 'boundary' as const }
+    const encoded = combineSourcemaps(filename, [
+      s.generateMap(options) as RawSourceMap,
+      originalMap as RawSourceMap,
+    ])
+    const decoded = combineSourcemaps(filename, [
+      s.generateDecodedMap(options) as DecodedSourceMap,
+      originalMap as RawSourceMap,
+    ])
+
+    expect(decoded).toStrictEqual(encoded)
+    expect(decoded.sourcesContent).toStrictEqual(originalMap.sourcesContent)
+  })
 
   test('should combine sourcemaps with single sources', () => {
     const sourcemaps = [

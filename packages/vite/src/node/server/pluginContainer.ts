@@ -636,7 +636,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   async close(): Promise<void> {
     if (this._closed) return
     this._closed = true
-    await Promise.allSettled(Array.from(this._processesing))
+    await Promise.allSettled([...this._processesing])
     const config = this.environment.getTopLevelConfig()
     let buildEndError: Error | undefined
     try {

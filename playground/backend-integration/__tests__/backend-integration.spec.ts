@@ -6,6 +6,7 @@ import {
   getColor,
   getCssRuleBg,
   isBuild,
+  isBundledDev,
   isServe,
   listAssets,
   page,
@@ -34,6 +35,12 @@ describe('asset imports from js', () => {
       '.asset-reference.outside-root .asset-url',
     )
     if (isBuild) {
+      expect(text).toMatch(/\/dev\/assets\/logo-[-\w]{8}\.png/)
+    } else if (isBundledDev) {
+      // asset url is prefixed with server.origin
+      expect(text).toMatch(
+        `http://localhost:${ports['backend-integration']}/dev/assets/`,
+      )
       expect(text).toMatch(/\/dev\/assets\/logo-[-\w]{8}\.png/)
     } else {
       // asset url is prefixed with server.origin
@@ -116,6 +123,8 @@ describe.runIf(isServe)('serve', () => {
     )
     await expect.poll(() => getColor('body')).toBe('red') // successful HMR
 
+    // bundled dev injects CSS with `<style>`, so there is no `<link>` to re-request
+    if (isBundledDev) return
     // Verify that the base (/dev/) was added during the css-update
     const link = await page.$('link[rel="stylesheet"]:last-of-type')
     expect(await link.getAttribute('href')).toContain('/dev/global.css?t=')
@@ -142,7 +151,9 @@ describe.runIf(isServe)('serve', () => {
         editFile('frontend/entrypoints/main.ts', (code) =>
           code.replace('text-black', 'text-[rgb(204,0,0)]'),
         ),
-      '[vite] css hot updated: /global.css',
+      isBundledDev
+        ? '[vite] hot updated: playground-temp/backend-integration/frontend/entrypoints/global.css'
+        : '[vite] css hot updated: /global.css',
     )
     await expect.poll(() => getColor(el)).toBe('rgb(204, 0, 0)')
   })

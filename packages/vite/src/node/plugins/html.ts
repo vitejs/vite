@@ -44,6 +44,7 @@ import {
 } from '../utils'
 import {
   assetUrlRE,
+  getAssetUrlPostfix,
   getPublicAssetFilename,
   publicAssetUrlRE,
   urlToBuiltUrl,
@@ -168,7 +169,23 @@ const noInlineLinkRels = new Set([
   'apple-touch-icon',
   'apple-touch-startup-image',
   'manifest',
+  'modulepreload',
+  'preload',
+  'prefetch',
 ])
+
+// If the node is a link, check if it can be inlined. If not, return `false` to
+// force no inline. `undefined` leaves it to the default heuristics.
+function getLinkShouldInline(
+  node: DefaultTreeAdapterMap['element'],
+  attributes: Record<string, string>,
+): false | undefined {
+  const isNoInlineLink =
+    node.nodeName === 'link' &&
+    attributes.rel &&
+    parseRelAttr(attributes.rel).some((v) => noInlineLinkRels.has(v))
+  return isNoInlineLink ? false : undefined
+}
 
 export const isAsyncScriptMap: WeakMap<
   ResolvedConfig,
@@ -375,6 +392,7 @@ export function getCssFilesForChunk(
   // Collect all CSS from imports (unfiltered for caching, filtered for return)
   const allFiles: string[] = []
   const filteredFiles: string[] = []
+  let complete = true
   chunk.imports.forEach((file) => {
     const importee = bundle[file]
     if (importee?.type === 'chunk') {
@@ -390,7 +408,11 @@ export function getCssFilesForChunk(
       if (analyzedImportedCssFiles.has(importee)) {
         allFiles.push(...analyzedImportedCssFiles.get(importee)!)
       } else {
-        allFiles.push(...importeeCss)
+        // The importee is still being analyzed (an import cycle), so its CSS
+        // is not known yet. The returned list is still right for this entry,
+        // which adds the importee's CSS further up the walk, but it must not
+        // be cached for other entries.
+        complete = false
       }
     }
   })
@@ -403,7 +425,9 @@ export function getCssFilesForChunk(
     }
   })
 
-  analyzedImportedCssFiles.set(chunk, unique(allFiles))
+  if (complete) {
+    analyzedImportedCssFiles.set(chunk, unique(allFiles))
+  }
 
   return filteredFiles
 }
@@ -636,7 +660,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                         decodedUrl !== undefined &&
                         !isExcludedUrl(decodedUrl)
                       ) {
-                        const result = await processAssetUrl(url)
+                        const result = await processAssetUrl(
+                          decodedUrl,
+                          getLinkShouldInline(node, attr.attributes),
+                        )
                         return result !== decodedUrl
                           ? encodeURIPath(result)
                           : url
@@ -675,20 +702,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   })
                   js += importExpression
                 } else {
-                  // If the node is a link, check if it can be inlined. If not, set `shouldInline`
-                  // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
-                  const isNoInlineLink =
-                    node.nodeName === 'link' &&
-                    attr.attributes.rel &&
-                    parseRelAttr(attr.attributes.rel).some((v) =>
-                      noInlineLinkRels.has(v),
-                    )
-                  const shouldInline = isNoInlineLink ? false : undefined
                   assetUrlsPromises.push(
                     (async () => {
                       const processedUrl = await processAssetUrl(
                         url,
-                        shouldInline,
+                        getLinkShouldInline(node, attr.attributes),
                       )
                       if (processedUrl !== url) {
                         overwriteAttrValue(
@@ -1064,12 +1082,15 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           },
         )
         // resolve asset url references
-        result = result.replace(assetUrlRE, (_, fileHash) => {
+        result = result.replace(assetUrlRE, (_, fileHash, urlId) => {
           const file = this.getFileName(fileHash)
           if (chunk) {
             chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
           }
-          return encodeURIPath(toOutputAssetFilePath(file))
+          return (
+            encodeURIPath(toOutputAssetFilePath(file)) +
+            getAssetUrlPostfix(this.environment, urlId)
+          )
         })
 
         result = result.replace(publicAssetUrlRE, (_, fileHash) => {
@@ -1700,13 +1721,11 @@ export function getImportMapFilename(
   return 'importmap.json'
 }
 
-function getImportMapBaseUrl(options: ResolvedEnvironmentOptions): string {
-  const chunkImportMap =
-    options.build.rolldownOptions.experimental?.chunkImportMap
-  if (typeof chunkImportMap === 'object' && chunkImportMap.baseUrl) {
-    return chunkImportMap.baseUrl
-  }
-  return '/'
+function getImportMapBaseUrl(
+  options: ResolvedEnvironmentOptions & ResolvedConfig,
+): string {
+  // Vite overrides Rolldown's chunkImportMap.baseUrl with the resolved base.
+  return options.base
 }
 
 /**

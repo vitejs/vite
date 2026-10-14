@@ -39,16 +39,10 @@ export interface WebSocketConnectionPayload {
 }
 
 export interface InvalidatePayload {
-  /**
-   * Module URL of the invalidated module.
-   * @remarks This changed from a browser-safe URL to a module URL.
-   */
+  /** Module URL of the invalidated module */
   path: string
   message: string | undefined
-  /**
-   * Module URL of the first module that invalidated the update.
-   * @remarks This changed from a browser-safe URL to a module URL.
-   */
+  /** Module URL of the first module that invalidated the update */
   firstInvalidatedBy: string
 }
 

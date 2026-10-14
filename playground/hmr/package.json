@@ -8,5 +8,9 @@
     "build": "vite build",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
     "preview": "vite preview"
+  },
+  "devDependencies": {
+    "tinyglobby": "^0.2.17",
+    "ws": "^8.22.0"
   }
 }

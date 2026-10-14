@@ -231,6 +231,12 @@ export function createWebSocketServer(
         parsedUrl.pathname === hmrBase
       ) {
         handleUpgrade(req, socket as Socket, head, protocol === 'vite-ping')
+      } else {
+        // Node.js detaches its own socket error handler before emitting
+        // `upgrade`, so a socket that no listener takes over would crash the
+        // process when the client resets the connection (e.g. ECONNRESET).
+        // Other listeners (proxy, plugins) still receive the error as usual.
+        socket.on('error', noop)
       }
     }
     wsServer.on('upgrade', hmrServerWsListener)
@@ -461,7 +467,7 @@ export function createWebSocketServer(
 
     [isWebSocketServer]: true,
     get clients() {
-      return new Set(Array.from(wss.clients).map(getSocketClient))
+      return new Set([...wss.clients].map(getSocketClient))
     },
   }
 }

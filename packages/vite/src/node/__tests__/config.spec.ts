@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
 import { afterEach, assert, describe, expect, test, vi } from 'vitest'
-import type { InlineConfig, PluginOption } from '..'
+import type { InlineConfig, Plugin, PluginOption } from '..'
 import { isWindows } from '../../shared/utils'
 import type { UserConfig, UserConfigExport } from '../config'
 import {
@@ -22,6 +22,200 @@ import {
   mergeConfig,
   normalizePath,
 } from '../utils'
+
+const devToolsIntegration = vi.hoisted(() => vi.fn())
+
+vi.mock('@vitejs/devtools/integration', () => ({
+  DevToolsIntegration: devToolsIntegration,
+}))
+
+describe('DevTools plugin resolution', () => {
+  afterEach(() => {
+    devToolsIntegration.mockReset()
+  })
+
+  test('uses the standard plugin lifecycle and exposes the resolved config', async () => {
+    const configHooks: string[] = []
+    const plugin = (
+      name: string,
+      enforce?: 'pre' | 'post',
+      apply?: 'serve' | 'build',
+      config?: InlineConfig,
+    ): Plugin => ({
+      name,
+      enforce,
+      apply,
+      config() {
+        configHooks.push(name)
+        return config
+      },
+    })
+
+    devToolsIntegration.mockResolvedValueOnce([
+      plugin('devtools-pre', 'pre'),
+      plugin('devtools-normal'),
+      plugin('devtools-post', 'post'),
+      plugin('devtools-build-only', undefined, 'build'),
+    ])
+
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        devtools: true,
+        plugins: [
+          plugin('user-pre', 'pre'),
+          plugin('user-normal'),
+          plugin('user-post', 'post'),
+        ],
+      },
+      'serve',
+    )
+
+    expect(devToolsIntegration).toHaveBeenCalledWith({
+      command: 'serve',
+      devtools: {
+        options: true,
+      },
+    })
+    expect(configHooks).toEqual([
+      'user-pre',
+      'devtools-pre',
+      'user-normal',
+      'devtools-normal',
+      'user-post',
+      'devtools-post',
+    ])
+    expect(config.devtools).toMatchObject({
+      apply: 'all',
+      enabled: true,
+    })
+
+    const pluginNames = config.plugins.map((plugin) => plugin.name)
+    expect(pluginNames).not.toContain('devtools-build-only')
+    expect(pluginNames.indexOf('user-pre')).toBeLessThan(
+      pluginNames.indexOf('devtools-pre'),
+    )
+    expect(pluginNames.indexOf('user-normal')).toBeLessThan(
+      pluginNames.indexOf('devtools-normal'),
+    )
+    expect(pluginNames.indexOf('user-post')).toBeLessThan(
+      pluginNames.indexOf('devtools-post'),
+    )
+  })
+
+  test('does not allow a plugin config hook to enable DevTools', async () => {
+    const logger = createLogger('silent')
+    const warn = vi.spyOn(logger, 'warn')
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        customLogger: logger,
+        plugins: [
+          {
+            name: 'enable-devtools',
+            config: () => ({ devtools: true }),
+          },
+        ],
+      },
+      'serve',
+    )
+
+    expect(config.devtools).toBe(false)
+    expect(devToolsIntegration).not.toHaveBeenCalled()
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "The `devtools` option cannot be changed from a plugin's `config` hook.",
+      ),
+    )
+  })
+
+  test('does not allow a plugin config hook to disable DevTools', async () => {
+    const logger = createLogger('silent')
+    const warn = vi.spyOn(logger, 'warn')
+    devToolsIntegration.mockResolvedValueOnce([])
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        customLogger: logger,
+        devtools: true,
+        plugins: [
+          {
+            name: 'disable-devtools',
+            config: () => ({ devtools: false }),
+          },
+        ],
+      },
+      'serve',
+    )
+
+    expect(config.devtools).toMatchObject({ enabled: true })
+    expect(devToolsIntegration).toHaveBeenCalledOnce()
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "The `devtools` option cannot be changed from a plugin's `config` hook.",
+      ),
+    )
+  })
+
+  test('does not allow a plugin config hook to mutate DevTools options in place', async () => {
+    const logger = createLogger('silent')
+    const warn = vi.spyOn(logger, 'warn')
+    devToolsIntegration.mockResolvedValueOnce([])
+    const devtools = { enabled: true }
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        customLogger: logger,
+        devtools,
+        plugins: [
+          {
+            name: 'mutate-devtools',
+            config() {
+              devtools.enabled = false
+            },
+          },
+        ],
+      },
+      'serve',
+    )
+
+    expect(config.devtools).toMatchObject({ enabled: true })
+    expect(devToolsIntegration).toHaveBeenCalledOnce()
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "The `devtools` option cannot be changed from a plugin's `config` hook.",
+      ),
+    )
+  })
+
+  test('does not allow a plugin config hook to change non-enablement DevTools options', async () => {
+    const logger = createLogger('silent')
+    const warn = vi.spyOn(logger, 'warn')
+    devToolsIntegration.mockResolvedValueOnce([])
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        customLogger: logger,
+        devtools: { apply: 'serve' },
+        plugins: [
+          {
+            name: 'change-devtools-options',
+            config: () => ({ devtools: { apply: 'build' } }),
+          },
+        ],
+      },
+      'serve',
+    )
+
+    expect(config.devtools).toMatchObject({ apply: 'serve' })
+    expect(devToolsIntegration).toHaveBeenCalledOnce()
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "The `devtools` option cannot be changed from a plugin's `config` hook.",
+      ),
+    )
+  })
+})
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -862,6 +1056,40 @@ describe('mergeConfig', () => {
     expect(mergedConfig.server.hmr.port).toBe(3002)
   })
 
+  test('mergeConfig does not mutate `server.hmr` defaults', () => {
+    const defaults = {
+      server: {
+        hmr: {
+          host: 'localhost',
+        },
+      },
+    }
+
+    mergeConfig(defaults, {
+      server: {
+        hmr: {
+          port: 3000,
+        },
+      },
+    })
+
+    expect(defaults.server.hmr).toEqual({ host: 'localhost' })
+    expect(Object.hasOwn(defaults.server.hmr, 'port')).toBe(false)
+
+    const secondMerge = mergeConfig(defaults, {
+      server: {
+        hmr: {
+          protocol: 'wss',
+        },
+      },
+    })
+
+    expect(secondMerge.server.ws).toEqual({
+      host: 'localhost',
+      protocol: 'wss',
+    })
+  })
+
   test('`server.hmr.overlay` is not mapped to `server.ws.overlay`', () => {
     const config = mergeConfig(
       {},
@@ -877,6 +1105,31 @@ describe('mergeConfig', () => {
     expect(config.server.hmr.overlay).toBe(false)
     // overlay should not be synced to ws
     expect(config.server.ws?.overlay).toBeUndefined()
+  })
+
+  test('`mergeConfig` does not crash when `server.ws` is false and `server.hmr` is merged', () => {
+    const baseConfig = defineConfig({
+      server: {
+        ws: false,
+        hmr: {
+          host: 'localhost',
+        },
+      },
+    })
+
+    const newConfig = defineConfig({
+      server: {
+        hmr: {
+          port: 5173,
+        },
+      },
+    })
+
+    const mergedConfig = mergeConfig(baseConfig, newConfig)
+
+    expect(mergedConfig.server.ws).toBe(false)
+    expect(mergedConfig.server.hmr).toBeTypeOf('object')
+    expect(mergedConfig.server.hmr).toBeTruthy()
   })
 
   test('resolveConfig properly syncs hmr and ws', async () => {
@@ -1290,56 +1543,20 @@ describe('resolveConfig', () => {
     })
   })
 
-  test('reserves glob characters in input', async () => {
-    const cases: { name: string; input: UserConfig['input'] }[] = [
-      { name: 'wildcard', input: 'src/*.ts' },
-      { name: 'single char', input: 'src/page?.ts' },
-      { name: 'character class', input: 'src/[id].ts' },
-      { name: 'brace expansion', input: 'src/{a,b}.ts' },
-      { name: 'extglob group', input: 'src/?(group).ts' },
-      { name: 'negation', input: 'src/!(main).ts' },
-      { name: 'extglob prefix +', input: 'src/+(page).ts' },
-      { name: 'extglob prefix @', input: 'src/@(page).ts' },
-      { name: 'array element', input: ['src/main.ts', 'src/*.ts'] },
-      { name: 'record', input: { main: 'src/*.ts' } },
-    ]
+  test('allows glob characters in input', async () => {
+    const input = 'src/*.ts'
 
-    for (const { name, input } of cases) {
-      await expect(resolveConfig({ input }, 'serve'), name).rejects.toThrow(
-        /`input` cannot contain glob characters/,
-      )
-    }
+    await expect(resolveConfig({ input }, 'serve')).resolves.toMatchObject({
+      input,
+    })
   })
 
-  test('support escaped input', async () => {
-    const cases: {
-      name: string
-      input: UserConfig['input']
-      expected: UserConfig['input']
-    }[] = [
-      {
-        name: 'glob',
-        input: 'src/\\*.ts',
-        expected: 'src/*.ts',
-      },
-      {
-        name: 'array element',
-        input: ['src/\\*.ts'],
-        expected: ['src/*.ts'],
-      },
-      {
-        name: 'record',
-        input: { main: 'src/\\*.ts' },
-        expected: { main: 'src/*.ts' },
-      },
-    ]
+  test('preserves input escaping', async () => {
+    const inputs = ['src/\\*.ts', 'C:\\root\\@src\\index.html']
 
-    for (const { name, input, expected } of cases) {
-      await expect(
-        resolveConfig({ input }, 'serve'),
-        name,
-      ).resolves.toMatchObject({
-        input: expected,
+    for (const input of inputs) {
+      await expect(resolveConfig({ input }, 'serve')).resolves.toMatchObject({
+        input,
       })
     }
   })

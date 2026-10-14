@@ -1,5 +1,4 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
-import colors from 'picocolors'
 import type { ObjectHook } from 'rolldown'
 import {
   viteAliasPlugin as nativeAliasPlugin,
@@ -16,7 +15,10 @@ import {
 } from '../plugin'
 import { assetPlugin } from './asset'
 import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
-import { clientInjectionsPlugin } from './clientInjections'
+import {
+  bundledDevClientImportsPlugin,
+  clientInjectionsPlugin,
+} from './clientInjections'
 import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
 import { definePlugin } from './define'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
@@ -53,10 +55,6 @@ export async function resolvePlugins(
   const buildPlugins = anyEnvBundled
     ? resolveBuildPlugins(config)
     : { pre: [], post: [] }
-  const devtoolsIntegrationPlugin =
-    config.devtools.enabled && !isWorker
-      ? await loadDevToolsIntegrationPlugin(config)
-      : null
   const { modulePreload } = config.build
 
   return [
@@ -92,6 +90,8 @@ export async function resolvePlugins(
     modulePreload !== false && modulePreload.polyfill
       ? modulePreloadPolyfillPlugin()
       : null,
+    // before the resolver, which cannot resolve the client's public URL
+    bundledDevClientImportsPlugin(config),
     ...oxcResolvePlugin(
       {
         root: config.root,
@@ -147,30 +147,12 @@ export async function resolvePlugins(
     ...postPlugins,
 
     ...buildPlugins.post,
-    devtoolsIntegrationPlugin,
 
     // internal server-only plugins are always applied after everything else
     clientInjectionsPlugin(config),
     cssAnalysisPlugin(config),
     importAnalysisPlugin(config),
   ].filter(Boolean) as Plugin[]
-}
-
-async function loadDevToolsIntegrationPlugin(
-  config: ResolvedConfig,
-): Promise<Plugin | null> {
-  try {
-    const { DevToolsIntegration } = await import('@vitejs/devtools/integration')
-    return DevToolsIntegration({ config })
-  } catch (error: any) {
-    config.logger.error(
-      colors.red(
-        `Failed to load Vite DevTools integration: ${error?.message || error?.stack}`,
-      ),
-      { error },
-    )
-    return null
-  }
 }
 
 export function createPluginHookUtils(

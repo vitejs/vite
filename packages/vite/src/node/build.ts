@@ -466,6 +466,9 @@ export function resolveBuildEnvironmentOptions(
     raw,
   )
   setupRollupOptionCompat(merged, 'build')
+  if (isBundledDev) {
+    merged.chunkImportMap = false
+  }
   merged.rolldownOptions = {
     platform:
       consumer === 'client' || isSsrTargetWebworkerEnvironment
@@ -669,10 +672,8 @@ export function resolveRolldownOptions(
           tsconfigFilename: undefined,
         }
       : options.rolldownOptions.resolve,
-    output: options.rolldownOptions.output,
     input,
     plugins,
-    external: options.rolldownOptions.external,
     onLog(level, log) {
       onRollupLog(level, log, environment)
     },
@@ -747,6 +748,20 @@ export function resolveRolldownOptions(
             findNearestPackageData(root, packageCache)?.data.type,
           )
         : 'js'
+    const resolvedMinify =
+      options.minify === 'oxc'
+        ? libOptions && (format === 'es' || format === 'esm')
+          ? {
+              compress: true,
+              mangle: true,
+              // Do not minify whitespace for ES lib output since that would remove
+              // pure annotations and break tree-shaking
+              codegen: false,
+            }
+          : true
+        : options.minify === false
+          ? 'dce-only'
+          : false
     return {
       dir: outDir,
       // Default format is 'es' for regular and for SSR builds
@@ -788,6 +803,15 @@ export function resolveRolldownOptions(
           (typeof input === 'string' || Object.keys(input).length === 1))
           ? false
           : undefined),
+      topLevelVar: true,
+      ...output,
+      minify:
+        output.minify === undefined
+          ? resolvedMinify
+          : typeof output.minify === 'object' &&
+              typeof resolvedMinify === 'object'
+            ? { ...resolvedMinify, ...output.minify }
+            : output.minify,
       comments:
         typeof output.comments === 'boolean'
           ? output.comments
@@ -801,22 +825,6 @@ export function resolveRolldownOptions(
               legal: !options.minify,
               ...output.comments,
             },
-      minify:
-        options.minify === 'oxc'
-          ? libOptions && (format === 'es' || format === 'esm')
-            ? {
-                compress: true,
-                mangle: true,
-                // Do not minify whitespace for ES lib output since that would remove
-                // pure annotations and break tree-shaking
-                codegen: false,
-              }
-            : true
-          : options.minify === false
-            ? 'dce-only'
-            : false,
-      topLevelVar: true,
-      ...output,
     }
   }
 
@@ -1901,7 +1909,7 @@ export async function createBuilder(
       return output
     },
     async runDevTools() {
-      if (config.devtools.enabled) {
+      if (config.devtools) {
         try {
           const { runDevTools } = await import('@vitejs/devtools/integration')
           await runDevTools(builder)

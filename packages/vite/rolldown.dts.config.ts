@@ -417,7 +417,7 @@ function escapeRegex(str: string): string {
 }
 
 function unique<T>(arr: T[]): T[] {
-  return Array.from(new Set(arr))
+  return [...new Set(arr)]
 }
 
 const postcssLoadConfigDeepImport =
