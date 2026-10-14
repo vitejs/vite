@@ -43,8 +43,8 @@ See also [Virtual Modules Convention](https://rolldown.rs/apis/plugin-api#virtua
 Users will add plugins to the project `devDependencies` and configure them using the `plugins` array option.
 
 ```js [vite.config.js]
-import vitePlugin from 'vite-plugin-feature'
 import rollupPlugin from 'rollup-plugin-feature'
+import vitePlugin from 'vite-plugin-feature'
 
 export default defineConfig({
   plugins: [vitePlugin(), rollupPlugin()],
@@ -56,9 +56,9 @@ Falsy plugins will be ignored, which can be used to easily activate or deactivat
 `plugins` also accepts presets including several plugins as a single element. This is useful for complex features (like framework integration) that are implemented using several plugins. The array will be flattened internally.
 
 ```js
+import frameworkDevtools from 'vite-plugin-framework-devtools'
 // framework-plugin
 import frameworkRefresh from 'vite-plugin-framework-refresh'
-import frameworkDevtools from 'vite-plugin-framework-devtools'
 
 export default function framework(config) {
   return [frameworkRefresh(config), frameworkDevTools(config)]
@@ -434,7 +434,9 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       originalUrl?: string
     },
   ) =>
-    IndexHtmlTransformResult | void | Promise<IndexHtmlTransformResult | void>
+    | IndexHtmlTransformResult
+    | void
+    | Promise<IndexHtmlTransformResult | void>
 
   type IndexHtmlTransformResult =
     | string

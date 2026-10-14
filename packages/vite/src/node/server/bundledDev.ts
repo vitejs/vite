@@ -15,6 +15,7 @@ import {
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
 import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
 import {
+  getBundledDevClientAliases,
   getHmrImplementation,
   getRolldownDevRuntimeFiles,
 } from '../plugins/clientInjections'
@@ -31,6 +32,7 @@ type HmrOutput = BindingClientHmrUpdate['update']
 type MemoryFile = {
   source: string | Uint8Array
   etag?: string
+  contentType?: string
 }
 
 export class MemoryFiles {
@@ -426,11 +428,15 @@ export class BundledDev {
       ],
       ...getRolldownDevRuntimeFiles(),
     ])
+    const aliases = getBundledDevClientAliases(
+      this.environment.getTopLevelConfig(),
+    )
     this.staticFiles.clear()
-    for (const [fileName, source] of sources) {
-      const file = {
+    for (const [fileName, source] of [...sources, ...aliases]) {
+      const file: MemoryFile = {
         source,
         etag: getEtag(Buffer.from(source), { weak: true }),
+        ...(aliases.has(fileName) ? { contentType: 'text/javascript' } : {}),
       }
       this.staticFiles.set(fileName, file)
       this.memoryFiles.set(fileName, file)
