@@ -466,6 +466,9 @@ export function resolveBuildEnvironmentOptions(
     raw,
   )
   setupRollupOptionCompat(merged, 'build')
+  if (isBundledDev) {
+    merged.chunkImportMap = false
+  }
   merged.rolldownOptions = {
     platform:
       consumer === 'client' || isSsrTargetWebworkerEnvironment
