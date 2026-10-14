@@ -1,0 +1,87 @@
+playground/agent-hmr-gate/index.html
+  s_b83537547a35a9::t_f8053c7f7b3b50 1-21
+packages/vite/src/client/bundledDevHmrClient.ts
+  s_82207904ebea35::t_50b36c4317f375 275-279,281,283-286,306-308,310-319,322,333-339
+packages/vite/src/client/client.ts
+  s_82207904ebea35::t_5b96859128db1d 1-2,147-252,314-351,361-385,397-398
+packages/vite/src/module-runner/hmrHandler.ts
+  s_82207904ebea35::t_238a67be8f9118 18-23,33,35,84-85
+packages/vite/src/node/config.ts
+  s_82207904ebea35::t_8140f36cb0e357 620-627,921
+packages/vite/src/node/plugins/agentHmrGate.ts
+  s_b83537547a35a9::t_2c68b6337f960c 1-263
+packages/vite/src/node/plugins/index.ts
+  s_82207904ebea35::t_3c979c79ced67c 16,153-155
+packages/vite/src/shared/hmr.ts
+  s_82207904ebea35::t_4780e4b41226b4 189
+packages/vite/types/hmrPayload.d.ts
+  s_82207904ebea35::t_19a1a3b1cd54e7 7,9,28-33,47-55
+playground/agent-hmr-gate/README.md
+  s_b83537547a35a9::t_6963a711a5361b 1-40
+playground/agent-hmr-gate/__tests__/agent-hmr-gate.spec.ts
+  s_5c97bfd6f769af::t_b0217ec6c0b3f4 1-94
+playground/agent-hmr-gate/hooks/claude-settings.json
+  s_5136b205aad17d::t_4d32eb80238ea4 1-26
+playground/agent-hmr-gate/hooks/codex-hooks.json
+  s_b83537547a35a9::t_aee6c7d5ef04fb 1-38
+playground/agent-hmr-gate/hooks/hmr-gate-hook.mjs
+  s_b83537547a35a9::t_8920a0738717c3 1-30
+playground/agent-hmr-gate/package.json
+  s_1a0a1aca69a6d3::t_cfca13eb9951c9 1-10
+playground/agent-hmr-gate/src/first.ts
+  s_5136b205aad17d::t_29ebfff4269ab4 1
+playground/agent-hmr-gate/src/main.ts
+  s_b83537547a35a9::t_4a05146a2b6737 1-23
+playground/agent-hmr-gate/src/second.ts
+  s_5136b205aad17d::t_64b6d922c0891b 1
+playground/agent-hmr-gate/vite.config.ts
+  s_b83537547a35a9::t_1f056619c6f98c 1-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "7b08e4364d9ebf6d9646461ddebed623a81aa39b",
+  "prompts": {},
+  "sessions": {
+    "s_1a0a1aca69a6d3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1389a-3465-7302-89f5-90196451c81c",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_5136b205aad17d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a138bc-ab1b-7e03-bff3-b971d8e1b54f",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_5c97bfd6f769af": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a139a8-02dc-7262-a8f9-930da497bb04",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_82207904ebea35": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1399a-af78-7301-9b8a-d0e5fce93afe",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_b83537547a35a9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a138a5-7e5d-7710-9219-0c747e51a4aa",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
