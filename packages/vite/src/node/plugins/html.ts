@@ -1743,6 +1743,8 @@ export function getImportMap(
       mapping: Record<string, string>
     }
   | undefined {
+  if (!options.build.chunkImportMap) return undefined
+
   const asset = bundle[getImportMapFilename(options)] as OutputAsset | undefined
   if (!asset) return undefined
 
