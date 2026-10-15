@@ -44,9 +44,13 @@ const input = {
 
 const serveInput = {
   ...input,
-  invalid: resolve(dirname, 'invalid.html'),
-  invalidClick: resolve(dirname, 'invalidClick.html'),
-  invalidEscape: resolve(dirname, 'invalidEscape.html'),
+  ...(process.env.VITE_TEST_BUNDLED_DEV
+    ? {}
+    : {
+        invalid: resolve(dirname, 'invalid.html'),
+        invalidClick: resolve(dirname, 'invalidClick.html'),
+        invalidEscape: resolve(dirname, 'invalidEscape.html'),
+      }),
   protocolRelative: resolve(dirname, 'protocol-relative.html'),
   relativeInput: resolve(dirname, 'relative-input.html'),
 }

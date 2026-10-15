@@ -21,9 +21,12 @@ export default defineConfig(({ command }) => ({
     ...(command === 'build'
       ? []
       : [
-          ...['css-link', 'css-style', 'missing-import'].map(
-            (dir) => path.resolve(import.meta.dirname, dir, 'index.html'),
-          ),
+          ...[
+            'css-link',
+            'css-style',
+            ...(process.env.VITE_TEST_BUNDLED_DEV ? [] : ['missing-file']),
+            'missing-import',
+          ].map((dir) => path.resolve(import.meta.dirname, dir, 'index.html')),
           path.resolve(import.meta.dirname, './entry-cycle/index.html'),
           path.resolve(import.meta.dirname, './entry-cycle/entry-cycle.js'),
           path.resolve(
