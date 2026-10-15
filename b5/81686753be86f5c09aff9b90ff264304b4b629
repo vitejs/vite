@@ -1,0 +1,21 @@
+pnpm-lock.yaml
+  s_9a0030f2edd8a2::t_825a638074b428 275,285-287,290,302,305,9305,10031,10035-10036,10050,10052,10062-10064,10181,10381,10384,10472,10789-10790,10973,10979,10987,11793,13246,13910,13913,13915,13919,13921,13923,14075,14104,14122,14177-14183,14190,14202-14211
+docs/package.json
+  s_9a0030f2edd8a2::t_a041cb9ad4cda6 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b581686753be86f5c09aff9b90ff264304b4b629",
+  "prompts": {},
+  "sessions": {
+    "s_9a0030f2edd8a2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13f56-95ff-7542-bff4-0714bab9aacc",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
