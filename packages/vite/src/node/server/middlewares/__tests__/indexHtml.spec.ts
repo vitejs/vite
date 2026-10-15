@@ -200,25 +200,33 @@ describe('indexHtml middleware — safe module paths', () => {
     })
   }
 
-  const cases = [
-    ['/index.html', './classic.js?raw', 'classic.js?raw'],
-    ['/index.html', '../classic.js?raw', 'classic.js?raw'],
-    ['/nested/index.html', './classic.js?raw', 'nested/classic.js?raw'],
-    ['/nested/index.html', 'classic.js?raw', 'nested/classic.js?raw'],
-    ['/nested/index.html', '../classic.js?raw', 'classic.js?raw'],
-    ['/nested/index.html', '/classic.js?raw', 'classic.js?raw'],
-    ['/nested/', './classic.js?raw', 'nested/classic.js?raw'],
-    ['/nested/?q=1', './classic.js?raw', 'nested/classic.js?raw'],
-    ['/nested/index.html', './a%20b.js?raw', 'nested/a b.js?raw'],
+  const cases: [htmlPath: string, url: string, file: string, base?: string][] =
     [
-      '/nested/index.html',
-      './classic.js?path=/../file',
-      'nested/classic.js?path=/../file',
-    ],
-  ]
-  for (const [htmlPath, url, file] of cases) {
-    test(`resolves ${htmlPath} with ${url} as an HTML path`, async () => {
-      const server = await createTestServer()
+      ['/index.html', './classic.js?raw', 'classic.js?raw'],
+      ['/index.html', '../classic.js?raw', 'classic.js?raw'],
+      ['/nested/index.html', './classic.js?raw', 'nested/classic.js?raw'],
+      ['/nested/index.html', 'classic.js?raw', 'nested/classic.js?raw'],
+      ['/nested/index.html', '../classic.js?raw', 'classic.js?raw'],
+      ['/nested/index.html', '/classic.js?raw', 'classic.js?raw'],
+      ['/nested/', './classic.js?raw', 'nested/classic.js?raw'],
+      ['/nested/?q=1', './classic.js?raw', 'nested/classic.js?raw'],
+      ['/nested/index.html', './a%20b.js?raw', 'nested/a b.js?raw'],
+      [
+        '/nested/index.html',
+        './classic.js?path=/../file',
+        'nested/classic.js?path=/../file',
+      ],
+      [
+        path.posix.join(FS_PREFIX, OUTSIDE_HTML_PATH),
+        './classic.js?raw',
+        '../classic.js?raw',
+      ],
+      ['/index.html', '/ui/classic.js?raw', 'classic.js?raw', '/ui/'],
+      ['/index.html', './classic.js?raw', 'classic.js?raw', '/ui/'],
+    ]
+  for (const [htmlPath, url, file, base] of cases) {
+    test(`resolves ${htmlPath} with ${url} as an HTML path${base ? ` with base ${base}` : ''}`, async () => {
+      const server = await createTestServer(undefined, undefined, base)
 
       await server.transformIndexHtml(
         htmlPath,
@@ -231,20 +239,6 @@ describe('indexHtml middleware — safe module paths', () => {
       expect(server.config.safeModulePaths).toContain(filePath + postfix)
     })
   }
-
-  test('registers relative URLs from an /@fs/ HTML file', async () => {
-    const server = await createTestServer()
-    const fsUrl = path.posix.join(FS_PREFIX, OUTSIDE_HTML_PATH)
-
-    await server.transformIndexHtml(
-      fsUrl,
-      '<script src="./classic.js?raw"></script>',
-    )
-
-    expect(server.config.safeModulePaths).toContain(
-      normalizePath(path.join(FIXTURE_DIR, 'classic.js?raw')),
-    )
-  })
 
   test('resolves parent URLs at the URL root', async () => {
     const server = await createTestServer()
@@ -264,21 +258,6 @@ describe('indexHtml middleware — safe module paths', () => {
       normalizePath(OUTSIDE_HTML_PATH),
     )
   })
-
-  for (const url of ['/ui/classic.js?raw', './classic.js?raw']) {
-    test(`registers ${url} with a non-root base`, async () => {
-      const server = await createTestServer(undefined, undefined, '/ui/')
-
-      await server.transformIndexHtml(
-        '/index.html',
-        `<script src="${url}"></script>`,
-      )
-
-      const filePath = normalizePath(path.join(FIXTURE_DIR, 'root/classic.js'))
-      expect(server.config.safeModulePaths).toContain(filePath)
-      expect(server.config.safeModulePaths).toContain(filePath + '?raw')
-    })
-  }
 
   test('registers aliased stylesheets at the path used for transformation', async () => {
     const server = await createTestServer(undefined, [
@@ -342,55 +321,56 @@ describe('indexHtml middleware — safe module paths', () => {
     )
   })
 
-  test('registers URLs while scanning source HTML tags', async () => {
-    const server = await createTestServer()
-    const html = `
-      <link rel="stylesheet" href="./style.css?direct">
-      <script src="./classic.js?raw"></script>
-      <script>import('./dynamic.js?url')</script>
-    `
-
-    await server.transformIndexHtml('/index.html', html)
-
-    for (const [file, query] of [
-      ['style.css', '?direct'],
-      ['classic.js', '?raw'],
-      ['dynamic.js', '?url'],
-    ]) {
-      const filePath = normalizePath(path.resolve(FIXTURE_DIR, 'root', file))
-      expect(server.config.safeModulePaths).toContain(filePath)
-      expect(server.config.safeModulePaths).toContain(filePath + query)
-    }
-  })
-
-  test('registers URLs while scanning plugin-injected tags', async () => {
-    const server = await createTestServer(undefined, [
+  describe('HTML tag registration', () => {
+    const cases = [
       {
-        name: 'inject-safe-module-tags',
-        transformIndexHtml() {
-          return [
-            {
-              tag: 'link',
-              attrs: { rel: 'stylesheet', href: './style.css?direct' },
-            },
-            {
-              tag: 'script',
-              attrs: { src: './classic.js?raw' },
-            },
-          ]
-        },
+        name: 'source HTML tags',
+        html: `
+          <link rel="stylesheet" href="./style.css?direct">
+          <script src="./classic.js?raw"></script>
+          <script>import('./dynamic.js?url')</script>
+        `,
+        plugins: [],
+        files: ['style.css?direct', 'classic.js?raw', 'dynamic.js?url'],
       },
-    ])
+      {
+        name: 'plugin-injected tags',
+        html: HTML_CONTENT,
+        plugins: [
+          {
+            name: 'inject-safe-module-tags',
+            transformIndexHtml() {
+              return [
+                {
+                  tag: 'link',
+                  attrs: { rel: 'stylesheet', href: './style.css?direct' },
+                },
+                {
+                  tag: 'script',
+                  attrs: { src: './classic.js?raw' },
+                },
+              ]
+            },
+          },
+        ],
+        files: ['style.css?direct', 'classic.js?raw'],
+      },
+    ]
+    for (const { name, html, plugins, files } of cases) {
+      test(`registers URLs while scanning ${name}`, async () => {
+        const server = await createTestServer(undefined, plugins)
 
-    await server.transformIndexHtml('/index.html', HTML_CONTENT)
+        await server.transformIndexHtml('/index.html', html)
 
-    for (const [file, query] of [
-      ['style.css', '?direct'],
-      ['classic.js', '?raw'],
-    ]) {
-      const filePath = normalizePath(path.resolve(FIXTURE_DIR, 'root', file))
-      expect(server.config.safeModulePaths).toContain(filePath)
-      expect(server.config.safeModulePaths).toContain(filePath + query)
+        for (const file of files) {
+          const { file: filename, postfix } = splitFileAndPostfix(file)
+          const filePath = normalizePath(
+            path.resolve(FIXTURE_DIR, 'root', filename),
+          )
+          expect(server.config.safeModulePaths).toContain(filePath)
+          expect(server.config.safeModulePaths).toContain(filePath + postfix)
+        }
+      })
     }
   })
 })
