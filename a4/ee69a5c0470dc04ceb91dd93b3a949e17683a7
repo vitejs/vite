@@ -1,0 +1,21 @@
+playground/hmr/vite.config.ts
+  s_a4815acefaf3ed::t_ca2323aa5ad0d7 24-29
+playground/html/vite.config.js
+  s_a4815acefaf3ed::t_6b9aabd2fc3a52 47-53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "a4ee69a5c0470dc04ceb91dd93b3a949e17683a7",
+  "prompts": {},
+  "sessions": {
+    "s_a4815acefaf3ed": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13ddb-d6b8-72d1-bc73-06a5d4bfb6a2",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
