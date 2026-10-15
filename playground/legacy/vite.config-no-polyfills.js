@@ -3,6 +3,9 @@ import legacy from '@vitejs/plugin-legacy'
 import { defineConfig } from 'vite'
 
 export default defineConfig(({ isPreview }) => ({
+  input: {
+    index: path.resolve(import.meta.dirname, 'no-polyfills.html'),
+  },
   base: !isPreview ? './' : '/no-polyfills/',
   plugins: [
     legacy({
@@ -15,13 +18,7 @@ export default defineConfig(({ isPreview }) => ({
       enforce: 'post',
     },
   ],
-
   build: {
     outDir: 'dist/no-polyfills',
-    rolldownOptions: {
-      input: {
-        index: path.resolve(import.meta.dirname, 'no-polyfills.html'),
-      },
-    },
   },
 }))

@@ -1,6 +1,7 @@
 import { virtual } from 'virtual:file'
 import { virtual as virtualDep } from 'virtual:file-dep'
 import { foo as depFoo, nestedFoo } from './hmrDep'
+import './hotData'
 import './importing-updated'
 import './invalidation-circular-deps'
 import './file-delete-restore'
@@ -8,8 +9,8 @@ import './optional-chaining/parent'
 import './intermediate-file-delete'
 import './circular'
 import './prune'
-import logo from './logo.svg'
 import logoNoInline from './logo-no-inline.svg'
+import logo from './logo.svg'
 import { msg as softInvalidationMsg } from './soft-invalidation'
 
 export const foo = 1

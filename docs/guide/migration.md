@@ -4,14 +4,14 @@ If you are migrating from `rolldown-vite`, the technical preview release for Rol
 
 ## Default Browser Target Change [<Badge text="NRV" type="warning" />](#migration-from-v7)
 
-The default browser value of `build.target` and `'baseline-widely-available'`, is updated to newer browser version:
+The default browser values of `build.target` and `'baseline-widely-available'` are updated to newer browser versions:
 
 - Chrome 107 → 111
 - Edge 107 → 111
 - Firefox 104 → 114
 - Safari 16.0 → 16.4
 
-These browser versions align with [Baseline Widely Available](https://web-platform-dx.github.io/web-features/) feature sets as of 2026-01-01. In other words, they were all released about two and a half years ago.
+These browser versions align with [Baseline Widely Available](https://web-platform-dx.github.io/baseline/) feature sets as of 2026-01-01. In other words, they were all released about two and a half years ago.
 
 ## Rolldown
 
@@ -58,7 +58,7 @@ const plugin = {
   configResolved(config) {
     console.log('options', config.optimizeDeps.rolldownOptions)
   },
-},
+}
 ```
 
 ### JavaScript Transforms by Oxc
@@ -93,7 +93,7 @@ const plugin = {
   configResolved(config) {
     console.log('options', config.oxc)
   },
-},
+}
 ```
 
 Currently, the Oxc transformer does not support lowering native decorators as we are waiting for the specification to progress, see ([oxc-project/oxc#9170](https://github.com/oxc-project/oxc/issues/9170)).
@@ -129,8 +129,8 @@ $ deno add -D npm:@rolldown/plugin-babel npm:@babel/plugin-proposal-decorators
 :::
 
 ```ts [vite.config.ts]
-import { defineConfig } from 'vite'
 import babel from '@rolldown/plugin-babel'
+import { defineConfig } from 'vite'
 
 function decoratorPreset(options: Record<string, unknown>) {
   return {
@@ -178,6 +178,7 @@ $ deno add -D npm:@rollup/plugin-swc npm:@swc/core
 :::
 
 ```js
+import swc from '@rollup/plugin-swc'
 import { defineConfig, withFilter } from 'vite'
 
 export default defineConfig({
@@ -234,7 +235,7 @@ If it matches one of the following conditions, the `default` import is the `modu
 
 - The importer is `.mjs` or `.mts`.
 - The closest `package.json` for the importer has a `type` field set to `module`.
-- The `module.exports.__esModule` value of the importee CJS module is not set to true.
+- The `module.exports.__esModule` value of the importee CJS module is not set to `true`.
 
 ::: details The previous behavior
 
@@ -242,11 +243,11 @@ In development, if it matches one of the following conditions, the `default` imp
 
 - _The importer is included in the dependency optimization_ and `.mjs` or `.mts`.
 - _The importer is included in the dependency optimization_ and the closest `package.json` for the importer has a `type` field set to `module`.
-- The `module.exports.__esModule` value of the importee CJS module is not set to true.
+- The `module.exports.__esModule` value of the importee CJS module is not set to `true`.
 
 In build, the conditions were:
 
-- The `module.exports.__esModule` value of the importee CJS module is not set to true.
+- The `module.exports.__esModule` value of the importee CJS module is not set to `true`.
 - _`default` property of `module.exports` does not exist_.
 
 (assuming [`build.commonjsOptions.defaultIsModuleExports`](https://github.com/rollup/plugins/tree/master/packages/commonjs#defaultismoduleexports) is not changed from the default `'auto'`)
@@ -317,16 +318,19 @@ _This change only affects plugin authors._
 Rolldown has experimental support for [Module types](https://rolldown.rs/guide/notable-features#module-types), similar to [esbuild's `loader` option](https://esbuild.github.io/api/#loader). Due to this, Rolldown automatically sets a module type based on the extension of the resolved id. If you are converting content from other module types to JavaScript in `load` or `transform` hooks, you may need to add `moduleType: 'js'` to the returned value:
 
 ```js
+import fs from 'node:fs'
+
 const plugin = {
   name: 'txt-loader',
-  load(id) {
-    if (id.endsWith('.txt')) {
-      const content = fs.readFile(id, 'utf-8')
+  load: {
+    filter: { id: /\.txt$/ },
+    handler(id) {
+      const content = fs.readFileSync(id, 'utf-8')
       return {
         code: `export default ${JSON.stringify(content)}`,
         moduleType: 'js', // [!code ++]
       }
-    }
+    },
   },
 }
 ```
@@ -343,7 +347,7 @@ The following options are deprecated and will be removed in the future:
 
 ## Removed Deprecated Features [<Badge text="NRV" type="warning" />](#migration-from-v7)
 
-- Passing an URL to `import.meta.hot.accept` is no longer supported. Please pass an id instead. ([#21382](https://github.com/vitejs/vite/pull/21382))
+- Passing a URL to `import.meta.hot.accept` is no longer supported. Please pass an id instead. ([#21382](https://github.com/vitejs/vite/pull/21382))
 
 ## Advanced
 
@@ -356,13 +360,13 @@ These breaking changes are expected to only affect a minority of use cases:
   - Assigning to `bundle[foo]` is not supported. This is discouraged by Rollup as well. Please use `this.emitFile()` instead.
   - the reference is not shared across the hooks ([rolldown-vite#410](https://github.com/vitejs/rolldown-vite/issues/410))
   - `structuredClone(bundle)` errors with `DataCloneError: #<Object> could not be cloned`. This is not supported anymore. Please clone it with `structuredClone({ ...bundle })`. ([rolldown-vite#128](https://github.com/vitejs/rolldown-vite/issues/128))
-- All parallel hooks in Rollup works as sequential hooks. See [Rolldown's documentation](https://rolldown.rs/apis/plugin-api#sequential-hook-execution) for more details.
+- All parallel hooks in Rollup work as sequential hooks. See [Rolldown's documentation](https://rolldown.rs/apis/plugin-api#sequential-hook-execution) for more details.
 - `"use strict";` is not injected sometimes. See [Rolldown's documentation](https://rolldown.rs/in-depth/directives) for more details.
 - Transforming to ES5 and below with plugin-legacy is not supported ([rolldown-vite#452](https://github.com/vitejs/rolldown-vite/issues/452))
 - Passing the same browser with multiple versions of it to `build.target` option now errors: esbuild selects the latest version of it, which was probably not what you intended.
-- Missing support by Rolldown: The following features are not supported by Rolldown and is no longer supported by Vite.
+- Missing support by Rolldown: The following features are not supported by Rolldown and are no longer supported by Vite.
   - `build.rollupOptions.output.format: 'system'` ([rolldown#2387](https://github.com/rolldown/rolldown/issues/2387))
-  - `build.rollupOptions.output.format: 'amd'` ([rolldown#2387](https://github.com/rolldown/rolldown/issues/2528))
+  - `build.rollupOptions.output.format: 'amd'` ([rolldown#2528](https://github.com/rolldown/rolldown/issues/2528))
   - `shouldTransformCachedModule` hook ([rolldown#4389](https://github.com/rolldown/rolldown/issues/4389))
   - `resolveImportMeta` hook ([rolldown#1010](https://github.com/rolldown/rolldown/issues/1010))
   - `renderDynamicImport` hook ([rolldown#4532](https://github.com/rolldown/rolldown/issues/4532))

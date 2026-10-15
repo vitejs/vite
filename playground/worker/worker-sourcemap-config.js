@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
-import workerPluginTestPlugin from './worker-plugin-test-plugin'
+import workerPluginTestPlugin from './worker-plugin-test-plugin.js'
 
 /** @param {boolean | 'inline' | 'hidden' | 'sourcemap'} sourcemap */
 export default (sourcemap) => {

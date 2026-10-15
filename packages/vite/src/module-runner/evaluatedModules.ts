@@ -1,8 +1,8 @@
-import { cleanUrl, isWindows, slash, unwrapId } from '../shared/utils'
 import { SOURCEMAPPING_URL } from '../shared/constants'
-import { decodeBase64 } from './utils'
+import { cleanUrl, isWindows, slash, unwrapId } from '../shared/utils'
 import { DecodedMap } from './sourcemap/decoder'
 import type { ResolvedResult } from './types'
+import { decodeBase64 } from './utils'
 
 const MODULE_RUNNER_SOURCEMAPPING_REGEXP = new RegExp(
   `//# ${SOURCEMAPPING_URL}=data:application/json;base64,(.+)`,

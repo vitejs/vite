@@ -1,18 +1,25 @@
 import * as depSelfReferenceUrlWorker from '@vitejs/test-dep-self-reference-url-worker'
-import myWorker from '../my-worker.ts?worker'
-import InlineWorker from '../my-worker.ts?worker&inline'
+// imported but never used — the dead-importer module itself is side-effect-free,
+// so rolldown DCEs it along with its `?worker` import. The worker plugin should
+// then skip emitting the dce-test-worker asset (and its nested worker too).
+import { dceTestWorker as _dceTestWorker } from '../dce-test-importer.js'
+import DceTestLiveWorker from '../dce-test-live-worker.js?worker'
+import { mode } from '../modules/workerImport'
 import InlineSharedWorker from '../my-inline-shared-worker?sharedworker&inline'
 import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
+import myWorker from '../my-worker.ts?worker'
+import InlineWorker from '../my-worker.ts?worker&inline'
 import TSOutputWorker from '../possible-ts-output-worker?worker'
-import NestedWorker from '../worker-nested-worker?worker'
-import { mode } from '../modules/workerImport'
 import SelfReferenceWorker from '../self-reference-worker?worker'
+import NestedWorker from '../worker-nested-worker?worker'
 
 function text(el, text) {
   document.querySelector(el).textContent = text
 }
 
 document.querySelector('.mode-true').textContent = mode
+
+new DceTestLiveWorker()
 
 const worker = new myWorker()
 worker.postMessage('ping')

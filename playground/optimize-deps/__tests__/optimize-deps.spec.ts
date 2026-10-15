@@ -43,6 +43,15 @@ test('default import from cjs (cjs-dep-cjs-compiled-from-cjs)', async () => {
     .toBe('ok')
 })
 
+test.runIf(isServe)(
+  'named import injected into an optimized dep by a plugin (dep-with-injected-import)',
+  async () => {
+    await expect
+      .poll(() => page.textContent('.injected-import-in-optimized-dep'))
+      .toBe('msg from injected cjs import')
+  },
+)
+
 test('dynamic imports from cjs dep (react)', async () => {
   await expect
     .poll(() => page.textContent('.cjs-dynamic button'))
@@ -76,6 +85,18 @@ test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-cjs)', 
 test('dynamic default import from cjs with es-module-flag (cjs-dynamic-dep-cjs-with-es-module-flag)', async () => {
   await expect
     .poll(() => page.textContent('.cjs-dynamic-dep-cjs-with-es-module-flag'))
+    .toBe('ok')
+})
+
+test('dynamic import from format-ambiguous importer respects __esModule flag (cjs-dynamic-importer-ambiguous)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-importer-ambiguous'))
+    .toBe('ok')
+})
+
+test('dynamic import from explicit cjs importer uses node interop (cjs-dynamic-importer-cjs)', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-importer-cjs'))
     .toBe('ok')
 })
 
@@ -158,6 +179,20 @@ test('dep with optional peer dep (cjs)', async () => {
     .toMatch(`[success]`)
 })
 
+test.runIf(isServe)(
+  'optimized CJS dep preserves fallback for excluded optional peer',
+  async () => {
+    const metadata = readDepOptimizationMetadata()
+    expect(Object.keys(metadata.optimized)).toContain(
+      '@vitejs/test-dep-with-excluded-optional-peer-dep-cjs',
+    )
+
+    await expect
+      .poll(() => page.textContent('.dep-with-excluded-optional-peer-dep-cjs'))
+      .toMatch(`[success]`)
+  },
+)
+
 test('dep with css import', async () => {
   await expect.poll(() => getColor('.dep-linked-include')).toBe('red')
 })
@@ -233,6 +268,20 @@ test('non optimized module is not duplicated', async () => {
     .poll(() => page.textContent('.non-optimized-module-is-not-duplicated'))
     .toBe('from-absolute-path, from-relative-path')
 })
+
+test.runIf(isServe)(
+  'optimized browser:false is empty without warning',
+  async () => {
+    expect(await page.textContent('.browser-false-optimized')).toBe('[success]')
+    expect(browserLogs).not.toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          'Module "browser-false-only" has been externalized for browser compatibility',
+        ),
+      ]),
+    )
+  },
+)
 
 test.runIf(isServe)('error on builtin modules usage', () => {
   expect(browserLogs).toEqual(
@@ -374,6 +423,18 @@ test('dependency with external sub-dependencies', async () => {
     .poll(() => page.textContent('.dep-cjs-with-external-deps-node-builtin'))
     .toBe('foo bar')
 })
+
+test.runIf(isServe)(
+  'discovers deep imports with custom html-like extensions during dep scan',
+  async () => {
+    await expect
+      .poll(() => page.textContent('.svelte-deep-import'))
+      .toBe('[success]')
+    expect(serverLogs.join('\n')).not.toContain(
+      "Could not resolve './relative.svelte' in virtual-module:",
+    )
+  },
+)
 
 test('virtual module with .vue extension does not error during scan', async () => {
   await expect.poll(() => page.textContent('.virtual-module-vue')).toBe('ok')

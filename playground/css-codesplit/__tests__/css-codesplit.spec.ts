@@ -63,6 +63,19 @@ describe.runIf(isBuild)('build', () => {
     expect(manifest['other.js'].css.length).toBe(1)
   })
 
+  // Regression test for vitejs/vite#22856: when rolldown deduplicates two same-content css
+  // assets, it must not rename the survivor after Vite has recorded the earlier name, or the
+  // manifest ends up pointing at a css file that was never written.
+  test('manifest should not reference a deduplicated css file that does not exist', () => {
+    const emitted = new Set(listAssets())
+    const referenced = Object.values(readManifest())
+      .flatMap((chunk) => chunk.css ?? [])
+      .map((file) => file.replace(/^assets\//, ''))
+    for (const file of referenced) {
+      expect(emitted).toContain(file)
+    }
+  })
+
   test('should not mark a css chunk with ?url and normal import as pure css chunk', () => {
     expect(findAssetFile(/chunk-.*\.js$/)).toBeTruthy()
   })

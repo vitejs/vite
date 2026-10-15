@@ -108,7 +108,7 @@ pre.frame {
 
 .message {
   line-height: 1.3;
-  font-weight: 600;
+  font-weight: 400;
   white-space: pre-wrap;
 }
 
@@ -212,6 +212,7 @@ const codeframeRE = /^(?:>?\s*\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
 
 // Allow `ErrorOverlay` to extend `HTMLElement` even in environments where
 // `HTMLElement` was not originally defined.
+// oxlint-disable-next-line typescript/no-useless-default-assignment
 const { HTMLElement = class {} as typeof globalThis.HTMLElement } = globalThis
 export class ErrorOverlay extends HTMLElement {
   root: ShadowRoot

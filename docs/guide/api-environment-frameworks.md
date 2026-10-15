@@ -180,7 +180,7 @@ If your code can run in the same runtime as the user modules (i.e., it does not 
 // code using the Vite's APIs
 import { createServer } from 'vite'
 
-const server = createServer({
+const server = await createServer({
   plugins: [
     // a plugin that handles `virtual:entrypoint`
     {
@@ -189,7 +189,7 @@ const server = createServer({
     },
   ],
 })
-const ssrEnvironment = server.environment.ssr
+const ssrEnvironment = server.environments.ssr
 const input = {}
 
 // use exposed functions by each environment factories that runs the code
@@ -252,7 +252,7 @@ If your code requires Node.js APIs, you can use `hot.send` to communicate with t
 // code using the Vite's APIs
 import { createServer } from 'vite'
 
-const server = createServer({
+const server = await createServer({
   plugins: [
     // a plugin that handles `virtual:entrypoint`
     {
@@ -261,13 +261,13 @@ const server = createServer({
     },
   ],
 })
-const ssrEnvironment = server.environment.ssr
+const ssrEnvironment = server.environments.ssr
 const input = {}
 
 // use exposed functions by each environment factories that runs the code
 // check for each environment factories what they provide
 if (ssrEnvironment instanceof RunnableDevEnvironment) {
-  ssrEnvironment.runner.import('virtual:entrypoint')
+  await ssrEnvironment.runner.import('virtual:entrypoint')
 } else if (ssrEnvironment instanceof CustomDevEnvironment) {
   ssrEnvironment.runEntrypoint('virtual:entrypoint')
 } else {
@@ -277,9 +277,9 @@ if (ssrEnvironment instanceof RunnableDevEnvironment) {
 const req = new Request('http://example.com/')
 
 const uniqueId = 'a-unique-id'
-ssrEnvironment.send('request', serialize({ req, uniqueId }))
+ssrEnvironment.hot.send('request', serialize({ req, uniqueId }))
 const response = await new Promise((resolve) => {
-  ssrEnvironment.on('response', (data) => {
+  ssrEnvironment.hot.on('response', (data) => {
     data = deserialize(data)
     if (data.uniqueId === uniqueId) {
       resolve(data.res)
@@ -297,8 +297,6 @@ import.meta.hot.on('request', (data) => {
   const res = handler(req)
   import.meta.hot.send('response', serialize({ res: res, uniqueId }))
 })
-
-const response = handler(new Request('http://example.com/'))
 
 // -------------------------------------
 // ./entrypoint.js
@@ -335,6 +333,10 @@ export default defineConfig({
 ```
 
 ### The `buildApp` plugin hook
+
+- **Type:** `(this: MinimalPluginContextWithoutEnvironment, builder: ViteBuilder) => Promise<void>`
+- **Kind:** `async`, `sequential`
+- **Scope:** [Global](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks)
 
 Besides the `builder.buildApp` config option, plugins can define a `buildApp` hook to participate in the app build. The config option and the plugin hooks run in a defined order: hooks with order `'pre'` or `null` run first, then the configured `builder.buildApp`, then hooks with order `'post'`. Within a hook, `environment.isBuilt` tells you whether an environment has already been built, which lets a plugin avoid building it twice.
 

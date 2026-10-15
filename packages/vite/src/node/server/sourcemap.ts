@@ -1,17 +1,18 @@
-import path from 'node:path'
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
+import path from 'node:path'
 import convertSourceMap from 'convert-source-map'
-import type { ExistingRawSourceMap, SourceMap } from 'rolldown'
 import colors from 'picocolors'
+import type { ExistingRawSourceMap, SourceMap } from 'rolldown'
+import { cleanUrl } from '../../shared/utils'
 import type { Logger } from '../logger'
 import {
   blankReplacer,
   createDebugger,
+  isExternalUrl,
   isParentDirectory,
   normalizePath,
 } from '../utils'
-import { cleanUrl } from '../../shared/utils'
 
 const debug = createDebugger('vite:sourcemap', {
   onlyWhenFocused: true,
@@ -49,7 +50,7 @@ export function getNodeModulesPackageRoot(
 // prefixes used for special handling in esbuildDepPlugin.
 const virtualSourceRE = /^(?:dep:|browser-external:|virtual:)|\0/
 
-interface SourceMapLike {
+export interface SourceMapLike {
   sources: string[]
   sourcesContent?: (string | null)[]
   sourceRoot?: string
@@ -71,6 +72,10 @@ export async function injectSourcesContent(
   file: string,
   logger: Logger,
 ): Promise<void> {
+  if (map.sourceRoot && isExternalUrl(map.sourceRoot)) {
+    return
+  }
+
   let sourceRootPromise: Promise<string | undefined>
 
   const packageRoot = getNodeModulesPackageRoot(file)
@@ -82,6 +87,7 @@ export async function injectSourcesContent(
     if (
       sourcesContent[index] == null &&
       sourcePath &&
+      !isExternalUrl(sourcePath) &&
       !virtualSourceRE.test(sourcePath)
     ) {
       sourcesContentPromises.push(

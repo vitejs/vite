@@ -5,14 +5,14 @@ import {
   ModuleRunner,
   createNodeImportMeta,
 } from 'vite/module-runner'
-import type { ViteDevServer } from '../server'
+import { isRunnableDevEnvironment } from '../../node'
 import { unwrapId } from '../../shared/utils'
+import type { ViteDevServer } from '../server'
 import type { DevEnvironment } from '../server/environment'
 import type { NormalizedServerHotChannel } from '../server/hmr'
 import { buildErrorMessage } from '../server/middlewares/error'
-import { isRunnableDevEnvironment } from '../../node'
-import { ssrFixStacktrace } from './ssrStacktrace'
 import { createServerModuleRunnerTransport } from './runtime/serverModuleRunner'
+import { ssrFixStacktrace } from './ssrStacktrace'
 
 type SSRModule = Record<string, any>
 

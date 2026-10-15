@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { isBuild, page } from '~utils'
+import { isBuild, isBundledDev, page } from '~utils'
 
 const mode = isBuild ? `production` : `development`
 
@@ -110,7 +110,11 @@ test('env object in template literal expression', async () => {
 
 if (!isBuild) {
   test('relative url import script return import.meta.url', async () => {
-    expect(await page.textContent('.url')).toMatch('/env/index.js')
+    // bundled dev: index.js is bundled into the entry chunk, so
+    // import.meta.url is the chunk URL
+    expect(await page.textContent('.url')).toMatch(
+      isBundledDev ? '/env/assets/index.js' : '/env/index.js',
+    )
   })
 }
 

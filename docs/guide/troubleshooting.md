@@ -105,7 +105,7 @@ When using a self-signed SSL certificate, Chrome ignores all caching directives 
 
 To resolve the problem use a trusted SSL cert.
 
-See: [Cache problems](https://helpx.adobe.com/mt/experience-manager/kb/cache-problems-on-chrome-with-SSL-certificate-errors.html), [Chrome issue](https://bugs.chromium.org/p/chromium/issues/detail?id=110649#c8)
+See: [Chrome issue](https://bugs.chromium.org/p/chromium/issues/detail?id=110649#c8)
 
 #### macOS
 
@@ -134,6 +134,20 @@ If you are using a Dev Container or port forwarding feature in VS Code, you may 
 This is because [the port forwarding feature in VS Code does not support IPv6](https://github.com/microsoft/vscode-remote-release/issues/7029).
 
 See [#16522](https://github.com/vitejs/vite/issues/16522) for more details.
+
+### Illegal operation error when watching files
+
+If the file or directory is located on a file system that does not support file system events, Vite may be unable to watch it.
+
+An example error you may encounter is:
+
+```
+Error: EISDIR: illegal operation on a directory, watch 'C:/Users/me/project/vite.config.js'
+```
+
+For example, this can happen with a VirtualBox shared folder.
+
+To solve this, you can enable [`server.watch.usePolling`](/config/server-options#server-watch). Note that [`usePolling` leads to high CPU utilization](https://github.com/paulmillr/chokidar/tree/3.6.0#performance).
 
 ## HMR
 
@@ -206,7 +220,9 @@ To resolve this, you can:
 
 This error may occur in unstable network environments. For example, when the request fails due to network errors or server downtime.
 
-Note that you cannot retry the dynamic import due to browser limitations ([whatwg/html#6768](https://github.com/whatwg/html/issues/6768)).
+Browsers that support [retriable module loading](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import#browser_compatibility) do not cache network and HTTP errors in the module map. In these browsers, your application or framework can retry the original dynamic import. Older browsers cache the failure, so reloading the page remains the fallback.
+
+Retrying also does not fix [version skew](#version-skew) when a chunk has been permanently removed by a deployment.
 
 #### Browser extensions blocking requests
 
@@ -218,7 +234,7 @@ It might be possible to work around by selecting a different chunk name by [`bui
 
 ### Outdated pre-bundled deps when linking to a local package
 
-The hash key used to invalidate optimized dependencies depends on the package lock contents, the patches applied to dependencies, and the options in the Vite config file that affects the bundling of node modules. This means that Vite will detect when a dependency is overridden using a feature as [npm overrides](https://docs.npmjs.com/cli/v9/configuring-npm/package-json#overrides), and re-bundle your dependencies on the next server start. Vite won't invalidate the dependencies when you use a feature like [npm link](https://docs.npmjs.com/cli/v9/commands/npm-link). In case you link or unlink a dependency, you'll need to force re-optimization on the next server start by using `vite --force`. We recommend using overrides instead, which are supported now by every package manager (see also [pnpm overrides](https://pnpm.io/9.x/package_json#pnpmoverrides) and [yarn resolutions](https://yarnpkg.com/configuration/manifest/#resolutions)).
+The hash key used to invalidate optimized dependencies depends on the package lock contents, the patches applied to dependencies, and the options in the Vite config file that affects the bundling of node modules. This means that Vite will detect when a dependency is overridden using a feature as [npm overrides](https://docs.npmjs.com/cli/v9/configuring-npm/package-json#overrides), and re-bundle your dependencies on the next server start. Vite won't invalidate the dependencies when you use a feature like [npm link](https://docs.npmjs.com/cli/v9/commands/npm-link). In case you link or unlink a dependency, you'll need to force re-optimization on the next server start by using `vite --force`. We recommend using overrides instead, which are supported now by every package manager (see also [pnpm overrides](https://pnpm.io/settings#overrides) and [yarn resolutions](https://yarnpkg.com/configuration/manifest/#resolutions)).
 
 ## Performance Bottlenecks
 
@@ -240,7 +256,7 @@ vite build --profile
 Once your application is opened in the browser, just await finish loading it and then go back to the terminal and press `p` key (will stop the Node.js inspector) then press `q` key to stop the dev server.
 :::
 
-Node.js inspector will generate `vite-profile-0.cpuprofile` in the root folder, go to https://www.speedscope.app/, and upload the CPU profile using the `BROWSE` button to inspect the result.
+Node.js inspector will generate `vite-profile-0.cpuprofile` in the root folder. You can pass `--profile <name>` (or `--profile=<name>`) to write `<name>.cpuprofile` instead. Go to https://www.speedscope.app/, and upload the CPU profile using the `BROWSE` button to inspect the result.
 
 You can install [vite-plugin-inspect](https://github.com/antfu/vite-plugin-inspect), which lets you inspect the intermediate state of Vite plugins and can also help you to identify which plugins or middlewares are the bottleneck in your applications. The plugin can be used in both dev and build modes. Check the readme file for more details.
 

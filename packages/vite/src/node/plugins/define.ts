@@ -1,13 +1,13 @@
 import { transformSync } from 'rolldown/utils'
 import type { ResolvedConfig } from '../config'
+import type { Environment } from '../environment'
 import type { Plugin } from '../plugin'
 import { escapeRegex, isCSSRequest } from '../utils'
-import type { Environment } from '../environment'
 import { isHTMLRequest } from './html'
 
 const nonJsRe = /\.json(?:$|\?)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
-const escapedDotRE = /(?<!\\)\\./g
+const escapedDotRE = /(?<!\\)\\\./g
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -55,7 +55,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       userDefine[key] = handleDefineValue(environment.config.define[key])
 
       // make sure `import.meta.env` object has user define properties
-      if (isBuild && key.startsWith('import.meta.env.')) {
+      if (isBundled && key.startsWith('import.meta.env.')) {
         userDefineEnv[key.slice(16)] = environment.config.define[key]
       }
     }

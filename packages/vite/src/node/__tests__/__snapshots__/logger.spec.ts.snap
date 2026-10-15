@@ -1,0 +1,40 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`printServerUrls > aligns interface names into a column 1`] = `
+"
+  ➜  Network: http://172.18.0.1:5173/  eth0
+  ➜  Network: http://10.0.0.2:5173/    wlan0
+"
+`;
+
+exports[`printServerUrls > appends interface name for a single explicit host URL 1`] = `
+"
+  ➜  Network: http://192.168.1.10:5173/  eth0
+"
+`;
+
+exports[`printServerUrls > appends the network interface name to each network URL 1`] = `
+"
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://172.18.0.1:5173/  eth0
+  ➜  Network: http://10.0.0.2:5173/    wlan0
+"
+`;
+
+exports[`printServerUrls > omits the annotation when the interface name is unknown 1`] = `
+"
+  ➜  Network: http://10.0.0.2:5173/
+"
+`;
+
+exports[`printServerUrls > truncates an over-long interface name 1`] = `
+"
+  ➜  Network: http://10.0.0.2:5173/  vEthernet (WSL (Hyp…
+"
+`;
+
+exports[`printServerUrls > works when networkInterfaceNames is absent 1`] = `
+"
+  ➜  Network: http://10.0.0.2:5173/
+"
+`;

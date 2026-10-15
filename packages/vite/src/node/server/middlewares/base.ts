@@ -1,6 +1,6 @@
 import type { Connect } from '#dep-types/connect'
-import { joinUrlSegments, stripBase } from '../../utils'
 import { cleanUrl, withTrailingSlash } from '../../../shared/utils'
+import { joinUrlSegments, stripBase } from '../../utils'
 
 // this middleware is only active when (base !== '/')
 
@@ -14,7 +14,7 @@ export function baseMiddleware(
     const pathname = cleanUrl(url)
     const base = rawBase
 
-    if (pathname.startsWith(base)) {
+    if (pathname === base || pathname.startsWith(withTrailingSlash(base))) {
       // rewrite url to remove base. this ensures that other middleware does
       // not need to consider base being prepended or not
       req.url = stripBase(url, base)

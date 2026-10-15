@@ -2,7 +2,16 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
-import { isBuild, isServe, isWindows, page, testDir, viteTestUrl } from '~utils'
+import {
+  isBuild,
+  isBundled,
+  isBundledDev,
+  isServe,
+  isWindows,
+  page,
+  testDir,
+  viteTestUrl,
+} from '~utils'
 
 test('bom import', async () => {
   expect(await page.textContent('.utf8-bom')).toMatch('[success]')
@@ -29,7 +38,7 @@ test('deep import with exports field', async () => {
 test('deep import with query with exports field', async () => {
   // since it is imported with `?url` it should return a URL
   expect(await page.textContent('.exports-deep-query')).toMatch(
-    isBuild ? /base64/ : '/exports-path/deep.json',
+    isBundled ? /base64/ : '/exports-path/deep.json',
   )
 })
 
@@ -129,6 +138,13 @@ test('browser field', async () => {
   expect(await page.textContent('.browser')).toMatch('[success]')
 })
 
+// accessing a property of a `browser: false` module must not throw (#22022)
+test('access property of browser:false module', async () => {
+  expect(await page.textContent('.browser-field-false-access')).toMatch(
+    '[success]',
+  )
+})
+
 test('Resolve browser field even if module field exists', async () => {
   expect(await page.textContent('.browser-module1')).toMatch('[success]')
 })
@@ -203,6 +219,11 @@ test('Resolving star with imports filed', async () => {
   expect(await page.textContent('.imports-star')).toMatch('[success]')
 })
 
+// https://github.com/vitejs/vite/issues/23637
+test('Resolving star with $$ in filename with imports field', async () => {
+  expect(await page.textContent('.imports-star-dollar')).toMatch('[success]')
+})
+
 test('Resolving slash with imports filed', async () => {
   expect(await page.textContent('.imports-slash')).toMatch('[success]')
 })
@@ -214,7 +235,7 @@ test('Resolving from other package with imports field', async () => {
 test('Resolving with query with imports field', async () => {
   // since it is imported with `?url` it should return a URL
   expect(await page.textContent('.imports-query')).toMatch(
-    isBuild ? /base64/ : '/imports-path/query.json',
+    isBundled ? /base64/ : '/imports-path/query.json',
   )
 })
 
@@ -270,7 +291,9 @@ test.runIf(isBuild)('sideEffects field glob pattern is respected', async () => {
 
 describe.runIf(isServe)('HEAD request handling', () => {
   test('HEAD request to JS file returns correct Content-Type', async () => {
-    const response = await fetch(new URL('/absolute.js', viteTestUrl), {
+    // bundled dev serves the bundle output, not the source file
+    const jsPath = isBundledDev ? '/assets/index.js' : '/absolute.js'
+    const response = await fetch(new URL(jsPath, viteTestUrl), {
       method: 'HEAD',
     })
     expect(response.headers.get('content-type')).toBe('text/javascript')
@@ -279,14 +302,19 @@ describe.runIf(isServe)('HEAD request handling', () => {
     expect(text).toBe('')
   })
 
-  test('HEAD request to CSS file returns correct Content-Type', async () => {
-    const response = await fetch(new URL('/style.css', viteTestUrl), {
-      method: 'HEAD',
-      headers: {
-        Accept: 'text/css',
-      },
-    })
-    expect(response.headers.get('content-type')).toBe('text/css')
-    expect(response.status).toBe(200)
-  })
+  // bundled dev serves only the bundle output, and dev puts CSS into the JS
+  // bundle, so there is no CSS file to request
+  test.skipIf(isBundledDev)(
+    'HEAD request to CSS file returns correct Content-Type',
+    async () => {
+      const response = await fetch(new URL('/style.css', viteTestUrl), {
+        method: 'HEAD',
+        headers: {
+          Accept: 'text/css',
+        },
+      })
+      expect(response.headers.get('content-type')).toBe('text/css')
+      expect(response.status).toBe(200)
+    },
+  )
 })

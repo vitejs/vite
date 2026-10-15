@@ -38,6 +38,31 @@
   <span class="result"></span>
 </div>
 
+<div class="direct-wasm-global">
+  <h3>Direct wasm import of a global, result should be 42 (number)</h3>
+  <span class="result"></span>
+</div>
+
+<div class="direct-wasm-global-import">
+  <h3>wasm importing a global from another wasm, result should be 43</h3>
+  <span class="result"></span>
+</div>
+
+<div class="direct-wasm-mutable-global-import">
+  <h3>
+    wasm reading a mutable global mutated by another wasm, result should be 9
+  </h3>
+  <span class="result"></span>
+</div>
+
+<div class="direct-wasm-string-builtins">
+  <h3>
+    wasm using js-string builtins and imported string constants, result should
+    be 5
+  </h3>
+  <span class="result"></span>
+</div>
+
 <script type="module">
   import light from './light.wasm?init'
   import heavy from './heavy.wasm?init'
@@ -45,6 +70,10 @@
   import { add } from './add.wasm'
   import { exported_func } from './light-with-imports.wasm'
   import { getResult } from './imports.js'
+  import { answer } from './global.wasm'
+  import { getAnswerPlusOne, readCounter } from './global-consumer.wasm'
+  import { bumpCounter } from './global.wasm'
+  import { helloLength } from './string-constants.wasm'
 
   const w = new myWorker()
   w.addEventListener('message', (ev) => {
@@ -55,6 +84,19 @@
 
   exported_func()
   text('.direct-wasm-with-imports .result', getResult())
+
+  text('.direct-wasm-global .result', `${answer} ${typeof answer}`)
+  text('.direct-wasm-global-import .result', getAnswerPlusOne())
+
+  // The mutable global is a single live cell shared between the two wasm
+  // modules: mutating it from one is observed by the other (7 + 2 = 9).
+  bumpCounter()
+  bumpCounter()
+  text('.direct-wasm-mutable-global-import .result', readCounter())
+
+  // 'hello'.length, where 'hello' is an engine-provided imported string constant
+  // and `length` is a js-string builtin.
+  text('.direct-wasm-string-builtins .result', helloLength())
 
   async function testWasm(init, resultElement) {
     const { exported_func } = await init({

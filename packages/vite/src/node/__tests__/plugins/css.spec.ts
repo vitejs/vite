@@ -1,7 +1,8 @@
 import path from 'node:path'
-import { describe, expect, test } from 'vitest'
-import type { InternalModuleFormat } from 'rolldown'
 import MagicString from 'magic-string'
+import type { InternalModuleFormat } from 'rolldown'
+import { describe, expect, test } from 'vitest'
+import { PartialEnvironment } from '../../baseEnvironment'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
 import {
@@ -15,7 +16,6 @@ import {
   preprocessCSS,
   resolveLibCssFilename,
 } from '../../plugins/css'
-import { PartialEnvironment } from '../../baseEnvironment'
 import { normalizePath } from '../../utils'
 
 const dirname = import.meta.dirname
@@ -142,6 +142,17 @@ composes: bar from '@/css/bar.module.css';
     const result1 = await transform(css, '/foo.module.css') // server
     const result2 = await transform(css, '/foo.module.css?direct') // client
     expect(result1.code).toBe(result2.code)
+  })
+})
+
+describe('url()', () => {
+  test('keeps a % that is not an escape sequence', async () => {
+    const { transform } = await createCssPluginTransform({ configFile: false })
+    const result = await transform(
+      `.foo { background: url(./100%.png) }`,
+      '/foo.css',
+    )
+    expect(result.code).toContain('100%.png')
   })
 })
 
@@ -279,6 +290,15 @@ describe('convertTargets', () => {
 
   test('supports es6 as an alias of es2015', () => {
     expect(convertTargets('es6')).toStrictEqual(convertTargets('es2015'))
+  })
+
+  test('returns undefined when there is no constraint', () => {
+    expect(convertTargets('esnext')).toBeUndefined()
+    expect(convertTargets(['esnext'])).toBeUndefined()
+    expect(convertTargets(false)).toBeUndefined()
+    expect(convertTargets(['esnext', 'chrome148'])).toStrictEqual({
+      chrome: 0x94_00_00,
+    })
   })
 })
 
@@ -420,6 +440,22 @@ describe('preprocessCSS', () => {
       }
       "
     `)
+  })
+
+  test('lightningcss preserves $ in external @import url', async () => {
+    const resolvedConfig = await resolveConfig(
+      {
+        configFile: false,
+        css: { transformer: 'lightningcss' },
+      },
+      'serve',
+    )
+    const result = await preprocessCSS(
+      `@import 'http://example.com/a.css?x=$&y';`,
+      'foo.css',
+      resolvedConfig,
+    )
+    expect(result.code).toContain('http://example.com/a.css?x=$&y')
   })
 })
 
@@ -827,6 +863,31 @@ exports.foo = foo;
 
       //#endregion
       })();"
+    `)
+  })
+
+  test('should inject CSS after the shebang line for es', async () => {
+    const result = getInlinedCSSInjectedCode(
+      `#!/usr/bin/env node
+console.log("foo");`,
+      'es',
+    )
+    expect(result).toMatchInlineSnapshot(`
+      "#!/usr/bin/env node
+      injectCSS();console.log("foo");"
+    `)
+  })
+
+  test('should inject CSS at the start for es without shebang', async () => {
+    const result = getInlinedCSSInjectedCode(`console.log("foo");`, 'es')
+    expect(result).toMatchInlineSnapshot(`"injectCSS();console.log("foo");"`)
+  })
+
+  test('should inject CSS for es shebang without trailing newline', async () => {
+    const result = getInlinedCSSInjectedCode(`#!/usr/bin/env node`, 'es')
+    expect(result).toMatchInlineSnapshot(`
+      "#!/usr/bin/env node
+      injectCSS();"
     `)
   })
 })

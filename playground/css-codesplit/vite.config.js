@@ -4,16 +4,16 @@ import { defineConfig } from 'vite'
 const dirname = import.meta.dirname
 
 export default defineConfig({
+  input: {
+    main: resolve(dirname, './index.html'),
+    other: resolve(dirname, './other.js'),
+    style2: resolve(dirname, './style2.js'),
+    'shared-css-with-js': resolve(dirname, 'shared-css-with-js.html'),
+    'shared-css-no-js': resolve(dirname, 'shared-css-no-js.html'),
+  },
   build: {
     manifest: true,
     rolldownOptions: {
-      input: {
-        main: resolve(dirname, './index.html'),
-        other: resolve(dirname, './other.js'),
-        style2: resolve(dirname, './style2.js'),
-        'shared-css-with-js': resolve(dirname, 'shared-css-with-js.html'),
-        'shared-css-no-js': resolve(dirname, 'shared-css-no-js.html'),
-      },
       output: {
         // manualChunks(id) {
         //   // make `chunk.css` its own chunk for easier testing of pure css chunks

@@ -1,8 +1,8 @@
 import type { OriginalMapping } from '@jridgewell/trace-mapping'
-import type { ModuleRunner } from '../runner'
-import { posixDirname, posixResolve } from '../utils'
+import { decodeSourceURL, slash } from '../../shared/utils'
 import type { EvaluatedModules } from '../evaluatedModules'
-import { slash } from '../../shared/utils'
+import type { ModuleRunner } from '../runner'
+import { decodeBase64, posixDirname, posixResolve } from '../utils'
 import { DecodedMap, getOriginalPosition } from './decoder'
 
 interface RetrieveFileHandler {
@@ -102,11 +102,12 @@ function supportRelativeURL(file: string, url: string) {
 }
 
 function getRunnerSourceMap(position: OriginalMapping): CachedMapEntry | null {
+  const id = decodeSourceURL(position.source!)
   for (const moduleGraph of evaluatedModulesCache) {
-    const sourceMap = moduleGraph.getModuleSourceMapById(position.source!)
+    const sourceMap = moduleGraph.getModuleSourceMapById(id)
     if (sourceMap) {
       return {
-        url: position.source,
+        url: id,
         map: sourceMap,
         vite: true,
       }
@@ -154,7 +155,7 @@ function retrieveSourceMap(source: string) {
   if (reSourceMap.test(sourceMappingURL)) {
     // Support source map URL as a data url
     const rawData = sourceMappingURL.slice(sourceMappingURL.indexOf(',') + 1)
-    sourceMapData = Buffer.from(rawData, 'base64').toString()
+    sourceMapData = decodeBase64(rawData)
     sourceMappingURL = source
   } else {
     // Support source map URLs relative to the source URL
@@ -330,7 +331,9 @@ function CallSiteToString(this: CallSite) {
 }
 
 function cloneCallSite(frame: CallSite) {
-  const object = {} as CallSite
+  // null prototype so assigning `constructor` below doesn't throw
+  // when user code has frozen `Object.prototype`
+  const object = Object.create(null) as CallSite
   Object.getOwnPropertyNames(Object.getPrototypeOf(frame)).forEach((name) => {
     const key = name as keyof CallSite
     // @ts-expect-error difficult to type
@@ -361,13 +364,19 @@ function wrapCallSite(frame: CallSite, state: State) {
     const line = frame.getLineNumber() ?? 0
     const column = (frame.getColumnNumber() ?? 1) - 1
 
-    const position = mapSourcePosition({
-      name: null,
-      source,
-      line,
-      column,
-    })
+    const unmapped = { name: null, source, line, column }
+    const position = mapSourcePosition(unmapped)
     state.curPosition = position
+    // Most frames have no source map, and cloning one per frame dominates the cost of
+    // building the stack. Skip it when the clone would print the same thing anyway.
+    if (
+      position === unmapped &&
+      !state.nextPosition?.name &&
+      frame.getColumnNumber() != null &&
+      frame.getScriptNameOrSourceURL() === source
+    ) {
+      return frame
+    }
     frame = cloneCallSite(frame)
     const originalFunctionName = frame.getFunctionName
     frame.getFunctionName = function () {

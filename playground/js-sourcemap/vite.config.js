@@ -3,13 +3,11 @@ import babel from '@babel/core'
 import MagicString from 'magic-string'
 import { Visitor, parseSync } from 'oxc-parser'
 import { defineConfig } from 'vite'
-import transformFooWithInlineSourceMap from './foo-with-sourcemap-plugin'
-import { transformZooWithSourcemapPlugin } from './zoo-with-sourcemap-plugin'
+import transformFooWithInlineSourceMap from './foo-with-sourcemap-plugin.ts'
 
 export default defineConfig({
   plugins: [
     transformFooWithInlineSourceMap(),
-    transformZooWithSourcemapPlugin(),
     {
       name: 'test-babel-transformed-optimized-dep',
       async transform(code, id) {

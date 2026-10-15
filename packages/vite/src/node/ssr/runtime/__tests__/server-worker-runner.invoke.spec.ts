@@ -1,8 +1,8 @@
-import { BroadcastChannel, Worker } from 'node:worker_threads'
 import path from 'node:path'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { BroadcastChannel, Worker } from 'node:worker_threads'
 import type { BirpcReturn } from 'birpc'
 import { createBirpc } from 'birpc'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { DevEnvironment } from '../../..'
 import { type ViteDevServer, createServer } from '../../../server'
 

@@ -1,5 +1,5 @@
-import noExternalReactServerMessage from '@vitejs/test-ssr-conditions-no-external/server'
 import externalReactServerMessage from '@vitejs/test-ssr-conditions-external/server'
+import noExternalReactServerMessage from '@vitejs/test-ssr-conditions-no-external/server'
 
 export async function render(url) {
   let html = ''

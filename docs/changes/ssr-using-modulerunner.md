@@ -4,7 +4,7 @@
 Give us feedback at [Environment API feedback discussion](https://github.com/vitejs/vite/discussions/16358)
 :::
 
-`server.ssrLoadModule` has been replaced by importing from a [Module Runner](/guide/api-environment#modulerunner).
+`server.ssrLoadModule` has been replaced by importing from a [Module Runner](/guide/api-environment-runtimes#modulerunner).
 
 Affected scope: `Vite Plugin Authors`
 

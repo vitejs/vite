@@ -1,0 +1,5 @@
+{
+  "name": "@vitejs/test-native-compat-mts",
+  "type": "commonjs",
+  "private": true
+}

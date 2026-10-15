@@ -1,6 +1,6 @@
 import colors from 'picocolors'
-import type { Logger } from './logger'
 import type { ResolvedConfig, ResolvedEnvironmentOptions } from './config'
+import type { Logger } from './logger'
 import type { Plugin } from './plugin'
 
 const environmentColors = [

@@ -1,8 +1,9 @@
+import fs from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
-import fs from 'node:fs'
-import { pathToFileURL } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
+import { pathToFileURL } from 'node:url'
+import type { Page } from 'playwright-chromium'
 import {
   afterEach,
   beforeAll,
@@ -11,17 +12,25 @@ import {
   expect,
   test,
 } from 'vitest'
-import type { Page } from 'playwright-chromium'
 import WebSocket from 'ws'
-import testJSON from '../safe.json'
+import {
+  browser,
+  bundledDevUnsupported,
+  isBundledDev,
+  isServe,
+  page,
+  viteServer,
+  viteTestUrl,
+} from '~utils'
 import { getWindows83ShortNameForDotEnv as getWindows83ShortNameForDotEnv } from '../root/windows83Filename'
-import { browser, isServe, page, viteServer, viteTestUrl } from '~utils'
+import testJSON from '../safe.json'
 
-const getViteTestIndexHtmlUrl = () => {
-  const srcPrefix = viteTestUrl.endsWith('/') ? '' : '/'
-  // NOTE: viteTestUrl is set lazily
-  return viteTestUrl + srcPrefix + 'src/'
-}
+// `viteTestUrl` is set lazily, so this must be a function.
+// `viteTestUrl` keeps its trailing slash when the playground sets a base, so
+// plain concatenation would produce `//`-prefixed paths, which the server
+// refuses to serve as files.
+const getViteTestUrl = (pathname: string) =>
+  viteTestUrl.replace(/\/$/, '') + pathname
 
 const safeJsonContent = fs.readFileSync(
   path.resolve(import.meta.dirname, '../safe.json'),
@@ -30,7 +39,7 @@ const safeJsonContent = fs.readFileSync(
 const stringified = JSON.stringify(testJSON)
 
 beforeAll(async () => {
-  await page.goto(getViteTestIndexHtmlUrl())
+  await page.goto(getViteTestUrl('/src/'))
 })
 
 describe.runIf(isServe)('normal', () => {
@@ -51,7 +60,11 @@ describe.runIf(isServe)('normal', () => {
   })
 })
 
-describe.runIf(isServe)('matrix', () => {
+const projectFileServingUnsupported = bundledDevUnsupported(
+  'bundled dev serves only the bundle output and the public directory, never a single project file',
+)
+
+describe.runIf(isServe)('matrix', projectFileServingUnsupported, () => {
   const dotEnvWindows83ShortName = getWindows83ShortNameForDotEnv()
 
   const variants = [
@@ -208,6 +221,13 @@ describe.runIf(isServe)('matrix', () => {
       content: /403 Restricted/,
       status: '403',
     },
+    {
+      name: 'unsafe fetch with vite wasm instance query',
+      testId: 'unsafe-vite-wasm-instance',
+      content: /403 Restricted/,
+      status: '403',
+      disableVariants: [''],
+    },
     // It is 404 in `fs-serve/base` test, 403 in `fs-serve` test
     {
       name: 'unsafe fetch with relative path after query',
@@ -259,6 +279,12 @@ describe.runIf(isServe)('matrix', () => {
       content: /403 Restricted/,
       status: '403',
     },
+    {
+      name: 'denied .env with vite wasm instance query',
+      testId: 'unsafe-dotenv-vite-wasm-instance',
+      content: /403 Restricted/,
+      status: '403',
+    },
     // On NTFS, it exposes a file's default data stream through the `::$DATA` suffix,
     // so `.env::$DATA` resolves to the same content as `.env`.
     // It is 404 on non-NTFS.
@@ -293,10 +319,9 @@ describe.runIf(isServe)('matrix', () => {
         continue
       }
 
-      test.concurrent(
-        `${name} (${variantName})`,
-        { skip },
-        async ({ expect }) => {
+      test
+        .skipIf(skip)
+        .concurrent(`${name} (${variantName})`, async ({ expect }) => {
           const baseSelector = `.fetch${variantId}-${testId}`
           const actualStatus = expect.poll(() =>
             page.textContent(`${baseSelector}-status`),
@@ -324,15 +349,14 @@ describe.runIf(isServe)('matrix', () => {
           } else {
             await actualContent.toMatch(content)
           }
-        },
-      )
+        })
     }
   }
 })
 
 describe('fetch', () => {
   test('serve with configured headers', async () => {
-    const res = await fetch(viteTestUrl + '/src/')
+    const res = await fetch(getViteTestUrl('/src/'))
     expect(res.headers.get('x-served-by')).toBe('vite')
   })
 })
@@ -398,18 +422,19 @@ describe('cross origin', () => {
 
   describe('allowed for same origin', () => {
     beforeEach(async () => {
-      await page.goto(getViteTestIndexHtmlUrl())
+      await page.goto(getViteTestUrl('/src/'))
     })
 
     test('fetch HTML file', async () => {
-      const status = await fetchStatusFromPage(page, viteTestUrl + '/src/')
+      const status = await fetchStatusFromPage(page, getViteTestUrl('/src/'))
       expect(status).toBe(200)
     })
 
     test.runIf(isServe)('fetch JS file', async () => {
       const status = await fetchStatusFromPage(
         page,
-        viteTestUrl + '/src/code.js',
+        // bundled dev serves the bundle output, not the source file
+        getViteTestUrl(isBundledDev ? '/assets/main.js' : '/src/code.js'),
       )
       expect(status).toBe(200)
     })
@@ -425,7 +450,7 @@ describe('cross origin', () => {
 
     test('fetch with allowed hosts', async () => {
       const viteTestUrlUrl = new URL(viteTestUrl)
-      const res = await fetch(viteTestUrl + '/src/index.html', {
+      const res = await fetch(getViteTestUrl('/src/index.html'), {
         headers: { Host: viteTestUrlUrl.host },
       })
       expect(res.status).toBe(200)
@@ -463,6 +488,14 @@ describe('cross origin', () => {
     let page2: Page
     beforeEach(async () => {
       page2 = await browser.newPage()
+      // Serve the navigation locally so the tests don't depend on reaching the
+      // public `vite.dev` site (flaky from CI runners).
+      await page2.route('http://vite.dev/**', (route) =>
+        route.fulfill({
+          contentType: 'text/html',
+          body: '<!doctype html><title>404</title>',
+        }),
+      )
       await page2.goto('http://vite.dev/404')
     })
     afterEach(async () => {

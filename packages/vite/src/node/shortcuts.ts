@@ -1,10 +1,10 @@
 import readline from 'node:readline'
 import colors from 'picocolors'
+import type { PreviewServer } from './preview'
 import { restartServerWithUrls } from './server'
 import type { ViteDevServer } from './server'
-import { isDevServer } from './utils'
-import type { PreviewServer } from './preview'
 import { openBrowser } from './server/openBrowser'
+import { isDevServer } from './utils'
 
 export type ShortcutsState<Server = ViteDevServer | PreviewServer> = {
   rl: readline.Interface
