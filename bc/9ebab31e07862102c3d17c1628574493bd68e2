@@ -1,0 +1,21 @@
+packages/vite/src/node/__tests__/build.spec.ts
+  s_93af56b0703b4a::t_7063f43ff80777 1319-1391
+packages/vite/src/node/plugins/css.ts
+  s_93af56b0703b4a::t_d109ecb330ef18 1081-1082,1133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "bc9ebab31e07862102c3d17c1628574493bd68e2",
+  "prompts": {},
+  "sessions": {
+    "s_93af56b0703b4a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a133da-89f7-7ad3-8e19-fca4f6235717",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
