@@ -241,6 +241,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           if (urlWithoutPostfix[0] === '.') {
             file = path.resolve(path.dirname(id), urlWithoutPostfix)
             file = slash(tryFsResolve(file, fsResolveOptions) ?? file)
+            config.safeModulePaths.add(file)
           } else {
             workerResolver ??= createBackCompatIdResolver(config, {
               extensions: [],
@@ -248,13 +249,16 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               preferRelative: true,
             })
             file = await workerResolver(this.environment, urlWithoutPostfix, id)
-            file ??=
-              urlWithoutPostfix[0] === '/'
-                ? slash(path.join(config.publicDir, urlWithoutPostfix))
-                : slash(path.resolve(path.dirname(id), urlWithoutPostfix))
+            if (file !== undefined) {
+              config.safeModulePaths.addId(file)
+            } else {
+              file =
+                urlWithoutPostfix[0] === '/'
+                  ? slash(path.join(config.publicDir, urlWithoutPostfix))
+                  : slash(path.resolve(path.dirname(id), urlWithoutPostfix))
+              config.safeModulePaths.add(file)
+            }
           }
-
-          config.safeModulePaths.add(cleanUrl(file))
 
           if (
             isBundled &&
