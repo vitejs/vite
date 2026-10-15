@@ -16,6 +16,7 @@ import {
   processSrcSetSync,
   stripBase,
 } from '../utils'
+import { applyStaticAlias } from './middlewares/static'
 
 export function addHtmlUrlToSafeModulePaths(
   url: string,
@@ -49,10 +50,12 @@ export function addHtmlUrlToSafeModulePaths(
   const decodedFile = decodeURIIfPossible(resolvedUrl.pathname)
   if (decodedFile === undefined) return
 
+  const aliasedFile = applyStaticAlias(decodedFile, config.resolve.alias)
   const filePath = normalizePath(
-    decodedFile.startsWith(FS_PREFIX)
-      ? fsPathFromId(decodedFile)
-      : path.join(config.root, decodedFile),
+    aliasedFile ||
+      (decodedFile.startsWith(FS_PREFIX)
+        ? fsPathFromId(decodedFile)
+        : path.join(config.root, decodedFile)),
   )
   config.safeModulePaths.addId(filePath + postfix)
 }
