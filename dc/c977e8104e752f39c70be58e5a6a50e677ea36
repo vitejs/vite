@@ -1,0 +1,31 @@
+playground/vitestSetup.ts
+  s_32ba0e8d7777c0::t_cb5c067a16c488 82-110,294-296
+playground/optimize-missing-deps/server.js
+  s_9863e80e9758ea::t_c982e7dc13188c 26-29
+playground/js-sourcemap/index.html
+  s_9863e80e9758ea::t_767caa56c2c079 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "dcc977e8104e752f39c70be58e5a6a50e677ea36",
+  "prompts": {},
+  "sessions": {
+    "s_32ba0e8d7777c0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1399c-f646-7f91-b2c8-62586a032cde",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_9863e80e9758ea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a139e0-d53b-7950-974d-0230ac9a3cc0",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
