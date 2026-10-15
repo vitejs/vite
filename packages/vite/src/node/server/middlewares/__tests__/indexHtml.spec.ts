@@ -275,6 +275,37 @@ describe('indexHtml middleware — safe module paths', () => {
     })
   }
 
+  test('registers aliased stylesheets at the path used for transformation', async () => {
+    const server = await createTestServer(undefined, [
+      {
+        name: 'alias-html-stylesheets',
+        config() {
+          return {
+            resolve: {
+              alias: {
+                '/@': path.join(FIXTURE_DIR, 'root'),
+              },
+            },
+          }
+        },
+      },
+    ])
+    server.config.server.fs.allow = []
+
+    await server.transformIndexHtml(
+      '/index.html',
+      '<link rel="stylesheet" href="/@/style.css?direct">',
+    )
+
+    const filePath = path.join(FIXTURE_DIR, 'root/style.css')
+    expect(server.config.safeModulePaths).toContain(filePath)
+    expect(server.config.safeModulePaths).toContain(filePath + '?direct')
+    const result = await server.environments.client.transformRequest(
+      '/@/style.css?direct',
+    )
+    expect(result?.code).toContain('color: red')
+  })
+
   test('uses HTML paths for source and injected URLs with a custom module resolver', async () => {
     const server = await createTestServer(undefined, [
       {
