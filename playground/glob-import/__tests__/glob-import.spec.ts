@@ -3,10 +3,10 @@ import path from 'node:path'
 import { expect, test } from 'vitest'
 import {
   addFile,
+  bundledDevTodo,
   editFile,
   findAssetFile,
   isBuild,
-  isBundledDev,
   page,
   removeFile,
 } from '~utils'
@@ -132,8 +132,13 @@ test('import glob in package', async () => {
   )
 })
 
+const globFileAddRemoveTodo = bundledDevTodo(
+  '`import.meta.glob` does not see a file that is created or deleted after the server starts: Rolldown supports the `hotUpdate` hook only for Rust plugins, and the hook stays off (`experimental.devMode.hotUpdate`) until its JS-side adapter lands',
+  { vite: [22956], rolldown: [10065] },
+)
+
 if (!isBuild) {
-  test.skipIf(isBundledDev)('hmr for adding/removing files', async () => {
+  test('hmr for adding/removing files', globFileAddRemoveTodo, async () => {
     const resultElement = page.locator('.result')
 
     addFile('root/dir/a.js', '')
@@ -198,8 +203,9 @@ if (!isBuild) {
     expect(response.status()).toBe(-1)
   })
 
-  test.skipIf(isBundledDev)(
+  test(
     'hmr for adding/removing files in package',
+    globFileAddRemoveTodo,
     async () => {
       const resultElement = page.locator('.in-package')
 
@@ -215,8 +221,9 @@ if (!isBuild) {
     },
   )
 
-  test.skipIf(isBundledDev)(
+  test(
     'hmr for adding/removing files with array patterns and exclusions',
+    globFileAddRemoveTodo,
     async () => {
       const resultElement = page.locator('.array-result')
       await expect
