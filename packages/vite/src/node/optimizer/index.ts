@@ -418,7 +418,9 @@ export async function loadCachedDepOptimizationMetadata(
     } catch {}
     // hash is consistent, no need to re-bundle
     if (cachedMetadata) {
-      if (cachedMetadata.lockfileHash !== getLockfileHash(environment)) {
+      if (
+        cachedMetadata.lockfileHash !== getLockfileHash(environment.config.root)
+      ) {
         environment.logger.info(
           'Re-optimizing dependencies because lockfile has changed',
           {
@@ -1265,7 +1267,8 @@ const lockfileFormats = [
   },
   {
     path: 'nub.lock',
-    checkPatchesDir: 'patches',
+    // Included in lockfile (`patchedDependencies` has patch hashes)
+    checkPatchesDir: false,
     manager: 'nub',
   },
 
@@ -1298,6 +1301,18 @@ const lockfileFormats = [
   return process.env.npm_config_user_agent?.startsWith(manager) ? 1 : -1
 })
 const lockfilePaths = lockfileFormats.map((l) => l.path)
+
+// Only used when none of the formats above is found, so it never changes which
+// lockfile is hashed for projects that already have one of them.
+// e.g. Yarn with `nodeLinker: pnpm` writes neither `.yarn-state.yml` nor `.pnp.cjs`.
+const fallbackLockfileFormats = [
+  {
+    path: 'yarn.lock',
+    checkPatchesDir: '.yarn/patches',
+    manager: 'yarn',
+  },
+]
+const fallbackLockfilePaths = fallbackLockfileFormats.map((l) => l.path)
 
 function getConfigHash(environment: Environment): string {
   // Take config into account
@@ -1344,14 +1359,16 @@ function getConfigHash(environment: Environment): string {
   return getHash(content)
 }
 
-function getLockfileHash(environment: Environment): string {
-  const lockfilePath = lookupFile(environment.config.root, lockfilePaths)
+export function getLockfileHash(root: string): string {
+  const lockfilePath =
+    lookupFile(root, lockfilePaths) ?? lookupFile(root, fallbackLockfilePaths)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
     const normalizedLockfilePath = lockfilePath.replaceAll('\\', '/')
-    const lockfileFormat = lockfileFormats.find((f) =>
-      normalizedLockfilePath.endsWith(f.path),
-    )!
+    const lockfileFormat = [
+      ...lockfileFormats,
+      ...fallbackLockfileFormats,
+    ].find((f) => normalizedLockfilePath.endsWith(f.path))!
     if (lockfileFormat.checkPatchesDir) {
       // Default of https://github.com/ds300/patch-package
       const baseDir = lockfilePath.slice(0, -lockfileFormat.path.length)
@@ -1373,7 +1390,7 @@ function getDepHash(environment: Environment): {
   configHash: string
   hash: string
 } {
-  const lockfileHash = getLockfileHash(environment)
+  const lockfileHash = getLockfileHash(environment.config.root)
   const configHash = getConfigHash(environment)
   const hash = getHash(lockfileHash + configHash)
   return {

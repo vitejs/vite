@@ -61,6 +61,7 @@ export default defineConfig({
   plugins: [
     testVue(),
     notjs(),
+    svelteDeepImport(),
     virtualModulePlugin(),
     injectImportIntoOptimizedDep(),
     {
@@ -98,6 +99,44 @@ export default defineComponent({
       // fallback to empty module for other vue files
       if (!id.startsWith('\0') && id.endsWith('.vue')) {
         return { code: `export default {}` }
+      }
+    },
+  }
+}
+
+function svelteDeepImport() {
+  const transformSvelte = (code) =>
+    code.match(/<script>([\s\S]*)<\/script>/)?.[1]
+
+  return {
+    name: 'svelte-deep-import',
+    config() {
+      return {
+        optimizeDeps: {
+          extensions: ['.svelte'],
+          rolldownOptions: {
+            plugins: [
+              {
+                name: 'svelte-deep-import-optimizer',
+                transform: {
+                  filter: { id: /\.svelte$/ },
+                  handler(code) {
+                    const transformed = transformSvelte(code)
+                    if (transformed) {
+                      return { code: transformed, moduleType: 'js' }
+                    }
+                  },
+                },
+              },
+            ],
+          },
+        },
+      }
+    },
+    transform(code, id) {
+      if (id.endsWith('.svelte')) {
+        const transformed = transformSvelte(code)
+        if (transformed) return { code: transformed }
       }
     },
   }

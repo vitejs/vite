@@ -1,17 +1,21 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { exactRegex } from 'rolldown/filter'
 import { cleanUrl } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
 import {
   BUNDLED_DEV_CLIENT_ENTRY,
+  BUNDLED_DEV_CLIENT_FILENAME,
   BUNDLED_DEV_ROLLDOWN_RUNTIME_DIR,
   CLIENT_ENTRY,
+  CLIENT_PUBLIC_PATH,
   ENV_ENTRY,
+  ENV_PUBLIC_PATH,
 } from '../constants'
 import { perEnvironmentState } from '../environment'
 import type { Plugin } from '../plugin'
-import { isObject, normalizePath, resolveHostname } from '../utils'
+import { escapeRegex, isObject, normalizePath, resolveHostname } from '../utils'
 import { replaceDefine, serializeDefine } from './define'
 
 // ids in transform are normalized to unix style
@@ -122,6 +126,9 @@ async function createClientConfigValueReplacer(
   const hmrTimeoutReplacement = escapeReplacement(timeout)
   const hmrEnableOverlayReplacement = escapeReplacement(overlay)
   const hmrConfigNameReplacement = escapeReplacement(hmrConfigName)
+  const hmrPartialAcceptReplacement = escapeReplacement(
+    config.experimental.hmrPartialAccept,
+  )
   const wsTokenReplacement = escapeReplacement(config.webSocketToken)
   const serverForwardConsoleReplacement = escapeReplacement(
     config.server.forwardConsole as any,
@@ -140,6 +147,7 @@ async function createClientConfigValueReplacer(
       .replace(`__HMR_TIMEOUT__`, hmrTimeoutReplacement)
       .replace(`__HMR_ENABLE_OVERLAY__`, hmrEnableOverlayReplacement)
       .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
+      .replace(`__HMR_PARTIAL_ACCEPT__`, hmrPartialAcceptReplacement)
       .replace(`__WS_TOKEN__`, wsTokenReplacement)
       .replace(`__SERVER_FORWARD_CONSOLE__`, serverForwardConsoleReplacement)
 }
@@ -195,4 +203,52 @@ export function getRolldownDevRuntimeFiles(): Map<string, string> {
     throw new Error(`rolldown dev runtime entry ${entry} was not found`)
   }
   return files
+}
+
+export function getBundledDevClientAliases(
+  config: ResolvedConfig,
+): Map<string, string> {
+  const clientUrl = path.posix.join(config.base, BUNDLED_DEV_CLIENT_FILENAME)
+  return new Map([
+    [CLIENT_PUBLIC_PATH.slice(1), `export * from ${JSON.stringify(clientUrl)}`],
+    // defines are replaced at build time in bundled dev
+    [ENV_PUBLIC_PATH.slice(1), ''],
+  ])
+}
+
+export function bundledDevClientImportsPlugin(config: ResolvedConfig): Plugin {
+  const clientUrl = path.posix.join(config.base, BUNDLED_DEV_CLIENT_FILENAME)
+  return {
+    name: 'vite:bundled-dev-client-imports',
+    applyToEnvironment(environment) {
+      return (
+        config.command === 'serve' &&
+        environment.config.isBundled &&
+        environment.config.consumer === 'client'
+      )
+    },
+    resolveId: {
+      filter: {
+        id: [
+          exactRegex(clientUrl),
+          exactRegex(path.posix.join(config.base, CLIENT_PUBLIC_PATH)),
+        ],
+      },
+      handler() {
+        return { id: clientUrl, external: true }
+      },
+    },
+    load: {
+      filter: {
+        id: new RegExp(
+          `^(?:${escapeRegex(normalizedClientEntry)}|${escapeRegex(normalizedEnvEntry)})(?:\\?.*)?$`,
+        ),
+      },
+      handler(id) {
+        return cleanUrl(id) === normalizedClientEntry
+          ? `export * from ${JSON.stringify(clientUrl)}`
+          : ''
+      },
+    },
+  }
 }

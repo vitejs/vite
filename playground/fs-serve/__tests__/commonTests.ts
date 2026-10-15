@@ -15,6 +15,7 @@ import {
 import WebSocket from 'ws'
 import {
   browser,
+  bundledDevUnsupported,
   isBundledDev,
   isServe,
   page,
@@ -59,9 +60,11 @@ describe.runIf(isServe)('normal', () => {
   })
 })
 
-// bundled dev serves only the bundle output and the public directory, never a
-// single project file, so the fs allow/deny matrix does not apply to it.
-describe.runIf(isServe && !isBundledDev)('matrix', () => {
+const projectFileServingUnsupported = bundledDevUnsupported(
+  'bundled dev serves only the bundle output and the public directory, never a single project file',
+)
+
+describe.runIf(isServe)('matrix', projectFileServingUnsupported, () => {
   const dotEnvWindows83ShortName = getWindows83ShortNameForDotEnv()
 
   const variants = [
@@ -218,6 +221,13 @@ describe.runIf(isServe && !isBundledDev)('matrix', () => {
       content: /403 Restricted/,
       status: '403',
     },
+    {
+      name: 'unsafe fetch with vite wasm instance query',
+      testId: 'unsafe-vite-wasm-instance',
+      content: /403 Restricted/,
+      status: '403',
+      disableVariants: [''],
+    },
     // It is 404 in `fs-serve/base` test, 403 in `fs-serve` test
     {
       name: 'unsafe fetch with relative path after query',
@@ -269,6 +279,12 @@ describe.runIf(isServe && !isBundledDev)('matrix', () => {
       content: /403 Restricted/,
       status: '403',
     },
+    {
+      name: 'denied .env with vite wasm instance query',
+      testId: 'unsafe-dotenv-vite-wasm-instance',
+      content: /403 Restricted/,
+      status: '403',
+    },
     // On NTFS, it exposes a file's default data stream through the `::$DATA` suffix,
     // so `.env::$DATA` resolves to the same content as `.env`.
     // It is 404 on non-NTFS.
@@ -303,10 +319,9 @@ describe.runIf(isServe && !isBundledDev)('matrix', () => {
         continue
       }
 
-      test.concurrent(
-        `${name} (${variantName})`,
-        { skip },
-        async ({ expect }) => {
+      test
+        .skipIf(skip)
+        .concurrent(`${name} (${variantName})`, async ({ expect }) => {
           const baseSelector = `.fetch${variantId}-${testId}`
           const actualStatus = expect.poll(() =>
             page.textContent(`${baseSelector}-status`),
@@ -334,8 +349,7 @@ describe.runIf(isServe && !isBundledDev)('matrix', () => {
           } else {
             await actualContent.toMatch(content)
           }
-        },
-      )
+        })
     }
   }
 })

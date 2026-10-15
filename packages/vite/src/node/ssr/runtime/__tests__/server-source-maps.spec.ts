@@ -139,6 +139,17 @@ describe('module runner initialization', async () => {
     ])
   })
 
+  it('prints the file name of a frame without a source map', async () => {
+    // when a script's sourceURL differs from its file name, the file name is what gets printed
+    const error = await getError(() =>
+      runInThisContext(
+        '(function inVm() { throw new Error("vm") })()\n//# sourceURL=renamed.js',
+        { filename: 'original.js', displayErrors: false },
+      ),
+    )
+    expect(error.stack!.split('\n')[1]).toBe('    at inVm (original.js:1:26)')
+  })
+
   it('call site of an imported binding matches Node column', async ({
     runner,
     server,
