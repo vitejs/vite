@@ -1,0 +1,31 @@
+packages/vite/src/node/server/__tests__/moduleUrl.spec.ts
+  s_dc4db4a597e998::t_a0cd37102dc114 26,37-49
+packages/vite/src/node/server/__tests__/transformRequest.spec.ts
+  s_dc4db4a597e998::t_c6d994accf8bc0 38-49,51-59,61-68,70-71,74-128
+packages/vite/src/node/server/middlewares/transform.ts
+  s_dc4db4a597e998::t_737f415b989fc6 254-255
+packages/vite/src/node/server/environment.ts
+  s_dc4db4a597e998::t_3c0c74ef20ed15 37,94
+packages/vite/src/node/server/moduleUrl.ts
+  s_dc4db4a597e998::t_cb58889d887675 21-23,37-39
+packages/vite/src/node/server/resolveRequest.ts
+  s_dc4db4a597e998::t_a60cd01c121183 6-10,19
+packages/vite/src/node/server/transformRequest.ts
+  s_dc4db4a597e998::t_484021b41af6fc 33,113-116,133-136,150,163
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "58b2ae0fe634fb41ed22b6657577de8988fa59a0",
+  "prompts": {},
+  "sessions": {
+    "s_dc4db4a597e998": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a14061-a227-7410-80b4-71e724c4b749",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
