@@ -1,0 +1,25 @@
+packages/vite/package.json
+  s_a3775725b0e13c::t_0d912db7e50fd6 66
+packages/vite/src/node/logger.ts
+  s_a3775725b0e13c::t_fe24e52809be8f 1
+packages/vite/src/types/chokidar.d.ts
+  s_a3775725b0e13c::t_e6615a3a31b988 8
+packages/vite/src/types/connect.d.ts
+  s_a3775725b0e13c::t_5faefc47d6a728 11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "285c06092511866bb634fe1305651c094906ea4d",
+  "prompts": {},
+  "sessions": {
+    "s_a3775725b0e13c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a134d1-3386-77d0-82ea-78874ae9e6e1",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

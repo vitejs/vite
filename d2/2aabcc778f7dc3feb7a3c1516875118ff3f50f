@@ -1,0 +1,55 @@
+packages/vite/src/node/server/middlewares/__tests__/fixtures/root/classic.js
+  s_9863e80e9758ea::t_d7f970669dcabe 1
+playground/base/vite.config.ts
+  s_c4d8860865de84::t_443359946b689d 1,4-11,15
+packages/vite/src/node/plugins/html.ts
+  s_9863e80e9758ea::t_ab656aa3f988a3 31,1499,1522-1524,1547-1548
+packages/vite/src/node/server/middlewares/__tests__/indexHtml.spec.ts
+  s_9863e80e9758ea::t_25ee0a31be9eb2 5,15,22,181-234
+packages/vite/src/node/server/middlewares/__tests__/fixtures/root/dynamic.js
+  s_9863e80e9758ea::t_8a87a40e5ad24c 1
+packages/vite/src/node/server/middlewares/__tests__/fixtures/root/style.css
+  s_9863e80e9758ea::t_0bf63f619ecc40 1-3
+packages/vite/src/node/server/htmlSafeModulePaths.ts
+  s_9863e80e9758ea::t_2e5804cb4ce636 1-96
+playground/html/vite.config.js
+  s_9863e80e9758ea::t_39a540ba0a8900 45-55,284
+playground/resolve/index.html
+  s_9863e80e9758ea::t_ed9ebb9dc282ae 192-193
+packages/vite/src/node/server/middlewares/indexHtml.ts
+  s_9863e80e9758ea::t_516a3a069c709c 48,144-145,197,203,260-270,328,352,395,418
+playground/resolve/vite.config-mainfields-custom-first.js
+  s_9863e80e9758ea::t_6d63a50934d4f7 1-7
+playground/vitestSetup.ts
+  s_9863e80e9758ea::t_d44c342a978387 265
+playground/hmr/vite.config.ts
+  s_9863e80e9758ea::t_704cf8f897a30c 24-26
+playground/resolve/vite.config.js
+  s_9863e80e9758ea::t_23fbca90253de2 41
+playground/hmr/__tests__/hmr.spec.ts
+  s_9863e80e9758ea::t_21c3295b7d5644 1322
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "d22aabcc778f7dc3feb7a3c1516875118ff3f50f",
+  "prompts": {},
+  "sessions": {
+    "s_9863e80e9758ea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a139e0-d53b-7950-974d-0230ac9a3cc0",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_c4d8860865de84": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a139ef-2810-7670-872f-cf2947e87cbd",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
