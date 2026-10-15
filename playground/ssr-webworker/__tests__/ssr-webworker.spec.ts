@@ -1,5 +1,8 @@
+import nodePath from 'node:path'
+import type { RolldownOutput } from 'rolldown'
+import { build } from 'vite'
 import { expect, test } from 'vitest'
-import { findAssetFile, isBuild, page } from '~utils'
+import { findAssetFile, isBuild, page, rootDir } from '~utils'
 import { port, serverLogs } from './serve'
 
 const url = `http://localhost:${port}`
@@ -49,6 +52,31 @@ test.runIf(isBuild)('build output does not contain createRequire', async () => {
   expect(workerContent).toBeDefined()
   expect(workerContent).not.toContain('createRequire')
 })
+
+test.runIf(isBuild)(
+  'converts a CommonJS require for an installed Node builtin package to an import',
+  async () => {
+    const output = (await build({
+      configFile: false,
+      root: nodePath.join(rootDir, 'cjs-node-builtin'),
+      logLevel: 'silent',
+      ssr: {
+        target: 'webworker',
+        external: ['util'],
+      },
+      build: {
+        ssr: 'installed-node-builtin.cjs',
+        write: false,
+      },
+    })) as RolldownOutput
+    const entry = output.output.find(
+      (file) => file.type === 'chunk' && file.isEntry,
+    )
+
+    expect(entry?.code).toContain('from "util"')
+    expect(entry?.code).not.toContain('__require("util")')
+  },
+)
 
 test.runIf(isBuild)('codeSplitting: false', () => {
   const dynamicJsContent = findAssetFile(/dynamic-[-\w]+\.js/, 'worker')
