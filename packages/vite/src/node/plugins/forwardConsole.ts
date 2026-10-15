@@ -9,7 +9,7 @@ import { normalizePath } from '..'
 import { cleanUrl } from '../../shared/utils'
 import type { MemoryFiles } from '../server/bundledDev'
 import { extractSourcemapFromFile } from '../server/sourcemap'
-import { generateCodeFrame, isInNodeModules } from '../utils'
+import { generateCodeFrame } from '../utils'
 
 export function forwardConsolePlugin(pluginOpts: {
   environments: string[]
@@ -22,12 +22,18 @@ export function forwardConsolePlugin(pluginOpts: {
     configureServer(server) {
       for (const name of pluginOpts.environments) {
         const environment = server.environments[name]
+        const bundledDevOutDir = getBundledDevOutDir(environment)
         environment.hot.on('vite:forward-console', (payload) => {
           if (
             payload.type === 'error' ||
             payload.type === 'unhandled-rejection'
           ) {
-            const output = formatError(payload, environment, sourceMapCache)
+            const output = formatError(
+              payload,
+              environment,
+              sourceMapCache,
+              bundledDevOutDir,
+            )
             environment.config.logger.error(output, {
               timestamp: true,
             })
@@ -61,13 +67,21 @@ function formatError(
   >,
   environment: DevEnvironment,
   sourceMapCache: Map<string, any>,
+  bundledDevOutDir: string,
 ) {
   const error = payload.data
   const memoryFiles = environment.bundledDev?.memoryFiles
   const stacks = parseErrorStacktrace(error, {
     getUrlId(id) {
       if (memoryFiles) {
-        return getBundledDevChunkPath(environment, memoryFiles, id) ?? id
+        return (
+          getBundledDevChunkPath(
+            environment,
+            memoryFiles,
+            bundledDevOutDir,
+            id,
+          ) ?? id
+        )
       }
       const moduleGraph = environment.moduleGraph
       const mod = moduleGraph.getModuleById(id)
@@ -91,7 +105,7 @@ function formatError(
     },
     getSourceMap(id) {
       if (memoryFiles) {
-        return getBundledDevSourceMap(environment, memoryFiles, id)
+        return getBundledDevSourceMap(memoryFiles, bundledDevOutDir, id)
       }
       if (sourceMapCache.has(id)) {
         return sourceMapCache.get(id)
@@ -125,7 +139,12 @@ function formatError(
 
   const nearest = stacks.find((stack) => {
     if (memoryFiles) {
-      return !isInNodeModules(stack.file) && fs.existsSync(stack.file)
+      return (
+        !environment.config.dev.sourcemapIgnoreList(
+          stack.file,
+          `${stack.file}.map`,
+        ) && fs.existsSync(stack.file)
+      )
     }
     const modules = environment.moduleGraph.getModulesByFile(stack.file)
     return (
@@ -168,6 +187,7 @@ function getBundledDevOutDir(environment: DevEnvironment): string {
 function getBundledDevChunkPath(
   environment: DevEnvironment,
   memoryFiles: MemoryFiles,
+  outDir: string,
   url: string,
 ): string | undefined {
   const { decodedBase } = environment.config
@@ -175,16 +195,15 @@ function getBundledDevChunkPath(
   if (!url.startsWith(decodedBase)) return
   const fileName = url.slice(decodedBase.length)
   if (memoryFiles.has(fileName)) {
-    return `${getBundledDevOutDir(environment)}/${fileName}`
+    return `${outDir}/${fileName}`
   }
 }
 
 function getBundledDevSourceMap(
-  environment: DevEnvironment,
   memoryFiles: MemoryFiles,
+  outDir: string,
   chunkPath: string,
 ) {
-  const outDir = getBundledDevOutDir(environment)
   if (!chunkPath.startsWith(`${outDir}/`)) return null
   const chunkFileName = chunkPath.slice(outDir.length + 1)
   const readFile = (fileName: string) => {
