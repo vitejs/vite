@@ -28,7 +28,6 @@ import type { Logger } from '../logger'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from '../plugin'
 import { checkPublicFile } from '../publicDir'
 import type { ViteDevServer } from '../server'
-import { addHtmlTagDescriptorToSafeModulePaths } from '../server/htmlSafeModulePaths'
 import {
   decodeURIIfPossible,
   encodeURIPath,
@@ -1518,7 +1517,6 @@ export async function applyHtmlTransforms(
       let bodyPrependTags: HtmlTagDescriptor[] | undefined
 
       for (const tag of tags) {
-        addHtmlTagDescriptorToSafeModulePaths(tag, ctx)
         switch (tag.injectTo) {
           case 'body':
             ;(bodyTags ??= []).push(tag)

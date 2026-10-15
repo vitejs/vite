@@ -1,9 +1,14 @@
 import path from 'node:path'
+import type { DefaultTreeAdapterMap } from 'parse5'
 import { splitFileAndPostfix } from '../../shared/utils'
+import { getNodeAssetAttributes } from '../assetSource'
 import { FS_PREFIX } from '../constants'
-import type {
-  HtmlTagDescriptor,
-  IndexHtmlTransformContext,
+import {
+  type IndexHtmlTransformContext,
+  extractImportExpressionFromClassicScript,
+  getScriptInfo,
+  nodeIsElement,
+  traverseHtml,
 } from '../plugins/html'
 import { checkPublicFile } from '../publicDir'
 import {
@@ -14,6 +19,7 @@ import {
   isInternalRequest,
   normalizePath,
   processSrcSetSync,
+  safeRealpathSync,
   stripBase,
 } from '../utils'
 import { applyStaticAlias } from './middlewares/static'
@@ -26,14 +32,14 @@ export function addHtmlUrlToSafeModulePaths(
   if (!server) return
 
   const { config } = server
-  url = stripBase(url, config.base)
-  url = stripBase(url, config.decodedBase)
+  const withoutBase = stripBase(url, config.base)
+  url = withoutBase === url ? stripBase(url, config.decodedBase) : withoutBase
+  url = url.split('#', 1)[0]
   if (
     !url ||
-    url[0] === '#' ||
     isExternalUrl(url) ||
     isDataUrl(url) ||
-    isInternalRequest(url) ||
+    (isInternalRequest(url) && !url.startsWith(FS_PREFIX)) ||
     checkPublicFile(url, config)
   ) {
     return
@@ -58,9 +64,18 @@ export function addHtmlUrlToSafeModulePaths(
         : path.join(config.root, decodedFile)),
   )
   config.safeModulePaths.addId(filePath + postfix)
+  if (!config.resolve.preserveSymlinks) {
+    try {
+      config.safeModulePaths.addId(
+        normalizePath(safeRealpathSync(filePath)) + postfix,
+      )
+    } catch {
+      // Files referenced by HTML may not exist yet.
+    }
+  }
 }
 
-export function addHtmlSrcSetToSafeModulePaths(
+function addHtmlSrcSetToSafeModulePaths(
   srcset: string,
   ctx: IndexHtmlTransformContext,
 ): void {
@@ -70,25 +85,45 @@ export function addHtmlSrcSetToSafeModulePaths(
   })
 }
 
-export function addHtmlTagDescriptorToSafeModulePaths(
-  tag: HtmlTagDescriptor,
+export async function addHtmlToSafeModulePaths(
+  html: string,
   ctx: IndexHtmlTransformContext,
-): void {
-  if (tag.attrs) {
-    if (tag.tag === 'script' && typeof tag.attrs.src === 'string') {
-      addHtmlUrlToSafeModulePaths(tag.attrs.src, ctx)
-    } else if (tag.tag === 'link') {
-      if (typeof tag.attrs.href === 'string') {
-        addHtmlUrlToSafeModulePaths(tag.attrs.href, ctx)
+): Promise<void> {
+  await traverseHtml(
+    html,
+    ctx.filename,
+    () => {},
+    (node) => {
+      if (!nodeIsElement(node)) return
+
+      if (node.nodeName === 'script') {
+        const { src, isModule, isIgnored } = getScriptInfo(node)
+        if (!isIgnored) {
+          if (src) {
+            addHtmlUrlToSafeModulePaths(src.value, ctx)
+          } else if (!isModule && node.childNodes.length) {
+            const scriptNode = node.childNodes.at(
+              -1,
+            ) as DefaultTreeAdapterMap['textNode']
+            for (const { url } of extractImportExpressionFromClassicScript(
+              scriptNode,
+            )) {
+              addHtmlUrlToSafeModulePaths(url, ctx)
+            }
+          }
+        }
       }
-      if (typeof tag.attrs.imagesrcset === 'string') {
-        addHtmlSrcSetToSafeModulePaths(tag.attrs.imagesrcset, ctx)
+
+      for (const attr of getNodeAssetAttributes(
+        node,
+        ctx.server!.config.html?.additionalAssetSources,
+      )) {
+        if (attr.type === 'srcset') {
+          addHtmlSrcSetToSafeModulePaths(attr.value, ctx)
+        } else if (attr.type === 'src') {
+          addHtmlUrlToSafeModulePaths(attr.value, ctx)
+        }
       }
-    }
-  }
-  if (Array.isArray(tag.children)) {
-    for (const child of tag.children) {
-      addHtmlTagDescriptorToSafeModulePaths(child, ctx)
-    }
-  }
+    },
+  )
 }
