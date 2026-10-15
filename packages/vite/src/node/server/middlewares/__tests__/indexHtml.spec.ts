@@ -5,6 +5,7 @@ import { splitFileAndPostfix } from '../../../../shared/utils'
 import { FS_PREFIX } from '../../../constants'
 import type { Plugin } from '../../../plugin'
 import { createServer } from '../../../server'
+import { normalizePath } from '../../../utils'
 import { browserUrlToModuleUrl } from '../../moduleUrl'
 
 const FIXTURE_DIR = path.resolve(import.meta.dirname, 'fixtures')
@@ -231,7 +232,7 @@ describe('indexHtml middleware — safe module paths', () => {
       )
 
       const { file: filename, postfix } = splitFileAndPostfix(file)
-      const filePath = path.join(FIXTURE_DIR, 'root', filename)
+      const filePath = normalizePath(path.join(FIXTURE_DIR, 'root', filename))
       expect(server.config.safeModulePaths).toContain(filePath)
       expect(server.config.safeModulePaths).toContain(filePath + postfix)
     })
@@ -247,13 +248,15 @@ describe('indexHtml middleware — safe module paths', () => {
     )
 
     expect(server.config.safeModulePaths).toContain(
-      path.join(FIXTURE_DIR, 'classic.js?raw'),
+      normalizePath(path.join(FIXTURE_DIR, 'classic.js?raw')),
     )
   })
 
   test('resolves parent URLs at the URL root', async () => {
     const server = await createTestServer()
-    server.config.server.fs.allow = [path.join(FIXTURE_DIR, 'root')]
+    server.config.server.fs.allow = [
+      normalizePath(path.join(FIXTURE_DIR, 'root')),
+    ]
 
     await server.transformIndexHtml(
       '/index.html',
@@ -261,9 +264,11 @@ describe('indexHtml middleware — safe module paths', () => {
     )
 
     expect(server.config.safeModulePaths).toContain(
-      path.join(FIXTURE_DIR, 'root/outside.html'),
+      normalizePath(path.join(FIXTURE_DIR, 'root/outside.html')),
     )
-    expect(server.config.safeModulePaths).not.toContain(OUTSIDE_HTML_PATH)
+    expect(server.config.safeModulePaths).not.toContain(
+      normalizePath(OUTSIDE_HTML_PATH),
+    )
   })
 
   for (const url of ['/ui/classic.js?raw', './classic.js?raw']) {
@@ -275,7 +280,7 @@ describe('indexHtml middleware — safe module paths', () => {
         `<script src="${url}"></script>`,
       )
 
-      const filePath = path.join(FIXTURE_DIR, 'root/classic.js')
+      const filePath = normalizePath(path.join(FIXTURE_DIR, 'root/classic.js'))
       expect(server.config.safeModulePaths).toContain(filePath)
       expect(server.config.safeModulePaths).toContain(filePath + '?raw')
     })
@@ -303,7 +308,7 @@ describe('indexHtml middleware — safe module paths', () => {
       '<link rel="stylesheet" href="/@/style.css?direct">',
     )
 
-    const filePath = path.join(FIXTURE_DIR, 'root/style.css')
+    const filePath = normalizePath(path.join(FIXTURE_DIR, 'root/style.css'))
     expect(server.config.safeModulePaths).toContain(filePath)
     expect(server.config.safeModulePaths).toContain(filePath + '?direct')
     const result = await server.environments.client.transformRequest(
@@ -335,10 +340,12 @@ describe('indexHtml middleware — safe module paths', () => {
 
     for (const file of ['classic.js?raw', 'dynamic.js?url']) {
       expect(server.config.safeModulePaths).toContain(
-        path.join(FIXTURE_DIR, 'root', file),
+        normalizePath(path.join(FIXTURE_DIR, 'root', file)),
       )
     }
-    expect(server.config.safeModulePaths).not.toContain(OUTSIDE_HTML_PATH)
+    expect(server.config.safeModulePaths).not.toContain(
+      normalizePath(OUTSIDE_HTML_PATH),
+    )
   })
 
   test('registers URLs while scanning source HTML tags', async () => {
@@ -356,7 +363,7 @@ describe('indexHtml middleware — safe module paths', () => {
       ['classic.js', '?raw'],
       ['dynamic.js', '?url'],
     ]) {
-      const filePath = path.resolve(FIXTURE_DIR, 'root', file)
+      const filePath = normalizePath(path.resolve(FIXTURE_DIR, 'root', file))
       expect(server.config.safeModulePaths).toContain(filePath)
       expect(server.config.safeModulePaths).toContain(filePath + query)
     }
@@ -387,7 +394,7 @@ describe('indexHtml middleware — safe module paths', () => {
       ['style.css', '?direct'],
       ['classic.js', '?raw'],
     ]) {
-      const filePath = path.resolve(FIXTURE_DIR, 'root', file)
+      const filePath = normalizePath(path.resolve(FIXTURE_DIR, 'root', file))
       expect(server.config.safeModulePaths).toContain(filePath)
       expect(server.config.safeModulePaths).toContain(filePath + query)
     }
