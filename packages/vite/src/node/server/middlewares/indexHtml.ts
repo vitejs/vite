@@ -45,7 +45,10 @@ import {
   stripBase,
   tryStatSync,
 } from '../../utils'
-import { addHtmlUrlToSafeModulePaths } from '../htmlSafeModulePaths'
+import {
+  addHtmlToSafeModulePaths,
+  addHtmlUrlToSafeModulePaths,
+} from '../htmlSafeModulePaths'
 import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
@@ -92,18 +95,21 @@ export function createDevHtmlTransformFn(
     { ...basePluginContextMeta, watchMode: true },
     config.logger,
   )
-  return (
+  return async (
     server: ViteDevServer,
     url: string,
     html: string,
     originalUrl?: string,
   ): Promise<string> => {
-    return applyHtmlTransforms(html, transformHooks, pluginContext, {
+    const ctx = {
       path: url,
       filename: getHtmlFilename(url, server),
       server,
       originalUrl,
-    })
+    }
+    html = await applyHtmlTransforms(html, transformHooks, pluginContext, ctx)
+    await addHtmlToSafeModulePaths(html, ctx)
+    return html
   }
 }
 

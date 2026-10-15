@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { splitFileAndPostfix } from '../../../../shared/utils'
@@ -203,6 +204,7 @@ describe('indexHtml middleware — safe module paths', () => {
   const cases: [htmlPath: string, url: string, file: string, base?: string][] =
     [
       ['/index.html', './classic.js?raw', 'classic.js?raw'],
+      ['/index.html', '/classic.js?raw#part', 'classic.js?raw'],
       ['/index.html', '../classic.js?raw', 'classic.js?raw'],
       ['/nested/index.html', './classic.js?raw', 'nested/classic.js?raw'],
       ['/nested/index.html', 'classic.js?raw', 'nested/classic.js?raw'],
@@ -221,8 +223,15 @@ describe('indexHtml middleware — safe module paths', () => {
         './classic.js?raw',
         '../classic.js?raw',
       ],
-      ['/index.html', '/ui/classic.js?raw', 'classic.js?raw', '/ui/'],
+      [
+        '/index.html',
+        `${path.posix.join(FS_PREFIX, normalizePath(OUTSIDE_HTML_PATH))}?raw`,
+        '../outside.html?raw',
+      ],
+      ['/index.html', '/classic.js?raw', 'classic.js?raw', '/ui/'],
+      ['/index.html', '/ui/classic.js?raw', 'ui/classic.js?raw', '/ui/'],
       ['/index.html', './classic.js?raw', 'classic.js?raw', '/ui/'],
+      ['/index.html', '/src/main.ts', 'src/main.ts', '/src/'],
     ]
   for (const [htmlPath, url, file, base] of cases) {
     test(`resolves ${htmlPath} with ${url} as an HTML path${base ? ` with base ${base}` : ''}`, async () => {
@@ -256,6 +265,33 @@ describe('indexHtml middleware — safe module paths', () => {
     )
     expect(server.config.safeModulePaths).not.toContain(
       normalizePath(OUTSIDE_HTML_PATH),
+    )
+  })
+
+  test('registers the real path of a symlinked entry', async () => {
+    const dir = fs.realpathSync(
+      fs.mkdtempSync(path.join(os.tmpdir(), 'vite-html-')),
+    )
+    const root = path.join(dir, 'root')
+    const target = path.join(dir, 'target')
+    fs.mkdirSync(root)
+    fs.mkdirSync(target)
+    fs.writeFileSync(path.join(target, 'entry.js'), 'export const answer = 42')
+    fs.symlinkSync(target, path.join(root, 'linked'), 'junction')
+    const server = await createTestServer(root)
+    onTestFinished(async () => {
+      await server.close()
+      fs.rmSync(dir, { recursive: true, force: true })
+    })
+    server.config.server.preTransformRequests = false
+
+    await server.transformIndexHtml(
+      '/index.html',
+      '<script type="module" src="/linked/entry.js"></script>',
+    )
+
+    expect(server.config.safeModulePaths).toContain(
+      normalizePath(path.join(target, 'entry.js')),
     )
   })
 
@@ -322,7 +358,14 @@ describe('indexHtml middleware — safe module paths', () => {
   })
 
   describe('HTML tag registration', () => {
-    const cases = [
+    const cases: {
+      name: string
+      html: string
+      plugins: Plugin[]
+      files: string[]
+      base?: string
+      expectedHtml?: string
+    }[] = [
       {
         name: 'source HTML tags',
         html: `
@@ -355,12 +398,103 @@ describe('indexHtml middleware — safe module paths', () => {
         ],
         files: ['style.css?direct', 'classic.js?raw'],
       },
+      {
+        name: 'HTML returned by a post hook',
+        html: HTML_CONTENT,
+        plugins: [
+          {
+            name: 'inject-html-reference',
+            transformIndexHtml: {
+              order: 'post',
+              handler(html) {
+                return (
+                  html + '<script type="module" src="/classic.js?raw"></script>'
+                )
+              },
+            },
+          },
+        ],
+        files: ['classic.js?raw'],
+      },
+      {
+        name: 'source assets accepted by filters before URL rewriting',
+        base: '/ui/',
+        html: '<custom-img data-src="/style.css?filtered"></custom-img>',
+        expectedHtml: 'data-src="/ui/style.css?filtered"',
+        plugins: [
+          {
+            name: 'filter-source-assets',
+            config() {
+              return {
+                html: {
+                  additionalAssetSources: {
+                    'custom-img': {
+                      srcAttributes: ['data-src'],
+                      filter: ({ value }) => value.startsWith('/style.css'),
+                    },
+                  },
+                },
+              }
+            },
+          },
+        ],
+        files: ['style.css?filtered'],
+      },
+      {
+        name: 'nested injected asset tags, srcsets, and additional asset sources',
+        html: HTML_CONTENT,
+        plugins: [
+          {
+            name: 'inject-html-assets',
+            config() {
+              return {
+                html: {
+                  additionalAssetSources: {
+                    'custom-img': { srcAttributes: ['data-src'] },
+                  },
+                },
+              }
+            },
+            transformIndexHtml() {
+              return [
+                {
+                  tag: 'div',
+                  injectTo: 'body',
+                  children: [
+                    {
+                      tag: 'img',
+                      attrs: {
+                        src: './classic.js?image',
+                        srcset: './classic.js?small 1x, ./dynamic.js?large 2x',
+                      },
+                    },
+                    { tag: 'video', attrs: { poster: './style.css?poster' } },
+                    {
+                      tag: 'custom-img',
+                      attrs: { 'data-src': './style.css?custom' },
+                    },
+                  ],
+                },
+              ]
+            },
+          },
+        ],
+        files: [
+          'classic.js?image',
+          'classic.js?small',
+          'dynamic.js?large',
+          'style.css?poster',
+          'style.css?custom',
+        ],
+      },
     ]
-    for (const { name, html, plugins, files } of cases) {
+    for (const { name, html, plugins, files, base, expectedHtml } of cases) {
       test(`registers URLs while scanning ${name}`, async () => {
-        const server = await createTestServer(undefined, plugins)
+        const server = await createTestServer(undefined, plugins, base)
+        server.config.server.preTransformRequests = false
 
-        await server.transformIndexHtml('/index.html', html)
+        const transformed = await server.transformIndexHtml('/index.html', html)
+        if (expectedHtml) expect(transformed).toContain(expectedHtml)
 
         for (const file of files) {
           const { file: filename, postfix } = splitFileAndPostfix(file)
