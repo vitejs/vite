@@ -1,13 +1,14 @@
 import { describe, expect, test } from 'vitest'
 import { rolldownDepPlugin } from '../../optimizer/rolldownDepPlugin'
 import { optionalPeerDepId } from '../../plugins/resolve'
+import { SafeModulePaths } from '../../server/safeModulePaths'
 import { normalizePath } from '../../utils'
 
 function createRolldownDepPlugins(cacheDir: string) {
   const baseConfig = {
     cacheDir: normalizePath(cacheDir),
     optimizeDeps: { extensions: [] },
-    safeModulePaths: new Set<string>(),
+    safeModulePaths: new SafeModulePaths(),
     server: { fs: { allow: [] } },
     resolve: { builtins: [] },
     createResolver: () => ({}),
