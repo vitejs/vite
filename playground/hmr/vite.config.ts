@@ -22,6 +22,7 @@ export default defineConfig(({ command }) => ({
       ? []
       : [
           path.resolve(import.meta.dirname, './missing-import/index.html'),
+          path.resolve(import.meta.dirname, './css-style/index.html'),
           ...acceptExportsPages,
         ]),
     path.resolve(
