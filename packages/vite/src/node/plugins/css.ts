@@ -1452,7 +1452,7 @@ async function compileCSSPreprocessors(
     environment.getTopLevelConfig(),
   )
   const opts = {
-    ...((preprocessorOptions && preprocessorOptions[lang]) || {}),
+    ...(preprocessorOptions && preprocessorOptions[lang]),
     // important: set this for relative import resolving
     filename: cleanUrl(id),
     enableSourcemap: devSourcemap ?? false,
