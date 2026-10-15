@@ -13,6 +13,9 @@ dedupeInjectedDeps: false
 overrides:
   vite: 'workspace:*'
   debug: 'npm:obug@^1.0.2'
+  # Volar uses the TypeScript 6 compiler API; its broad optional peer includes TS 7.
+  '@volar/typescript>typescript@>=7': '-'
+  '@volar/language-service>typescript@>=7': '-'
 patchedDependencies:
   "sirv@3.0.2": "patches/sirv@3.0.2.patch"
   "chokidar@3.6.0": "patches/chokidar@3.6.0.patch"
@@ -33,6 +36,10 @@ packageExtensions:
   '@volar/typescript':
     dependencies:
       '@volar/language-service': 2.4.28
+      typescript: ~6.0.3
+  '@volar/language-service':
+    dependencies:
+      typescript: ~6.0.3
   '@vue/compiler-core':
     dependencies:
       '@babel/types': ^7.29.8
@@ -42,6 +49,7 @@ packageExtensions:
   '@vue/language-core':
     dependencies:
       '@vue/compiler-sfc': ^3.5.0
+      typescript: ~6.0.3
 allowBuilds:
   core-js: false
   vue-demi: false
