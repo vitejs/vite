@@ -412,7 +412,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           const [id, fragment] = decodedUrl.split('#')
           let resolved = await resolveUrl(id, importer)
           if (resolved) {
-            config.safeModulePaths.add(cleanUrl(resolved))
+            config.safeModulePaths.addId(resolved)
             if (fragment) resolved += '#' + fragment
             let url = await fileToUrl(this, resolved, 'string')
             // Inherit HMR timestamp if this asset was invalidated
