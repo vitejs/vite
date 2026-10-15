@@ -1543,17 +1543,16 @@ describe('resolveConfig', () => {
     })
   })
 
-  test('adds URLs and their cleaned paths to safeModulePaths', async () => {
+  test('registers IDs with cleaned paths and preserves exact filesystem paths', async () => {
     const config = await resolveConfig({}, 'serve')
     const safeModulePaths = config.safeModulePaths
 
-    expect(safeModulePaths.addUrl).toBeTypeOf('function')
-    safeModulePaths.addUrl('/foo/bar?raw')
-    expect([...safeModulePaths]).toEqual(['/foo/bar?raw', '/foo/bar'])
+    safeModulePaths.addId('/foo/bar?raw')
+    expect(Array.from(safeModulePaths)).toEqual(['/foo/bar?raw', '/foo/bar'])
 
     safeModulePaths.clear()
-    safeModulePaths.add('/foo/bar?url')
-    expect([...safeModulePaths]).toEqual(['/foo/bar?url'])
+    safeModulePaths.add('/foo#dir/bar?literal')
+    expect(Array.from(safeModulePaths)).toEqual(['/foo#dir/bar?literal'])
   })
 
   test('allows glob characters in input', async () => {
