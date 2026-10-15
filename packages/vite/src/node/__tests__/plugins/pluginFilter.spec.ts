@@ -114,6 +114,31 @@ describe('createIdFilter', () => {
       inputFilter: '/virtual/foo',
       cases: [{ id: '/virtual/foo', expected: true }],
     },
+    {
+      inputFilter: { include: '**/*.{js,ts}' },
+      cases: [
+        { id: 'foo.js', expected: true },
+        { id: 'foo.ts', expected: true },
+        { id: 'foo.css', expected: false },
+      ],
+    },
+    {
+      // parentheses are literal characters in Rolldown's glob matcher
+      inputFilter: { include: '**/*.(js)' },
+      cases: [
+        { id: 'foo.js', expected: false },
+        { id: 'foo.(js)', expected: true },
+      ],
+    },
+    {
+      // extglobs are not supported by Rolldown's glob matcher
+      inputFilter: { include: '**/*.@(js|ts)' },
+      cases: [
+        { id: 'foo.js', expected: false },
+        { id: 'foo.ts', expected: false },
+        { id: 'foo.@(js|ts)', expected: true },
+      ],
+    },
   ]
 
   for (const filter of filters) {
@@ -131,6 +156,12 @@ describe('createIdFilter', () => {
       }
     })
   }
+
+  test('cwd containing parentheses', () => {
+    const idFilter = createIdFilter('*.js', '/proj (copy)')
+    expect(idFilter!('/proj (copy)/foo.js')).toBe(true)
+    expect(idFilter!('/proj copy/foo.js')).toBe(false)
+  })
 })
 
 describe('createCodeFilter', () => {
