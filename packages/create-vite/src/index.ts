@@ -474,7 +474,7 @@ async function init() {
   const interactive = argInteractive ?? process.stdin.isTTY
 
   // Detect AI agent environment for better agent experience (AX)
-  if (detectAgent().name && interactive) {
+  if (interactive && detectAgent().name) {
     console.log(
       '\nTo create in one go, run: create-vite <DIRECTORY> --no-interactive --template <TEMPLATE>\n',
     )
