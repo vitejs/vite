@@ -48,11 +48,11 @@ export function addHtmlUrlToSafeModulePaths(
   const { file, postfix } = splitFileAndPostfix(url)
   let resolvedUrl: URL
   try {
-    resolvedUrl = new URL(file, `http://vite.local${ctx.path}`)
+    resolvedUrl = new URL(file, `http://example.com${ctx.path}`)
   } catch {
     return
   }
-  if (resolvedUrl.origin !== 'http://vite.local') return
+  if (resolvedUrl.origin !== 'http://example.com') return
   const decodedFile = decodeURIIfPossible(resolvedUrl.pathname)
   if (decodedFile === undefined) return
 
