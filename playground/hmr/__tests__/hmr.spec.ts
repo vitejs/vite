@@ -1319,7 +1319,7 @@ if (!isBuild) {
     },
   )
 
-  // bundled dev does not yet reuse transformIndexHtml-injected styles
+  // bundled dev: /css-style/index.html is not a bundle input
   test.skipIf(isBundledDev)(
     'reuse server rendered style without rewriting unchanged css',
     async () => {
