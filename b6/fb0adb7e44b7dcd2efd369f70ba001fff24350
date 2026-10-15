@@ -1,0 +1,21 @@
+packages/vite/src/node/server/htmlSafeModulePaths.ts
+  s_f5ed5003188563::t_aa6f195527fada 19,53,55-58
+packages/vite/src/node/server/middlewares/__tests__/indexHtml.spec.ts
+  s_f5ed5003188563::t_a74344c547ea86 278-308
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b6fb0adb7e44b7dcd2efd369f70ba001fff24350",
+  "prompts": {},
+  "sessions": {
+    "s_f5ed5003188563": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13f41-410c-77b3-8646-93e4c76ce92c",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
