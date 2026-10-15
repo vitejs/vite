@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
+import { splitFileAndPostfix } from '../../../../shared/utils'
 import { FS_PREFIX } from '../../../constants'
 import type { Plugin } from '../../../plugin'
 import { createServer } from '../../../server'
@@ -12,7 +13,11 @@ const OUTSIDE_HTML_PATH = path.resolve(FIXTURE_DIR, 'outside.html')
 const OUTSIDE_HTML_CONTENT = fs.readFileSync(OUTSIDE_HTML_PATH, 'utf-8')
 const VITE_PACKAGE_DIR = path.resolve(import.meta.dirname, '../../../../..')
 
-async function createTestServer(rootDir?: string, plugins?: Plugin[]) {
+async function createTestServer(
+  rootDir?: string,
+  plugins?: Plugin[],
+  base?: string,
+) {
   const root = path.resolve(import.meta.dirname, rootDir ?? 'fixtures/root')
 
   const server = await createServer({
@@ -20,6 +25,7 @@ async function createTestServer(rootDir?: string, plugins?: Plugin[]) {
     root,
     logLevel: 'error',
     plugins,
+    base,
     server: {
       middlewareMode: true,
       ws: false,
@@ -180,6 +186,124 @@ describe('indexHtml middleware — HMR timestamp injection with non-root base', 
 })
 
 describe('indexHtml middleware — safe module paths', () => {
+  for (const url of ['./malformed%zz.js', '\\\\%']) {
+    test(`leaves malformed URL ${url} for the browser`, async () => {
+      const server = await createTestServer()
+
+      await expect(
+        server.transformIndexHtml(
+          '/index.html',
+          `<script src="${url}"></script>`,
+        ),
+      ).resolves.toContain(`src="${url}"`)
+    })
+  }
+
+  const cases = [
+    ['/index.html', './classic.js?raw', 'classic.js?raw'],
+    ['/index.html', '../classic.js?raw', 'classic.js?raw'],
+    ['/nested/index.html', './classic.js?raw', 'nested/classic.js?raw'],
+    ['/nested/index.html', 'classic.js?raw', 'nested/classic.js?raw'],
+    ['/nested/index.html', '../classic.js?raw', 'classic.js?raw'],
+    ['/nested/index.html', '/classic.js?raw', 'classic.js?raw'],
+    ['/nested/', './classic.js?raw', 'nested/classic.js?raw'],
+    ['/nested/?q=1', './classic.js?raw', 'nested/classic.js?raw'],
+    ['/nested/index.html', './a%20b.js?raw', 'nested/a b.js?raw'],
+    [
+      '/nested/index.html',
+      './classic.js?path=/../file',
+      'nested/classic.js?path=/../file',
+    ],
+  ]
+  for (const [htmlPath, url, file] of cases) {
+    test(`resolves ${htmlPath} with ${url} as an HTML path`, async () => {
+      const server = await createTestServer()
+
+      await server.transformIndexHtml(
+        htmlPath,
+        `<script src="${url}"></script>`,
+      )
+
+      const { file: filename, postfix } = splitFileAndPostfix(file)
+      const filePath = path.join(FIXTURE_DIR, 'root', filename)
+      expect(server.config.safeModulePaths).toContain(filePath)
+      expect(server.config.safeModulePaths).toContain(filePath + postfix)
+    })
+  }
+
+  test('registers relative URLs from an /@fs/ HTML file', async () => {
+    const server = await createTestServer()
+    const fsUrl = path.posix.join(FS_PREFIX, OUTSIDE_HTML_PATH)
+
+    await server.transformIndexHtml(
+      fsUrl,
+      '<script src="./classic.js?raw"></script>',
+    )
+
+    expect(server.config.safeModulePaths).toContain(
+      path.join(FIXTURE_DIR, 'classic.js?raw'),
+    )
+  })
+
+  test('resolves parent URLs at the URL root', async () => {
+    const server = await createTestServer()
+    server.config.server.fs.allow = [path.join(FIXTURE_DIR, 'root')]
+
+    await server.transformIndexHtml(
+      '/index.html',
+      '<script src="../outside.html"></script>',
+    )
+
+    expect(server.config.safeModulePaths).toContain(
+      path.join(FIXTURE_DIR, 'root/outside.html'),
+    )
+    expect(server.config.safeModulePaths).not.toContain(OUTSIDE_HTML_PATH)
+  })
+
+  for (const url of ['/ui/classic.js?raw', './classic.js?raw']) {
+    test(`registers ${url} with a non-root base`, async () => {
+      const server = await createTestServer(undefined, undefined, '/ui/')
+
+      await server.transformIndexHtml(
+        '/index.html',
+        `<script src="${url}"></script>`,
+      )
+
+      const filePath = path.join(FIXTURE_DIR, 'root/classic.js')
+      expect(server.config.safeModulePaths).toContain(filePath)
+      expect(server.config.safeModulePaths).toContain(filePath + '?raw')
+    })
+  }
+
+  test('uses HTML paths for source and injected URLs with a custom module resolver', async () => {
+    const server = await createTestServer(undefined, [
+      {
+        name: 'custom-module-resolver',
+        enforce: 'pre',
+        resolveId(id) {
+          if (id === 'classic.js?raw' || id === './dynamic.js?url') {
+            return OUTSIDE_HTML_PATH
+          }
+        },
+        transformIndexHtml() {
+          return [{ tag: 'script', attrs: { src: './dynamic.js?url' } }]
+        },
+      },
+    ])
+
+    await server.transformIndexHtml(
+      '/index.html',
+      '<script src="classic.js?raw"></script>',
+    )
+
+    for (const file of ['classic.js?raw', 'dynamic.js?url']) {
+      expect(server.config.safeModulePaths).toContain(
+        path.join(FIXTURE_DIR, 'root', file),
+      )
+    }
+    expect(server.config.safeModulePaths).not.toContain(OUTSIDE_HTML_PATH)
+  })
+
   test('registers URLs while scanning source HTML tags', async () => {
     const server = await createTestServer()
     const html = `

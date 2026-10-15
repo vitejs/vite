@@ -257,16 +257,13 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   const styleUrl: AssetNode[] = []
   const inlineStyles: InlineStyleAttribute[] = []
   const inlineModulePaths: string[] = []
-  const safeModulePathPromises: Promise<unknown>[] = []
   const registerSafeModulePath = (url: string) => {
-    safeModulePathPromises.push(
-      addHtmlUrlToSafeModulePaths(url, {
-        path: htmlPath,
-        filename,
-        server,
-        originalUrl,
-      }),
-    )
+    addHtmlUrlToSafeModulePaths(url, {
+      path: htmlPath,
+      filename,
+      server,
+      originalUrl,
+    })
   }
 
   const addInlineModule = (
@@ -415,7 +412,6 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   }
 
   await Promise.all([
-    ...safeModulePathPromises,
     ...styleUrl.map(async ({ start, end, code }, index) => {
       const url = `${proxyModulePath}?html-proxy&direct&index=${index}.css`
 
