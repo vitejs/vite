@@ -12,7 +12,7 @@ const notableDependencies = [
 
 // Dev tools used for development
 const devToolNames = [
-  'eslint',
+  'oxlint',
   'oxfmt',
   'typescript',
   'vitest',
