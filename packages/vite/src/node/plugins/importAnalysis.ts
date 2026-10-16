@@ -17,6 +17,7 @@ import { parseAst } from 'rolldown/parseAst'
 import type { ESTree } from 'rolldown/utils'
 import {
   cleanUrl,
+  joinUrlSegments,
   unwrapId,
   withTrailingSlash,
   wrapId,
@@ -59,7 +60,6 @@ import {
   isFilePathFormatExplicit,
   isInNodeModules,
   isJSRequest,
-  joinUrlSegments,
   moduleListContains,
   normalizePath,
   prettifyUrl,

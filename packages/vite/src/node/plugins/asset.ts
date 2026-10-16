@@ -15,8 +15,9 @@ import type {
 import { makeIdFiltersToMatchWithQuery } from 'rolldown/filter'
 import {
   cleanUrl,
+  joinUrlSegments,
+  moduleUrlToBrowserUrl,
   splitFileAndPostfix,
-  withTrailingSlash,
 } from '../../shared/utils'
 import type { PartialEnvironment } from '../baseEnvironment'
 import {
@@ -24,22 +25,17 @@ import {
   toOutputFilePathInJS,
 } from '../build'
 import type { ResolvedConfig } from '../config'
-import {
-  DEFAULT_ASSETS_INLINE_LIMIT,
-  DEFAULT_ASSETS_RE,
-  FS_PREFIX,
-} from '../constants'
+import { DEFAULT_ASSETS_INLINE_LIMIT, DEFAULT_ASSETS_RE } from '../constants'
 import type { Environment } from '../environment'
 import type { Plugin } from '../plugin'
 import { checkPublicFile } from '../publicDir'
+import { fileToModuleUrl } from '../server/moduleUrl'
 import {
   encodeURIPath,
   getHash,
   injectQuery,
-  joinUrlSegments,
   normalizePath,
   rawRE,
-  removeLeadingSlash,
   removeUrlQuery,
   urlRE,
 } from '../utils'
@@ -485,20 +481,9 @@ export async function fileToDevUrl(
     return pathToFileURL(cleanedId).href
   }
 
-  let rtn: string
-  if (publicFile) {
-    // in public dir during dev, keep the url as-is
-    rtn = id
-  } else if (id.startsWith(withTrailingSlash(config.root))) {
-    // in project root, infer short public path
-    rtn = '/' + path.posix.relative(config.root, id)
-  } else {
-    // outside of project root, use absolute fs path
-    // (this is special handled by the serve static middleware
-    rtn = path.posix.join(FS_PREFIX, id)
-  }
+  const moduleUrl = publicFile ? id : fileToModuleUrl(id, config.root)
   const base = joinUrlSegments(config.server.origin ?? '', config.decodedBase)
-  return joinUrlSegments(base, removeLeadingSlash(rtn))
+  return moduleUrlToBrowserUrl(moduleUrl, base)
 }
 
 export function getPublicAssetFilename(
