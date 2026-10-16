@@ -1,7 +1,10 @@
+import fs from 'node:fs'
+import os from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { promiseWithResolvers } from '../../../shared/utils'
+import { normalizePath } from '../../utils'
 import { type ViteDevServer, createServer } from '../index'
 
 const stubGetWatchedCode = /\(\)\s*\{\s*return this;\s*\}/
@@ -166,5 +169,36 @@ describe('watcher configuration', () => {
         ]),
       )
     })
+  })
+
+  it('should watch the root when it is inside a default ignored directory', async () => {
+    const tmpDir = fs.mkdtempSync(join(os.tmpdir(), 'vite-watcher-'))
+    const ignoredRoot = join(tmpDir, 'test-results', 'app')
+    fs.mkdirSync(join(ignoredRoot, 'src'), { recursive: true })
+    fs.mkdirSync(join(ignoredRoot, 'test-results'), { recursive: true })
+    fs.writeFileSync(join(ignoredRoot, 'src/main.js'), '')
+    fs.writeFileSync(join(ignoredRoot, 'test-results/report.json'), '')
+
+    try {
+      server = await createServer({ root: ignoredRoot, configFile: false })
+      await new Promise((resolve) => server!.watcher.once('ready', resolve))
+      await vi.waitFor(() => {
+        const watched = server!.watcher.getWatched()
+        const normalizedWatched = Object.fromEntries(
+          Object.entries(watched).map(([dir, files]) => [
+            normalizePath(dir),
+            files,
+          ]),
+        )
+        const normalizedRoot = normalizePath(ignoredRoot)
+        expect(normalizedWatched[`${normalizedRoot}/src`]).toEqual(['main.js'])
+        // directories matching the default patterns inside the root are still ignored
+        expect(normalizedWatched[normalizedRoot]).not.toContain('test-results')
+      })
+    } finally {
+      await server?.close()
+      server = undefined
+      fs.rmSync(tmpDir, { recursive: true, force: true })
+    }
   })
 })

@@ -58,11 +58,35 @@ export function resolveEmptyOutDir(
 export type ServerWatchOptions = WatchOptions &
   Omit<DevWatchOptions, 'enabled' | 'skipWrite'>
 
+const defaultIgnoredDirs = [
+  '.git',
+  'node_modules',
+  'test-results', // Playwright
+]
+
+/**
+ * The default patterns are matched against the whole absolute path. If the
+ * project root itself is inside one of these directories (e.g.
+ * `/home/user/test-results/app`), every file would be ignored, so anchor the
+ * pattern to the root in that case.
+ */
+function resolveDefaultIgnoredPattern(dir: string, root?: string): string {
+  const pattern = `**/${dir}/**`
+  if (root) {
+    const normalizedRoot = normalizePath(root)
+    if (normalizedRoot.split('/').includes(dir)) {
+      return `${escapePath(normalizedRoot)}/${pattern}`
+    }
+  }
+  return pattern
+}
+
 export function resolveChokidarOptions(
   options: ServerWatchOptions | undefined,
   resolvedOutDirs: Set<string>,
   emptyOutDir: boolean,
   cacheDir: string,
+  root?: string,
 ): WatchOptions {
   const {
     ignored: ignoredList,
@@ -76,9 +100,7 @@ export function resolveChokidarOptions(
     ...otherOptions
   } = options ?? {}
   const ignored: WatchOptions['ignored'] = [
-    '**/.git/**',
-    '**/node_modules/**',
-    '**/test-results/**', // Playwright
+    ...defaultIgnoredDirs.map((dir) => resolveDefaultIgnoredPattern(dir, root)),
     escapePath(cacheDir) + '/**',
     ...arraify(ignoredList || []),
   ]
