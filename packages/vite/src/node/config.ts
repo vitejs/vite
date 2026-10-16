@@ -618,6 +618,14 @@ export interface ExperimentalOptions {
    */
   hmrPartialAccept?: boolean
   /**
+   * Hold HMR updates between agent turn lifecycle hooks and apply them as one
+   * preview transaction.
+   *
+   * @experimental
+   * @default false
+   */
+  agentHmrGate?: boolean
+  /**
    * Enable full bundle mode during `serve`.
    *
    * This seeds the default for the client environment's `isBundled` option.
@@ -910,6 +918,7 @@ const configDefaults = Object.freeze({
     importGlobRestoreExtension: false,
     renderBuiltUrl: undefined,
     hmrPartialAccept: false,
+    agentHmrGate: false,
     bundledDev: false,
   },
   future: {

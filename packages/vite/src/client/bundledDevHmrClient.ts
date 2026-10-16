@@ -272,10 +272,18 @@ export class BundledDevHMRClient extends HMRClient {
   }
 
   handlePush(payload: BundledDevUpdatePayload): void {
+    this.handlePushBatch([payload])
+  }
+
+  handlePushBatch(payloads: BundledDevUpdatePayload[]): void {
+    if (payloads.length === 0) return
     this.applyQueue = this.applyQueue
-      .then(() => this.applyPush(payload))
+      .then(() => this.applyPushBatch(payloads))
       .catch((err) => {
-        this.warnFailedUpdate(err, payload.changedIds)
+        this.warnFailedUpdate(
+          err,
+          payloads.flatMap((payload) => payload.changedIds),
+        )
       })
   }
 
@@ -295,21 +303,23 @@ export class BundledDevHMRClient extends HMRClient {
     }
   }
 
-  private async applyPush({
-    changedIds,
-    url,
-    seq,
-  }: BundledDevUpdatePayload): Promise<void> {
+  private async applyPushBatch(
+    payloads: BundledDevUpdatePayload[],
+  ): Promise<void> {
     if (this.reloadPending) return
-    if (seq !== this.lastSeq + 1) {
-      this.requestFullReload(
-        `hmr update sequence gap (expected ${this.lastSeq + 1}, got ${seq})`,
-      )
-      return
+    const changedIds = new Set<string>()
+    for (const payload of payloads) {
+      if (payload.seq !== this.lastSeq + 1) {
+        this.requestFullReload(
+          `hmr update sequence gap (expected ${this.lastSeq + 1}, got ${payload.seq})`,
+        )
+        return
+      }
+      this.lastSeq = payload.seq
+      for (const id of payload.changedIds) changedIds.add(id)
     }
-    this.lastSeq = seq
 
-    const update = this.computeHmrUpdate(changedIds)
+    const update = this.computeHmrUpdate([...changedIds])
     if (update.type === 'noop') return
     if (update.type === 'full-reload') {
       this.requestFullReload(update.reason)
@@ -320,11 +330,13 @@ export class BundledDevHMRClient extends HMRClient {
     await this.notifyListeners('vite:beforeUpdate', listenerPayload)
     if (this.options.beforeApply() === 'reload') return
 
-    try {
-      await import(/* @vite-ignore */ this.options.base + url)
-    } catch {
-      this.requestFullReload(`failed to import hmr patch ${url}`)
-      return
+    for (const { url } of payloads) {
+      try {
+        await import(/* @vite-ignore */ this.options.base + url)
+      } catch {
+        this.requestFullReload(`failed to import hmr patch ${url}`)
+        return
+      }
     }
 
     await this.applyUpdate(update)

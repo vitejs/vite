@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/playground/agent-hmr-gate/hooks/hmr-gate-hook.mjs\" begin",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/playground/agent-hmr-gate/hooks/hmr-gate-hook.mjs\" flush",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

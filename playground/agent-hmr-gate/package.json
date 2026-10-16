@@ -1,0 +1,10 @@
+{
+  "name": "@vitejs/test-agent-hmr-gate",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5173 --strictPort",
+    "build": "vite build"
+  }
+}
