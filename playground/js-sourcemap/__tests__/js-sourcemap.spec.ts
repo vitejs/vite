@@ -6,6 +6,7 @@ import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import { mapFileCommentRegex } from 'convert-source-map'
 import { describe, expect, test, vi } from 'vitest'
 import {
+  bundledDevUnsupported,
   extractSourcemap,
   findAssetFile,
   formatSourcemapForSnapshot,
@@ -22,6 +23,13 @@ const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
 function escapeRegex(str: string): string {
   return str.replace(escapeRegexRE, '\\$&')
 }
+
+const projectFileServingUnsupported = bundledDevUnsupported(
+  'bundled dev serves only the bundle output and the public directory, never a single project file',
+)
+const clientOptimizerUnsupported = bundledDevUnsupported(
+  'bundled dev has no dep optimizer for the client environment, so there is no client `.vite/deps` metadata',
+)
 
 async function getDepJs(entry: string, depIdFragment: string) {
   const res = await page.request.get(new URL(entry, page.url()).href)
@@ -155,9 +163,9 @@ if (!isBuild) {
     `)
   })
 
-  // bundled dev does not inject fallback sourcemap, so this test is irrelevant
-  test.skipIf(isBundledDev)(
+  test(
     'js with inline sourcemap injected by a plugin',
+    projectFileServingUnsupported,
     async () => {
       const res = await page.request.get(
         new URL('./foo-with-sourcemap.js', page.url()).href,
@@ -212,9 +220,7 @@ if (!isBuild) {
     `)
   })
 
-  // This test is for the import-analysis plugin (#14232), which does not run
-  // in bundled dev.
-  test.skipIf(isBundledDev)('multiline import', async () => {
+  test('multiline import', projectFileServingUnsupported, async () => {
     const res = await page.request.get(
       new URL('./with-multiline-import.ts', page.url()).href,
     )
@@ -284,11 +290,9 @@ if (!isBuild) {
     )
   })
 
-  // bundled dev has no dep optimizer by design, so `/node_modules/.vite/deps/`
-  // does not exist. The dep is still bundled, and the test above scans the
-  // whole map, so the no-leak check still covers it.
-  test.skipIf(isBundledDev)(
+  test(
     'should not leak file contents via sourcemap path traversal in optimized deps',
+    clientOptimizerUnsupported,
     async () => {
       const res = await page.request.get(
         new URL('./optimized-malicious-import.js', page.url()).href,
@@ -313,10 +317,9 @@ if (!isBuild) {
     },
   )
 
-  // bundled dev: these cases only apply with the dep optimizer. The test
-  // plugins act on `/deps/` URLs, which do not exist under bundled dev.
-  test.skipIf(isBundledDev)(
+  test(
     'babel-transformed downleveled optimized dep maps to the correct original name',
+    clientOptimizerUnsupported,
     async () => {
       const depJs = await getDepJs(
         './optimized-class-field-import-babel.js',
@@ -330,8 +333,9 @@ if (!isBuild) {
     },
   )
 
-  test.skipIf(isBundledDev)(
+  test(
     'oxc-transformed downleveled optimized dep maps to the correct original name',
+    clientOptimizerUnsupported,
     async () => {
       const depJs = await getDepJs(
         './optimized-class-field-import-oxc.js',
