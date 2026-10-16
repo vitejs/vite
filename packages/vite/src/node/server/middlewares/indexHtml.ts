@@ -46,6 +46,10 @@ import {
   tryStatSync,
 } from '../../utils'
 import {
+  addHtmlToSafeModulePaths,
+  addHtmlUrlToSafeModulePaths,
+} from '../htmlSafeModulePaths'
+import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from '../pluginContainer'
@@ -91,18 +95,21 @@ export function createDevHtmlTransformFn(
     { ...basePluginContextMeta, watchMode: true },
     config.logger,
   )
-  return (
+  return async (
     server: ViteDevServer,
     url: string,
     html: string,
     originalUrl?: string,
   ): Promise<string> => {
-    return applyHtmlTransforms(html, transformHooks, pluginContext, {
+    const ctx = {
       path: url,
       filename: getHtmlFilename(url, server),
       server,
       originalUrl,
-    })
+    }
+    html = await applyHtmlTransforms(html, transformHooks, pluginContext, ctx)
+    await addHtmlToSafeModulePaths(html, ctx)
+    return html
   }
 }
 
@@ -140,7 +147,8 @@ const processNodeUrl = (
   useSrcSetReplacer: boolean,
   config: ResolvedConfig,
   htmlPath: string,
-  originalUrl?: string,
+  originalUrl: string | undefined,
+  registerSafeModulePath: (url: string) => void,
   server?: ViteDevServer,
   isClassicScriptLink?: boolean,
 ): string => {
@@ -192,11 +200,13 @@ const processNodeUrl = (
         preTransformUrl = decodeURI(preTransformUrl)
       } catch {
         // Malformed uri. Skip pre-transform.
+        registerSafeModulePath(url)
         return url
       }
       preTransformRequest(server, preTransformUrl, config.decodedBase)
     }
 
+    registerSafeModulePath(url)
     return url
   }
 
@@ -253,6 +263,14 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   const styleUrl: AssetNode[] = []
   const inlineStyles: InlineStyleAttribute[] = []
   const inlineModulePaths: string[] = []
+  const registerSafeModulePath = (url: string) => {
+    addHtmlUrlToSafeModulePaths(url, {
+      path: htmlPath,
+      filename,
+      server,
+      originalUrl,
+    })
+  }
 
   const addInlineModule = (
     node: DefaultTreeAdapterMap['element'],
@@ -310,6 +328,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           config,
           htmlPath,
           originalUrl,
+          registerSafeModulePath,
           server,
           !isModule,
         )
@@ -333,6 +352,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
             config,
             htmlPath,
             originalUrl,
+            registerSafeModulePath,
           )
           if (processedUrl !== url) {
             s.update(start, end, processedUrl)
@@ -375,6 +395,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           config,
           htmlPath,
           originalUrl,
+          registerSafeModulePath,
         )
         if (processedUrl !== attr.value) {
           overwriteAttrValue(s, attr.location, processedUrl)
