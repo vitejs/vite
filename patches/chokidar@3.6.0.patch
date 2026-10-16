@@ -1,8 +1,59 @@
 diff --git a/index.js b/index.js
-index 8752893ca4986cf05103a46c438223b7ee4e1907..9185d79f6ee5194bf259dd252b8105d9846cda6c 100644
+index 8752893ca4986cf05103a46c438223b7ee4e1907..c708ff9b033f381b598e56f8e185a1fe0fbda4d0 100644
 --- a/index.js
 +++ b/index.js
-@@ -915,6 +915,8 @@ _closePath(path) {
+@@ -573,6 +573,13 @@ async _emit(event, path, val1, val2, val3) {
+     return this;
+   }
+ 
++  if (event === EV_UNLINK) {
++    // Cancel queued trailing `change` callbacks so `change` is never emitted after `unlink` (https://github.com/paulmillr/chokidar/pull/1456)
++    const changeAction = this._throttled.get(EV_CHANGE);
++    const changeThrottler = changeAction ? changeAction.get(path) : undefined;
++    if (changeThrottler) changeThrottler.clear(false);
++  }
++
+   if (opts.atomic) {
+     if (event === EV_UNLINK) {
+       this._pendingUnlinks.set(path, args);
+@@ -613,7 +620,11 @@ async _emit(event, path, val1, val2, val3) {
+   }
+ 
+   if (event === EV_CHANGE) {
+-    const isThrottled = !this._throttle(EV_CHANGE, path, 50);
++    // Replay suppressed changes when window closes (https://github.com/paulmillr/chokidar/pull/1456)
++    const isThrottled = !this._throttle(EV_CHANGE, path, 50, (suppressedCount) => {
++      if (this.closed) return;
++      if (suppressedCount > 0) void this._emit(EV_CHANGE, path);
++    });
+     if (isThrottled) return this;
+   }
+ 
+@@ -656,7 +667,7 @@ _handleError(error) {
+  * @param {Number} timeout duration of time to suppress duplicate actions
+  * @returns {Object|false} tracking object or false if action should be suppressed
+  */
+-_throttle(actionType, path, timeout) {
++_throttle(actionType, path, timeout, onRelease) {
+   if (!this._throttled.has(actionType)) {
+     this._throttled.set(actionType, new Map());
+   }
+@@ -672,12 +683,13 @@ _throttle(actionType, path, timeout) {
+   }
+ 
+   let timeoutObject;
+-  const clear = () => {
++  const clear = (invokeRelease = true) => {
+     const item = action.get(path);
+     const count = item ? item.count : 0;
+     action.delete(path);
+     clearTimeout(timeoutObject);
+     if (item) clearTimeout(item.timeoutObject);
++    if (invokeRelease && onRelease) onRelease(count);
+     return count;
+   };
+   timeoutObject = setTimeout(clear, timeout);
+@@ -915,6 +927,8 @@ _closePath(path) {
   * @param {Path} path
   */
  _closeFile(path) {
@@ -11,7 +62,7 @@ index 8752893ca4986cf05103a46c438223b7ee4e1907..9185d79f6ee5194bf259dd252b8105d9
    const closers = this._closers.get(path);
    if (!closers) return;
    closers.forEach(closer => closer());
-@@ -928,6 +930,8 @@ _closeFile(path) {
+@@ -928,6 +942,8 @@ _closeFile(path) {
   */
  _addPathCloser(path, closer) {
    if (!closer) return;
