@@ -23,6 +23,8 @@ const input = {
     'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
   ),
   linkProps: resolve(dirname, 'link-props/index.html'),
+  linkOrder: resolve(dirname, 'link-order/index.html'),
+  linkOrderOrdered: resolve(dirname, 'link-order/ordered.html'),
   valid: resolve(dirname, 'valid.html'),
   importmapOrder: resolve(dirname, 'importmapOrder.html'),
   env: resolve(dirname, 'env.html'),
