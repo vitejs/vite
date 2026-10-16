@@ -773,6 +773,12 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
   )
 })
 
+test('new URL(`${dynamic}`, import.meta.url) (without leading ./)', async () => {
+  expect(await page.textContent('.dynamic-import-meta-url-no-dot')).toMatch(
+    assetMatch,
+  )
+})
+
 test(
   'new URL(`./${dynamic}?abc`, import.meta.url)',
   bundledDevTodo(
