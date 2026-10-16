@@ -1316,6 +1316,79 @@ test('chunkImportMap is emitted for SSR when enabled', async () => {
   )
 })
 
+test('chunkImportMap handles unhashed output', async () => {
+  const result = (await build({
+    root: resolve(dirname, 'fixtures/shared-plugins/chunk-import-map'),
+    logLevel: 'warn',
+    build: {
+      chunkImportMap: true,
+      write: false,
+      rolldownOptions: {
+        input: '/entry.js',
+        output: {
+          entryFileNames: '[name].js',
+          chunkFileNames: '[name].js',
+        },
+      },
+    },
+  })) as RolldownOutput
+
+  expect(
+    result.output.some(
+      (output) =>
+        output.type === 'asset' && output.fileName === 'importmap.json',
+    ),
+  ).toBe(false)
+})
+
+test('chunkImportMap handles pure CSS with unhashed output', async () => {
+  const modules: Record<string, string> = {
+    'entry.js': `import('style.css')`,
+    'style.css': `.style { color: red }`,
+  }
+  const result = (await build({
+    root: resolve(dirname, 'packages/build-project'),
+    logLevel: 'silent',
+    build: {
+      chunkImportMap: true,
+      write: false,
+      rolldownOptions: {
+        input: 'entry.js',
+        output: {
+          entryFileNames: '[name].js',
+          chunkFileNames: '[name].js',
+        },
+      },
+    },
+    plugins: [
+      {
+        name: 'pure-css',
+        resolveId(id) {
+          if (id in modules) return `\0${id}`
+        },
+        load(id) {
+          return modules[id.slice(1)]
+        },
+      },
+    ],
+  })) as RolldownOutput
+
+  expect(
+    result.output.some(
+      (output) =>
+        output.type === 'asset' && output.fileName === 'importmap.json',
+    ),
+  ).toBe(false)
+
+  const entry = result.output.find(
+    (output): output is OutputChunk =>
+      output.type === 'chunk' && output.isEntry,
+  )
+  assert(entry)
+  expect(entry.code).not.toContain('import(')
+  expect(entry.code).toContain('Promise.resolve')
+})
+
 test('importmap named asset is not emitted when chunkImportMap is false', async () => {
   const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
   const builder = await createBuilder({

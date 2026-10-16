@@ -99,7 +99,7 @@ export function vitePluginSsrMiddleware({
       const handler: Connect.NextHandleFunction = async (req, res, next) => {
         try {
           const mod = await importWithRetry()
-          await mod['default'](req, res, next)
+          await mod.default(req, res, next)
         } catch (e) {
           next(e)
         }

@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "tinyglobby": "^0.2.17"
+    "tinyglobby": "^0.2.17",
+    "ws": "^8.22.0"
   }
 }
