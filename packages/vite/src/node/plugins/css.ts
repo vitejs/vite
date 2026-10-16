@@ -38,7 +38,7 @@ import type { LightningCSSOptions } from '#types/internal/lightningcssOptions'
 import type { CustomPluginOptionsVite } from '#types/metadata'
 import { type DevEnvironment } from '..'
 import { NULL_BYTE_PLACEHOLDER } from '../../shared/constants'
-import { cleanUrl, isWindows, slash } from '../../shared/utils'
+import { cleanUrl, isWindows, joinUrlSegments, slash } from '../../shared/utils'
 import { PartialEnvironment } from '../baseEnvironment'
 import {
   createToImportMetaURLBasedRelativeRuntime,
@@ -87,7 +87,6 @@ import {
   isDataUrl,
   isExternalUrl,
   isObject,
-  joinUrlSegments,
   lineTerminatorRE,
   mergeWithDefaults,
   normalizePath,
