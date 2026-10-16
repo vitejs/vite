@@ -6,12 +6,7 @@ import type { DefaultTreeAdapterMap, Token } from 'parse5'
 import type { SourceMapInput } from 'rolldown'
 import type { Connect } from '#dep-types/connect'
 import type { PreviewServer, ResolvedConfig, ViteDevServer } from '../..'
-import {
-  cleanUrl,
-  joinUrlSegments,
-  unwrapId,
-  wrapId,
-} from '../../../shared/utils'
+import { cleanUrl, moduleUrlToBrowserUrl } from '../../../shared/utils'
 import { getNodeAssetAttributes } from '../../assetSource'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import { getHmrImplementation } from '../../plugins/clientInjections'
@@ -46,9 +41,9 @@ import {
   isParentDirectory,
   normalizePath,
   processSrcSetSync,
-  stripBase,
   tryStatSync,
 } from '../../utils'
+import { browserUrlToModuleUrl } from '../moduleUrl'
 import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
@@ -183,22 +178,23 @@ const processNodeUrl = (
     }
 
     if (server) {
-      const mod = server.environments.client.moduleGraph.urlToModuleMap.get(
-        stripBase(preTransformUrl || url, config.decodedBase),
-      )
-      if (mod && mod.lastHMRTimestamp > 0) {
-        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
-      }
-    }
-
-    if (server && preTransformUrl) {
+      let decodedUrl: string
       try {
-        preTransformUrl = decodeURI(preTransformUrl)
+        decodedUrl = decodeURI(preTransformUrl || url)
       } catch {
         // Malformed uri. Skip pre-transform.
         return url
       }
-      preTransformRequest(server, preTransformUrl, config.decodedBase)
+      const moduleUrl = browserUrlToModuleUrl(decodedUrl, config.decodedBase)
+      const mod =
+        server.environments.client.moduleGraph.urlToModuleMap.get(moduleUrl)
+      if (mod && mod.lastHMRTimestamp > 0) {
+        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+      }
+
+      if (preTransformUrl) {
+        preTransformRequest(server, moduleUrl)
+      }
     }
 
     return url
@@ -243,10 +239,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     // and ids are properly handled
     const validPath = `${htmlPath}${trailingSlash ? 'index.html' : ''}`
     proxyModulePath = `\0${validPath}`
-    proxyModuleUrl = wrapId(proxyModulePath)
+    proxyModuleUrl = proxyModulePath
   }
-  proxyModuleUrl = joinUrlSegments(decodedBase, proxyModuleUrl)
-
   const s = new MagicString(html)
   let inlineModuleIndex = -1
   // The key to the proxyHtml cache is decoded, as it will be compared
@@ -256,7 +250,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   )
   const styleUrl: AssetNode[] = []
   const inlineStyles: InlineStyleAttribute[] = []
-  const inlineModulePaths: string[] = []
+  const inlineModuleUrls: string[] = []
 
   const addInlineModule = (
     node: DefaultTreeAdapterMap['element'],
@@ -284,15 +278,16 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     addToHTMLProxyCache(config, proxyCacheUrl, inlineModuleIndex, { code, map })
 
     // inline js module. convert to src="proxy" (dev only, base is never relative)
-    const modulePath = `${proxyModuleUrl}?html-proxy&index=${inlineModuleIndex}.${ext}`
-    inlineModulePaths.push(modulePath)
+    const moduleUrl = `${proxyModuleUrl}?html-proxy&index=${inlineModuleIndex}.${ext}`
+    inlineModuleUrls.push(moduleUrl)
+    const browserUrl = moduleUrlToBrowserUrl(moduleUrl, decodedBase)
 
     s.update(
       node.sourceCodeLocation!.startOffset,
       node.sourceCodeLocation!.endOffset,
-      `<script type="module" src="${modulePath}"></script>`,
+      `<script type="module" src="${browserUrl}"></script>`,
     )
-    preTransformRequest(server!, modulePath, decodedBase)
+    preTransformRequest(server!, moduleUrl)
   }
 
   await traverseHtml(html, filename, config.logger.warn, (node) => {
@@ -391,8 +386,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   const clientModuleGraph = server?.environments.client.moduleGraph
   if (clientModuleGraph) {
     await Promise.all(
-      inlineModulePaths.map(async (url) => {
-        const module = await clientModuleGraph.getModuleByUrl(url)
+      inlineModuleUrls.map(async (url) => {
+        const module = await clientModuleGraph._getUnresolvedUrlToModule(url)
         if (module) {
           clientModuleGraph.invalidateModule(module)
         }
@@ -566,18 +561,11 @@ export function indexHtmlMiddleware(
   }
 }
 
-// NOTE: We usually don't prefix `url` and `base` with `decoded`, but in this file particularly
-// we're dealing with mixed encoded/decoded paths often, so we make this explicit for now.
-function preTransformRequest(
-  server: ViteDevServer,
-  decodedUrl: string,
-  decodedBase: string,
-) {
+/** Warm a decoded ModuleURL for a client-side HTML dependency. */
+function preTransformRequest(server: ViteDevServer, url: string) {
   if (!server.config.server.preTransformRequests) return
 
-  // transform all url as non-ssr as html includes client-side assets only
-  decodedUrl = unwrapId(stripBase(decodedUrl, decodedBase))
-  server.warmupRequest(decodedUrl)
+  server.warmupRequest(url)
 }
 
 async function generateFallbackHtml(server: ViteDevServer) {
