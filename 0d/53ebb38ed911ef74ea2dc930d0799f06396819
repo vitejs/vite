@@ -1,0 +1,65 @@
+packages/vite/src/node/server/__tests__/pluginContainer.spec.ts
+  s_dc4db4a597e998::t_be560e0a390835 198-226
+packages/vite/src/node/plugins/importAnalysis.ts
+  s_dc4db4a597e998::t_893c363ee6fe05 295,299-305,354,359,375,543,547-551,553,641,770
+  s_dc4db4a597e998::t_8ffc329282b254 14,17,40-44
+  s_dc4db4a597e998::t_d7529652eaa1de 356-358,360-369,399-400,647-648,772,781-786
+  s_dc4db4a597e998::t_da31579550e707 39,396,401,544-546,717,804,806-808,828
+  s_dc4db4a597e998::t_a2b248d2768f18 642-643
+  s_dc4db4a597e998::t_eb449a2e7ff3b5 649-650
+  s_dc4db4a597e998::t_2b3941077d470b 718-719
+  s_dc4db4a597e998::t_1e1a08b6b2f9f2 787-788
+  s_dc4db4a597e998::t_42c01cb87b99da 723,775,830,842
+packages/vite/src/node/server/resolveRequest.ts
+  s_dc4db4a597e998::t_a60cd01c121183 6-10,19
+  s_dc4db4a597e998::t_dbe5ba92f071fb 1-5,11-18,20-31
+packages/vite/src/node/server/environment.ts
+  s_dc4db4a597e998::t_3c0c74ef20ed15 37,94
+packages/vite/src/node/server/index.ts
+  s_4c165c705368d4::t_3c2b617a1048a7 947
+packages/vite/src/node/server/__tests__/moduleGraph.spec.ts
+  s_dc4db4a597e998::t_1c3899f02287db 1,7-68
+packages/vite/src/node/server/middlewares/transform.ts
+  s_dc4db4a597e998::t_077e86838eab91 11,33,35,210-218,240
+  s_dc4db4a597e998::t_737f415b989fc6 257-258
+packages/vite/src/node/server/moduleGraph.ts
+  s_dc4db4a597e998::t_6ebb0948ebe3ad 5-6,12,16,122,343,350-354,363-374,376-389,391-393,425,456
+  s_dc4db4a597e998::t_5285938452e5fb 123,137-139,344,349,359,390,426,453-454
+  s_dc4db4a597e998::t_26672c5ac2b54a 375
+  s_dc4db4a597e998::t_86d2fff6ba99a5 132-136,140-141
+packages/vite/src/node/server/__tests__/transformRequest.spec.ts
+  s_dc4db4a597e998::t_c6d994accf8bc0 150-240
+  s_4c165c705368d4::t_07dc50e7d024ab 38-103
+  s_dc4db4a597e998::t_75b405d154affe 1-8,11-37,241-392
+  s_4c165c705368d4::t_a56312e36b0b3e 104-149
+packages/vite/src/node/server/pluginContainer.ts
+  s_dc4db4a597e998::t_35710d22e22230 829-832,844
+packages/vite/src/node/server/transformRequest.ts
+  s_dc4db4a597e998::t_484021b41af6fc 33,113-116,133-136,150,163
+  s_dc4db4a597e998::t_cf8a0150078040 31,34,165,167-168,180,225,231,340,480-481
+  s_dc4db4a597e998::t_37d8a17c99bf02 14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "0d53ebb38ed911ef74ea2dc930d0799f06396819",
+  "prompts": {},
+  "sessions": {
+    "s_4c165c705368d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a14085-8ba0-7181-9ecf-a01c4c096ebc",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_dc4db4a597e998": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a14061-a227-7410-80b4-71e724c4b749",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

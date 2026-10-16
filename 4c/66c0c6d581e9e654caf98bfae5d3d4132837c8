@@ -1,0 +1,21 @@
+packages/vite/src/node/__tests__/optimizer/depUrl.spec.ts
+  s_dc4db4a597e998::t_0247374a46a5db 1-31
+packages/vite/src/node/optimizer/index.ts
+  s_dc4db4a597e998::t_47fc07403c05e1 25,1000-1001
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "4c66c0c6d581e9e654caf98bfae5d3d4132837c8",
+  "prompts": {},
+  "sessions": {
+    "s_dc4db4a597e998": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a14061-a227-7410-80b4-71e724c4b749",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

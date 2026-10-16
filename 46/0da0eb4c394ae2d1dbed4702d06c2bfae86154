@@ -1,0 +1,19 @@
+packages/vite/src/node/plugins/importAnalysis.ts
+  s_dc4db4a597e998::t_d7529652eaa1de 351-364,398-399,642-645,712-713,718,767,770,776-783
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "460da0eb4c394ae2d1dbed4702d06c2bfae86154",
+  "prompts": {},
+  "sessions": {
+    "s_dc4db4a597e998": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a14061-a227-7410-80b4-71e724c4b749",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

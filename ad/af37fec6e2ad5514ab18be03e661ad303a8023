@@ -1,0 +1,27 @@
+packages/vite/src/node/plugins/importAnalysis.ts
+  s_dc4db4a597e998::t_8ffc329282b254 14,17,39-43,347,353,399,639
+packages/vite/src/node/server/__tests__/moduleUrl.spec.ts
+  s_dc4db4a597e998::t_f9d6ef02a2ab2f 1-60
+packages/vite/src/node/server/middlewares/indexHtml.ts
+  s_dc4db4a597e998::t_9e7c2e88c69396 9,48,576
+packages/vite/src/node/server/moduleUrl.ts
+  s_dc4db4a597e998::t_862396b773d001 1-54
+packages/vite/src/node/server/transformRequest.ts
+  s_dc4db4a597e998::t_37d8a17c99bf02 14,32,494-496
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "adaf37fec6e2ad5514ab18be03e661ad303a8023",
+  "prompts": {},
+  "sessions": {
+    "s_dc4db4a597e998": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a14061-a227-7410-80b4-71e724c4b749",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
