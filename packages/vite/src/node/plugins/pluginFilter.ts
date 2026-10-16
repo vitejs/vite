@@ -33,6 +33,16 @@ function getMatcherString(glob: string, cwd: string) {
   return slash(resolved)
 }
 
+/**
+ * Rolldown matches hook filter globs with its Rust glob matcher (the
+ * `fast-glob` crate), which has no group or extglob syntax and treats `(`,
+ * `)` and `|` as literal characters. Escape them so picomatch matches the
+ * same way in dev as Rolldown does in build.
+ */
+function escapeGlobGroupChars(glob: string) {
+  return glob.replace(/[()|]/g, '\\$&')
+}
+
 function patternToIdFilter(
   pattern: string | RegExp,
   cwd: string,
@@ -46,7 +56,7 @@ function patternToIdFilter(
     }
   }
 
-  const glob = getMatcherString(pattern, cwd)
+  const glob = escapeGlobGroupChars(getMatcherString(pattern, cwd))
   const matcher = picomatch(glob, { dot: true })
   return (id: string) => {
     const normalizedId = slash(id)
