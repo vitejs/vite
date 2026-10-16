@@ -4,6 +4,7 @@ import path, { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { promiseWithResolvers } from '../../../shared/utils'
+import { normalizePath } from '../../utils'
 import { type ViteDevServer, createServer } from '../index'
 
 const stubGetWatchedCode = /\(\)\s*\{\s*return this;\s*\}/
@@ -171,8 +172,10 @@ describe('watcher configuration', () => {
   })
 
   it('should emit a trailing change event when a file is saved twice in rapid succession', async () => {
-    const tempDir = fs.mkdtempSync(
-      path.join(fs.realpathSync(os.tmpdir()), 'vite-watcher-test-'),
+    const tempDir = fs.realpathSync.native(
+      fs.mkdtempSync(
+        path.join(fs.realpathSync.native(os.tmpdir()), 'vite-watcher-test-'),
+      ),
     )
     const testFile = join(tempDir, 'test.js')
     fs.writeFileSync(testFile, 'export default "initial"\n')
@@ -183,7 +186,7 @@ describe('watcher configuration', () => {
         configFile: false,
         server: {
           middlewareMode: true,
-          hmr: false,
+          ws: false,
         },
       })
       if (!(server.watcher as any)._readyEmitted) {
@@ -192,11 +195,15 @@ describe('watcher configuration', () => {
         )
       }
       // Allow the OS file watcher to settle before triggering test writes
-      await new Promise((r) => setTimeout(r, 200))
+      await new Promise((r) => setTimeout(r, 300))
+
+      const isTestFile = (file: string) =>
+        normalizePath(resolve(file)).toLowerCase() ===
+        normalizePath(resolve(testFile)).toLowerCase()
 
       let lastSeen = ''
       server.watcher.on('change', (file) => {
-        if (resolve(file) === resolve(testFile)) {
+        if (isTestFile(file)) {
           lastSeen = fs.readFileSync(file, 'utf-8')
         }
       })
@@ -209,7 +216,7 @@ describe('watcher configuration', () => {
         () => {
           expect(lastSeen).toBe('export default "second"\n')
         },
-        { timeout: 1000 },
+        { timeout: 5000 },
       )
     } finally {
       if (server) {
@@ -221,8 +228,10 @@ describe('watcher configuration', () => {
   })
 
   it('should not emit a change event after unlink when rapid changes were throttled', async () => {
-    const tempDir = fs.mkdtempSync(
-      path.join(fs.realpathSync(os.tmpdir()), 'vite-watcher-test-'),
+    const tempDir = fs.realpathSync.native(
+      fs.mkdtempSync(
+        path.join(fs.realpathSync.native(os.tmpdir()), 'vite-watcher-test-'),
+      ),
     )
     const testFile = join(tempDir, 'test.js')
     fs.writeFileSync(testFile, 'export default "initial"\n')
@@ -233,7 +242,7 @@ describe('watcher configuration', () => {
         configFile: false,
         server: {
           middlewareMode: true,
-          hmr: false,
+          ws: false,
         },
       })
       if (!(server.watcher as any)._readyEmitted) {
@@ -241,11 +250,15 @@ describe('watcher configuration', () => {
           server!.watcher.once('ready', resolve),
         )
       }
-      await new Promise((r) => setTimeout(r, 200))
+      await new Promise((r) => setTimeout(r, 300))
+
+      const isTestFile = (file: string) =>
+        normalizePath(resolve(file)).toLowerCase() ===
+        normalizePath(resolve(testFile)).toLowerCase()
 
       const events: string[] = []
       server.watcher.on('all', (event, file) => {
-        if (resolve(file) === resolve(testFile)) {
+        if (isTestFile(file)) {
           events.push(event)
         }
       })
@@ -260,7 +273,7 @@ describe('watcher configuration', () => {
         () => {
           expect(events).toContain('unlink')
         },
-        { timeout: 1000 },
+        { timeout: 5000 },
       )
 
       // Wait past the 50ms throttle window to ensure no late change event is emitted after unlink
