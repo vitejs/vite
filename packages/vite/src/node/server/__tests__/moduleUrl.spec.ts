@@ -1,11 +1,24 @@
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { moduleUrlToBrowserUrl } from '../../../shared/utils'
 import { normalizePath } from '../../utils'
-import { browserUrlToModuleUrl, fileToModuleUrl } from '../moduleUrl'
+import type { DevEnvironment } from '../environment'
+import {
+  browserUrlToModuleUrl,
+  fileToModuleUrl,
+  resolvedIdToModuleUrl,
+} from '../moduleUrl'
 
 describe('ModuleURL and BrowserURL conversions', () => {
   const root = normalizePath(path.resolve('/project'))
+  const environment = {
+    config: { root },
+    depsOptimizer: {
+      isOptimizedDepFile: (id: string) => id.includes('/.vite/deps/'),
+    },
+  } as DevEnvironment
+
   it('maps normalized file paths to root-relative or filesystem URLs', () => {
     const cases = [
       { input: root, output: '/' },
@@ -44,4 +57,33 @@ describe('ModuleURL and BrowserURL conversions', () => {
       expect(browserUrlToModuleUrl(browserUrl, '/base/')).toBe(moduleUrl)
     })
   }
+
+  for (const [id, expected] of [
+    [`${root}/src/main.js?raw`, '/src/main.js?raw'],
+    ['\0virtual:demo?query', '\0virtual:demo?query'],
+    ['virtual:demo', 'virtual:demo'],
+    ['/@react-refresh', '/@react-refresh'],
+    ['/slash-prefixed-virtual.js', '/slash-prefixed-virtual.js'],
+  ]) {
+    it(`maps resolved ID ${id} to ModuleURL ${expected}`, () => {
+      expect(resolvedIdToModuleUrl(environment, id)).toBe(expected)
+    })
+  }
+
+  it('maps files under a drive root to root-relative ModuleURLs', () => {
+    const driveEnvironment = { config: { root: 'C:/' } } as DevEnvironment
+    expect(resolvedIdToModuleUrl(driveEnvironment, 'C:/src/file.js')).toBe(
+      '/src/file.js',
+    )
+  })
+
+  it('maps existing out-of-root files and not-yet-written optimized files', () => {
+    const file = normalizePath(fileURLToPath(import.meta.url))
+    const optimized = normalizePath(path.resolve('/outside/.vite/deps/dep.js'))
+    for (const id of [file + '?raw', optimized + '?v=abc']) {
+      expect(resolvedIdToModuleUrl(environment, id)).toBe(
+        path.posix.join('/@fs/', id),
+      )
+    }
+  })
 })
