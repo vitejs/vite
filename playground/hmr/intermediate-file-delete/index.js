@@ -9,9 +9,13 @@ const render = () => {
 
 render()
 
-button.addEventListener('click', () => {
+const increment = () => {
   button.textContent = `${Number(button.textContent) + 1}`
   render()
-})
+}
+button.addEventListener('click', increment)
 
-if (import.meta.hot) import.meta.hot.accept()
+if (import.meta.hot) {
+  import.meta.hot.accept()
+  import.meta.hot.dispose(() => button.removeEventListener('click', increment))
+}
