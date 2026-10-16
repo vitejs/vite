@@ -19,3 +19,7 @@ function load(name, importer) {
 load('route-a', () => import('./page-a.js'))
 load('route-b', () => import('./page-b.js'))
 load('route-c', () => import('./page-c.js'))
+// A route whose lazy chunk has its own lazy import
+load('route-nested', () =>
+  import('./page-nested.js').then((mod) => mod.loadInner()),
+)

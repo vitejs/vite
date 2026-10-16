@@ -38,6 +38,12 @@ if (typeof DevRuntime !== 'undefined') {
       ctx._internal = { updateStyle, removeStyle }
       return ctx
     }
+
+    override loadLazyChunk(proxyModuleId: string): Promise<unknown> {
+      return import(
+        /* @vite-ignore */ `${base}@vite/lazy?id=${encodeURIComponent(proxyModuleId)}&clientId=${this.clientId}`
+      )
+    }
   }
 
   const clientId = nanoid()
