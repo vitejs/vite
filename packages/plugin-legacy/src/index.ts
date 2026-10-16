@@ -271,6 +271,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let overriddenBuildTarget = false
   let overriddenBuildTargetOnlyModern = false
   let overriddenDefaultModernTargets = false
+  let defaultCssTarget: string[] | undefined
   const legacyConfigPlugin: Plugin = {
     name: 'vite:legacy-config',
 
@@ -280,13 +281,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           config.build = {}
         }
 
-        if (genLegacy && !config.build.cssTarget) {
-          // Hint for esbuild that we are targeting legacy browsers when minifying CSS.
-          // Full CSS compat table available at https://github.com/evanw/esbuild/blob/78e04680228cf989bdd7d471e02bbc2c8d345dc9/internal/compat/css_table.go
-          // But note that only the `HexRGBA` feature affects the minify outcome.
-          // HSL & rebeccapurple values will be minified away regardless the target.
-          // So targeting `chrome61` suffices to fix the compatibility issue.
-          config.build.cssTarget = 'chrome61'
+        if (genLegacy && config.build.cssTarget === undefined) {
+          // Resolve browser targets after other config hooks finalize root.
+          config.build.cssTarget = defaultCssTarget = ['chrome61']
         }
 
         if (genLegacy) {
@@ -457,7 +454,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       outputToChunkFileNameToPolyfills.set(opts, null)
     },
 
-    configResolved(_config) {
+    async configResolved(_config) {
       if (_config.build.lib) {
         throw new Error('@vitejs/plugin-legacy does not support library mode.')
       }
@@ -489,6 +486,49 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         options.targets ||
         browserslistLoadConfig({ path: config.root }) ||
         'last 2 versions and not dead, > 0.3%, Firefox ESR'
+
+      if (defaultCssTarget && config.build.cssTarget === defaultCssTarget) {
+        const { default: browserslistToEsbuild } =
+          await import('browserslist-to-esbuild')
+        const { default: resolveBabelTargets } = _require(
+          '@babel/helper-compilation-targets',
+        )
+        const resolvedTargets = resolveBabelTargets(
+          typeof targets === 'object' && !Array.isArray(targets)
+            ? targets
+            : { browsers: targets },
+          { ignoreBrowserslistConfig: true },
+        ) as Record<string, string>
+        const browserAliases: Record<string, string> = {
+          ios: 'ios_saf',
+          opera_mobile: 'op_mob',
+        }
+        const cssQueries = Object.entries(resolvedTargets).flatMap(
+          ([browser, version]) => {
+            if (['node', 'deno', 'rhino'].includes(browser)) return []
+            const browserName = browserAliases[browser] || browser
+            return version === 'tp'
+              ? `${browserName} TP`
+              : `${browserName} >= ${version.split('.').slice(0, 2).join('.')}`
+          },
+        )
+        // Keep rgba() instead of hexadecimal alpha colors, and retain
+        // prefixes needed by both the legacy and modern browsers.
+        const cssTargets = [
+          'chrome61',
+          ...browserslistToEsbuild(cssQueries),
+          ...browserslistToEsbuild(modernTargets),
+        ]
+        if (config.build.cssTarget === defaultCssTarget) {
+          config.build.cssTarget = cssTargets
+        }
+        for (const environment of Object.values(config.environments)) {
+          if (environment.build.cssTarget === defaultCssTarget) {
+            environment.build.cssTarget = cssTargets
+          }
+        }
+      }
+
       if (isDebug) {
         console.log(`[@vitejs/plugin-legacy] targets:`, targets)
       }

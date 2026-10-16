@@ -996,6 +996,65 @@ test('inlined assets HMR', async () => {
   expect(updatedLogoUrl).not.toEqual(initialLogoUrl)
 })
 
+test('file edits trigger HMR when the modification time does not advance', async () => {
+  const filename = resolve(testDir, 'unresolved.ts')
+  const timestamp = new Date(
+    Math.floor(fs.statSync(filename).mtimeMs / 1000) * 1000,
+  )
+  fs.utimesSync(filename, timestamp, timestamp)
+  await setupModuleRunner('/unresolved.ts')
+
+  // getWatched() can be populated before polling captures its initial stats.
+  let pollingStarted = false
+  const onRaw = (_event: string, path: string) => {
+    if (path === filename) pollingStarted = true
+  }
+  server.watcher.on('raw', onRaw)
+  onTestFinished(() => {
+    server.watcher.off('raw', onRaw)
+  })
+  await expect
+    .poll(() => {
+      // An access-time-only change starts polling without triggering HMR.
+      fs.utimesSync(filename, new Date(), timestamp)
+      return pollingStarted
+    })
+    .toBe(true)
+  server.watcher.off('raw', onRaw)
+
+  const writeFileSync = fs.writeFileSync
+  const writeSpy = vi
+    .spyOn(fs, 'writeFileSync')
+    .mockImplementation((path, data, options) => {
+      const previous = path === filename ? fs.statSync(filename) : undefined
+      writeFileSync(path, data, options)
+      if (previous) {
+        // Model a write with unchanged mtime and a newer access time.
+        fs.utimesSync(
+          filename,
+          new Date(previous.mtimeMs + 60_000),
+          previous.mtime,
+        )
+      }
+    })
+  onTestFinished(() => writeSpy.mockRestore())
+
+  await untilConsoleLogAfter(
+    () =>
+      editFile('unresolved.ts', (code) =>
+        code.replace('const foo = 1', 'const foo = 2 '),
+      ),
+    [
+      'foo was: 1',
+      '(self-accepting 1) foo is now: 2',
+      '(self-accepting 2) foo is now: 2',
+      updated('/unresolved.ts'),
+    ],
+    true,
+  )
+  await expect.poll(() => hmr('.app')).toMatch('2')
+})
+
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void
 
 export async function untilConsoleLogAfter(

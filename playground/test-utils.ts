@@ -209,7 +209,13 @@ export function editFile(
     Error.captureStackTrace(e, editFile)
     throw e
   }
+  const previousMtime = fs.statSync(filename).mtimeMs
   fs.writeFileSync(filename, modified)
+  const stats = fs.statSync(filename)
+  // Chokidar can suppress size-only changes when the mtime is unchanged.
+  if (stats.mtimeMs <= previousMtime) {
+    fs.utimesSync(filename, stats.atime, new Date(previousMtime + 1))
+  }
 }
 
 export function addFile(filename: string, content: string): void {
