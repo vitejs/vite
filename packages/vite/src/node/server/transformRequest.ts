@@ -498,24 +498,22 @@ async function handleModuleSoftInvalidation(
           environment.config.base,
         ),
       )
-      for (const importedMod of mod.importedModules) {
-        if (importedMod.url !== moduleUrl) continue
-        if (importedMod.lastHMRTimestamp > 0) {
-          const replacedUrl = injectQuery(
-            urlWithoutTimestamp,
-            `t=${importedMod.lastHMRTimestamp}`,
-          )
-          const start = hasQuotes ? imp.s + 1 : imp.s
-          const end = hasQuotes ? imp.e - 1 : imp.e
-          s.overwrite(start, end, replacedUrl)
-        }
+      const importedMod =
+        await environment.moduleGraph._getUnresolvedUrlToModule(moduleUrl)
+      if (!importedMod || !mod.importedModules.has(importedMod)) continue
+      if (importedMod.lastHMRTimestamp > 0) {
+        const replacedUrl = injectQuery(
+          urlWithoutTimestamp,
+          `t=${importedMod.lastHMRTimestamp}`,
+        )
+        const start = hasQuotes ? imp.s + 1 : imp.s
+        const end = hasQuotes ? imp.e - 1 : imp.e
+        s.overwrite(start, end, replacedUrl)
+      }
 
-        if (imp.d === -1 && environment.config.dev.preTransformRequests) {
-          // pre-transform known direct imports
-          environment.warmupRequest(moduleUrl)
-        }
-
-        break
+      if (imp.d === -1 && environment.config.dev.preTransformRequests) {
+        // pre-transform known direct imports
+        environment.warmupRequest(moduleUrl)
       }
     }
 
