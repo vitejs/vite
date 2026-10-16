@@ -656,6 +656,7 @@ export async function toAbsoluteGlob(
   root = globSafePath(root)
   let dir
   if (base) {
+    base = globSafePath(base)
     if (base[0] === '/') {
       dir = posix.join(root, base)
     } else {

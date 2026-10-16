@@ -18,6 +18,22 @@ describe('fixture', async () => {
     ).toMatchSnapshot()
   })
 
+  it.each([
+    './fixture-[ab]',
+    '/fixture-[ab]',
+    './fixture-{a,b}',
+    '/fixture-{a,b}',
+  ])('treats base %s as a literal directory', async (base) => {
+    const code = `Object.keys(import.meta.glob('./*.ts', { base: '${base}' }))`
+    const result = await transformGlobImport(
+      code,
+      resolve(root, 'index.ts'),
+      root,
+      resolveId,
+    )
+    expect(result?.s.toString()).toBe('Object.keys({"./index.ts": 0})')
+  })
+
   it('preserve line count', async () => {
     const getTransformedLineCount = async (code: string) =>
       (await transformGlobImport(code, 'virtual:module', root, resolveId))?.s
