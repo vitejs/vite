@@ -1,0 +1,37 @@
+packages/vite/src/node/__tests__/optimizer/depUrl.spec.ts
+  s_dc4db4a597e998::t_0247374a46a5db 1-31
+  s_dc4db4a597e998::t_8bd8d746c05654 32-33
+packages/vite/src/node/server/moduleUrl.ts
+  s_dc4db4a597e998::t_cb58889d887675 21-23,37-39
+  s_dc4db4a597e998::t_480f6480e94792 2,11-16,70-92
+  s_dc4db4a597e998::t_4142c2e383f879 19-20,24-26,50
+  s_dc4db4a597e998::t_862396b773d001 1,3-10,17-18,27-36,40-49,51-69
+  s_dc4db4a597e998::t_e6e0cff93b155a 93
+packages/vite/src/node/plugins/asset.ts
+  s_dc4db4a597e998::t_d59cb126379410 16,23,27,481-482
+packages/vite/src/node/server/warmup.ts
+  s_dc4db4a597e998::t_ed3446afc4954b 8,50
+packages/vite/src/node/server/__tests__/moduleUrl.spec.ts
+  s_dc4db4a597e998::t_f9d6ef02a2ab2f 1-12,14-25,52-87
+  s_dc4db4a597e998::t_a0cd37102dc114 26,37-49
+  s_dc4db4a597e998::t_3d1ba0ffed5972 13,27-36,50-51
+  s_dc4db4a597e998::t_b49cfb8a3ba157 88-94
+packages/vite/src/node/optimizer/index.ts
+  s_dc4db4a597e998::t_47fc07403c05e1 25,1000-1001
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "7ba0db7602bf8dd0af9afa8cc6c2b7eace029600",
+  "prompts": {},
+  "sessions": {
+    "s_dc4db4a597e998": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a14061-a227-7410-80b4-71e724c4b749",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
