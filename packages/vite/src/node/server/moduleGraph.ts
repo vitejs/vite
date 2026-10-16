@@ -67,6 +67,11 @@ export class EnvironmentModuleNode {
    * @internal
    */
   staticImportedUrls?: Set<string>
+  /**
+   * Whether the module's file has been deleted from disk.
+   * @internal
+   */
+  isDeleted?: boolean
 
   /**
    * @param setIsSelfAccepting - set `false` to set `isSelfAccepting` later. e.g. #7870
@@ -147,6 +152,7 @@ export class EnvironmentModuleGraph {
     if (mods) {
       const seen = new Set<EnvironmentModuleNode>()
       mods.forEach((mod) => {
+        mod.isDeleted = false
         this.invalidateModule(mod, seen)
       })
     }
@@ -155,10 +161,13 @@ export class EnvironmentModuleGraph {
   onFileDelete(file: string): void {
     const mods = this.getModulesByFile(file)
     if (mods) {
+      const seen = new Set<EnvironmentModuleNode>()
       mods.forEach((mod) => {
+        mod.isDeleted = true
         mod.importedModules.forEach((importedMod) => {
           importedMod.importers.delete(mod)
         })
+        this.invalidateModule(mod, seen)
       })
     }
   }
@@ -211,13 +220,16 @@ export class EnvironmentModuleGraph {
     mod.ssrError = null
 
     mod.importers.forEach((importer) => {
-      if (!importer.acceptedHmrDeps.has(mod)) {
+      if (!importer.acceptedHmrDeps.has(mod) || mod.isDeleted) {
         // If the importer statically imports the current module, we can soft-invalidate the importer
         // to only update the import timestamps. If it's not statically imported, e.g. watched/glob file,
         // we can only soft invalidate if the current module was also soft-invalidated. A soft-invalidation
         // doesn't need to trigger a re-load and re-transform of the importer.
         // But we exclude direct CSS files as those cannot be soft invalidated.
+        // We also cannot soft-invalidate importers if the current module was deleted, as importers
+        // must be re-transformed to re-resolve the deleted import specifier.
         const shouldSoftInvalidateImporter =
+          !mod.isDeleted &&
           (importer.staticImportedUrls?.has(mod.url) || softInvalidate) &&
           importer.type === 'js'
         this.invalidateModule(
@@ -349,7 +361,7 @@ export class EnvironmentModuleGraph {
     // Quick path, if we already have a module for this rawUrl (even without extension)
     rawUrl = removeImportQuery(removeTimestampQuery(rawUrl))
     let mod = this._getUnresolvedUrlToModule(rawUrl)
-    if (mod) {
+    if (mod && !('then' in mod ? false : mod.isDeleted)) {
       return mod
     }
     const modPromise = (async () => {
@@ -375,8 +387,11 @@ export class EnvironmentModuleGraph {
       }
       // multiple urls can map to the same module and id, make sure we register
       // the url to the existing module in that case
-      else if (!this.urlToModuleMap.has(url)) {
-        this.urlToModuleMap.set(url, mod)
+      else {
+        mod.isDeleted = false
+        if (!this.urlToModuleMap.has(url)) {
+          this.urlToModuleMap.set(url, mod)
+        }
       }
       this._setUnresolvedUrlToModule(rawUrl, mod)
       return mod
@@ -421,7 +436,7 @@ export class EnvironmentModuleGraph {
   async resolveUrl(url: string): Promise<ResolvedUrl> {
     url = removeImportQuery(removeTimestampQuery(url))
     const mod = await this._getUnresolvedUrlToModule(url)
-    if (mod?.id) {
+    if (mod?.id && !mod.isDeleted) {
       return [mod.url, mod.id, mod.meta]
     }
     return this._resolveUrl(url)

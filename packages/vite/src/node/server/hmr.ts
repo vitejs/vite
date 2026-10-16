@@ -485,6 +485,9 @@ export async function handleHMRUpdate(
   for (const environment of environments) {
     const mods = new Set(environment.moduleGraph.getModulesByFile(file))
     if (type === 'create') {
+      for (const mod of mods) {
+        mod.isDeleted = false
+      }
       for (const mod of environment.moduleGraph._hasResolveFailedErrorModules) {
         mods.add(mod)
       }
@@ -828,7 +831,7 @@ function propagateUpdate(
     return false
   }
 
-  if (node.isSelfAccepting) {
+  if (node.isSelfAccepting && !node.isDeleted) {
     // isSelfAccepting is only true for js and css
     const boundary = node as EnvironmentModuleNode & { type: 'js' | 'css' }
     boundaries.push({
@@ -844,7 +847,7 @@ function propagateUpdate(
   // are used outside of me".
   // Also, the imported module (this one) must be updated before the importers,
   // so that they do get the fresh imported module when/if they are reloaded.
-  if (node.acceptedHmrExports) {
+  if (node.acceptedHmrExports && !node.isDeleted) {
     // acceptedHmrExports is only true for js and css
     const boundary = node as EnvironmentModuleNode & { type: 'js' | 'css' }
     boundaries.push({
@@ -861,7 +864,7 @@ function propagateUpdate(
   for (const importer of node.importers) {
     const subChain = [...currentChain, importer]
 
-    if (importer.acceptedHmrDeps.has(node)) {
+    if (importer.acceptedHmrDeps.has(node) && !node.isDeleted) {
       // acceptedHmrDeps has value only for js and css
       const boundary = importer as EnvironmentModuleNode & {
         type: 'js' | 'css'
