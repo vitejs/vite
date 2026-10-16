@@ -221,6 +221,19 @@ describe.runIf(isBuild)('build', () => {
         'dep1 common dep2 unique',
       )
     })
+
+    test('bundles ?inline scripts into synchronous inline scripts', async () => {
+      await page.goto(viteTestUrl + '/inline/script.html?v=1')
+      expect(
+        await page.$('script[type="module"][src*="script-inline"]'),
+      ).toBeNull()
+      expect(
+        await page.$('script:not([type="module"]):not([src])'),
+      ).toBeTruthy()
+      expect(
+        await page.$eval('#inline-order', (el) => el.textContent),
+      ).toBe('dependency,inline,after')
+    })
   })
 })
 
