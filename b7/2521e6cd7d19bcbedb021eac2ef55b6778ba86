@@ -1,0 +1,45 @@
+packages/vite/src/node/plugins/importAnalysis.ts
+  s_dc4db4a597e998::t_920acef650fe45 14,19,44-48,299-300,303-309,314,330-337,343,349,360,362-375,379,381,384-385,388,390,397-403,408,411-413,555-563,565,567,604,609,613,628,634,643,653-655,659-662,729-731,735,782,784,787,793-800,816,818-820,840,842,854
+packages/vite/src/node/server/__tests__/moduleGraph.spec.ts
+  s_dc4db4a597e998::t_bd4fc38316f22e 1,7-68
+packages/vite/src/node/server/__tests__/pluginContainer.spec.ts
+  s_dc4db4a597e998::t_373437ca264288 198-226
+packages/vite/src/node/server/__tests__/transformRequest.spec.ts
+  s_dc4db4a597e998::t_c59a82ceea0fe9 1-8,11-403
+packages/vite/src/node/server/environment.ts
+  s_dc4db4a597e998::t_cecf3f72469272 37,94
+packages/vite/src/node/server/middlewares/transform.ts
+  s_dc4db4a597e998::t_0961853f3de5ce 11,33,35,142,144,160,167,170-175,212-220,231-232,237-240,242-244,247,250,252,261-265,267,274,277,279-280
+packages/vite/src/node/server/pluginContainer.ts
+  s_dc4db4a597e998::t_a79820b4f80d91 829-832,844
+packages/vite/src/node/server/resolveRequest.ts
+  s_dc4db4a597e998::t_aba355fd588793 1-31
+packages/vite/src/node/server/transformRequest.ts
+  s_dc4db4a597e998::t_9a6e3482bf8485 14,31,33-34,113-116,133-136,150,163,165,167-168,180,225,231,340,480-481
+packages/vite/src/node/server/index.ts
+  s_dc4db4a597e998::t_c67ddca9a9e277 381-383,390,948
+packages/vite/src/node/server/moduleGraph.ts
+  s_dc4db4a597e998::t_c42c2ce0ccd66c 5-6,12,16,59-60,81,89,120,125-126,135-144,341,347-348,353-358,363,367-397,424,429-430,457-458,460
+packages/vite/src/shared/invokeMethods.ts
+  s_dc4db4a597e998::t_69bdc59983c271 50-51
+packages/vite/types/customEvent.d.ts
+  s_dc4db4a597e998::t_b1d379838cd5bb 42,45
+packages/vite/types/hmrPayload.d.ts
+  s_dc4db4a597e998::t_7d77801dc5d7ca 41,43,50-54,62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b72521e6cd7d19bcbedb021eac2ef55b6778ba86",
+  "prompts": {},
+  "sessions": {
+    "s_dc4db4a597e998": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a14061-a227-7410-80b4-71e724c4b749",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
