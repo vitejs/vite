@@ -180,7 +180,7 @@ function parseAuthor(author: PackageJson['author']): {
   // Parse string format: "Name <email> (url)" or "Name (url)" or "Name <email>" or "Name"
   let str = author
   let url: string | undefined
-  const urlMatch = str.match(/\(([^)]+)\)$/)
+  const urlMatch = /\(([^)]+)\)$/.exec(str)
   if (urlMatch) {
     url = urlMatch[1]
     str = str.slice(0, urlMatch.index).trim()

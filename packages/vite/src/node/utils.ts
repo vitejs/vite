@@ -904,10 +904,7 @@ export function combineSourcemaps(
   filename: string,
   sourcemapList: Array<DecodedSourceMap | RawSourceMap>,
 ): RawSourceMap {
-  if (
-    sourcemapList.length === 0 ||
-    sourcemapList.every((m) => m.sources.length === 0)
-  ) {
+  if (sourcemapList.every((m) => m.sources.length === 0)) {
     return { ...nullSourceMap }
   }
 
