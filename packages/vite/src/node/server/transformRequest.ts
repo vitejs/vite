@@ -1,6 +1,7 @@
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
+import { dataToEsm } from '@rollup/pluginutils'
 import { init, parse as parseImports } from 'es-module-lexer'
 import getEtag from 'etag'
 import MagicString from 'magic-string'
@@ -341,7 +342,13 @@ async function loadAndTransform(
     throw err
   }
   if (moduleType === undefined) {
-    const guessedModuleType = getModuleTypeFromId(id)
+    const guessedModuleType = getModuleTypeFromId(
+      id,
+      environment.config.build.rolldownOptions?.moduleTypes as Record<
+        string,
+        string
+      >,
+    )
     if (guessedModuleType && guessedModuleType !== 'js') {
       moduleType = guessedModuleType
     }
@@ -355,13 +362,31 @@ async function loadAndTransform(
 
   // transform
   const transformStart = debugTransform ? performance.now() : 0
+  const originalCode = code
   const transformResult = await pluginContainer.transform(code, id, {
     inMap: map,
     moduleType,
   })
-  const originalCode = code
   if (transformResult.code === originalCode) {
     // no transform applied, keep code as-is
+    if (moduleType === 'json') {
+      try {
+        const parsed = JSON.parse(originalCode)
+        if (environment.getTopLevelConfig().json.namedExports) {
+          code = dataToEsm(parsed, {
+            preferConst: true,
+            namedExports: true,
+          })
+        } else {
+          code = `export default ${JSON.stringify(parsed)}`
+        }
+      } catch {
+        throw new Error(`Failed to parse JSON file: ${id}`)
+      }
+    } else if (moduleType === 'text') {
+      code = `export default ${JSON.stringify(originalCode)}`
+    }
+
     debugTransform?.(
       timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`),
     )
@@ -553,13 +578,40 @@ const defaultModuleTypes: Record<string, ModuleType | undefined> = {
 }
 
 // https://github.com/rolldown/rolldown/blob/bf53a100edf1780d5a5aa41f0bc0459c5696543e/crates/rolldown/src/utils/load_source.rs#L53-L89
-export function getModuleTypeFromId(id: string): ModuleType | undefined {
+export function getModuleTypeFromId(
+  id: string,
+  configModuleTypes?: Record<string, string>,
+): ModuleType | undefined {
+  const cleanId = cleanUrl(id)
   let pos = -1
-  while ((pos = id.indexOf('.', pos + 1)) >= 0) {
-    const ext = id.slice(pos + 1)
-    const moduleType = defaultModuleTypes[ext]
+  while ((pos = cleanId.indexOf('.', pos + 1)) >= 0) {
+    const ext = cleanId.slice(pos)
+    const moduleType =
+      configModuleTypes?.[ext] ||
+      configModuleTypes?.[ext.slice(1)] ||
+      defaultModuleTypes[ext.slice(1)]
     if (moduleType) {
-      return moduleType
+      return moduleType as ModuleType
+    }
+  }
+
+  // Fallback to full ID for proxy queries (e.g. ?html-proxy&index=0.css, ?vue&type=style&lang.css)
+  // only if the base file extension didn't match a module type.
+  pos = -1
+  while ((pos = id.indexOf('.', pos + 1)) >= 0) {
+    if (
+      pos > 0 &&
+      (id[pos - 1] === '=' || id[pos - 1] === '?' || id[pos - 1] === '&')
+    ) {
+      continue
+    }
+    const ext = id.slice(pos)
+    const moduleType =
+      configModuleTypes?.[ext] ||
+      configModuleTypes?.[ext.slice(1)] ||
+      defaultModuleTypes[ext.slice(1)]
+    if (moduleType) {
+      return moduleType as ModuleType
     }
   }
 }
