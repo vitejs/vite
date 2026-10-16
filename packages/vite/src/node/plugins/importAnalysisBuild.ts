@@ -27,6 +27,38 @@ type FileDep = {
 
 type VitePreloadErrorEvent = Event & { payload: Error }
 
+type PreloadDependency = {
+  fileName: string
+  js?: string
+  imports?: readonly string[]
+  css?: Iterable<string>
+}
+
+function collectPreloadDependencies(
+  fileName: string,
+  ownerFileName: string,
+  getDependency: (fileName: string) => PreloadDependency | undefined,
+): string[] {
+  const visited = new Set([ownerFileName])
+  const dependencies: string[] = []
+  const visit = (fileName: string) => {
+    const dependency = getDependency(fileName)
+    if (!dependency || visited.has(dependency.fileName)) return
+    visited.add(dependency.fileName)
+    const { js, imports = [], css = [] } = dependency
+    if (js !== undefined) {
+      dependencies.push(js)
+    }
+    imports.forEach(visit)
+    // Keep this chunk's CSS after its dependencies so its styles take precedence.
+    for (const file of css) {
+      dependencies.push(file)
+    }
+  }
+  visit(fileName)
+  return dependencies
+}
+
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
  * target is not native es - so that injected helper logic can be conditionally
@@ -481,7 +513,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                 )
                   url = rawUrl.slice(1, -1)
               }
-              const deps = new Set<string>()
+              let deps = new Set<string>()
               let hasRemovedPureCssChunk = false
 
               let normalizedFile: string | undefined = undefined
@@ -492,43 +524,42 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                   url,
                 )
 
-                const ownerFilename = chunk.fileName
-                // literal import - trace direct imports and add to deps
-                const analyzed: Set<string> = new Set<string>()
-                const addDeps = (rawFilename: string) => {
-                  const filename =
-                    importMapMapping?.[rawFilename] ?? rawFilename
-                  if (filename === ownerFilename) return
-                  if (analyzed.has(filename)) return
-                  analyzed.add(filename)
-                  const chunk = bundle[filename]
-                  if (chunk) {
-                    deps.add(chunk.fileName)
-                    if (chunk.type === 'chunk') {
-                      chunk.imports.forEach(addDeps)
-                      // Ensure that the css imported by current chunk is loaded after the dependencies.
-                      // So the style of current chunk won't be overwritten unexpectedly.
-                      chunk.viteMetadata!.importedCss.forEach((file) => {
-                        deps.add(file)
-                      })
-                    }
-                  } else {
-                    const removedPureCssFiles =
-                      removedPureCssFilesCache.get(config)!
-                    const chunk = removedPureCssFiles.get(filename)
-                    if (chunk) {
-                      if (chunk.viteMetadata!.importedCss.size) {
-                        chunk.viteMetadata!.importedCss.forEach((file) => {
-                          deps.add(file)
-                        })
-                        hasRemovedPureCssChunk = true
+                let shouldRewriteImport = false
+                deps = new Set(
+                  collectPreloadDependencies(
+                    normalizedFile,
+                    chunk.fileName,
+                    (rawFilename) => {
+                      const fileName =
+                        importMapMapping?.[rawFilename] ?? rawFilename
+                      const dependency = bundle[fileName]
+                      if (dependency?.type === 'chunk') {
+                        return {
+                          fileName,
+                          js: dependency.fileName,
+                          imports: dependency.imports,
+                          css: dependency.viteMetadata!.importedCss,
+                        }
                       }
-
-                      s.update(expStart, expEnd, 'Promise.resolve({})')
-                    }
-                  }
+                      if (dependency) {
+                        return { fileName, js: dependency.fileName }
+                      }
+                      const removedPureCssChunk = removedPureCssFilesCache
+                        .get(config)!
+                        .get(fileName)
+                      if (removedPureCssChunk) {
+                        const css =
+                          removedPureCssChunk.viteMetadata!.importedCss
+                        if (css.size) hasRemovedPureCssChunk = true
+                        shouldRewriteImport = true
+                        return { fileName, css }
+                      }
+                    },
+                  ),
+                )
+                if (shouldRewriteImport) {
+                  s.update(expStart, expEnd, 'Promise.resolve({})')
                 }
-                addDeps(normalizedFile)
               }
 
               const markerStartPos = importMarkerPos[index]
