@@ -172,6 +172,27 @@ test('successfully scaffolds a project with subfolder based on react starter tem
   expect(templateFilesReact).toEqual(generatedFiles)
 })
 
+test('successfully scaffolds a project with backslash-separated nested target directory', () => {
+  const { stdout } = run(
+    [
+      `subfolder\\${projectName}`,
+      '--interactive',
+      '--no-immediate',
+      '--template',
+      'react',
+      '--no-rolldown',
+    ],
+    {
+      cwd: import.meta.dirname,
+    },
+  )
+  const generatedFiles = fs.readdirSync(genPathWithSubfolder).sort()
+
+  // Assertions
+  expect(stdout).toContain(`Scaffolding project in ${genPathWithSubfolder}`)
+  expect(templateFilesReact).toEqual(generatedFiles)
+})
+
 test('successfully scaffolds a project based on react-compiler-ts starter template', () => {
   const { stdout } = run([projectName, '--template', 'react-compiler-ts'], {
     cwd: import.meta.dirname,
