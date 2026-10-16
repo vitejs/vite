@@ -862,7 +862,7 @@ test('delete file should not break hmr', async () => {
 
   // remove unused file
   removeFile('intermediate-file-delete/re-export.js')
-  __HMR__['.intermediate-file-delete-increment'] = '1' // reset state
+  globalThis.__HMR__['.intermediate-file-delete-increment'] = '1' // reset state
   await expect
     .poll(() => hmr('.intermediate-file-delete-display'))
     .toMatch('count is 1!')

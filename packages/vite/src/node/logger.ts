@@ -1,4 +1,4 @@
-/* eslint no-console: 0 */
+/* oxlint-disable no-console */
 
 import readline from 'node:readline'
 import colors from 'picocolors'
