@@ -1,6 +1,12 @@
 # @paul-browne/vite
 
-A fork of [Vite](https://github.com/vitejs/vite) that adds a `displayName` config option, so tools built on Vite can show their own name in CLI banners, log prefixes and the browser console instead of "vite" ([vitejs/vite#23175](https://github.com/vitejs/vite/issues/23175), [vitejs/vite#23695](https://github.com/vitejs/vite/pull/23695)). Versions match the upstream Vite release they are based on.
+A fork of [Vite](https://github.com/vitejs/vite) with options for tools built on Vite that want their own name in its output ([vitejs/vite#23175](https://github.com/vitejs/vite/issues/23175), [vitejs/vite#23695](https://github.com/vitejs/vite/pull/23695)):
+
+- `displayName` shows the tool's name instead of "vite" in CLI banners, log prefixes and the browser console, and leaves Vite's own plugin names (`vite:*`) out of errors, warnings and the error overlay.
+- `hiddenPluginNames` leaves more plugin names out the same way, such as the tool's own.
+- `configHint` points the error overlay's tip and the blocked-host error at the tool's config file instead of `vite.config.js`.
+
+Each release is based on an upstream Vite release, with the patch number raised for the fork's own changes: 8.3.5 is upstream 8.3.4 plus `hiddenPluginNames` and `configHint`.
 
 Install it under the `vite` name so plugins and `import ... from 'vite'` keep working:
 
@@ -12,7 +18,11 @@ npm i -D vite@npm:@paul-browne/vite
 // vite.config.js
 import { defineConfig } from 'vite'
 
-export default defineConfig({ displayName: 'my-tool' })
+export default defineConfig({
+  displayName: 'my-tool',
+  hiddenPluginNames: [/^my-tool:/],
+  configHint: { file: 'my-tool.config.js', key: 'vite' },
+})
 ```
 
 The original Vite README follows.
