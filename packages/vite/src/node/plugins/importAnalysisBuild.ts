@@ -404,8 +404,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
       let importMapMapping: Record<string, string> | undefined
       let importMapReverseMapping: Record<string, string> | undefined
-      if (this.environment.config.build.chunkImportMap) {
-        const importMap = getImportMap(bundle, this.environment.config)!
+      const importMap = getImportMap(bundle, this.environment.config)
+      if (importMap) {
         importMapMapping = importMap.mapping
         importMapReverseMapping = Object.fromEntries(
           Object.entries(importMapMapping).map(([k, v]) => [v, k]),
