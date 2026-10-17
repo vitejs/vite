@@ -1376,6 +1376,7 @@ export function createCSSResolvers(
   return {
     get css() {
       return (cssResolve ??= createBackCompatIdResolver(config, {
+        userPrePlugins: true,
         extensions: ['.css'],
         mainFields: ['style'],
         conditions: ['style', DEV_PROD_CONDITION],
@@ -1387,6 +1388,7 @@ export function createCSSResolvers(
     get sass() {
       if (!sassResolve) {
         const resolver = createBackCompatIdResolver(config, {
+          userPrePlugins: true,
           extensions: ['.scss', '.sass', '.css'],
           mainFields: ['sass', 'style'],
           conditions: ['sass', 'style', DEV_PROD_CONDITION],
@@ -1415,6 +1417,7 @@ export function createCSSResolvers(
 
     get less() {
       return (lessResolve ??= createBackCompatIdResolver(config, {
+        userPrePlugins: true,
         extensions: ['.less', '.css'],
         mainFields: ['less', 'style'],
         conditions: ['less', 'style', DEV_PROD_CONDITION],
