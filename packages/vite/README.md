@@ -6,7 +6,7 @@ A fork of [Vite](https://github.com/vitejs/vite) with options for tools built on
 - `hiddenPluginNames` leaves more plugin names out the same way, such as the tool's own.
 - `configHint` points the error overlay's tip and the blocked-host error at the tool's config file instead of `vite.config.js`.
 
-Each release is based on an upstream Vite release, with the patch number raised for the fork's own changes: 8.3.5 is upstream 8.3.4 plus `hiddenPluginNames` and `configHint`.
+Each release is based on an upstream Vite release, with the patch number raised for the fork's own changes: 8.3.6 is upstream 8.3.4 plus `hiddenPluginNames`, `configHint`, and a fix that names the file when one of Rolldown's native plugins, such as the JSON plugin, fails to transform it.
 
 Install it under the `vite` name so plugins and `import ... from 'vite'` keep working:
 

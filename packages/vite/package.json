@@ -1,6 +1,6 @@
 {
   "name": "@paul-browne/vite",
-  "version": "8.3.5",
+  "version": "8.3.6",
   "description": "Vite with a configurable displayName for whitelabelling (fork of vite)",
   "keywords": [
     "build-tool",
