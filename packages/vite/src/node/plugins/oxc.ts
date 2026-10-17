@@ -238,6 +238,7 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
     id: string,
     code: string,
     environment: Environment,
+    moduleType?: string,
   ): OxcTransformOptions => {
     const result: OxcTransformOptions = {
       ...oxcTransformOptions,
@@ -250,7 +251,8 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
     // disable refresh based by the same condition as @vitejs/plugin-react
     // https://github.com/vitejs/vite-plugin-react/blob/c8ecad052001b6fc42e508f18433e6b305bca641/packages/plugin-react/src/index.ts#L261-L269
     const [filepath] = id.split('?')
-    const isJSX = filepath.endsWith('x')
+    const isJSX =
+      filepath.endsWith('x') || moduleType === 'jsx' || moduleType === 'tsx'
 
     if (
       typeof jsxOptions === 'object' &&
@@ -313,13 +315,26 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
     configureServer(_server) {
       server = _server
     },
-    async transform(code, id) {
-      if (filter(id) || filter(cleanUrl(id)) || jsxRefreshFilter?.(id)) {
+    async transform(code, id, options) {
+      const moduleType = options?.moduleType
+      if (
+        filter(id) ||
+        filter(cleanUrl(id)) ||
+        jsxRefreshFilter?.(id) ||
+        (moduleType && ['jsx', 'ts', 'tsx'].includes(moduleType))
+      ) {
         const modifiedOxcTransformOptions = getModifiedOxcTransformOptions(
-          oxcTransformOptions,
+          {
+            ...oxcTransformOptions,
+            lang:
+              moduleType && ['js', 'jsx', 'ts', 'tsx'].includes(moduleType)
+                ? (moduleType as OxcTransformOptions['lang'])
+                : undefined,
+          },
           id,
           code,
           this.environment,
+          moduleType,
         )
         const result = await transformWithOxc(
           code,
@@ -329,7 +344,12 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
           config,
           server?.watcher,
         )
-        if (jsxInject && jsxExtensionsRE.test(id)) {
+        if (
+          jsxInject &&
+          (jsxExtensionsRE.test(id) ||
+            moduleType === 'jsx' ||
+            moduleType === 'tsx')
+        ) {
           result.code = jsxInject + ';' + result.code
         }
         for (const warning of result.warnings) {
