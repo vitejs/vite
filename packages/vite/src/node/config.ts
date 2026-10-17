@@ -2434,12 +2434,7 @@ export async function loadConfigFromFile(
 
   try {
     const { configExport, dependencies } = await (configLoader === 'bundle'
-      ? bundleAndLoadConfigFile(
-          resolvedPath,
-          configRoot,
-          logLevel,
-          customLogger,
-        )
+      ? bundleAndLoadConfigFile(resolvedPath, logLevel, customLogger)
       : configLoader === 'runner'
         ? runnerImportConfigFile(resolvedPath)
         : nativeImportConfigFile(resolvedPath))
@@ -2498,7 +2493,6 @@ async function runnerImportConfigFile(resolvedPath: string) {
 
 async function bundleAndLoadConfigFile(
   resolvedPath: string,
-  configRoot: string,
   logLevel: LogLevel | undefined,
   customLogger: Logger | undefined,
 ) {
@@ -2515,10 +2509,7 @@ async function bundleAndLoadConfigFile(
   if (bundled.nativeIncompatibilities.length > 0) {
     const logger = createLogger(logLevel, { customLogger })
     logger.warn(
-      formatNativeConfigIncompatWarning(
-        bundled.nativeIncompatibilities,
-        configRoot,
-      ),
+      formatNativeConfigIncompatWarning(bundled.nativeIncompatibilities),
     )
   }
 
