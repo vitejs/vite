@@ -80,10 +80,13 @@ interface EnvironmentOptions {
   resolve?: EnvironmentResolveOptions
   optimizeDeps: DepOptimizationOptions
   consumer?: 'client' | 'server'
+  keepProcessEnv?: boolean
   dev: DevOptions
   build: BuildOptions
 }
 ```
+
+`keepProcessEnv` declares whether the environment's runtime provides a real `process.env`. If it is `true`, `process.env` in the code is preserved as is and evaluated at runtime. Otherwise, it is statically replaced with an empty object. It defaults to `true` when `consumer` is `'server'`, except for the `ssr` environment when `ssr.target` is `'webworker'`, and to `false` otherwise, so a new environment only needs to set it when its runtime does not match that default.
 
 The `UserConfig` interface extends from the `EnvironmentOptions` interface, allowing to configure the client and defaults for other environments, configured through the `environments` option. The `client` and a server environment named `ssr` are always present during dev. This allows backward compatibility with `server.ssrLoadModule(url)` and `server.moduleGraph`. During build, the `client` environment is always present, and the `ssr` environment is only present if it is explicitly configured (using `environments.ssr` or for backward compatibility `build.ssr`). An app doesn't need to use the `ssr` name for its SSR environment, it could name it `server` for example.
 
