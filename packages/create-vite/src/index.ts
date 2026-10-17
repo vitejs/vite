@@ -410,6 +410,7 @@ const TEMPLATES = FRAMEWORKS.map((f) => f.variants.map((v) => v.name)).reduce(
 const renameFiles: Record<string, string | undefined> = {
   _gitignore: '.gitignore',
   '_oxlintrc.json': '.oxlintrc.json',
+  _editorconfig: '.editorconfig',
 }
 
 const defaultTargetDir = 'vite-project'
