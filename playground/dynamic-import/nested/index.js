@@ -205,6 +205,15 @@ import(`../nested/static.js`).then((mod) => {
   text('.dynamic-import-static', mod.self)
 })
 
+async function resolveSpecifier() {
+  return './hello.js'
+}
+
+;(async () => {
+  const mod = await import(await resolveSpecifier())
+  text('.dynamic-import-with-await-in-the-argument', mod.hello())
+})()
+
 // #22700: in a nested `import().then(() => import())`, the outer import's CSS
 // dep used to be dropped to `void 0` in the build output, orphaning the CSS.
 import('./then-css/outer.js').then((outerMod) => {
