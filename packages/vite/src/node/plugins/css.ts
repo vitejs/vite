@@ -622,7 +622,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             return `export default ${JSON.stringify(css)}`
           }
           if (this.environment.config.consumer === 'server') {
-            return modulesCode || 'export {}'
+            return {
+              code: modulesCode || 'export {}',
+              map: { mappings: '' },
+            }
           }
 
           const cssContent = await getContentWithSourcemap(css)

@@ -9,6 +9,7 @@ import {
   convertTargets,
   createCSSResolvers,
   cssPlugin,
+  cssPostPlugin,
   cssUrlRE,
   getEmptyChunkReplacer,
   hoistAtRules,
@@ -142,6 +143,30 @@ composes: bar from '@/css/bar.module.css';
     const result1 = await transform(css, '/foo.module.css') // server
     const result2 = await transform(css, '/foo.module.css?direct') // client
     expect(result1.code).toBe(result2.code)
+  })
+})
+
+describe('server environment', () => {
+  test('returns an empty sourcemap when CSS is replaced with an empty module', async () => {
+    const config = await resolveConfig(
+      { configFile: false, environments: { ssr: {} } },
+      'serve',
+    )
+    const css = cssPlugin(config)
+    const environment = new PartialEnvironment('ssr', config)
+    const { transform } = cssPostPlugin(config)
+
+    // @ts-expect-error buildStart is function
+    await css.buildStart.call({})
+
+    // @ts-expect-error transform.handler is function
+    const result = await transform.handler.call(
+      { environment },
+      '.foo { color: red; }',
+      '/foo.css',
+    )
+
+    expect(result).toEqual({ code: 'export {}', map: { mappings: '' } })
   })
 })
 
