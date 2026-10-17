@@ -940,11 +940,16 @@ class PluginContext
     position?: number | { column: number; line: number },
   ): E {
     const err = (typeof e === 'string' ? new Error(e) : e) as E
+    // Ahead of the `pluginCode` check: rolldown's wrapper for its native
+    // plugins sets a `pluginCode` too, and records the transform options
+    // (`{ moduleType, ssr, inMap }`) as the id of the module that failed.
+    if (this._activeId && (!err.id || typeof err.id !== 'string')) {
+      err.id = this._activeId
+    }
     if (err.pluginCode) {
       return err // The plugin likely called `this.error`
     }
     err.plugin = this._plugin.name
-    if (this._activeId && !err.id) err.id = this._activeId
     if (this._activeCode) {
       err.pluginCode = this._activeCode
 
