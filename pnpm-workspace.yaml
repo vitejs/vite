@@ -2,6 +2,7 @@ packages:
   - 'packages/*'
   - 'playground/**'
   - 'packages/**/__tests__/**'
+  - '!packages/**/__tests__/**/fixtures/lockfile-hash/**'
   - docs
 
 hoistPattern:
