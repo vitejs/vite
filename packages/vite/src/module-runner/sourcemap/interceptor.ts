@@ -258,12 +258,21 @@ function mapEvalOrigin(origin: string): string {
   return origin
 }
 
-// This is copied almost verbatim from the V8 source code at
-// https://code.google.com/p/v8/source/browse/trunk/src/messages.js. The
-// implementation of wrapCallSite() used to just forward to the actual source
-// code of CallSite.prototype.toString but unfortunately a new release of V8
-// did something to the prototype chain and broke the shim. The only fix I
-// could find was copy/paste.
+const identifierRE =
+  /^(?!.*[\u{10000}-\u{10FFFF}])[$_\p{ID_Start}][$\p{ID_Continue}\p{Join_Control}]*$/u
+
+function stringEndsWithMethodName(subject: string, pattern: string): boolean {
+  return (
+    subject === pattern ||
+    subject.endsWith(`.${pattern}`) ||
+    subject.endsWith(` ${pattern}`)
+  )
+}
+
+// Keep this aligned with V8's stack frame serialization:
+// https://github.com/v8/v8/blob/19173cde61d86c96da741e10e4ccbb20e11794ad/src/objects/call-site-info.cc#L741-L881
+// Cloned call sites need a local toString implementation so source-mapped
+// locations retain V8's native stack frame formatting.
 function CallSiteToString(this: CallSite) {
   let fileName
   let fileLocation = ''
@@ -294,28 +303,35 @@ function CallSiteToString(this: CallSite) {
 
   let line = ''
   const functionName = this.getFunctionName()
+  if (this.isAsync()) {
+    line += 'async '
+    const promiseIndex = this.getPromiseIndex()
+    if (promiseIndex != null) {
+      line += functionName ? `Promise.${functionName}` : '<anonymous>'
+      line += ` (index ${promiseIndex})`
+      return line
+    }
+  }
   let addSuffix = true
   const isConstructor = this.isConstructor()
   const isMethodCall = !(this.isToplevel() || isConstructor)
   if (isMethodCall) {
-    let typeName = this.getTypeName()
-    // Fixes shim to be backward compatible with Node v0 to v4
-    if (typeName === '[object Object]') typeName = 'null'
-
+    const typeName = this.getTypeName()
     const methodName = this.getMethodName()
     if (functionName) {
-      if (typeName && functionName.indexOf(typeName) !== 0)
+      if (
+        typeName &&
+        identifierRE.test(functionName) &&
+        functionName !== typeName
+      )
         line += `${typeName}.`
 
       line += functionName
-      if (
-        methodName &&
-        functionName.indexOf(`.${methodName}`) !==
-          functionName.length - methodName.length - 1
-      )
+      if (methodName && !stringEndsWithMethodName(functionName, methodName))
         line += ` [as ${methodName}]`
     } else {
-      line += `${typeName}.${methodName || '<anonymous>'}`
+      if (typeName) line += `${typeName}.`
+      line += methodName || '<anonymous>'
     }
   } else if (isConstructor) {
     line += `new ${functionName || '<anonymous>'}`
