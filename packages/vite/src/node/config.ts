@@ -678,7 +678,13 @@ export interface ResolvedWorkerOptions {
 
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
-  /** @experimental */
+  /**
+   * The loader to use when loading the config file.
+   *
+   * `runner` is deprecated and will be removed in the next major version.
+   *
+   * @default 'bundle'
+   */
   configLoader?: 'bundle' | 'runner' | 'native'
   /** @deprecated */
   envFile?: false
@@ -2404,6 +2410,13 @@ export async function loadConfigFromFile(
   ) {
     throw new Error(
       `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle', 'runner', and 'native'.`,
+    )
+  }
+  if (configLoader === 'runner') {
+    createLogger(logLevel, { customLogger }).warn(
+      colors.yellow(
+        `The \`runner\` config loader is deprecated and will be removed in Vite 9. Use \`bundle\` or \`native\` instead.`,
+      ),
     )
   }
 
