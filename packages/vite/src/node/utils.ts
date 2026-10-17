@@ -33,7 +33,7 @@ import {
   withTrailingSlash,
 } from '../shared/utils'
 import type { BuildEnvironmentOptions } from './build'
-import type { ResolvedConfig } from './config'
+import type { ConfigHint, ResolvedConfig } from './config'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
@@ -1178,6 +1178,38 @@ export function extractHostnamesFromSubjectAltName(
 
 export function arraify<T>(target: T | T[]): T[] {
   return Array.isArray(target) ? target : [target]
+}
+
+/**
+ * Whether output should leave out the name of a plugin, per the resolved
+ * `hiddenPluginNames`.
+ */
+export function isPluginNameHidden(
+  name: string | undefined,
+  hiddenPluginNames: readonly (string | RegExp)[],
+): boolean {
+  if (!name) return false
+  return hiddenPluginNames.some((pattern) => {
+    if (typeof pattern === 'string') return pattern === name
+    pattern.lastIndex = 0
+    return pattern.test(name)
+  })
+}
+
+/**
+ * A config option, and the file to set it in, as messages to the user
+ * name them: where `configHint` says, or else in `defaultFile`.
+ */
+export function describeConfigOption(
+  configHint: ConfigHint | undefined,
+  option: string,
+  defaultFile: string,
+): { option: string; file: string } {
+  if (!configHint) return { option, file: defaultFile }
+  return {
+    option: configHint.key ? `${configHint.key}.${option}` : option,
+    file: configHint.file,
+  }
 }
 
 // Taken from https://stackoverflow.com/a/36328890

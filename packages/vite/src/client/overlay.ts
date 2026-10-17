@@ -3,8 +3,10 @@ import type { ErrorPayload } from '#types/hmrPayload'
 // injected by the hmr plugin when served
 declare const __BASE__: string
 declare const __HMR_CONFIG_NAME__: string
+declare const __HMR_OVERLAY_OPTION__: string
 
 const hmrConfigName = __HMR_CONFIG_NAME__
+const hmrOverlayOption = __HMR_OVERLAY_OPTION__
 const base = __BASE__ || '/'
 
 export const cspNonce =
@@ -196,7 +198,7 @@ const createTemplate = () =>
         ' key, or fix the code to dismiss.',
         h('br'),
         'You can also disable this overlay by setting ',
-        h('code', { part: 'config-option-name' }, 'server.hmr.overlay'),
+        h('code', { part: 'config-option-name' }, hmrOverlayOption),
         ' to ',
         h('code', { part: 'config-option-value' }, 'false'),
         ' in ',

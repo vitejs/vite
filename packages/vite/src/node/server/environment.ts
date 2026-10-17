@@ -319,7 +319,12 @@ export class DevEnvironment extends BaseEnvironment {
       }
       // Unexpected error, log the issue but avoid an unhandled exception
       this.logger.error(
-        buildErrorMessage(e, [`Pre-transform error: ${e.message}`], false),
+        buildErrorMessage(
+          e,
+          [`Pre-transform error: ${e.message}`],
+          false,
+          this.config.hiddenPluginNames,
+        ),
         {
           error: e,
           timestamp: true,

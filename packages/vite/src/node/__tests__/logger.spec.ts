@@ -1,6 +1,6 @@
 import { stripVTControlCharacters } from 'node:util'
 import { describe, expect, test } from 'vitest'
-import { printServerUrls } from '../logger'
+import { createLogger, printServerUrls } from '../logger'
 import type { ResolvedServerUrls } from '../server'
 
 function collectServerUrls(urls: ResolvedServerUrls): string {
@@ -63,5 +63,37 @@ describe('printServerUrls', () => {
       networkInterfaceNames: ['eth0'],
     })
     expect(messages).toMatchSnapshot()
+  })
+})
+
+describe('createLogger', () => {
+  function collectLogs(options: Parameters<typeof createLogger>[1]) {
+    const messages: string[] = []
+    const fakeConsole = {
+      log: (msg: string) => messages.push(stripVTControlCharacters(msg)),
+    } as Console
+    const logger = createLogger('info', {
+      allowClearScreen: false,
+      console: fakeConsole,
+      ...options,
+    })
+    logger.info('hello', { timestamp: true })
+    return messages
+  }
+
+  test('uses [vite] as the default prefix', () => {
+    expect(collectLogs({})[0]).toMatch(/ \[vite\] hello$/)
+  })
+
+  test('derives the prefix from displayName', () => {
+    expect(collectLogs({ displayName: 'sitelo' })[0]).toMatch(
+      / \[sitelo\] hello$/,
+    )
+  })
+
+  test('an explicit prefix takes precedence over displayName', () => {
+    expect(
+      collectLogs({ displayName: 'sitelo', prefix: '[custom]' })[0],
+    ).toMatch(/ \[custom\] hello$/)
   })
 })

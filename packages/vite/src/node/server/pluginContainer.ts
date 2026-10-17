@@ -231,6 +231,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       return null
     }
     if (!module.info) {
+      const { displayName } = this.environment.config
       module.info = new Proxy(
         { id, meta: module.meta || EMPTY_OBJECT } as ModuleInfo,
         // throw when an unsupported ModuleInfo property is accessed,
@@ -245,7 +246,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
               return undefined
             }
             throw Error(
-              `[vite] The "${key}" property of ModuleInfo is not supported.`,
+              `[${displayName}] The "${key}" property of ModuleInfo is not supported.`,
             )
           },
         },
@@ -677,6 +678,7 @@ export class BasicMinimalPluginContext<Meta = PluginContextMeta> {
   constructor(
     public meta: Meta,
     private _logger: Logger,
+    private _hiddenPluginNames: readonly (string | RegExp)[] = [],
   ) {}
 
   // FIXME: properly support this later
@@ -687,13 +689,23 @@ export class BasicMinimalPluginContext<Meta = PluginContextMeta> {
 
   debug(rawLog: string | RollupLog | (() => string | RollupLog)): void {
     const log = this._normalizeRawLog(rawLog)
-    const msg = buildErrorMessage(log, [`debug: ${log.message}`], false)
+    const msg = buildErrorMessage(
+      log,
+      [`debug: ${log.message}`],
+      false,
+      this._hiddenPluginNames,
+    )
     debugPluginContainerContext?.(msg)
   }
 
   info(rawLog: string | RollupLog | (() => string | RollupLog)): void {
     const log = this._normalizeRawLog(rawLog)
-    const msg = buildErrorMessage(log, [`info: ${log.message}`], false)
+    const msg = buildErrorMessage(
+      log,
+      [`info: ${log.message}`],
+      false,
+      this._hiddenPluginNames,
+    )
     this._logger.info(msg, { clear: true, timestamp: true })
   }
 
@@ -703,6 +715,7 @@ export class BasicMinimalPluginContext<Meta = PluginContextMeta> {
       log,
       [colors.yellow(`warning: ${log.message}`)],
       false,
+      this._hiddenPluginNames,
     )
     this._logger.warn(msg, { clear: true, timestamp: true })
   }
@@ -726,7 +739,7 @@ class MinimalPluginContext<T extends Environment = Environment>
 {
   public environment: T
   constructor(meta: PluginContextMeta, environment: T) {
-    super(meta, environment.logger)
+    super(meta, environment.logger, environment.config.hiddenPluginNames)
     this.environment = environment
   }
 }
