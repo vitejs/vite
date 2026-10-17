@@ -12,6 +12,7 @@ import {
   asyncFlatten,
   bareImportRE,
   combineSourcemaps,
+  createSerialPromiseQueue,
   extractHostnamesFromCerts,
   extractHostnamesFromSubjectAltName,
   flattenId,
@@ -1374,5 +1375,47 @@ describe('resolveServerUrls', () => {
 
     expect(result.network).toStrictEqual(['http://10.0.0.5:3000/'])
     expect(result.networkInterfaceNames).toStrictEqual([undefined])
+  })
+})
+
+describe('createSerialPromiseQueue', () => {
+  test('a rejected task does not reject later tasks', async () => {
+    const queue = createSerialPromiseQueue<string>()
+
+    await expect(
+      queue.run(async () => {
+        throw new Error('first')
+      }),
+    ).rejects.toThrow('first')
+
+    await expect(queue.run(async () => 'ok')).resolves.toBe('ok')
+  })
+
+  test('a rejected task does not reject a task already queued behind it', async () => {
+    const queue = createSerialPromiseQueue<string>()
+
+    const first = queue.run(
+      () =>
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('first')), 20),
+        ),
+    )
+    const second = queue.run(async () => 'ok')
+
+    await expect(first).rejects.toThrow('first')
+    await expect(second).resolves.toBe('ok')
+  })
+
+  test('resolves in call order even if a later task finishes first', async () => {
+    const queue = createSerialPromiseQueue<string>()
+    const order: string[] = []
+
+    const slow = queue
+      .run(() => new Promise((r) => setTimeout(() => r('slow'), 20)))
+      .then((v) => order.push(v))
+    const fast = queue.run(async () => 'fast').then((v) => order.push(v))
+
+    await Promise.all([slow, fast])
+    expect(order).toEqual(['slow', 'fast'])
   })
 })
