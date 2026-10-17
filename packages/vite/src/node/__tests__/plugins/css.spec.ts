@@ -10,6 +10,7 @@ import {
   createCSSResolvers,
   cssPlugin,
   cssUrlRE,
+  findClosingParenIndex,
   getEmptyChunkReplacer,
   hoistAtRules,
   injectInlinedCSS,
@@ -19,6 +20,36 @@ import {
 import { normalizePath } from '../../utils'
 
 const dirname = import.meta.dirname
+
+describe('image-set() paren matching', () => {
+  test('handles nested functions with inner parentheses', () => {
+    const css =
+      'image-set(url("a.png") 1x, linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1)) 2x)'
+    const open = css.indexOf('(')
+    const close = findClosingParenIndex(css, open)
+    expect(close).toBe(css.length - 1)
+    expect(css.slice(open + 1, close)).toBe(
+      'url("a.png") 1x, linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1)) 2x',
+    )
+  })
+
+  test('handles nested cross-fade with urls', () => {
+    const css = 'image-set(cross-fade(url(a.png), url(b.png)) 1x)'
+    const open = css.indexOf('(')
+    const close = findClosingParenIndex(css, open)
+    expect(close).toBe(css.length - 1)
+    expect(css.slice(open + 1, close)).toBe(
+      'cross-fade(url(a.png), url(b.png)) 1x',
+    )
+  })
+
+  test('ignores parentheses inside quotes', () => {
+    const css = `image-set(url("awkward).png") 1x)`
+    const open = css.indexOf('(')
+    const close = findClosingParenIndex(css, open)
+    expect(close).toBe(css.length - 1)
+  })
+})
 
 describe('search css url function', () => {
   test('some spaces before it', () => {
