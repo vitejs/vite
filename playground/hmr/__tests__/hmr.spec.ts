@@ -1071,8 +1071,12 @@ if (!isBuild) {
       .toMatch('count is 2')
 
     // update import, hmr works
-    editFile('intermediate-file-delete/index.js', (code) =>
-      code.replace("from './re-export.js'", "from './display.js'"),
+    await untilBrowserLogAfter(
+      () =>
+        editFile('intermediate-file-delete/index.js', (code) =>
+          code.replace("from './re-export.js'", "from './display.js'"),
+        ),
+      hotUpdatedLog('intermediate-file-delete/index.js'),
     )
     editFile('intermediate-file-delete/display.js', (code) =>
       code.replace('count is ${count}', 'count is ${count}!'),
