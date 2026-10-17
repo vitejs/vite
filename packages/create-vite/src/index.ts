@@ -4,8 +4,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import util from 'node:util'
 import * as prompts from '@clack/prompts'
-import { determineAgent } from '@vercel/detect-agent'
 import mri from 'mri'
+import { detectAgent } from 'std-env'
 import { xSync } from 'tinyexec'
 
 const {
@@ -474,8 +474,7 @@ async function init() {
   const interactive = argInteractive ?? process.stdin.isTTY
 
   // Detect AI agent environment for better agent experience (AX)
-  const { isAgent } = await determineAgent()
-  if (isAgent && interactive) {
+  if (interactive && detectAgent().name) {
     console.log(
       '\nTo create in one go, run: create-vite <DIRECTORY> --no-interactive --template <TEMPLATE>\n',
     )

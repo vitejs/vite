@@ -1267,7 +1267,8 @@ const lockfileFormats = [
   },
   {
     path: 'nub.lock',
-    checkPatchesDir: 'patches',
+    // Included in lockfile (`patchedDependencies` has patch hashes)
+    checkPatchesDir: false,
     manager: 'nub',
   },
 
