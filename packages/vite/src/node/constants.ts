@@ -121,6 +121,11 @@ export const VITE_PACKAGE_DIR: string = resolve(
   '../../..',
 )
 
+/**
+ * Names of Vite's own plugins, left out of output when `displayName` is set.
+ */
+export const VITE_PLUGIN_NAMES: readonly RegExp[] = [/^vite:/, /^builtin:vite-/]
+
 export const CLIENT_ENTRY: string = resolve(
   VITE_PACKAGE_DIR,
   'dist/client/client.mjs',

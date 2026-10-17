@@ -1786,3 +1786,44 @@ test('build banner uses displayName', async () => {
   })
   expect(infos[0]).toMatch(/^sitelo v\S+ building client environment/)
 })
+
+test("build warnings leave out hidden plugins' names", async () => {
+  const logger = createLogger('silent')
+  const warnings: string[] = []
+  logger.warn = (msg) => {
+    warnings.push(stripVTControlCharacters(msg))
+  }
+  const warningPlugin = (name: string) => ({
+    name,
+    buildStart(this: { warn(message: string): void }) {
+      this.warn(`a warning from a plugin`)
+    },
+  })
+  await build({
+    root: resolve(dirname, 'packages/build-project'),
+    displayName: 'sitelo',
+    hiddenPluginNames: ['my-tool-plugin'],
+    customLogger: logger,
+    build: { write: false },
+    plugins: [
+      warningPlugin('vite:stand-in'),
+      warningPlugin('my-tool-plugin'),
+      warningPlugin('someone-elses-plugin'),
+      {
+        name: 'test',
+        resolveId(id) {
+          if (id === 'entry.js') return '\0' + id
+        },
+        load(id) {
+          if (id === '\0entry.js') return 'export default 1'
+        },
+      },
+    ],
+    input: 'entry.js',
+  })
+  expect(warnings).toStrictEqual([
+    'a warning from a plugin',
+    'a warning from a plugin',
+    '[plugin someone-elses-plugin] a warning from a plugin',
+  ])
+})

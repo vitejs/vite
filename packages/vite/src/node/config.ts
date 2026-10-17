@@ -63,6 +63,7 @@ import {
   DEFAULT_SERVER_MAIN_FIELDS,
   ENV_ENTRY,
   FS_PREFIX,
+  VITE_PLUGIN_NAMES,
 } from './constants'
 import { loadEnv, resolveEnvPrefix } from './env'
 import { createIdResolver } from './idResolver'
@@ -486,11 +487,33 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    * build banners, the default logger prefix, and the browser console
    * messages of the HMR client. Useful for tools built on top of Vite.
    *
-   * This does not change plugin names, `envPrefix`, or internal URLs such
+   * It also leaves the names of Vite's own plugins (`vite:*`) out of error
+   * messages, warnings and the error overlay; see `hiddenPluginNames`. It
+   * does not rename plugins, or change `envPrefix` or internal URLs such
    * as `/@vite/client`.
    * @default 'vite'
    */
   displayName?: string
+  /**
+   * Plugin names to leave out of error messages, warnings and the error
+   * overlay. A string matches a name exactly; a RegExp is tested against
+   * it. When `displayName` is set, Vite's own plugins (`vite:*`) are left
+   * out as well.
+   *
+   * Useful for tools built on top of Vite, whose users neither added nor
+   * configure those plugins. The plugins keep their names.
+   */
+  hiddenPluginNames?: (string | RegExp)[]
+  /**
+   * Where users set Vite's options, for the messages that tell them to
+   * change one: the error overlay's tip and the blocked-host error. By
+   * default these name `vite.config.js`, or the overlay the config file
+   * that was loaded.
+   *
+   * Useful for tools built on top of Vite that take Vite's options in
+   * their own config file.
+   */
+  configHint?: ConfigHint
   /**
    * @default true
    */
@@ -564,6 +587,18 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    * @default false
    */
   devtools?: boolean | DevToolsConfig
+}
+
+export interface ConfigHint {
+  /**
+   * The file users edit to set Vite's options, e.g. `my-tool.config.js`.
+   */
+  file: string
+  /**
+   * The property Vite's options sit under in that file, if any: with
+   * `'vite'`, the overlay's tip says to set `vite.server.hmr.overlay`.
+   */
+  key?: string
 }
 
 export interface HTMLOptions {
@@ -756,6 +791,12 @@ export interface ResolvedConfig extends Readonly<
     rawAssetsInclude: (string | RegExp)[]
     logger: Logger
     displayName: string
+    /**
+     * `hiddenPluginNames`, with Vite's own plugins added when `displayName`
+     * is set.
+     */
+    hiddenPluginNames: readonly (string | RegExp)[]
+    configHint: ConfigHint | undefined
     /**
      * Create an internal resolver to be used in special scenarios, e.g.
      * optimizer & handling css `@imports`.
@@ -2122,6 +2163,14 @@ export async function resolveConfig(
     rawAssetsInclude: config.assetsInclude ? arraify(config.assetsInclude) : [],
     logger,
     displayName: config.displayName ?? configDefaults.displayName,
+    hiddenPluginNames: [
+      ...((config.displayName ?? configDefaults.displayName) !==
+      configDefaults.displayName
+        ? VITE_PLUGIN_NAMES
+        : []),
+      ...(config.hiddenPluginNames ?? []),
+    ],
+    configHint: config.configHint,
     packageCache,
     worker: resolvedWorkerOptions,
     appType: config.appType ?? 'spa',

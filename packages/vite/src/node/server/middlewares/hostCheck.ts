@@ -1,6 +1,11 @@
 import { hostValidationMiddleware as originalHostValidationMiddleware } from 'host-validation-middleware'
 import type { Connect } from '#dep-types/connect'
-import type { ResolvedPreviewOptions, ResolvedServerOptions } from '../..'
+import type {
+  ConfigHint,
+  ResolvedPreviewOptions,
+  ResolvedServerOptions,
+} from '../..'
+import { describeConfigOption } from '../../utils'
 
 export function getAdditionalAllowedHosts(
   resolvedServerOptions: Pick<ResolvedServerOptions, 'host' | 'ws' | 'origin'>,
@@ -46,16 +51,21 @@ export function getAdditionalAllowedHosts(
 export function hostValidationMiddleware(
   allowedHosts: string[],
   isPreview: boolean,
+  configHint?: ConfigHint,
 ): Connect.NextHandleFunction {
   return originalHostValidationMiddleware({
     // Freeze the array to allow caching
     allowedHosts: Object.freeze([...allowedHosts]),
     generateErrorMessage(hostname) {
       const hostnameWithQuotes = JSON.stringify(hostname)
-      const optionName = `${isPreview ? 'preview' : 'server'}.allowedHosts`
+      const { option, file } = describeConfigOption(
+        configHint,
+        `${isPreview ? 'preview' : 'server'}.allowedHosts`,
+        'vite.config.js',
+      )
       return (
         `Blocked request. This host (${hostnameWithQuotes}) is not allowed.\n` +
-        `To allow this host, add ${hostnameWithQuotes} to \`${optionName}\` in vite.config.js.`
+        `To allow this host, add ${hostnameWithQuotes} to \`${option}\` in ${file}.`
       )
     },
   })
