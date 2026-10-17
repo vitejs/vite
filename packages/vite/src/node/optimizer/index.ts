@@ -1308,7 +1308,8 @@ const lockfilePaths = lockfileFormats.map((l) => l.path)
 const fallbackLockfileFormats = [
   {
     path: 'yarn.lock',
-    checkPatchesDir: '.yarn/patches',
+    // Included in lockfile
+    checkPatchesDir: false,
     manager: 'yarn',
   },
 ]
