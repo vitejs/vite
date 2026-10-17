@@ -25,7 +25,7 @@ type FileDep = {
   runtime: boolean
 }
 
-type VitePreloadErrorEvent = Event & { payload: Error }
+type VitePreloadErrorEvent = Event & { payload: unknown }
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -116,43 +116,14 @@ function detectScriptRel() {
     : 'preload'
 }
 
-type PreloadSeen = Record<string, Promise<unknown> | undefined>
-
-export function preloadOnce(
-  seen: PreloadSeen,
-  href: string,
-  preload: () => Promise<unknown> | undefined,
-): Promise<unknown> | undefined {
-  if (href in seen) return seen[href]
-
-  const promise = preload()
-  if (!promise) {
-    seen[href] = undefined
-    return
-  }
-
-  const preloadPromise = promise.then(
-    () => {
-      seen[href] = undefined
-    },
-    (err) => {
-      seen[href] = undefined
-      throw err
-    },
-  )
-  seen[href] = preloadPromise
-  return preloadPromise
-}
-
 declare const scriptRel: string
-declare const seen: PreloadSeen
+declare const seen: Record<string, Promise<Error | undefined> | undefined>
 function preload(
   baseModule: () => Promise<unknown>,
   deps?: string[],
   importerUrl?: string,
 ) {
-  let promise: Promise<PromiseSettledResult<unknown>[] | void> =
-    Promise.resolve()
+  let promise: Promise<(Error | undefined)[] | void> = Promise.resolve()
   // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
   if (__VITE_IS_MODERN__ && deps && deps.length > 0) {
     let preloadedHrefs: { all: Set<string>; styles: Set<string> } | undefined
@@ -164,20 +135,6 @@ function preload(
     // in that case fallback to getAttribute
     const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute('nonce')
 
-    // Promise.allSettled is not supported by Chrome 64-75, Firefox 67-70, Safari 11.1-12.1
-    function allSettled<T>(
-      promises: Array<T | PromiseLike<T>>,
-    ): Promise<PromiseSettledResult<T>[]> {
-      return Promise.all(
-        promises.map((p) =>
-          Promise.resolve(p).then(
-            (value: T) => ({ status: 'fulfilled' as const, value }),
-            (reason: unknown) => ({ status: 'rejected' as const, reason }),
-          ),
-        ),
-      )
-    }
-
     function importMetaResolve(specifier: string): URL {
       // @ts-expect-error import.meta.resolve is not supported by all browsers we support
       // But `import.meta.resolve` is only needed when build.chunkImportMap is enabled,
@@ -188,65 +145,72 @@ function preload(
       return new URL(specifier, /** #__KEEP__ */ import.meta.url)
     }
 
-    promise = allSettled(
+    promise = Promise.all(
       deps
         .map((depString) => {
           // @ts-expect-error assetsURL is declared before preload.toString()
           depString = assetsURL(depString, importerUrl)
           const dep = importMetaResolve(depString)
+          if (dep.href in seen) return seen[dep.href]
+          seen[dep.href] = undefined
           const isCss = isCssPreloadUrl(dep)
 
-          return preloadOnce(seen, dep.href, () => {
-            if (preloadedHrefs === undefined) {
-              preloadedHrefs = { all: new Set(), styles: new Set() }
-              const links = document.getElementsByTagName('link')
-              for (let i = links.length - 1; i >= 0; i--) {
-                const link = links[i]
-                // The `links[i].href` is an absolute URL thanks to browser doing the work
-                // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
-                preloadedHrefs.all.add(link.href)
-                if (link.rel === 'stylesheet') {
-                  preloadedHrefs.styles.add(link.href)
-                }
+          if (preloadedHrefs === undefined) {
+            preloadedHrefs = { all: new Set(), styles: new Set() }
+            const links = document.getElementsByTagName('link')
+            for (let i = links.length - 1; i >= 0; i--) {
+              const link = links[i]
+              // The `links[i].href` is an absolute URL thanks to browser doing the work
+              // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
+              preloadedHrefs.all.add(link.href)
+              if (link.rel === 'stylesheet') {
+                preloadedHrefs.styles.add(link.href)
               }
             }
+          }
 
-            // check if the file is already preloaded by SSR markup
-            // `importMetaResolve` converts `dep` to an absolute URL
-            const preloadedHrefSet = isCss
-              ? preloadedHrefs.styles
-              : preloadedHrefs.all
-            if (preloadedHrefSet.has(dep.href)) {
-              return
-            }
+          // check if the file is already preloaded by SSR markup
+          // `importMetaResolve` converts `dep` to an absolute URL
+          const preloadedHrefSet = isCss
+            ? preloadedHrefs.styles
+            : preloadedHrefs.all
+          if (preloadedHrefSet.has(dep.href)) {
+            return
+          }
 
-            const link = document.createElement('link')
-            link.rel = isCss ? 'stylesheet' : scriptRel
-            if (!isCss) {
-              link.as = 'script'
-            }
-            link.crossOrigin = ''
-            link.href = dep.href
-            if (cspNonce) {
-              link.setAttribute('nonce', cspNonce)
-            }
-            document.head.appendChild(link)
-            if (isCss) {
-              return new Promise((res, rej) => {
-                link.addEventListener('load', res)
-                link.addEventListener('error', () =>
-                  rej(new Error(`Unable to preload CSS for ${dep}`)),
-                )
+          const link = document.createElement('link')
+          link.rel = isCss ? 'stylesheet' : scriptRel
+          if (!isCss) {
+            link.as = 'script'
+          }
+          link.crossOrigin = ''
+          link.href = dep.href
+          if (cspNonce) {
+            link.setAttribute('nonce', cspNonce)
+          }
+          document.head.appendChild(link)
+          if (isCss) {
+            // Return errors so every stylesheet settles before failures are reported.
+            const promise = new Promise<Error | undefined>((res) => {
+              link.addEventListener('load', () => {
+                seen[dep.href] = undefined
+                res(undefined)
               })
-            }
-          })
+              link.addEventListener('error', () => {
+                seen[dep.href] = undefined
+                res(new Error(`Unable to preload CSS for ${dep}`))
+              })
+            })
+            seen[dep.href] = promise
+            return promise
+          }
         })
-        // skip undefined to be converted to Promise.resolve for performance
+        // Only pending stylesheets need to be awaited.
         .filter((p) => p !== undefined),
     )
   }
 
-  function handlePreloadError(err: Error) {
+  function handlePreloadError(err: unknown) {
     const e = new Event('vite:preloadError', {
       cancelable: true,
     }) as VitePreloadErrorEvent
@@ -259,18 +223,18 @@ function preload(
 
   return promise.then((res) => {
     for (const item of res || []) {
-      if (item.status !== 'rejected') continue
-      handlePreloadError(item.reason)
+      if (!item) continue
+      handlePreloadError(item)
     }
     return baseModule().catch(handlePreloadError)
   })
 }
 
-function getPreloadCode(
+export function getPreloadCode(
   environment: PartialEnvironment,
   renderBuiltUrlBoolean: boolean,
   isRelativeBase: boolean,
-) {
+): string {
   const { modulePreload } = environment.config.build
 
   const scriptRel =
@@ -296,7 +260,7 @@ function getPreloadCode(
         `function(dep) { return ${JSON.stringify(environment.config.base)}+dep }`
   // replace `import` as a workaround for stackblitz: https://stackblitz.com/edit/node-vqfvv8dy?file=index.js
   const preloadMethodCode = preload.toString().replaceAll('𝐢𝐦𝐩𝐨𝐫𝐭', 'import')
-  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};const isCssPreloadUrl = ${isCssPreloadUrl.toString()};const preloadOnce = ${preloadOnce.toString()};export const ${preloadMethod} = ${preloadMethodCode}`
+  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};const isCssPreloadUrl = ${isCssPreloadUrl.toString()};export const ${preloadMethod} = ${preloadMethodCode}`
   return preloadCode
 }
 
