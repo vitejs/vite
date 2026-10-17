@@ -505,16 +505,37 @@ export function resolveSubpathImports(
   const basedir = path.dirname(importer)
   const pkgData = findNearestPackageData(basedir, options.packageCache)
   if (!pkgData) return
-
-  let { file: idWithoutPostfix, postfix } = splitFileAndPostfix(id.slice(1))
-  idWithoutPostfix = '#' + idWithoutPostfix
-
-  let importsPath = resolveExportsOrImports(
-    pkgData.data,
-    idWithoutPostfix,
-    options,
-    'imports',
-  )
+  // Imports keys are matched literally and may themselves contain `#` or `?`
+  // (e.g. `##/*`, `#a?b`) — neither has URL semantics in import specifiers.
+  // Try the full id first, then fall back to the id with the query part
+  // stripped so that Vite query postfixes keep working (#16085, #23622).
+  // Note that resolve.exports throws when no key matches, so the first
+  // attempt needs to be guarded to allow the fallback
+  let importsPath: string | undefined
+  let postfix = ''
+  let fullIdError: unknown
+  try {
+    importsPath = resolveExportsOrImports(pkgData.data, id, options, 'imports')
+  } catch (e) {
+    // no key matches the full id, try without the query part below
+    fullIdError = e
+  }
+  if (importsPath === undefined) {
+    const queryIndex = id.indexOf('?')
+    if (queryIndex !== -1) {
+      importsPath = resolveExportsOrImports(
+        pkgData.data,
+        id.slice(0, queryIndex),
+        options,
+        'imports',
+      )
+      if (importsPath !== undefined) {
+        postfix = id.slice(queryIndex)
+      }
+    } else if (fullIdError) {
+      throw fullIdError
+    }
+  }
 
   if (importsPath?.[0] === '.') {
     importsPath = path.relative(basedir, path.join(pkgData.dir, importsPath))
