@@ -32,6 +32,26 @@ export function shouldExternalize(
   return isExternal(id, importer)
 }
 
+export function isExplicitlyExternal(
+  id: string,
+  external: true | string[] | undefined,
+): boolean {
+  if (!bareImportRE.test(id) || id.includes('\0')) {
+    return false
+  }
+  if (external === true) {
+    return true
+  }
+  if (!external?.length) {
+    return false
+  }
+  if (external.includes(id)) {
+    return true
+  }
+  const pkgName = getNpmPackageName(id)
+  return !!pkgName && external.includes(pkgName)
+}
+
 export function createIsConfiguredAsExternal(
   environment: PartialEnvironment,
 ): (id: string, importer?: string) => boolean {
