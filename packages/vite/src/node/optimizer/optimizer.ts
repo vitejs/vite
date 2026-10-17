@@ -662,9 +662,8 @@ export function createDepsOptimizer(
       // scan+optimize step finished after crawl end. We follow the same
       // process as in the holdUntilCrawlEnd in this case.
       const afterScanResult = optimizationResult.result
-      optimizationResult = undefined // signal that we'll be using the result
-
       const result = await afterScanResult
+      optimizationResult = undefined // signal that we'll be using the result
       currentlyProcessing = false
 
       const crawlDeps = Object.keys(metadata.discovered)
