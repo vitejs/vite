@@ -1229,6 +1229,7 @@ if (!isBuild) {
     await gotoLatestBuild(viteTestUrl)
 
     const el = page.locator('.optional-chaining')
+    await expect.poll(() => el.textContent()).toMatch('1')
     await untilBrowserLogAfter(
       () =>
         editFile(
