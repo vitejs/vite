@@ -559,6 +559,7 @@ export async function _createServer(
     config.root,
     resolvedOutDirs,
   )
+  const envFiles = getEnvFilesForMode(config.mode, config.envDir)
   const resolvedWatchOptions = resolveChokidarOptions(
     {
       disableGlobbing: true,
@@ -567,6 +568,17 @@ export async function _createServer(
     resolvedOutDirs,
     emptyOutDir,
     config.cacheDir,
+    {
+      root,
+      // paths that the dev server depends on and that must stay watched
+      // when `watch.ignoredFromGitignore` matches them
+      protectedPaths: [
+        ...(config.configFile ? [config.configFile] : []),
+        ...config.configFileDependencies,
+        ...envFiles,
+        ...(config.publicDir ? [config.publicDir] : []),
+      ],
+    },
   )
 
   const middlewares = connect() as Connect.Server
@@ -592,7 +604,7 @@ export async function _createServer(
           [
             ...(config.experimental.bundledDev ? [] : [root]),
             ...config.configFileDependencies,
-            ...getEnvFilesForMode(config.mode, config.envDir),
+            ...envFiles,
             // Watch the public directory explicitly because it might be outside
             // of the root directory.
             ...(publicDir && publicFiles ? [publicDir] : []),
