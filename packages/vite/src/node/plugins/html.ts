@@ -1139,7 +1139,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               build: {
                 ...config.inlineConfig.build,
                 write: false,
-                watch: false,
                 emptyOutDir: false,
                 lib: {
                   entry: inlineScript.src,
