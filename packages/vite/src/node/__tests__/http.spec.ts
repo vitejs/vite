@@ -240,6 +240,56 @@ describe('port detection', () => {
     expect(address).toStrictEqual(expect.objectContaining({ port: BASE_PORT }))
   })
 
+  test('connections to the port probe server do not block startup', async () => {
+    const loopbackHosts: Record<string, string> = {
+      '0.0.0.0': '127.0.0.1',
+      '::': '::1',
+    }
+    const clients: net.Socket[] = []
+    const originalCreateServer = net.createServer.bind(net)
+    using _ = vi.spyOn(net, 'createServer').mockImplementation(() => {
+      const server = originalCreateServer()
+      const originalClose = server.close.bind(server)
+      server.close = (callback) => {
+        const address = server.address()
+        if (typeof address !== 'object' || !address) {
+          return originalClose(callback)
+        }
+        let closed = false
+        const close = () => {
+          if (closed) return
+          closed = true
+          originalClose(callback)
+        }
+        // simulate a client connecting to the probe server before it closes
+        server.once('connection', close)
+        const client = net.connect(
+          address.port,
+          loopbackHosts[address.address] ?? address.address,
+        )
+        client.on('error', close)
+        clients.push(client)
+        return server
+      }
+      return server
+    })
+
+    try {
+      viteServer = await createServer({
+        root: import.meta.dirname,
+        optimizeDeps,
+        logLevel: 'silent',
+        server: { port: BASE_PORT, strictPort: false, ws: false },
+      })
+      await viteServer.listen()
+    } finally {
+      clients.forEach((client) => client.destroy())
+    }
+
+    const address = viteServer.httpServer!.address()
+    expect(address).toStrictEqual(expect.objectContaining({ port: BASE_PORT }))
+  })
+
   test('throws error when port is blocked and strictPort is true', async () => {
     await using _blockingServer = await createSimpleServer(
       BASE_PORT,
