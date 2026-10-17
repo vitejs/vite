@@ -2491,4 +2491,33 @@ describe('displayName', () => {
     )
     expect(config.displayName).toBe('sitelo')
   })
+
+  test("hides no plugin names unless it is set or they're listed", async () => {
+    const config = await resolveConfig({ configFile: false }, 'serve')
+    expect(config.hiddenPluginNames).toStrictEqual([])
+  })
+
+  test("hides Vite's own plugin names when it is set", async () => {
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        displayName: 'sitelo',
+        hiddenPluginNames: ['my-plugin'],
+      },
+      'serve',
+    )
+    expect(config.hiddenPluginNames).toStrictEqual([
+      /^vite:/,
+      /^builtin:vite-/,
+      'my-plugin',
+    ])
+  })
+
+  test('hides listed plugin names without it', async () => {
+    const config = await resolveConfig(
+      { configFile: false, hiddenPluginNames: [/^my-/] },
+      'serve',
+    )
+    expect(config.hiddenPluginNames).toStrictEqual([/^my-/])
+  })
 })

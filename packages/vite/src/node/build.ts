@@ -75,6 +75,7 @@ import {
   createDebugger,
   displayTime,
   getPkgName,
+  isPluginNameHidden,
   joinUrlSegments,
   mergeConfig,
   mergeWithDefaults,
@@ -1171,7 +1172,10 @@ export function onRollupLog(
 
     // append plugin name to align with Rollup's behavior
     let message = logging.message
-    if (logging.plugin) {
+    if (
+      logging.plugin &&
+      !isPluginNameHidden(logging.plugin, environment.config.hiddenPluginNames)
+    ) {
       message = `[plugin ${logging.plugin}] ${message}`
     }
 
