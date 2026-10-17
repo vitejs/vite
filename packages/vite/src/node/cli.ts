@@ -52,6 +52,7 @@ interface GlobalCLIOptions {
   filter?: string
   m?: string
   mode?: string
+  F?: boolean
   force?: boolean
   w?: boolean
 }
@@ -127,6 +128,7 @@ function cleanGlobalCLIOptions<Options extends GlobalCLIOptions>(
   delete ret.filter
   delete ret.m
   delete ret.mode
+  delete ret.F
   delete ret.force
   delete ret.w
 
@@ -209,11 +211,11 @@ cli
   .option('--cors', `[boolean] enable CORS`)
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
   .option(
-    '--force',
+    '-F, --force',
     `[boolean] force the optimizer to ignore the cache and re-bundle`,
   )
   .option(
-    '--experimentalBundle',
+    '-e, --experimentalBundle',
     `[boolean] use experimental full bundle mode (this is highly experimental)`,
   )
   .action(
@@ -399,7 +401,7 @@ cli
     'pre-bundle dependencies (deprecated, the pre-bundle process runs automatically and does not need to be called)',
   )
   .option(
-    '--force',
+    '-F, --force',
     `[boolean] force the optimizer to ignore the cache and re-bundle`,
   )
   .action(

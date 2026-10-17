@@ -14,26 +14,26 @@ vite [root]
 
 #### Options
 
-| Options                   |                                                                                                                                                                                       |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--host [host]`           | Specify hostname (`string`)                                                                                                                                                           |
-| `--port <port>`           | Specify port (`number`)                                                                                                                                                               |
-| `--open [path]`           | Open browser on startup (`boolean \| string`)                                                                                                                                         |
-| `--cors`                  | Enable CORS (`boolean`)                                                                                                                                                               |
-| `--strictPort`            | Exit if specified port is already in use (`boolean`)                                                                                                                                  |
-| `--force`                 | Force the optimizer to ignore the cache and re-bundle (`boolean`)                                                                                                                     |
-| `--experimentalBundle`    | Use experimental full bundle mode (this is highly experimental) (`boolean`)                                                                                                           |
-| `-c, --config <file>`     | Use specified config file (`string`)                                                                                                                                                  |
-| `--base <path>`           | Public base path (default: `/`) (`string`)                                                                                                                                            |
-| `-l, --logLevel <level>`  | info \| warn \| error \| silent (`string`)                                                                                                                                            |
-| `--clearScreen`           | Allow/disable clear screen when logging (`boolean`)                                                                                                                                   |
-| `--configLoader <loader>` | Use `bundle` to bundle the config with Rolldown, or `runner` (experimental) to process it on the fly, or `native` (experimental) to load using the native runtime (default: `bundle`) |
-| `--profile [name]`        | Start built-in Node.js inspector and write the profile to `<name>.cpuprofile` (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks)) (`boolean \| string`) |
-| `-d, --debug [feat]`      | Show debug logs (`string \| boolean`)                                                                                                                                                 |
-| `-f, --filter <filter>`   | Filter debug logs (`string`)                                                                                                                                                          |
-| `-m, --mode <mode>`       | Set env mode (`string`)                                                                                                                                                               |
-| `-h, --help`              | Display available CLI options                                                                                                                                                         |
-| `-v, --version`           | Display version number                                                                                                                                                                |
+| Options                    |                                                                                                                                                                                       |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--host [host]`            | Specify hostname (`string`)                                                                                                                                                           |
+| `--port <port>`            | Specify port (`number`)                                                                                                                                                               |
+| `--open [path]`            | Open browser on startup (`boolean \| string`)                                                                                                                                         |
+| `--cors`                   | Enable CORS (`boolean`)                                                                                                                                                               |
+| `--strictPort`             | Exit if specified port is already in use (`boolean`)                                                                                                                                  |
+| `-F, --force`              | Force the optimizer to ignore the cache and re-bundle (`boolean`)                                                                                                                     |
+| `-e, --experimentalBundle` | Use experimental full bundle mode (this is highly experimental) (`boolean`)                                                                                                           |
+| `-c, --config <file>`      | Use specified config file (`string`)                                                                                                                                                  |
+| `--base <path>`            | Public base path (default: `/`) (`string`)                                                                                                                                            |
+| `-l, --logLevel <level>`   | info \| warn \| error \| silent (`string`)                                                                                                                                            |
+| `--clearScreen`            | Allow/disable clear screen when logging (`boolean`)                                                                                                                                   |
+| `--configLoader <loader>`  | Use `bundle` to bundle the config with Rolldown, or `runner` (experimental) to process it on the fly, or `native` (experimental) to load using the native runtime (default: `bundle`) |
+| `--profile [name]`         | Start built-in Node.js inspector and write the profile to `<name>.cpuprofile` (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks)) (`boolean \| string`) |
+| `-d, --debug [feat]`       | Show debug logs (`string \| boolean`)                                                                                                                                                 |
+| `-f, --filter <filter>`    | Filter debug logs (`string`)                                                                                                                                                          |
+| `-m, --mode <mode>`        | Set env mode (`string`)                                                                                                                                                               |
+| `-h, --help`               | Display available CLI options                                                                                                                                                         |
+| `-v, --version`            | Display version number                                                                                                                                                                |
 
 ## Build
 
@@ -92,7 +92,7 @@ vite optimize [root]
 
 | Options                   |                                                                                                                                                                                       |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--force`                 | Force the optimizer to ignore the cache and re-bundle (`boolean`)                                                                                                                     |
+| `-F, --force`             | Force the optimizer to ignore the cache and re-bundle (`boolean`)                                                                                                                     |
 | `-c, --config <file>`     | Use specified config file (`string`)                                                                                                                                                  |
 | `--base <path>`           | Public base path (default: `/`) (`string`)                                                                                                                                            |
 | `-l, --logLevel <level>`  | info \| warn \| error \| silent (`string`)                                                                                                                                            |
