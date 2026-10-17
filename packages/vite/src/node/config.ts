@@ -1257,12 +1257,6 @@ function resolveDepOptimizationOptions(
   consumer: 'client' | 'server' | undefined,
   logger: Logger,
 ): DepOptimizationOptions {
-  if (
-    optimizeDeps?.rolldownOptions &&
-    optimizeDeps?.rolldownOptions === optimizeDeps?.rollupOptions
-  ) {
-    delete optimizeDeps?.rollupOptions
-  }
   const merged = mergeWithDefaults(
     {
       ...configDefaults.optimizeDeps,
@@ -1272,8 +1266,6 @@ function resolveDepOptimizationOptions(
     },
     optimizeDeps ?? {},
   )
-  setupRollupOptionCompat(merged, 'optimizeDeps')
-
   const rolldownOptions = merged.rolldownOptions as Exclude<
     DepOptimizationOptions['rolldownOptions'],
     undefined
@@ -1465,14 +1457,12 @@ export async function resolveConfig(
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   config.build ??= {}
-  setupRollupOptionCompat(config.build, 'build')
+  setupRollupOptionCompat(config.build)
   config.worker ??= {}
-  setupRollupOptionCompat(config.worker, 'worker')
+  setupRollupOptionCompat(config.worker)
   config.optimizeDeps ??= {}
-  setupRollupOptionCompat(config.optimizeDeps, 'optimizeDeps')
   if (config.ssr) {
     config.ssr.optimizeDeps ??= {}
-    setupRollupOptionCompat(config.ssr.optimizeDeps, 'ssr.optimizeDeps')
   }
 
   let configFileDependencies: string[] = []
@@ -1996,7 +1986,7 @@ export async function resolveConfig(
     rollupOptions: config.worker?.rollupOptions || {},
     rolldownOptions: config.worker?.rolldownOptions, // will be set by setupRollupOptionCompat if undefined
   }
-  setupRollupOptionCompat(resolvedWorkerOptions, 'worker')
+  setupRollupOptionCompat(resolvedWorkerOptions)
 
   const base = withTrailingSlash(resolvedBase)
 
