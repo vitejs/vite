@@ -230,9 +230,9 @@ describe.runIf(isBuild)('build', () => {
       expect(
         await page.$('script:not([type="module"]):not([src])'),
       ).toBeTruthy()
-      expect(
-        await page.$eval('#inline-order', (el) => el.textContent),
-      ).toBe('dependency,inline,after')
+      expect(await page.$eval('#inline-order', (el) => el.textContent)).toBe(
+        'dependency,inline,after',
+      )
     })
   })
 })
