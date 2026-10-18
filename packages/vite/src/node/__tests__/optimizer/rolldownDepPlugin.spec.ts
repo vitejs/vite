@@ -2,39 +2,36 @@ import { describe, expect, test } from 'vitest'
 import { rolldownDepPlugin } from '../../optimizer/rolldownDepPlugin'
 import { normalizePath } from '../../utils'
 
-test(
-  'keeps excluded .vue exports external when they resolve to JavaScript',
-  async () => {
-    const baseConfig = {
-      cacheDir: '/root/.vite',
-      optimizeDeps: { extensions: [] },
-      resolve: { builtins: [] },
-      createResolver: () => async (id: string) =>
-        id === 'state-lib/component.vue'
-          ? '/root/node_modules/state-lib/component.vue.js'
-          : undefined,
-    }
-    const mockEnvironment = {
-      config: baseConfig,
-      name: 'client',
-      getTopLevelConfig: () => baseConfig,
-    } as any
-    const plugin = rolldownDepPlugin(mockEnvironment, {}, ['state-lib']).find(
-      (p: any) => p.name === 'vite:dep-pre-bundle-assets',
-    ) as any
+test('keeps excluded .vue exports external when they resolve to JavaScript', async () => {
+  const baseConfig = {
+    cacheDir: '/root/.vite',
+    optimizeDeps: { extensions: [] },
+    resolve: { builtins: [] },
+    createResolver: () => async (id: string) =>
+      id === 'state-lib/component.vue'
+        ? '/root/node_modules/state-lib/component.vue.js'
+        : undefined,
+  }
+  const mockEnvironment = {
+    config: baseConfig,
+    name: 'client',
+    getTopLevelConfig: () => baseConfig,
+  } as any
+  const plugin = rolldownDepPlugin(mockEnvironment, {}, ['state-lib']).find(
+    (p: any) => p.name === 'vite:dep-pre-bundle-assets',
+  ) as any
 
-    const result = await plugin.resolveId.handler(
-      'state-lib/component.vue',
-      undefined,
-      { kind: 'import-statement' },
-    )
+  const result = await plugin.resolveId.handler(
+    'state-lib/component.vue',
+    undefined,
+    { kind: 'import-statement' },
+  )
 
-    expect(result).toStrictEqual({
-      id: 'state-lib/component.vue',
-      external: 'absolute',
-    })
-  },
-)
+  expect(result).toStrictEqual({
+    id: 'state-lib/component.vue',
+    external: 'absolute',
+  })
+})
 
 async function createRolldownDepPluginTransform(cacheDir: string) {
   const baseConfig = {
