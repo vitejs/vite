@@ -2222,7 +2222,7 @@ describe('loadConfigFromFile', () => {
     ))!
     expect(config).toMatchInlineSnapshot(`
         {
-          "jsonValue": "vite",
+          "jsonValue": "@paul-browne/vite",
         }
       `)
   })

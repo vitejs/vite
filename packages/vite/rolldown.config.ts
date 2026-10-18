@@ -5,6 +5,7 @@ import MagicString from 'magic-string'
 import type { Plugin } from 'rolldown'
 import { defineConfig } from 'rolldown'
 import pkg from './package.json' with { type: 'json' }
+import { rewriteSelfImportsPlugin } from './rewriteSelfImportsPlugin'
 import licensePlugin from './rollupLicensePlugin'
 
 // eslint-disable-next-line n/no-unsupported-features/node-builtins
@@ -140,6 +141,7 @@ const nodeConfig = defineConfig({
     writeTypesPlugin(),
     enableSourceMapsInWatchModePlugin(),
     externalizeDepsInWatchPlugin(),
+    rewriteSelfImportsPlugin(),
   ],
 })
 

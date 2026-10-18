@@ -13,7 +13,7 @@
     "vue": "^3.5.43"
   },
   "devDependencies": {
-    "vite": "workspace:*",
+    "vite": "workspace:@paul-browne/vite@*",
     "@vitejs/devtools": "^0.7.6",
     "@vitejs/devtools-vite": "^0.7.6",
     "@vitejs/devtools-rolldown": "^0.7.6"

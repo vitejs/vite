@@ -11,7 +11,7 @@ shellEmulator: true
 autoInstallPeers: false
 dedupeInjectedDeps: false
 overrides:
-  vite: 'workspace:*'
+  vite: 'workspace:@paul-browne/vite@*'
   debug: 'npm:obug@^1.0.2'
   # Volar uses the TypeScript 6 compiler API; its broad optional peer includes TS 7.
   '@volar/typescript>typescript@>=7': '-'
