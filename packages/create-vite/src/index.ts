@@ -7,6 +7,7 @@ import * as prompts from '@clack/prompts'
 import mri from 'mri'
 import { detectAgent } from 'std-env'
 import { xSync } from 'tinyexec'
+import packageInfo from '../package.json' with { type: 'json' }
 
 const {
   blue,
@@ -470,6 +471,8 @@ async function init() {
     console.log(helpMessage)
     return
   }
+
+  console.log(`\n${cyan(`create-vite v${packageInfo.version}`)}\n`)
 
   const interactive = argInteractive ?? process.stdin.isTTY
 
