@@ -1,0 +1,38 @@
+packages/vite/src/node/plugins/externalizeUrl.ts
+  s_086c601d398ef3::t_3fa0fb6f61b02d 1-29
+packages/vite/src/node/server/transformRequest.ts
+  s_086c601d398ef3::t_404d20b28a8b66 501-512,514-516
+playground/external/public/plugin-external.js
+  s_086c601d398ef3::t_4af5ff58126c8a 1
+playground/external/src/main.js
+  s_086c601d398ef3::t_b0b79ca4968360 4-17
+playground/external/__tests__/external.spec.ts
+  s_086c601d398ef3::t_4f00a51f26d627 16-43
+  s_086c601d398ef3::t_403a20787bb70c 2
+packages/vite/src/node/plugins/importAnalysis.ts
+  s_086c601d398ef3::t_2e599d952ddbfe 369,461-463,575,674,739-740,744-746,793,809,827-829,835,839,860,862,874
+packages/vite/src/node/plugins/index.ts
+  s_086c601d398ef3::t_77c41b9aceb62a 26,89-90
+playground/external/index.html
+  s_086c601d398ef3::t_cf7dc4a12875e1 12-14,25-38
+playground/external/vite.config.js
+  s_086c601d398ef3::t_9a4e34c9a992bd 45-60
+packages/vite/src/node/idResolver.ts
+  s_086c601d398ef3::t_e9492d975f3ddb 6,65-69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "92c83966df879f34b139711d980b9857752ffb47",
+  "prompts": {},
+  "sessions": {
+    "s_086c601d398ef3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a14e30-9827-7f70-894b-3e873aac5d16",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
