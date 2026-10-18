@@ -688,8 +688,26 @@ export function runOptimizeDeps(
           if (chunk.type !== 'chunk') continue
 
           if (chunk.isEntry) {
-            const { exportsData, file, id, ...info } =
-              depForEntryFileName[chunk.fileName]
+            // Rolldown deconflicts the file name when another chunk already
+            // claims it (e.g. the `effect/schema` entry is emitted as
+            // `effect_schema2.js`), so the file name is not a reliable key
+            // back to the dep. The chunk name is: `entryFileNames` is
+            // `[name].js` and `[name]` is the dep's flattened id.
+            // https://github.com/vitejs/vite/issues/23757
+            const dep =
+              depForEntryFileName[chunk.fileName] ??
+              depForEntryFileName[`${chunk.name}.js`]
+            if (!dep) {
+              throw new Error(
+                `Cannot find optimized dependency for entry chunk "${chunk.fileName}"`,
+              )
+            }
+            const { exportsData, file: _file, id, ...info } = dep
+            // The chunk may have been emitted under a deconflicted file name,
+            // so point the dep at the file that was actually written.
+            const file = normalizePath(
+              path.resolve(getDepsCacheDir(environment), chunk.fileName),
+            )
             addOptimizedDepInfo(metadata, 'optimized', {
               id,
               file,
