@@ -510,7 +510,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             // which we ignore and assume the line is not empty
           }
 
-          return isLineEmpty ? lineStartOffset : startOffset
+          return isLineEmpty ? Math.max(0, lineStartOffset) : startOffset
         }
 
         // pre-transform
