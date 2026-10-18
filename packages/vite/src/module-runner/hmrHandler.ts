@@ -7,7 +7,7 @@ import type { ModuleRunner } from './runner'
 export function createHMRHandlerForRunner(
   runner: ModuleRunner,
 ): (payload: HotPayload) => Promise<void> {
-  return createHMRHandler(async (payload) => {
+  const handle = createHMRHandler(async (payload) => {
     const hmrClient = runner.hmrClient
     if (!hmrClient || runner.isClosed()) return
     switch (payload.type) {
@@ -83,6 +83,17 @@ export function createHMRHandlerForRunner(
       }
     }
   })
+  return (payload) => {
+    // Every message but a ping or a custom event can mean the server's
+    // modules changed: an update, a reload, a prune, an error from a failed
+    // update, or a reconnection that may have missed one. Count it on
+    // arrival rather than when the queue reaches it, so that imports made in
+    // the meantime ask the server again.
+    if (payload.type !== 'ping' && payload.type !== 'custom') {
+      runner.hmrGeneration++
+    }
+    return handle(payload)
+  }
 }
 
 function getModulesByFile(runner: ModuleRunner, file: string): string[] {
