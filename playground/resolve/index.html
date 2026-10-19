@@ -55,6 +55,9 @@
 <h2>Resolving star with imports filed</h2>
 <p class="imports-star">fail</p>
 
+<h2>Resolving star with $$ in filename with imports field</h2>
+<p class="imports-star-dollar">fail</p>
+
 <h2>Resolving slash with imports filed</h2>
 <p class="imports-slash">fail</p>
 
@@ -263,6 +266,9 @@
 
   import { msg as importsStar } from '#star/index.js'
   text('.imports-star', importsStar)
+
+  import { msg as importsStarDollar } from '#star/dollar$$.js'
+  text('.imports-star-dollar', importsStarDollar)
 
   import { msg as importsSlash } from '#slash/index.js'
   text('.imports-slash', importsSlash)

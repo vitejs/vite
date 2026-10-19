@@ -5,7 +5,6 @@ import {
   getColor,
   isBuild,
   isBundled,
-  isBundledDev,
   page,
   serverLogs,
 } from '~utils'
@@ -120,16 +119,11 @@ test('should load dynamic import with vars url', async () => {
     .toMatch(isBundled ? 'data:text/javascript' : '/alias/url.js')
 })
 
-// bundled dev: workers created through the dynamic-import-vars glob aren't
-// bundled as worker entries yet
-test.skipIf(isBundledDev)(
-  'should load dynamic import with vars worker',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.dynamic-import-with-vars-worker'))
-      .toMatch('load worker')
-  },
-)
+test('should load dynamic import with vars worker', async () => {
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-vars-worker'))
+    .toMatch('load worker')
+})
 
 test('should load dynamic import with css in package', async () => {
   await page.click('.pkg-css')

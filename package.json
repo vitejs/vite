@@ -21,7 +21,7 @@
     "preinstall": "npx only-allow pnpm",
     "postinstall": "simple-git-hooks",
     "format": "oxfmt",
-    "lint": "eslint --cache . --concurrency auto",
+    "lint": "oxlint .",
     "typecheck": "tsc -p scripts && pnpm -r --parallel run typecheck",
     "test": "pnpm test-unit && pnpm test-serve && pnpm test-build",
     "test-serve": "vitest run -c vitest.config.e2e.ts",
@@ -42,34 +42,31 @@
   },
   "devDependencies": {
     "@e18e/eslint-plugin": "^0.8.1",
-    "@eslint/js": "^9.39.5",
     "@type-challenges/utils": "^0.1.1",
     "@types/babel__core": "^7.20.5",
     "@types/babel__preset-env": "^7.10.0",
     "@types/convert-source-map": "^2.0.3",
     "@types/etag": "^1.8.4",
     "@types/less": "^3.0.8",
-    "@types/node": "^24.19.1",
+    "@types/node": "^24.19.2",
     "@types/picomatch": "^4.0.3",
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.18.2",
     "@vitejs/release-scripts": "^1.10.0",
-    "eslint": "^9.39.5",
-    "eslint-plugin-import-x": "^4.17.1",
     "eslint-plugin-n": "^18.4.1",
     "eslint-plugin-regexp": "^3.3.1",
     "execa": "^9.6.1",
-    "globals": "^17.13.0",
     "lint-staged": "^17.6.0",
     "oxfmt": "^0.72.0",
+    "oxlint": "^1.87.0",
+    "oxlint-tsgolint": "^7.0.2004",
     "picocolors": "^1.1.1",
-    "playwright-chromium": "^1.63.0",
-    "rolldown": "~1.2.12",
+    "playwright-chromium": "^1.64.0",
+    "rolldown": "~1.2.14",
     "rollup": "^4.59.0",
     "simple-git-hooks": "^2.14.0",
     "tsx": "^4.23.15",
-    "typescript": "~6.0.2",
-    "typescript-eslint": "^8.71.1",
+    "typescript": "~7.0.2",
     "vite": "workspace:*",
     "vitest": "^5.0.3"
   },
@@ -81,16 +78,16 @@
       "oxfmt --no-error-on-unmatched-pattern"
     ],
     "packages/*/{src,types}/**/*.ts": [
-      "eslint --cache --fix --concurrency auto"
+      "oxlint --fix"
     ],
     "packages/**/*.d.ts": [
-      "eslint --cache --fix --concurrency auto"
+      "oxlint --fix"
     ],
     "playground/**/__tests__/**/*.ts": [
-      "eslint --cache --fix --concurrency auto"
+      "oxlint --fix"
     ]
   },
-  "packageManager": "pnpm@12.9.1",
+  "packageManager": "pnpm@12.11.2",
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"
   }

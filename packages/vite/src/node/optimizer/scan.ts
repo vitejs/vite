@@ -715,7 +715,7 @@ function rolldownScanPlugin(
     // for jsx/tsx, we need to access the content and check for
     // presence of import.meta.glob, since it results in import relationships
     // but isn't crawled by esbuild.
-    ...(environment.config.esbuild && environment.config.esbuild.jsxInject
+    ...(environment.config.oxc && environment.config.oxc.jsxInject
       ? [
           {
             name: 'vite:dep-scan:transform:jsx-inject',
@@ -724,9 +724,9 @@ function rolldownScanPlugin(
                 id: /\.[jt]sx$/,
               },
               handler(code) {
-                const esbuildConfig = environment.config.esbuild
-                if (esbuildConfig && esbuildConfig.jsxInject) {
-                  code = esbuildConfig.jsxInject + `\n` + code
+                const oxcConfig = environment.config.oxc
+                if (oxcConfig && oxcConfig.jsxInject) {
+                  code = oxcConfig.jsxInject + `\n` + code
                 }
                 return code
               },
