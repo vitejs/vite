@@ -85,7 +85,7 @@
     "@rollup/pluginutils": "^5.4.0",
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
-    "@vitejs/devtools": "^0.7.6",
+    "@vitejs/devtools": "^0.8.0",
     "@vitest/utils": "^4.1.11",
     "@voidzero-dev/vite-task-client": "^0.2.0",
     "artichokie": "^0.4.5",
@@ -135,7 +135,7 @@
   },
   "peerDependencies": {
     "@types/node": "^20.19.0 || >=22.12.0",
-    "@vitejs/devtools": "^0.7.1",
+    "@vitejs/devtools": "^0.7.1 || ^0.8.0",
     "esbuild": "^0.27.0 || ^0.28.0",
     "jiti": ">=1.21.0",
     "less": "^4.0.0",
