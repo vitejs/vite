@@ -1,0 +1,19 @@
+pnpm-lock.yaml
+  s_f364d4bac7dd2f::t_512699b33222d4 244-245,6798-6799,6803-6804,12425,12427,12429
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "28e92594d7745a0adb9548b8d27b28daae21a44a",
+  "prompts": {},
+  "sessions": {
+    "s_f364d4bac7dd2f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a14431-b071-7071-b3bb-e1cbecadbf78",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
