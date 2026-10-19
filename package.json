@@ -62,7 +62,7 @@
     "oxlint-tsgolint": "^7.0.2004",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.64.0",
-    "rolldown": "~1.2.13",
+    "rolldown": "~1.2.14",
     "rollup": "^4.59.0",
     "simple-git-hooks": "^2.14.0",
     "tsx": "^4.23.15",
