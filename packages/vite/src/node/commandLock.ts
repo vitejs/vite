@@ -3,7 +3,8 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import type { ResolvedConfig } from './config'
 import type { Plugin } from './plugin'
-import type { ResolvedServerUrls } from './server'
+import type { PreviewServer } from './preview'
+import type { ResolvedServerUrls, ViteDevServer } from './server'
 import { getHash } from './utils'
 
 type CommandLockType = 'dev' | 'preview' | 'build'
@@ -82,12 +83,11 @@ function removeFile(file: string): void {
   try {
     fs.unlinkSync(file)
   } catch {
-    // Command lock files are advisory and must not affect the Vite command.
+    // Failure to remove a lock file must not affect the Vite command.
   }
 }
 
 async function scanCommandLocks(
-  config: ResolvedConfig,
   lockDir: string,
   currentRecord: CommandLockRecord,
 ): Promise<void> {
@@ -98,7 +98,6 @@ async function scanCommandLocks(
     return
   }
 
-  const reportedPids = new Set<number>()
   await Promise.all(
     files.map(async (file) => {
       if (!file.endsWith('.json')) return
@@ -118,13 +117,12 @@ async function scanCommandLocks(
         return
       }
       if (!isSameCommand(record, currentRecord)) return
-      if (reportedPids.has(record.pid)) return
-      reportedPids.add(record.pid)
 
       const primaryUrl = record.urls?.local[0] ?? record.urls?.network[0]
       const location = primaryUrl ? ` at ${primaryUrl}` : ''
-      config.logger.info(
-        `Found another Vite ${record.command} process for this project${location} (PID ${record.pid})`,
+      throw new Error(
+        `Found another Vite ${record.command} process for this project${location} (PID ${record.pid}).\n` +
+          'Pass --bypass-lock to bypass this check.',
       )
     }),
   )
@@ -144,7 +142,7 @@ function createCommandLockController(
   const ownedPaths = new Set<string>()
   let currentPath: string | undefined
   let cleanupRegistered = false
-  let reportDuplicates = true
+  let checkDuplicates = true
   let released = false
   let generation = 0
 
@@ -219,6 +217,11 @@ function createCommandLockController(
     const lockPath = path.resolve(lockDir, `${getHash(serialized, 16)}.json`)
     if (lockPath === currentPath) return
 
+    if (checkDuplicates) {
+      await scanCommandLocks(lockDir, record)
+      checkDuplicates = false
+    }
+
     const tempPath = `${lockPath}.${process.pid}.${Math.random()
       .toString(16)
       .slice(2)}.tmp`
@@ -240,11 +243,6 @@ function createCommandLockController(
     currentPath = lockPath
     ownedPaths.add(lockPath)
     registerCleanup()
-
-    if (reportDuplicates) {
-      reportDuplicates = false
-      await scanCommandLocks(config, lockDir, record)
-    }
 
     if (previousPath && previousPath !== lockPath) {
       removeFile(previousPath)
@@ -272,21 +270,34 @@ export async function createCommandLock(
 }
 
 export function commandLockPlugin(): Plugin {
-  const controller = createCommandLockController('dev')
+  let controller: CommandLockController
+
+  async function configureServer(
+    server: ViteDevServer | PreviewServer,
+  ): Promise<void> {
+    await controller.publish(server.config, null)
+    server.httpServer?.once('listening', () => {
+      void controller.publish(server.config, server.resolvedUrls)
+    })
+  }
+
   return {
     name: 'vite:command-lock',
     apply: 'serve',
-    configureServer(server) {
-      server.httpServer?.once('listening', () => {
-        void controller.publish(server.config, server.resolvedUrls)
-      })
+    config(_config, { isPreview }) {
+      controller ??= createCommandLockController(isPreview ? 'preview' : 'dev')
     },
+    configureServer,
+    configurePreviewServer: configureServer,
     closeServer({ reason }) {
       if (reason === 'close') {
         controller.release()
       } else {
         controller.unpublish()
       }
+    },
+    closePreviewServer() {
+      controller.release()
     },
   }
 }
