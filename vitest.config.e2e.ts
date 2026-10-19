@@ -11,7 +11,6 @@ const isBundledDev = !isBuild && !!process.env.VITE_TEST_BUNDLED_DEV
 // from `playground/test-utils.ts` instead.
 const bundledDevExclude = [
   './playground/hmr-ssr/__tests__/hmr-ssr.spec.ts',
-  './playground/legacy/__tests__/chunk-importmap/legacy-chunk-importmap.spec.ts',
   './playground/object-hooks/__tests__/object-hooks.spec.ts',
   './playground/optimize-deps/__tests__/optimize-deps.spec.ts',
 ]
