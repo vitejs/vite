@@ -1,0 +1,29 @@
+docs/guide/cli.md
+  s_eead324bfeb048::t_f4b48e7238d766 3-6,30,70,133
+packages/vite/src/node/cli.ts
+  s_884c8b4063e39e::t_ea148ad791e13f 56,132,203,241,384-386,470
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "92d9be924222bcb7f909c1417b3207be45732ff0",
+  "prompts": {},
+  "sessions": {
+    "s_884c8b4063e39e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a15312-b2dd-71c0-9a59-a36635679451",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_eead324bfeb048": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a15389-56e3-7b62-8b73-7ca447e17512",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
