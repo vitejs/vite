@@ -1,0 +1,19 @@
+packages/vite/LICENSE.md
+  s_b85bbe94280895::t_2163ee3cb5ce99 1605
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "9752c2e126eb745655768a6acaa8e1dd5a8cfc25",
+  "prompts": {},
+  "sessions": {
+    "s_b85bbe94280895": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a152bc-8e3a-71f1-9b3f-b5010fccdcfb",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
