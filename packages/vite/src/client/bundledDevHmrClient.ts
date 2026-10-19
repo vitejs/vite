@@ -8,6 +8,8 @@ import type { NormalizedModuleRunnerTransport } from '../shared/moduleRunnerTran
 
 /** the subset of `__rolldown_runtime__` the HMR client uses */
 export interface RolldownRuntimeLike {
+  staticImports: Map<string, { edges: string[] }>
+  dynamicImports: Map<string, { edges: string[] }>
   getImporters(id: string): string[]
   getImportedBindings(importer: string, id: string): string[] | undefined
   isExecuted(id: string): boolean
@@ -43,6 +45,7 @@ export class BundledDevHMRClient extends HMRClient {
   private applyQueue = Promise.resolve()
   private lastSeq = 0
   private reloadPending = false
+  private orphans = new Set<string>()
 
   constructor(
     logger: HMRLogger,
@@ -124,6 +127,19 @@ export class BundledDevHMRClient extends HMRClient {
       : { type: 'noop' }
   }
 
+  private getImports(id: string): string[] {
+    return [
+      ...(this.runtime.staticImports.get(id)?.edges ?? []),
+      ...(this.runtime.dynamicImports.get(id)?.edges ?? []),
+    ]
+  }
+
+  private hasExecutedImporter(id: string): boolean {
+    return this.runtime
+      .getImporters(id)
+      .some((importer) => this.runtime.isExecuted(importer))
+  }
+
   private bubble(
     id: string,
     stack: string[],
@@ -135,6 +151,7 @@ export class BundledDevHMRClient extends HMRClient {
     if (traversedModules.has(id)) return
     traversedModules.add(id)
     updateSet.add(id)
+    if (this.orphans.has(id) && !this.hasExecutedImporter(id)) return
     if (firstInvalidatedBy !== undefined && id === firstInvalidatedBy) {
       return {
         type: 'full-reload',
@@ -320,11 +337,18 @@ export class BundledDevHMRClient extends HMRClient {
     await this.notifyListeners('vite:beforeUpdate', listenerPayload)
     if (this.options.beforeApply() === 'reload') return
 
+    // the patch replaces the import edges of the changed modules
+    const importsBeforePatch = changedIds.flatMap((id) => this.getImports(id))
     try {
       await import(/* @vite-ignore */ this.options.base + url)
     } catch {
       this.requestFullReload(`failed to import hmr patch ${url}`)
       return
+    }
+    for (const id of importsBeforePatch) {
+      if (this.runtime.isExecuted(id) && !this.hasExecutedImporter(id)) {
+        this.orphans.add(id)
+      }
     }
 
     await this.applyUpdate(update)
