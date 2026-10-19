@@ -165,6 +165,15 @@ for (const command of isServe ? ['dev', 'build'] : ['preview']) {
       })
       const getOwnerOutput = captureStdout(ownerProcess)
       await expect.poll(getOwnerOutput).toMatch(ready)
+      if (command !== 'build') {
+        await expect
+          .poll(() =>
+            readCommandLockRecords().filter(
+              (record) => record.pid === ownerProcess.pid,
+            ),
+          )
+          .toMatchObject([{ urls: { local: [expect.stringMatching(ready)] } }])
+      }
       const existingRecords = readCommandLockRecords()
 
       for (const ownerState of ['running', 'terminated']) {
