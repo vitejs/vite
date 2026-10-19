@@ -57,6 +57,7 @@ function createHMROptions(
 
   return {
     logger: options.hmr?.logger ?? defaultLogger,
+    partialAccept: environment.config.experimental.hmrPartialAccept,
   }
 }
 

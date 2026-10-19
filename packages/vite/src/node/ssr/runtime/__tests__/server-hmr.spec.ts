@@ -253,3 +253,48 @@ function editFile(file: string, callback: (content: string) => string) {
   const content = fs.readFileSync(filepath, 'utf-8')
   fs.writeFileSync(filepath, callback(content), 'utf-8')
 }
+
+describe.each([false, true])(
+  'full bundle partial acceptance (%s)',
+  (partialAccept) => {
+    it.override('fullBundle', ['virtual:partial-accept-entry'])
+    it.override('config', {
+      experimental: { hmrPartialAccept: partialAccept },
+      server: { hmr: true },
+      plugins: [
+        {
+          name: 'partial-accept-fixture',
+          resolveId(id) {
+            if (id.startsWith('virtual:partial-accept-')) return id
+          },
+          load(id) {
+            if (id === 'virtual:partial-accept-entry') {
+              return `
+                import { accepted } from 'virtual:partial-accept-dep'
+                export const value = () => accepted
+              `
+            }
+            if (id === 'virtual:partial-accept-dep') {
+              return `
+                export const accepted = 1
+                export const other = 2
+                import.meta.hot.acceptExports(['accepted'])
+              `
+            }
+          },
+        },
+      ],
+    })
+
+    it('respects the configured partial acceptance during propagation', async ({
+      runner,
+    }) => {
+      const mod = await runner.import('virtual:partial-accept-entry')
+      expect(mod.value()).toBe(1)
+      const update = runner._bundledDevHmrClient!.computeHmrUpdate([
+        'virtual:partial-accept-dep',
+      ])
+      expect(update.type).toBe(partialAccept ? 'boundaries' : 'full-reload')
+    })
+  },
+)

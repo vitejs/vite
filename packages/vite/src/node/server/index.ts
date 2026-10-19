@@ -7,7 +7,6 @@ import { get as httpsGet } from 'node:https'
 import type * as net from 'node:net'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
-import { determineAgent } from '@vercel/detect-agent'
 import { disableCache } from '@voidzero-dev/vite-task-client'
 import chokidar from 'chokidar'
 import connect from 'connect'
@@ -15,6 +14,7 @@ import corsMiddleware from 'cors'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import colors from 'picocolors'
 import type { SourceMap } from 'rolldown'
+import { detectAgent } from 'std-env'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { FSWatcher } from '#dep-types/chokidar'
 import type { Connect } from '#dep-types/connect'
@@ -291,7 +291,7 @@ export type HttpServer = http.Server | Http2SecureServer
 export async function resolveForwardConsoleOptions(
   value: boolean | ForwardConsoleOptions | undefined,
 ): Promise<ResolvedForwardConsoleOptions> {
-  value ??= (await determineAgent()).isAgent
+  value ??= !!detectAgent().name
 
   if (value === false) {
     return {
@@ -317,6 +317,12 @@ export async function resolveForwardConsoleOptions(
     unhandledErrors,
     logLevels,
   }
+}
+
+interface ServerRestartState {
+  promise: Promise<void> | null
+  pending: boolean
+  forceOptimize: boolean
 }
 
 export interface ViteDevServer {
@@ -469,14 +475,6 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _restartPromise: Promise<void> | null
-  /**
-   * @internal
-   */
-  _forceOptimizeOnRestart: boolean
-  /**
-   * @internal
-   */
   _shortcutsState?: ShortcutsState<ViteDevServer>
   /**
    * @internal
@@ -516,13 +514,18 @@ export async function _createServer(
     listen: boolean
     previousEnvironments?: Record<string, DevEnvironment>
     previousShortcutsState?: ShortcutsState<ViteDevServer>
-    previousRestartPromise?: Promise<void> | null
-    previousForceOptimizeOnRestart?: boolean
+    restartState?: ServerRestartState
   },
 ): Promise<ViteDevServer> {
   // The dev server is a long-running, interactive process whose outputs
   // (network responses, HMR updates) cannot be replayed from a cache.
   disableCache()
+
+  const restartState = options.restartState ?? {
+    promise: null,
+    pending: false,
+    forceOptimize: false,
+  }
 
   const config = isResolvedConfig(inlineConfig)
     ? inlineConfig
@@ -851,14 +854,24 @@ export async function _createServer(
       bindCLIShortcuts(server, options)
     },
     async restart(forceOptimize?: boolean) {
-      if (!server._restartPromise) {
-        server._forceOptimizeOnRestart = !!forceOptimize
-        server._restartPromise = restartServer(server).finally(() => {
-          server._restartPromise = null
-          server._forceOptimizeOnRestart = false
-        })
+      restartState.forceOptimize ||= !!forceOptimize
+      if (restartState.promise) {
+        restartState.pending = true
+        return restartState.promise
       }
-      return server._restartPromise
+      restartState.promise = (async () => {
+        try {
+          do {
+            restartState.pending = false
+            await restartServer(server, restartState)
+          } while (restartState.pending)
+        } finally {
+          restartState.promise = null
+          restartState.pending = false
+          restartState.forceOptimize = false
+        }
+      })()
+      return restartState.promise
     },
 
     waitForRequestsIdle(ignoredId?: string): Promise<void> {
@@ -876,8 +889,6 @@ export async function _createServer(
       }
       return closeServerPromise
     },
-    _restartPromise: options.previousRestartPromise ?? null,
-    _forceOptimizeOnRestart: options.previousForceOptimizeOnRestart ?? false,
     _shortcutsState: options.previousShortcutsState,
   }
 
@@ -1394,11 +1405,14 @@ export async function resolveServerOptions(
   return server
 }
 
-async function restartServer(server: ViteDevServer) {
+async function restartServer(
+  server: ViteDevServer,
+  restartState: ServerRestartState,
+) {
   global.__vite_start_time = performance.now()
 
   let inlineConfig = server.config.inlineConfig
-  if (server._forceOptimizeOnRestart) {
+  if (restartState.forceOptimize) {
     inlineConfig = mergeConfig(inlineConfig, {
       forceOptimizeDeps: true,
     })
@@ -1417,8 +1431,7 @@ async function restartServer(server: ViteDevServer) {
         listen: false,
         previousEnvironments: server.environments,
         previousShortcutsState: server._shortcutsState,
-        previousRestartPromise: server._restartPromise,
-        previousForceOptimizeOnRestart: server._forceOptimizeOnRestart,
+        restartState,
       })
     } catch (err: any) {
       server.config.logger.error(err.message, {

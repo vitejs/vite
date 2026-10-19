@@ -18,7 +18,15 @@ import type {
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { expect } from 'vitest'
-import { isWindows, page, sourcemapSnapshot, testDir } from './vitestSetup'
+import type { TaskMeta, TestOptions } from 'vitest'
+import {
+  isBundledDev,
+  isWindows,
+  page,
+  sourcemapSnapshot,
+  testDir,
+  viteServer,
+} from './vitestSetup'
 
 export * from './vitestSetup'
 
@@ -275,6 +283,22 @@ export function readDepOptimizationMetadata(
   )
 }
 
+export async function gotoLatestBuild(url: string): Promise<void> {
+  if (isBundledDev) {
+    // Earlier HMR edits leave the bundled-dev output stale. Opening a page then
+    // serves the fallback page first, which reloads into the real page later.
+    const bundledDev = viteServer.environments.client.bundledDev as any
+    await bundledDev.devEngine.ensureLatestBuildOutput()
+  }
+  await page.goto(url)
+}
+
+export function hotUpdatedLog(file: string): string {
+  return isBundledDev
+    ? `[vite] hot updated: ${normalizePath(path.relative(process.cwd(), testDir))}/${file}`
+    : `[vite] hot updated: /${file}`
+}
+
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void
 
 export async function untilBrowserLogAfter(
@@ -469,4 +493,25 @@ export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
     reject = _reject
   })
   return { promise, resolve, reject }
+}
+
+type BundledDevIssues = NonNullable<TaskMeta['issues']>
+
+/**
+ * Test options for a case that does not pass under bundled dev yet.
+ * See the `bundled-dev/*` tags in `vitest.config.e2e.ts`.
+ */
+export function bundledDevTodo(
+  reason: string,
+  issues?: BundledDevIssues,
+): TestOptions {
+  return { tags: ['bundled-dev/todo'], meta: { reason, issues } }
+}
+
+/** Test options for a case that does not apply to bundled dev, by design. */
+export function bundledDevUnsupported(
+  reason: string,
+  issues?: BundledDevIssues,
+): TestOptions {
+  return { tags: ['bundled-dev/unsupported'], meta: { reason, issues } }
 }

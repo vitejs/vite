@@ -1212,6 +1212,42 @@ test('chunkImportMap per environment with shared plugins', async () => {
   expect(entry.code).toContain(JSON.stringify(cssSpecifier.slice(1)))
 })
 
+test('chunkImportMap with a non-root base', async () => {
+  const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
+  const base = '/sub/'
+  const result = (await build({
+    root,
+    base,
+    logLevel: 'warn',
+    build: {
+      chunkImportMap: true,
+      write: false,
+      rolldownOptions: {
+        input: '/entry.js',
+      },
+    },
+  })) as RolldownOutput
+
+  const entry = result.output.find(
+    (output): output is OutputChunk =>
+      output.type === 'chunk' && output.isEntry,
+  )!
+  const css = result.output.find(
+    (output) => output.type === 'asset' && output.fileName.endsWith('.css'),
+  )!
+  const importMapAsset = result.output.find(
+    (output): output is OutputAsset =>
+      output.type === 'asset' && output.fileName === 'importmap.json',
+  )!
+  const importMap = JSON.parse(importMapAsset.source.toString())
+    .imports as Record<string, string>
+  const cssSpecifier = Object.entries(importMap).find(
+    ([, fileName]) => fileName === `${base}${css.fileName}`,
+  )![0]
+  // The import map maps the specifier without the base to the actual URL.
+  expect(entry.code).toContain(JSON.stringify(cssSpecifier.slice(base.length)))
+})
+
 test('chunkImportMap is emitted when emitAssets is false', async () => {
   const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
   const builder = await createBuilder({
@@ -1278,6 +1314,79 @@ test('chunkImportMap is emitted for SSR when enabled', async () => {
       fileName: 'importmap.json',
     }),
   )
+})
+
+test('chunkImportMap handles unhashed output', async () => {
+  const result = (await build({
+    root: resolve(dirname, 'fixtures/shared-plugins/chunk-import-map'),
+    logLevel: 'warn',
+    build: {
+      chunkImportMap: true,
+      write: false,
+      rolldownOptions: {
+        input: '/entry.js',
+        output: {
+          entryFileNames: '[name].js',
+          chunkFileNames: '[name].js',
+        },
+      },
+    },
+  })) as RolldownOutput
+
+  expect(
+    result.output.some(
+      (output) =>
+        output.type === 'asset' && output.fileName === 'importmap.json',
+    ),
+  ).toBe(false)
+})
+
+test('chunkImportMap handles pure CSS with unhashed output', async () => {
+  const modules: Record<string, string> = {
+    'entry.js': `import('style.css')`,
+    'style.css': `.style { color: red }`,
+  }
+  const result = (await build({
+    root: resolve(dirname, 'packages/build-project'),
+    logLevel: 'silent',
+    build: {
+      chunkImportMap: true,
+      write: false,
+      rolldownOptions: {
+        input: 'entry.js',
+        output: {
+          entryFileNames: '[name].js',
+          chunkFileNames: '[name].js',
+        },
+      },
+    },
+    plugins: [
+      {
+        name: 'pure-css',
+        resolveId(id) {
+          if (id in modules) return `\0${id}`
+        },
+        load(id) {
+          return modules[id.slice(1)]
+        },
+      },
+    ],
+  })) as RolldownOutput
+
+  expect(
+    result.output.some(
+      (output) =>
+        output.type === 'asset' && output.fileName === 'importmap.json',
+    ),
+  ).toBe(false)
+
+  const entry = result.output.find(
+    (output): output is OutputChunk =>
+      output.type === 'chunk' && output.isEntry,
+  )
+  assert(entry)
+  expect(entry.code).not.toContain('import(')
+  expect(entry.code).toContain('Promise.resolve')
 })
 
 test('importmap named asset is not emitted when chunkImportMap is false', async () => {

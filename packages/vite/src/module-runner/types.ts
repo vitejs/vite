@@ -92,6 +92,11 @@ export interface ModuleRunnerHmr {
    * Configure HMR logger.
    */
   logger?: false | HMRLogger
+  /**
+   * Enable partial acceptance of exports in bundled mode.
+   * @default false
+   */
+  partialAccept?: boolean
 }
 
 export interface ModuleRunnerOptions {

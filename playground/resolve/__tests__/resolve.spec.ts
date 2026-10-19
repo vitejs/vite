@@ -219,6 +219,11 @@ test('Resolving star with imports filed', async () => {
   expect(await page.textContent('.imports-star')).toMatch('[success]')
 })
 
+// https://github.com/vitejs/vite/issues/23637
+test('Resolving star with $$ in filename with imports field', async () => {
+  expect(await page.textContent('.imports-star-dollar')).toMatch('[success]')
+})
+
 test('Resolving slash with imports filed', async () => {
   expect(await page.textContent('.imports-slash')).toMatch('[success]')
 })

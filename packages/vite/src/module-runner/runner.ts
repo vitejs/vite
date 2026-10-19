@@ -97,6 +97,8 @@ export class ModuleRunner {
           this.transport,
           runtime,
           {
+            partialAccept:
+              optionsHmr !== true && optionsHmr.partialAccept === true,
             loadPatch: async (url) => {
               await this.import(url)
               // don't leave the HMR patch in memory
