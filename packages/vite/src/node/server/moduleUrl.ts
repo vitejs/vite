@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { cleanUrl, unwrapId, withTrailingSlash } from '../../shared/utils'
 import { FS_PREFIX } from '../constants'
-import { stripBase } from '../utils'
+import { fsPathFromId, normalizePath, stripBase } from '../utils'
 import type { DevEnvironment } from './environment'
 
 /** Map a normalized filesystem path to a ModuleURL. */
@@ -17,6 +17,12 @@ export function fileToModuleUrl(file: string, root: string): string {
   }
   // out of root, use /@fs/ prefix
   return path.posix.join(FS_PREFIX, file)
+}
+
+export function moduleUrlToFilePath(pathname: string, root: string): string {
+  return pathname.startsWith(FS_PREFIX)
+    ? fsPathFromId(pathname)
+    : normalizePath(path.resolve(root, `.${pathname}`))
 }
 
 /**

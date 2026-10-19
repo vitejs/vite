@@ -16,7 +16,6 @@ import {
   DEP_VERSION_RE,
   DEV_PROD_CONDITION,
   ENV_ENTRY,
-  FS_PREFIX,
   SPECIAL_QUERY_RE,
 } from '../constants'
 import { canExternalizeFile } from '../external'
@@ -34,11 +33,11 @@ import {
   resolvePackageData,
 } from '../packages'
 import type { Plugin } from '../plugin'
+import { moduleUrlToFilePath } from '../server/moduleUrl'
 import {
   bareImportRE,
   createDebugger,
   deepImportRE,
-  fsPathFromId,
   getNpmPackageName,
   injectQuery,
   isBuiltin,
@@ -433,10 +432,7 @@ function optimizerResolvePlugin(
         // tryFileResolve or /fs/ resolution but these files may not yet
         // exists if we are in the middle of a deps re-processing
         if (asSrc && depsOptimizer.isOptimizedDepUrl(id)) {
-          const optimizedPath = id.startsWith(FS_PREFIX)
-            ? fsPathFromId(id)
-            : normalizePath(path.resolve(root, id.slice(1)))
-          return optimizedPath
+          return moduleUrlToFilePath(id, root)
         }
 
         if (!isDataUrl(id) && !isExternalUrl(id)) {
