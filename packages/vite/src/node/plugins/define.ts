@@ -55,7 +55,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       userDefine[key] = handleDefineValue(environment.config.define[key])
 
       // make sure `import.meta.env` object has user define properties
-      if (isBuild && key.startsWith('import.meta.env.')) {
+      if (isBundled && key.startsWith('import.meta.env.')) {
         userDefineEnv[key.slice(16)] = environment.config.define[key]
       }
     }

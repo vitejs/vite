@@ -2,6 +2,7 @@ import { describe, expect, test, vi } from 'vitest'
 import {
   browserErrors,
   browserLogs,
+  bundledDevUnsupported,
   editFile,
   getColor,
   getCssRuleBg,
@@ -110,6 +111,10 @@ describe.runIf(isBuild)('build', () => {
 })
 
 describe.runIf(isServe)('serve', () => {
+  const cssLinkUnsupported = bundledDevUnsupported(
+    'bundled dev turns a `<link rel="stylesheet">` to a project CSS file (without `media` or `disabled`) into a CSS import, served as a `<style>` injected by a JS module, so there is no `<link>` tag to swap on a CSS edit; the edit still hot updates in place',
+  )
+
   test('No ReferenceError', async () => {
     browserErrors.forEach((error) => {
       expect(error.name).not.toBe('ReferenceError')
@@ -122,13 +127,17 @@ describe.runIf(isServe)('serve', () => {
       code.replace('black', 'red'),
     )
     await expect.poll(() => getColor('body')).toBe('red') // successful HMR
-
-    // bundled dev injects CSS with `<style>`, so there is no `<link>` to re-request
-    if (isBundledDev) return
-    // Verify that the base (/dev/) was added during the css-update
-    const link = await page.$('link[rel="stylesheet"]:last-of-type')
-    expect(await link.getAttribute('href')).toContain('/dev/global.css?t=')
   })
+
+  test(
+    'preserve the base in CSS HMR link href',
+    cssLinkUnsupported,
+    async () => {
+      // Verify that the base (/dev/) was added during the css-update
+      const link = await page.$('link[rel="stylesheet"]:last-of-type')
+      expect(await link.getAttribute('href')).toContain('/dev/global.css?t=')
+    },
+  )
 
   test('server.origin is applied to non-public CSS url()', async () => {
     const bg = await getCssRuleBg('.outside-root--aliased')
