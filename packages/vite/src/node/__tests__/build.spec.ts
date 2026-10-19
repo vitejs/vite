@@ -1341,6 +1341,39 @@ test('chunkImportMap handles unhashed output', async () => {
   ).toBe(false)
 })
 
+test('handles <link> href with query string only without EISDIR', async () => {
+  const result = (await build({
+    root: resolve(dirname, 'packages/build-project'),
+    logLevel: 'silent',
+    build: {
+      write: false,
+    },
+    plugins: [
+      {
+        name: 'test-html-link-query',
+        transformIndexHtml: {
+          order: 'pre',
+          handler() {
+            return '<link rel="alternate" type="text/markdown" href="?md">'
+          },
+        },
+        resolveId(id) {
+          if (id === 'entry.js') return '\0entry.js'
+        },
+        load(id) {
+          if (id === '\0entry.js') return 'console.log("hello")'
+        },
+      },
+    ],
+  })) as RolldownOutput
+  const htmlAsset = result.output.find(
+    (o): o is OutputAsset => o.fileName === 'index.html',
+  )
+  expect(htmlAsset?.source).toContain(
+    '<link rel="alternate" type="text/markdown" href="?md">',
+  )
+})
+
 test('chunkImportMap handles pure CSS with unhashed output', async () => {
   const modules: Record<string, string> = {
     'entry.js': `import('style.css')`,

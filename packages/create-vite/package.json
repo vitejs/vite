@@ -14,7 +14,7 @@
     "dist"
   ],
   "scripts": {
-    "dev": "tsdown --watch",
+    "dev": "node api.js && tsdown --watch",
     "build": "tsdown",
     "typecheck": "tsc",
     "prepublishOnly": "npm run build",

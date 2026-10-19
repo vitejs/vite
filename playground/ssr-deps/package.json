@@ -4,7 +4,7 @@
   "type": "module",
   "version": "0.0.0",
   "scripts": {
-    "dev": "node server",
+    "dev": "node api.js && node server",
     "serve": "NODE_ENV=production node server",
     "debug": "node --inspect-brk server"
   },
