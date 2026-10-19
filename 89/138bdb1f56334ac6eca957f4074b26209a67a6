@@ -1,0 +1,19 @@
+playground/cli-module/__tests__/cli-module.spec.ts
+  s_884c8b4063e39e::t_34e30a6f1a46b3 168-176
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "89138bdb1f56334ac6eca957f4074b26209a67a6",
+  "prompts": {},
+  "sessions": {
+    "s_884c8b4063e39e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a15312-b2dd-71c0-9a59-a36635679451",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
