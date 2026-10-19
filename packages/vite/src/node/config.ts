@@ -598,6 +598,14 @@ export interface FutureOptions {
 
 export interface ExperimentalOptions {
   /**
+   * Emit a versioned build manifest with HTML tags returned by plugins.
+   * Requires `build.manifest` to be enabled.
+   *
+   * @experimental
+   * @default false
+   */
+  newManifestFormat?: boolean
+  /**
    * Append fake `&lang.(ext)` when queries are specified, to preserve the file extension for following plugins to process.
    *
    * @experimental
@@ -907,6 +915,7 @@ const configDefaults = Object.freeze({
   },
   /** @experimental */
   experimental: {
+    newManifestFormat: false,
     importGlobRestoreExtension: false,
     renderBuiltUrl: undefined,
     hmrPartialAccept: false,

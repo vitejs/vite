@@ -50,6 +50,7 @@ import {
   urlToBuiltUrl,
 } from './asset'
 import { cssBundleNameCache } from './css'
+import type { ManifestHtmlTagDescriptor } from './manifest'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
 
 interface ScriptAssetsUrl {
@@ -1188,19 +1189,19 @@ export type IndexHtmlTransformResult =
   | string
   | HtmlTagDescriptor[]
   | {
-      html: string
+      html?: string
       tags: HtmlTagDescriptor[]
     }
 
 export interface IndexHtmlTransformContext {
   /**
-   * public path when served
+   * Public path when served. Absent when collecting manifest HTML tags.
    */
-  path: string
+  path?: string
   /**
-   * filename on disk
+   * Filename on disk. Absent when collecting manifest HTML tags.
    */
-  filename: string
+  filename?: string
   server?: ViteDevServer
   bundle?: OutputBundle
   chunk?: OutputChunk
@@ -1209,7 +1210,7 @@ export interface IndexHtmlTransformContext {
 
 export type IndexHtmlTransformHook = (
   this: MinimalPluginContextWithoutEnvironment,
-  html: string,
+  html: string | undefined,
   ctx: IndexHtmlTransformContext,
 ) => IndexHtmlTransformResult | void | Promise<IndexHtmlTransformResult | void>
 
@@ -1223,7 +1224,9 @@ export type IndexHtmlTransform =
 export function preImportMapHook(
   config: ResolvedConfig,
 ): IndexHtmlTransformHook {
-  return (html, ctx) => {
+  return (html, { filename }) => {
+    if (html === undefined || filename === undefined) return
+
     const importMapIndex = html.search(importMapRE)
     if (importMapIndex < 0) return
 
@@ -1231,9 +1234,7 @@ export function preImportMapHook(
     if (importMapAppendIndex < 0) return
 
     if (importMapAppendIndex < importMapIndex) {
-      const relativeHtml = normalizePath(
-        path.relative(config.root, ctx.filename),
-      )
+      const relativeHtml = normalizePath(path.relative(config.root, filename))
       config.logger.warnOnce(
         colors.yellow(
           colors.bold(
@@ -1253,9 +1254,12 @@ export function postImportMapHook(
 ): IndexHtmlTransformHook {
   const decoder = new TextDecoder()
   return function (html, { bundle }) {
+    if (html === undefined) return
+
     const chunkImportMapEnabled =
       config.command === 'build' &&
       config.environments.client.build.chunkImportMap
+    if (chunkImportMapEnabled && bundle === undefined) return
 
     if (importMapAppendRE.test(html)) {
       let importMap: string | undefined
@@ -1349,14 +1353,16 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
       }
     }
   }
-  return (html, ctx) => {
+  return (html, { filename }) => {
+    if (html === undefined || filename === undefined) return
+
     return html.replace(pattern, (text, key) => {
       if (key in env) {
         return env[key]
       } else {
         if (envPrefix.some((prefix) => key.startsWith(prefix))) {
           const relativeHtml = normalizePath(
-            path.relative(config.root, ctx.filename),
+            path.relative(config.root, filename),
           )
           config.logger.warn(
             colors.yellow(
@@ -1381,7 +1387,7 @@ export function injectNonceAttributeTagHook(
 
   return async (html, { filename }) => {
     const nonce = config.html?.cspNonce
-    if (!nonce) return
+    if (!nonce || html === undefined || filename === undefined) return
 
     const s = new MagicString(html)
 
@@ -1451,6 +1457,29 @@ export function resolveHtmlTransforms(
   }
 
   return [preHooks, normalHooks, postHooks]
+}
+
+export async function collectHtmlTags(
+  plugins: readonly Plugin[],
+  pluginContext: MinimalPluginContextWithoutEnvironment,
+  bundle: OutputBundle,
+): Promise<ManifestHtmlTagDescriptor[][]> {
+  const tagGroups: ManifestHtmlTagDescriptor[][] = []
+  for (const hook of resolveHtmlTransforms(plugins).flat()) {
+    const result = await hook.call(pluginContext, undefined, { bundle })
+    if (!result || typeof result === 'string') continue
+
+    const tags = Array.isArray(result) ? result : result.tags
+    if (tags.length) {
+      tagGroups.push(
+        tags.map((tag) => ({
+          ...tag,
+          injectTo: tag.injectTo ?? 'head-prepend',
+        })),
+      )
+    }
+  }
+  return tagGroups
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/head#see_also
