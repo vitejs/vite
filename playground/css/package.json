@@ -4,14 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node api.js && vite",
     "build": "vite build",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
     "preview": "vite preview",
-    "dev:relative-base": "vite --config ./vite.config-relative-base.js dev",
+    "dev:relative-base": "node api.js && vite --config ./vite.config-relative-base.js dev",
     "build:relative-base": "vite --config ./vite.config-relative-base.js build",
     "preview:relative-base": "vite --config ./vite.config-relative-base.js preview",
-    "dev:no-css-minify": "vite --config ./vite.config-no-css-minify.js dev",
+    "dev:no-css-minify": "node api.js && vite --config ./vite.config-no-css-minify.js dev",
     "build:no-css-minify": "vite --config ./vite.config-no-css-minify.js build",
     "preview:no-css-minify": "vite --config ./vite.config-no-css-minify.js preview"
   },

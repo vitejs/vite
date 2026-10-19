@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
-    "dev": "vite",
+    "dev": "node api.js && vite",
     "build": "vite build",
     "preview": "vite preview"
   }

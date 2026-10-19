@@ -56,7 +56,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "dev": "premove dist && pnpm build-bundle -w",
+    "dev": "node api.js && premove dist && pnpm build-bundle -w",
     "build": "premove dist && pnpm build-bundle && pnpm build-types",
     "build-bundle": "rolldown --config rolldown.config.ts",
     "build-types": "pnpm build-types-roll && pnpm build-types-check",
