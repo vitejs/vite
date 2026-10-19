@@ -53,7 +53,9 @@ describe('ModuleURL and BrowserURL conversions', () => {
     expect(moduleUrlToFilePath('/@fs/C:/outside/file.js', root)).toBe(
       'C:/outside/file.js',
     )
-    expect(moduleUrlToFilePath('/src/file.js', '/')).toBe('/src/file.js')
+    expect(moduleUrlToFilePath('/src/file.js', '/')).toBe(
+      normalizePath(path.resolve('/src/file.js')),
+    )
   })
 
   it('keeps multiple leading slashes relative to root', () => {
