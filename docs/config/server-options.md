@@ -343,7 +343,7 @@ To fix it, you could either:
 
 Create Vite server in middleware mode.
 
-If [proxy](./server-options#server-proxy) is setup for WebSocket, the `server` should be provided to bind the proxy correctly.
+If a [proxy](./server-options#server-proxy) is set up for WebSocket connections, the `server` should be provided to bind the proxy correctly.
 
 - **Related:** [appType](./shared-options#apptype), [SSR - Setting Up the Dev Server](/guide/ssr#setting-up-the-dev-server)
 
