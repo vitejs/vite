@@ -1294,6 +1294,17 @@ describe('resolveEnvPrefix', () => {
     consoleWarnSpy.mockRestore()
   })
 
+  test('uses displayName in the whitespace warning', () => {
+    const consoleWarnSpy = vi
+      .spyOn(console, 'warn')
+      .mockImplementation(() => {})
+    resolveEnvPrefix({ envPrefix: 'WITH SPACE', displayName: 'sitelo' })
+    expect(stripVTControlCharacters(consoleWarnSpy.mock.calls[0][0])).toMatch(
+      /^\[sitelo\] Warning:/,
+    )
+    consoleWarnSpy.mockRestore()
+  })
+
   test('should work correctly for valid envPrefix value', () => {
     const config: UserConfig = { envPrefix: ['CUSTOM_'] }
     expect(resolveEnvPrefix(config)).toMatchObject(['CUSTOM_'])
@@ -2211,7 +2222,7 @@ describe('loadConfigFromFile', () => {
     ))!
     expect(config).toMatchInlineSnapshot(`
         {
-          "jsonValue": "vite",
+          "jsonValue": "@paul-browne/vite",
         }
       `)
   })
@@ -2464,5 +2475,49 @@ describe('resolveServerOptions', () => {
       )
       warnFn.mockClear()
     }
+  })
+})
+
+describe('displayName', () => {
+  test('defaults to vite', async () => {
+    const config = await resolveConfig({ configFile: false }, 'serve')
+    expect(config.displayName).toBe('vite')
+  })
+
+  test('can be set by the user', async () => {
+    const config = await resolveConfig(
+      { configFile: false, displayName: 'sitelo' },
+      'serve',
+    )
+    expect(config.displayName).toBe('sitelo')
+  })
+
+  test("hides no plugin names unless it is set or they're listed", async () => {
+    const config = await resolveConfig({ configFile: false }, 'serve')
+    expect(config.hiddenPluginNames).toStrictEqual([])
+  })
+
+  test("hides Vite's own plugin names when it is set", async () => {
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        displayName: 'sitelo',
+        hiddenPluginNames: ['my-plugin'],
+      },
+      'serve',
+    )
+    expect(config.hiddenPluginNames).toStrictEqual([
+      /^vite:/,
+      /^builtin:vite-/,
+      'my-plugin',
+    ])
+  })
+
+  test('hides listed plugin names without it', async () => {
+    const config = await resolveConfig(
+      { configFile: false, hiddenPluginNames: [/^my-/] },
+      'serve',
+    )
+    expect(config.hiddenPluginNames).toStrictEqual([/^my-/])
   })
 })

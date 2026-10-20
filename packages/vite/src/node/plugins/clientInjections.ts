@@ -15,7 +15,13 @@ import {
 } from '../constants'
 import { perEnvironmentState } from '../environment'
 import type { Plugin } from '../plugin'
-import { escapeRegex, isObject, normalizePath, resolveHostname } from '../utils'
+import {
+  describeConfigOption,
+  escapeRegex,
+  isObject,
+  normalizePath,
+  resolveHostname,
+} from '../utils'
 import { replaceDefine, serializeDefine } from './define'
 
 // ids in transform are normalized to unix style
@@ -94,7 +100,12 @@ async function createClientConfigValueReplacer(
   const protocol = wsConfig?.protocol || null
   const timeout = wsConfig?.timeout || 30000
   const isWsServerSpecified = !!wsConfig?.server
-  const hmrConfigName = path.basename(config.configFile || 'vite.config.js')
+  const { option: hmrOverlayOption, file: hmrConfigName } =
+    describeConfigOption(
+      config.configHint,
+      'server.hmr.overlay',
+      path.basename(config.configFile || 'vite.config.js'),
+    )
 
   const hmrConfig = isObject(config.server.hmr) ? config.server.hmr : undefined
   const overlay = hmrConfig?.overlay !== false
@@ -126,10 +137,12 @@ async function createClientConfigValueReplacer(
   const hmrTimeoutReplacement = escapeReplacement(timeout)
   const hmrEnableOverlayReplacement = escapeReplacement(overlay)
   const hmrConfigNameReplacement = escapeReplacement(hmrConfigName)
+  const hmrOverlayOptionReplacement = escapeReplacement(hmrOverlayOption)
   const hmrPartialAcceptReplacement = escapeReplacement(
     config.experimental.hmrPartialAccept,
   )
   const wsTokenReplacement = escapeReplacement(config.webSocketToken)
+  const displayNameReplacement = escapeReplacement(config.displayName)
   const serverForwardConsoleReplacement = escapeReplacement(
     config.server.forwardConsole as any,
   )
@@ -147,9 +160,11 @@ async function createClientConfigValueReplacer(
       .replace(`__HMR_TIMEOUT__`, hmrTimeoutReplacement)
       .replace(`__HMR_ENABLE_OVERLAY__`, hmrEnableOverlayReplacement)
       .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
+      .replace(`__HMR_OVERLAY_OPTION__`, hmrOverlayOptionReplacement)
       .replace(`__HMR_PARTIAL_ACCEPT__`, hmrPartialAcceptReplacement)
       .replace(`__WS_TOKEN__`, wsTokenReplacement)
       .replace(`__SERVER_FORWARD_CONSOLE__`, serverForwardConsoleReplacement)
+      .replace(`__DISPLAY_NAME__`, displayNameReplacement)
 }
 
 const ROLLDOWN_DEV_RUNTIME_ENTRY = 'rolldown/experimental/runtime'

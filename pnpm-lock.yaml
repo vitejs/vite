@@ -164,7 +164,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  vite: workspace:*
+  vite: workspace:@paul-browne/vite@*
   debug: npm:obug@^1.0.2
   '@volar/typescript>typescript@>=7': '-'
   '@volar/language-service>typescript@>=7': '-'
@@ -259,7 +259,7 @@ importers:
         specifier: ~7.0.2
         version: 7.0.2
       vite:
-        specifier: workspace:*
+        specifier: workspace:@paul-browne/vite@*
         version: link:packages/vite
       vitest:
         specifier: ^5.0.5
@@ -377,7 +377,7 @@ importers:
         specifier: ^0.3.1
         version: 0.3.1
       vite:
-        specifier: workspace:*
+        specifier: workspace:@paul-browne/vite@*
         version: link:../vite
 
   packages/vite:
@@ -932,7 +932,7 @@ importers:
         specifier: ^0.8.0
         version: 0.8.0(@devframes/agentic@1.2.5)(cac@7.1.0)(crossws@0.4.15)(srvx@1.0.6)(vite@packages+vite)
       vite:
-        specifier: workspace:*
+        specifier: workspace:@paul-browne/vite@*
         version: link:../../packages/vite
 
   playground/dynamic-import:
@@ -992,7 +992,7 @@ importers:
         specifier: npm:slash@^5.1.0
         version: slash@5.1.0
       vite:
-        specifier: workspace:*
+        specifier: workspace:@paul-browne/vite@*
         version: link:../../packages/vite
       vue:
         specifier: ^3.5.44
@@ -1142,7 +1142,7 @@ importers:
         specifier: ^5.51.2
         version: 5.51.2
       vite:
-        specifier: workspace:*
+        specifier: workspace:@paul-browne/vite@*
         version: link:../../packages/vite
 
   playground/lib:
@@ -4250,7 +4250,7 @@ packages:
   '@tailwindcss/vite@4.3.3':
     resolution: {integrity: sha512-yYU8cogLeSh/ms2jh8Fj7jaba/EWa7Ja6GoUqYZaraEuCI5YS6ms6ObZgjjedm+jm6XZjdNRWBpPP6Z86oOxcw==}
     peerDependencies:
-      vite: workspace:*
+      vite: workspace:@paul-browne/vite@*
 
   '@tanstack/virtual-core@3.19.6':
     resolution: {integrity: sha512-CsTW892z23gy7IyxYTTorVu1uZWB+0N349rSMgKz4rFLPpLza7F7TpcCKeI5iUAwYQCt8QUlOU67J+KXCxtpGw==}
@@ -4510,7 +4510,7 @@ packages:
   '@vitejs/devtools-kit@0.8.0':
     resolution: {integrity: sha512-R4bXaPpKXbNY2sUuJMhnsSSgHkxOorkMa1gFI6I8ISSARW6TjXbj+GZK6JRdmn9TTn/kKMCGUhREHr/UcHXLAw==}
     peerDependencies:
-      vite: workspace:*
+      vite: workspace:@paul-browne/vite@*
 
   '@vitejs/devtools-rolldown@0.8.0':
     resolution: {integrity: sha512-uFYefiOoUE5G/a6APHSEwJOWaPa4YUWMO/tfoLp4wmbFtHHEWfdQsAdlpkgYXXxuODqcBDuNxfvTktoTxmR2OA==}
@@ -4518,7 +4518,7 @@ packages:
   '@vitejs/devtools-vite@0.8.0':
     resolution: {integrity: sha512-UQ9U5j/WBwVOor267ZiyYRNBhkbePqk/1l7d0wZ1ije5I1o/mMbVTXbFbwsVxOTXqP3vM3pyy4ot4gB/a48uIw==}
     peerDependencies:
-      vite: workspace:*
+      vite: workspace:@paul-browne/vite@*
 
   '@vitejs/devtools@0.8.0':
     resolution: {integrity: sha512-4HyRoreQ3lmIsvq5IGadtllHzzv4tCpEaT7MpnClWg4TXd3niytbRdGW/+sNg7qefDoPcGCWbpcd2Ts1EN2/NQ==}
@@ -7800,7 +7800,7 @@ packages:
   vitepress-plugin-group-icons@1.8.1:
     resolution: {integrity: sha512-9TY8xunZDX+a+k4GZu+2rJftBsZXCEMsFXLj3p2JTM/NCTRGvIemx+iBhvauyCbOFcIEYTsRVswWF1TeMS89Ew==}
     peerDependencies:
-      vite: workspace:*
+      vite: workspace:@paul-browne/vite@*
     peerDependenciesMeta:
       vite:
         optional: true
@@ -7837,7 +7837,7 @@ packages:
       '@vitest/ui': 5.0.5
       happy-dom: '*'
       jsdom: '*'
-      vite: workspace:*
+      vite: workspace:@paul-browne/vite@*
     peerDependenciesMeta:
       '@edge-runtime/vm':
         optional: true

@@ -371,6 +371,21 @@ describe('plugin container', () => {
         }
       `)
     })
+
+    it('names the module a native plugin failed to transform', async () => {
+      // rolldown's wrapper for its native plugins records the transform
+      // options (`{ moduleType, ssr, inMap }`) as the failed module's id
+      const environment = await getDevEnvironment()
+
+      await expect(
+        environment.pluginContainer.transform('{ "a": 1, }', '/data.json', {
+          moduleType: 'json',
+        }),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining('trailing comma'),
+        id: '/data.json',
+      })
+    })
   })
 
   describe('resolveId', () => {

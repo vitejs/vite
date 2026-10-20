@@ -13,6 +13,7 @@ import { dts } from 'rolldown-plugin-dts'
 import { parseAst } from 'rolldown/parseAst'
 import type { ESTree } from 'rolldown/utils'
 import pkg from './package.json' with { type: 'json' }
+import { rewriteSelfImportsPlugin } from './rewriteSelfImportsPlugin'
 
 type Directive = ESTree.Directive
 type ModuleExportName = ESTree.ModuleExportName
@@ -59,6 +60,7 @@ export default defineConfig({
       },
       emitDtsOnly: true,
     }),
+    rewriteSelfImportsPlugin(),
   ],
 })
 
