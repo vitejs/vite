@@ -1254,6 +1254,58 @@ if (!isBuild) {
       .toBe(isBundledDev ? 'count is 2!' : 'count is 1!')
   })
 
+  test('updating a file that only an unused file imports should not keep old code', async () => {
+    await page.goto(viteTestUrl)
+
+    const display = () => page.textContent('.orphan-no-boundary-display')
+
+    await expect.poll(display).toBe('count is 1')
+
+    await page.click('.orphan-no-boundary-increment')
+    await expect.poll(display).toBe('count is 2')
+
+    // re-export.js and display.js are no longer imported
+    await untilBrowserLogAfter(
+      () =>
+        editFile('orphan-no-boundary/index.js', (code) =>
+          code.replace("from './re-export.js'", "from './local.js'"),
+        ),
+      hotUpdatedLog('orphan-no-boundary/index.js'),
+    )
+    await expect.poll(display).toBe('local 2')
+
+    // update display.js. Plain dev reloads the page, because re-export.js has
+    // no importers, so it is an entry point in its module graph. Bundled dev
+    // finds no hmr boundary, so nothing runs again and no update is logged.
+    // Wait for the dispose log instead, so that this edit is handled on its own
+    // and not in the same update as the next edit.
+    const editDisplay = () =>
+      editFile('orphan-no-boundary/display.js', (code) =>
+        code.replace('count is ${count}', 'count is ${count}!'),
+      )
+    if (isBundledDev) {
+      await untilBrowserLogAfter(
+        editDisplay,
+        '[orphan-no-boundary] re-export.js disposed',
+      )
+    } else {
+      editDisplay()
+    }
+    await expect.poll(display).toBe(isBundledDev ? 'local 2' : 'local 1')
+
+    // import re-export.js again
+    await untilBrowserLogAfter(
+      () =>
+        editFile('orphan-no-boundary/index.js', (code) =>
+          code.replace("from './local.js'", "from './re-export.js'"),
+        ),
+      hotUpdatedLog('orphan-no-boundary/index.js'),
+    )
+    await expect
+      .poll(display)
+      .toBe(isBundledDev ? 'count is 2!' : 'count is 1!')
+  })
+
   test('import.meta.hot?.accept', async () => {
     await gotoLatestBuild(viteTestUrl)
 
