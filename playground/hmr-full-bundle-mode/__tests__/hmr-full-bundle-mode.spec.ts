@@ -26,6 +26,27 @@ if (isBuild) {
     await expect
       .poll(() => page.textContent('body'))
       .toContain('Bundling in progress')
+    // the fallback page inlines the HMR runtime, which contains non-ASCII
+    // characters; without an explicit charset, browsers may decode the page
+    // with a legacy encoding (e.g. GBK) and corrupt the inline module script
+    // (assert via evaluate: getAttribute would auto-wait 30s for the meta
+    // tag that is missing when this regresses)
+    const fallbackEncoding = await page.evaluate(() => ({
+      declared: document
+        .querySelector('meta[charset]')
+        ?.getAttribute('charset'),
+      effective: document.characterSet,
+      inlineRuntime:
+        document.querySelector<HTMLScriptElement>('script[type="module"]')
+          ?.textContent ?? '',
+    }))
+    expect(fallbackEncoding.declared).toBe('utf-8')
+    expect(fallbackEncoding.effective).toBe('UTF-8')
+    // the charset declaration is load-bearing: the inline runtime really
+    // does contain non-ASCII characters (e.g. `…` in console stringify)
+    expect(
+      [...fallbackEncoding.inlineRuntime].some((c) => c.codePointAt(0)! > 0x7f),
+    ).toBe(true)
     await reloadPromise // page shown after reload
     await expect.poll(() => page.textContent('h1')).toBe('HMR Full Bundle Mode')
     await expect.poll(() => page.textContent('.app')).toBe('hello')
