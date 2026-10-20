@@ -1576,7 +1576,18 @@ export async function resolveConfig(
     // During build, we only build the ssr environment if it is configured
     // through the deprecated ssr top level options or if it is explicitly defined
     // in the environments config
-    config.environments = { ssr: {}, ...config.environments }
+    config.environments = {
+      // In build mode, the deprecated `build.ssr` option reuses the top-level
+      // `input` as the SSR entry (e.g. for library builds where `build.lib.entry`
+      // defaults to `input`). Forward it to this implicit environment, matching
+      // how the client environment inherits top-level input. In dev, the ssr
+      // entries are provided dynamically through ssrLoadModule instead.
+      ssr:
+        isBuild && config.build?.ssr && config.input != null
+          ? { input: config.input }
+          : {},
+      ...config.environments,
+    }
   }
   if (!config.environments.client) {
     config.environments = { client: {}, ...config.environments }

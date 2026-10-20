@@ -1616,6 +1616,19 @@ describe('resolveConfig', () => {
 
     expect(config.build.lib && config.build.lib.entry).toBe('src/explicit.ts')
   })
+
+  test('top-level input is forwarded to the implicit build.ssr environment and defaults build.lib.entry (#23847)', async () => {
+    const config = await resolveConfig(
+      {
+        input: 'src/main.ts',
+        build: { ssr: true, lib: { name: 'MyLib' } },
+      },
+      'build',
+    )
+
+    expect(config.environments.ssr.input).toBe('src/main.ts')
+    expect(config.environments.ssr.build.lib?.entry).toBe('src/main.ts')
+  })
 })
 
 test('config compat 1', async () => {
