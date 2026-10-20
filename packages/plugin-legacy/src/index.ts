@@ -166,8 +166,9 @@ const _require = createRequire(import.meta.url)
 
 const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
 const prefixedHashInFileNameRE = /\W?\[hash(?::\d+)?\]/
+// Keep quoted values together so their contents cannot be mistaken for attributes.
 export const modulePreloadLinkRE: RegExp =
-  /<link(?![\w-])[^>]*?\srel=(['"])modulepreload\1[^>]*>/g
+  /<link(?![\w-])(?:[^"'>]|"[^"]*"|'[^']*')*?\srel=(['"])modulepreload\1(?:[^"'>]|"[^"]*"|'[^']*')*>/g
 
 // browsers supporting dynamic import + import.meta.resolve + async generator
 const modernTargetsEsbuild = [
