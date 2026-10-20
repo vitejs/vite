@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type { Connect } from '#dep-types/connect'
 import { cleanUrl } from '../../../shared/utils'
-import { createDebugger, joinUrlSegments } from '../../utils'
+import { createDebugger, isHTMLRequest, joinUrlSegments } from '../../utils'
 import type { DevEnvironment } from '../environment'
 
 const debug = createDebugger('vite:html-fallback')
@@ -51,7 +51,7 @@ export function htmlFallbackMiddleware(
 
     // .html files are not handled by serveStaticMiddleware
     // so we need to check if the file exists
-    if (pathname.endsWith('.html')) {
+    if (isHTMLRequest(pathname)) {
       if (checkFileExists(pathname)) {
         debug?.(`Rewriting ${req.method} ${req.url} to ${url}`)
         req.url = url

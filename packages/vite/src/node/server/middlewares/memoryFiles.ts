@@ -2,6 +2,7 @@ import * as mrmime from 'mrmime'
 import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '..'
 import { cleanUrl } from '../../../shared/utils'
+import { isHTMLRequest } from '../../utils'
 
 export function memoryFilesMiddleware(
   server: ViteDevServer,
@@ -15,7 +16,7 @@ export function memoryFilesMiddleware(
 
   return function viteMemoryFilesMiddleware(req, res, next) {
     const cleanedUrl = cleanUrl(req.url!)
-    if (cleanedUrl.endsWith('.html')) {
+    if (isHTMLRequest(cleanedUrl)) {
       return next()
     }
 

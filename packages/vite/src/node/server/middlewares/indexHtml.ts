@@ -37,6 +37,7 @@ import {
   injectQuery,
   isCSSRequest,
   isDevServer,
+  isHTMLRequest,
   isJSRequest,
   isParentDirectory,
   joinUrlSegments,
@@ -473,7 +474,11 @@ export function indexHtmlMiddleware(
 
     const url = req.url && cleanUrl(req.url)
     // htmlFallbackMiddleware appends '.html' to URLs
-    if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
+    if (
+      url &&
+      isHTMLRequest(url) &&
+      req.headers['sec-fetch-dest'] !== 'script'
+    ) {
       if (fullBundle) {
         let pathname
         try {
