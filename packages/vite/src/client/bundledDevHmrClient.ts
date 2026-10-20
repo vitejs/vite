@@ -393,18 +393,19 @@ export class BundledDevHMRClient extends HMRClient {
     // static imports that were removed from the module cache. So this function
     // will return undefined in the above graph. Without d.js, it will return
     // a.js.
-    const removed = new Set(update.updateSet)
-    const runAgain = new Set<string>()
+    const executedByBoundaries = new Set<string>()
     const queue = update.boundaries.map(({ acceptedVia }) => acceptedVia)
     while (queue.length) {
       const id = queue.pop()!
-      if (runAgain.has(id) || !removed.has(id)) continue
-      runAgain.add(id)
+      if (executedByBoundaries.has(id) || !update.updateSet.includes(id)) {
+        continue
+      }
+      executedByBoundaries.add(id)
       // an `import()` may not run again, so only static imports count
       queue.push(...(this.runtime.staticImports.get(id)?.edges ?? []))
     }
     return update.updateSet.find(
-      (id) => this.runtime.isEntry(id) && !runAgain.has(id),
+      (id) => this.runtime.isEntry(id) && !executedByBoundaries.has(id),
     )
   }
 
