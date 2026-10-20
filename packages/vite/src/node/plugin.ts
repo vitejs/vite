@@ -321,10 +321,11 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
    * Transform index.html.
    * The hook receives the following arguments:
    *
-   * - html: string
+   * - html: string | undefined (undefined when collecting manifest HTML tags
+   *   with experimental.newManifestFormat)
    * - ctx: IndexHtmlTransformContext, which contains:
-   *    - path: public path when served
-   *    - filename: filename on disk
+   *    - path?: public path when served (absent during manifest collection)
+   *    - filename?: filename on disk (absent during manifest collection)
    *    - server?: ViteDevServer (only present during serve)
    *    - bundle?: rollup.OutputBundle (only present during build)
    *    - chunk?: rollup.OutputChunk

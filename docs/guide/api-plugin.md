@@ -399,7 +399,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   The hook can be async and can return one of the following:
   - Transformed HTML string
   - An array of tag descriptor objects (`{ tag, attrs, children }`) to inject to the existing HTML. Each tag can also specify where it should be injected to (default is prepending to `<head>`)
-  - An object containing both as `{ html, tags }`
+  - An object with `tags` and an optional `html` string
 
   By default `order` is `undefined`, with this hook applied after the HTML has been transformed. In order to inject a script that should go through the Vite plugins pipeline, `order: 'pre'` will apply the hook before processing the HTML. `order: 'post'` applies the hook after all hooks with `order` undefined are applied.
 
@@ -410,6 +410,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
     return {
       name: 'html-transform',
       transformIndexHtml(html) {
+        if (html === undefined) return
         return html.replace(
           /<title>(.*?)<\/title>/,
           `<title>Title replaced!</title>`,
@@ -423,10 +424,10 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
   ```ts
   type IndexHtmlTransformHook = (
-    html: string,
+    html: string | undefined,
     ctx: {
-      path: string
-      filename: string
+      path?: string
+      filename?: string
       server?: ViteDevServer
       bundle?: import('rolldown').OutputBundle
       chunk?: import('rolldown').OutputChunk
@@ -441,7 +442,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
     | string
     | HtmlTagDescriptor[]
     | {
-        html: string
+        html?: string
         tags: HtmlTagDescriptor[]
       }
 
@@ -462,6 +463,10 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   ::: warning Note
   This hook won't be called if you are using a framework that has custom handling of entry files (for example [SvelteKit](https://github.com/sveltejs/kit/discussions/8269#discussioncomment-4509145)).
   :::
+
+<!--
+TODO: mention `experimental.newManifest` here once we try this option with some plugins / frameworks
+-->
 
 ### `handleHotUpdate`
 

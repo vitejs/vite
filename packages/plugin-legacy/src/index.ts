@@ -718,7 +718,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
     transformIndexHtml(html, { chunk, bundle }) {
       if (config.build.ssr) return
-      if (!chunk) return
+      if (!chunk || html === undefined) return
       if (chunk.fileName.includes('-legacy')) {
         // The legacy bundle is built first, and its index.html isn't actually emitted if
         // modern bundle will be generated. Here we simply record its corresponding legacy chunk.
