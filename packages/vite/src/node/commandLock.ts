@@ -87,45 +87,43 @@ function removeFile(file: string): void {
   }
 }
 
-async function scanCommandLocks(
+function scanCommandLocks(
   lockDir: string,
   currentRecord: CommandLockRecord,
-): Promise<void> {
+): void {
   let files: string[]
   try {
-    files = await fsp.readdir(lockDir)
+    files = fs.readdirSync(lockDir)
   } catch {
     return
   }
 
-  await Promise.all(
-    files.map(async (file) => {
-      if (!file.endsWith('.json')) return
-      const lockPath = path.resolve(lockDir, file)
-      let record: CommandLockRecord
-      try {
-        const parsed: unknown = JSON.parse(await fsp.readFile(lockPath, 'utf8'))
-        if (!isCommandLockRecord(parsed)) return
-        record = parsed
-      } catch {
-        return
-      }
+  for (const file of files) {
+    if (!file.endsWith('.json')) continue
+    const lockPath = path.resolve(lockDir, file)
+    let record: CommandLockRecord
+    try {
+      const parsed: unknown = JSON.parse(fs.readFileSync(lockPath, 'utf8'))
+      if (!isCommandLockRecord(parsed)) continue
+      record = parsed
+    } catch {
+      continue
+    }
 
-      if (record.pid === process.pid) return
-      if (!isProcessAlive(record.pid)) {
-        removeFile(lockPath)
-        return
-      }
-      if (!isSameCommand(record, currentRecord)) return
+    if (record.pid === process.pid) continue
+    if (!isProcessAlive(record.pid)) {
+      removeFile(lockPath)
+      continue
+    }
+    if (!isSameCommand(record, currentRecord)) continue
 
-      const primaryUrl = record.urls?.local[0] ?? record.urls?.network[0]
-      const location = primaryUrl ? ` at ${primaryUrl}` : ''
-      throw new Error(
-        `Found another Vite ${record.command} process for this project${location} (PID ${record.pid}).\n` +
-          'Pass --bypass-lock to bypass this check.',
-      )
-    }),
-  )
+    const primaryUrl = record.urls?.local[0] ?? record.urls?.network[0]
+    const location = primaryUrl ? ` at ${primaryUrl}` : ''
+    throw new Error(
+      `Found another Vite ${record.command} process for this project${location} (PID ${record.pid}).\n` +
+        'Pass --bypass-lock to bypass this check.',
+    )
+  }
 }
 
 interface CommandLockController extends CommandLock {
@@ -218,7 +216,7 @@ function createCommandLockController(
     if (lockPath === currentPath) return
 
     if (checkDuplicates) {
-      await scanCommandLocks(lockDir, record)
+      scanCommandLocks(lockDir, record)
       checkDuplicates = false
     }
 

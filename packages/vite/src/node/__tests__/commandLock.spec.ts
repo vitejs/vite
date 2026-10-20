@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, onTestFinished, test } from 'vitest'
 import { createCommandLock } from '../commandLock'
 import { resolveConfig } from '../config'
 import type { InlineConfig } from '../config'
-import { createLogger } from '../logger'
 import { getHash } from '../utils'
 
 describe('command lock', () => {
@@ -22,13 +21,11 @@ describe('command lock', () => {
     return resolveConfig(
       {
         root: tempDir,
-        cacheDir: path.join(tempDir, 'node_modules/.vite'),
         configFile: false,
-        mode: 'development',
-        customLogger: createLogger('silent'),
+        logLevel: 'silent',
         ...overrides,
       },
-      'build',
+      'serve',
     )
   }
 
