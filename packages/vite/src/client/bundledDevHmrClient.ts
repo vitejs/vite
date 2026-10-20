@@ -9,9 +9,9 @@ import type { NormalizedModuleRunnerTransport } from '../shared/moduleRunnerTran
 /** the subset of `__rolldown_runtime__` the HMR client uses */
 export interface RolldownRuntimeLike {
   staticImports: Map<string, { edges: string[] }>
-  dynamicImports: Map<string, { edges: string[] }>
   getImporters(id: string): string[]
   getImportedBindings(importer: string, id: string): string[] | undefined
+  isEntry(id: string): boolean
   isExecuted(id: string): boolean
   hasFactory(id: string): boolean
   removeModuleCache(id: string): void
@@ -44,7 +44,6 @@ export class BundledDevHMRClient extends HMRClient {
   private applyQueue = Promise.resolve()
   private lastSeq = 0
   private reloadPending = false
-  private orphans = new Set<string>()
 
   constructor(
     logger: HMRLogger,
@@ -124,19 +123,6 @@ export class BundledDevHMRClient extends HMRClient {
     return { type: 'update', boundaries, updateSet: [...updateSet] }
   }
 
-  private getImports(id: string): string[] {
-    return [
-      ...(this.runtime.staticImports.get(id)?.edges ?? []),
-      ...(this.runtime.dynamicImports.get(id)?.edges ?? []),
-    ]
-  }
-
-  private hasExecutedImporter(id: string): boolean {
-    return this.runtime
-      .getImporters(id)
-      .some((importer) => this.runtime.isExecuted(importer))
-  }
-
   private bubble(
     id: string,
     stack: string[],
@@ -148,10 +134,6 @@ export class BundledDevHMRClient extends HMRClient {
     if (traversedModules.has(id)) return
     traversedModules.add(id)
     updateSet.add(id)
-    // A module that ran in this page gets orphaned when all its importers
-    // remove their import of it. An orphan has no importer left, so stop here
-    // and don't bubble up.
-    if (this.orphans.has(id) && !this.hasExecutedImporter(id)) return
     if (firstInvalidatedBy !== undefined && id === firstInvalidatedBy) {
       return {
         type: 'full-reload',
@@ -174,12 +156,9 @@ export class BundledDevHMRClient extends HMRClient {
     const parents = this.runtime
       .getImporters(id)
       .filter((p) => this.runtime.isExecuted(p))
-    if (!acceptedExports && !parents.length) {
-      return {
-        type: 'full-reload',
-        reason: `no hmr boundary found for module \`${id}\``,
-      }
-    }
+    // No importer that ran: either an entry, which `applyUpdate` handles, or a
+    // module that is no longer imported, where the update stops.
+    if (!parents.length) return
     for (const parent of parents) {
       const subChain = [...stack, parent]
       if (this.acceptsDep(parent, id)) {
@@ -333,24 +312,24 @@ export class BundledDevHMRClient extends HMRClient {
     }
     // none of the changed modules has run in this page
     if (!update.updateSet.length) return
+    // A reload found with the old import edges saves fetching the patch.
+    // `applyUpdate` checks again with the new import edges.
+    const entry = this.findEntryWithoutBoundary(update)
+    if (entry !== undefined) {
+      this.requestFullReload(`no hmr boundary found for module \`${entry}\``)
+      return
+    }
 
     const notify = update.boundaries.length > 0
     const listenerPayload = this.toUpdatePayload(update.boundaries, undefined)
     if (notify) await this.notifyListeners('vite:beforeUpdate', listenerPayload)
     if (this.options.beforeApply() === 'reload') return
 
-    // the patch replaces the import edges of the changed modules
-    const importsBeforePatch = changedIds.flatMap((id) => this.getImports(id))
     try {
       await import(/* @vite-ignore */ this.options.base + url)
     } catch {
       this.requestFullReload(`failed to import hmr patch ${url}`)
       return
-    }
-    for (const id of importsBeforePatch) {
-      if (this.runtime.isExecuted(id) && !this.hasExecutedImporter(id)) {
-        this.orphans.add(id)
-      }
     }
 
     await this.applyUpdate(update)
@@ -388,6 +367,47 @@ export class BundledDevHMRClient extends HMRClient {
     if (notify) await this.notifyListeners('vite:afterUpdate', listenerPayload)
   }
 
+  /**
+   * Find an entry in the update that nothing runs again. The page started each
+   * entry, and only a page load starts it again, so such an entry should be
+   * reloaded.
+   *
+   * The modules run again with the import edges of the patch. Called before the
+   * patch is imported, it uses the old import edges: a found entry still needs
+   * a reload, but `undefined` must be checked again after the import, as the
+   * patch can remove an import.
+   */
+  private findEntryWithoutBoundary(
+    update: Extract<HmrUpdate, { type: 'update' }>,
+  ): string | undefined {
+    // To help visualize how it works, imagine this import graph, where c.js is
+    // edited:
+    //
+    // a.js (entry) -> c.js <- d.js (accepts c.js)
+    //   ^--------------|
+    //
+    // `update.boundaries`: [d.js accepts c.js]
+    // `update.updateSet` : [c.js, a.js]
+    //
+    // d.js runs c.js again, and c.js runs a.js again, because a module runs its
+    // static imports that were removed from the module cache. So this function
+    // will return undefined in the above graph. Without d.js, it will return
+    // a.js.
+    const removed = new Set(update.updateSet)
+    const runAgain = new Set<string>()
+    const queue = update.boundaries.map(({ acceptedVia }) => acceptedVia)
+    while (queue.length) {
+      const id = queue.pop()!
+      if (runAgain.has(id) || !removed.has(id)) continue
+      runAgain.add(id)
+      // an `import()` may not run again, so only static imports count
+      queue.push(...(this.runtime.staticImports.get(id)?.edges ?? []))
+    }
+    return update.updateSet.find(
+      (id) => this.runtime.isEntry(id) && !runAgain.has(id),
+    )
+  }
+
   private async applyUpdate(
     update: Extract<HmrUpdate, { type: 'update' }>,
     firstInvalidatedBy?: string,
@@ -397,6 +417,12 @@ export class BundledDevHMRClient extends HMRClient {
         this.requestFullReload(`no factory for module \`${id}\``)
         return
       }
+    }
+    // the patch may have removed an import that ran an entry again
+    const entry = this.findEntryWithoutBoundary(update)
+    if (entry !== undefined) {
+      this.requestFullReload(`no hmr boundary found for module \`${entry}\``)
+      return
     }
 
     // collect callbacks before the caches are removed
