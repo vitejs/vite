@@ -1772,6 +1772,38 @@ test('config compat 3', async () => {
   `)
 })
 
+test.each([undefined, true, 'oxc'] as const)(
+  'preserves the original minifier before normalization: %s',
+  async (minify) => {
+    const resolved = await resolveConfig(
+      {
+        configFile: false,
+        build: { minify },
+        plugins: [
+          Object.freeze({
+            name: 'set-minifier',
+            enforce: 'post',
+            configEnvironment: Object.freeze({
+              order: 'post',
+              handler: () => ({
+                build: { minify: minify === 'oxc' ? true : 'oxc' },
+              }),
+            }),
+          }) satisfies Plugin,
+        ],
+      },
+      'build',
+    )
+
+    expect(resolved.build.originalMinify).toBe(minify)
+    expect(resolved.build.minify).toBe('oxc')
+    expect(resolved.environments.client.build.originalMinify).toBe(
+      minify === 'oxc' ? true : 'oxc',
+    )
+    expect(resolved.environments.client.build.minify).toBe('oxc')
+  },
+)
+
 test('configEnvironment mutation does not leak between environments', async () => {
   const resolved = await resolveConfig(
     {

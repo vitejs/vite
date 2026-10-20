@@ -378,12 +378,16 @@ export type ResolveModulePreloadDependenciesFn = (
 export interface ResolvedBuildEnvironmentOptions extends Required<
   Omit<BuildEnvironmentOptions, 'polyfillModulePreload'>
 > {
+  /** The minifier value before defaults and normalization are applied. */
+  readonly originalMinify: BuildEnvironmentOptions['minify']
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
 export interface ResolvedBuildOptions extends Required<
   Omit<BuildOptions, 'polyfillModulePreload'>
 > {
+  /** The minifier value before defaults and normalization are applied. */
+  readonly originalMinify: BuildEnvironmentOptions['minify']
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
@@ -437,6 +441,7 @@ export function resolveBuildEnvironmentOptions(
   input?: InputOption,
   isSsrTargetWebworkerEnvironment?: boolean,
 ): ResolvedBuildEnvironmentOptions {
+  const originalMinify = raw.minify
   const deprecatedPolyfillModulePreload = raw.polyfillModulePreload
   const { polyfillModulePreload, ...rest } = raw
   raw = rest
@@ -504,6 +509,7 @@ export function resolveBuildEnvironmentOptions(
 
   const resolved: ResolvedBuildEnvironmentOptions = {
     ...merged,
+    originalMinify,
     cssTarget: merged.cssTarget ?? merged.target,
     cssMinify:
       merged.cssMinify ??
