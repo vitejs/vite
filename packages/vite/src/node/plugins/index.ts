@@ -13,6 +13,7 @@ import {
   type Plugin,
   type PluginWithRequiredHook,
 } from '../plugin'
+import { agentHmrGate } from './agentHmrGate'
 import { assetPlugin } from './asset'
 import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
 import {
@@ -149,6 +150,9 @@ export async function resolvePlugins(
     ...buildPlugins.post,
 
     // internal server-only plugins are always applied after everything else
+    !isBuild && !isWorker && config.experimental.agentHmrGate
+      ? agentHmrGate()
+      : null,
     clientInjectionsPlugin(config),
     cssAnalysisPlugin(config),
     importAnalysisPlugin(config),

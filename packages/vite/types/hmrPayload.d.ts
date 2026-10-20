@@ -4,7 +4,9 @@ export type HotPayload =
   | ConnectedPayload
   | PingPayload
   | UpdatePayload
+  | UpdateBatchPayload
   | BundledDevUpdatePayload
+  | BundledDevUpdateBatchPayload
   | FullReloadPayload
   | CustomPayload
   | ErrorPayload
@@ -23,6 +25,12 @@ export interface UpdatePayload {
   updates: Update[]
 }
 
+/** An update whose accepted dependencies are applied as one callback batch. */
+export interface UpdateBatchPayload {
+  type: 'update-batch'
+  updates: Update[]
+}
+
 /**
  * Full-bundle-mode update notification. The client computes the HMR boundaries
  * itself from `changedIds`.
@@ -34,6 +42,15 @@ export interface BundledDevUpdatePayload {
   url: string
   /** Per-client sequence number */
   seq: number
+}
+
+/**
+ * A set of full-bundle-mode patches that must be loaded before their combined
+ * module update is applied.
+ */
+export interface BundledDevUpdateBatchPayload {
+  type: 'bundled-dev-update-batch'
+  updates: BundledDevUpdatePayload[]
 }
 
 export interface Update {

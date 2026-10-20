@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agent HMR gate</title>
+    <script>
+      const reloadCount =
+        Number(sessionStorage.getItem('reload-count') || 0) + 1
+      sessionStorage.setItem('reload-count', String(reloadCount))
+      window.__reloadCount = reloadCount
+    </script>
+  </head>
+  <body>
+    <main>
+      <h1>Agent HMR gate</h1>
+      <p id="app"></p>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
