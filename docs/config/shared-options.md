@@ -424,6 +424,7 @@ Selects the engine used for CSS processing. Check out [Lightning CSS](../guide/f
 - **Default:** `'warn'`
 
 Configures the severity of unresolved CSS `url()` references during build time.
+
 - `'warn'`: Vite logs a warning and leaves the URL unchanged for runtime resolution.
 - `'error'`: Vite throws a build error with source details.
 - `'silent'`: Vite silently leaves the URL unchanged without logging a warning.

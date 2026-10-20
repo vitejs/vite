@@ -893,9 +893,7 @@ console.log("foo");`,
 })
 
 describe('unresolved CSS url severity', () => {
-  async function transformWithSeverity(
-    severity?: 'warn' | 'error' | 'silent',
-  ) {
+  async function transformWithSeverity(severity?: 'warn' | 'error' | 'silent') {
     let warnMessage = ''
     let errorMessage = ''
     const config = await resolveConfig(
@@ -944,7 +942,7 @@ describe('unresolved CSS url severity', () => {
           environment,
           error(err: any) {
             thrownError = err
-            throw (typeof err === 'string' ? new Error(err) : err)
+            throw typeof err === 'string' ? new Error(err) : err
           },
         },
         `.bg { background: url('./non-existent-asset.png'); }`,
@@ -960,21 +958,23 @@ describe('unresolved CSS url severity', () => {
   test('defaults to warn', async () => {
     const { thrownError, warnMessage } = await transformWithSeverity()
     expect(thrownError).toBeUndefined()
-    expect(warnMessage).toContain("non-existent-asset.png")
+    expect(warnMessage).toContain('non-existent-asset.png')
     expect(warnMessage).toContain("didn't resolve at build time")
   })
 
   test('logs warning when set to warn explicitly', async () => {
     const { thrownError, warnMessage } = await transformWithSeverity('warn')
     expect(thrownError).toBeUndefined()
-    expect(warnMessage).toContain("non-existent-asset.png")
+    expect(warnMessage).toContain('non-existent-asset.png')
   })
 
   test('throws error when set to error', async () => {
     const { thrownError, warnMessage } = await transformWithSeverity('error')
     expect(warnMessage).toBe('')
     expect(thrownError).toBeDefined()
-    expect(thrownError.message).toContain('Could not resolve "./non-existent-asset.png"')
+    expect(thrownError.message).toContain(
+      'Could not resolve "./non-existent-asset.png"',
+    )
   })
 
   test('silent does not warn or throw', async () => {
@@ -983,4 +983,3 @@ describe('unresolved CSS url severity', () => {
     expect(warnMessage).toBe('')
   })
 })
-
