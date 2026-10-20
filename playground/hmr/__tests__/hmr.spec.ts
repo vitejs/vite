@@ -1070,12 +1070,25 @@ if (!isBuild) {
       .poll(() => page.textContent('.intermediate-file-delete-display'))
       .toMatch('count is 2')
 
-    // update import, hmr works
-    editFile('intermediate-file-delete/index.js', (code) =>
-      code.replace("from './re-export.js'", "from './display.js'"),
+    // Update the imported module before rewiring the import. Waiting for each
+    // update prevents the two file changes from racing into separate rebuilds.
+    await untilBrowserLogAfter(
+      () =>
+        editFile('intermediate-file-delete/display.js', (code) =>
+          code.replace('count is ${count}', 'count is ${count}!'),
+        ),
+      '>>> vite:afterUpdate -- update',
     )
-    editFile('intermediate-file-delete/display.js', (code) =>
-      code.replace('count is ${count}', 'count is ${count}!'),
+    await expect
+      .poll(() => page.textContent('.intermediate-file-delete-display'))
+      .toMatch('count is 2!')
+
+    await untilBrowserLogAfter(
+      () =>
+        editFile('intermediate-file-delete/index.js', (code) =>
+          code.replace("from './re-export.js'", "from './display.js'"),
+        ),
+      '>>> vite:afterUpdate -- update',
     )
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
@@ -1216,6 +1229,7 @@ if (!isBuild) {
     await gotoLatestBuild(viteTestUrl)
 
     const el = page.locator('.optional-chaining')
+    await expect.poll(() => el.textContent()).toMatch('1')
     await untilBrowserLogAfter(
       () =>
         editFile(
