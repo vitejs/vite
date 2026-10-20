@@ -57,6 +57,7 @@ function createHMROptions(
 
   return {
     logger: options.hmr?.logger ?? defaultLogger,
+    partialAccept: environment.config.experimental.hmrPartialAccept,
   }
 }
 
@@ -89,9 +90,14 @@ export const createServerModuleRunnerTransport = (options: {
 }): ModuleRunnerTransport => {
   const hmrClient: HotChannelClient = {
     send: (payload: HotPayload) => {
-      if (payload.type !== 'custom') {
+      if (
+        payload.type !== 'custom' &&
+        payload.type !== 'update' &&
+        payload.type !== 'bundled-dev-update' &&
+        payload.type !== 'full-reload'
+      ) {
         throw new Error(
-          'Cannot send non-custom events from the client to the server.',
+          `Cannot send events of type '${payload.type}' from the client to the server.`,
         )
       }
       options.channel.send(payload)
@@ -147,6 +153,7 @@ export function createServerModuleRunner(
   const hmr = createHMROptions(environment, options)
   return new ModuleRunner(
     {
+      rolldownRuntime: environment.config.isBundled,
       ...options,
       transport: createServerModuleRunnerTransport({
         channel: environment.hot as NormalizedServerHotChannel,
@@ -157,4 +164,9 @@ export function createServerModuleRunner(
     },
     options.evaluator,
   )
+}
+
+export interface ServerModuleRunnerFactoryOptions<E extends DevEnvironment> {
+  runner?: (environment: E, options?: ServerModuleRunnerOptions) => ModuleRunner
+  runnerOptions?: ServerModuleRunnerOptions
 }

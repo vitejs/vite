@@ -1,14 +1,17 @@
+import fs from 'node:fs'
+import { resolve } from 'node:path'
 import { assert, describe, expect, onTestFinished, vi } from 'vitest'
 import { promiseWithResolvers } from '../../../../shared/utils'
-import { createModuleRunnerTester } from './utils'
+import { runnerTest as it } from './utils'
 
 describe(
   'module runner hmr works as expected',
   async () => {
-    const it = await createModuleRunnerTester({
+    it.override('config', {
       server: {
         // override watch options because it's disabled by default
         watch: {},
+        hmr: true,
       },
     })
 
@@ -206,6 +209,92 @@ describe(
       expect(sharedResult.value).toBe('ready')
       expect(evaluatedResult.sharedValue).toBe('ready')
     })
+
+    describe('full bundle mode', () => {
+      it.override('fullBundle', ['./fixtures/simple-hmr.js'])
+      it.override('config', {
+        server: {
+          hmr: true,
+          watch: { usePolling: true, interval: 10 },
+        },
+      })
+
+      it('the exports object is updated', async ({ runner }) => {
+        const exports1 = await runner.import('/fixtures/simple-hmr.js')
+
+        expect(exports1).toHaveProperty('test', 'I am initialized')
+        expect(exports1).not.toHaveProperty('hmr')
+
+        const hmrCode = `\nexport const hmr = true;globalThis.__HMR_PROMISE__.resolve()`
+
+        editFile('./fixtures/simple-hmr.js', (code) => code + hmrCode)
+        onTestFinished(() => {
+          ;(globalThis as any).__HMR_PROMISE__ = undefined
+          editFile('./fixtures/simple-hmr.js', (code) =>
+            code.replace(hmrCode, ''),
+          )
+        })
+
+        await (globalThis as any).__HMR_PROMISE__
+
+        const exports2 = await runner.import('/fixtures/simple-hmr.js')
+        expect(exports2).toMatchObject({
+          test: 'I am initialized',
+          hmr: true,
+        })
+      })
+    })
   },
   process.env.CI ? 50_00 : 5_000,
+)
+
+function editFile(file: string, callback: (content: string) => string) {
+  const filepath = resolve(import.meta.dirname, file)
+  const content = fs.readFileSync(filepath, 'utf-8')
+  fs.writeFileSync(filepath, callback(content), 'utf-8')
+}
+
+describe.each([false, true])(
+  'full bundle partial acceptance (%s)',
+  (partialAccept) => {
+    it.override('fullBundle', ['virtual:partial-accept-entry'])
+    it.override('config', {
+      experimental: { hmrPartialAccept: partialAccept },
+      server: { hmr: true },
+      plugins: [
+        {
+          name: 'partial-accept-fixture',
+          resolveId(id) {
+            if (id.startsWith('virtual:partial-accept-')) return id
+          },
+          load(id) {
+            if (id === 'virtual:partial-accept-entry') {
+              return `
+                import { accepted } from 'virtual:partial-accept-dep'
+                export const value = () => accepted
+              `
+            }
+            if (id === 'virtual:partial-accept-dep') {
+              return `
+                export const accepted = 1
+                export const other = 2
+                import.meta.hot.acceptExports(['accepted'])
+              `
+            }
+          },
+        },
+      ],
+    })
+
+    it('respects the configured partial acceptance during propagation', async ({
+      runner,
+    }) => {
+      const mod = await runner.import('virtual:partial-accept-entry')
+      expect(mod.value()).toBe(1)
+      const update = runner._bundledDevHmrClient!.computeHmrUpdate([
+        'virtual:partial-accept-dep',
+      ])
+      expect(update.type).toBe(partialAccept ? 'boundaries' : 'full-reload')
+    })
+  },
 )

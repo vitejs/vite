@@ -1,5 +1,6 @@
 import type { ErrorPayload, HotPayload } from '#types/hmrPayload'
 import type { ViteHotContext } from '#types/hot'
+import type { BundledDevHMRClient } from '../shared/bundledDevHmr'
 import { setupForwardConsoleHandler } from '../shared/forwardConsole'
 import { HMRClient, HMRContext } from '../shared/hmr'
 import { createHMRHandler } from '../shared/hmrHandler'
@@ -8,7 +9,6 @@ import {
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
 import { wrapId } from '../shared/utils'
-import type { BundledDevHMRClient } from './bundledDevHmrClient'
 import { ErrorOverlay, cspNonce, overlayId } from './overlay'
 // @ts-expect-error internal virtual module
 import '@vite/env'
