@@ -260,16 +260,29 @@ test('Resolving key containing ? with imports field', async () => {
   expect(await page.textContent('.imports-question-mark')).toMatch('[success]')
 })
 
-test.runIf(isServe && !isBundledDev)(
-  'Resolving #hash imported with #hash#hash surfaces the original error',
-  async () => {
-    const res = await page.request.get(
-      viteTestUrl + '/imports-path/importer-hash-hash.js',
-    )
-    expect(res.status()).toBe(500)
-    expect(await res.text()).toContain('Missing \\"#hash#hash\\" specifier')
-  },
-)
+test('Resolving with hash postfix with imports field', async () => {
+  expect(await page.textContent('.imports-hash-hash')).toBe(
+    '[success] subpath imports #hash',
+  )
+})
+
+test('Resolving #hash?query with imports field', async () => {
+  expect(await page.textContent('.imports-hash-query')).toBe(
+    '[success] subpath imports #hash',
+  )
+})
+
+test('Resolving #mid#hash#fragment?query with imports field', async () => {
+  expect(await page.textContent('.imports-mid-hash-postfix')).toBe(
+    '[success] subpath imports with # inside key',
+  )
+})
+
+test('Resolving #question?mark?query#fragment with imports field', async () => {
+  expect(await page.textContent('.imports-question-mark-postfix')).toBe(
+    '[success] subpath imports with ? inside key',
+  )
+})
 
 test("Resolve doesn't interrupt page request with trailing query and .css", async () => {
   await page.goto(viteTestUrl + '/?test.css')

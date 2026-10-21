@@ -505,36 +505,40 @@ export function resolveSubpathImports(
   const basedir = path.dirname(importer)
   const pkgData = findNearestPackageData(basedir, options.packageCache)
   if (!pkgData) return
-  // Imports keys are matched literally and may themselves contain `#` or `?`
-  // (e.g. `##/*`, `#a?b`) — neither has URL semantics in import specifiers.
-  // Try the full id first, then fall back to the id with the query part
-  // stripped so that Vite query postfixes keep working (#16085, #23622).
-  // Note that resolve.exports throws when no key matches, so the first
-  // attempt needs to be guarded to allow the fallback
+  // Imports keys may themselves contain `#` or `?` (e.g. `##/*`, `#a?b`).
+  // Try the full id first, then each query or hash boundary from right to left
+  // so that the longest matching key wins (#16085, #23622).
   let importsPath: string | undefined
   let postfix = ''
   let fullIdError: unknown
-  try {
-    importsPath = resolveExportsOrImports(pkgData.data, id, options, 'imports')
-  } catch (e) {
-    // no key matches the full id, try without the query part below
-    fullIdError = e
-  }
-  if (importsPath === undefined) {
-    const queryIndex = id.indexOf('?')
-    if (queryIndex !== -1) {
+  for (
+    let postfixIndex = id.length;
+    postfixIndex > 0;
+    postfixIndex = Math.max(
+      id.lastIndexOf('?', postfixIndex - 1),
+      id.lastIndexOf('#', postfixIndex - 1),
+    )
+  ) {
+    const key = id.slice(0, postfixIndex)
+    try {
       importsPath = resolveExportsOrImports(
         pkgData.data,
-        id.slice(0, queryIndex),
+        key,
         options,
         'imports',
       )
       if (importsPath !== undefined) {
-        postfix = id.slice(queryIndex)
+        postfix = id.slice(postfixIndex)
+        break
       }
-    } else if (fullIdError) {
-      throw fullIdError
+    } catch (e) {
+      if (Object.hasOwn(pkgData.data.imports, key)) throw e
+      // resolve.exports throws when no key matches; keep the full id error.
+      fullIdError ??= e
     }
+  }
+  if (importsPath === undefined && fullIdError) {
+    throw fullIdError
   }
 
   if (importsPath?.[0] === '.') {
