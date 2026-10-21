@@ -1,0 +1,27 @@
+packages/vite/src/node/__tests__/fixtures/resolve-subpath-imports/package.json
+  s_26117f30e7160b::t_0f780a03996b47 1-8
+packages/vite/src/node/__tests__/resolve.spec.ts
+  s_26117f30e7160b::t_7edf5fc8c04d85 5,9-25
+packages/vite/src/node/plugins/resolve.ts
+  s_26117f30e7160b::t_70b18d3c8416db 508-510,514-523,526,531-532,534-537,540-542
+playground/resolve/__tests__/resolve.spec.ts
+  s_26117f30e7160b::t_4ea53a311bdfb3 263-285
+playground/resolve/index.html
+  s_26117f30e7160b::t_4696f717c85c73 82-93,312-323
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "bb9cf6e44c77cfdbbee552eb56cac1faf50ffc67",
+  "prompts": {},
+  "sessions": {
+    "s_26117f30e7160b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a15d02-63bb-7673-9082-a83c3661a525",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
