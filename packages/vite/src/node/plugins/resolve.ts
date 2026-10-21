@@ -501,16 +501,41 @@ export function resolveSubpathImports(
   const basedir = path.dirname(importer)
   const pkgData = findNearestPackageData(basedir, options.packageCache)
   if (!pkgData) return
-
-  let { file: idWithoutPostfix, postfix } = splitFileAndPostfix(id.slice(1))
-  idWithoutPostfix = '#' + idWithoutPostfix
-
-  let importsPath = resolveExportsOrImports(
-    pkgData.data,
-    idWithoutPostfix,
-    options,
-    'imports',
-  )
+  // Imports keys may themselves contain `#` or `?` (e.g. `##/*`, `#a?b`).
+  // Try the full id first, then each query or hash boundary from right to left
+  // so that the longest matching key wins (#16085, #23622).
+  let importsPath: string | undefined
+  let postfix = ''
+  let fullIdError: unknown
+  for (
+    let postfixIndex = id.length;
+    postfixIndex > 0;
+    postfixIndex = Math.max(
+      id.lastIndexOf('?', postfixIndex - 1),
+      id.lastIndexOf('#', postfixIndex - 1),
+    )
+  ) {
+    const key = id.slice(0, postfixIndex)
+    try {
+      importsPath = resolveExportsOrImports(
+        pkgData.data,
+        key,
+        options,
+        'imports',
+      )
+      if (importsPath !== undefined) {
+        postfix = id.slice(postfixIndex)
+        break
+      }
+    } catch (e) {
+      if (Object.hasOwn(pkgData.data.imports, key)) throw e
+      // resolve.exports throws when no key matches; keep the full id error.
+      fullIdError ??= e
+    }
+  }
+  if (importsPath === undefined && fullIdError) {
+    throw fullIdError
+  }
 
   if (importsPath?.[0] === '.') {
     importsPath = path.relative(basedir, path.join(pkgData.dir, importsPath))
