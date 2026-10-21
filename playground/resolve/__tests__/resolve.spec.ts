@@ -3,6 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import {
+  browserErrors,
   isBuild,
   isBundled,
   isBundledDev,
@@ -144,6 +145,28 @@ test('access property of browser:false module', async () => {
     '[success]',
   )
 })
+
+test('named import from a Node built-in does not break the build', async () => {
+  if (isBundled) {
+    await expect
+      .poll(() => page.textContent('.node-builtin-named-import'))
+      .toMatch('[success]')
+  } else {
+    // plain dev reads the named import at once, and the stub throws
+    expect(browserErrors.map((e) => e.message)).toContainEqual(
+      expect.stringContaining('Cannot access "node:fs.readFileSync"'),
+    )
+  }
+})
+
+test.runIf(isBundled)(
+  'reading a named import from a Node built-in',
+  async () => {
+    await expect
+      .poll(() => page.textContent('.node-builtin-named-import-read'))
+      .toMatch(isBuild ? 'undefined' : 'Cannot access "node:fs.readFileSync"')
+  },
+)
 
 test('Resolve browser field even if module field exists', async () => {
   expect(await page.textContent('.browser-module1')).toMatch('[success]')
