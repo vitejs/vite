@@ -8,6 +8,7 @@ import type { Plugin } from '../../../plugin'
 import { createServer } from '../../../server'
 import { normalizePath } from '../../../utils'
 import { browserUrlToModuleUrl } from '../../moduleUrl'
+import { isFileLoadingAllowed } from '../static'
 
 const FIXTURE_DIR = path.resolve(import.meta.dirname, 'fixtures')
 const HTML_PATH = path.resolve(FIXTURE_DIR, 'root/index.html')
@@ -274,7 +275,7 @@ describe('indexHtml middleware — safe module paths', () => {
     )
   })
 
-  test('registers the real path of a symlinked entry', async () => {
+  test('registers symlinked module and static asset paths', async () => {
     const dir = fs.realpathSync(
       fs.mkdtempSync(path.join(os.tmpdir(), 'vite-html-')),
     )
@@ -283,23 +284,101 @@ describe('indexHtml middleware — safe module paths', () => {
     fs.mkdirSync(root)
     fs.mkdirSync(target)
     fs.writeFileSync(path.join(target, 'entry.js'), 'export const answer = 42')
+    fs.writeFileSync(path.join(target, 'image.svg'), '<svg/>')
+    fs.writeFileSync(path.join(target, 'other.svg'), '<svg/>')
     fs.symlinkSync(target, path.join(root, 'linked'), 'junction')
     const server = await createTestServer(root)
     onTestFinished(async () => {
       await server.close()
       fs.rmSync(dir, { recursive: true, force: true })
     })
+    server.config.server.fs.allow = []
     server.config.server.preTransformRequests = false
 
     await server.transformIndexHtml(
       '/index.html',
-      '<script type="module" src="/linked/entry.js"></script>',
+      '<script type="module" src="/linked/entry.js"></script><img src="/linked/image.svg">',
     )
 
-    expect(server.config.safeModulePaths).toContain(
-      normalizePath(path.join(target, 'entry.js')),
-    )
+    const result =
+      await server.environments.client.transformRequest('/linked/entry.js')
+    expect(result?.code).toContain('answer = 42')
+    for (const base of [path.join(root, 'linked'), target]) {
+      const image = normalizePath(path.join(base, 'image.svg'))
+      const other = normalizePath(path.join(base, 'other.svg'))
+      expect(isFileLoadingAllowed(server.config, image)).toBe(true)
+      expect(isFileLoadingAllowed(server.config, other)).toBe(false)
+    }
   })
+
+  for (const base of ['/', '/ui/']) {
+    test(`registers custom-resolved source and injected modules with base ${base}`, async () => {
+      const root = path.join(FIXTURE_DIR, 'root')
+      const modules = {
+        '/nested/custom.css?raw': 'style.css?raw',
+        '/nested/custom-dynamic.js?url&label=hello world': 'dynamic.js?url',
+        '/nested/custom-classic.js?raw': 'classic.js?raw',
+        '/nested/custom-entry.data?raw': 'dynamic.js?raw',
+        '/nested/custom-preload.data?url': 'classic.js?url',
+        '/nested/custom-preload-script.data?raw': 'style.css?url',
+        '/nested/custom.svg': 'classic.js?raw&image',
+        'custom-entry': 'dynamic.js?raw&wrapped',
+        'relative-entry': 'dynamic.js?raw&relative',
+      }
+      const server = await createTestServer(
+        undefined,
+        [
+          {
+            name: 'custom-html-module-resolver',
+            enforce: 'pre',
+            resolveId(id) {
+              const file = modules[id as keyof typeof modules]
+              if (file) return path.join(root, file)
+            },
+            transformIndexHtml() {
+              return [
+                { tag: 'script', attrs: { src: './custom-classic.js?raw' } },
+              ]
+            },
+          },
+          {
+            name: 'inject-post-html-module',
+            transformIndexHtml: {
+              order: 'post',
+              handler(html) {
+                return (
+                  html +
+                  `<script type="module" src="./custom-entry.data?raw"></script>
+                 <link rel=" MODULEPRELOAD " href="./custom-preload.data?url">
+                 <link rel="preload" as="SCRIPT" href="./custom-preload-script.data?raw">
+                 <script type="module" src="${base}@id/custom-entry"></script>
+                 <script type="module" src="../@id/relative-entry"></script>`
+                )
+              },
+            },
+          },
+        ],
+        base,
+      )
+      server.config.server.fs.allow = []
+      server.config.server.preTransformRequests = false
+
+      await server.transformIndexHtml(
+        '/nested/index.html',
+        `<link rel="stylesheet" href="custom.css?raw">
+         <img src="./custom.svg?t=1234567890123">
+         <script>import('./custom-dynamic.js?url&label=hello%20world&import&t=1234567890123')</script>`,
+      )
+
+      for (const [url, file] of Object.entries(modules)) {
+        expect(server.config.safeModulePaths, url).toContain(
+          normalizePath(path.join(root, file)),
+        )
+        const result = await server.environments.client.transformRequest(url)
+        expect(result).not.toBeNull()
+      }
+    })
+  }
 
   test('registers aliased stylesheets at the path used for transformation', async () => {
     const server = await createTestServer(undefined, [
