@@ -3,6 +3,7 @@ import path from 'node:path'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { FS_PREFIX } from '../../../constants'
 import { createServer } from '../../../server'
+import { browserUrlToModuleUrl } from '../../moduleUrl'
 
 const FIXTURE_DIR = path.resolve(import.meta.dirname, 'fixtures')
 const HTML_PATH = path.resolve(FIXTURE_DIR, 'root/index.html')
@@ -48,8 +49,10 @@ describe('indexHtml middleware — inline script proxy cache', () => {
       'devHtmlHook should have rewritten the inline <script> to a ?html-proxy src',
     ).toBeTruthy()
 
-    const proxyModuleUrl = proxyUrlMatch![1]
-
+    const proxyModuleUrl = browserUrlToModuleUrl(
+      proxyUrlMatch![1],
+      server.config.decodedBase,
+    )
     const result =
       await server.environments.client.transformRequest(proxyModuleUrl)
 
@@ -81,7 +84,10 @@ describe('indexHtml middleware — inline script proxy cache', () => {
       'devHtmlHook should rewrite the inline <script> to a ?html-proxy src',
     ).toBeTruthy()
 
-    const proxyModuleUrl = proxyUrlMatch![1]
+    const proxyModuleUrl = browserUrlToModuleUrl(
+      proxyUrlMatch![1],
+      server.config.decodedBase,
+    )
     const result =
       await server.environments.client.transformRequest(proxyModuleUrl)
 
