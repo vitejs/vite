@@ -8,7 +8,10 @@ import type { NormalizedModuleRunnerTransport } from '../shared/moduleRunnerTran
 
 /** the subset of `__rolldown_runtime__` the HMR client uses */
 export interface RolldownRuntimeLike {
+  staticImports: Map<string, { edges: string[] }>
+  dynamicImports: Map<string, { edges: string[] }>
   getImporters(id: string): string[]
+  getImportedBindings(importer: string, id: string): string[] | undefined
   isExecuted(id: string): boolean
   hasFactory(id: string): boolean
   removeModuleCache(id: string): void
@@ -23,16 +26,16 @@ interface PropagationBoundary {
 }
 
 type HmrUpdate =
-  | { type: 'noop' }
   | { type: 'full-reload'; reason: string }
   | {
-      type: 'boundaries'
+      type: 'update'
       boundaries: PropagationBoundary[]
       updateSet: string[]
     }
 
 export interface BundledDevHMRClientOptions {
   base: string
+  partialAccept: boolean
   /** returning `'reload'` aborts the apply — the hook reloads the page itself */
   beforeApply: () => 'reload' | 'continue'
 }
@@ -41,6 +44,7 @@ export class BundledDevHMRClient extends HMRClient {
   private applyQueue = Promise.resolve()
   private lastSeq = 0
   private reloadPending = false
+  private orphans = new Set<string>()
 
   constructor(
     logger: HMRLogger,
@@ -56,17 +60,43 @@ export class BundledDevHMRClient extends HMRClient {
   }
 
   isSelfAccepted(id: string): boolean {
-    return (
-      this.hotModulesMap.get(id)?.callbacks.some((c) => c.deps.includes(id)) ??
-      false
-    )
+    return this.acceptsDep(id, id)
   }
 
   acceptsDep(parent: string, id: string): boolean {
     return (
       this.hotModulesMap
         .get(parent)
-        ?.callbacks.some((c) => c.deps.includes(id)) ?? false
+        ?.callbacks.some((c) => !c.exports && c.deps.includes(id)) ?? false
+    )
+  }
+
+  private getAcceptedExports(id: string): Set<string> | undefined {
+    let accepted: Set<string> | undefined
+    for (const c of this.hotModulesMap.get(id)?.callbacks ?? []) {
+      if (!c.exports) continue
+      accepted ??= new Set()
+      for (const name of c.exports) accepted.add(name)
+    }
+    return accepted
+  }
+
+  private acceptsAllExports(id: string, accepted: Set<string>): boolean {
+    const exports = this.runtime.loadExports(id)
+    if (typeof exports !== 'object' || exports == null) return false
+    return Object.keys(exports).every((name) => accepted.has(name))
+  }
+
+  private importsOnlyAccepted(
+    parent: string,
+    id: string,
+    accepted: Set<string>,
+  ): boolean {
+    if (!this.options.partialAccept) return false
+    return (
+      this.runtime
+        .getImportedBindings(parent, id)
+        ?.every((name) => accepted.has(name)) ?? false
     )
   }
 
@@ -91,9 +121,20 @@ export class BundledDevHMRClient extends HMRClient {
       )
       if (fullReload) return fullReload
     }
-    return boundaries.length
-      ? { type: 'boundaries', boundaries, updateSet: [...updateSet] }
-      : { type: 'noop' }
+    return { type: 'update', boundaries, updateSet: [...updateSet] }
+  }
+
+  private getImports(id: string): string[] {
+    return [
+      ...(this.runtime.staticImports.get(id)?.edges ?? []),
+      ...(this.runtime.dynamicImports.get(id)?.edges ?? []),
+    ]
+  }
+
+  private hasExecutedImporter(id: string): boolean {
+    return this.runtime
+      .getImporters(id)
+      .some((importer) => this.runtime.isExecuted(importer))
   }
 
   private bubble(
@@ -107,24 +148,33 @@ export class BundledDevHMRClient extends HMRClient {
     if (traversedModules.has(id)) return
     traversedModules.add(id)
     updateSet.add(id)
+    // A module that ran in this page gets orphaned when all its importers
+    // remove their import of it. An orphan has no importer left, so stop here
+    // and don't bubble up.
+    if (this.orphans.has(id) && !this.hasExecutedImporter(id)) return
     if (firstInvalidatedBy !== undefined && id === firstInvalidatedBy) {
       return {
         type: 'full-reload',
         reason: `update propagated back to ${firstInvalidatedBy}, which already called \`import.meta.hot.invalidate()\``,
       }
     }
-    if (this.isSelfAccepted(id)) {
+    const acceptedExports = this.getAcceptedExports(id)
+    const selfAccepted =
+      this.isSelfAccepted(id) ||
+      (acceptedExports !== undefined &&
+        this.acceptsAllExports(id, acceptedExports))
+    if (selfAccepted || acceptedExports) {
       boundaries.push({
         boundary: id,
         acceptedVia: id,
         isWithinCircularImport: this.isNodeWithinCircularImports(id, stack),
       })
-      return
+      if (selfAccepted) return
     }
     const parents = this.runtime
       .getImporters(id)
       .filter((p) => this.runtime.isExecuted(p))
-    if (!parents.length) {
+    if (!acceptedExports && !parents.length) {
       return {
         type: 'full-reload',
         reason: `no hmr boundary found for module \`${id}\``,
@@ -141,6 +191,12 @@ export class BundledDevHMRClient extends HMRClient {
             subChain,
           ),
         })
+        continue
+      }
+      if (
+        acceptedExports &&
+        this.importsOnlyAccepted(parent, id, acceptedExports)
+      ) {
         continue
       }
       if (!stack.includes(parent)) {
@@ -271,25 +327,34 @@ export class BundledDevHMRClient extends HMRClient {
     this.lastSeq = seq
 
     const update = this.computeHmrUpdate(changedIds)
-    if (update.type === 'noop') return
     if (update.type === 'full-reload') {
       this.requestFullReload(update.reason)
       return
     }
+    // none of the changed modules has run in this page
+    if (!update.updateSet.length) return
 
+    const notify = update.boundaries.length > 0
     const listenerPayload = this.toUpdatePayload(update.boundaries, undefined)
-    await this.notifyListeners('vite:beforeUpdate', listenerPayload)
+    if (notify) await this.notifyListeners('vite:beforeUpdate', listenerPayload)
     if (this.options.beforeApply() === 'reload') return
 
+    // the patch replaces the import edges of the changed modules
+    const importsBeforePatch = changedIds.flatMap((id) => this.getImports(id))
     try {
       await import(/* @vite-ignore */ this.options.base + url)
     } catch {
       this.requestFullReload(`failed to import hmr patch ${url}`)
       return
     }
+    for (const id of importsBeforePatch) {
+      if (this.runtime.isExecuted(id) && !this.hasExecutedImporter(id)) {
+        this.orphans.add(id)
+      }
+    }
 
     await this.applyUpdate(update)
-    await this.notifyListeners('vite:afterUpdate', listenerPayload)
+    if (notify) await this.notifyListeners('vite:afterUpdate', listenerPayload)
   }
 
   private async applyInvalidate(id: string): Promise<void> {
@@ -307,24 +372,24 @@ export class BundledDevHMRClient extends HMRClient {
 
     // no rebuild happened, so there is no patch to fetch
     const update = this.computeHmrUpdate(importers, { firstInvalidatedBy })
-    if (update.type === 'noop') return
     if (update.type === 'full-reload') {
       this.requestFullReload(update.reason)
       return
     }
 
+    const notify = update.boundaries.length > 0
     const listenerPayload = this.toUpdatePayload(
       update.boundaries,
       firstInvalidatedBy,
     )
-    await this.notifyListeners('vite:beforeUpdate', listenerPayload)
+    if (notify) await this.notifyListeners('vite:beforeUpdate', listenerPayload)
     if (this.options.beforeApply() === 'reload') return
     await this.applyUpdate(update, firstInvalidatedBy)
-    await this.notifyListeners('vite:afterUpdate', listenerPayload)
+    if (notify) await this.notifyListeners('vite:afterUpdate', listenerPayload)
   }
 
   private async applyUpdate(
-    update: Extract<HmrUpdate, { type: 'boundaries' }>,
+    update: Extract<HmrUpdate, { type: 'update' }>,
     firstInvalidatedBy?: string,
   ): Promise<void> {
     for (const id of update.updateSet) {

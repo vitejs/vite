@@ -466,6 +466,9 @@ export function resolveBuildEnvironmentOptions(
     raw,
   )
   setupRollupOptionCompat(merged, 'build')
+  if (isBundledDev) {
+    merged.chunkImportMap = false
+  }
   merged.rolldownOptions = {
     platform:
       consumer === 'client' || isSsrTargetWebworkerEnvironment
@@ -1548,7 +1551,7 @@ function injectSsrFlag<T extends Record<string, any>>(
   pluginName: string,
 ): T & { ssr?: boolean } {
   let ssr = environment.config.consumer === 'server'
-  const newOptions = { ...(options ?? {}), ssr } as T & {
+  const newOptions = { ...options, ssr } as T & {
     ssr?: boolean
   }
 

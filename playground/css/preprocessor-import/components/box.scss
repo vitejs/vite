@@ -1,0 +1,5 @@
+@use './vars' as vars;
+
+:root {
+  --preprocessor-import-color: #{vars.$color};
+}

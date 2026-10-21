@@ -1,6 +1,6 @@
 import type { Response, Route } from 'playwright-chromium'
 import { beforeAll, describe, expect, test } from 'vitest'
-import { isServe, page, promiseWithResolvers } from '~utils'
+import { isBundledDev, page, promiseWithResolvers } from '~utils'
 
 // Regression test for rolldown/rolldown#10774.
 //
@@ -36,7 +36,7 @@ const onResponse = (res: Response) => {
   }
 }
 
-describe.runIf(isServe)('lazy compilation', () => {
+describe.runIf(isBundledDev)('lazy compilation', () => {
   beforeAll(() => {
     page.on('response', onResponse)
     return () => {
