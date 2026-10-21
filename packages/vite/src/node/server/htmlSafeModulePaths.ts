@@ -1,6 +1,7 @@
 import path from 'node:path'
 import type { DefaultTreeAdapterMap } from 'parse5'
-import { splitFileAndPostfix } from '../../shared/utils'
+import { VALID_ID_PREFIX } from '../../shared/constants'
+import { splitFileAndPostfix, unwrapId } from '../../shared/utils'
 import { getNodeAssetAttributes } from '../assetSource'
 import { FS_PREFIX } from '../constants'
 import {
@@ -19,6 +20,8 @@ import {
   isInternalRequest,
   normalizePath,
   processSrcSetSync,
+  removeImportQuery,
+  removeTimestampQuery,
   safeRealpathSync,
   stripBase,
 } from '../utils'
@@ -27,7 +30,7 @@ import { applyStaticAlias } from './middlewares/static'
 export function addHtmlUrlToSafeModulePaths(
   url: string,
   ctx: IndexHtmlTransformContext,
-): void {
+): string | undefined {
   const server = ctx.server
   if (!server) return
 
@@ -39,12 +42,10 @@ export function addHtmlUrlToSafeModulePaths(
     !url ||
     isExternalUrl(url) ||
     isDataUrl(url) ||
-    (isInternalRequest(url) && !url.startsWith(FS_PREFIX)) ||
     checkPublicFile(url, config)
   ) {
     return
   }
-
   const { file, postfix } = splitFileAndPostfix(url)
   let resolvedUrl: URL
   try {
@@ -55,6 +56,13 @@ export function addHtmlUrlToSafeModulePaths(
   if (resolvedUrl.origin !== 'http://example.com') return
   const decodedFile = decodeURIIfPossible(resolvedUrl.pathname)
   if (decodedFile === undefined) return
+  const moduleUrl = decodeURIIfPossible(resolvedUrl.pathname + postfix)
+  if (isInternalRequest(decodedFile) && !decodedFile.startsWith(FS_PREFIX)) {
+    if (decodedFile.startsWith(VALID_ID_PREFIX) && moduleUrl !== undefined) {
+      return unwrapId(moduleUrl)
+    }
+    return
+  }
 
   const aliasedFile = applyStaticAlias(decodedFile, config.resolve.alias)
   const filePath = normalizePath(
@@ -73,22 +81,20 @@ export function addHtmlUrlToSafeModulePaths(
       // Files referenced by HTML may not exist yet.
     }
   }
-}
-
-function addHtmlSrcSetToSafeModulePaths(
-  srcset: string,
-  ctx: IndexHtmlTransformContext,
-): void {
-  processSrcSetSync(srcset, ({ url }) => {
-    addHtmlUrlToSafeModulePaths(url, ctx)
-    return url
-  })
+  return moduleUrl
 }
 
 export async function addHtmlToSafeModulePaths(
   html: string,
   ctx: IndexHtmlTransformContext,
 ): Promise<void> {
+  const moduleUrls = new Set<string>()
+  const registerUrl = (url: string) => {
+    const moduleUrl = addHtmlUrlToSafeModulePaths(url, ctx)
+    if (moduleUrl) {
+      moduleUrls.add(removeImportQuery(removeTimestampQuery(moduleUrl)))
+    }
+  }
   await traverseHtml(
     html,
     ctx.filename,
@@ -100,7 +106,7 @@ export async function addHtmlToSafeModulePaths(
         const { src, isModule, isIgnored } = getScriptInfo(node)
         if (!isIgnored) {
           if (src) {
-            addHtmlUrlToSafeModulePaths(src.value, ctx)
+            registerUrl(src.value)
           } else if (!isModule && node.childNodes.length) {
             const scriptNode = node.childNodes.at(
               -1,
@@ -108,7 +114,7 @@ export async function addHtmlToSafeModulePaths(
             for (const { url } of extractImportExpressionFromClassicScript(
               scriptNode,
             )) {
-              addHtmlUrlToSafeModulePaths(url, ctx)
+              registerUrl(url)
             }
           }
         }
@@ -119,11 +125,23 @@ export async function addHtmlToSafeModulePaths(
         ctx.server!.config.html?.additionalAssetSources,
       )) {
         if (attr.type === 'srcset') {
-          addHtmlSrcSetToSafeModulePaths(attr.value, ctx)
+          processSrcSetSync(attr.value, ({ url }) => {
+            registerUrl(url)
+            return url
+          })
         } else if (attr.type === 'src') {
-          addHtmlUrlToSafeModulePaths(attr.value, ctx)
+          registerUrl(attr.value)
         }
       }
     },
+  )
+  await Promise.all(
+    [...moduleUrls].map(async (url) => {
+      const resolved =
+        await ctx.server!.environments.client.pluginContainer.resolveId(url)
+      if (resolved && !resolved.external) {
+        ctx.server!.config.safeModulePaths.addId(resolved.id)
+      }
+    }),
   )
 }
