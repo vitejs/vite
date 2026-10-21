@@ -264,6 +264,11 @@ async function loadAndTransform(
   let map: SourceDescription['map'] = null
   let moduleType: ModuleType | undefined
 
+  // Ensure the module node exists before `load` runs, so that module info
+  // and files registered via `this.addWatchFile` in the `load` hook can be
+  // associated with this module (#23860)
+  mod ??= await moduleGraph._ensureEntryFromUrl(url, undefined, resolved)
+
   // load
   const loadStart = debugLoad ? performance.now() : 0
   const loadResult = await pluginContainer.load(id)
@@ -349,9 +354,6 @@ async function loadAndTransform(
 
   if (environment._closing && environment.config.dev.recoverable)
     throwClosedServerError()
-
-  // ensure module in graph after successful load
-  mod ??= await moduleGraph._ensureEntryFromUrl(url, undefined, resolved)
 
   // transform
   const transformStart = debugTransform ? performance.now() : 0
