@@ -6,7 +6,12 @@ import type { DefaultTreeAdapterMap, Token } from 'parse5'
 import type { SourceMapInput } from 'rolldown'
 import type { Connect } from '#dep-types/connect'
 import type { PreviewServer, ResolvedConfig, ViteDevServer } from '../..'
-import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
+import {
+  cleanUrl,
+  joinUrlSegments,
+  unwrapId,
+  wrapId,
+} from '../../../shared/utils'
 import { getNodeAssetAttributes } from '../../assetSource'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import { getHmrImplementation } from '../../plugins/clientInjections'
@@ -39,7 +44,6 @@ import {
   isDevServer,
   isJSRequest,
   isParentDirectory,
-  joinUrlSegments,
   normalizePath,
   processSrcSetSync,
   stripBase,
