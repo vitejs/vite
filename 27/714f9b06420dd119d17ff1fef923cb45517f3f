@@ -1,0 +1,19 @@
+packages/vite/src/node/server/middlewares/__tests__/indexHtml.spec.ts
+  s_5eb8d4b3de2f10::t_052f6d73184077 8,235,251,257-259,267-270,283,311,343,346-348,366,397
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "27714f9b06420dd119d17ff1fef923cb45517f3f",
+  "prompts": {},
+  "sessions": {
+    "s_5eb8d4b3de2f10": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13f10-0f82-7822-b84a-6bfb5e8161e9",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
