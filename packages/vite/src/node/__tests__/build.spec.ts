@@ -32,6 +32,33 @@ const dirname = import.meta.dirname
 type FormatsToFileNames = [LibraryFormats, string][]
 
 describe('build', () => {
+  test('preserves query-only HTML links while bundling file URLs with queries', async () => {
+    const result = (await build({
+      root: resolve(dirname, 'fixtures/html-query-only'),
+      configFile: false,
+      logLevel: 'silent',
+      base: '/nested/',
+      build: {
+        write: false,
+        assetsInlineLimit: 0,
+      },
+    })) as RolldownOutput
+
+    const html = result.output.find(
+      (output): output is OutputAsset =>
+        output.type === 'asset' && output.fileName === 'index.html',
+    )!
+    expect(html.source).toContain('href="?md"')
+    expect(html.source).toContain('href="?format=md#overview"')
+    expect(html.source).toContain('href="?"')
+    expect(html.source).toContain('href="#overview"')
+
+    const icon = result.output.find(
+      (output) => output.type === 'asset' && output.fileName.endsWith('.svg'),
+    )!
+    expect(html.source).toContain(`href="/nested/${icon.fileName}?v=1"`)
+  })
+
   test('file hash should change when css changes for dynamic entries', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({
