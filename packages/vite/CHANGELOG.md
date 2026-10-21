@@ -1,3 +1,9 @@
+## <small>6.4.5 (2026-10-21)</small>
+
+* fix: check `server.fs` after stripping query as well (#22160) (#23855) ([91e40d7](https://github.com/vitejs/vite/commit/91e40d7bf9777057bbd31c3eb036a54c9465697e)), closes [#22160](https://github.com/vitejs/vite/issues/22160) [#23855](https://github.com/vitejs/vite/issues/23855)
+
+
+
 ## <small>6.4.4 (2026-10-06)</small>
 
 * fix(deps): update launch-editor to v2.14.2 (#23654) ([8afec69](https://github.com/vitejs/vite/commit/8afec69d6360857ebe35516781ef96e93df3f54e)), closes [#23654](https://github.com/vitejs/vite/issues/23654)
