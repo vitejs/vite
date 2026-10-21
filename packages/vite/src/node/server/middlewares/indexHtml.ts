@@ -578,15 +578,13 @@ function preTransformRequest(
 
 async function generateFallbackHtml(server: ViteDevServer) {
   const hmrRuntime = await getHmrImplementation(server.config)
+  // The charset must be declared: the inlined HMR runtime contains non-ASCII
+  // characters, and without it browsers may decode this page with a legacy
+  // encoding (e.g. GBK), corrupting the inline module script below.
   return /* html */ `
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!--
-    The charset must be declared: the inlined HMR runtime contains non-ASCII
-    characters, and without it browsers may decode this page with a legacy
-    encoding (e.g. GBK), corrupting the inline module script below.
-  -->
   <meta charset="utf-8" />
   <script>globalThis.__vite_is_fallback_page__ = true</script>
   <script type="module">
