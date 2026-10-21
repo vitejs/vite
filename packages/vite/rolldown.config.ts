@@ -1,16 +1,15 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { writeFileSync } from 'node:fs'
 import path from 'node:path'
+import { ImportType, init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import type { Plugin } from 'rolldown'
 import { defineConfig } from 'rolldown'
-import { ImportType, init, parse } from 'es-module-lexer'
+import pkg from './package.json' with { type: 'json' }
 import licensePlugin from './rollupLicensePlugin'
 
 // eslint-disable-next-line n/no-unsupported-features/node-builtins
 const dirname = import.meta.dirname
-const pkg = JSON.parse(
-  readFileSync(new URL('./package.json', import.meta.url)).toString(),
-)
+
 const disableSourceMap = !!process.env.DEBUG_DISABLE_SOURCE_MAP
 
 const envConfig = defineConfig({
@@ -45,7 +44,8 @@ const bundledDevClientConfig = defineConfig({
   transform: {
     target: 'es2020',
   },
-  external: ['@vite/env'],
+  // the runtime is served from the installed rolldown at dev time (`getRolldownDevRuntimeFiles`)
+  external: ['@vite/env', 'rolldown/experimental/runtime'],
   output: {
     dir: path.resolve(dirname, 'dist'),
     entryFileNames: 'client/bundledDevClient.mjs',
@@ -152,7 +152,6 @@ const moduleRunnerConfig = defineConfig({
     'fsevents',
     'lightningcss',
     /^rolldown\//,
-    '@vitejs/devtools/cli-commands',
     ...Object.keys(pkg.dependencies),
   ],
   plugins: [bundleSizeLimit(55), enableSourceMapsInWatchModePlugin()],
@@ -213,9 +212,10 @@ function externalizeDepsInWatchPlugin(): Plugin {
         options.external ||= []
         if (!Array.isArray(options.external))
           throw new Error('external must be an array')
-        options.external = options.external.concat(
-          Object.keys(pkg.devDependencies),
-        )
+        options.external = [
+          ...options.external,
+          ...Object.keys(pkg.devDependencies),
+        ]
       }
     },
   }

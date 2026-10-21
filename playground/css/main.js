@@ -7,6 +7,7 @@ import './less-plugin.less'
 import './stylus.styl'
 import './manual-chunk.css'
 import './postcss-inject-url.css'
+import './preprocessor-import/main.css'
 
 import urlCss from './url-imported.css?url'
 appendLinkStylesheet(urlCss)
@@ -57,7 +58,6 @@ import './external.css'
 import './dep.css'
 import './glob-dep.css'
 
-// eslint-disable-next-line import-x/order
 import { barModuleClasses } from '@vitejs/test-css-js-dep'
 document
   .querySelector('.css-js-dep-module')

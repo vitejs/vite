@@ -1,20 +1,28 @@
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
-import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
+import { promisify } from 'node:util'
 import { ignoreInput, ignoreOutput } from '@voidzero-dev/vite-task-client'
-import colors from 'picocolors'
 import { init, parse } from 'es-module-lexer'
-import { isDynamicPattern } from 'tinyglobby'
+import colors from 'picocolors'
 import {
   type RolldownOptions,
   type RolldownOutput,
   type OutputOptions as RolldownOutputOptions,
   rolldown,
 } from 'rolldown'
+import { isDynamicPattern } from 'tinyglobby'
 import type { DepsOptimizerEsbuildOptions } from '#types/internal/esbuildOptions'
+import { isWindows } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
+import {
+  ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
+  METADATA_FILENAME,
+} from '../constants'
+import type { Environment } from '../environment'
+import { transformWithOxc } from '../plugins/oxc'
+import { fileToModuleUrl } from '../server/moduleUrl'
 import {
   arraify,
   asyncFlatten,
@@ -25,23 +33,15 @@ import {
   lookupFile,
   normalizeId,
   normalizePath,
-  removeLeadingSlash,
   tryStatSync,
   unique,
 } from '../utils'
-import {
-  ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
-  METADATA_FILENAME,
-} from '../constants'
-import { isWindows } from '../../shared/utils'
-import type { Environment } from '../environment'
-import { transformWithOxc } from '../plugins/oxc'
-import { ScanEnvironment, scanImports } from './scan'
 import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
 import {
   rolldownCjsExternalPlugin,
   rolldownDepPlugin,
 } from './rolldownDepPlugin'
+import { ScanEnvironment, scanImports } from './scan'
 
 const debug = createDebugger('vite:deps')
 
@@ -57,6 +57,7 @@ export type ExportsData = {
 
 export interface DepsOptimizer {
   init: () => Promise<void>
+  initState: 'idle' | 'initializing' | 'initialized'
 
   metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
@@ -74,8 +75,8 @@ export interface DepsOptimizer {
 
 export interface DepOptimizationConfig {
   /**
-   * Force optimize listed dependencies (must be resolvable import paths,
-   * cannot be globs).
+   * Force optimize listed dependencies (must be resolvable import paths).
+   * Supports experimental glob patterns for deep imports.
    */
   include?: string[]
   /**
@@ -417,7 +418,9 @@ export async function loadCachedDepOptimizationMetadata(
     } catch {}
     // hash is consistent, no need to re-bundle
     if (cachedMetadata) {
-      if (cachedMetadata.lockfileHash !== getLockfileHash(environment)) {
+      if (
+        cachedMetadata.lockfileHash !== getLockfileHash(environment.config.root)
+      ) {
         environment.logger.info(
           'Re-optimizing dependencies because lockfile has changed',
           {
@@ -832,7 +835,7 @@ async function prepareRolldownOptimizerRun(
 
   const plugins = await asyncFlatten(arraify(pluginsFromConfig))
   if (external.length) {
-    plugins.push(rolldownCjsExternalPlugin(external, platform))
+    plugins.push(rolldownCjsExternalPlugin(external, platform, environment))
   }
   plugins.push(...rolldownDepPlugin(environment, flatIdDeps, external))
 
@@ -994,17 +997,7 @@ export function createIsOptimizedDepUrl(
 ): (url: string) => boolean {
   const { root } = environment.config
   const depsCacheDir = getDepsCacheDirPrefix(environment)
-
-  // determine the url prefix of files inside cache directory
-  const depsCacheDirRelative = normalizePath(path.relative(root, depsCacheDir))
-  const depsCacheDirPrefix = depsCacheDirRelative.startsWith('../')
-    ? // if the cache directory is outside root, the url prefix would be something
-      // like '/@fs/absolute/path/to/node_modules/.vite'
-      `/@fs/${removeLeadingSlash(normalizePath(depsCacheDir))}`
-    : // if the cache directory is inside root, the url prefix would be something
-      // like '/node_modules/.vite'
-      `/${depsCacheDirRelative}`
-
+  const depsCacheDirPrefix = fileToModuleUrl(depsCacheDir, root)
   return function isOptimizedDepUrl(url: string): boolean {
     return url.startsWith(depsCacheDirPrefix)
   }
@@ -1143,15 +1136,19 @@ export async function extractExportsData(
         ...remainingRolldownOptions.moduleTypes,
       },
     })
-    const result = await build.generate({
-      ...rolldownOptions.output,
-      format: 'esm',
-      sourcemap: false,
-    })
-    const [, exports, , hasModuleSyntax] = parse(result.output[0].code)
-    return {
-      hasModuleSyntax,
-      exports: exports.map((e) => e.n),
+    try {
+      const result = await build.generate({
+        ...rolldownOptions.output,
+        format: 'esm',
+        sourcemap: false,
+      })
+      const [, exports, , hasModuleSyntax] = parse(result.output[0].code)
+      return {
+        hasModuleSyntax,
+        exports: exports.map((e) => e.n),
+      }
+    } finally {
+      await build.close()
     }
   }
 
@@ -1260,7 +1257,8 @@ const lockfileFormats = [
   },
   {
     path: 'nub.lock',
-    checkPatchesDir: 'patches',
+    // Included in lockfile (`patchedDependencies` has patch hashes)
+    checkPatchesDir: false,
     manager: 'nub',
   },
 
@@ -1293,6 +1291,19 @@ const lockfileFormats = [
   return process.env.npm_config_user_agent?.startsWith(manager) ? 1 : -1
 })
 const lockfilePaths = lockfileFormats.map((l) => l.path)
+
+// Only used when none of the formats above is found, so it never changes which
+// lockfile is hashed for projects that already have one of them.
+// e.g. Yarn with `nodeLinker: pnpm` writes neither `.yarn-state.yml` nor `.pnp.cjs`.
+const fallbackLockfileFormats = [
+  {
+    path: 'yarn.lock',
+    // Included in lockfile
+    checkPatchesDir: false,
+    manager: 'yarn',
+  },
+]
+const fallbackLockfilePaths = fallbackLockfileFormats.map((l) => l.path)
 
 function getConfigHash(environment: Environment): string {
   // Take config into account
@@ -1339,14 +1350,16 @@ function getConfigHash(environment: Environment): string {
   return getHash(content)
 }
 
-function getLockfileHash(environment: Environment): string {
-  const lockfilePath = lookupFile(environment.config.root, lockfilePaths)
+export function getLockfileHash(root: string): string {
+  const lockfilePath =
+    lookupFile(root, lockfilePaths) ?? lookupFile(root, fallbackLockfilePaths)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
     const normalizedLockfilePath = lockfilePath.replaceAll('\\', '/')
-    const lockfileFormat = lockfileFormats.find((f) =>
-      normalizedLockfilePath.endsWith(f.path),
-    )!
+    const lockfileFormat = [
+      ...lockfileFormats,
+      ...fallbackLockfileFormats,
+    ].find((f) => normalizedLockfilePath.endsWith(f.path))!
     if (lockfileFormat.checkPatchesDir) {
       // Default of https://github.com/ds300/patch-package
       const baseDir = lockfilePath.slice(0, -lockfileFormat.path.length)
@@ -1368,7 +1381,7 @@ function getDepHash(environment: Environment): {
   configHash: string
   hash: string
 } {
-  const lockfileHash = getLockfileHash(environment)
+  const lockfileHash = getLockfileHash(environment.config.root)
   const configHash = getConfigHash(environment)
   const hash = getHash(lockfileHash + configHash)
   return {
@@ -1465,7 +1478,7 @@ export async function cleanupDepsCacheStaleDirs(
 
 // The ISC License
 // Copyright (c) 2011-2022 Isaac Z. Schlueter, Ben Noordhuis, and Contributors
-// https://github.com/isaacs/node-graceful-fs/blob/main/LICENSE
+// https://github.com/isaacs/node-graceful-fs/blob/234379906b7d2f4c9cfeb412d2516f42b0fb4953/LICENSE
 
 // On Windows, A/V software can lock the directory, causing this
 // to fail with an EACCES or EPERM if the directory contains newly

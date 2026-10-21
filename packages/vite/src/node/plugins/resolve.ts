@@ -1,23 +1,43 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'picocolors'
+import { exports, imports } from 'resolve.exports'
 import type { PartialResolvedId } from 'rolldown'
 import { viteResolvePlugin } from 'rolldown/experimental'
-import { exports, imports } from 'resolve.exports'
-import type { Plugin } from '../plugin'
+import type { Environment } from '..'
+import {
+  cleanUrl,
+  splitFileAndPostfix,
+  withTrailingSlash,
+} from '../../shared/utils'
+import type { ResolvedConfig, ResolvedEnvironmentOptions } from '../config'
 import {
   CLIENT_ENTRY,
   DEP_VERSION_RE,
   DEV_PROD_CONDITION,
   ENV_ENTRY,
-  FS_PREFIX,
   SPECIAL_QUERY_RE,
 } from '../constants'
+import { canExternalizeFile } from '../external'
+import {
+  isDepOptimizationDisabled,
+  optimizedDepInfoFromFile,
+  optimizedDepInfoFromId,
+} from '../optimizer'
+import type { DepsOptimizer } from '../optimizer'
+import type { PackageCache, PackageData } from '../packages'
+import {
+  findNearestMainPackageData,
+  findNearestPackageData,
+  loadPackageData,
+  resolvePackageData,
+} from '../packages'
+import type { Plugin } from '../plugin'
+import { moduleUrlToFilePath } from '../server/moduleUrl'
 import {
   bareImportRE,
   createDebugger,
   deepImportRE,
-  fsPathFromId,
   getNpmPackageName,
   injectQuery,
   isBuiltin,
@@ -30,27 +50,6 @@ import {
   safeRealpathSync,
   tryStatSync,
 } from '../utils'
-import {
-  isDepOptimizationDisabled,
-  optimizedDepInfoFromFile,
-  optimizedDepInfoFromId,
-} from '../optimizer'
-import type { DepsOptimizer } from '../optimizer'
-import type { Environment } from '..'
-import type { PackageCache, PackageData } from '../packages'
-import { canExternalizeFile } from '../external'
-import {
-  findNearestMainPackageData,
-  findNearestPackageData,
-  loadPackageData,
-  resolvePackageData,
-} from '../packages'
-import {
-  cleanUrl,
-  splitFileAndPostfix,
-  withTrailingSlash,
-} from '../../shared/utils'
-import type { ResolvedConfig, ResolvedEnvironmentOptions } from '../config'
 
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
 const normalizedEnvEntry = normalizePath(ENV_ENTRY)
@@ -258,6 +257,7 @@ export function oxcResolvePlugin(
             : [options.noExternal]
 
         const plugin = viteResolvePlugin({
+          tsconfig: partialEnv.config.tsconfig,
           resolveOptions: {
             isBuild: options.isBuild,
             isProduction: options.isProduction,
@@ -269,7 +269,7 @@ export function oxcResolvePlugin(
 
             mainFields: options.skipMainField
               ? options.mainFields
-              : options.mainFields.concat(['main']),
+              : [...options.mainFields, 'main'],
             conditions: options.conditions,
             externalConditions: options.externalConditions,
             extensions: options.extensions,
@@ -350,11 +350,10 @@ export function oxcResolvePlugin(
                 )
                 return newResolvedId === resolvedId ? undefined : newResolvedId
               },
-          resolveSubpathImports(id, importer, isRequire, scan) {
+          resolveSubpathImports(id, importer, isRequire) {
             return resolveSubpathImports(id, importer, {
               ...options,
               isRequire: resolveOptions.isRequire ?? isRequire,
-              scan,
             })
           },
 
@@ -433,10 +432,7 @@ function optimizerResolvePlugin(
         // tryFileResolve or /fs/ resolution but these files may not yet
         // exists if we are in the middle of a deps re-processing
         if (asSrc && depsOptimizer.isOptimizedDepUrl(id)) {
-          const optimizedPath = id.startsWith(FS_PREFIX)
-            ? fsPathFromId(id)
-            : normalizePath(path.resolve(root, id.slice(1)))
-          return optimizedPath
+          return moduleUrlToFilePath(id, root)
         }
 
         if (!isDataUrl(id) && !isExternalUrl(id)) {
@@ -489,25 +485,57 @@ function optimizerResolvePlugin(
   }
 }
 
-function resolveSubpathImports(
+export function resolveSubpathImports(
   id: string,
   importer: string | undefined,
-  options: InternalResolveOptions,
-) {
+  options: Pick<
+    InternalResolveOptions,
+    | 'packageCache'
+    | 'conditions'
+    | 'externalConditions'
+    | 'isProduction'
+    | 'isRequire'
+  >,
+): string | undefined {
   if (!importer || !id.startsWith(subpathImportsPrefix)) return
   const basedir = path.dirname(importer)
   const pkgData = findNearestPackageData(basedir, options.packageCache)
   if (!pkgData) return
-
-  let { file: idWithoutPostfix, postfix } = splitFileAndPostfix(id.slice(1))
-  idWithoutPostfix = '#' + idWithoutPostfix
-
-  let importsPath = resolveExportsOrImports(
-    pkgData.data,
-    idWithoutPostfix,
-    options,
-    'imports',
-  )
+  // Imports keys may themselves contain `#` or `?` (e.g. `##/*`, `#a?b`).
+  // Try the full id first, then each query or hash boundary from right to left
+  // so that the longest matching key wins (#16085, #23622).
+  let importsPath: string | undefined
+  let postfix = ''
+  let fullIdError: unknown
+  for (
+    let postfixIndex = id.length;
+    postfixIndex > 0;
+    postfixIndex = Math.max(
+      id.lastIndexOf('?', postfixIndex - 1),
+      id.lastIndexOf('#', postfixIndex - 1),
+    )
+  ) {
+    const key = id.slice(0, postfixIndex)
+    try {
+      importsPath = resolveExportsOrImports(
+        pkgData.data,
+        key,
+        options,
+        'imports',
+      )
+      if (importsPath !== undefined) {
+        postfix = id.slice(postfixIndex)
+        break
+      }
+    } catch (e) {
+      if (Object.hasOwn(pkgData.data.imports, key)) throw e
+      // resolve.exports throws when no key matches; keep the full id error.
+      fullIdError ??= e
+    }
+  }
+  if (importsPath === undefined && fullIdError) {
+    throw fullIdError
+  }
 
   if (importsPath?.[0] === '.') {
     importsPath = path.relative(basedir, path.join(pkgData.dir, importsPath))
@@ -1027,7 +1055,10 @@ function getConditions(
 function resolveExportsOrImports(
   pkg: PackageData['data'],
   key: string,
-  options: InternalResolveOptions,
+  options: Pick<
+    InternalResolveOptions,
+    'conditions' | 'externalConditions' | 'isProduction' | 'isRequire'
+  >,
   type: 'imports' | 'exports',
   externalize?: boolean,
 ) {

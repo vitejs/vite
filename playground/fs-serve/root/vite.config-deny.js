@@ -1,14 +1,13 @@
 import path from 'node:path'
 import { defineConfig } from 'vite'
+import safeModulePathPlugin from './safeModulePathPlugin.ts'
 import svgVirtualModulePlugin from './svgVirtualModulePlugin.ts'
 
 export default defineConfig({
+  input: {
+    main: path.resolve(import.meta.dirname, 'src/index.html'),
+  },
   build: {
-    rolldownOptions: {
-      input: {
-        main: path.resolve(import.meta.dirname, 'src/index.html'),
-      },
-    },
     outDir: 'dist/deny',
   },
   server: {
@@ -21,5 +20,5 @@ export default defineConfig({
   define: {
     ROOT: JSON.stringify(path.dirname(import.meta.dirname).replace(/\\/g, '/')),
   },
-  plugins: [svgVirtualModulePlugin()],
+  plugins: [svgVirtualModulePlugin(), safeModulePathPlugin()],
 })

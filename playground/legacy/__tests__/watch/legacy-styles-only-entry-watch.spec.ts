@@ -1,3 +1,4 @@
+import { setTimeout } from 'node:timers/promises'
 import { expect, test } from 'vitest'
 import {
   editFile,
@@ -23,6 +24,8 @@ test.runIf(isBuild)('rebuilds styles only entry on change', async () => {
     originalContents.replace('#ff69b4', '#ffb6c1 '),
   )
   await notifyRebuildComplete(watcher)
+  // wait for both "output" to complete, workaround for https://github.com/rolldown/rolldown/issues/10613
+  await Promise.race([notifyRebuildComplete(watcher), setTimeout(100)])
 
   const updatedManifest = readManifest('watch')
   expect(Object.keys(updatedManifest)).toHaveLength(numberOfManifestEntries)

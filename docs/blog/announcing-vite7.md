@@ -61,7 +61,7 @@ We require these new ranges so Node.js supports `require(esm)` without a flag. T
 
 ## Default Browser Target Changed to Baseline Widely Available
 
-[Baseline](https://web-platform-dx.github.io/web-features/) gives us clear information about which web platform features work across their core browser set today. Baseline Widely Available indicates the feature is well-established and works across many devices and browser versions, being available across browsers for at least 30 months.
+[Baseline](https://web-platform-dx.github.io/baseline/) gives us clear information about which web platform features work across their core browser set today. Baseline Widely Available indicates the feature is well-established and works across many devices and browser versions, being available across browsers for at least 30 months.
 
 In Vite 7, the default browser target is changing from `'modules'` to a new default: `'baseline-widely-available'`. The set of browsers will be updated on each major to match the list of minimum browser versions compatible with Baseline Widely available features. The default browser value of `build.target` is changing in Vite 7.0:
 

@@ -1,26 +1,36 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
-import { sassModuleTests, sassOtherTests, sassTest } from './sass-tests'
 import {
+  bundledDevTodo,
   editFile,
   findAssetFile,
   getBg,
   getBgColor,
   getColor,
   isBuild,
+  isBundled,
+  isServe,
   page,
   removeFile,
   serverLogs,
   viteTestUrl,
 } from '~utils'
+import { sassModuleTests, sassOtherTests, sassTest } from './sass-tests'
+
+const droppedEditTodo = bundledDevTodo(
+  'An edit that lands while the page is loading or before the HMR client connects is dropped, so the update never reaches the page',
+  { rolldown: [10039] },
+)
 
 // note: tests should retrieve the element at the beginning of test and reuse it
 // in later assertions to ensure CSS HMR doesn't reload the page
 test('imported css', async () => {
-  const glob = await page.textContent('.imported-css-glob')
-  expect(glob).toContain('.dir-import')
-  const globEager = await page.textContent('.imported-css-globEager')
-  expect(globEager).toContain('.dir-import')
+  await expect
+    .poll(() => page.textContent('.imported-css-glob'))
+    .toContain('.dir-import')
+  await expect
+    .poll(() => page.textContent('.imported-css-globEager'))
+    .toContain('.dir-import')
 })
 
 test('linked css', async () => {
@@ -29,8 +39,11 @@ test('linked css', async () => {
 
   expect(await getColor(linked)).toBe('blue')
   expect(await getColor(atImport)).toBe('red')
+})
 
-  if (isBuild) return
+test.runIf(isServe)('linked css HMR', droppedEditTodo, async () => {
+  const linked = await page.$('.linked')
+  const atImport = await page.$('.linked-at-import')
 
   editFile('linked.css', (code) => code.replace('color: blue', 'color: red'))
   await expect.poll(() => getColor(linked)).toBe('red')
@@ -47,8 +60,11 @@ test('css import from js', async () => {
 
   expect(await getColor(imported)).toBe('green')
   expect(await getColor(atImport)).toBe('purple')
+})
 
-  if (isBuild) return
+test.runIf(isServe)('css import from js HMR', droppedEditTodo, async () => {
+  const imported = await page.$('.imported')
+  const atImport = await page.$('.imported-at-import')
 
   editFile('imported.css', (code) => code.replace('color: green', 'color: red'))
   await expect.poll(() => getColor(imported)).toBe('red')
@@ -68,8 +84,10 @@ test('css import asset with space', async () => {
 test('postcss config', async () => {
   const imported = await page.$('.postcss .nesting')
   expect(await getColor(imported)).toBe('pink')
+})
 
-  if (isBuild) return
+test.runIf(isServe)('postcss config HMR', droppedEditTodo, async () => {
+  const imported = await page.$('.postcss .nesting')
 
   editFile('imported.css', (code) => code.replace('color: pink', 'color: red'))
   await expect.poll(() => getColor(imported)).toBe('red')
@@ -97,17 +115,19 @@ test('less', async () => {
 
   expect(await getColor(imported)).toBe('blue')
   expect(await getColor(atImport)).toBe('darkslateblue')
-  expect(await getBg(atImport)).toMatch(isBuild ? /base64/ : '/nested/icon.png')
+  expect(await getBg(atImport)).toMatch(
+    isBundled ? /base64/ : '/nested/icon.png',
+  )
   expect(await getColor(atImportAlias)).toBe('darkslateblue')
   expect(await getBg(atImportAlias)).toMatch(
-    isBuild ? /base64/ : '/nested/icon.png',
+    isBundled ? /base64/ : '/nested/icon.png',
   )
   expect(await getColor(atImportUrlOmmer)).toBe('darkorange')
   expect(await getBg(urlStartsWithVariable)).toMatch(
-    isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+    isBundled ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
   expect(await getBg(urlStartsWithInterpolation)).toMatch(
-    isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+    isBundled ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
 
   if (isBuild) return
@@ -143,7 +163,7 @@ test('stylus', async () => {
   expect(await getColor(relativeImport)).toBe('darkslateblue')
   expect(await getColor(relativeImportAlias)).toBe('darkslateblue')
   expect(await getBg(relativeImportAlias)).toMatch(
-    isBuild ? /base64/ : '/nested/icon.png',
+    isBundled ? /base64/ : '/nested/icon.png',
   )
   expect(await getColor(optionsRelativeImport)).toBe('green')
   expect(await getColor(optionsAbsoluteImport)).toBe('red')
@@ -368,9 +388,9 @@ test('URL separation', async () => {
     if (i > 0)
       editFile('imported.css', (code) => code.replace(cases[i - 1], c) + '\n')
 
-    expect(await getBg(urlSeparated)).toMatch(
-      /^url\(.+\)(?:\s*,\s*url\(.+\))*$/,
-    )
+    await expect
+      .poll(() => getBg(urlSeparated))
+      .toMatch(/^url\(.+\)(?:\s*,\s*url\(.+\))*$/)
   }
 })
 
@@ -401,9 +421,16 @@ test('minify css', async () => {
   expect(cssFile).not.toMatch('#ffff00b3')
 })
 
-test('?url', async () => {
-  expect(await getColor('.url-imported-css')).toBe('yellow')
-})
+test(
+  '?url',
+  bundledDevTodo(
+    '`?url` CSS skips the CSS pipeline and is inlined as raw bytes, so PostCSS does not run on it',
+    { vite: [22863] },
+  ),
+  async () => {
+    expect(await getColor('.url-imported-css')).toBe('yellow')
+  },
+)
 
 test('?raw', async () => {
   const rawImportCss = await page.$('.raw-imported-css')
@@ -411,16 +438,23 @@ test('?raw', async () => {
   expect(await rawImportCss.textContent()).toBe(
     readFileSync(require.resolve('../raw-imported.css'), 'utf-8'),
   )
+})
 
-  if (!isBuild) {
+test.runIf(isServe)(
+  '?raw HMR',
+  bundledDevTodo(
+    'This edit reloads the page. An edit that lands while the page is loading is dropped, so the later HMR edits in this file become flaky',
+    { rolldown: [10039] },
+  ),
+  async () => {
     editFile('raw-imported.css', (code) =>
       code.replace('color: yellow', 'color: blue'),
     )
     await expect
       .poll(() => page.textContent('.raw-imported-css'))
       .toMatch('color: blue')
-  }
-})
+  },
+)
 
 test('import css in less', async () => {
   expect(await getColor('.css-in-less')).toBe('yellow')
@@ -466,10 +500,12 @@ test('sugarss', async () => {
 
   expect(await getColor(imported)).toBe('blue')
   expect(await getColor(atImport)).toBe('darkslateblue')
-  expect(await getBg(atImport)).toMatch(isBuild ? /base64/ : '/nested/icon.png')
+  expect(await getBg(atImport)).toMatch(
+    isBundled ? /base64/ : '/nested/icon.png',
+  )
   expect(await getColor(atImportAlias)).toBe('darkslateblue')
   expect(await getBg(atImportAlias)).toMatch(
-    isBuild ? /base64/ : '/nested/icon.png',
+    isBundled ? /base64/ : '/nested/icon.png',
   )
 
   if (isBuild) return
@@ -497,6 +533,15 @@ test('@import scss', async () => {
   expect(await getColor('.at-import-scss')).toBe('red')
 })
 
+test('preprocessor imported from css resolves relative imports', async () => {
+  const color = await page.evaluate(() =>
+    getComputedStyle(document.documentElement)
+      .getPropertyValue('--preprocessor-import-color')
+      .trim(),
+  )
+  expect(color).toBe('cornflowerblue')
+})
+
 test.runIf(isBuild)('manual chunk path', async () => {
   // assert that the manual-chunk css is output in the directory specified in manualChunk (#12072)
   expect(
@@ -517,8 +562,8 @@ test.runIf(isBuild)('Scoped CSS via cssScopeTo should be treeshaken', () => {
 
 test('Scoped CSS should have a correct order', async () => {
   await page.goto(viteTestUrl + '/treeshake-scoped/')
-  expect(await getColor('.treeshake-scoped-order')).toBe('red')
-  expect(await getBgColor('.treeshake-scoped-order')).toBe('blue')
+  await expect.poll(() => getColor('.treeshake-scoped-order')).toBe('red')
+  await expect.poll(() => getBgColor('.treeshake-scoped-order')).toBe('blue')
 })
 
 test.runIf(isBuild)(

@@ -1,39 +1,36 @@
-import path from 'node:path'
 import fsp from 'node:fs/promises'
 import colors from 'picocolors'
 import type { ExistingRawSourceMap } from 'rolldown'
 import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '..'
 import {
-  createDebugger,
-  fsPathFromId,
-  injectQuery,
-  isCSSRequest,
-  isImportRequest,
-  isJSRequest,
-  normalizePath,
-  prettifyUrl,
-  removeImportQuery,
-  removeTimestampQuery,
-} from '../../utils'
-import { send } from '../send'
-import { ERR_DENIED_ID, ERR_LOAD_URL } from '../transformRequest'
-import { applySourcemapIgnoreList } from '../sourcemap'
-import { isHTMLProxy } from '../../plugins/html'
+  ERR_OUTDATED_OPTIMIZED_DEP,
+  NULL_BYTE_PLACEHOLDER,
+} from '../../../shared/constants'
+import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
+import type { ResolvedConfig } from '../../config'
 import {
   DEP_VERSION_RE,
   ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
   ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
-  FS_PREFIX,
 } from '../../constants'
 import { isDirectCSSRequest, isDirectRequest } from '../../plugins/css'
-import { ERR_CLOSED_SERVER } from '../pluginContainer'
-import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
+import { isHTMLProxy } from '../../plugins/html'
 import {
-  ERR_OUTDATED_OPTIMIZED_DEP,
-  NULL_BYTE_PLACEHOLDER,
-} from '../../../shared/constants'
-import type { ResolvedConfig } from '../../config'
+  createDebugger,
+  injectQuery,
+  isCSSRequest,
+  isImportRequest,
+  isJSRequest,
+  prettifyUrl,
+  removeImportQuery,
+  removeTimestampQuery,
+} from '../../utils'
+import { moduleUrlToFilePath } from '../moduleUrl'
+import { ERR_CLOSED_SERVER } from '../pluginContainer'
+import { send } from '../send'
+import { applySourcemapIgnoreList } from '../sourcemap'
+import { ERR_DENIED_ID, ERR_LOAD_URL } from '../transformRequest'
 import { checkLoadingAccess, respondWithAccessDenied } from './static'
 
 const debugCache = createDebugger('vite:cache')
@@ -56,12 +53,19 @@ const urlRE = /[?&]url\b/
 const rawRE = /[?&]raw\b/
 const inlineRE = /[?&]inline\b/
 const svgRE = /\.svg\b/
+const wasmInstanceRE = /[?&]vite-wasm-instance(?:&|$)/
 
 export function isServerAccessDeniedForTransform(
   config: ResolvedConfig,
   id: string,
 ): boolean {
-  if (rawRE.test(id) || urlRE.test(id) || inlineRE.test(id) || svgRE.test(id)) {
+  if (
+    rawRE.test(id) ||
+    urlRE.test(id) ||
+    inlineRE.test(id) ||
+    svgRE.test(id) ||
+    wasmInstanceRE.test(id)
+  ) {
     return (
       checkLoadingAccess(config, cleanUrl(id)) !== 'allowed' ||
       checkLoadingAccess(config, id) !== 'allowed'
@@ -158,9 +162,10 @@ export function transformMiddleware(
         if (depsOptimizer?.isOptimizedDepUrl(url)) {
           // If the browser is requesting a source map for an optimized dep, it
           // means that the dependency has already been pre-bundled and loaded
-          const sourcemapPath = url.startsWith(FS_PREFIX)
-            ? fsPathFromId(url)
-            : normalizePath(path.resolve(server.config.root, url.slice(1)))
+          const sourcemapPath = moduleUrlToFilePath(
+            withoutQuery,
+            server.config.root,
+          )
           // url may contain relative path that may resolve outside of the optimized deps directory
           if (!depsOptimizer.isOptimizedDepFile(sourcemapPath)) {
             return next()

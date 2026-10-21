@@ -1,7 +1,7 @@
 import path from 'node:path'
+import tailwind from '@tailwindcss/vite'
 import { globSync } from 'tinyglobby'
 import { defineConfig, normalizePath } from 'vite'
-import tailwind from '@tailwindcss/vite'
 
 /**
  * @returns {import('vite').Plugin}
@@ -29,6 +29,7 @@ function BackendIntegrationExample() {
       ])
 
       return {
+        input: Object.fromEntries(entrypoints),
         server: {
           // same port in playground/test-utils.ts
           port: 5009,
@@ -41,9 +42,6 @@ function BackendIntegrationExample() {
         build: {
           manifest: true,
           outDir,
-          rolldownOptions: {
-            input: Object.fromEntries(entrypoints),
-          },
         },
         root,
         resolve: {

@@ -1,15 +1,6 @@
+import EventEmitter from 'node:events'
 import fs from 'node:fs'
 import { posix, resolve } from 'node:path'
-import EventEmitter from 'node:events'
-import {
-  afterAll,
-  beforeAll,
-  describe,
-  expect,
-  onTestFinished,
-  test,
-  vi,
-} from 'vitest'
 import type {
   InlineConfig,
   Plugin,
@@ -19,10 +10,20 @@ import type {
 import { createRunnableDevEnvironment, createServer } from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
 import {
+  afterAll,
+  beforeAll,
+  describe,
+  expect,
+  onTestFinished,
+  test,
+  vi,
+} from 'vitest'
+import {
   addFile,
   createInMemoryLogger,
   editFile,
   isBuild,
+  isBundledDev,
   promiseWithResolvers,
   readFile,
   removeFile,
@@ -861,7 +862,7 @@ test('delete file should not break hmr', async () => {
 
   // remove unused file
   removeFile('intermediate-file-delete/re-export.js')
-  __HMR__['.intermediate-file-delete-increment'] = '1' // reset state
+  globalThis.__HMR__['.intermediate-file-delete-increment'] = '1' // reset state
   await expect
     .poll(() => hmr('.intermediate-file-delete-display'))
     .toMatch('count is 1!')
@@ -1185,6 +1186,9 @@ async function setupModuleRunner(
       disabled: true,
       noDiscovery: true,
       include: [],
+    },
+    experimental: {
+      bundledDev: isBundledDev,
     },
     ...serverOptions,
   })

@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
-import { port } from './serve'
 import { page } from '~utils'
+import { port } from './serve'
 
 test('cli should work in "type":"module" package', async () => {
   // this test uses a custom serve implementation, so regular helpers for browserLogs and goto don't work

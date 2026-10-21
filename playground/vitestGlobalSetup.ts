@@ -1,9 +1,9 @@
+import type { CopyOptions } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import type { CopyOptions } from 'node:fs'
-import type { TestProject } from 'vitest/node'
 import type { BrowserServer } from 'playwright-chromium'
 import { chromium } from 'playwright-chromium'
+import type { TestProject } from 'vitest/node'
 
 let browserServer: BrowserServer | undefined
 const PLAYGROUND_NAME_REGEX = /playground\/([\w-]+)\//
@@ -42,6 +42,7 @@ export async function setup(project: TestProject): Promise<void> {
   const dedicatedCopyList: Record<string, string[]> = {
     assets: ['encoded-base', 'relative-base', 'runtime-base', 'url-base'],
     css: ['lightningcss'],
+    hmr: ['no-partial-accept'],
     'transform-plugin': ['base'],
   }
   const cpPromises = []

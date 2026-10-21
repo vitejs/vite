@@ -2,10 +2,10 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import colors from 'picocolors'
 import { glob, isDynamicPattern } from 'tinyglobby'
-import { FS_PREFIX } from '../constants'
-import { normalizePath } from '../utils'
 import type { ViteDevServer } from '../index'
+import { normalizePath } from '../utils'
 import type { DevEnvironment } from './environment'
+import { fileToModuleUrl } from './moduleUrl'
 
 export function warmupFiles(
   server: ViteDevServer,
@@ -47,7 +47,7 @@ async function warmupFile(
   }
   // for other files, pass it through `transformRequest` with warmup
   else {
-    const url = fileToUrl(file, server.config.root)
+    const url = fileToModuleUrl(normalizePath(file), server.config.root)
     await environment.warmupRequest(url)
   }
 }
@@ -56,16 +56,6 @@ function htmlFileToUrl(file: string, root: string) {
   const url = path.relative(root, file)
   // out of root, ignore file
   if (url[0] === '.') return
-  // file within root, create root-relative url
-  return '/' + normalizePath(url)
-}
-
-function fileToUrl(file: string, root: string) {
-  const url = path.relative(root, file)
-  // out of root, use /@fs/ prefix
-  if (url[0] === '.') {
-    return path.posix.join(FS_PREFIX, normalizePath(file))
-  }
   // file within root, create root-relative url
   return '/' + normalizePath(url)
 }

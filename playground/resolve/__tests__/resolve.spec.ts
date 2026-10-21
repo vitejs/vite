@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import {
   isBuild,
+  isBundled,
   isBundledDev,
   isServe,
   isWindows,
@@ -34,15 +35,12 @@ test('deep import with exports field', async () => {
   expect(await page.textContent('.exports-deep')).toMatch('[success]')
 })
 
-test.skipIf(isBundledDev)(
-  'deep import with query with exports field',
-  async () => {
-    // since it is imported with `?url` it should return a URL
-    expect(await page.textContent('.exports-deep-query')).toMatch(
-      isBuild ? /base64/ : '/exports-path/deep.json',
-    )
-  },
-)
+test('deep import with query with exports field', async () => {
+  // since it is imported with `?url` it should return a URL
+  expect(await page.textContent('.exports-deep-query')).toMatch(
+    isBundled ? /base64/ : '/exports-path/deep.json',
+  )
+})
 
 test('deep import with exports field + exposed dir', async () => {
   expect(await page.textContent('.exports-deep-exposed-dir')).toMatch(
@@ -221,6 +219,11 @@ test('Resolving star with imports filed', async () => {
   expect(await page.textContent('.imports-star')).toMatch('[success]')
 })
 
+// https://github.com/vitejs/vite/issues/23637
+test('Resolving star with $$ in filename with imports field', async () => {
+  expect(await page.textContent('.imports-star-dollar')).toMatch('[success]')
+})
+
 test('Resolving slash with imports filed', async () => {
   expect(await page.textContent('.imports-slash')).toMatch('[success]')
 })
@@ -229,15 +232,12 @@ test('Resolving from other package with imports field', async () => {
   expect(await page.textContent('.imports-pkg-slash')).toMatch('[success]')
 })
 
-test.skipIf(isBundledDev)(
-  'Resolving with query with imports field',
-  async () => {
-    // since it is imported with `?url` it should return a URL
-    expect(await page.textContent('.imports-query')).toMatch(
-      isBuild ? /base64/ : '/imports-path/query.json',
-    )
-  },
-)
+test('Resolving with query with imports field', async () => {
+  // since it is imported with `?url` it should return a URL
+  expect(await page.textContent('.imports-query')).toMatch(
+    isBundled ? /base64/ : '/imports-path/query.json',
+  )
+})
 
 test('Resolving dot-prefixed directory with imports field', async () => {
   expect(await page.textContent('.imports-dot-prefixed')).toMatch('[success]')
@@ -247,6 +247,46 @@ test('Resolving #/ root alias pattern with imports field', async () => {
   // This tests the new Node.js behavior from https://github.com/nodejs/node/pull/60864
   // which allows "#/*" patterns (slash immediately after #) in package.json imports
   expect(await page.textContent('.imports-root-slash')).toMatch('[success]')
+})
+
+test('Resolving ## prefixed pattern with imports field', async () => {
+  // subpath imports keys may contain more than one leading `#` (e.g. `##/*`)
+  expect(await page.textContent('.imports-double-hash')).toMatch('[success]')
+})
+
+test('Resolving key containing # with imports field', async () => {
+  // subpath imports keys may contain `#` outside the leading position
+  expect(await page.textContent('.imports-mid-hash')).toMatch('[success]')
+})
+
+test('Resolving key containing ? with imports field', async () => {
+  // subpath imports keys may contain `?` and are matched literally,
+  // taking precedence over stripping it as a query postfix
+  expect(await page.textContent('.imports-question-mark')).toMatch('[success]')
+})
+
+test('Resolving with hash postfix with imports field', async () => {
+  expect(await page.textContent('.imports-hash-hash')).toBe(
+    '[success] subpath imports #hash',
+  )
+})
+
+test('Resolving #hash?query with imports field', async () => {
+  expect(await page.textContent('.imports-hash-query')).toBe(
+    '[success] subpath imports #hash',
+  )
+})
+
+test('Resolving #mid#hash#fragment?query with imports field', async () => {
+  expect(await page.textContent('.imports-mid-hash-postfix')).toBe(
+    '[success] subpath imports with # inside key',
+  )
+})
+
+test('Resolving #question?mark?query#fragment with imports field', async () => {
+  expect(await page.textContent('.imports-question-mark-postfix')).toBe(
+    '[success] subpath imports with ? inside key',
+  )
 })
 
 test("Resolve doesn't interrupt page request with trailing query and .css", async () => {
@@ -289,9 +329,11 @@ test.runIf(isBuild)('sideEffects field glob pattern is respected', async () => {
   expect(sideEffectValues).toStrictEqual(['success'])
 })
 
-describe.runIf(isServe && !isBundledDev)('HEAD request handling', () => {
+describe.runIf(isServe)('HEAD request handling', () => {
   test('HEAD request to JS file returns correct Content-Type', async () => {
-    const response = await fetch(new URL('/absolute.js', viteTestUrl), {
+    // bundled dev serves the bundle output, not the source file
+    const jsPath = isBundledDev ? '/assets/index.js' : '/absolute.js'
+    const response = await fetch(new URL(jsPath, viteTestUrl), {
       method: 'HEAD',
     })
     expect(response.headers.get('content-type')).toBe('text/javascript')
@@ -300,14 +342,19 @@ describe.runIf(isServe && !isBundledDev)('HEAD request handling', () => {
     expect(text).toBe('')
   })
 
-  test('HEAD request to CSS file returns correct Content-Type', async () => {
-    const response = await fetch(new URL('/style.css', viteTestUrl), {
-      method: 'HEAD',
-      headers: {
-        Accept: 'text/css',
-      },
-    })
-    expect(response.headers.get('content-type')).toBe('text/css')
-    expect(response.status).toBe(200)
-  })
+  // bundled dev serves only the bundle output, and dev puts CSS into the JS
+  // bundle, so there is no CSS file to request
+  test.skipIf(isBundledDev)(
+    'HEAD request to CSS file returns correct Content-Type',
+    async () => {
+      const response = await fetch(new URL('/style.css', viteTestUrl), {
+        method: 'HEAD',
+        headers: {
+          Accept: 'text/css',
+        },
+      })
+      expect(response.headers.get('content-type')).toBe('text/css')
+      expect(response.status).toBe(200)
+    },
+  )
 })

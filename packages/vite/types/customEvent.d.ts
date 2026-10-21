@@ -19,6 +19,8 @@ export interface CustomEventMap {
   'vite:forward-console': ForwardConsolePayload
   /** @internal */
   'vite:client-connected': { clientId: string }
+  /** @internal */
+  'vite:bundled-dev:reload-needed': { reason: string }
 
   // server events
   'vite:client:connect': undefined
@@ -37,8 +39,10 @@ export interface WebSocketConnectionPayload {
 }
 
 export interface InvalidatePayload {
+  /** Module URL of the invalidated module */
   path: string
   message: string | undefined
+  /** Module URL of the first module that invalidated the update */
   firstInvalidatedBy: string
 }
 

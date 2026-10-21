@@ -1,9 +1,15 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
 import deepJson from 'vue/package.json'
-import testJson from '../../test.json'
+import {
+  bundledDevUnsupported,
+  editFile,
+  isBundled,
+  isServe,
+  page,
+} from '~utils'
 import hmrJson from '../../hmr.json'
-import { editFile, isBuild, isBundledDev, isServe, page } from '~utils'
+import testJson from '../../test.json'
 
 const stringified = JSON.stringify(testJson)
 const deepStringified = JSON.stringify(deepJson)
@@ -33,13 +39,19 @@ test('dynamic import, named', async () => {
   expect(await page.textContent('.dynamic-named')).toBe(testJson.hello)
 })
 
-test.skipIf(isBundledDev)('fetch', async () => {
-  expect(await page.textContent('.fetch')).toBe(stringified)
-})
+test(
+  'fetch',
+  bundledDevUnsupported(
+    'bundled dev serves only the bundle output and the public directory, never a single project file',
+  ),
+  async () => {
+    expect(await page.textContent('.fetch')).toBe(stringified)
+  },
+)
 
-test.skipIf(isBundledDev)('?url', async () => {
+test('?url', async () => {
   expect(await page.textContent('.url')).toMatch(
-    isBuild ? 'data:application/json' : '/test.json',
+    isBundled ? 'data:application/json' : '/test.json',
   )
 })
 

@@ -1,4 +1,5 @@
 import { setTimeout } from 'node:timers/promises'
+import type { Response } from 'playwright-chromium'
 import { expect, test, onTestFinished } from 'vitest'
 import {
   addFile,
@@ -33,6 +34,25 @@ if (isBuild) {
       .poll(() => page.textContent('.worker-query'))
       .toBe('worker-query')
     await expect.poll(() => page.textContent('.worker-url')).toBe('worker-url')
+  })
+
+  // The runtime must be the installed rolldown's, served by the dev server
+  test('loads the rolldown runtime from the server', async () => {
+    const runtimeUrl = new URL(
+      '/@rolldown/experimental-runtime.mjs',
+      page.url(),
+    )
+    const client = await page.request.get(
+      new URL('/bundledDevClient.mjs', page.url()).href,
+    )
+    expect(await client.text()).toContain(`from "${runtimeUrl.pathname}"`)
+    const runtime = await page.request.get(runtimeUrl.href)
+    expect(runtime.status()).toBe(200)
+    expect(await runtime.text()).toContain('DevRuntime')
+    const loaded: string[] = await page.evaluate(() =>
+      performance.getEntriesByType('resource').map((entry) => entry.name),
+    )
+    expect(loaded).toContain(runtimeUrl.href)
   })
 
   // BUNDLED -> GENERATE_HMR_PATCH -> BUNDLING -> BUNDLE_ERROR -> BUNDLING -> BUNDLED
@@ -231,9 +251,91 @@ if (isBuild) {
     await expect.poll(() => page.textContent('.worker-url')).toBe('worker-url')
   })
 
+  // The importer self-accepts, so this update arrives as an HMR patch. A patch
+  // skips the generate phase, so without the worker files being emitted earlier
+  // it ships a URL for a file that was never written.
+  test('worker updated through an HMR patch is served', async () => {
+    const original = readFile('worker-accept-src.js')
+    onTestFinished(async () => {
+      addFile('worker-accept-src.js', original)
+      await expect
+        .poll(() => page.textContent('.worker-accept'))
+        .toBe('worker-accept')
+    })
+
+    await expect
+      .poll(() => page.textContent('.worker-accept'))
+      .toBe('worker-accept')
+
+    // survives an HMR patch, but not a page reload
+    await page.evaluate(() => {
+      ;(window as any).__workerAcceptKeptAlive = true
+    })
+
+    editFile('worker-accept-src.js', (code) =>
+      code.replace("'worker-accept'", "'worker-accept-updated'"),
+    )
+    await expect
+      .poll(() => page.textContent('.worker-accept'))
+      .toBe('worker-accept-updated')
+
+    expect(
+      await page.evaluate(() => (window as any).__workerAcceptKeptAlive),
+    ).toBe(true)
+  })
+
+  // The inner worker is bundled on its own, so a patch that emits only the
+  // worker it just resolved leaves one of the two files unserved.
+  test('nested worker updated through an HMR patch is served', async () => {
+    const original = readFile('worker-nested-inner.js')
+    onTestFinished(async () => {
+      addFile('worker-nested-inner.js', original)
+      await expect
+        .poll(() => page.textContent('.worker-nested'))
+        .toBe('nested-outer+nested-inner')
+    })
+
+    await expect
+      .poll(() => page.textContent('.worker-nested'))
+      .toBe('nested-outer+nested-inner')
+
+    // survives an HMR patch, but not a page reload
+    await page.evaluate(() => {
+      ;(window as any).__workerNestedKeptAlive = true
+    })
+
+    editFile('worker-nested-inner.js', (code) =>
+      code.replace("'nested-inner'", "'nested-inner-updated'"),
+    )
+    await expect
+      .poll(() => page.textContent('.worker-nested'))
+      .toBe('nested-outer+nested-inner-updated')
+
+    expect(
+      await page.evaluate(() => (window as any).__workerNestedKeptAlive),
+    ).toBe(true)
+  })
+
   test('lazy bundling', async () => {
+    const responsePromise = page.waitForResponse(/\/@vite\/lazy\?/)
     await page.click('#load-dynamic')
     await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')
+
+    // the lazy chunk names a `.map` file that only exists in memory; the dev
+    // server has to register it, otherwise the reference 404s and the module
+    // cannot be mapped back to its source. The reference is relative and a lazy
+    // chunk is imported from `/@vite/lazy?...`, so it resolves under `/@vite/`.
+    const response = await responsePromise
+    const code = await response.text()
+    const url = code.match(/\/\/# sourceMappingURL=(.+)$/m)?.[1]
+    expect(url).toMatch(/^lazy_compile_\d+\.js\.map$/)
+
+    const mapResponse = await fetch(new URL(url!, response.url()))
+    expect(mapResponse.status).toBe(200)
+    const map = await mapResponse.json()
+    expect(map.version).toBe(3)
+    expect(map.sources.some((s: string) => s.endsWith('dynamic.js'))).toBe(true)
+    expect(map.mappings.length).toBeGreaterThan(0)
   })
 
   // placed before `invalidate` on purpose: that test's cleanup restores
@@ -244,12 +346,20 @@ if (isBuild) {
     await expect.poll(() => page.textContent('.data-count')).toBe('1')
     await expect.poll(() => page.textContent('.data-disposed')).toBe('0')
 
-    editFile('data.js', (code) => code.replace('// @hmr-bump', '// @hmr-bump1'))
+    editFile('data.js', (code) =>
+      code.replace(
+        "globalThis.__hmrBump = 'initial'",
+        "globalThis.__hmrBump = 'first-update'",
+      ),
+    )
     await expect.poll(() => page.textContent('.data-count')).toBe('2')
     await expect.poll(() => page.textContent('.data-disposed')).toBe('1')
 
     editFile('data.js', (code) =>
-      code.replace('// @hmr-bump1', '// @hmr-bump12'),
+      code.replace(
+        "globalThis.__hmrBump = 'first-update'",
+        "globalThis.__hmrBump = 'second-update2'",
+      ),
     )
     await expect.poll(() => page.textContent('.data-count')).toBe('3')
     await expect.poll(() => page.textContent('.data-disposed')).toBe('2')
@@ -305,6 +415,53 @@ if (isBuild) {
       .toBe('dead-accept-updated')
   })
 
+  test('a full reload navigates once, onto the rebuilt bundle', async () => {
+    const original = readFile('dead-accept.js')
+
+    // the client must not navigate on its own decision: it sends
+    // `vite:bundled-dev:reload-needed` and the server answers `full-reload`
+    // only after the rebuilt bundle is served — so the page never sees the
+    // bundling-fallback document and loads exactly once
+    let documentLoads = 0
+    let sawFallbackPage = false
+    const onResponse = async (response: Response) => {
+      if (response.request().resourceType() !== 'document') return
+      documentLoads++
+      if ((await response.text()).includes('__vite_is_fallback_page__')) {
+        sawFallbackPage = true
+      }
+    }
+    page.on('response', onResponse)
+    onTestFinished(async () => {
+      page.off('response', onResponse)
+      addFile('dead-accept.js', original)
+      await expect
+        .poll(() => page.textContent('.dead-accept'))
+        .toBe('dead-accept')
+    })
+
+    const serverLogIndex = serverLogs.length
+    editFile('dead-accept.js', (code) =>
+      code.replace("'dead-accept'", "'dead-accept-reloaded'"),
+    )
+    await expect
+      .poll(() => page.textContent('.dead-accept'))
+      .toBe('dead-accept-reloaded')
+
+    await expect
+      .poll(() =>
+        serverLogs
+          .slice(serverLogIndex)
+          .some((l) => l.includes('bundling for page reload')),
+      )
+      .toBe(true)
+
+    // give a hypothetical second navigation time to happen before counting
+    await setTimeout(300)
+    expect(documentLoads).toBe(1)
+    expect(sawFallbackPage).toBe(false)
+  })
+
   test('editing a worker-only module without accept reloads the page', async () => {
     const original = readFile('worker-plain-dep.js')
     onTestFinished(async () => {
@@ -325,6 +482,13 @@ if (isBuild) {
     await expect
       .poll(() => page.textContent('.worker-plain'))
       .toBe('worker-plain-updated')
+  })
+
+  test('lazy bundling errors return 500', async () => {
+    const response = await page.request.get(
+      new URL('/@vite/lazy?id=%2Ffoo%2Fbar&clientId=x', page.url()).href,
+    )
+    expect(response.status()).toBe(500)
   })
 
   // Blocked by https://github.com/rolldown/rolldown/issues/10340

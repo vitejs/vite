@@ -1,7 +1,7 @@
 import { msg as msgFromDep } from '@vitejs/test-dep-to-optimize'
 import depCjs from '@vitejs/test-worker-dep-cjs'
-import { mode, msg } from './modules/workerImport.js'
 import { bundleWithPlugin } from './modules/test-plugin'
+import { mode, msg } from './modules/workerImport.js'
 import viteSvg from './vite.svg'
 const metaUrl = import.meta.url
 

@@ -9,11 +9,11 @@ The manual HMR API is primarily intended for framework and tooling authors. As a
 Vite exposes its manual HMR API via the special `import.meta.hot` object:
 
 ```ts twoslash
-import type { ModuleNamespace } from 'vite/types/hot.d.ts'
 import type {
   CustomEventName,
   InferCustomEventPayload,
 } from 'vite/types/customEvent.d.ts'
+import type { ModuleNamespace } from 'vite/types/hot.d.ts'
 
 // ---cut---
 interface ImportMeta {
@@ -169,7 +169,7 @@ if (import.meta.hot) {
 
 ## `hot.prune(cb)`
 
-Register a callback that will call when the module is no longer imported on the page. Compared to `hot.dispose`, this can be used if the source code cleans up side-effects by itself on updates and you only need to clean-up when it's removed from the page. Vite currently uses this for `.css` imports.
+Register a callback that will be called when the module is no longer imported on the page. Compared to `hot.dispose`, this can be used if the source code cleans up side-effects by itself on updates and you only need to clean-up when it's removed from the page. Vite currently uses this for `.css` imports.
 
 ```js twoslash
 import 'vite/client'
