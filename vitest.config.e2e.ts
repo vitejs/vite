@@ -10,10 +10,7 @@ const isBundled = isBuild || isBundledDev
 // support (vitejs/vite#23028). A file where only a few cases fail is not
 // listed here; those cases use `bundledDevTodo()` / `bundledDevUnsupported()`
 // from `playground/test-utils.ts` instead.
-const bundledDevExclude = [
-  './playground/hmr-ssr/__tests__/hmr-ssr.spec.ts',
-  './playground/optimize-deps/__tests__/optimize-deps.spec.ts',
-]
+const bundledDevExclude = ['./playground/hmr-ssr/__tests__/hmr-ssr.spec.ts']
 
 const timeout = process.env.PWDEBUG ? Infinity : process.env.CI ? 50000 : 30000
 
