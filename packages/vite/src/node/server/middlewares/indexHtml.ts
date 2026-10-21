@@ -32,7 +32,6 @@ import {
 import { checkPublicFile } from '../../publicDir'
 import {
   ensureWatchedFile,
-  fsPathFromId,
   getHash,
   injectQuery,
   isCSSRequest,
@@ -43,7 +42,7 @@ import {
   processSrcSetSync,
   tryStatSync,
 } from '../../utils'
-import { browserUrlToModuleUrl } from '../moduleUrl'
+import { browserUrlToModuleUrl, moduleUrlToFilePath } from '../moduleUrl'
 import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
@@ -106,14 +105,10 @@ export function createDevHtmlTransformFn(
 }
 
 function getHtmlFilename(url: string, server: ViteDevServer) {
-  const urlPath = cleanUrl(url)
-  if (urlPath.startsWith(FS_PREFIX)) {
-    return decodeURIComponent(fsPathFromId(urlPath))
-  } else {
-    return decodeURIComponent(
-      normalizePath(path.join(server.config.root, urlPath.slice(1))),
-    )
-  }
+  return moduleUrlToFilePath(
+    decodeURIComponent(cleanUrl(url)),
+    server.config.root,
+  )
 }
 
 function shouldPreTransform(url: string, config: ResolvedConfig) {
@@ -516,8 +511,8 @@ export function indexHtmlMiddleware(
       }
 
       let filePath: string
-      if (isDev && url.startsWith(FS_PREFIX)) {
-        filePath = decodeURIComponent(fsPathFromId(url))
+      if (isDev) {
+        filePath = moduleUrlToFilePath(decodeURIComponent(url), root)
       } else {
         filePath = normalizePath(
           path.resolve(path.join(root, decodeURIComponent(url))),

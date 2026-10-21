@@ -7,6 +7,7 @@ import type { DevEnvironment } from '../environment'
 import {
   browserUrlToModuleUrl,
   fileToModuleUrl,
+  moduleUrlToFilePath,
   resolvedIdToModuleUrl,
 } from '../moduleUrl'
 
@@ -36,6 +37,31 @@ describe('ModuleURL and BrowserURL conversions', () => {
     for (const { input, inputRoot = root, output } of cases) {
       expect(fileToModuleUrl(input, inputRoot)).toBe(output)
     }
+  })
+
+  it('recovers file paths from root-relative and filesystem ModuleURLs', () => {
+    const files = [
+      root,
+      `${root}/.hidden.js`,
+      `${root}/src/a%25 b-あ.js`,
+      `${root}/src/file?#.js`,
+      `${root}-sibling/file.js`,
+    ]
+    for (const file of files) {
+      expect(moduleUrlToFilePath(fileToModuleUrl(file, root), root)).toBe(file)
+    }
+    expect(moduleUrlToFilePath('/@fs/C:/outside/file.js', root)).toBe(
+      'C:/outside/file.js',
+    )
+    expect(moduleUrlToFilePath('/src/file.js', '/')).toBe(
+      normalizePath(path.resolve('/src/file.js')),
+    )
+  })
+
+  it('keeps multiple leading slashes relative to root', () => {
+    expect(moduleUrlToFilePath('//src/file.js', root)).toBe(
+      `${root}/src/file.js`,
+    )
   })
 
   for (const [moduleUrl, browserPath] of [
