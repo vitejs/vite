@@ -15,8 +15,9 @@ import type {
 import { makeIdFiltersToMatchWithQuery } from 'rolldown/filter'
 import {
   cleanUrl,
+  joinUrlSegments,
+  moduleUrlToBrowserUrl,
   splitFileAndPostfix,
-  withTrailingSlash,
 } from '../../shared/utils'
 import type { PartialEnvironment } from '../baseEnvironment'
 import {
@@ -24,29 +25,25 @@ import {
   toOutputFilePathInJS,
 } from '../build'
 import type { ResolvedConfig } from '../config'
-import {
-  DEFAULT_ASSETS_INLINE_LIMIT,
-  DEFAULT_ASSETS_RE,
-  FS_PREFIX,
-} from '../constants'
+import { DEFAULT_ASSETS_INLINE_LIMIT, DEFAULT_ASSETS_RE } from '../constants'
 import type { Environment } from '../environment'
 import type { Plugin } from '../plugin'
 import { checkPublicFile } from '../publicDir'
+import { fileToModuleUrl } from '../server/moduleUrl'
 import {
   encodeURIPath,
   getHash,
   injectQuery,
-  joinUrlSegments,
   normalizePath,
   rawRE,
-  removeLeadingSlash,
   removeUrlQuery,
   urlRE,
 } from '../utils'
 import { getImportMapFilename } from './html'
 
-// referenceId is base64url but replaces - with $
-export const assetUrlRE: RegExp = /__VITE_ASSET__([\w$]+)__/g
+// referenceId is a 22-character base64url string but replaces - with $
+export const assetUrlRE: RegExp =
+  /__VITE_ASSET__([\w$]{22})(?:_([a-f\d]{24}))?__/g
 
 const encodedHashPlaceholderRE = /!~%7B([\w$]{1,17})%7D~/g
 function unescapeHashPlaceholders(uri: string): string {
@@ -55,6 +52,7 @@ function unescapeHashPlaceholders(uri: string): string {
 
 interface FileUrlMetadata {
   asFileUrl: boolean
+  postfix: string
 }
 
 const fileUrlMetadata = new WeakMap<Environment, Map<string, FileUrlMetadata>>()
@@ -140,12 +138,12 @@ export function renderAssetUrlInJS(
   assetUrlRE.lastIndex = 0
   while ((match = assetUrlRE.exec(code))) {
     s ||= new MagicString(code)
-    const [full, referenceId] = match
+    const [full, referenceId, urlId] = match
     const file = pluginContext.getFileName(referenceId)
     chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
     const replacement = toOutputFilePathInJS(
       environment,
-      file,
+      file + getAssetUrlPostfix(environment, urlId),
       'asset',
       chunk.fileName,
       'js',
@@ -285,7 +283,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         }
 
         return {
-          code: `export default ${formatBuiltAsset(resolved, 'js')}`,
+          code: `export default ${formatBuiltAsset(
+            resolved,
+            'js',
+            addFileUrlMetadataForAsset(this.environment, resolved, 'js'),
+          )}`,
           // Force rollup to keep this module from being shared between other entry points if it's an entrypoint.
           // If the resulting chunk is empty, it will be removed in generateBundle.
           moduleSideEffects:
@@ -327,7 +329,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
             }
             const replacement = toOutputFilePathInJS(
               environment,
-              fileName,
+              fileName + (metadata?.postfix ?? ''),
               'asset',
               chunkId,
               'js',
@@ -479,20 +481,9 @@ export async function fileToDevUrl(
     return pathToFileURL(cleanedId).href
   }
 
-  let rtn: string
-  if (publicFile) {
-    // in public dir during dev, keep the url as-is
-    rtn = id
-  } else if (id.startsWith(withTrailingSlash(config.root))) {
-    // in project root, infer short public path
-    rtn = '/' + path.posix.relative(config.root, id)
-  } else {
-    // outside of project root, use absolute fs path
-    // (this is special handled by the serve static middleware
-    rtn = path.posix.join(FS_PREFIX, id)
-  }
+  const moduleUrl = publicFile ? id : fileToModuleUrl(id, config.root)
   const base = joinUrlSegments(config.server.origin ?? '', config.decodedBase)
-  return joinUrlSegments(base, removeLeadingSlash(rtn))
+  return moduleUrlToBrowserUrl(moduleUrl, base)
 }
 
 export function getPublicAssetFilename(
@@ -516,7 +507,8 @@ export function publicFileToBuiltUrl(
 ): string {
   if (config.command !== 'build') {
     // We don't need relative base or renderBuiltUrl support during dev
-    return joinUrlSegments(config.decodedBase, url)
+    const base = joinUrlSegments(config.server.origin ?? '', config.decodedBase)
+    return joinUrlSegments(base, url)
   }
   const hash = getHash(url)
   let cache = publicAssetUrlCache.get(config)
@@ -555,11 +547,28 @@ async function fileToBuiltUrl(
     skipPublicCheck,
     forceInline,
   )
-  const urlId =
-    resolved.type === 'reference' && format === 'js' && asFileUrl
-      ? addFileUrlMetadata(pluginContext.environment, { asFileUrl })
-      : undefined
+  const urlId = addFileUrlMetadataForAsset(
+    pluginContext.environment,
+    resolved,
+    format,
+    asFileUrl,
+  )
   return formatBuiltAsset(resolved, format, urlId)
+}
+
+function addFileUrlMetadataForAsset(
+  environment: Environment,
+  resolved: FileToBuiltUrlResult,
+  format: AssetUrlFormat,
+  useFileUrl = false,
+): string | undefined {
+  if (resolved.type !== 'reference') return
+
+  const asFileUrl = format === 'js' && useFileUrl
+  const { postfix } = resolved
+  if (!asFileUrl && !postfix) return
+
+  return addFileUrlMetadata(environment, { asFileUrl, postfix })
 }
 
 function addFileUrlMetadata(
@@ -580,6 +589,15 @@ function addFileUrlMetadata(
   return urlId
 }
 
+export function getAssetUrlPostfix(
+  environment: Environment,
+  urlId: string | undefined,
+): string {
+  return urlId
+    ? (fileUrlMetadata.get(environment)?.get(urlId)?.postfix ?? '')
+    : ''
+}
+
 /** Format a resolved asset as either a JS expression or a plain-text string. */
 function formatBuiltAsset(
   resolved: FileToBuiltUrlResult,
@@ -591,11 +609,9 @@ function formatBuiltAsset(
       const base = urlId
         ? `import.meta.ROLLDOWN_FILE_URL_${resolved.referenceId}_${urlId}`
         : `import.meta.ROLLDOWN_FILE_URL_${resolved.referenceId}`
-      return resolved.postfix
-        ? `${base} + ${JSON.stringify(resolved.postfix)}`
-        : base
+      return base
     }
-    return `__VITE_ASSET__${resolved.referenceId}__${resolved.postfix}`
+    return `__VITE_ASSET__${resolved.referenceId}${urlId ? `_${urlId}` : ''}__`
   }
   return format === 'js'
     ? JSON.stringify(encodeURIPath(resolved.value))
@@ -699,7 +715,10 @@ export function toOutputFilePathInJSForBundledDev(
   )
   // renderBuiltUrl is not supported in bundled dev
   if (typeof outputUrl === 'object') throw new Error('unreachable')
-  return outputUrl
+  return joinUrlSegments(
+    environment.getTopLevelConfig().server.origin ?? '',
+    outputUrl,
+  )
 }
 
 export async function urlToBuiltUrl(

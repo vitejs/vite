@@ -4,9 +4,10 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import util from 'node:util'
 import * as prompts from '@clack/prompts'
-import { determineAgent } from '@vercel/detect-agent'
-import spawn from 'cross-spawn'
 import mri from 'mri'
+import { detectAgent } from 'std-env'
+import { xSync } from 'tinyexec'
+import packageInfo from '../package.json' with { type: 'json' }
 
 const {
   blue,
@@ -172,12 +173,20 @@ const FRAMEWORKS: Framework[] = [
         customCommand: 'npm create react-router@latest TARGET_DIR',
       },
       {
+        name: 'custom-tanstack-start-react',
+        display: 'TanStack Start ↗',
+        link: 'https://tanstack.com/start',
+        color: cyan,
+        customCommand:
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --build-tool vite --interactive',
+      },
+      {
         name: 'custom-tanstack-router-react',
         display: 'TanStack Router ↗',
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --build-tool vite --router-only --interactive',
       },
       {
         name: 'redwoodsdk-standard',
@@ -274,12 +283,20 @@ const FRAMEWORKS: Framework[] = [
         color: yellow,
       },
       {
+        name: 'custom-tanstack-start-solid',
+        display: 'TanStack Start ↗',
+        link: 'https://tanstack.com/start',
+        color: cyan,
+        customCommand:
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --build-tool vite --interactive',
+      },
+      {
         name: 'custom-tanstack-router-solid',
         display: 'TanStack Router ↗',
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --build-tool vite --router-only --interactive',
       },
       {
         name: 'custom-vike-solid',
@@ -399,15 +416,17 @@ const renameFiles: Record<string, string | undefined> = {
 const defaultTargetDir = 'vite-project'
 
 function run([command, ...args]: string[], options?: SpawnOptions) {
-  const { status, error } = spawn.sync(command, args, options)
-  if (status != null && status > 0) {
-    process.exit(status)
-  }
-
-  if (error) {
+  let exitCode: number | undefined
+  try {
+    ;({ exitCode } = xSync(command, args, { nodeOptions: options }))
+  } catch (error) {
     console.error(`\n${command} ${args.join(' ')} error!`)
     console.error(error)
     process.exit(1)
+  }
+
+  if (exitCode != null && exitCode > 0) {
+    process.exit(exitCode)
   }
 }
 
@@ -453,11 +472,12 @@ async function init() {
     return
   }
 
+  console.log(`\n${cyan(`create-vite v${packageInfo.version}`)}\n`)
+
   const interactive = argInteractive ?? process.stdin.isTTY
 
   // Detect AI agent environment for better agent experience (AX)
-  const { isAgent } = await determineAgent()
-  if (isAgent && interactive) {
+  if (interactive && detectAgent().name) {
     console.log(
       '\nTo create in one go, run: create-vite <DIRECTORY> --no-interactive --template <TEMPLATE>\n',
     )
@@ -621,10 +641,10 @@ async function init() {
     const replacedArgs = args.map((arg) =>
       arg.replace('TARGET_DIR', () => targetDir),
     )
-    const { status } = spawn.sync(command, replacedArgs, {
-      stdio: 'inherit',
+    const { exitCode } = xSync(command, replacedArgs, {
+      nodeOptions: { stdio: 'inherit' },
     })
-    process.exit(status ?? 0)
+    process.exit(exitCode ?? 0)
   }
 
   // 5. Ask whether to use ESLint instead of Oxlint (React templates only)
@@ -806,7 +826,7 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
 
 function setupReactCompiler(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@rolldown/plugin-babel
-  const babelPluginVersion = '0.2.3'
+  const babelPluginVersion = '0.2.4'
   // renovate: datasource=npm depName=babel-plugin-react-compiler
   const reactCompilerPluginVersion = '1.0.0'
   // renovate: datasource=npm depName=@babel/core
@@ -860,15 +880,15 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@eslint/js
   const eslintJsVersion = '10.0.1'
   // renovate: datasource=npm depName=eslint
-  const eslintVersion = '10.10.0'
+  const eslintVersion = '10.13.0'
   // renovate: datasource=npm depName=eslint-plugin-react-hooks
   const eslintPluginReactHooksVersion = '7.1.1'
   // renovate: datasource=npm depName=eslint-plugin-react-refresh
-  const eslintPluginReactRefreshVersion = '0.5.6'
+  const eslintPluginReactRefreshVersion = '0.5.7'
   // renovate: datasource=npm depName=globals
-  const globalsVersion = '17.12.0'
+  const globalsVersion = '17.13.0'
   // renovate: datasource=npm depName=typescript-eslint
-  const typescriptEslintVersion = '8.69.0'
+  const typescriptEslintVersion = '8.71.2'
 
   const eslintConfigForTS = /* js */ `import js from '@eslint/js'
 import globals from 'globals'

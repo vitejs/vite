@@ -1,16 +1,23 @@
 import { beforeAll, describe, expect, test } from 'vitest'
 import {
   browserLogs,
+  bundledDevTodo,
   findAssetFile,
   getBg,
   getColor,
   isBuild,
+  isBundledDev,
   page,
 } from '~utils'
 
+// bundled dev serves hashed asset URLs like build. But it writes them to the
+// default `assets/` folder, because build's custom assetFileNames setting
+// (other-assets/) is not applied here.
 const absoluteAssetMatch = isBuild
   ? /\/other-assets\/asset-[-\w]{8}\.png/
-  : '/nested/asset.png'
+  : isBundledDev
+    ? /\/assets\/asset-[-\w]{8}\.png/
+    : '/nested/asset.png'
 
 // Asset URLs in CSS are relative to the same dir, the computed
 // style returns the absolute URL in the test
@@ -20,7 +27,9 @@ const iconMatch = `/icon.png`
 
 const absoluteIconMatch = isBuild
   ? /\/other-assets\/icon-[-\w]{8}\.png/
-  : '/nested/icon.png'
+  : isBundledDev
+    ? /\/assets\/icon-[-\w]{8}\.png/
+    : '/nested/icon.png'
 
 const absolutePublicIconMatch = isBuild ? /\/icon\.png/ : '/icon.png'
 
@@ -167,7 +176,9 @@ describe('image', () => {
       expect(s).toMatch(
         isBuild
           ? /other-assets\/asset-[-\w]{8}\.png \dx/
-          : /\.\/nested\/asset\.png \dx/,
+          : isBundledDev
+            ? /\/assets\/asset-[-\w]{8}\.png \dx/
+            : /\.\/nested\/asset\.png \dx/,
       )
     })
   })
@@ -175,14 +186,26 @@ describe('image', () => {
 
 describe('svg fragments', () => {
   // 404 is checked already, so here we just ensure the urls end with #fragment
-  test('img url', async () => {
-    const img = await page.$('.svg-frag-img')
-    expect(await img.getAttribute('src')).toMatch(/svg#icon-clock-view$/)
-  })
+  test(
+    'img url',
+    bundledDevTodo(
+      'bundled dev drops the postfix (`?query` / `#fragment`) from emitted asset URLs',
+    ),
+    async () => {
+      const img = await page.$('.svg-frag-img')
+      expect(await img.getAttribute('src')).toMatch(/svg#icon-clock-view$/)
+    },
+  )
 
-  test('via css url()', async () => {
-    expect(await getBg('.icon')).toMatch(/svg#icon-clock-view"\)$/)
-  })
+  test(
+    'via css url()',
+    bundledDevTodo(
+      'bundled dev drops the postfix (`?query` / `#fragment`) from emitted asset URLs',
+    ),
+    async () => {
+      expect(await getBg('.icon')).toMatch(/svg#icon-clock-view"\)$/)
+    },
+  )
 
   test('from js import', async () => {
     const img = await page.$('.svg-frag-import')
@@ -196,21 +219,31 @@ test('?raw import', async () => {
 
 test('?url import', async () => {
   expect(await page.textContent('.url')).toMatch(
-    isBuild ? /\/other-assets\/foo-[-\w]{8}\.js/ : `/foo.js`,
+    isBuild
+      ? /\/other-assets\/foo-[-\w]{8}\.js/
+      : isBundledDev
+        ? /\/assets\/foo-[-\w]{8}\.js/
+        : `/foo.js`,
   )
 })
 
 test('?url import on css', async () => {
   const txt = await page.textContent('.url-css')
   expect(txt).toMatch(
-    isBuild ? /\/other-assets\/icons-[-\w]{8}\.css/ : '/css/icons.css',
+    isBuild
+      ? /\/other-assets\/icons-[-\w]{8}\.css/
+      : isBundledDev
+        ? /\/assets\/icons-[-\w]{8}\.css/
+        : '/css/icons.css',
   )
 })
 
 test('new URL(..., import.meta.url)', async () => {
   const absoluteImgMatch = isBuild
     ? /http.*\/other-assets\/img-[-\w]{8}\.png/
-    : '/import-meta-url/img.png'
+    : isBundledDev
+      ? /http.*\/assets\/img-[-\w]{8}\.png/
+      : '/import-meta-url/img.png'
   expect(await page.textContent('.import-meta-url')).toMatch(absoluteImgMatch)
 })
 

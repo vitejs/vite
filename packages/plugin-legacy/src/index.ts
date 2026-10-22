@@ -1,5 +1,4 @@
 import crypto from 'node:crypto'
-import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type {
@@ -7,6 +6,7 @@ import type {
   types as BabelTypes,
 } from '@babel/core'
 import browserslist from 'browserslist'
+import corejsPkg from 'core-js/package.json' with { type: 'json' }
 import MagicString from 'magic-string'
 import colors from 'picocolors'
 import { build, normalizePath } from 'vite'
@@ -40,7 +40,7 @@ async function loadPolyfillPlugins(): Promise<BabelPlugin[]> {
       (await import('babel-plugin-polyfill-corejs3')).default,
       {
         method: 'usage-global',
-        version: _require('core-js/package.json').version,
+        version: corejsPkg.version,
         shippedProposals: true,
       },
     ],
@@ -161,8 +161,6 @@ function isVersionGte(version: string, minVersion: string): boolean {
   // a prerelease (e.g. `8.1.2-beta.0`) ranks lower than the corresponding release (`8.1.2`)
   return !version.includes('-') || minVersion.includes('-')
 }
-
-const _require = createRequire(import.meta.url)
 
 const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
 const prefixedHashInFileNameRE = /\W?\[hash(?::\d+)?\]/

@@ -790,7 +790,7 @@ export function ensureWatchedFile(
   if (
     file &&
     // only need to watch if out of root
-    !file.startsWith(withTrailingSlash(root)) &&
+    !normalizePath(file).startsWith(withTrailingSlash(root)) &&
     // some rollup plugins use null bytes for private resolved Ids
     !file.includes('\0') &&
     fs.existsSync(file)
@@ -904,10 +904,7 @@ export function combineSourcemaps(
   filename: string,
   sourcemapList: Array<DecodedSourceMap | RawSourceMap>,
 ): RawSourceMap {
-  if (
-    sourcemapList.length === 0 ||
-    sourcemapList.every((m) => m.sources.length === 0)
-  ) {
+  if (sourcemapList.every((m) => m.sources.length === 0)) {
     return { ...nullSourceMap }
   }
 
@@ -1446,7 +1443,7 @@ export function setupHmrWsOptionCompat(
   }
   serverConfig.ws = wsConfig
 
-  const hmrProxy = hmrConfig || {}
+  const hmrProxy = { ...hmrConfig }
   for (const key of wsOptionKeys) {
     Object.defineProperty(hmrProxy, key, {
       get() {
@@ -1479,11 +1476,10 @@ function mergeConfigRecursively(
   }
   if (rootPath === 'server.hmr') {
     for (const key of wsOptionKeys) {
-      Object.defineProperty(
-        merged,
-        key,
-        Object.getOwnPropertyDescriptor(defaults, key)!,
-      )
+      const descriptor = Object.getOwnPropertyDescriptor(defaults, key)
+      if (descriptor) {
+        Object.defineProperty(merged, key, descriptor)
+      }
     }
   }
 
@@ -1742,19 +1738,6 @@ function hasCorrectCase(file: string, assets: string): boolean {
   }
 
   return false
-}
-
-export function joinUrlSegments(a: string, b: string): string {
-  if (!a || !b) {
-    return a || b || ''
-  }
-  if (a.endsWith('/')) {
-    a = a.substring(0, a.length - 1)
-  }
-  if (b[0] !== '/') {
-    b = '/' + b
-  }
-  return a + b
 }
 
 export function removeLeadingSlash(str: string): string {
