@@ -20,6 +20,7 @@ export default defineConfig({
       writeBundle() {
         fs.mkdirSync(path.resolve(dirname, 'dist/views'))
         fs.mkdirSync(path.resolve(dirname, 'dist/files'))
+        fs.mkdirSync(path.resolve(dirname, 'dist/nested'))
         for (const file of runtimeFiles) {
           fs.copyFileSync(
             path.resolve(dirname, file),
