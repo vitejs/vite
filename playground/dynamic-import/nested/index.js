@@ -206,7 +206,7 @@ import(`../nested/static.js`).then((mod) => {
 })
 
 async function resolveSpecifier() {
-  return './hello.js'
+  return '/nested/hello.js'
 }
 
 ;(async () => {
