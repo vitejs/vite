@@ -26,6 +26,7 @@ import {
   sourcemapSnapshot,
   testDir,
   viteServer,
+  watchBuilds,
 } from './vitestSetup'
 
 export * from './vitestSetup'
@@ -289,6 +290,32 @@ export async function gotoLatestBuild(url: string): Promise<void> {
     await bundledDev.devEngine.ensureLatestBuildOutput()
   }
   await page.goto(url)
+}
+
+/**
+ * Wait for every output containing the edited module to finish rebuilding.
+ * Workaround for Rolldown emitting END per output before all outputs finish:
+ * https://github.com/rolldown/rolldown/issues/10613
+ * Call immediately after a synchronous edit, before yielding to watcher callbacks.
+ */
+export async function waitForRebuild(filename: string): Promise<void> {
+  const id = path.resolve(testDir, filename)
+  const builds = watchBuilds
+    .filter((build) => build.files.has(id))
+    .map((build) => ({
+      build,
+      version: build.invalidated.get(id) ?? 0,
+    }))
+  if (!builds.length) {
+    throw new Error(`No build output contains "${filename}"`)
+  }
+  await expect
+    .poll(() =>
+      builds.every(
+        ({ build, version }) => (build.completed.get(id) ?? 0) > version,
+      ),
+    )
+    .toBe(true)
 }
 
 export function hotUpdatedLog(file: string): string {
