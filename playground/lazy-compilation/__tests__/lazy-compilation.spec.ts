@@ -100,7 +100,7 @@ describe.runIf(isBundledDev)('lazy compilation', () => {
     // The client reports A and B over the websocket after evaluating them;
     // the next lazy request is a separate HTTP request, so give the reports
     // a moment to land before C is compiled.
-    await new Promise((resolve) => setTimeout(resolve, 300))
+    await new Promise((resolve) => setTimeout(resolve, 1000))
 
     await page.click('#route-c-btn')
     await expect
