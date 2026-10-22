@@ -1,0 +1,57 @@
+playground/css/__tests__/tests.ts
+  s_c768fee43fd23b::t_687881112dcafe 489-502
+playground/css/index.html
+  s_c768fee43fd23b::t_551f4f0bb4fe61 250-256
+packages/vite/src/node/__tests__/plugins/css.spec.ts
+  s_ddc1d36be5469f::t_0952113d647f88 2,150-292
+packages/vite/src/node/__tests__/plugins/fixtures/css-url-imports/logo.svg
+  s_c768fee43fd23b::t_250a8d960cc019 1
+packages/vite/src/node/__tests__/plugins/fixtures/css-url-imports/nested/_collision.scss
+  s_ddc1d36be5469f::t_19f4212cc2d664 1-17
+packages/vite/src/node/__tests__/plugins/fixtures/css-url-imports/nested/_style.scss
+  s_c768fee43fd23b::t_54eae7b7a9bc77 1-4
+packages/vite/src/node/__tests__/plugins/fixtures/css-url-imports/nested/nested-logo.svg
+  s_c768fee43fd23b::t_00be274c6dd0d5 1
+packages/vite/src/node/__tests__/plugins/fixtures/css-url-imports/nested/package.json
+  s_c768fee43fd23b::t_fbef3e4ba9b7e8 1-6
+packages/vite/src/node/__tests__/plugins/fixtures/css-url-imports/package.json
+  s_16ff2b3f75af78::t_5098319ed0ab17 1-8
+packages/vite/src/node/plugins/css.ts
+  s_ddc1d36be5469f::t_f5c99f033c4a1a 310,410-418,434,1563-1572,1575,1583,2235,2240-2261,2863-2873
+playground/css/imports-field.css
+  s_c768fee43fd23b::t_19a50dd832e8e1 4-15
+playground/css/package.json
+  s_c768fee43fd23b::t_7447e80ef5aa5c 33-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "fce46ca462ad3612ad261ca86d8644aa66d49456",
+  "prompts": {},
+  "sessions": {
+    "s_16ff2b3f75af78": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a15dcc-84ff-7513-a17c-7025392ad108",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_c768fee43fd23b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a15d3e-ea05-7803-a3c1-f1d1a8eebb76",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_ddc1d36be5469f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a161e1-a3b9-7d83-8825-9485e01a20de",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
