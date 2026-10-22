@@ -202,6 +202,9 @@ export function applyStaticAlias(
         ? pathname === find || pathname.startsWith(`${find}/`)
         : find.test(pathname)
     if (matches) {
+      if (typeof find === 'string') {
+        return replacement + pathname.slice(find.length)
+      }
       return pathname.replace(find, replacement)
     }
   }

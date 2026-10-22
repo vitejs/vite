@@ -319,9 +319,10 @@ describe.runIf(isServe)('matrix', projectFileServingUnsupported, () => {
         continue
       }
 
-      test
-        .skipIf(skip)
-        .concurrent(`${name} (${variantName})`, async ({ expect }) => {
+      test.concurrent(
+        `${name} (${variantName})`,
+        { skip: skip || undefined },
+        async ({ expect }) => {
           const baseSelector = `.fetch${variantId}-${testId}`
           const actualStatus = expect.poll(() =>
             page.textContent(`${baseSelector}-status`),
@@ -349,7 +350,8 @@ describe.runIf(isServe)('matrix', projectFileServingUnsupported, () => {
           } else {
             await actualContent.toMatch(content)
           }
-        })
+        },
+      )
     }
   }
 })

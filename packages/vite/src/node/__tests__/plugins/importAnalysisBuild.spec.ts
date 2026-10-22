@@ -2,6 +2,7 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import { beforeAll, describe, expect, test } from 'vitest'
 import { promiseWithResolvers } from '../../../shared/utils'
 import {
+  getChunkImportMapKeySignatures,
   isCssPreloadUrl,
   matchImportsToPreloadMarkers,
   preloadMarker,
@@ -11,6 +12,94 @@ import {
 beforeAll(async () => {
   await init
 })
+
+test('chunk import map key signatures follow rendered chunk order', () => {
+  const unhashed = {
+    facadeModuleId: null,
+    fileName: 'plain.js',
+    moduleIds: ['/plain.js'],
+    name: 'shared',
+  }
+  const chunkA = {
+    facadeModuleId: null,
+    fileName: 'assets/shared-!~{001}~.js',
+    moduleIds: ['/a.js', '/z.js'],
+    name: 'shared',
+  }
+  const chunkB = {
+    facadeModuleId: null,
+    fileName: 'assets/shared-!~{002}~.js',
+    moduleIds: ['/b.js'],
+    name: 'shared',
+  }
+  const facade = {
+    facadeModuleId: '/entry.js',
+    fileName: 'assets/entry-!~{003}~.js',
+    moduleIds: ['/entry.js'],
+    name: 'entry',
+  }
+
+  expect(
+    Object.fromEntries(
+      getChunkImportMapKeySignatures({
+        [unhashed.fileName]: unhashed,
+        [chunkA.fileName]: chunkA,
+        [chunkB.fileName]: chunkB,
+        [facade.fileName]: facade,
+      }),
+    ),
+  ).toStrictEqual({
+    [unhashed.fileName]: JSON.stringify(['file', unhashed.fileName]),
+    [chunkA.fileName]: JSON.stringify(['name', 'shared']),
+    [chunkB.fileName]: JSON.stringify(['module', '/b.js']),
+    [facade.fileName]: JSON.stringify(['facade', '/entry.js']),
+  })
+
+  expect(
+    Object.fromEntries(
+      getChunkImportMapKeySignatures({
+        [chunkB.fileName]: chunkB,
+        [chunkA.fileName]: chunkA,
+      }),
+    ),
+  ).toStrictEqual({
+    [chunkB.fileName]: JSON.stringify(['name', 'shared']),
+    [chunkA.fileName]: JSON.stringify(['module', '/a.js']),
+  })
+})
+
+for (const { name, moduleIds, signature } of [
+  {
+    name: 'no module IDs',
+    moduleIds: [],
+    signature: ['file', 'assets/shared-!~{002}~.js'],
+  },
+  {
+    name: 'an empty module ID',
+    moduleIds: ['/a.js', ''],
+    signature: ['module', ''],
+  },
+]) {
+  test(`chunk import map key signatures handle duplicate names with ${name}`, () => {
+    const first = {
+      facadeModuleId: null,
+      fileName: 'assets/shared-!~{001}~.js',
+      moduleIds: ['/first.js'],
+      name: 'shared',
+    }
+    const duplicate = {
+      ...first,
+      fileName: 'assets/shared-!~{002}~.js',
+      moduleIds,
+    }
+    const signatures = getChunkImportMapKeySignatures({
+      [first.fileName]: first,
+      [duplicate.fileName]: duplicate,
+    })
+    expect(signatures.size).toBe(2)
+    expect(signatures.get(duplicate.fileName)).toBe(JSON.stringify(signature))
+  })
+}
 
 // the start position of every `__VITE_PRELOAD__` marker, in source order
 function markerPositions(code: string): number[] {
