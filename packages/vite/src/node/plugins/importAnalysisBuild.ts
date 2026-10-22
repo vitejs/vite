@@ -4,11 +4,12 @@ import convertSourceMap from 'convert-source-map'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import MagicString from 'magic-string'
-import type { SourceMap } from 'rolldown'
+import type { RenderedChunk, SourceMap } from 'rolldown'
 import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
 import type { PartialEnvironment } from '../baseEnvironment'
 import { toOutputFilePathInJS } from '../build'
 import type { ResolvedConfig } from '../config'
+import { perEnvironmentState } from '../environment'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import { genSourceMapUrl } from '../server/sourcemap'
 import {
@@ -26,6 +27,81 @@ type FileDep = {
 }
 
 type VitePreloadErrorEvent = Event & { payload: Error }
+
+type ChunkImportMapKeyChunk = Pick<
+  RenderedChunk,
+  'facadeModuleId' | 'fileName' | 'moduleIds' | 'name'
+>
+
+/**
+ * Keep signature selection aligned with Rolldown's import-map key selection so
+ * changes to preload keys are reflected in chunk hashes.
+ * https://github.com/rolldown/rolldown/blob/main/crates/rolldown_plugin_chunk_import_map/src/lib.rs#L39-L66
+ * @internal
+ */
+export function getChunkImportMapKeySignatures(
+  chunks: Record<string, ChunkImportMapKeyChunk>,
+): Map<string, string> {
+  const signatures = new Map<string, string>()
+  const usedNames = new Set<string>()
+  for (const [fileName, chunk] of Object.entries(chunks)) {
+    // Rolldown only assigns import-map keys to hashed chunks. Unhashed chunks
+    // also do not reserve their name for a later same-named hashed chunk.
+    if (!chunk.fileName.includes('!~{')) {
+      signatures.set(fileName, JSON.stringify(['file', fileName]))
+    } else if (chunk.facadeModuleId != null) {
+      signatures.set(fileName, JSON.stringify(['facade', chunk.facadeModuleId]))
+    } else if (!usedNames.has(chunk.name)) {
+      usedNames.add(chunk.name)
+      signatures.set(fileName, JSON.stringify(['name', chunk.name]))
+    } else {
+      const moduleId = chunk.moduleIds.reduce<string | undefined>(
+        (smallest, id) =>
+          smallest === undefined || id < smallest ? id : smallest,
+        undefined,
+      )
+      if (moduleId !== undefined) {
+        signatures.set(fileName, JSON.stringify(['module', moduleId]))
+      } else {
+        // Rolldown leaves duplicate-named chunks without module IDs unmapped.
+        signatures.set(fileName, JSON.stringify(['file', fileName]))
+      }
+    }
+  }
+  return signatures
+}
+
+type PreloadDependency = {
+  fileName: string
+  js?: string
+  imports?: readonly string[]
+  css?: Iterable<string>
+}
+
+function collectPreloadDependencies(
+  fileName: string,
+  ownerFileName: string,
+  getDependency: (fileName: string) => PreloadDependency | undefined,
+): string[] {
+  const visited = new Set([ownerFileName])
+  const dependencies: string[] = []
+  const visit = (fileName: string) => {
+    const dependency = getDependency(fileName)
+    if (!dependency || visited.has(dependency.fileName)) return
+    visited.add(dependency.fileName)
+    const { js, imports = [], css = [] } = dependency
+    if (js !== undefined) {
+      dependencies.push(js)
+    }
+    imports.forEach(visit)
+    // Keep this chunk's CSS after its dependencies so its styles take precedence.
+    for (const file of css) {
+      dependencies.push(file)
+    }
+  }
+  visit(fileName)
+  return dependencies
+}
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -312,10 +388,45 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
   const renderBuiltUrl = config.experimental.renderBuiltUrl
   const isRelativeBase = config.base === './' || config.base === ''
 
+  // With chunkImportMap: true, stable import specifiers can hide changes to the
+  // preload dependencies injected in generateBundle after hashing. Keep the graph
+  // per environment so augmentChunkHash includes those changes before hashing.
+  // With chunkImportMap: false, imports use hashed filenames, so dependency
+  // changes already propagate into the importing chunk's hash.
+  const getPreloadHashGraph = perEnvironmentState(() => ({
+    chunks: {} as Record<string, RenderedChunk>,
+    chunkImportMapKeySignatures: new Map<string, string>(),
+    chunkInfo: new Map<
+      string,
+      { importedCssCount: number; isPureCss: boolean }
+    >(),
+  }))
+
   const plugin: Plugin = {
     name: 'vite:build-import-analysis',
 
-    renderChunk(code, _, { format }) {
+    renderStart() {
+      const graph = getPreloadHashGraph(this)
+      graph.chunks = {}
+      graph.chunkImportMapKeySignatures.clear()
+      graph.chunkInfo.clear()
+    },
+
+    renderChunk(code, chunk, { format }, { chunks }) {
+      if (
+        format === 'es' &&
+        getInsertPreload(this.environment) &&
+        this.environment.config.build.chunkImportMap
+      ) {
+        const graph = getPreloadHashGraph(this)
+        graph.chunks = chunks
+        const importedCssCount = chunk.viteMetadata?.importedCss.size ?? 0
+        graph.chunkInfo.set(chunk.fileName, {
+          importedCssCount,
+          isPureCss: code === '' && importedCssCount > 0,
+        })
+      }
+
       // make sure we only perform the preload logic in modern builds.
       if (code.includes(isModernFlag)) {
         const re = new RegExp(isModernFlag, 'g')
@@ -330,6 +441,60 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       return null
     },
 
+    augmentChunkHash(chunk) {
+      const environment = this.environment
+      if (!getInsertPreload(environment)) return
+      const { chunkImportMap, modulePreload } = environment.config.build
+      if (!chunkImportMap) return
+
+      const graph = getPreloadHashGraph(this)
+      const owner = graph.chunks[chunk.fileName]
+      if (!owner) return
+
+      if (graph.chunkImportMapKeySignatures.size === 0) {
+        graph.chunkImportMapKeySignatures = getChunkImportMapKeySignatures(
+          graph.chunks,
+        )
+      }
+      const getKey = (fileName: string) =>
+        graph.chunkImportMapKeySignatures.get(fileName)!
+
+      const pureCssImports = [...owner.imports, ...owner.dynamicImports]
+        .filter((fileName) => graph.chunkInfo.get(fileName)?.isPureCss)
+        .map(getKey)
+
+      const preloadSignatures = owner.dynamicImports.map((dynamicImport) =>
+        collectPreloadDependencies(
+          dynamicImport,
+          chunk.fileName,
+          (fileName) => {
+            const dependency = graph.chunks[fileName]
+            if (!dependency) return
+            const key = getKey(fileName)
+            const { importedCssCount = 0, isPureCss = false } =
+              graph.chunkInfo.get(fileName) ?? {}
+            return {
+              fileName,
+              js:
+                modulePreload !== false && !isPureCss ? `js:${key}` : undefined,
+              imports: dependency.imports,
+              css:
+                importedCssCount > 0
+                  ? [`css:${key}:${importedCssCount}`]
+                  : undefined,
+            }
+          },
+        ),
+      )
+
+      if (
+        pureCssImports.length ||
+        preloadSignatures.some((dependencies) => dependencies.length)
+      ) {
+        return JSON.stringify([pureCssImports, preloadSignatures])
+      }
+    },
+
     async generateBundle(opts, bundle) {
       const { format } = opts
       if (format !== 'es') {
@@ -337,6 +502,22 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       }
 
       await init
+
+      const importMap = getImportMap(bundle, this.environment.config)
+      if (importMap) {
+        const removedPureCssFiles = removedPureCssFilesCache.get(config)
+        if (removedPureCssFiles?.size) {
+          const base = this.environment.config.base
+          for (const [specifier, fileName] of Object.entries(
+            importMap.content.imports,
+          )) {
+            if (removedPureCssFiles.has(fileName.slice(base.length))) {
+              delete importMap.content.imports[specifier]
+            }
+          }
+          importMap.asset.source = JSON.stringify(importMap.content)
+        }
+      }
 
       // If preload is not enabled, we parse through each imports and remove any imports to pure CSS chunks
       // as they are removed from the bundle
@@ -386,7 +567,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                   path.posix.dirname(chunk.fileName),
                   url,
                 )
-                if (removedPureCssFiles.has(normalizedFile)) {
+                const fileName =
+                  importMap?.mapping[normalizedFile] ?? normalizedFile
+                if (removedPureCssFiles.has(fileName)) {
                   // remove with Promise.resolve({}) while preserving source map location
                   chunk.code =
                     chunk.code.slice(0, expStart) +
@@ -404,8 +587,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
       let importMapMapping: Record<string, string> | undefined
       let importMapReverseMapping: Record<string, string> | undefined
-      if (this.environment.config.build.chunkImportMap) {
-        const importMap = getImportMap(bundle, this.environment.config)!
+      if (importMap) {
         importMapMapping = importMap.mapping
         importMapReverseMapping = Object.fromEntries(
           Object.entries(importMapMapping).map(([k, v]) => [v, k]),
@@ -481,7 +663,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                 )
                   url = rawUrl.slice(1, -1)
               }
-              const deps = new Set<string>()
+              let deps = new Set<string>()
               let hasRemovedPureCssChunk = false
 
               let normalizedFile: string | undefined = undefined
@@ -492,43 +674,42 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                   url,
                 )
 
-                const ownerFilename = chunk.fileName
-                // literal import - trace direct imports and add to deps
-                const analyzed: Set<string> = new Set<string>()
-                const addDeps = (rawFilename: string) => {
-                  const filename =
-                    importMapMapping?.[rawFilename] ?? rawFilename
-                  if (filename === ownerFilename) return
-                  if (analyzed.has(filename)) return
-                  analyzed.add(filename)
-                  const chunk = bundle[filename]
-                  if (chunk) {
-                    deps.add(chunk.fileName)
-                    if (chunk.type === 'chunk') {
-                      chunk.imports.forEach(addDeps)
-                      // Ensure that the css imported by current chunk is loaded after the dependencies.
-                      // So the style of current chunk won't be overwritten unexpectedly.
-                      chunk.viteMetadata!.importedCss.forEach((file) => {
-                        deps.add(file)
-                      })
-                    }
-                  } else {
-                    const removedPureCssFiles =
-                      removedPureCssFilesCache.get(config)!
-                    const chunk = removedPureCssFiles.get(filename)
-                    if (chunk) {
-                      if (chunk.viteMetadata!.importedCss.size) {
-                        chunk.viteMetadata!.importedCss.forEach((file) => {
-                          deps.add(file)
-                        })
-                        hasRemovedPureCssChunk = true
+                let shouldRewriteImport = false
+                deps = new Set(
+                  collectPreloadDependencies(
+                    normalizedFile,
+                    chunk.fileName,
+                    (rawFilename) => {
+                      const fileName =
+                        importMapMapping?.[rawFilename] ?? rawFilename
+                      const dependency = bundle[fileName]
+                      if (dependency?.type === 'chunk') {
+                        return {
+                          fileName,
+                          js: dependency.fileName,
+                          imports: dependency.imports,
+                          css: dependency.viteMetadata!.importedCss,
+                        }
                       }
-
-                      s.update(expStart, expEnd, 'Promise.resolve({})')
-                    }
-                  }
+                      if (dependency) {
+                        return { fileName, js: dependency.fileName }
+                      }
+                      const removedPureCssChunk = removedPureCssFilesCache
+                        .get(config)!
+                        .get(fileName)
+                      if (removedPureCssChunk) {
+                        const css =
+                          removedPureCssChunk.viteMetadata!.importedCss
+                        if (css.size) hasRemovedPureCssChunk = true
+                        shouldRewriteImport = true
+                        return { fileName, css }
+                      }
+                    },
+                  ),
+                )
+                if (shouldRewriteImport) {
+                  s.update(expStart, expEnd, 'Promise.resolve({})')
                 }
-                addDeps(normalizedFile)
               }
 
               const markerStartPos = importMarkerPos[index]

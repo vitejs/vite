@@ -15,6 +15,7 @@ import {
 import WebSocket from 'ws'
 import {
   browser,
+  bundledDevUnsupported,
   isBundledDev,
   isServe,
   page,
@@ -59,9 +60,11 @@ describe.runIf(isServe)('normal', () => {
   })
 })
 
-// bundled dev serves only the bundle output and the public directory, never a
-// single project file, so the fs allow/deny matrix does not apply to it.
-describe.runIf(isServe && !isBundledDev)('matrix', () => {
+const projectFileServingUnsupported = bundledDevUnsupported(
+  'bundled dev serves only the bundle output and the public directory, never a single project file',
+)
+
+describe.runIf(isServe)('matrix', projectFileServingUnsupported, () => {
   const dotEnvWindows83ShortName = getWindows83ShortNameForDotEnv()
 
   const variants = [
@@ -318,7 +321,7 @@ describe.runIf(isServe && !isBundledDev)('matrix', () => {
 
       test.concurrent(
         `${name} (${variantName})`,
-        { skip },
+        { skip: skip || undefined },
         async ({ expect }) => {
           const baseSelector = `.fetch${variantId}-${testId}`
           const actualStatus = expect.poll(() =>
