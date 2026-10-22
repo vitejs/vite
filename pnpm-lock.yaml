@@ -411,8 +411,8 @@ importers:
         specifier: ^1.0.0-next.25
         version: 1.0.0-next.25
       '@rollup/plugin-alias':
-        specifier: ^6.0.0
-        version: 6.0.0(rollup@4.64.9)
+        specifier: ^6.0.1
+        version: 6.0.1(rollup@4.64.9)
       '@rollup/plugin-dynamic-import-vars':
         specifier: 2.1.4
         version: 2.1.4(rollup@4.64.9)
@@ -622,6 +622,8 @@ importers:
         version: 4.18.1
 
   packages/vite/src/node/__tests__/fixtures/file-url: {}
+
+  packages/vite/src/node/__tests__/fixtures/resolve-subpath-imports: {}
 
   packages/vite/src/node/__tests__/fixtures/scan-subpath-import-glob: {}
 
@@ -3907,8 +3909,8 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@rollup/plugin-alias@6.0.0':
-    resolution: {integrity: sha512-tPCzJOtS7uuVZd+xPhoy5W4vThe6KWXNmsFCNktaAh5RTqcLiSfT4huPQIXkgJ6YCOjJHvecOAzQxLFhPxKr+g==}
+  '@rollup/plugin-alias@6.0.1':
+    resolution: {integrity: sha512-08wjv2HEuyxIuriLELnksoX+so83XnJ5E4hbVeCHkWlwOcaRQaHYxpUTAplnZjrlh/l5mZgvH1itNC9kcTfTTA==}
     engines: {node: '>=20.19.0'}
     peerDependencies:
       rollup: '>=4.0.0'
@@ -9567,7 +9569,7 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@rollup/plugin-alias@6.0.0(rollup@4.64.9)':
+  '@rollup/plugin-alias@6.0.1(rollup@4.64.9)':
     optionalDependencies:
       rollup: 4.64.9
 
