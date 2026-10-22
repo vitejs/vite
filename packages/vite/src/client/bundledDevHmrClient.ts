@@ -380,6 +380,13 @@ export class BundledDevHMRClient extends HMRClient {
   private findEntryWithoutBoundary(
     update: Extract<HmrUpdate, { type: 'update' }>,
   ): string | undefined {
+    const entriesInUpdateSet = update.updateSet.filter((id) =>
+      this.runtime.isEntry(id),
+    )
+    if (entriesInUpdateSet.length === 0) {
+      return undefined
+    }
+
     // To help visualize how it works, imagine this import graph, where c.js is
     // edited:
     //
@@ -393,21 +400,18 @@ export class BundledDevHMRClient extends HMRClient {
     // static imports that were removed from the module cache. So this function
     // will return undefined in the above graph. Without d.js, it will return
     // a.js.
+    const updateSet = new Set(update.updateSet)
     const executedByBoundaries = new Set<string>()
     const queue = update.boundaries.map(({ acceptedVia }) => acceptedVia)
     while (queue.length) {
       const id = queue.pop()!
-      if (executedByBoundaries.has(id) || !update.updateSet.includes(id)) {
-        continue
-      }
+      if (executedByBoundaries.has(id) || !updateSet.has(id)) continue
       executedByBoundaries.add(id)
       // Only static imports count. An `import()` inside a function may not run
       // again, and skipping a top-level one only costs an extra reload.
       queue.push(...(this.runtime.staticImports.get(id)?.edges ?? []))
     }
-    return update.updateSet.find(
-      (id) => this.runtime.isEntry(id) && !executedByBoundaries.has(id),
-    )
+    return entriesInUpdateSet.find((id) => !executedByBoundaries.has(id))
   }
 
   private async applyUpdate(
