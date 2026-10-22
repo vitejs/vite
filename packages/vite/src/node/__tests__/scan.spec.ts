@@ -246,7 +246,11 @@ test('scan import.meta.glob with jsx preserve', async (ctx) => {
     optimizeDeps: {
       force: true,
       noDiscovery: false,
-      entries: ['./entry-glob-preserve.jsx', './inline-tsx-glob.html'],
+      entries: [
+        './entry-glob-preserve.jsx',
+        './entry-glob-preserve.tsx',
+        './inline-tsx-glob.html',
+      ],
       rolldownOptions: {
         transform: {
           jsx: 'preserve',
@@ -261,7 +265,13 @@ test('scan import.meta.glob with jsx preserve', async (ctx) => {
   )
   ctx.onTestFinished(cancel)
 
-  await expect(result).resolves.toEqual({ deps: {}, missing: {} })
+  // `vue` is imported by a globbed file (`pages/with-dep.tsx`), so its
+  // presence in the deps also proves the glob output was parsed and crawled
+  // correctly with JSX preserved
+  await expect(result).resolves.toEqual({
+    deps: { vue: expect.any(String) },
+    missing: {},
+  })
 })
 
 test('scan respects oxc jsxInject', async (ctx) => {
