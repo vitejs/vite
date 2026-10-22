@@ -33,7 +33,7 @@ import isomorphicModuleMessage from 'virtual:isomorphic-module'
 export async function render(url, rootDir) {
   let html = ''
 
-  const encryptedMsg = await bcrypt.hash('Secret Message!', 10)
+  const encryptedMsg = await bcrypt.hash('Secret Message!', { salt: 10 })
   html += `\n<p class="encrypted-msg">encrypted message: ${encryptedMsg}</p>`
 
   const fileContent = await readFileContent(path.resolve(rootDir, 'message'))
