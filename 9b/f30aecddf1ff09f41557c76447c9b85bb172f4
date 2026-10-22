@@ -1,0 +1,19 @@
+playground/vitestSetupUtils.ts
+  s_ad8444b6883029::t_ad7de89cdc93ab 1-478
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "9bf30aecddf1ff09f41557c76447c9b85bb172f4",
+  "prompts": {},
+  "sessions": {
+    "s_ad8444b6883029": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a161bd-225d-7220-a00e-00c949d36262",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
