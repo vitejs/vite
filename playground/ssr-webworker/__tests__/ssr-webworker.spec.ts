@@ -1,5 +1,5 @@
 import nodePath from 'node:path'
-import type { RolldownOutput } from 'rolldown'
+import type { RolldownOutput, OutputChunk } from 'rolldown'
 import { build } from 'vite'
 import { expect, test } from 'vitest'
 import { findAssetFile, isBuild, page, rootDir } from '~utils'
@@ -70,7 +70,7 @@ test.runIf(isBuild)(
       },
     })) as RolldownOutput
     const entry = output.output.find(
-      (file) => file.type === 'chunk' && file.isEntry,
+      (file): file is OutputChunk => file.type === 'chunk' && file.isEntry,
     )
 
     expect(entry?.code).toContain('from "util"')
