@@ -2,7 +2,7 @@ import path from 'node:path'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
 import type { InternalModuleFormat } from 'rolldown'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, onTestFinished, test } from 'vitest'
 import { PartialEnvironment } from '../../baseEnvironment'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
@@ -394,10 +394,14 @@ async function createCssPluginTransform(inlineConfig: InlineConfig = {}) {
   const config = await resolveConfig(inlineConfig, 'serve')
   const environment = new PartialEnvironment('client', config)
 
-  const { transform, buildStart } = cssPlugin(config)
+  const { transform, buildStart, buildEnd } = cssPlugin(config)
 
   // @ts-expect-error buildStart is function
   await buildStart.call({})
+  onTestFinished(async () => {
+    // @ts-expect-error buildEnd is function
+    await buildEnd.call({})
+  })
 
   return {
     async transform(code: string, id: string) {
