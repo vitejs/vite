@@ -1,0 +1,19 @@
+playground/css-codesplit/__tests__/css-codesplit.spec.ts
+  s_ee9cb05a201317::t_e02e736bb2aaa1 14-15,20-22,28,30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "5375c3c346a343fb783118a2f566da892909bec4",
+  "prompts": {},
+  "sessions": {
+    "s_ee9cb05a201317": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a16278-23c2-76f1-9de3-6c5617c34b5c",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
