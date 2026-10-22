@@ -5,6 +5,8 @@ import {
   addFile,
   browser,
   browserLogs,
+  bundledDevTodo,
+  bundledDevUnsupported,
   editFile,
   getBg,
   getColor,
@@ -246,10 +248,11 @@ if (!isBuild) {
     await expect.poll(() => el.textContent()).toMatch('3')
   })
 
-  // bundled dev: propagating `import.meta.hot.invalidate()` to the importer
-  // fails with `no factory for module \`...invalidation/parent.js\``, so the
-  // client falls back to a full page reload instead of hot-updating the parent
-  test.skipIf(isBundledDev)('invalidate', async () => {
+  const invalidateTodo = bundledDevTodo(
+    "`import.meta.hot.invalidate()` cannot hot-update the importer: the HMR patch does not include the importer's factory (`no factory for module`), so the client does a full page reload; a fix could be, e.g., that the client pulls the missing factories from the server",
+  )
+
+  test('invalidate', invalidateTodo, async () => {
     const el = page.locator('.invalidation-parent')
     await untilBrowserLogAfter(
       () =>
@@ -272,8 +275,7 @@ if (!isBuild) {
     await expect.poll(() => el.textContent()).toMatch('child updated')
   })
 
-  // bundled dev: same missing-importer-factory fallback as `invalidate`
-  test.skipIf(isBundledDev)('invalidate works with multiple tabs', async () => {
+  test('invalidate works with multiple tabs', invalidateTodo, async () => {
     let page2: Page
     try {
       page2 = await browser.newPage()
@@ -305,9 +307,9 @@ if (!isBuild) {
     }
   })
 
-  // bundled dev: same missing-importer-factory fallback as `invalidate`
-  test.skipIf(isBundledDev)(
+  test(
     'invalidate virtual module propagates to importers',
+    invalidateTodo,
     async () => {
       const el = await page.$('.virtual-invalidation-parent')
       await expect.poll(() => el.textContent()).toBe('initial')
@@ -381,16 +383,18 @@ if (!isBuild) {
     await expect.poll(() => el.textContent()).toMatch('child updated')
   })
 
-  // bundled dev: file changes do not run the `hotUpdate` plugin hook, so the
-  // plugin's custom events never reach the page
-  test.skipIf(isBundledDev)('plugin hmr handler + custom event', async () => {
+  const hotUpdateTodo = bundledDevTodo(
+    "A Vite plugin's `hotUpdate` hook does not run on a file change: Rolldown supports the `hotUpdate` hook only for Rust plugins, and the hook stays off (`experimental.devMode.hotUpdate`) until its JS-side adapter lands",
+    { vite: [22956], rolldown: [10065] },
+  )
+
+  test('plugin hmr handler + custom event', hotUpdateTodo, async () => {
     const el = page.locator('.custom')
     editFile('customFile.js', (code) => code.replace('custom', 'edited2'))
     await expect.poll(() => el.textContent()).toMatch('edited2')
   })
 
-  // bundled dev: same missing `hotUpdate` plugin hook as the previous case
-  test.skipIf(isBundledDev)('plugin hmr remove custom events', async () => {
+  test('plugin hmr remove custom events', hotUpdateTodo, async () => {
     const el = page.locator('.toRemove')
     await expect.poll(() => el.textContent()).toMatch('edited2')
     editFile('customFile.js', (code) => code.replace('edited2', 'custom33'))
@@ -402,8 +406,12 @@ if (!isBuild) {
     await expect.poll(() => el.textContent()).toMatch('3')
   })
 
-  // bundled dev: editing an html file does not trigger a page reload
-  test.skipIf(isBundledDev)('full-reload encodeURI path', async () => {
+  const htmlEditTodo = bundledDevTodo(
+    'Editing the markup of an HTML entry (anything that stays in the HTML output, not an inline `<script type="module">`) does not reload the page: bundled dev hot updates only when Rolldown reports a module update, and such an edit leaves the module code of the HTML entry unchanged (no-op update); a fix could be, e.g., that bundled dev reloads the page when the HTML output of the entry changes, while edits to inline module scripts stay module updates',
+    { vite: [23194] },
+  )
+
+  test('full-reload encodeURI path', htmlEditTodo, async () => {
     await page.goto(
       viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
     )
@@ -416,9 +424,11 @@ if (!isBuild) {
     await expect.poll(() => el.textContent()).toBe('title2')
   })
 
-  // bundled dev: css is a bundle asset, so an edit does not swap the
-  // stylesheet link in place and the query params are lost
-  test.skipIf(isBundledDev)('CSS update preserves query params', async () => {
+  const cssLinkUnsupported = bundledDevUnsupported(
+    'bundled dev turns a `<link rel="stylesheet">` to a project CSS file (without `media` or `disabled`) into a CSS import, served as a `<style>` injected by a JS module, so there is no `<link>` tag to swap on a CSS edit; the edit still hot updates in place',
+  )
+
+  test('CSS update preserves query params', cssLinkUnsupported, async () => {
     await page.goto(viteTestUrl)
 
     editFile('global.css', (code) => code.replace('white', 'tomato'))
@@ -434,9 +444,7 @@ if (!isBuild) {
     expect(textpost).not.toMatch('direct')
   })
 
-  // bundled dev: stylesheet links point at bundle assets and are not swapped
-  // on css edits
-  test.skipIf(isBundledDev)('it swaps out link tags', async () => {
+  test('it swaps out link tags', cssLinkUnsupported, async () => {
     await page.goto(viteTestUrl)
 
     editFile('global.css', (code) => code.replace('tomato', 'white'))
@@ -451,9 +459,7 @@ if (!isBuild) {
     await expect.poll(() => page.locator('link').count()).toBe(1)
   })
 
-  // bundled dev: editing a dynamic import that was never loaded triggers a
-  // page reload; plain dev ignores the change (#7561)
-  test.skipIf(isBundledDev)('not loaded dynamic import', async () => {
+  test('not loaded dynamic import', async () => {
     await page.goto(viteTestUrl + '/counter/index.html', { waitUntil: 'load' })
 
     const btn = page.locator('button')
@@ -463,7 +469,7 @@ if (!isBuild) {
 
     // Modifying `index.ts` triggers a page reload, as expected
     const indexTsLoadPromise = page.waitForEvent('load')
-    editFile('counter/index.ts', (code) => code + '\n')
+    editFile('counter/index.ts', (code) => code + '\nglobalThis.__edited = 1\n')
     await indexTsLoadPromise
     await expect.poll(() => btn.textContent()).toBe('Counter 0')
 
@@ -477,7 +483,7 @@ if (!isBuild) {
     // define `accept.module.hot.accept` may wrongfully trigger a full page
     // reload, see discussion at #7561.)
     const depTsLoadPromise = page.waitForEvent('load', { timeout: 1000 })
-    editFile('counter/dep.ts', (code) => code + ' ')
+    editFile('counter/dep.ts', (code) => code + '\nexport const edited = 1\n')
     await expect(depTsLoadPromise).rejects.toThrow(
       /page\.waitForEvent: Timeout \d+ms exceeded while waiting for event "load"/,
     )
@@ -486,9 +492,7 @@ if (!isBuild) {
   })
 
   // #2255
-  // bundled dev: the test passes on its own, but its edits queue stray page
-  // reloads that swallow a later hot update (`import.meta.hot?.accept` times out)
-  test.skipIf(isBundledDev)('importing reloaded', async () => {
+  test('importing reloaded', async () => {
     await page.goto(viteTestUrl)
     const outputEle = page.locator('.importing-reloaded')
     const getOutput = () => {
@@ -894,9 +898,12 @@ if (!isBuild) {
     })
   })
 
-  // bundled dev: the icon is inlined as a data URI (build-style inlining),
-  // and editing index.html does not trigger a page reload
-  test.skipIf(isBundledDev)('css in html hmr', async () => {
+  const inlineStyleEditTodo = bundledDevTodo(
+    'An inline `<style>` in an HTML entry goes through the build pipeline: it becomes an `index.html?html-proxy&inline-css&index=N.css` module that goes through the CSS pipeline and writes the CSS back into the HTML output. But editing `index.html` does not invalidate that module, which is a bug, so the CSS pipeline does not run again and the HTML output stays unchanged',
+    { vite: [23194], rolldown: [10962] },
+  )
+
+  test('css in html hmr', inlineStyleEditTodo, async () => {
     await page.goto(viteTestUrl)
     await expect.poll(() => getBg('.import-image')).toMatch('icon')
     await page.goto(viteTestUrl + '/foo/', { waitUntil: 'load' })
@@ -908,8 +915,7 @@ if (!isBuild) {
     await expect.poll(() => getBg('.import-image')).toMatch('')
   })
 
-  // bundled dev: editing an html file does not trigger a page reload
-  test.skipIf(isBundledDev)('HTML', async () => {
+  test('HTML', htmlEditTodo, async () => {
     await page.goto(viteTestUrl + '/counter/index.html')
     const btn = page.locator('button')
     await expect.poll(() => btn.textContent()).toBe('Counter 0')
@@ -922,10 +928,7 @@ if (!isBuild) {
     await expect.poll(() => btn.textContent()).toBe('Compteur 0')
   })
 
-  // bundled dev: the update itself applies via HMR, but the edit also queues
-  // stray page reloads that swallow a later hot update
-  // (`import.meta.hot?.accept` times out)
-  test.skipIf(isBundledDev)('handle virtual module updates', async () => {
+  test('handle virtual module updates', async () => {
     await page.goto(viteTestUrl)
     const el = page.locator('.virtual')
     await expect.poll(() => el.textContent()).toBe('[success]0')
@@ -933,9 +936,11 @@ if (!isBuild) {
     await expect.poll(() => el.textContent()).toBe('[wow]0')
   })
 
-  // bundled dev: `server.moduleGraph` is empty, so the plugin's
-  // `reloadModule(virtual module)` call finds nothing to reload
-  test.skipIf(isBundledDev)('invalidate virtual module', async () => {
+  const reloadModuleTodo = bundledDevTodo(
+    '`environment.reloadModule()` has no effect under bundled dev: the client module graph is empty, so a plugin cannot find the module to pass, `reloadModule` only has the unbundled update path, and Rolldown has no API to rebuild one module without a file change',
+  )
+
+  test('invalidate virtual module', reloadModuleTodo, async () => {
     await page.goto(viteTestUrl)
     const el = page.locator('.virtual')
     await expect.poll(() => el.textContent()).toBe('[wow]0')
@@ -943,34 +948,29 @@ if (!isBuild) {
     await expect.poll(() => el.textContent()).toBe('[wow]1')
   })
 
-  // bundled dev: same stray-reload fallout as `handle virtual module updates`
-  test.skipIf(isBundledDev)(
-    'handle virtual module accept updates',
-    async () => {
-      await page.goto(viteTestUrl)
-      const el = page.locator('.virtual-dep')
-      await expect.poll(() => el.textContent()).toBe('0')
-      editFile('importedVirtual.js', (code) => code.replace('[wow]', '[wow2]'))
-      await expect.poll(() => el.textContent()).toBe('[wow2]0')
-    },
+  test('handle virtual module accept updates', async () => {
+    await page.goto(viteTestUrl)
+    const el = page.locator('.virtual-dep')
+    await expect.poll(() => el.textContent()).toBe('0')
+    editFile('importedVirtual.js', (code) => code.replace('[wow]', '[wow2]'))
+    await expect.poll(() => el.textContent()).toBe('[wow2]0')
+  })
+
+  test('invalidate virtual module and accept', reloadModuleTodo, async () => {
+    await page.goto(viteTestUrl)
+    const el = page.locator('.virtual-dep')
+    await expect.poll(() => el.textContent()).toBe('0')
+    await page.locator('.virtual-update-dep').click()
+    await expect.poll(() => el.textContent()).toBe('[wow2]2')
+  })
+
+  const unresolvedImportTodo = bundledDevTodo(
+    'Fixing an unresolved bare import does not reload the page: Rolldown treats the import as external and keeps `import "missing-modules"` in the output, so the chunk fails to load in the browser before any of its modules run, and the client applies an update only to modules that have run on the page, so the edit that fixes the import is ignored',
   )
 
-  // bundled dev: same empty-module-graph gap as `invalidate virtual module`
-  test.skipIf(isBundledDev)(
-    'invalidate virtual module and accept',
-    async () => {
-      await page.goto(viteTestUrl)
-      const el = page.locator('.virtual-dep')
-      await expect.poll(() => el.textContent()).toBe('0')
-      await page.locator('.virtual-update-dep').click()
-      await expect.poll(() => el.textContent()).toBe('[wow2]2')
-    },
-  )
-
-  // bundled dev: recovery after a startup build error (missing import) does
-  // not rebuild and reload the page
-  test.skipIf(isBundledDev)(
+  test(
     'keep hmr reload after missing import on server startup',
+    unresolvedImportTodo,
     async () => {
       const file = 'missing-import/a.js'
       const importCode = "import 'missing-modules'"
@@ -998,10 +998,13 @@ if (!isBuild) {
     },
   )
 
-  // bundled dev: deleting and re-adding files is not handled — no dispose
-  // events, no rebuild, no reload
-  test.skipIf(isBundledDev)(
+  const pruneEventTodo = bundledDevTodo(
+    'A module that is no longer imported is not pruned under bundled dev: the server never sends a `prune` message, so the `hot.dispose` and `hot.prune` callbacks of that module never run',
+  )
+
+  test(
     'should hmr when file is deleted and restored',
+    pruneEventTodo,
     async () => {
       await page.goto(viteTestUrl)
 
@@ -1054,20 +1057,18 @@ if (!isBuild) {
     },
   )
 
-  // bundled dev: same file-delete gap as
-  // `should hmr when file is deleted and restored`
-  test.skipIf(isBundledDev)('delete file should not break hmr', async () => {
+  test('delete file should not break hmr', async () => {
     await page.goto(viteTestUrl)
 
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
-      .toMatch('count is 1')
+      .toBe('count is 1')
 
     // add state
     await page.click('.intermediate-file-delete-increment')
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
-      .toMatch('count is 2')
+      .toBe('count is 2')
 
     // update import, hmr works
     editFile('intermediate-file-delete/index.js', (code) =>
@@ -1078,19 +1079,21 @@ if (!isBuild) {
     )
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
-      .toMatch('count is 2!')
+      .toBe('count is 2!')
 
-    // remove unused file, page reload because it's considered entry point now
+    // remove unused file. Plain dev reloads the page, because the file is now
+    // an entry point in its module graph. Bundled dev keeps the page as is: the
+    // file is no longer in the bundle, so nothing changes.
     removeFile('intermediate-file-delete/re-export.js')
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
-      .toMatch('count is 1!')
+      .toBe(isBundledDev ? 'count is 2!' : 'count is 1!')
 
     // re-add state
     await page.click('.intermediate-file-delete-increment')
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
-      .toMatch('count is 2!')
+      .toBe(isBundledDev ? 'count is 3!' : 'count is 2!')
 
     // hmr works after file deletion
     editFile('intermediate-file-delete/display.js', (code) =>
@@ -1098,12 +1101,12 @@ if (!isBuild) {
     )
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
-      .toMatch('count is 2')
+      .toBe(isBundledDev ? 'count is 3' : 'count is 2')
   })
 
-  // bundled dev: dispose and prune events for deleted files are not sent
-  test.skipIf(isBundledDev)(
+  test(
     'deleted file should trigger dispose and prune callbacks',
+    pruneEventTodo,
     async () => {
       await page.goto(viteTestUrl)
 
@@ -1148,9 +1151,45 @@ if (!isBuild) {
     },
   )
 
-  // bundled dev: prune events are not sent when an import is removed
-  test.skipIf(isBundledDev)(
+  const buildErrorRecoveryTodo = bundledDevTodo(
+    'Recovering from a build error reloads the page if no update was applied on it since it loaded. The client reloads when the first update arrives while the error overlay is shown. Here the page opened fine, and the hot-update patch would apply',
+  )
+
+  test(
+    'restoring a deleted file that is still imported hot updates',
+    buildErrorRecoveryTodo,
+    async () => {
+      // load the page again: the client reloads instead of applying the
+      // recovery update only when no update was applied since the page loaded
+      await page.goto(viteTestUrl)
+
+      const childFile = 'file-delete-restore/child.js'
+      const originalChildFileCode = readFile(childFile)
+
+      await expect
+        .poll(() => page.textContent('.file-delete-restore'))
+        .toMatch('parent:child')
+      await page.evaluate(() => {
+        ;(window as any).__notReloaded = true
+      })
+
+      await untilBrowserLogAfter(
+        () => removeFile(childFile),
+        isBundledDev ? />>> vite:error/ : /Failed to reload/,
+      )
+      await untilBrowserLogAfter(
+        () => addFile(childFile, originalChildFileCode),
+        'file-delete-restore/child.js is disposed',
+      )
+      expect(await page.evaluate(() => (window as any).__notReloaded)).toBe(
+        true,
+      )
+    },
+  )
+
+  test(
     'deleting import from non-self-accepting module can trigger prune event',
+    pruneEventTodo,
     async () => {
       await page.goto(viteTestUrl)
       await expect.poll(() => page.textContent('.prune')).toMatch('prune-init')
@@ -1173,8 +1212,102 @@ if (!isBuild) {
     },
   )
 
-  test('import.meta.hot?.accept', async () => {
+  test('importing an unused file again should not use old code', async () => {
     await page.goto(viteTestUrl)
+
+    const display = () => page.textContent('.orphan-reimport-display')
+
+    await expect.poll(display).toBe('count is 1')
+
+    await page.click('.orphan-reimport-increment')
+    await expect.poll(display).toBe('count is 2')
+
+    // re-export.js is no longer imported
+    await untilBrowserLogAfter(
+      () =>
+        editFile('orphan-reimport/index.js', (code) =>
+          code.replace("from './re-export.js'", "from './display.js'"),
+        ),
+      hotUpdatedLog('orphan-reimport/index.js'),
+    )
+
+    // update a dependency of re-export.js. Plain dev reloads the page, because
+    // re-export.js has no importers, so it is an entry point in its module graph.
+    // Bundled dev applies the update and stops at re-export.js.
+    editFile('orphan-reimport/display.js', (code) =>
+      code.replace('count is ${count}', 'count is ${count}!'),
+    )
+    await expect
+      .poll(display)
+      .toBe(isBundledDev ? 'count is 2!' : 'count is 1!')
+
+    // import re-export.js again
+    await untilBrowserLogAfter(
+      () =>
+        editFile('orphan-reimport/index.js', (code) =>
+          code.replace("from './display.js'", "from './re-export.js'"),
+        ),
+      hotUpdatedLog('orphan-reimport/index.js'),
+    )
+    await expect
+      .poll(display)
+      .toBe(isBundledDev ? 'count is 2!' : 'count is 1!')
+  })
+
+  test('updating a file that only an unused file imports should not keep old code', async () => {
+    await page.goto(viteTestUrl)
+
+    const display = () => page.textContent('.orphan-no-boundary-display')
+
+    await expect.poll(display).toBe('count is 1')
+
+    await page.click('.orphan-no-boundary-increment')
+    await expect.poll(display).toBe('count is 2')
+
+    // re-export.js and display.js are no longer imported
+    await untilBrowserLogAfter(
+      () =>
+        editFile('orphan-no-boundary/index.js', (code) =>
+          code.replace("from './re-export.js'", "from './local.js'"),
+        ),
+      hotUpdatedLog('orphan-no-boundary/index.js'),
+    )
+    await expect.poll(display).toBe('local 2')
+
+    // update display.js. Plain dev reloads the page, because re-export.js has
+    // no importers, so it is an entry point in its module graph. Bundled dev
+    // finds no hmr boundary, so nothing runs again and no update is logged.
+    // Wait for the dispose log instead, so that this edit is handled on its own
+    // and not in the same update as the next edit.
+    const editDisplay = () =>
+      editFile('orphan-no-boundary/display.js', (code) =>
+        code.replace('count is ${count}', 'count is ${count}!'),
+      )
+    if (isBundledDev) {
+      await untilBrowserLogAfter(
+        editDisplay,
+        '[orphan-no-boundary] re-export.js disposed',
+      )
+    } else {
+      editDisplay()
+    }
+    await expect.poll(display).toBe(isBundledDev ? 'local 2' : 'local 1')
+
+    // import re-export.js again
+    await untilBrowserLogAfter(
+      () =>
+        editFile('orphan-no-boundary/index.js', (code) =>
+          code.replace("from './local.js'", "from './re-export.js'"),
+        ),
+      hotUpdatedLog('orphan-no-boundary/index.js'),
+    )
+    await expect
+      .poll(display)
+      .toBe(isBundledDev ? 'count is 2!' : 'count is 1!')
+  })
+
+  test('import.meta.hot?.accept', async () => {
+    await gotoLatestBuild(viteTestUrl)
 
     const el = page.locator('.optional-chaining')
     await untilBrowserLogAfter(
@@ -1229,8 +1362,12 @@ if (!isBuild) {
       .toBe('mod-a -> mod-b (edited) -> mod-c -> mod-a (expected error)')
   })
 
-  // bundled dev: editing an asset file does not push an update to the page
-  test.skipIf(isBundledDev)('not inlined assets HMR', async () => {
+  const assetWatchTodo = bundledDevTodo(
+    'Editing an imported asset file (for example an `.svg`) pushes no update, because nothing watches the file. When a plugin `load` hook returns the content, the plugin must register the file. `vite:asset` does not call `this.addWatchFile` for an inlined asset. For an emitted asset it sets `originalFileName`, which Rolldown documents as watching the file, but Rolldown does not watch it',
+    { rolldown: [10962] },
+  )
+
+  test('not inlined assets HMR', assetWatchTodo, async () => {
     await page.goto(viteTestUrl)
     const el = page.locator('#logo-no-inline')
     await untilBrowserLogAfter(
@@ -1245,8 +1382,7 @@ if (!isBuild) {
       .toMatch('40')
   })
 
-  // bundled dev: same asset-edit gap as `not inlined assets HMR`
-  test.skipIf(isBundledDev)('inlined assets HMR', async () => {
+  test('inlined assets HMR', assetWatchTodo, async () => {
     await page.goto(viteTestUrl)
     const el = page.locator('#logo')
     await untilBrowserLogAfter(
@@ -1268,9 +1404,13 @@ if (!isBuild) {
     await expect.poll(() => getColor('.css-deps')).toBe('green')
   })
 
-  // bundled dev: adding the missing file does not rebuild and reload the page
-  test.skipIf(isBundledDev)(
+  const missingFileTodo = bundledDevTodo(
+    'This test should move to a standalone playground. Bundled dev builds all pages in one build, so a page whose import is missing when the server starts fails the build for every page. So `missing-file/index.html` is not a build input here, and under bundled dev the test opens the root page. Even in a standalone playground, creating the missing file does not recover the build, because the dev engine does not watch missing import paths',
+  )
+
+  test(
     'hmr should happen after missing file is created',
+    missingFileTodo,
     async () => {
       const file = 'missing-file/a.js'
       const code = 'console.log("a.js")'
@@ -1291,10 +1431,13 @@ if (!isBuild) {
     },
   )
 
-  // bundled dev: /css-link/index.html is not a bundle input, so the page is
-  // never served and the styled element never appears
-  test.skipIf(isBundledDev)(
+  const ssrCssLinkUnsupported = bundledDevUnsupported(
+    'A server-rendered `<link>` to a source CSS file cannot work under bundled dev. Bundled dev never serves a single project file, and CSS reaches the page only through JS modules, so there is no CSS URL to link to',
+  )
+
+  test(
     'deduplicate server rendered link stylesheet',
+    ssrCssLinkUnsupported,
     async () => {
       await page.goto(viteTestUrl + '/css-link/index.html')
       await expect.poll(() => getColor('.test-css-link')).toBe('orange')
@@ -1319,25 +1462,21 @@ if (!isBuild) {
     },
   )
 
-  // bundled dev: /css-style/index.html is not a bundle input
-  test.skipIf(isBundledDev)(
-    'reuse server rendered style without rewriting unchanged css',
-    async () => {
-      await page.goto(viteTestUrl + '/css-style/index.html')
-      await page.waitForFunction(() => (window as any).__cssStyleLoaded)
-      await expect.poll(() => getColor('.test-css-style')).toBe('orange')
-      expect(
-        await page.evaluate(() => [
-          document.querySelectorAll('style[data-vite-dev-id]').length,
-          (window as any).__ssrStyleMutations,
-        ]),
-      ).toStrictEqual([1, 0])
+  test('reuse server rendered style without rewriting unchanged css', async () => {
+    await page.goto(viteTestUrl + '/css-style/index.html')
+    await page.waitForFunction(() => (window as any).__cssStyleLoaded)
+    await expect.poll(() => getColor('.test-css-style')).toBe('orange')
+    expect(
+      await page.evaluate(() => [
+        document.querySelectorAll('style[data-vite-dev-id]').length,
+        (window as any).__ssrStyleMutations,
+      ]),
+    ).toStrictEqual([1, 0])
 
-      editFile('css-style/styles.css', (code) =>
-        code.replace('color: orange;', 'color: blue;'),
-      )
-      await expect.poll(() => getColor('.test-css-style')).toBe('blue')
-      expect(await page.locator('style[data-vite-dev-id]').count()).toBe(1)
-    },
-  )
+    editFile('css-style/styles.css', (code) =>
+      code.replace('color: orange;', 'color: blue;'),
+    )
+    await expect.poll(() => getColor('.test-css-style')).toBe('blue')
+    expect(await page.locator('style[data-vite-dev-id]').count()).toBe(1)
+  })
 }

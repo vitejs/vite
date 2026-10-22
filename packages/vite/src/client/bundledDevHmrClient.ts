@@ -8,6 +8,8 @@ import type { NormalizedModuleRunnerTransport } from '../shared/moduleRunnerTran
 
 /** the subset of `__rolldown_runtime__` the HMR client uses */
 export interface RolldownRuntimeLike {
+  staticImports: Map<string, { edges: string[] }>
+  dynamicImports: Map<string, { edges: string[] }>
   getImporters(id: string): string[]
   getImportedBindings(importer: string, id: string): string[] | undefined
   isExecuted(id: string): boolean
@@ -24,10 +26,9 @@ interface PropagationBoundary {
 }
 
 type HmrUpdate =
-  | { type: 'noop' }
   | { type: 'full-reload'; reason: string }
   | {
-      type: 'boundaries'
+      type: 'update'
       boundaries: PropagationBoundary[]
       updateSet: string[]
     }
@@ -43,6 +44,7 @@ export class BundledDevHMRClient extends HMRClient {
   private applyQueue = Promise.resolve()
   private lastSeq = 0
   private reloadPending = false
+  private orphans = new Set<string>()
 
   constructor(
     logger: HMRLogger,
@@ -119,9 +121,20 @@ export class BundledDevHMRClient extends HMRClient {
       )
       if (fullReload) return fullReload
     }
-    return boundaries.length
-      ? { type: 'boundaries', boundaries, updateSet: [...updateSet] }
-      : { type: 'noop' }
+    return { type: 'update', boundaries, updateSet: [...updateSet] }
+  }
+
+  private getImports(id: string): string[] {
+    return [
+      ...(this.runtime.staticImports.get(id)?.edges ?? []),
+      ...(this.runtime.dynamicImports.get(id)?.edges ?? []),
+    ]
+  }
+
+  private hasExecutedImporter(id: string): boolean {
+    return this.runtime
+      .getImporters(id)
+      .some((importer) => this.runtime.isExecuted(importer))
   }
 
   private bubble(
@@ -135,6 +148,10 @@ export class BundledDevHMRClient extends HMRClient {
     if (traversedModules.has(id)) return
     traversedModules.add(id)
     updateSet.add(id)
+    // A module that ran in this page gets orphaned when all its importers
+    // remove their import of it. An orphan has no importer left, so stop here
+    // and don't bubble up.
+    if (this.orphans.has(id) && !this.hasExecutedImporter(id)) return
     if (firstInvalidatedBy !== undefined && id === firstInvalidatedBy) {
       return {
         type: 'full-reload',
@@ -310,25 +327,34 @@ export class BundledDevHMRClient extends HMRClient {
     this.lastSeq = seq
 
     const update = this.computeHmrUpdate(changedIds)
-    if (update.type === 'noop') return
     if (update.type === 'full-reload') {
       this.requestFullReload(update.reason)
       return
     }
+    // none of the changed modules has run in this page
+    if (!update.updateSet.length) return
 
+    const notify = update.boundaries.length > 0
     const listenerPayload = this.toUpdatePayload(update.boundaries, undefined)
-    await this.notifyListeners('vite:beforeUpdate', listenerPayload)
+    if (notify) await this.notifyListeners('vite:beforeUpdate', listenerPayload)
     if (this.options.beforeApply() === 'reload') return
 
+    // the patch replaces the import edges of the changed modules
+    const importsBeforePatch = changedIds.flatMap((id) => this.getImports(id))
     try {
       await import(/* @vite-ignore */ this.options.base + url)
     } catch {
       this.requestFullReload(`failed to import hmr patch ${url}`)
       return
     }
+    for (const id of importsBeforePatch) {
+      if (this.runtime.isExecuted(id) && !this.hasExecutedImporter(id)) {
+        this.orphans.add(id)
+      }
+    }
 
     await this.applyUpdate(update)
-    await this.notifyListeners('vite:afterUpdate', listenerPayload)
+    if (notify) await this.notifyListeners('vite:afterUpdate', listenerPayload)
   }
 
   private async applyInvalidate(id: string): Promise<void> {
@@ -346,24 +372,24 @@ export class BundledDevHMRClient extends HMRClient {
 
     // no rebuild happened, so there is no patch to fetch
     const update = this.computeHmrUpdate(importers, { firstInvalidatedBy })
-    if (update.type === 'noop') return
     if (update.type === 'full-reload') {
       this.requestFullReload(update.reason)
       return
     }
 
+    const notify = update.boundaries.length > 0
     const listenerPayload = this.toUpdatePayload(
       update.boundaries,
       firstInvalidatedBy,
     )
-    await this.notifyListeners('vite:beforeUpdate', listenerPayload)
+    if (notify) await this.notifyListeners('vite:beforeUpdate', listenerPayload)
     if (this.options.beforeApply() === 'reload') return
     await this.applyUpdate(update, firstInvalidatedBy)
-    await this.notifyListeners('vite:afterUpdate', listenerPayload)
+    if (notify) await this.notifyListeners('vite:afterUpdate', listenerPayload)
   }
 
   private async applyUpdate(
-    update: Extract<HmrUpdate, { type: 'boundaries' }>,
+    update: Extract<HmrUpdate, { type: 'update' }>,
     firstInvalidatedBy?: string,
   ): Promise<void> {
     for (const id of update.updateSet) {

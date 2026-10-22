@@ -8,7 +8,7 @@
     "build:worker": "vite build --ssr src/entry-worker.jsx --outDir dist/worker"
   },
   "dependencies": {
-    "react": "^19.3.0",
+    "react": "^19.3.1",
     "@vitejs/test-browser-exports": "file:./browser-exports",
     "@vitejs/test-cjs-node-builtin": "file:./cjs-node-builtin",
     "@vitejs/test-worker-exports": "file:./worker-exports"

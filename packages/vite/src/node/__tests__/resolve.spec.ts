@@ -2,8 +2,26 @@ import { join } from 'node:path'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { build } from '../build'
 import type { EnvironmentOptions, InlineConfig } from '../config'
+import { resolveSubpathImports } from '../plugins/resolve'
 import { createServer } from '../server'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
+
+for (const id of ['#hash#blocked', '#hash?blocked']) {
+  test(`does not fall back from explicitly blocked imports key ${id}`, () => {
+    expect(() =>
+      resolveSubpathImports(
+        id,
+        join(import.meta.dirname, 'fixtures/resolve-subpath-imports/index.js'),
+        {
+          conditions: [],
+          externalConditions: [],
+          isProduction: false,
+          isRequire: false,
+        },
+      ),
+    ).toThrow(`Missing "${id}" specifier`)
+  })
+}
 
 describe('import and resolveId', () => {
   async function createTestServer() {

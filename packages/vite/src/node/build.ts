@@ -28,6 +28,7 @@ import type { RollupCommonJSOptions } from '#dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from '#dep-types/dynamicImportVars'
 import type { EsbuildTarget } from '#types/internal/esbuildOptions'
 import type { AssetMetadata, ChunkMetadata } from '#types/metadata'
+import { joinUrlSegments } from '../shared/utils'
 import type { PartialEnvironment } from './baseEnvironment'
 import { BaseEnvironment } from './baseEnvironment'
 import type {
@@ -74,7 +75,6 @@ import {
   createDebugger,
   displayTime,
   getPkgName,
-  joinUrlSegments,
   mergeConfig,
   mergeWithDefaults,
   partialEncodeURIPath,
@@ -1544,7 +1544,7 @@ function injectSsrFlag<T extends Record<string, any>>(
   pluginName: string,
 ): T & { ssr?: boolean } {
   let ssr = environment.config.consumer === 'server'
-  const newOptions = { ...(options ?? {}), ssr } as T & {
+  const newOptions = { ...options, ssr } as T & {
     ssr?: boolean
   }
 
