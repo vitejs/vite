@@ -280,6 +280,10 @@ export function oxcResolvePlugin(
           },
           environmentConsumer: partialEnv.config.consumer,
           environmentName: partialEnv.name,
+          convertExternalRequire:
+            options.isBuild &&
+            partialEnv.name === 'ssr' &&
+            partialEnv.config.ssr.target === 'webworker',
           builtins: partialEnv.config.resolve.builtins,
           external: options.external,
           noExternal: noExternal,
