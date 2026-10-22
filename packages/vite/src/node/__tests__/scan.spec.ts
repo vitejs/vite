@@ -237,6 +237,33 @@ test('scan import.meta.glob respects rolldown transform jsx options', async (ctx
   expect(scanResult.deps).not.toHaveProperty('react/jsx-runtime')
 })
 
+// https://github.com/vitejs/vite/issues/23873
+test('scan import.meta.glob with jsx preserve', async (ctx) => {
+  const server = await createServer({
+    configFile: false,
+    logLevel: 'error',
+    root: path.join(import.meta.dirname, 'fixtures', 'scan-jsx-runtime'),
+    optimizeDeps: {
+      force: true,
+      noDiscovery: false,
+      entries: ['./entry-glob-preserve.jsx', './inline-tsx-glob.html'],
+      rolldownOptions: {
+        transform: {
+          jsx: 'preserve',
+        },
+      },
+    },
+  })
+  ctx.onTestFinished(() => server.close())
+
+  const { cancel, result } = scanImports(
+    devToScanEnvironment(server.environments.client),
+  )
+  ctx.onTestFinished(cancel)
+
+  await expect(result).resolves.toEqual({ deps: {}, missing: {} })
+})
+
 test('scan respects oxc jsxInject', async (ctx) => {
   const server = await createServer({
     oxc: { jsxInject: `import 'vue'` },

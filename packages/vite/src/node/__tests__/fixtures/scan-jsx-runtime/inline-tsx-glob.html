@@ -1,0 +1,9 @@
+<!doctype html>
+<html>
+  <body>
+    <script type="module" lang="tsx">
+      const pages = import.meta.glob('./pages/*.tsx')
+      export const el = <div>{Object.keys(pages).length}</div>
+    </script>
+  </body>
+</html>

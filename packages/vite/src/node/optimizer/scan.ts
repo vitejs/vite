@@ -418,8 +418,9 @@ function rolldownScanPlugin(
     contents: string,
     id: string,
     loader: Loader,
-  ) => {
+  ): Promise<{ code: string; loader: Loader }> => {
     let transpiledContents: string
+    let outputLoader: Loader = 'js'
     // transpile because `transformGlobImport` only expects js
     if (loader !== 'js') {
       const result = transformSync(id, contents, {
@@ -431,6 +432,9 @@ function rolldownScanPlugin(
         throw new AggregateError(result.errors, 'oxc transform error')
       }
       transpiledContents = result.code
+      if (jsxOptions === 'preserve' && (loader === 'jsx' || loader === 'tsx')) {
+        outputLoader = 'jsx'
+      }
     } else {
       transpiledContents = contents
     }
@@ -442,7 +446,10 @@ function rolldownScanPlugin(
       resolve,
     )
 
-    return result?.s.toString() || transpiledContents
+    return {
+      code: result?.s.toString() || transpiledContents,
+      loader: outputLoader,
+    }
   }
 
   const scripts: Record<
@@ -505,9 +512,10 @@ function rolldownScanPlugin(
 
         const key = `${id}?id=${scriptId++}`
         if (contents.includes('import.meta.glob')) {
+          const transformed = await doTransformGlobImport(contents, id, loader)
           scripts[key] = {
-            loader: 'js', // since it is transpiled
-            contents: await doTransformGlobImport(contents, id, loader),
+            loader: transformed.loader,
+            contents: transformed.code,
           }
         } else {
           scripts[key] = {
@@ -745,9 +753,10 @@ function rolldownScanPlugin(
             let ext = path.extname(id).slice(1)
             if (ext === 'mjs') ext = 'js'
             const loader = ext as 'js' | 'ts' | 'jsx' | 'tsx'
+            const transformed = await doTransformGlobImport(code, id, loader)
             return {
-              moduleType: 'js',
-              code: await doTransformGlobImport(code, id, loader),
+              moduleType: transformed.loader,
+              code: transformed.code,
             }
           }
         },
