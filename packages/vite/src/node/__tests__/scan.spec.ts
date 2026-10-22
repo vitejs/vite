@@ -265,9 +265,6 @@ test('scan import.meta.glob with jsx preserve', async (ctx) => {
   )
   ctx.onTestFinished(cancel)
 
-  // `vue` is imported by a globbed file (`pages/with-dep.tsx`), so its
-  // presence in the deps also proves the glob output was parsed and crawled
-  // correctly with JSX preserved
   await expect(result).resolves.toEqual({
     deps: { vue: expect.any(String) },
     missing: {},
