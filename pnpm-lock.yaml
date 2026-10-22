@@ -623,6 +623,8 @@ importers:
 
   packages/vite/src/node/__tests__/fixtures/file-url: {}
 
+  packages/vite/src/node/__tests__/fixtures/resolve-subpath-imports: {}
+
   packages/vite/src/node/__tests__/fixtures/scan-subpath-import-glob: {}
 
   packages/vite/src/node/__tests__/fixtures/test-dep-conditions: {}
@@ -813,8 +815,8 @@ importers:
         specifier: ^1.33.0
         version: 1.33.0
       postcss-nested:
-        specifier: ^7.0.2
-        version: 7.0.2(postcss@8.5.30)
+        specifier: ^9.0.0
+        version: 9.0.0(postcss@8.5.30)
       sass:
         specifier: ^1.105.2
         version: 1.105.2
@@ -6877,9 +6879,9 @@ packages:
     peerDependencies:
       postcss: ^8.2.14
 
-  postcss-nested@7.0.2:
-    resolution: {integrity: sha512-5osppouFc0VR9/VYzYxO03VaDa3e8F23Kfd6/9qcZTUI8P58GIYlArOET2Wq0ywSl2o2PjELhYOFI4W7l5QHKw==}
-    engines: {node: '>=18.0'}
+  postcss-nested@9.0.0:
+    resolution: {integrity: sha512-cYlRG8MiABEAPvxMj1ms9Ame0Xi31AlSe0pY9I61dhUOKUZ6PQU/4i0WdVetUYKlowi3552nnbjhdYYbf2o7UA==}
+    engines: {node: ^22.0.0 || ^24.0.0 || >= 26.0.0}
     peerDependencies:
       postcss: ^8.2.14
 
@@ -12503,7 +12505,7 @@ snapshots:
       postcss: 8.5.30
       postcss-selector-parser: 6.1.4
 
-  postcss-nested@7.0.2(postcss@8.5.30):
+  postcss-nested@9.0.0(postcss@8.5.30):
     dependencies:
       postcss: 8.5.30
       postcss-selector-parser: 7.1.6
