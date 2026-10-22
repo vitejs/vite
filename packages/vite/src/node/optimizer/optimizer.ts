@@ -126,6 +126,11 @@ export function createDepsOptimizer(
   let firstRunCalled = false
   let warnAboutMissedDependencies = false
 
+  // If the scan fails there is no result to release to the browser, so
+  // onCrawlEnd needs to leave the processing state and queue the first run
+  // even if holdUntilCrawlEnd is false
+  let scanFailed = false
+
   // If this is a cold run, we wait for static imports discovered
   // from the first request before resolving to minimize full page reloads.
   // On warm start or after the first optimization is run, we use a simpler
@@ -227,6 +232,7 @@ export function createDepsOptimizer(
                 deps = await discover.result
                 discover = undefined
               } catch (e) {
+                scanFailed = true
                 environment.logger.error(
                   colors.red(
                     '(!) Failed to run dependency scan. ' +
@@ -719,7 +725,7 @@ export function createDepsOptimizer(
         startNextDiscoveredBatch()
         runOptimizer(result)
       }
-    } else if (!holdUntilCrawlEnd) {
+    } else if (!holdUntilCrawlEnd && !scanFailed) {
       // The post-scanner optimize result has been released to the browser
       // If new deps have been discovered, issue a regular rerun of the
       // optimizer. A full page reload may still be avoided if the new
