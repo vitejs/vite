@@ -401,7 +401,8 @@ export class BundledDevHMRClient extends HMRClient {
         continue
       }
       executedByBoundaries.add(id)
-      // an `import()` may not run again, so only static imports count
+      // Only static imports count. An `import()` inside a function may not run
+      // again, and skipping a top-level one only costs an extra reload.
       queue.push(...(this.runtime.staticImports.get(id)?.edges ?? []))
     }
     return update.updateSet.find(
