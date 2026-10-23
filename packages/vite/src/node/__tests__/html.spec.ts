@@ -1,6 +1,84 @@
-import type { OutputBundle, OutputChunk } from 'rolldown'
+import { resolve } from 'node:path'
+import type { OutputBundle, OutputChunk, RolldownOutput } from 'rolldown'
 import { describe, expect, test } from 'vitest'
+import { build } from '../build'
 import { getCssFilesForChunk } from '../plugins/html'
+
+describe('HTML tag removal', () => {
+  describe.each([
+    ['module script', '<script type="module" src="other.js"></script>'],
+    ['stylesheet', '<link rel="stylesheet" href="style.css">'],
+  ])('module script followed by %s', (kind, tag) => {
+    test.each([
+      ['', ''],
+      ['', '\n'],
+      ['', '\r\n'],
+      ['\n  ', ''],
+      ['<p>keep</p>', ''],
+    ])(
+      'removes tags with prefix %j and trailing %j (#23819)',
+      async (prefix, trailing) => {
+        const result = (await build({
+          root: resolve(import.meta.dirname, 'packages/build-project'),
+          configFile: false,
+          logLevel: 'silent',
+          build: {
+            write: false,
+            minify: false,
+            modulePreload: false,
+          },
+          plugins: [
+            {
+              name: 'test-html-tag-removal',
+              transformIndexHtml: {
+                order: 'pre',
+                handler: () =>
+                  prefix +
+                  '<script type="module" src="entry.js"></script>' +
+                  tag +
+                  trailing,
+              },
+              resolveId(id) {
+                if (['entry.js', 'other.js', 'style.css'].includes(id)) {
+                  return '\0' + id
+                }
+              },
+              load(id) {
+                if (id === '\0entry.js') return 'console.log("module a")'
+                if (id === '\0other.js') return 'console.log("module b")'
+                if (id === '\0style.css') return 'body { color: red }'
+              },
+            },
+          ],
+        })) as RolldownOutput
+
+        const html = result.output.find(
+          (output) =>
+            output.type === 'asset' && output.fileName === 'index.html',
+        )!
+        const htmlSource = html.type === 'asset' && html.source
+        expect(htmlSource).not.toMatch(/(?:entry\.js|other\.js|style\.css)/)
+        const scriptTag =
+          /<script type="module" crossorigin src="\/assets\/[^" ]+\.js"><\/script>/g
+        const styleTag =
+          /<link rel="stylesheet" crossorigin href="\/assets\/[^" ]+\.css">/g
+        const htmlText = htmlSource.toString()
+        expect(htmlText.match(scriptTag)).toHaveLength(1)
+        if (kind === 'stylesheet') {
+          expect(htmlText.match(styleTag)).toHaveLength(1)
+        }
+        expect(
+          htmlText.replace(scriptTag, '').replace(styleTag, '').trim(),
+        ).toBe(prefix.trim())
+        const script = result.output.find((output) => output.type === 'chunk')!
+        expect(script.type === 'chunk' && script.code).toContain('module a')
+        if (kind === 'module script') {
+          expect(script.type === 'chunk' && script.code).toContain('module b')
+        }
+      },
+    )
+  })
+})
 
 function createChunk(
   fileName: string,
