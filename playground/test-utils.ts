@@ -27,9 +27,9 @@ import {
   testDir,
   viteServer,
   watchBuilds,
-} from './vitestSetup'
+} from './vitestSetupUtils'
 
-export * from './vitestSetup'
+export * from './vitestSetupUtils'
 
 // make sure these ports are unique
 export const ports = {
