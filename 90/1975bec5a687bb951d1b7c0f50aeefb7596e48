@@ -1,0 +1,25 @@
+packages/plugin-legacy/src/index.ts
+  s_ce95b1885872bb::t_de84d6878cffd5 623,645
+packages/vite/src/node/plugins/assetImportMetaUrl.ts
+  s_ce95b1885872bb::t_de252c32c97b32 175
+packages/vite/src/node/plugins/css.ts
+  s_ce95b1885872bb::t_41e1f52c086068 993
+packages/vite/src/node/plugins/workerImportMetaUrl.ts
+  s_ce95b1885872bb::t_a4a383744cdaef 305
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "901975bec5a687bb951d1b7c0f50aeefb7596e48",
+  "prompts": {},
+  "sessions": {
+    "s_ce95b1885872bb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a167c2-e4d8-7573-b2b5-db007fe45819",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
