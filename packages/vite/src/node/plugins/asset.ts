@@ -286,7 +286,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        if (config.command === 'build' && resolved.type === 'reference' && this.getModuleInfo(id)?.isEntry) {
+        if (
+          config.command === 'build' &&
+          resolved.type === 'reference' &&
+          this.getModuleInfo(id)?.isEntry
+        ) {
           this.referenceFile(resolved.referenceId)
         }
 
