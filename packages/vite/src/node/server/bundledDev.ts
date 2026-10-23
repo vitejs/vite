@@ -129,6 +129,10 @@ export class BundledDev {
     this._closed = false
     debug?.('INITIAL: setup bundle options')
     const rolldownOptions = await this.getRolldownOptions()
+    if (isEmptyInput(rolldownOptions.input)) {
+      debug?.('INITIAL: no entry points, skipping the build')
+      return
+    }
     if (this.environment.config.consumer !== 'server') {
       await this.storeStaticFiles()
     }
@@ -294,6 +298,8 @@ export class BundledDev {
    * @internal
    */
   public async _waitForInitialBuildSuccess(): Promise<void> {
+    // the build is skipped when there are no entry points
+    if (!this._devEngine) return
     await this.devEngine.ensureCurrentBuildFinish()
     const bundleState = await this.devEngine.getBundleState()
     if (bundleState.lastBuildErrored) {
@@ -417,7 +423,7 @@ export class BundledDev {
     this._closed = true
     this.memoryFiles.clear()
     try {
-      await this.devEngine?.close()
+      await this._devEngine?.close()
     } finally {
       this.entryResolver = undefined
       this.initialBuildCompleted = false
@@ -664,4 +670,12 @@ function debounce(time: number, cb: () => void) {
  */
 function payloadDeliveredAck(filename: string): string {
   return `\n;__rolldown_runtime__.payloadDelivered(${JSON.stringify(filename)});`
+}
+
+function isEmptyInput(input: RolldownOptions['input']): boolean {
+  if (Array.isArray(input)) return input.length === 0
+  if (typeof input === 'object' && input !== null) {
+    return Object.keys(input).length === 0
+  }
+  return false
 }
