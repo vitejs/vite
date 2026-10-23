@@ -1221,7 +1221,20 @@ function isSingleDefaultExport(exports: readonly string[]) {
   return exports.length === 1 && exports[0] === 'default'
 }
 
-const lockfileFormats = [
+interface LockfileFormat {
+  path: string
+  // Directory containing patches applied on install (e.g. patch-package's
+  // `patches/`). Only its mtime is mixed into the hash as a best-effort
+  // signal, so custom patch directory locations are not covered.
+  checkPatchesDir?: string | boolean
+  // Mix the mtimes of the patch files recorded in `patchedDependencies`
+  // (package.json) into the hash. Unlike checkPatchesDir, this follows the
+  // recorded paths, so custom patch directories are covered.
+  checkPatchedDependencies?: boolean
+  manager: string
+}
+
+const lockfileFormats: LockfileFormat[] = [
   {
     path: 'node_modules/.pnpm/lock.yaml',
     // Included in lockfile
@@ -1241,7 +1254,7 @@ const lockfileFormats = [
   },
   {
     path: 'bun.lock',
-    checkPatchesDir: 'patches',
+    checkPatchedDependencies: true,
     manager: 'bun',
   },
   {
@@ -1284,7 +1297,7 @@ const lockfileFormats = [
   },
   {
     path: 'bun.lockb',
-    checkPatchesDir: 'patches',
+    checkPatchedDependencies: true,
     manager: 'bun',
   },
 ].sort((_, { manager }) => {
@@ -1295,7 +1308,7 @@ const lockfilePaths = lockfileFormats.map((l) => l.path)
 // Only used when none of the formats above is found, so it never changes which
 // lockfile is hashed for projects that already have one of them.
 // e.g. Yarn with `nodeLinker: pnpm` writes neither `.yarn-state.yml` nor `.pnp.cjs`.
-const fallbackLockfileFormats = [
+const fallbackLockfileFormats: LockfileFormat[] = [
   {
     path: 'yarn.lock',
     // Included in lockfile
@@ -1360,9 +1373,9 @@ export function getLockfileHash(root: string): string {
       ...lockfileFormats,
       ...fallbackLockfileFormats,
     ].find((f) => normalizedLockfilePath.endsWith(f.path))!
+    const baseDir = lockfilePath.slice(0, -lockfileFormat.path.length)
     if (lockfileFormat.checkPatchesDir) {
       // Default of https://github.com/ds300/patch-package
-      const baseDir = lockfilePath.slice(0, -lockfileFormat.path.length)
       const fullPath = path.join(
         baseDir,
         lockfileFormat.checkPatchesDir as string,
@@ -1372,8 +1385,31 @@ export function getLockfileHash(root: string): string {
         content += stat.mtimeMs.toString()
       }
     }
+    if (lockfileFormat.checkPatchedDependencies) {
+      content += getPatchedDependenciesMtimes(baseDir)
+    }
   }
   return getHash(content)
+}
+
+function getPatchedDependenciesMtimes(baseDir: string): string {
+  let patchedDependencies: Record<string, string> | undefined
+  try {
+    ;({ patchedDependencies } = JSON.parse(
+      fs.readFileSync(path.join(baseDir, 'package.json'), 'utf-8'),
+    ))
+  } catch {
+    return ''
+  }
+  if (!patchedDependencies) return ''
+  let content = ''
+  for (const patchPath of Object.values(patchedDependencies).sort()) {
+    const stat = tryStatSync(path.join(baseDir, patchPath))
+    if (stat?.isFile()) {
+      content += patchPath + '\0' + stat.mtimeMs + '\0'
+    }
+  }
+  return content
 }
 
 function getDepHash(environment: Environment): {
