@@ -253,11 +253,14 @@ class WorkerOutputCache {
 
   setPendingWorkerBundle(file: string, pending: Promise<WorkerBundle>): void {
     this.pendingBundles.set(file, pending)
-    pending.finally(() => {
+    // settle via `then` with both handlers so a rejected build cannot surface
+    // as an unhandled rejection through the cleanup chain
+    const settle = () => {
       if (this.pendingBundles.get(file) === pending) {
         this.pendingBundles.delete(file)
       }
-    })
+    }
+    pending.then(settle, settle)
   }
 
   getAssets() {
