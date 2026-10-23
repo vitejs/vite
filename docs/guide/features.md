@@ -219,6 +219,16 @@ Assets referenced by HTML elements such as `<script type="module" src>` and `<li
 </html>
 ```
 
+In a production build, adding `?inline` to a module script bundles the entry and
+its imports into a synchronous inline script:
+
+```html
+<script type="module" src="/src/early.js?inline"></script>
+```
+
+This is useful for scripts that need to run while the HTML is being parsed,
+before module scripts and other page resources.
+
 To opt-out of HTML processing on certain elements, you can add the `vite-ignore` attribute on the element, which can be useful when referencing external assets or CDN.
 
 ## Frameworks
