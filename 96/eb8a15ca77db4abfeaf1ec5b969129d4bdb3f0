@@ -1,0 +1,29 @@
+playground/hmr/__tests__/hmr.spec.ts
+  s_757066f930a5a2::t_ec3290fe227c27 1418-1447
+playground/hmr/missing-file/direct-script.html
+  s_01ed6d559d3584::t_8149af85d35652 1-2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "96eb8a15ca77db4abfeaf1ec5b969129d4bdb3f0",
+  "prompts": {},
+  "sessions": {
+    "s_01ed6d559d3584": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1665f-0242-7ac3-95b4-2fdefcdeabdb",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    },
+    "s_757066f930a5a2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a167a3-3d64-77c1-8609-5da0fe0abfaf",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
