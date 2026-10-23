@@ -939,11 +939,38 @@ importers:
 
   playground/dynamic-import:
     dependencies:
+      '@vitejs/test-dynamic-import-dep-cjs-compiled-from-cjs':
+        specifier: file:./dep-cjs-compiled-from-cjs
+        version: file:playground/dynamic-import/dep-cjs-compiled-from-cjs
+      '@vitejs/test-dynamic-import-dep-cjs-compiled-from-esm':
+        specifier: file:./dep-cjs-compiled-from-esm
+        version: file:playground/dynamic-import/dep-cjs-compiled-from-esm
+      '@vitejs/test-dynamic-import-dep-cjs-plain-object':
+        specifier: file:./dep-cjs-plain-object
+        version: file:playground/dynamic-import/dep-cjs-plain-object
+      '@vitejs/test-dynamic-import-dep-cjs-umd':
+        specifier: file:./dep-cjs-umd
+        version: file:playground/dynamic-import/dep-cjs-umd
+      '@vitejs/test-dynamic-import-dep-cjs-with-es-module-flag':
+        specifier: file:./dep-cjs-with-es-module-flag
+        version: file:playground/dynamic-import/dep-cjs-with-es-module-flag
       '@vitejs/test-pkg':
         specifier: file:./pkg
         version: file:playground/dynamic-import/pkg
 
   playground/dynamic-import-inline: {}
+
+  playground/dynamic-import/cjs-dynamic-importer-cjs: {}
+
+  playground/dynamic-import/dep-cjs-compiled-from-cjs: {}
+
+  playground/dynamic-import/dep-cjs-compiled-from-esm: {}
+
+  playground/dynamic-import/dep-cjs-plain-object: {}
+
+  playground/dynamic-import/dep-cjs-umd: {}
+
+  playground/dynamic-import/dep-cjs-with-es-module-flag: {}
 
   playground/dynamic-import/pkg: {}
 
@@ -4789,6 +4816,21 @@ packages:
 
   '@vitejs/test-dep-with-plus-subpath@file:playground/optimize-deps/dep-with-plus-subpath':
     resolution: {directory: playground/optimize-deps/dep-with-plus-subpath, type: directory}
+
+  '@vitejs/test-dynamic-import-dep-cjs-compiled-from-cjs@file:playground/dynamic-import/dep-cjs-compiled-from-cjs':
+    resolution: {directory: playground/dynamic-import/dep-cjs-compiled-from-cjs, type: directory}
+
+  '@vitejs/test-dynamic-import-dep-cjs-compiled-from-esm@file:playground/dynamic-import/dep-cjs-compiled-from-esm':
+    resolution: {directory: playground/dynamic-import/dep-cjs-compiled-from-esm, type: directory}
+
+  '@vitejs/test-dynamic-import-dep-cjs-plain-object@file:playground/dynamic-import/dep-cjs-plain-object':
+    resolution: {directory: playground/dynamic-import/dep-cjs-plain-object, type: directory}
+
+  '@vitejs/test-dynamic-import-dep-cjs-umd@file:playground/dynamic-import/dep-cjs-umd':
+    resolution: {directory: playground/dynamic-import/dep-cjs-umd, type: directory}
+
+  '@vitejs/test-dynamic-import-dep-cjs-with-es-module-flag@file:playground/dynamic-import/dep-cjs-with-es-module-flag':
+    resolution: {directory: playground/dynamic-import/dep-cjs-with-es-module-flag, type: directory}
 
   '@vitejs/test-entries@file:playground/ssr-resolve/entries':
     resolution: {directory: playground/ssr-resolve/entries, type: directory}
@@ -10388,6 +10430,16 @@ snapshots:
   '@vitejs/test-dep-with-optional-peer-dep@file:playground/optimize-deps/dep-with-optional-peer-dep': {}
 
   '@vitejs/test-dep-with-plus-subpath@file:playground/optimize-deps/dep-with-plus-subpath': {}
+
+  '@vitejs/test-dynamic-import-dep-cjs-compiled-from-cjs@file:playground/dynamic-import/dep-cjs-compiled-from-cjs': {}
+
+  '@vitejs/test-dynamic-import-dep-cjs-compiled-from-esm@file:playground/dynamic-import/dep-cjs-compiled-from-esm': {}
+
+  '@vitejs/test-dynamic-import-dep-cjs-plain-object@file:playground/dynamic-import/dep-cjs-plain-object': {}
+
+  '@vitejs/test-dynamic-import-dep-cjs-umd@file:playground/dynamic-import/dep-cjs-umd': {}
+
+  '@vitejs/test-dynamic-import-dep-cjs-with-es-module-flag@file:playground/dynamic-import/dep-cjs-with-es-module-flag': {}
 
   '@vitejs/test-entries@file:playground/ssr-resolve/entries': {}
 

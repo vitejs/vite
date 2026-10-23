@@ -1,6 +1,7 @@
-import { expect, test } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import {
   browserLogs,
+  bundledDevTodo,
   findAssetFile,
   getColor,
   isBuild,
@@ -226,3 +227,48 @@ test.runIf(isBuild)('should not preload for non-analyzable urls', () => {
   // should match e.g. await import(e.jss);o(".view",p===i)
   expect(js).to.match(/\.jss\);/)
 })
+
+describe(
+  'dynamic import of a CommonJS dep',
+  bundledDevTodo(
+    'lazy compilation loses the `default` export of a dynamically imported CommonJS module',
+    { vite: [23558] },
+  ),
+  () => {
+    test('plain module.exports object', async () => {
+      await expect
+        .poll(() => page.textContent('.cjs-dynamic-plain-object'))
+        .toBe('ok')
+    })
+
+    test('webpack UMD', async () => {
+      await expect.poll(() => page.textContent('.cjs-dynamic-umd')).toBe('ok')
+    })
+
+    test('compiled from ESM, with the __esModule flag', async () => {
+      await expect
+        .poll(() => page.textContent('.cjs-dynamic-dep-cjs-compiled-from-esm'))
+        .toBe('ok')
+    })
+
+    test('compiled from CJS', async () => {
+      await expect
+        .poll(() => page.textContent('.cjs-dynamic-dep-cjs-compiled-from-cjs'))
+        .toBe('ok')
+    })
+
+    test('module.exports object with the __esModule flag', async () => {
+      await expect
+        .poll(() =>
+          page.textContent('.cjs-dynamic-dep-cjs-with-es-module-flag'),
+        )
+        .toBe('ok')
+    })
+
+    test('from an explicit CJS importer uses node interop', async () => {
+      await expect
+        .poll(() => page.textContent('.cjs-dynamic-importer-cjs'))
+        .toBe('ok')
+    })
+  },
+)

@@ -56,7 +56,22 @@
 
 <div class="dynamic-import-rest"></div>
 
+<p>dynamic import of a CommonJS dep (plain module.exports object)</p>
+<div class="cjs-dynamic-plain-object"></div>
+<p>dynamic import of a CommonJS dep (webpack UMD)</p>
+<div class="cjs-dynamic-umd"></div>
+<p>dynamic import of a CommonJS dep (dep-cjs-compiled-from-esm)</p>
+<div class="cjs-dynamic-dep-cjs-compiled-from-esm"></div>
+<p>dynamic import of a CommonJS dep (dep-cjs-compiled-from-cjs)</p>
+<div class="cjs-dynamic-dep-cjs-compiled-from-cjs"></div>
+<p>dynamic import of a CommonJS dep (dep-cjs-with-es-module-flag)</p>
+<div class="cjs-dynamic-dep-cjs-with-es-module-flag"></div>
+<p>dynamic import of a CommonJS dep from an explicit CJS importer</p>
+<div class="cjs-dynamic-importer-cjs"></div>
+
 <script type="module" src="./nested/index.js"></script>
+<script type="module" src="./cjs-dynamic.js"></script>
+<script type="module" src="./cjs-dynamic-importer-cjs/index.js"></script>
 <script type="module" src="./(app)/nest/index.js"></script>
 <style>
   p {
