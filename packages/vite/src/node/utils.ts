@@ -819,13 +819,15 @@ function joinSrcset(ret: ImageCandidate[]) {
 
   The Regex has named capturing groups `url` and `descriptor`.
   The `url` group can be:
-  * any CSS function
+  * any CSS function, whose parentheses may nest one level deeper
+    (e.g. `linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 1))`
+    or `cross-fade(url(a.png), url(b.png))`)
   * CSS string (single or double-quoted)
   * URL string (unquoted)
   The `descriptor` is anything after the space and before the comma.
  */
 const imageCandidateRegex =
-  /(?:^|\s|(?<=,))(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>[\w.][^,]+))?(?:,|$)/g
+  /(?:^|\s|(?<=,))(?<url>[\w-]+\((?:[^()]|\([^()]*\))*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>[\w.][^,]+))?(?:,|$)/g
 const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
 
 export function parseSrcset(string: string): ImageCandidate[] {
