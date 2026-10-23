@@ -201,32 +201,48 @@ describe('port detection', () => {
     })
   })
 
-  test('non-EADDRINUSE errors on wildcard do not block port selection', async () => {
-    const originalCreateServer = net.createServer.bind(net)
-    using _ = vi.spyOn(net, 'createServer').mockImplementation(() => {
-      const server = originalCreateServer()
-      const originalListen = server.listen.bind(server)
+  test('does not listen on wildcard addresses when the host is loopback', async () => {
+    using listen = vi.spyOn(net.Server.prototype, 'listen')
+
+    viteServer = await createServer({
+      root: import.meta.dirname,
+      optimizeDeps,
+      logLevel: 'silent',
+      server: { host: '127.0.0.1', port: BASE_PORT, ws: false },
+    })
+    await viteServer.listen()
+
+    const wildcardListenCalls = listen.mock.calls
+      .map(([, host]) => host)
+      .filter((host) => host !== undefined && wildcardHosts.has(host))
+    expect(wildcardListenCalls).toStrictEqual([])
+    expect(viteServer.httpServer!.address()).toStrictEqual(
+      expect.objectContaining({ port: BASE_PORT }),
+    )
+  })
+
+  test('errors while probing wildcard addresses do not block port selection', async () => {
+    const originalConnect = net.connect.bind(net)
+    using _ = vi.spyOn(net, 'connect').mockImplementation(
       // @ts-expect-error this is the overload used internally
-      server.listen = (
-        port: number,
-        host: string,
-        ...args: unknown[]
-      ): net.Server => {
-        if (wildcardHosts.has(host)) {
+      (options: net.NetConnectOpts) => {
+        const socket = originalConnect(options)
+        if (
+          typeof options === 'object' &&
+          options.host &&
+          wildcardHosts.has(options.host)
+        ) {
           process.nextTick(() => {
             const err: NodeJS.ErrnoException = new Error(
-              'listen EACCES: permission denied',
+              'connect EACCES: permission denied',
             )
             err.code = 'EACCES'
-            server.emit('error', err)
+            socket.emit('error', err)
           })
-          return server
         }
-        // @ts-expect-error this is the overload used internally
-        return originalListen(port, host, ...args)
-      }
-      return server
-    })
+        return socket
+      },
+    )
 
     viteServer = await createServer({
       root: import.meta.dirname,
