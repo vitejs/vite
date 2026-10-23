@@ -8,8 +8,9 @@ test('proxy-bypass', async () => {
 })
 
 test('async-proxy-bypass', async () => {
-  const content = await page.frame('async-response').content()
-  expect(content).toContain('Hello after 4 ms (async timeout)')
+  await expect
+    .poll(() => page.frame('async-response')?.content())
+    .toContain('Hello after 4 ms (async timeout)')
 })
 
 test('async-proxy-bypass-with-error', async () => {
