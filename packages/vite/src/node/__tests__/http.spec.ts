@@ -129,17 +129,50 @@ describe('port detection', () => {
         '0.0.0.0',
       )
 
+      // Use a non-loopback host so the wildcard probe still runs.
       viteServer = await createServer({
         root: import.meta.dirname,
         optimizeDeps,
         logLevel: 'silent',
-        server: { port: BASE_PORT, strictPort: false, ws: false },
+        server: {
+          port: BASE_PORT,
+          host: '0.0.0.0',
+          strictPort: false,
+          ws: false,
+        },
       })
       await viteServer.listen()
 
       const address = viteServer.httpServer!.address()
       expect(address).toStrictEqual(
         expect.objectContaining({ port: BASE_PORT + 1 }),
+      )
+    })
+
+    test('loopback host can share a port number occupied on wildcard', async () => {
+      await using _blockingServer = await createSimpleServer(
+        BASE_PORT,
+        '0.0.0.0',
+      )
+
+      viteServer = await createServer({
+        root: import.meta.dirname,
+        optimizeDeps,
+        logLevel: 'silent',
+        server: {
+          port: BASE_PORT,
+          host: '127.0.0.1',
+          strictPort: false,
+          ws: false,
+        },
+      })
+      await viteServer.listen()
+
+      // Loopback skips the wildcard listen probe, so 127.0.0.1:port is used
+      // even when 0.0.0.0:port is already taken.
+      const address = viteServer.httpServer!.address()
+      expect(address).toStrictEqual(
+        expect.objectContaining({ port: BASE_PORT }),
       )
     })
 
@@ -158,7 +191,12 @@ describe('port detection', () => {
         root: import.meta.dirname,
         optimizeDeps,
         logLevel: 'silent',
-        server: { port: BASE_PORT, strictPort: false, ws: false },
+        server: {
+          port: BASE_PORT,
+          host: '::',
+          strictPort: false,
+          ws: false,
+        },
       })
       await viteServer.listen()
 
@@ -169,15 +207,15 @@ describe('port detection', () => {
     })
 
     test('wildcard check also runs after EADDRINUSE fallback', async () => {
-      // localhost:n occupied
+      // 0.0.0.0:n occupied
       // 0.0.0.0:n+1 occupied
-      // => Vite should pick n+2
+      // => Vite bound to 0.0.0.0 should pick n+2
 
-      await using _localhostServer = await createSimpleServer(
+      await using _wildcardServer1 = await createSimpleServer(
         BASE_PORT,
-        'localhost',
+        '0.0.0.0',
       )
-      await using _wildcardServer = await createSimpleServer(
+      await using _wildcardServer2 = await createSimpleServer(
         BASE_PORT + 1,
         '0.0.0.0',
       )
@@ -188,6 +226,7 @@ describe('port detection', () => {
         logLevel: 'silent',
         server: {
           port: BASE_PORT,
+          host: '0.0.0.0',
           strictPort: false,
           ws: false,
         },
@@ -258,22 +297,14 @@ describe('port detection', () => {
     )
   })
 
-  test('allows binding to specific host with strictPort when wildcard port is in use', async () => {
+  test('allows binding to loopback with strictPort when wildcard port is in use', async () => {
     await using _wildcardServer = await createSimpleServer(BASE_PORT, '0.0.0.0')
 
-    const warnMessages: string[] = []
+    using listen = vi.spyOn(net.Server.prototype, 'listen')
     viteServer = await createServer({
       root: import.meta.dirname,
       optimizeDeps,
-      customLogger: {
-        info: () => {},
-        warn: (msg) => warnMessages.push(msg),
-        warnOnce: () => {},
-        error: () => {},
-        clearScreen: () => {},
-        hasErrorLogged: () => false,
-        hasWarned: false,
-      },
+      logLevel: 'silent',
       server: {
         port: BASE_PORT,
         host: '127.0.0.1',
@@ -294,7 +325,39 @@ describe('port detection', () => {
 
     const address = viteServer.httpServer!.address()
     expect(address).toStrictEqual(expect.objectContaining({ port: BASE_PORT }))
-    expect(warnMessages).toContainEqual(expect.stringContaining('wildcard'))
+    // Loopback hosts skip the wildcard listen probe (Windows Firewall).
+    // https://github.com/vitejs/vite/issues/23766
+    expect(
+      listen.mock.calls.some(
+        ([, host]) => typeof host === 'string' && wildcardHosts.has(host),
+      ),
+    ).toBe(false)
+  })
+
+  test('does not probe wildcard addresses when host is loopback', async () => {
+    using listen = vi.spyOn(net.Server.prototype, 'listen')
+
+    viteServer = await createServer({
+      root: import.meta.dirname,
+      optimizeDeps,
+      logLevel: 'silent',
+      server: {
+        port: BASE_PORT,
+        host: '127.0.0.1',
+        strictPort: true,
+        ws: false,
+      },
+    })
+    await viteServer.listen()
+
+    expect(
+      listen.mock.calls.some(
+        ([, host]) => typeof host === 'string' && wildcardHosts.has(host),
+      ),
+    ).toBe(false)
+    expect(listen.mock.calls.some(([, host]) => host === '127.0.0.1')).toBe(
+      true,
+    )
   })
 
   describe('port reuse on restart', () => {

@@ -5,7 +5,7 @@ import net from 'node:net'
 import path from 'node:path'
 import colors from 'picocolors'
 import type { Connect } from '#dep-types/connect'
-import { wildcardHosts } from './constants'
+import { loopbackHosts, wildcardHosts } from './constants'
 import type { Logger } from './logger'
 import type { HttpServer } from './server'
 import type { ProxyOptions } from './server/middlewares/proxy'
@@ -246,6 +246,10 @@ async function tryBindServer(
 
 const MAX_PORT = 65535
 
+function isLoopbackHost(host: string | undefined): boolean {
+  return host != null && loopbackHosts.has(host)
+}
+
 export async function httpServerStart(
   httpServer: HttpServer,
   serverOptions: {
@@ -256,6 +260,10 @@ export async function httpServerStart(
   },
 ): Promise<number> {
   const { port: startPort, strictPort, host, logger } = serverOptions
+  // Listening on 0.0.0.0/:: just to probe availability triggers a Windows
+  // Firewall prompt even when the real server binds to loopback only.
+  // https://github.com/vitejs/vite/issues/23766
+  const skipWildcardPortCheck = isLoopbackHost(host)
 
   if (startPort === 0) {
     const port = await getAvailableEphemeralPort(host)
@@ -277,7 +285,9 @@ export async function httpServerStart(
   for (let port = startPort; port <= MAX_PORT; port++) {
     // Pre-check port availability on wildcard addresses (0.0.0.0, ::)
     // so that we avoid conflicts with other servers listening on all interfaces
-    const portAvailableOnWildcard = await isPortAvailable(port)
+    const portAvailableOnWildcard = skipWildcardPortCheck
+      ? true
+      : await isPortAvailable(port)
 
     // If port is not available on a wildcard address but strictPort is set,
     // we still try binding directly before giving up.
