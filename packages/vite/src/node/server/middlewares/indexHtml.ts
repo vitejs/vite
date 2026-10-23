@@ -572,7 +572,7 @@ async function generateFallbackHtml(server: ViteDevServer) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
   <script>globalThis.__vite_is_fallback_page__ = true</script>
   <script type="module">
     ${hmrRuntime.replaceAll('</script>', '<\\/script>')}
