@@ -139,7 +139,7 @@ export function renderAssetUrlInJS(
   while ((match = assetUrlRE.exec(code))) {
     s ||= new MagicString(code)
     const [full, referenceId, urlId] = match
-    const file = pluginContext.getFileName(referenceId)
+    const file = pluginContext.referenceFile(referenceId)
     chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
     const replacement = toOutputFilePathInJS(
       environment,
@@ -280,6 +280,14 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
               value: injectQuery(resolved.value, `t=${mod.lastHMRTimestamp}`),
             }
           }
+        }
+
+        if (
+          config.command === 'build' &&
+          resolved.type === 'reference' &&
+          this.getModuleInfo(id)?.isEntry
+        ) {
+          this.referenceFile(resolved.referenceId)
         }
 
         return {
@@ -669,6 +677,7 @@ async function resolveBuiltAsset(
     )
     const referenceId = pluginContext.emitFile({
       type: 'asset',
+      needsCodeReference: environment.config.command === 'build',
       // Ignore directory structure for asset file names
       name: path.basename(file),
       originalFileName,
