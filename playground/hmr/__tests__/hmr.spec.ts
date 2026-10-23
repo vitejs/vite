@@ -1416,6 +1416,36 @@ if (!isBuild) {
   )
 
   test(
+    'loads a previously missing file after it is created',
+    missingFileTodo,
+    async () => {
+      const file = 'missing-file/created.ts'
+      const [response] = await Promise.all([
+        page.waitForResponse(viteTestUrl + '/' + file),
+        page.goto(viteTestUrl + '/missing-file/direct-script.html'),
+      ])
+      expect(response.status()).toBe(404)
+
+      // TypeScript syntax requires the created file to pass through transforms.
+      addFile(
+        file,
+        `const message: string = 'created file'
+document.querySelector('.created-file').textContent = message`,
+      )
+      try {
+        await expect
+          .poll(async () => {
+            await page.reload()
+            return page.textContent('.created-file')
+          })
+          .toBe('created file')
+      } finally {
+        removeFile(file)
+      }
+    },
+  )
+
+  test(
     'hmr should happen after missing file is created',
     missingFileTodo,
     async () => {
