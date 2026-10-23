@@ -1083,7 +1083,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         )
         // resolve asset url references
         result = result.replace(assetUrlRE, (_, fileHash, urlId) => {
-          const file = this.getFileName(fileHash)
+          const file = this.referenceFile(fileHash)
           if (chunk) {
             chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
           }
