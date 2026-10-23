@@ -355,6 +355,8 @@ describe('alias replacement with $ patterns', () => {
       },
     })
     onTestFinished(() => server.close())
+    // The SSR dev plugin container exercises @rollup/plugin-alias, which we want to test here.
+    // Builds use Rolldown's native alias plugin for aliases.
     return server.environments.ssr.pluginContainer.resolveId(id)
   }
 
