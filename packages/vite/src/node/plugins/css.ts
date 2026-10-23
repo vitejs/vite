@@ -176,6 +176,16 @@ export interface CSSOptions {
   devSourcemap?: boolean
 
   /**
+   * Configure the severity of unresolved CSS `url()` references at build time.
+   * - `'warn'`: emit a warning and leave the URL unchanged (default)
+   * - `'error'`: emit a build error with source details
+   * - `'silent'`: silently leave the URL unchanged
+   *
+   * @default 'warn'
+   */
+  unresolvedUrlSeverity?: 'warn' | 'error' | 'silent'
+
+  /**
    * @experimental
    */
   lightningcss?: LightningCSSOptions
@@ -218,13 +228,16 @@ const _cssConfigDefaults = Object.freeze({
   // postcss
   /** @experimental */
   devSourcemap: false,
+  unresolvedUrlSeverity: 'warn',
   // lightningcss
 } satisfies CSSOptions)
 export const cssConfigDefaults: Readonly<Partial<CSSOptions>> =
   _cssConfigDefaults
 
 export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> &
-  Required<Pick<CSSOptions, 'transformer' | 'devSourcemap'>> & {
+  Required<
+    Pick<CSSOptions, 'transformer' | 'devSourcemap' | 'unresolvedUrlSeverity'>
+  > & {
     lightningcss?: LightningCSSOptions
   }
 
@@ -436,10 +449,17 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
               : false
 
             if (!isExternal) {
-              // #9800 If we cannot resolve the css url, leave a warning.
-              config.logger.warnOnce(
-                `\n${decodedUrl} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
-              )
+              const severity = config.css.unresolvedUrlSeverity
+              if (severity === 'error') {
+                this.error(
+                  `Could not resolve "${decodedUrl}" referenced in "${id}".`,
+                )
+              } else if (severity === 'warn') {
+                // #9800 If we cannot resolve the css url, leave a warning.
+                config.logger.warnOnce(
+                  `\n${decodedUrl} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
+                )
+              }
             }
           }
           return [url, undefined]
