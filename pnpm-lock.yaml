@@ -954,11 +954,16 @@ importers:
       '@vitejs/test-dynamic-import-dep-cjs-with-es-module-flag':
         specifier: file:./dep-cjs-with-es-module-flag
         version: file:playground/dynamic-import/dep-cjs-with-es-module-flag
+      '@vitejs/test-dynamic-import-dep-esm-named':
+        specifier: file:./dep-esm-named
+        version: file:playground/dynamic-import/dep-esm-named
       '@vitejs/test-pkg':
         specifier: file:./pkg
         version: file:playground/dynamic-import/pkg
 
   playground/dynamic-import-inline: {}
+
+  playground/dynamic-import/cjs-dynamic-importer-ambiguous: {}
 
   playground/dynamic-import/cjs-dynamic-importer-cjs: {}
 
@@ -971,6 +976,8 @@ importers:
   playground/dynamic-import/dep-cjs-umd: {}
 
   playground/dynamic-import/dep-cjs-with-es-module-flag: {}
+
+  playground/dynamic-import/dep-esm-named: {}
 
   playground/dynamic-import/pkg: {}
 
@@ -1431,10 +1438,6 @@ importers:
   playground/optimize-deps-no-discovery/dep-no-discovery: {}
 
   playground/optimize-deps/added-in-entries: {}
-
-  playground/optimize-deps/cjs-dynamic-importer-ambiguous: {}
-
-  playground/optimize-deps/cjs-dynamic-importer-cjs: {}
 
   playground/optimize-deps/dep-alias-using-absolute-path:
     dependencies:
@@ -4831,6 +4834,9 @@ packages:
 
   '@vitejs/test-dynamic-import-dep-cjs-with-es-module-flag@file:playground/dynamic-import/dep-cjs-with-es-module-flag':
     resolution: {directory: playground/dynamic-import/dep-cjs-with-es-module-flag, type: directory}
+
+  '@vitejs/test-dynamic-import-dep-esm-named@file:playground/dynamic-import/dep-esm-named':
+    resolution: {directory: playground/dynamic-import/dep-esm-named, type: directory}
 
   '@vitejs/test-entries@file:playground/ssr-resolve/entries':
     resolution: {directory: playground/ssr-resolve/entries, type: directory}
@@ -10440,6 +10446,8 @@ snapshots:
   '@vitejs/test-dynamic-import-dep-cjs-umd@file:playground/dynamic-import/dep-cjs-umd': {}
 
   '@vitejs/test-dynamic-import-dep-cjs-with-es-module-flag@file:playground/dynamic-import/dep-cjs-with-es-module-flag': {}
+
+  '@vitejs/test-dynamic-import-dep-esm-named@file:playground/dynamic-import/dep-esm-named': {}
 
   '@vitejs/test-entries@file:playground/ssr-resolve/entries': {}
 

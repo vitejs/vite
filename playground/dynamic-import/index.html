@@ -68,10 +68,15 @@
 <div class="cjs-dynamic-dep-cjs-with-es-module-flag"></div>
 <p>dynamic import of a CommonJS dep from an explicit CJS importer</p>
 <div class="cjs-dynamic-importer-cjs"></div>
+<p>dynamic import of a CommonJS dep from an ambiguous importer</p>
+<div class="cjs-dynamic-importer-ambiguous"></div>
+<p>dynamic named import from an ESM dep</p>
+<div class="esm-dynamic-named"></div>
 
 <script type="module" src="./nested/index.js"></script>
-<script type="module" src="./cjs-dynamic.js"></script>
+<script type="module" src="./dynamic-deps.js"></script>
 <script type="module" src="./cjs-dynamic-importer-cjs/index.js"></script>
+<script type="module" src="./cjs-dynamic-importer-ambiguous/index.js"></script>
 <script type="module" src="./(app)/nest/index.js"></script>
 <style>
   p {

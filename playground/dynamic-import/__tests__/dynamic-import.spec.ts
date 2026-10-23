@@ -272,3 +272,13 @@ describe(
     })
   },
 )
+
+test('dynamic import of a CommonJS dep from an ambiguous importer respects the __esModule flag', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-importer-ambiguous'))
+    .toBe('ok')
+})
+
+test('dynamic named import from an ESM dep', async () => {
+  await expect.poll(() => page.textContent('.esm-dynamic-named')).toBe('ok')
+})

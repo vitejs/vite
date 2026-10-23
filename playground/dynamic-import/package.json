@@ -18,6 +18,7 @@
     "@vitejs/test-dynamic-import-dep-cjs-plain-object": "file:./dep-cjs-plain-object",
     "@vitejs/test-dynamic-import-dep-cjs-umd": "file:./dep-cjs-umd",
     "@vitejs/test-dynamic-import-dep-cjs-with-es-module-flag": "file:./dep-cjs-with-es-module-flag",
+    "@vitejs/test-dynamic-import-dep-esm-named": "file:./dep-esm-named",
     "@vitejs/test-pkg": "file:./pkg"
   }
 }

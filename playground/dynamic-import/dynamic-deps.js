@@ -33,3 +33,9 @@ import('@vitejs/test-dynamic-import-dep-cjs-compiled-from-cjs').then((ns) => {
 import('@vitejs/test-dynamic-import-dep-cjs-with-es-module-flag').then((ns) => {
   text('.cjs-dynamic-dep-cjs-with-es-module-flag', ns.default.info)
 })
+
+import('@vitejs/test-dynamic-import-dep-esm-named').then((ns) => {
+  if (typeof ns.Socket === 'function') {
+    text('.esm-dynamic-named', 'ok')
+  }
+})
