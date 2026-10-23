@@ -27,9 +27,10 @@ import {
   testDir,
   viteServer,
   waitForBundledDevClient,
-} from './vitestSetup'
+  watchBuilds,
+} from './vitestSetupUtils'
 
-export * from './vitestSetup'
+export * from './vitestSetupUtils'
 
 // make sure these ports are unique
 export const ports = {
@@ -293,6 +294,32 @@ export async function gotoLatestBuild(url: string): Promise<void> {
   if (isBundledDev) {
     await waitForBundledDevClient()
   }
+}
+
+/**
+ * Wait for every output containing the edited module to finish rebuilding.
+ * Workaround for Rolldown emitting END per output before all outputs finish:
+ * https://github.com/rolldown/rolldown/issues/10613
+ * Call immediately after a synchronous edit, before yielding to watcher callbacks.
+ */
+export async function waitForRebuild(filename: string): Promise<void> {
+  const id = path.resolve(testDir, filename)
+  const builds = watchBuilds
+    .filter((build) => build.files.has(id))
+    .map((build) => ({
+      build,
+      version: build.invalidated.get(id) ?? 0,
+    }))
+  if (!builds.length) {
+    throw new Error(`No build output contains "${filename}"`)
+  }
+  await expect
+    .poll(() =>
+      builds.every(
+        ({ build, version }) => (build.completed.get(id) ?? 0) > version,
+      ),
+    )
+    .toBe(true)
 }
 
 export function hotUpdatedLog(file: string): string {
