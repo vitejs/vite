@@ -15,9 +15,11 @@ import type {
   OutputChunk,
   RollupError,
   SourceMapInput,
+  TransformPluginContext,
 } from 'rolldown'
 import { stripLiteral } from 'strip-literal'
-import { cleanUrl } from '../../shared/utils'
+import { VALID_ID_PREFIX } from '../../shared/constants'
+import { cleanUrl, unwrapId } from '../../shared/utils'
 import { getNodeAssetAttributes } from '../assetSource'
 import { toOutputFilePathInHtml } from '../build'
 import type { ResolvedConfig, ResolvedEnvironmentOptions } from '../config'
@@ -40,6 +42,7 @@ import {
   partialEncodeURIPath,
   processSrcSet,
   removeLeadingSlash,
+  stripBase,
   unique,
 } from '../utils'
 import {
@@ -238,6 +241,32 @@ export async function traverseHtml(
   for (const message of Object.values(warnings)) {
     warn(colors.yellow(`\n${message}`))
   }
+}
+
+/** Removes the module script and stylesheet tags whose URL is in `urls`. */
+async function removeInjectedPipelineTags(
+  html: string,
+  urls: Set<string>,
+  filePath: string,
+  warn: Logger['warn'],
+): Promise<string> {
+  const s = new MagicString(html)
+  let modified = false
+  await traverseHtml(html, filePath, warn, (node) => {
+    if (!nodeIsElement(node) || !node.sourceCodeLocation) return
+    if (node.nodeName !== 'script' && node.nodeName !== 'link') return
+    const attrName = node.nodeName === 'script' ? 'src' : 'href'
+    const attr = node.attrs.find(
+      (a) => a.prefix === undefined && a.name === attrName,
+    )
+    if (!attr || !urls.has(attr.value)) return
+    s.remove(
+      node.sourceCodeLocation.startOffset,
+      node.sourceCodeLocation.endOffset,
+    )
+    modified = true
+  })
+  return modified ? s.toString() : html
 }
 
 export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
@@ -445,9 +474,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   postHooks.push(injectNonceAttributeTagHook(config))
   postHooks.push(postImportMapHook(config))
   const processedHtml = perEnvironmentState(() => new Map<string, string>())
-
-  const isExcludedUrl = (url: string) =>
-    url[0] === '#' || isExternalUrl(url) || isDataUrl(url)
+  // Bundled dev only: pipeline tags pulled into the graph by the transform,
+  // keyed by HTML id, so `generateBundle` can drop the duplicate. See #22864.
+  const bundledDevInjectedTags = perEnvironmentState(
+    () => new Map<string, Set<string>>(),
+  )
 
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
@@ -519,6 +550,27 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           filename: id,
         })
 
+        // Bundled dev serves bundle output only, so a default-order hook's
+        // pipeline tags, injected in `generateBundle` once the graph is built,
+        // could never be served. Collect them here so the scan picks them up.
+        if (config.command === 'serve' && this.environment.config.isBundled) {
+          const collected = await collectBundledDevPipelineTags(
+            html,
+            normalHooks,
+            this,
+            { path: publicPath, filename: id },
+            id,
+            config,
+          )
+          if (collected.tags.length) {
+            bundledDevInjectedTags(this).set(id, collected.urls)
+            html = injectHtmlTags(html, collected.tags, {
+              path: publicPath,
+              filename: id,
+            })
+          }
+        }
+
         let js = ''
         const s = new MagicString(html)
         const scriptUrls: ScriptAssetsUrl[] = []
@@ -584,8 +636,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               if (isModule) {
                 inlineModuleIndex++
                 if (url && !isExcludedUrl(url) && !isPublicFile) {
+                  const moduleId = htmlUrlToModuleId(url, config)
                   setModuleSideEffectPromises.push(
-                    this.resolve(url, id).then((resolved) => {
+                    this.resolve(moduleId, id).then((resolved) => {
                       if (!resolved) {
                         return Promise.reject(
                           new Error(`Failed to resolve ${url} from ${id}`),
@@ -605,7 +658,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   )
                   // <script type="module" src="..."/>
                   // add it as an import
-                  js += `\nimport ${JSON.stringify(url)}`
+                  js += `\nimport ${JSON.stringify(moduleId)}`
                   shouldRemove = true
                 } else if (node.childNodes.length) {
                   const scriptNode =
@@ -694,9 +747,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   !('media' in attr.attributes || 'disabled' in attr.attributes)
                 ) {
                   // CSS references, convert to import
-                  const importExpression = `\nimport ${JSON.stringify(url)}`
+                  const moduleId = htmlUrlToModuleId(url, config)
+                  const importExpression = `\nimport ${JSON.stringify(moduleId)}`
                   styleUrls.push({
-                    url,
+                    url: moduleId,
                     start: nodeStartWithLeadingWhitespace(node),
                     end: node.sourceCodeLocation!.endOffset,
                   })
@@ -1081,6 +1135,17 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             chunk,
           },
         )
+        // The hook injected these tags again, but they are already bundled and
+        // bundled dev does not serve `/@id/` or `/@fs/`.
+        const injectedUrls = bundledDevInjectedTags(this).get(normalizedId)
+        if (injectedUrls?.size) {
+          result = await removeInjectedPipelineTags(
+            result,
+            injectedUrls,
+            normalizedId,
+            config.logger.warn,
+          )
+        }
         // resolve asset url references
         result = result.replace(assetUrlRE, (_, fileHash, urlId) => {
           const file = this.getFileName(fileHash)
@@ -1489,6 +1554,39 @@ function headTagInsertCheck(
   }
 }
 
+function injectHtmlTags(
+  html: string,
+  tags: HtmlTagDescriptor[],
+  ctx: IndexHtmlTransformContext,
+): string {
+  let headTags: HtmlTagDescriptor[] | undefined
+  let headPrependTags: HtmlTagDescriptor[] | undefined
+  let bodyTags: HtmlTagDescriptor[] | undefined
+  let bodyPrependTags: HtmlTagDescriptor[] | undefined
+
+  for (const tag of tags) {
+    switch (tag.injectTo) {
+      case 'body':
+        ;(bodyTags ??= []).push(tag)
+        break
+      case 'body-prepend':
+        ;(bodyPrependTags ??= []).push(tag)
+        break
+      case 'head':
+        ;(headTags ??= []).push(tag)
+        break
+      default:
+        ;(headPrependTags ??= []).push(tag)
+    }
+  }
+  headTagInsertCheck([...(headTags || []), ...(headPrependTags || [])], ctx)
+  if (headPrependTags) html = injectToHead(html, headPrependTags, true)
+  if (headTags) html = injectToHead(html, headTags)
+  if (bodyPrependTags) html = injectToBody(html, bodyPrependTags, true)
+  if (bodyTags) html = injectToBody(html, bodyTags)
+  return html
+}
+
 export async function applyHtmlTransforms(
   html: string,
   hooks: IndexHtmlTransformHook[],
@@ -1510,36 +1608,85 @@ export async function applyHtmlTransforms(
         html = res.html || html
         tags = res.tags
       }
-
-      let headTags: HtmlTagDescriptor[] | undefined
-      let headPrependTags: HtmlTagDescriptor[] | undefined
-      let bodyTags: HtmlTagDescriptor[] | undefined
-      let bodyPrependTags: HtmlTagDescriptor[] | undefined
-
-      for (const tag of tags) {
-        switch (tag.injectTo) {
-          case 'body':
-            ;(bodyTags ??= []).push(tag)
-            break
-          case 'body-prepend':
-            ;(bodyPrependTags ??= []).push(tag)
-            break
-          case 'head':
-            ;(headTags ??= []).push(tag)
-            break
-          default:
-            ;(headPrependTags ??= []).push(tag)
-        }
-      }
-      headTagInsertCheck([...(headTags || []), ...(headPrependTags || [])], ctx)
-      if (headPrependTags) html = injectToHead(html, headPrependTags, true)
-      if (headTags) html = injectToHead(html, headTags)
-      if (bodyPrependTags) html = injectToBody(html, bodyPrependTags, true)
-      if (bodyTags) html = injectToBody(html, bodyTags)
+      html = injectHtmlTags(html, tags, ctx)
     }
   }
 
   return html
+}
+
+/**
+ * An HTML `src`/`href` is a browser URL, not a module specifier. Plugins inject
+ * the `/@id/`-wrapped form `wrapId()` produces for ids that are not valid import
+ * specifiers, so unwrap it before resolving.
+ */
+function htmlUrlToModuleId(url: string, config: ResolvedConfig): string {
+  if (!url.includes(VALID_ID_PREFIX)) {
+    return url
+  }
+  return unwrapId(stripBase(url, config.decodedBase || config.base || '/'))
+}
+
+const isExcludedUrl = (url: string) =>
+  url[0] === '#' || isExternalUrl(url) || isDataUrl(url)
+
+/** The URL of a module script or stylesheet tag, if the tag is one. */
+function modulePipelineTagUrl(tag: HtmlTagDescriptor): string | undefined {
+  const attrs = tag.attrs
+  if (!attrs) return undefined
+  const url =
+    tag.tag === 'script'
+      ? attrs.type === 'module'
+        ? attrs.src
+        : undefined
+      : tag.tag === 'link' && attrs.rel === 'stylesheet'
+        ? attrs.href
+        : undefined
+  return typeof url === 'string' && url.length > 0 ? url : undefined
+}
+
+/** A module script or stylesheet tag only works if its module is bundled. */
+function isModulePipelineTag(tag: HtmlTagDescriptor): boolean {
+  const url = modulePipelineTagUrl(tag)
+  return !!url && !isExcludedUrl(url)
+}
+
+interface BundledDevInjectedTags {
+  /** to inject before the HTML scan */
+  tags: HtmlTagDescriptor[]
+  /** to drop from the emitted HTML again */
+  urls: Set<string>
+}
+
+/**
+ * Collects the pipeline tags of the default-order `transformIndexHtml` hooks.
+ * Only the tags are used — the hooks still apply their HTML edits, and get
+ * `bundle` and `chunk`, in `generateBundle`. A tag whose module does not resolve
+ * is skipped so a broken injection behaves as it does today.
+ */
+async function collectBundledDevPipelineTags(
+  html: string,
+  hooks: IndexHtmlTransformHook[],
+  pluginContext: TransformPluginContext,
+  ctx: IndexHtmlTransformContext,
+  id: string,
+  config: ResolvedConfig,
+): Promise<BundledDevInjectedTags> {
+  const result: BundledDevInjectedTags = { tags: [], urls: new Set() }
+  for (const hook of hooks) {
+    const res = await hook.call(pluginContext, html, ctx)
+    if (!res || typeof res === 'string') continue
+    const tags = Array.isArray(res) ? res : res.tags
+    for (const tag of tags) {
+      if (!isModulePipelineTag(tag)) continue
+      const url = modulePipelineTagUrl(tag)!
+      if (await pluginContext.resolve(htmlUrlToModuleId(url, config), id)) {
+        result.tags.push(tag)
+        result.urls.add(url)
+      }
+    }
+  }
+  return result
 }
 
 const importOrCommentRE =
