@@ -260,6 +260,7 @@ export function oxcResolvePlugin(
           tsconfig: partialEnv.config.tsconfig,
           resolveOptions: {
             isBuild: options.isBuild,
+            isBundled: partialEnv.config.isBundled,
             isProduction: options.isProduction,
             asSrc: options.asSrc ?? false,
             preferRelative: options.preferRelative ?? false,
