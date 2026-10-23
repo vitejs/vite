@@ -2,6 +2,7 @@ import { URL } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import {
   extractSourcemap,
+  findAssetFile,
   formatSourcemapForSnapshot,
   isBuild,
   isBundled,
@@ -10,11 +11,57 @@ import {
   page,
   serverLogs,
 } from '~utils'
+import { removeSourceMappingURL } from '../utils'
 
 test.runIf(isBuild)('should not output sourcemap warning (#4939)', () => {
   serverLogs.forEach((log) => {
     expect(log).not.toMatch('Sourcemap is likely to be incorrect')
   })
+})
+
+test.runIf(isBuild)('emit css sourcemap', () => {
+  const css = findAssetFile(/index-[-\w]+\.css$/, 'lightningcss')!
+  const map = JSON.parse(
+    findAssetFile(/index-[-\w]+\.css\.map$/, 'lightningcss')!,
+  )
+  expect(map.sourcesContent).toContain(`.linked {
+  color: red;
+}
+`)
+
+  expect(formatSourcemapForSnapshot(removeSourceMappingURL(map), css))
+    .toMatchInlineSnapshot(`
+      SourceMap {
+        content: {
+          "mappings": "AAAA,2JCCE,8BCDF,4BCAA",
+          "sources": [
+            "../../../linked.css",
+            "../../../imported.styl",
+            "../../../imported.sss",
+            "../../../input-map.css",
+          ],
+          "sourcesContent": [
+            ".linked {
+        color: red;
+      }
+      ",
+            ".imported
+        &-stylus
+          color blue-red-mixed
+      ",
+            ".imported-sugarss
+        color: red
+      ",
+            ".input-map {
+        color: #00f;
+      }
+      ",
+          ],
+          "version": 3,
+        },
+        visualization: "https://evanw.github.io/source-map-visualization/#MjgzAC5saW5rZWQsLmJlLWltcG9ydGVkLC5saW5rZWQtd2l0aC1pbXBvcnQsLmltcG9ydGVkLC5iZS1pbXBvcnRlZCwuaW1wb3J0ZWQtd2l0aC1pbXBvcnQsLmltcG9ydGVkLXNhc3MsLmhvUU10V19pbXBvcnRlZC1zYXNzLW1vZHVsZSwuaW1wb3J0ZWQtbGVzc3tjb2xvcjpyZWR9LmltcG9ydGVkLXN0eWx1c3tjb2xvcjpwdXJwbGV9LmltcG9ydGVkLXN1Z2Fyc3N7Y29sb3I6cmVkfS5pbnB1dC1tYXB7Y29sb3I6IzAwZn0KCi8qIyBzb3VyY2VNYXBwaW5nVVJMPWluZGV4LUNoc2RmUkJwLmNzcy5tYXAgKi8zMzIAeyJtYXBwaW5ncyI6IkFBQUEsMkpDQ0UsOEJDREYsNEJDQUEiLCJzb3VyY2VzIjpbIi4uLy4uLy4uL2xpbmtlZC5jc3MiLCIuLi8uLi8uLi9pbXBvcnRlZC5zdHlsIiwiLi4vLi4vLi4vaW1wb3J0ZWQuc3NzIiwiLi4vLi4vLi4vaW5wdXQtbWFwLmNzcyJdLCJzb3VyY2VzQ29udGVudCI6WyIubGlua2VkIHtcbiAgY29sb3I6IHJlZDtcbn1cbiIsIi5pbXBvcnRlZFxuICAmLXN0eWx1c1xuICAgIGNvbG9yIGJsdWUtcmVkLW1peGVkXG4iLCIuaW1wb3J0ZWQtc3VnYXJzc1xuICBjb2xvcjogcmVkXG4iLCIuaW5wdXQtbWFwIHtcbiAgY29sb3I6ICMwMGY7XG59XG4iXSwidmVyc2lvbiI6M30="
+      }
+    `)
 })
 
 describe.runIf(isServe)('serve', () => {
