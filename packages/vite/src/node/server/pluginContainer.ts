@@ -134,6 +134,18 @@ export function throwClosedServerError(): never {
   throw err
 }
 
+type TransformSourceMap = NonNullable<SourceDescription['map']>
+
+// Native plugins called from JS (e.g. `builtin:vite-json` in dev) return the
+// map in rolldown's binding shape `{ inner }`. Unwrap it so that an empty map
+// (`{ mappings: '' }`) is still recognized when combining.
+function unwrapBindingSourcemap(map: TransformSourceMap): TransformSourceMap {
+  const inner = (map as { inner?: TransformSourceMap }).inner
+  return typeof map === 'object' && !('mappings' in map) && inner != null
+    ? inner
+    : map
+}
+
 /**
  * Create a plugin container with a set of plugins. We pass them as a parameter
  * instead of using environment.plugins to allow the creation of different
@@ -595,11 +607,12 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
         if (result.code !== undefined) {
           code = result.code as string
           if (result.map) {
+            const map = unwrapBindingSourcemap(result.map)
             if (debugSourcemapCombine) {
               // @ts-expect-error inject plugin name for debug purpose
-              result.map.name = plugin.name
+              map.name = plugin.name
             }
-            ctx.sourcemapChain.push(result.map)
+            ctx.sourcemapChain.push(map)
           }
         }
         if (result.moduleType !== undefined) {
