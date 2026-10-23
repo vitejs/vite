@@ -149,12 +149,13 @@ describe('port detection', () => {
       )
     })
 
-    test('loopback host can share a port number occupied on wildcard', async () => {
+    test('loopback host skips wildcard probe when wildcard port is in use', async () => {
       await using _blockingServer = await createSimpleServer(
         BASE_PORT,
         '0.0.0.0',
       )
 
+      using listen = vi.spyOn(net.Server.prototype, 'listen')
       viteServer = await createServer({
         root: import.meta.dirname,
         optimizeDeps,
@@ -168,12 +169,21 @@ describe('port detection', () => {
       })
       await viteServer.listen()
 
-      // Loopback skips the wildcard listen probe, so 127.0.0.1:port is used
-      // even when 0.0.0.0:port is already taken.
-      const address = viteServer.httpServer!.address()
-      expect(address).toStrictEqual(
-        expect.objectContaining({ port: BASE_PORT }),
-      )
+      // Regression for https://github.com/vitejs/vite/issues/23766:
+      // loopback hosts must not listen-probe 0.0.0.0 / ::.
+      expect(
+        listen.mock.calls.some(
+          ([, host]) => typeof host === 'string' && wildcardHosts.has(host),
+        ),
+      ).toBe(false)
+
+      const address = viteServer.httpServer!.address() as net.AddressInfo
+      expect(address.address).toBe('127.0.0.1')
+      // On Linux, occupying 0.0.0.0 often also blocks 127.0.0.1 on the same
+      // port, so Vite may fall through to BASE_PORT + 1. On Windows they can
+      // share the port number. Either outcome is fine as long as we skipped
+      // the wildcard probe above.
+      expect(address.port).toBeGreaterThanOrEqual(BASE_PORT)
     })
 
     test('detects port conflict when server listens on :: (IPv6)', async (ctx) => {
