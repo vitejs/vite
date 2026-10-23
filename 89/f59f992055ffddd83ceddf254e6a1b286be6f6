@@ -1,0 +1,25 @@
+playground/assets/__tests__/assets.spec.ts
+  s_b9d49a9c5d89e0::t_366fc56b755ed5 20,887,895
+playground/legacy/__tests__/watch/legacy-styles-only-entry-watch.spec.ts
+  s_b9d49a9c5d89e0::t_9eeaeb8a20acd0 7,24
+playground/test-utils.ts
+  s_b9d49a9c5d89e0::t_8a1596954725a1 29,295-320
+playground/vitestSetupUtils.ts
+  s_b9d49a9c5d89e0::t_5fcf0955c24409 15,91-97,125,286-287,361,397-467
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "89f59f992055ffddd83ceddf254e6a1b286be6f6",
+  "prompts": {},
+  "sessions": {
+    "s_b9d49a9c5d89e0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1666d-b3a7-74e0-9ef2-cb51256073c0",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
