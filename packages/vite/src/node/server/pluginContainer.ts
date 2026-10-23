@@ -1136,7 +1136,10 @@ class TransformPluginContext
         // `sources: ['']` (because `''` means the path of sourcemap)
         // but MagicString generates this when `filename` option is not set.
         // Rollup supports these and therefore we support this as well
-        if (sm.sources.length === 1 && !sm.sources[0]) {
+        //
+        // an indexed ("sections") sourcemap has no top-level `sources` (each
+        // section carries its own nested map), so leave it untouched instead
+        if (sm.sources && sm.sources.length === 1 && !sm.sources[0]) {
           combinedMap = {
             ...sm,
             sources: [this.filename],
