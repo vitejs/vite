@@ -1,5 +1,6 @@
 import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '..'
+import { payloadDeliveredAck } from '../bundledDev'
 
 export function triggerLazyBundlingMiddleware(
   server: ViteDevServer,
@@ -42,6 +43,6 @@ export function triggerLazyBundlingMiddleware(
     }
 
     res!.setHeader('Content-Type', 'application/javascript')
-    return res!.end(result.code)
+    return res!.end(result.code + payloadDeliveredAck(result.filename))
   }
 }

@@ -384,14 +384,7 @@ export class BundledDev {
         source: result.sourcemap,
       })
     }
-    return {
-      filename: result.filename,
-      code:
-        result.code +
-        (this.environment.config.consumer === 'server'
-          ? ''
-          : payloadDeliveredAck(result.filename)),
-    }
+    return { filename: result.filename, code: result.code }
   }
 
   async resetClient(oldClientId: string, newClientId: string): Promise<void> {
@@ -668,7 +661,7 @@ function debounce(time: number, cb: () => void) {
  * chunk's tail: if the tail throws, no report is sent and the next payload
  * simply re-ships those factories, which is safe (registration overwrites).
  */
-function payloadDeliveredAck(filename: string): string {
+export function payloadDeliveredAck(filename: string): string {
   return `\n;__rolldown_runtime__.payloadDelivered(${JSON.stringify(filename)});`
 }
 
