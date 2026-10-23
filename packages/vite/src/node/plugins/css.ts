@@ -990,7 +990,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             }
 
             if (s) {
-              if (config.build.sourcemap) {
+              if (this.environment.config.build.sourcemap) {
                 return {
                   code: s.toString(),
                   map: s.generateMap({ hires: 'boundary' }),
