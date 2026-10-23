@@ -23,6 +23,7 @@ import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
 import { definePlugin } from './define'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { esbuildBannerFooterCompatPlugin } from './esbuildBannerFooterCompatPlugin'
+import { externalizeUrlPlugin } from './externalizeUrl'
 import { forwardConsolePlugin } from './forwardConsole'
 import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
 import { importAnalysisPlugin } from './importAnalysis'
@@ -84,6 +85,8 @@ export async function resolvePlugins(
         return true
       },
     } as Plugin,
+
+    !isBuild && externalizeUrlPlugin(),
 
     ...prePlugins,
 
