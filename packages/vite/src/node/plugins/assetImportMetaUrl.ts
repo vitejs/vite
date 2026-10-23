@@ -172,7 +172,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           )
         }
         if (s) {
-          return transformStableResult(s, id, config)
+          return transformStableResult(s, id, this.environment.config)
         }
       },
     },
