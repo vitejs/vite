@@ -353,6 +353,14 @@ async function loadAndTransform(
   // ensure module in graph after successful load
   mod ??= await moduleGraph._ensureEntryFromUrl(url, undefined, resolved)
 
+  // The `load` hook may return `meta`, but the module node might not have
+  // existed while the hook ran, in which case `pluginContainer.load()` could
+  // not merge it. Merge it now so `ModuleInfo.meta` matches the build and SSR
+  // pipelines.
+  if (isObject(loadResult) && loadResult.meta) {
+    mod.meta = { ...mod.meta, ...loadResult.meta }
+  }
+
   // transform
   const transformStart = debugTransform ? performance.now() : 0
   const transformResult = await pluginContainer.transform(code, id, {
