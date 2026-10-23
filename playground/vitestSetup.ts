@@ -12,6 +12,7 @@ import type {
   ConfigEnv,
   InlineConfig,
   Logger,
+  Plugin,
   PluginOption,
   ResolvedConfig,
   UserConfig,
@@ -114,6 +115,13 @@ export let page: Page = undefined!
 export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
 export let watcher: RolldownWatcher | undefined = undefined
+
+export const watchBuilds: {
+  files: Set<string>
+  invalidated: Map<string, number>
+  written: Map<string, number>
+  completed: Map<string, number>
+}[] = []
 
 export function setViteUrl(url: string): void {
   viteTestUrl = url
@@ -360,7 +368,7 @@ export async function startDefaultServe(): Promise<void> {
     const buildConfig = mergeConfig(
       await loadConfig({ command: 'build', mode: 'production' }),
       {
-        plugins: [resolvedPlugin()],
+        plugins: [resolvedPlugin(), buildWatchPlugin()],
       },
     )
     if (buildConfig.builder) {
@@ -393,6 +401,77 @@ export async function startDefaultServe(): Promise<void> {
       previewServer.config.base,
     )
     await page.goto(viteTestUrl)
+  }
+}
+
+// Workaround for Rolldown emitting END per output before all outputs finish:
+// https://github.com/rolldown/rolldown/issues/10613
+function buildWatchPlugin(): Plugin {
+  let subscribedWatcher: RolldownWatcher | undefined
+  const onEvent = (event: RolldownWatcherEvent): void => {
+    for (const state of watchBuilds) {
+      if (event.code === 'END') state.completed = state.written
+      if (event.code === 'ERROR') state.written = state.completed
+    }
+  }
+  return {
+    name: 'test-watch-builds',
+    buildStart() {
+      // The initial build can start before build() returns the watcher.
+      if (this.meta.watchMode && watcher && subscribedWatcher !== watcher) {
+        subscribedWatcher = watcher
+        subscribedWatcher.on('event', onEvent)
+      }
+    },
+    closeWatcher() {
+      subscribedWatcher?.off('event', onEvent)
+      subscribedWatcher = undefined
+    },
+    options(options) {
+      if (!this.meta.watchMode) return
+
+      // Rolldown creates a separate watch task for each output.
+      const state = {
+        files: new Set<string>(),
+        invalidated: new Map<string, number>(),
+        written: new Map<string, number>(),
+        completed: new Map<string, number>(),
+      }
+      watchBuilds.push(state)
+      let building = new Map<string, number>()
+      const watch = options.watch || {}
+      return {
+        ...options,
+        watch: {
+          ...watch,
+          onInvalidate(id) {
+            const filename = path.normalize(id)
+            state.invalidated.set(
+              filename,
+              (state.invalidated.get(filename) ?? 0) + 1,
+            )
+            watch.onInvalidate?.(id)
+          },
+        },
+        plugins: [
+          options.plugins,
+          {
+            name: 'test-watch-build-completion',
+            buildStart() {
+              building = new Map(state.invalidated)
+            },
+            writeBundle() {
+              state.files = new Set(
+                [...this.getModuleIds()].map((id) =>
+                  path.normalize(id.split('?')[0]),
+                ),
+              )
+              state.written = building
+            },
+          },
+        ],
+      }
+    },
   }
 }
 
