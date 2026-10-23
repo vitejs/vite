@@ -21,8 +21,12 @@ export default defineConfig(({ command }) => ({
     ...(command === 'build'
       ? []
       : [
-          path.resolve(import.meta.dirname, './missing-import/index.html'),
-          path.resolve(import.meta.dirname, './css-style/index.html'),
+          ...[
+            'css-link',
+            'css-style',
+            ...(process.env.VITE_TEST_BUNDLED_DEV ? [] : ['missing-file']),
+            'missing-import',
+          ].map((dir) => path.resolve(import.meta.dirname, dir, 'index.html')),
           ...acceptExportsPages,
         ]),
     path.resolve(
