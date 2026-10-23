@@ -65,3 +65,21 @@ test('wasm using js-string builtins and imported string constants', async () => 
     .poll(() => page.textContent('.direct-wasm-string-builtins .result'))
     .toMatch('5')
 })
+
+test('source phase import yields a WebAssembly.Module', async () => {
+  await expect
+    .poll(() => page.textContent('.source-phase-wasm .result'))
+    .toMatch('3')
+})
+
+test('dynamic source phase import yields a WebAssembly.Module', async () => {
+  await expect
+    .poll(() => page.textContent('.source-phase-wasm-dynamic .result'))
+    .toMatch('7')
+})
+
+test('source phase import instantiated with imports', async () => {
+  await expect
+    .poll(() => page.textContent('.source-phase-wasm-with-imports .result'))
+    .toMatch('42')
+})
