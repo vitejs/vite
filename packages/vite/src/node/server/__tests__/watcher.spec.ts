@@ -1,7 +1,11 @@
+import fs from 'node:fs'
+import os from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { promiseWithResolvers } from '../../../shared/utils'
+import { checkLoadingAccess } from '../middlewares/static'
+import { resolveChokidarOptions } from '../../watch'
 import { type ViteDevServer, createServer } from '../index'
 
 const stubGetWatchedCode = /\(\)\s*\{\s*return this;\s*\}/
@@ -166,5 +170,69 @@ describe('watcher configuration', () => {
         ]),
       )
     })
+  })
+
+  it('resolveChokidarOptions scopes .git pattern when root contains .git directory', () => {
+    const gitWorktreeRoot = '/path/to/repo/.git/worktrees/my-branch'
+    const options = resolveChokidarOptions(
+      {},
+      new Set(),
+      false,
+      '/cache',
+      gitWorktreeRoot,
+    )
+    const ignored = Array.isArray(options.ignored) ? options.ignored : []
+    expect(ignored).toContain(`${gitWorktreeRoot}/**/.git/**`)
+    expect(ignored).not.toContain('**/.git/**')
+  })
+
+  it('resolveChokidarOptions retains **/.git/** when root does not contain .git', () => {
+    const normalRoot = '/path/to/repo'
+    const options = resolveChokidarOptions(
+      {},
+      new Set(),
+      false,
+      '/cache',
+      normalRoot,
+    )
+    const ignored = Array.isArray(options.ignored) ? options.ignored : []
+    expect(ignored).toContain('**/.git/**')
+  })
+
+  it('serves files and watches root when project root is within ancestor .git directory (fix #23626)', async () => {
+    const tempDir = fs.mkdtempSync(join(os.tmpdir(), 'vite-git-ancestor-'))
+    const appRoot = join(tempDir, '.git', 'worktrees', 'app')
+    const appFile = join(appRoot, 'index.html')
+    const gitInternalFile = join(tempDir, '.git', 'config')
+
+    try {
+      fs.mkdirSync(appRoot, { recursive: true })
+      fs.writeFileSync(appFile, '<h1>Hello</h1>')
+      fs.writeFileSync(gitInternalFile, '[core]\n')
+
+      server = await createServer({
+        root: appRoot,
+        logLevel: 'silent',
+      })
+
+      // Verify that serving app files inside root is allowed and does not return 403
+      expect(checkLoadingAccess(server.config, appFile)).toBe('allowed')
+
+      // Verify that accessing sibling .git internals outside the root is denied
+      expect(checkLoadingAccess(server.config, gitInternalFile)).toBe('denied')
+
+      // Verify that chokidar watcher can watch the root inside ancestor .git
+      await new Promise((resolve) => server!.watcher.once('ready', resolve))
+      await vi.waitFor(() => {
+        const watchedDirs = Object.keys(server!.watcher.getWatched())
+        expect(watchedDirs).toContain(appRoot)
+      })
+    } finally {
+      if (server) {
+        await server.close()
+        server = undefined
+      }
+      fs.rmSync(tempDir, { recursive: true, force: true })
+    }
   })
 })
