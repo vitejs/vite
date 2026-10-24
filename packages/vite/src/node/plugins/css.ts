@@ -294,6 +294,33 @@ export const removedPureCssFilesCache: WeakMap<
   Map<string, RenderedChunk>
 > = new WeakMap()
 
+// `meta.chunks` is the same object for every `renderChunk` call of an output,
+// so the rendered modules of all chunks are indexed once per output
+// instead of scanning every chunk on each lookup
+const renderedModulesCache = new WeakMap<
+  Record<string, RenderedChunk>,
+  Map<string, RenderedModule>
+>()
+
+function getRenderedModules(
+  chunks: Record<string, RenderedChunk>,
+): Map<string, RenderedModule> {
+  let renderedModules = renderedModulesCache.get(chunks)
+  if (!renderedModules) {
+    renderedModules = new Map()
+    for (const name in chunks) {
+      const modules = chunks[name].modules
+      for (const id in modules) {
+        if (!renderedModules.has(id)) {
+          renderedModules.set(id, modules[id])
+        }
+      }
+    }
+    renderedModulesCache.set(chunks, renderedModules)
+  }
+  return renderedModules
+}
+
 // Used only if the config doesn't code-split CSS (builds a single CSS file)
 export const cssBundleNameCache: WeakMap<ResolvedConfig, string> = new WeakMap()
 
@@ -675,20 +702,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       ? {
           async renderChunk(code, chunk, opts, meta) {
             let chunkCSS: string | undefined
-            const renderedModules = new Proxy(
-              {} as Record<string, RenderedModule | undefined>,
-              {
-                get(_target, p) {
-                  for (const name in meta.chunks) {
-                    const modules = meta.chunks[name].modules
-                    const module = modules[p as string]
-                    if (module) {
-                      return module
-                    }
-                  }
-                },
-              },
-            )
             // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
             const isJsChunkEmpty = code === '' && !chunk.isEntry
             let isPureCssChunk = chunk.exports.length === 0
@@ -706,7 +719,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   this.getModuleInfo(id)?.meta?.vite?.cssScopeTo
                 if (
                   cssScopeTo &&
-                  !isCssScopeToRendered(cssScopeTo, renderedModules)
+                  !isCssScopeToRendered(
+                    cssScopeTo,
+                    getRenderedModules(meta.chunks),
+                  )
                 ) {
                   continue
                 }
@@ -1308,10 +1324,10 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
 
 function isCssScopeToRendered(
   cssScopeTo: Exclude<CustomPluginOptionsVite['cssScopeTo'], undefined>,
-  renderedModules: Record<string, RenderedModule | undefined>,
+  renderedModules: Map<string, RenderedModule>,
 ) {
   const [importerId, exp] = cssScopeTo
-  const importer = renderedModules[importerId]
+  const importer = renderedModules.get(importerId)
   return (
     importer && (exp === undefined || importer.renderedExports.includes(exp))
   )
