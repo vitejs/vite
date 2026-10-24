@@ -11,7 +11,14 @@ import { setupTest, sourcemapSnapshot } from './vitestSetupUtils'
 beforeAll(async ({}, suite) => setupTest(suite))
 
 const generateVisualizationLink = (code: string, map: string) => {
-  const utf16ToUTF8 = (x) => unescape(encodeURIComponent(x))
+  const utf16ToUTF8 = (x: string) => {
+    const bytes = new TextEncoder().encode(x)
+    let result = ''
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      result += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+    }
+    return result
+  }
   const convertedCode = utf16ToUTF8(code)
   const convertedMap = utf16ToUTF8(map)
   const hash = `${convertedCode.length}\0${convertedCode}${convertedMap.length}\0${convertedMap}`
