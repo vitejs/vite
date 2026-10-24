@@ -679,17 +679,36 @@ export function runOptimizeDeps(
       .build()
       .then((result) => {
         const depForEntryFileName: Record<string, OptimizedDepInfo> = {}
+        const depForFacadeModuleId: Record<string, OptimizedDepInfo> = {}
         for (const dep of Object.values(depsInfo)) {
           const entryFileName = flattenId(dep.id) + '.js'
           depForEntryFileName[entryFileName] = dep
+          if (dep.src) {
+            depForFacadeModuleId[normalizePath(dep.src)] = dep
+          }
         }
 
         for (const chunk of result.output) {
           if (chunk.type !== 'chunk') continue
 
           if (chunk.isEntry) {
-            const { exportsData, file, id, ...info } =
-              depForEntryFileName[chunk.fileName]
+            const normalizedFileName = chunk.fileName.replace(/\d+\.js$/, '.js')
+            const dep =
+              depForEntryFileName[chunk.fileName] ??
+              depForEntryFileName[`${chunk.name}.js`] ??
+              depForEntryFileName[normalizedFileName] ??
+              (chunk.facadeModuleId
+                ? depForFacadeModuleId[normalizePath(chunk.facadeModuleId)]
+                : undefined)
+            if (!dep) {
+              throw new Error(
+                `Unable to find optimized dependency for entry chunk "${chunk.fileName}"`,
+              )
+            }
+            const { exportsData, file: _file, id, ...info } = dep
+            const file = normalizePath(
+              path.resolve(getDepsCacheDir(environment), chunk.fileName),
+            )
             addOptimizedDepInfo(metadata, 'optimized', {
               id,
               file,
