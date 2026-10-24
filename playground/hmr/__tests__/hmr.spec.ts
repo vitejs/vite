@@ -1144,7 +1144,10 @@ if (!isBuild) {
             "export { value as childValue } from './child'",
           ),
         )
-      }, 'file-delete-restore/child.js hot data after prune: undefined')
+      }, [
+        'file-delete-restore/child.js hot data after prune: undefined',
+        hotUpdatedLog(parentFile),
+      ])
       await expect
         .poll(() => page.textContent('.file-delete-restore'))
         .toMatch('parent:child')
@@ -1352,6 +1355,24 @@ if (!isBuild) {
   )
 
   test('import.meta.hot?.accept', async () => {
+    if (isBundledDev) {
+      // Navigation can finish before the new HMR client registers.
+      let delayRegistration = true
+      await page.routeWebSocket('**', (socket) => {
+        const server = socket.connectToServer()
+        socket.onMessage((message) => {
+          if (
+            delayRegistration &&
+            String(message).includes('vite:client-connected')
+          ) {
+            delayRegistration = false
+            setTimeout(() => server.send(message), 500)
+          } else {
+            server.send(message)
+          }
+        })
+      })
+    }
     await gotoLatestBuild(viteTestUrl)
 
     const el = page.locator('.optional-chaining')

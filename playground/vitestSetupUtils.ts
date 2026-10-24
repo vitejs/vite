@@ -280,6 +280,32 @@ async function loadConfig(configEnv: ConfigEnv) {
   return merged
 }
 
+export async function waitForBundledDevClient(): Promise<void> {
+  const bundledDev = viteServer.environments.client.bundledDev as any
+  // TODO: workaround: an edit fired while no client is connected is
+  // dropped (vitejs/vite#23028). Remove this wait once the server
+  // buffers updates for clients that connect later. A page that never
+  // loads the client runtime (e.g. SSR-rendered pages) cannot register
+  // a client; a fully loaded page with no runtime counts as settled.
+  await vi.waitUntil(
+    async () => {
+      const state = await page
+        .evaluate(() => ({
+          loaded: document.readyState === 'complete',
+          hasRuntime: !!(globalThis as any).__rolldown_runtime__,
+          clientId: (globalThis as any).__rolldown_runtime__?.clientId,
+        }))
+        .catch(() => undefined)
+      if (!state) return false
+      if (state.clientId && bundledDev.clients?.get(state.clientId)) {
+        return true
+      }
+      return state.loaded && !state.hasRuntime
+    },
+    { timeout: 10_000 },
+  )
+}
+
 export async function startDefaultServe(): Promise<void> {
   await server?.close()
   await watcher?.close()
@@ -321,28 +347,7 @@ export async function startDefaultServe(): Promise<void> {
             { timeout: 15_000 },
           )
           .catch(() => {})
-        // TODO: workaround — an edit fired while no client is connected is
-        // dropped (vitejs/vite#23028). Remove this wait once the server
-        // buffers updates for clients that connect later. A page that never
-        // loads the client runtime (e.g. SSR-rendered pages) cannot register
-        // a client; a fully loaded page with no runtime counts as settled.
-        await vi.waitUntil(
-          async () => {
-            const state = await page
-              .evaluate(() => ({
-                loaded: document.readyState === 'complete',
-                hasRuntime: !!(globalThis as any).__rolldown_runtime__,
-                clientId: (globalThis as any).__rolldown_runtime__?.clientId,
-              }))
-              .catch(() => undefined)
-            if (!state) return false
-            if (state.clientId && bundledDev.clients?.get(state.clientId)) {
-              return true
-            }
-            return state.loaded && !state.hasRuntime
-          },
-          { timeout: 10_000 },
-        )
+        await waitForBundledDevClient()
       }
     }
   } else {

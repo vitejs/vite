@@ -26,6 +26,7 @@ import {
   sourcemapSnapshot,
   testDir,
   viteServer,
+  waitForBundledDevClient,
   watchBuilds,
 } from './vitestSetupUtils'
 
@@ -290,6 +291,9 @@ export async function gotoLatestBuild(url: string): Promise<void> {
     await bundledDev.devEngine.ensureLatestBuildOutput()
   }
   await page.goto(url)
+  if (isBundledDev) {
+    await waitForBundledDevClient()
+  }
 }
 
 /**
