@@ -440,6 +440,38 @@ export class EnvironmentModuleGraph {
     mod.transformResult = result
   }
 
+  /**
+   * @internal
+   * Remove a module node from the graph. This is used to roll back a module
+   * node that was created before a failed `load` hook, so that the next
+   * request for the same url can re-resolve from scratch (#23861)
+   */
+  _removeModule(mod: EnvironmentModuleNode): void {
+    if (this.urlToModuleMap.get(mod.url) === mod) {
+      this.urlToModuleMap.delete(mod.url)
+    }
+    if (mod.id && this.idToModuleMap.get(mod.id) === mod) {
+      this.idToModuleMap.delete(mod.id)
+    }
+    const etag = mod.transformResult?.etag
+    if (etag) this.etagToModuleMap.delete(etag)
+    if (mod.file) {
+      const fileMappedModules = this.fileToModulesMap.get(mod.file)
+      if (fileMappedModules) {
+        fileMappedModules.delete(mod)
+        if (!fileMappedModules.size) {
+          this.fileToModulesMap.delete(mod.file)
+        }
+      }
+    }
+    for (const [url, value] of this._unresolvedUrlToModuleMap) {
+      if (value === mod) {
+        this._unresolvedUrlToModuleMap.delete(url)
+      }
+    }
+    this._hasResolveFailedErrorModules.delete(mod)
+  }
+
   getModuleByEtag(etag: string): EnvironmentModuleNode | undefined {
     return this.etagToModuleMap.get(etag)
   }

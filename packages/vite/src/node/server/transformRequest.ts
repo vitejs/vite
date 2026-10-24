@@ -267,11 +267,25 @@ async function loadAndTransform(
   // Ensure the module node exists before `load` runs, so that module info
   // and files registered via `this.addWatchFile` in the `load` hook can be
   // associated with this module (#23860)
-  mod ??= await moduleGraph._ensureEntryFromUrl(url, undefined, resolved)
+  let removeModuleOnLoadFailure = false
+  if (!mod) {
+    removeModuleOnLoadFailure = !moduleGraph._getUnresolvedUrlToModule(
+      removeImportQuery(removeTimestampQuery(url)),
+    )
+    mod = await moduleGraph._ensureEntryFromUrl(url, undefined, resolved)
+  }
 
   // load
   const loadStart = debugLoad ? performance.now() : 0
-  const loadResult = await pluginContainer.load(id)
+  let loadResult: Awaited<ReturnType<typeof pluginContainer.load>>
+  try {
+    loadResult = await pluginContainer.load(id)
+  } catch (e) {
+    // Roll back the module node created above so that the failed load does
+    // not leave an orphaned entry behind (#23861)
+    if (removeModuleOnLoadFailure) moduleGraph._removeModule(mod)
+    throw e
+  }
 
   if (loadResult == null) {
     const file = cleanUrl(id)
@@ -290,6 +304,7 @@ async function loadAndTransform(
         debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
       } catch (e) {
         if (e.code !== 'ENOENT' && e.code !== 'EISDIR') {
+          if (removeModuleOnLoadFailure) moduleGraph._removeModule(mod)
           throw e
         }
       }
@@ -343,6 +358,11 @@ async function loadAndTransform(
       }. ${msg}`,
     )
     err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
+    // Roll back the module node created above so that the failed load does
+    // not leave an orphaned entry behind. Otherwise the orphaned entry
+    // prevents re-resolving the url on subsequent requests, e.g. when the
+    // file is created later (#23861)
+    if (removeModuleOnLoadFailure) moduleGraph._removeModule(mod)
     throw err
   }
   if (moduleType === undefined) {
