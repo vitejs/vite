@@ -63,6 +63,7 @@ export function resolveChokidarOptions(
   resolvedOutDirs: Set<string>,
   emptyOutDir: boolean,
   cacheDir: string,
+  root?: string,
 ): WatchOptions {
   const {
     ignored: ignoredList,
@@ -75,12 +76,25 @@ export function resolveChokidarOptions(
     exclude,
     ...otherOptions
   } = options ?? {}
+
+  const resolvedRoot = root ? normalizePath(path.resolve(root)) : undefined
+  const hasAncestorGit = resolvedRoot
+    ? /(?:^|\/)\.git(?:$|\/)/.test(resolvedRoot)
+    : false
+  const gitIgnoredPattern = hasAncestorGit
+    ? `${escapePath(resolvedRoot!)}/**/.git/**`
+    : '**/.git/**'
+
+  const userIgnored = arraify(ignoredList || []).map((item) =>
+    hasAncestorGit && item === '**/.git/**' ? gitIgnoredPattern : item,
+  )
+
   const ignored: WatchOptions['ignored'] = [
-    '**/.git/**',
+    gitIgnoredPattern,
     '**/node_modules/**',
     '**/test-results/**', // Playwright
     escapePath(cacheDir) + '/**',
-    ...arraify(ignoredList || []),
+    ...userIgnored,
   ]
   if (emptyOutDir) {
     ignored.push(
