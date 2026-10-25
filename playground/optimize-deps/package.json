@@ -56,11 +56,11 @@
     "@vitejs/test-dep-lodash-es": "file:./dep-lodash-es",
     "@vitejs/test-nested-exclude": "file:./nested-exclude",
     "phoenix": "^1.8.15",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "@vitejs/test-resolve-linked": "workspace:0.0.0",
     "url": "^0.11.4",
-    "vue": "^3.5.43",
+    "vue": "^3.5.44",
     "vuex": "^4.1.0"
   }
 }
