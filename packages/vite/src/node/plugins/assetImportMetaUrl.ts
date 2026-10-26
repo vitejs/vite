@@ -2,7 +2,7 @@ import path from 'node:path'
 import MagicString from 'magic-string'
 import { exactRegex } from 'rolldown/filter'
 import { stripLiteral } from 'strip-literal'
-import { slash } from '../../shared/utils'
+import { cleanUrl, slash } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
 import { createBackCompatIdResolver } from '../idResolver'
@@ -148,8 +148,9 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               } else {
                 builtUrlExpr = await fileToUrl(this, file, 'js')
                 // during dev, builtUrl may point to a directory or a non-existing file
-                if (tryStatSync(file)?.isFile()) {
-                  this.addWatchFile(file)
+                const watchFile = cleanUrl(file)
+                if (tryStatSync(watchFile)?.isFile()) {
+                  this.addWatchFile(watchFile)
                 }
               }
             } catch {
