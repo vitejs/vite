@@ -10,9 +10,11 @@ import {
   createCSSResolvers,
   cssPlugin,
   cssUrlRE,
+  finalizeCss,
   getEmptyChunkReplacer,
   hoistAtRules,
   injectInlinedCSS,
+  minifyCSS,
   preprocessCSS,
   resolveLibCssFilename,
 } from '../../plugins/css'
@@ -889,5 +891,82 @@ console.log("foo");`,
       "#!/usr/bin/env node
       injectCSS();"
     `)
+  })
+})
+
+describe('css minify warnings include filename', () => {
+  test('lightningcss minify warning includes filename', async () => {
+    let warningMsg = ''
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        root: dirname,
+        build: {
+          cssMinify: 'lightningcss',
+        },
+        customLogger: {
+          warn(msg: string) {
+            warningMsg += msg
+          },
+        } as any,
+      },
+      'build',
+    )
+
+    const css = '@custom-media --foo (min-width: 10px);\nbody { color: red; }'
+    await minifyCSS(css, config, false, 'src/custom.css')
+
+    expect(warningMsg).toContain('[lightningcss minify]')
+    expect(warningMsg).toContain('src/custom.css:1:14')
+  })
+
+  test('esbuild minify warning includes filename', async () => {
+    let warningMsg = ''
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        root: dirname,
+        build: {
+          cssMinify: 'esbuild',
+        },
+        customLogger: {
+          warn(msg: string) {
+            warningMsg += msg
+          },
+        } as any,
+      },
+      'build',
+    )
+
+    const css = 'body { color: red; } @import url(foo.css);'
+    await minifyCSS(css, config, false, 'src/custom.css')
+
+    expect(warningMsg).toContain('[esbuild css minify]')
+    expect(warningMsg).toContain('src/custom.css')
+  })
+
+  test('finalizeCss forwards filename to minifyCSS', async () => {
+    let warningMsg = ''
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        root: dirname,
+        build: {
+          cssMinify: 'lightningcss',
+        },
+        customLogger: {
+          warn(msg: string) {
+            warningMsg += msg
+          },
+        } as any,
+      },
+      'build',
+    )
+
+    const css = '@custom-media --foo (min-width: 10px);\nbody { color: red; }'
+    await finalizeCss(css, config, 'src/bundle.css')
+
+    expect(warningMsg).toContain('[lightningcss minify]')
+    expect(warningMsg).toContain('src/bundle.css:1:14')
   })
 })

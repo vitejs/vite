@@ -845,7 +845,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             await urlEmitQueue.run(async () =>
               Promise.all(
                 urlEmitTasks.map(async (info) => {
-                  info.content = await finalizeCss(info.content, config)
+                  info.content = await finalizeCss(
+                    info.content,
+                    config,
+                    info.originalFileName ?? info.cssAssetName,
+                  )
                 }),
               ),
             )
@@ -930,7 +934,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
                   // wait for previous tasks as well
                   chunkCSS = await codeSplitEmitQueue.run(async () => {
-                    return finalizeCss(chunkCSS!, config)
+                    return finalizeCss(
+                      chunkCSS!,
+                      config,
+                      originalFileName ?? cssAssetName,
+                    )
                   })
 
                   // emit corresponding css file
@@ -958,7 +966,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   // But because entry chunk can be imported by dynamic import,
                   // we shouldn't remove the inlined CSS. (#10285)
 
-                  chunkCSS = await finalizeCss(chunkCSS, config)
+                  chunkCSS = await finalizeCss(chunkCSS, config, chunk.fileName)
                   let cssString = JSON.stringify(chunkCSS)
                   cssString =
                     renderAssetUrlInJS(
@@ -1066,7 +1074,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // Finally, if there's any extracted CSS, we emit the asset
         if (extractedCss) {
           hasEmitted = true
-          extractedCss = await finalizeCss(extractedCss, config)
+          extractedCss = await finalizeCss(
+            extractedCss,
+            config,
+            getCssBundleName() ?? defaultCssBundleName,
+          )
           this.emitFile({
             name: getCssBundleName(),
             type: 'asset',
@@ -1989,13 +2001,17 @@ function combineSourcemapsIfExists(
 const viteHashUpdateMarker = '/*$vite$:1*/'
 const viteHashUpdateMarkerRE = /\/\*\$vite\$:\d+\*\//
 
-async function finalizeCss(css: string, config: ResolvedConfig) {
+export async function finalizeCss(
+  css: string,
+  config: ResolvedConfig,
+  filename?: string,
+): Promise<string> {
   // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
   if (css.includes('@import') || css.includes('@charset')) {
     css = hoistAtRules(css)
   }
   if (config.build.cssMinify) {
-    css = await minifyCSS(css, config, false)
+    css = await minifyCSS(css, config, false, filename)
   }
   // inject an additional string to generate a different hash for https://github.com/vitejs/vite/issues/18038
   //
@@ -2286,12 +2302,12 @@ async function doImportCSSReplace(
   return `@import ${prefix}${wrap}${newUrl}${wrap}`
 }
 
-async function minifyCSS(
+export async function minifyCSS(
   css: string,
   config: ResolvedConfig,
   inlined: boolean,
   filename: string = defaultCssBundleName,
-) {
+): Promise<string> {
   // We want inlined CSS to not end with a linebreak, while ensuring that
   // regular CSS assets do end with a linebreak.
   // See https://github.com/vitejs/vite/pull/13893#issuecomment-1678628198
@@ -2319,6 +2335,7 @@ async function minifyCSS(
         const msgs = await formatMessages(e.errors, { kind: 'error' })
         e.frame = '\n' + msgs.join('\n')
         e.loc = e.errors[0].location
+        e.id = cleanUrl(filename)
       }
       throw e
     }
@@ -2338,7 +2355,11 @@ async function minifyCSS(
     })
 
     for (const warning of warnings) {
+      const file = cleanUrl(warning.loc?.filename || filename)
       let msg = `[lightningcss minify] ${warning.message}`
+      if (file) {
+        msg += `\nfile: ${colors.cyan(`${file}:${warning.loc.line}:${warning.loc.column}`)}`
+      }
       msg += `\n${generateCodeFrame(css, {
         line: warning.loc.line,
         column: warning.loc.column - 1, // 1-based
@@ -2360,11 +2381,13 @@ async function minifyCSS(
 
     if (e.loc) {
       e.loc = {
+        file: cleanUrl(filename),
         line: e.loc.line,
         column: e.loc.column - 1, // 1-based
       }
       e.frame = generateCodeFrame(css, e.loc)
     }
+    e.id = cleanUrl(filename)
     throw e
   }
 }
@@ -3428,7 +3451,11 @@ async function compileLightningCSS(
   }
 
   for (const warning of res.warnings) {
+    const file = cleanUrl(warning.loc?.filename || filename)
     let msg = `[vite:css][lightningcss] ${warning.message}`
+    if (file) {
+      msg += `\nfile: ${colors.cyan(`${file}:${warning.loc.line}:${warning.loc.column}`)}`
+    }
     msg += `\n${generateCodeFrame(src, {
       line: warning.loc.line,
       column: warning.loc.column - 1, // 1-based
