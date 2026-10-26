@@ -4,18 +4,21 @@ import { describe, expect, test } from 'vitest'
 import { PartialEnvironment } from '../../baseEnvironment'
 import { resolveConfig } from '../../config'
 import { assetImportMetaUrlPlugin } from '../../plugins/assetImportMetaUrl'
+import { normalizePath } from '../../utils'
 
-async function createAssetImportMetaurlPluginTransform() {
+async function createAssetImportMetaurlPluginTransform(
+  addWatchFile?: (file: string) => void,
+) {
   const config = await resolveConfig({ configFile: false }, 'serve')
   const instance = assetImportMetaUrlPlugin(config)
   const environment = new PartialEnvironment('client', config)
 
-  return async (code: string) => {
+  return async (code: string, id = 'foo.ts') => {
     // @ts-expect-error transform.handler should exist
     const result = await instance.transform.handler.call(
-      { environment, parse: parseAst },
+      { environment, parse: parseAst, addWatchFile },
       code,
-      'foo.ts',
+      id,
     )
     return result?.code || result
   }
@@ -65,40 +68,28 @@ describe('assetImportMetaUrlPlugin', async () => {
   })
 })
 
-describe('assetImportMetaUrlPlugin watch files', async () => {
-  const config = await resolveConfig({ configFile: false }, 'serve')
-  const instance = assetImportMetaUrlPlugin(config)
-  const environment = new PartialEnvironment('client', config)
-  const file = path.posix.join(
-    import.meta.dirname.replaceAll('\\', '/'),
-    'assetImportMetaUrl.spec.ts',
+describe('assetImportMetaUrlPlugin watch files', () => {
+  const file = normalizePath(
+    path.join(import.meta.dirname, 'assetImportMetaUrl.spec.ts'),
   )
 
-  const getWatchFiles = async (url: string) => {
-    const watchFiles: string[] = []
-    // @ts-expect-error transform.handler should exist
-    await instance.transform.handler.call(
-      {
-        environment,
-        parse: parseAst,
-        addWatchFile: (file: string) => watchFiles.push(file),
-      },
-      `new URL('${url}', import.meta.url)`,
-      path.join(import.meta.dirname, 'entry.js'),
-    )
-    return watchFiles
+  const cases = [
+    './assetImportMetaUrl.spec.ts',
+    './assetImportMetaUrl.spec.ts?inline',
+    './assetImportMetaUrl.spec.ts#hash',
+  ]
+
+  for (const url of cases) {
+    test(`watches the referenced file for ${url}`, async () => {
+      const watchFiles: string[] = []
+      const transform = await createAssetImportMetaurlPluginTransform((file) =>
+        watchFiles.push(file),
+      )
+      await transform(
+        `new URL('${url}', import.meta.url)`,
+        path.join(import.meta.dirname, 'entry.js'),
+      )
+      expect(watchFiles).toStrictEqual([file])
+    })
   }
-
-  test('watches the referenced file', async () => {
-    expect(await getWatchFiles('./assetImportMetaUrl.spec.ts')).toEqual([file])
-  })
-
-  test('watches the referenced file when the url has a query or hash', async () => {
-    expect(await getWatchFiles('./assetImportMetaUrl.spec.ts?inline')).toEqual([
-      file,
-    ])
-    expect(await getWatchFiles('./assetImportMetaUrl.spec.ts#hash')).toEqual([
-      file,
-    ])
-  })
 })
