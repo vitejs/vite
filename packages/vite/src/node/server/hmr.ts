@@ -287,7 +287,17 @@ export const normalizeHotChannel = (
               } else {
                 payload = args[0]
               }
-              client.send(payload)
+              if (
+                enableHmr ||
+                !payload ||
+                typeof payload !== 'object' ||
+                payload.type === 'connected' ||
+                payload.type === 'ping' ||
+                payload.type === 'custom' ||
+                payload.type === 'error'
+              ) {
+                client.send(payload)
+              }
             },
           })
         }
@@ -352,6 +362,8 @@ export const normalizeHotChannel = (
 
       if (
         enableHmr ||
+        !payload ||
+        typeof payload !== 'object' ||
         payload.type === 'connected' ||
         payload.type === 'ping' ||
         payload.type === 'custom' ||

@@ -75,6 +75,7 @@ export class BundledDev {
   private _closed = false
   private clients = new Clients()
   private debouncedFullReload = debounce(20, () => {
+    if (this.environment.config.server.hmr === false) return
     this.environment.hot.send({ type: 'full-reload', path: '*' })
     this.environment.logger.info(colors.green(`page reload`), {
       timestamp: true,
@@ -85,7 +86,14 @@ export class BundledDev {
 
   private reloadNeededClientIds = new Set<string>()
   private debouncedReloadNeededFlush = debounce(20, () => {
-    if (this.lastBuildError || this.reloadNeededClientIds.size === 0) return
+    if (
+      this.lastBuildError ||
+      this.reloadNeededClientIds.size === 0 ||
+      this.environment.config.server.hmr === false
+    ) {
+      this.reloadNeededClientIds.clear()
+      return
+    }
     for (const clientId of this.reloadNeededClientIds) {
       this.clients.get(clientId)?.send({ type: 'full-reload', path: '*' })
     }
@@ -203,7 +211,10 @@ export class BundledDev {
           return
         }
         const { updates, changedFiles } = result
-        if (changedFiles.length === 0) {
+        if (
+          changedFiles.length === 0 ||
+          this.environment.config.server.hmr === false
+        ) {
           return
         }
         if (updates.every((update) => update.update.type === 'Noop')) {
@@ -469,7 +480,11 @@ export class BundledDev {
     files: string[],
     hmrOutput: HmrOutput,
   ) {
-    if (hmrOutput.type === 'Noop') return
+    if (
+      this.environment.config.server.hmr === false ||
+      hmrOutput.type === 'Noop'
+    )
+      return
 
     const shortFile = files
       .map((file) => getShortName(file, this.environment.config.root))

@@ -363,7 +363,17 @@ export function createWebSocketServer(
           } else {
             payload = args[0]
           }
-          socket.send(JSON.stringify(payload))
+          if (
+            config.server.hmr !== false ||
+            !payload ||
+            typeof payload !== 'object' ||
+            payload.type === 'connected' ||
+            payload.type === 'ping' ||
+            payload.type === 'custom' ||
+            payload.type === 'error'
+          ) {
+            socket.send(JSON.stringify(payload))
+          }
         },
         socket,
       })
