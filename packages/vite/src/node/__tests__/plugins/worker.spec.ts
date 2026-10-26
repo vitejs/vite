@@ -7,6 +7,30 @@ import { splitWorkerRequest } from '../../plugins/worker'
 
 const fixturesDir = resolve(import.meta.dirname, 'fixtures')
 
+test.each(['main.js', 'parent.js'])(
+  'emits a nested worker whose direct reference is tree-shaken (%s)',
+  async (entry) => {
+    const root = resolve(fixturesDir, 'worker-tree-shaken-reference')
+    const result = (await build({
+      root,
+      logLevel: 'silent',
+      build: {
+        write: false,
+        rolldownOptions: { input: resolve(root, entry) },
+      },
+    })) as RolldownOutput
+
+    const outer = result.output.find((o) =>
+      o.fileName.includes('outer.worker-'),
+    )!
+    expect(outer).toBeDefined()
+    const code = outer.type === 'asset' ? String(outer.source) : outer.code
+    const helper = code.match(/assets\/helper-[\w-]+\.js/)?.[0]
+    expect(helper).toBeDefined()
+    expect(result.output.map((o) => o.fileName)).toContain(helper)
+  },
+)
+
 describe('splitWorkerRequest', () => {
   for (const [id, postfix] of [
     ['/worker.js', ''],

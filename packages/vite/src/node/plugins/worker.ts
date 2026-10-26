@@ -176,9 +176,12 @@ class WorkerOutputCache {
     childBundleIds.add(childBundleId)
   }
 
-  getLiveAssetFileNames(mainLiveModuleIds: Set<string>): Set<string> {
+  getLiveAssetFileNames(
+    liveModuleIds: Set<string>,
+    rootBundleId?: BundleId,
+  ): Set<string> {
     const liveBundles = new Set<string>()
-    const queue: [BundleId, Set<string>][] = [[undefined, mainLiveModuleIds]]
+    const queue: [BundleId, Set<string>][] = [[rootBundleId, liveModuleIds]]
     while (queue.length > 0) {
       const [bundleId, moduleIds] = queue.shift()!
       const referencesByModule = this.bundleReferences.get(bundleId)
@@ -786,6 +789,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       // not guaranteed when an incremental build reuses cached modules.
       const shouldFilter =
         this.environment.config.command === 'build' && !config.build.watch
+      const rootBundleId = isWorker ? config.bundleChain.at(-1) : undefined
+      const liveFileNames = shouldFilter
+        ? cache.getLiveAssetFileNames(liveModuleIds, rootBundleId)
+        : undefined
 
       // `import.meta.ROLLDOWN_FILE_URL_*` requires calling `emitFile` while the
       // referencing module is loaded. Remove those eagerly emitted assets when
@@ -793,11 +800,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       // needs to run for worker sub-builds so dead nested workers don't become
       // referenced assets of their parent worker bundle.
       if (shouldFilter) {
-        const rootBundleId = isWorker ? config.bundleChain.at(-1) : undefined
         for (const workerBundle of cache.getDeadDirectlyReferencedBundles(
           rootBundleId,
           liveModuleIds,
         )) {
+          // A dead direct reference may still be live through another worker.
+          if (liveFileNames!.has(workerBundle.entryFilename)) continue
           const emittedAsset = bundle[workerBundle.entryFilename]
           if (emittedAsset?.type === 'asset') {
             delete bundle[workerBundle.entryFilename]
@@ -807,9 +815,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       if (isWorker) return
 
-      const liveFileNames = shouldFilter
-        ? cache.getLiveAssetFileNames(liveModuleIds)
-        : undefined
       for (const asset of cache.getAssets()) {
         if (liveFileNames && !liveFileNames.has(asset.fileName)) continue
         if (emittedAssets.has(asset.fileName)) continue
