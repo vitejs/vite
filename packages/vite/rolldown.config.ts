@@ -344,39 +344,51 @@ function buildTimeImportMetaUrlPlugin(): Plugin {
             s.overwrite(ss, se + 4, `${prefix}${index}`)
           }
         }
-        return s.hasChanged() ? s.toString() : undefined
+        return s.hasChanged()
+          ? {
+              code: s.toString(),
+              map: s.generateMap({ source: id, hires: 'boundary' }),
+            }
+          : undefined
       },
     },
     renderChunk(code, chunk, outputOptions) {
       if (!code.includes(prefix)) return
 
-      return code.replace(
-        /__vite_buildTimeImportMetaUrl_(\d+)/g,
-        (_, index) => {
-          const originalFile = Object.keys(idMap).find(
-            (key) => idMap[key] === +index,
+      const s = new MagicString(code)
+      const pattern = /__vite_buildTimeImportMetaUrl_(\d+)/g
+      let match
+      while ((match = pattern.exec(code))) {
+        const originalFile = Object.keys(idMap).find(
+          (key) => idMap[key] === +match![1],
+        )
+        if (!originalFile) {
+          throw new Error(
+            `Could not find original file for ${prefix}${match[1]} in ${chunk.fileName}`,
           )
-          if (!originalFile) {
-            throw new Error(
-              `Could not find original file for ${prefix}${index} in ${chunk.fileName}`,
-            )
-          }
-          const outputFile = path.resolve(outputOptions.dir!, chunk.fileName)
-          const relativePath = path
-            .relative(path.dirname(outputFile), originalFile)
-            .replaceAll('\\', '/')
+        }
+        const outputFile = path.resolve(outputOptions.dir!, chunk.fileName)
+        const relativePath = path
+          .relative(path.dirname(outputFile), originalFile)
+          .replaceAll('\\', '/')
 
-          if (outputOptions.format === 'es') {
-            return `new URL(${JSON.stringify(relativePath)}, import.meta.url)`
-          } else if (outputOptions.format === 'cjs') {
-            return `new URL(${JSON.stringify(
-              relativePath,
-            )}, require('node:url').pathToFileURL(__filename))`
-          } else {
-            throw new Error(`Unsupported output format ${outputOptions.format}`)
-          }
-        },
-      )
+        let replacement: string
+        if (outputOptions.format === 'es') {
+          replacement = `new URL(${JSON.stringify(relativePath)}, import.meta.url)`
+        } else if (outputOptions.format === 'cjs') {
+          replacement = `new URL(${JSON.stringify(
+            relativePath,
+          )}, require('node:url').pathToFileURL(__filename))`
+        } else {
+          throw new Error(`Unsupported output format ${outputOptions.format}`)
+        }
+        s.overwrite(match.index, match.index + match[0].length, replacement)
+      }
+
+      if (!outputOptions.sourcemap) {
+        return s.toString()
+      }
+      return { code: s.toString(), map: s.generateMap({ hires: 'boundary' }) }
     },
   }
 }
