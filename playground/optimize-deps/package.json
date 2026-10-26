@@ -55,7 +55,7 @@
     "@vitejs/test-dep-lodash.clonedeep": "file:./dep-lodash-clonedeep",
     "@vitejs/test-dep-lodash-es": "file:./dep-lodash-es",
     "@vitejs/test-nested-exclude": "file:./nested-exclude",
-    "phoenix": "^1.8.15",
+    "phoenix": "^1.8.16",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "@vitejs/test-resolve-linked": "workspace:0.0.0",
