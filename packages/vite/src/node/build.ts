@@ -24,11 +24,11 @@ import type {
   WatcherOptions,
 } from 'rolldown'
 import { viteLoadFallbackPlugin as nativeLoadFallbackPlugin } from 'rolldown/experimental'
-import { esmExternalRequirePlugin } from 'rolldown/plugins'
 import type { RollupCommonJSOptions } from '#dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from '#dep-types/dynamicImportVars'
 import type { EsbuildTarget } from '#types/internal/esbuildOptions'
 import type { AssetMetadata, ChunkMetadata } from '#types/metadata'
+import { joinUrlSegments } from '../shared/utils'
 import type { PartialEnvironment } from './baseEnvironment'
 import { BaseEnvironment } from './baseEnvironment'
 import type {
@@ -76,7 +76,6 @@ import {
   displayTime,
   getPkgName,
   isPluginNameHidden,
-  joinUrlSegments,
   mergeConfig,
   mergeWithDefaults,
   partialEncodeURIPath,
@@ -710,12 +709,6 @@ export function resolveRolldownOptions(
   const isSsrTargetWebworkerEnvironment =
     environment.name === 'ssr' &&
     environment.getTopLevelConfig().ssr?.target === 'webworker'
-
-  // For webworker SSR with platform: 'browser', external CJS require() calls
-  // need to be converted to ESM imports since createRequire is not available.
-  if (isSsrTargetWebworkerEnvironment) {
-    plugins.push(esmExternalRequirePlugin())
-  }
 
   const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
     // @ts-expect-error See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618

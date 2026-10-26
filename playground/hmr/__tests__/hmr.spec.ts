@@ -1062,13 +1062,13 @@ if (!isBuild) {
 
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
-      .toMatch('count is 1')
+      .toBe('count is 1')
 
     // add state
     await page.click('.intermediate-file-delete-increment')
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
-      .toMatch('count is 2')
+      .toBe('count is 2')
 
     // update import, hmr works
     editFile('intermediate-file-delete/index.js', (code) =>
@@ -1079,7 +1079,7 @@ if (!isBuild) {
     )
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
-      .toMatch('count is 2!')
+      .toBe('count is 2!')
 
     // remove unused file. Plain dev reloads the page, because the file is now
     // an entry point in its module graph. Bundled dev keeps the page as is: the
@@ -1087,13 +1087,13 @@ if (!isBuild) {
     removeFile('intermediate-file-delete/re-export.js')
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
-      .toMatch(isBundledDev ? 'count is 2!' : 'count is 1!')
+      .toBe(isBundledDev ? 'count is 2!' : 'count is 1!')
 
     // re-add state
     await page.click('.intermediate-file-delete-increment')
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
-      .toMatch(isBundledDev ? 'count is 3!' : 'count is 2!')
+      .toBe(isBundledDev ? 'count is 3!' : 'count is 2!')
 
     // hmr works after file deletion
     editFile('intermediate-file-delete/display.js', (code) =>
@@ -1101,7 +1101,7 @@ if (!isBuild) {
     )
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
-      .toMatch(isBundledDev ? 'count is 3' : 'count is 2')
+      .toBe(isBundledDev ? 'count is 3' : 'count is 2')
   })
 
   test(
@@ -1209,6 +1209,145 @@ if (!isBuild) {
         .toMatch(
           'prune-init|dep2-disposed|dep2-pruned|dep3-disposed|dep3-pruned',
         )
+    },
+  )
+
+  test('importing an unused file again should not use old code', async () => {
+    await page.goto(viteTestUrl)
+
+    const display = () => page.textContent('.orphan-reimport-display')
+
+    await expect.poll(display).toBe('count is 1')
+
+    await page.click('.orphan-reimport-increment')
+    await expect.poll(display).toBe('count is 2')
+
+    // re-export.js is no longer imported
+    await untilBrowserLogAfter(
+      () =>
+        editFile('orphan-reimport/index.js', (code) =>
+          code.replace("from './re-export.js'", "from './display.js'"),
+        ),
+      hotUpdatedLog('orphan-reimport/index.js'),
+    )
+
+    // update a dependency of re-export.js. Plain dev reloads the page, because
+    // re-export.js has no importers, so it is an entry point in its module graph.
+    // Bundled dev applies the update and stops at re-export.js.
+    editFile('orphan-reimport/display.js', (code) =>
+      code.replace('count is ${count}', 'count is ${count}!'),
+    )
+    await expect
+      .poll(display)
+      .toBe(isBundledDev ? 'count is 2!' : 'count is 1!')
+
+    // import re-export.js again
+    await untilBrowserLogAfter(
+      () =>
+        editFile('orphan-reimport/index.js', (code) =>
+          code.replace("from './display.js'", "from './re-export.js'"),
+        ),
+      hotUpdatedLog('orphan-reimport/index.js'),
+    )
+    await expect
+      .poll(display)
+      .toBe(isBundledDev ? 'count is 2!' : 'count is 1!')
+  })
+
+  test('updating a file that only an unused file imports should not keep old code', async () => {
+    await page.goto(viteTestUrl)
+
+    const display = () => page.textContent('.orphan-no-boundary-display')
+
+    await expect.poll(display).toBe('count is 1')
+
+    await page.click('.orphan-no-boundary-increment')
+    await expect.poll(display).toBe('count is 2')
+
+    // re-export.js and display.js are no longer imported
+    await untilBrowserLogAfter(
+      () =>
+        editFile('orphan-no-boundary/index.js', (code) =>
+          code.replace("from './re-export.js'", "from './local.js'"),
+        ),
+      hotUpdatedLog('orphan-no-boundary/index.js'),
+    )
+    await expect.poll(display).toBe('local 2')
+
+    // update display.js. Plain dev reloads the page, because re-export.js has
+    // no importers, so it is an entry point in its module graph. Bundled dev
+    // finds no hmr boundary, so nothing runs again and no update is logged.
+    // Wait for the dispose log instead, so that this edit is handled on its own
+    // and not in the same update as the next edit.
+    const editDisplay = () =>
+      editFile('orphan-no-boundary/display.js', (code) =>
+        code.replace('count is ${count}', 'count is ${count}!'),
+      )
+    if (isBundledDev) {
+      await untilBrowserLogAfter(
+        editDisplay,
+        '[orphan-no-boundary] re-export.js disposed',
+      )
+    } else {
+      editDisplay()
+    }
+    await expect.poll(display).toBe(isBundledDev ? 'local 2' : 'local 1')
+
+    // import re-export.js again
+    await untilBrowserLogAfter(
+      () =>
+        editFile('orphan-no-boundary/index.js', (code) =>
+          code.replace("from './local.js'", "from './re-export.js'"),
+        ),
+      hotUpdatedLog('orphan-no-boundary/index.js'),
+    )
+    await expect
+      .poll(display)
+      .toBe(isBundledDev ? 'count is 2!' : 'count is 1!')
+  })
+
+  // Plain dev serves no built chunk that a page could load as an entry.
+  test.runIf(isBundledDev)(
+    'updating a module in an import cycle with an entry reloads the page',
+    async () => {
+      await page.goto(viteTestUrl + '/entry-cycle/index.html')
+      const display = () => page.textContent('.entry-cycle-display')
+      await expect.poll(display).toBe('entry imports dep')
+
+      // Nothing accepts the update, and the walk from dep.js comes back to it
+      // through entry-cycle.js. Only a page load runs the entry again.
+      const loadPromise = page.waitForEvent('load')
+      editFile('entry-cycle/dep.js', (code) =>
+        code.replace('imports dep', 'imports dep!'),
+      )
+      await loadPromise
+      await expect.poll(display).toBe('entry imports dep!')
+    },
+  )
+
+  test.runIf(isBundledDev)(
+    'updating an entry that another entry no longer imports reloads the page',
+    async () => {
+      await page.goto(viteTestUrl + '/entry-import-removed/index.html')
+      const imported = () => page.textContent('.entry-import-removed-imported')
+      await expect.poll(imported).toBe('imported entry')
+
+      // imported-entry.js has no importer left, but the page still runs it
+      await untilBrowserLogAfter(
+        () =>
+          editFile('entry-import-removed/importing-entry.js', (code) =>
+            code.replace("import './imported-entry.js'\n", ''),
+          ),
+        hotUpdatedLog('entry-import-removed/importing-entry.js'),
+      )
+
+      // Only a page load runs the entry again.
+      const loadPromise = page.waitForEvent('load')
+      editFile('entry-import-removed/imported-entry.js', (code) =>
+        code.replace("'imported entry'", "'imported entry!'"),
+      )
+      await loadPromise
+      await expect.poll(imported).toBe('imported entry!')
     },
   )
 
