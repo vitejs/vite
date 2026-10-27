@@ -1,0 +1,19 @@
+packages/create-vite/package.json
+  s_7149c025edd4d0::t_005ff564e85bd0 13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "81f028aa54670a038a91bbf790a6c63b5fda5c9a",
+  "prompts": {},
+  "sessions": {
+    "s_7149c025edd4d0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a17c95-dca0-7e41-9c7e-e4cb58698df3",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
