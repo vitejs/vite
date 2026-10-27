@@ -4,9 +4,10 @@ import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { promiseWithResolvers } from '../../../shared/utils'
-import { checkLoadingAccess } from '../middlewares/static'
+import { normalizePath } from '../../utils'
 import { resolveChokidarOptions } from '../../watch'
 import { type ViteDevServer, createServer } from '../index'
+import { checkLoadingAccess } from '../middlewares/static'
 
 const stubGetWatchedCode = /\(\)\s*\{\s*return this;\s*\}/
 const root = fileURLToPath(
@@ -173,7 +174,9 @@ describe('watcher configuration', () => {
   })
 
   it('resolveChokidarOptions scopes .git pattern when root contains .git directory', () => {
-    const gitWorktreeRoot = '/path/to/repo/.git/worktrees/my-branch'
+    const gitWorktreeRoot = normalizePath(
+      resolve('/path/to/repo/.git/worktrees/my-branch'),
+    )
     const options = resolveChokidarOptions(
       {},
       new Set(),
@@ -200,7 +203,9 @@ describe('watcher configuration', () => {
   })
 
   it('serves files and watches root when project root is within ancestor .git directory (fix #23626)', async () => {
-    const tempDir = fs.mkdtempSync(join(os.tmpdir(), 'vite-git-ancestor-'))
+    const tempDir = fs.realpathSync(
+      fs.mkdtempSync(join(os.tmpdir(), 'vite-git-ancestor-')),
+    )
     const appRoot = join(tempDir, '.git', 'worktrees', 'app')
     const appFile = join(appRoot, 'index.html')
     const gitInternalFile = join(tempDir, '.git', 'config')

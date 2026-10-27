@@ -2467,7 +2467,9 @@ describe('resolveServerOptions', () => {
   })
 
   test('scopes **/.git/** in fs.deny when root contains ancestor .git directory', async () => {
-    const gitWorktreeRoot = '/path/to/repo/.git/worktrees/my-branch'
+    const gitWorktreeRoot = normalizePath(
+      path.resolve('/path/to/repo/.git/worktrees/my-branch'),
+    )
     const resolved = await resolveServerOptions(gitWorktreeRoot, {}, logger)
     expect(resolved.fs.deny).toContain(`${gitWorktreeRoot}/**/.git/**`)
     expect(resolved.fs.deny).not.toContain('**/.git/**')
@@ -2480,7 +2482,9 @@ describe('resolveServerOptions', () => {
   })
 
   test('scopes explicit **/.git/** in user-defined fs.deny when root contains .git', async () => {
-    const gitWorktreeRoot = '/path/to/repo/.git/worktrees/my-branch'
+    const gitWorktreeRoot = normalizePath(
+      path.resolve('/path/to/repo/.git/worktrees/my-branch'),
+    )
     const resolved = await resolveServerOptions(
       gitWorktreeRoot,
       {
