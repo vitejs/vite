@@ -888,7 +888,7 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=globals
   const globalsVersion = '17.13.0'
   // renovate: datasource=npm depName=typescript-eslint
-  const typescriptEslintVersion = '8.71.2'
+  const typescriptEslintVersion = '8.72.0'
 
   const eslintConfigForTS = /* js */ `import js from '@eslint/js'
 import globals from 'globals'
