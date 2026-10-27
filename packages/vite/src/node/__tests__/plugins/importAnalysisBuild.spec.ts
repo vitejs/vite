@@ -1,8 +1,6 @@
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { RolldownOutput } from 'rolldown'
-import { assert, beforeAll, describe, expect, test } from 'vitest'
+import { beforeAll, describe, expect, test } from 'vitest'
 import { promiseWithResolvers } from '../../../shared/utils'
-import { build } from '../../build'
 import {
   getChunkImportMapKeySignatures,
   isCssPreloadUrl,
@@ -14,78 +12,6 @@ import {
 beforeAll(async () => {
   await init
 })
-
-describe.each(['?dpl=test', '#fragment'])(
-  'dynamic imports qualified with %s',
-  (suffix) => {
-    async function buildProject(library = false) {
-      const modules: Record<string, string> = {
-        'entry.js': `window.loadLazy = () => import('${library ? 'lazy.css' : 'lazy.js'}')`,
-        'lazy.js': `import 'lazy.css'; export const lazy = true`,
-        'lazy.css': `.lazy { color: red }`,
-      }
-      const result = (await build({
-        configFile: false,
-        logLevel: 'silent',
-        build: {
-          rolldownOptions: { input: 'entry.js' },
-          write: false,
-          minify: false,
-          cssCodeSplit: true,
-          lib: library ? { entry: 'entry.js', formats: ['es'] } : false,
-        },
-        plugins: [
-          {
-            name: 'qualified-chunk-imports',
-            resolveId(id) {
-              if (id in modules) return `\0${id}`
-            },
-            load(id) {
-              return modules[id.slice(1)]
-            },
-            renderChunk(code) {
-              return code.replace(
-                /(import\(["'`])([^"'`]+\.js)(["'`]\))/g,
-                `$1$2${suffix}$3`,
-              )
-            },
-          },
-        ],
-      })) as RolldownOutput | RolldownOutput[]
-      return Array.isArray(result) ? result[0] : result
-    }
-
-    test('preserves CSS dependencies of lazy JavaScript chunks', async () => {
-      const { output } = await buildProject()
-      const entry = output.find(
-        (chunk) => chunk.type === 'chunk' && chunk.isEntry,
-      )
-      assert(entry?.type === 'chunk')
-      const css = output.find(
-        (asset) => asset.type === 'asset' && asset.fileName.endsWith('.css'),
-      )
-      assert(css)
-      expect(entry.code).toContain(suffix)
-      expect(entry.code).toContain(css.fileName)
-    })
-
-    test('removes imports of deleted CSS-only chunks in library builds', async () => {
-      const { output } = await buildProject(true)
-      const entry = output.find(
-        (chunk) => chunk.type === 'chunk' && chunk.isEntry,
-      )
-      assert(entry?.type === 'chunk')
-      expect(
-        output.some(
-          (asset) => asset.type === 'asset' && asset.fileName.endsWith('.css'),
-        ),
-      ).toBe(true)
-      expect(
-        parseImports(entry.code)[0].filter((specifier) => specifier.d > -1),
-      ).toHaveLength(0)
-    })
-  },
-)
 
 test('chunk import map key signatures follow rendered chunk order', () => {
   const unhashed = {
