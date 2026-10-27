@@ -297,7 +297,7 @@ const renderedModulesCache = new WeakMap<
   }
 >()
 
-export function getRenderedModule(
+function getRenderedModule(
   chunks: Record<string, RenderedChunk>,
   importerId: string,
 ): RenderedModule | undefined {
