@@ -38,7 +38,7 @@ import type { LightningCSSOptions } from '#types/internal/lightningcssOptions'
 import type { CustomPluginOptionsVite } from '#types/metadata'
 import { type DevEnvironment } from '..'
 import { NULL_BYTE_PLACEHOLDER } from '../../shared/constants'
-import { cleanUrl, isWindows, slash } from '../../shared/utils'
+import { cleanUrl, isWindows, joinUrlSegments, slash } from '../../shared/utils'
 import { PartialEnvironment } from '../baseEnvironment'
 import {
   createToImportMetaURLBasedRelativeRuntime,
@@ -73,6 +73,7 @@ import {
   asyncReplace,
   combineSourcemaps,
   createSerialPromiseQueue,
+  decodeURIIfPossible,
   emptyCssComments,
   encodeURIPath,
   escapeRegex,
@@ -86,7 +87,6 @@ import {
   isDataUrl,
   isExternalUrl,
   isObject,
-  joinUrlSegments,
   lineTerminatorRE,
   mergeWithDefaults,
   normalizePath,
@@ -289,6 +289,41 @@ const cssModulesCache = new WeakMap<
   Map<string, Record<string, string>>
 >()
 
+const renderedModulesCache = new WeakMap<
+  Record<string, RenderedChunk>,
+  {
+    modules: Map<string, RenderedModule>
+    chunks: ArrayIterator<string>
+  }
+>()
+
+function getRenderedModule(
+  chunks: Record<string, RenderedChunk>,
+  importerId: string,
+): RenderedModule | undefined {
+  let cache = renderedModulesCache.get(chunks)
+  if (!cache) {
+    cache = {
+      modules: new Map(),
+      chunks: Object.keys(chunks).values(),
+    }
+    renderedModulesCache.set(chunks, cache)
+  }
+
+  const cached = cache.modules.get(importerId)
+  if (cached) return cached
+
+  // Resume indexing at the next chunk, stopping once the importer is found.
+  for (const name of cache.chunks) {
+    const modules = chunks[name].modules
+    for (const id in modules) {
+      if (!cache.modules.has(id)) cache.modules.set(id, modules[id])
+    }
+    const importer = cache.modules.get(importerId)
+    if (importer) return importer
+  }
+}
+
 export const removedPureCssFilesCache: WeakMap<
   ResolvedConfig,
   Map<string, RenderedChunk>
@@ -394,7 +429,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           idResolver(environment, url, importer)
 
         const urlResolver: CssUrlResolver = async (url, importer) => {
-          const decodedUrl = decodeURI(url)
+          // a `%` that doesn't start an escape sequence (e.g. `url(100%.png)`)
+          // is kept as is, like browsers do
+          const decodedUrl = decodeURIIfPossible(url) ?? url
           if (checkPublicFile(decodedUrl, config)) {
             if (encodePublicUrlsInCSS(config)) {
               return [publicFileToBuiltUrl(decodedUrl, config), undefined]
@@ -673,20 +710,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       ? {
           async renderChunk(code, chunk, opts, meta) {
             let chunkCSS: string | undefined
-            const renderedModules = new Proxy(
-              {} as Record<string, RenderedModule | undefined>,
-              {
-                get(_target, p) {
-                  for (const name in meta.chunks) {
-                    const modules = meta.chunks[name].modules
-                    const module = modules[p as string]
-                    if (module) {
-                      return module
-                    }
-                  }
-                },
-              },
-            )
             // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
             const isJsChunkEmpty = code === '' && !chunk.isEntry
             let isPureCssChunk = chunk.exports.length === 0
@@ -704,7 +727,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   this.getModuleInfo(id)?.meta?.vite?.cssScopeTo
                 if (
                   cssScopeTo &&
-                  !isCssScopeToRendered(cssScopeTo, renderedModules)
+                  !isCssScopeToRendered(cssScopeTo, meta.chunks)
                 ) {
                   continue
                 }
@@ -988,7 +1011,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             }
 
             if (s) {
-              if (config.build.sourcemap) {
+              if (this.environment.config.build.sourcemap) {
                 return {
                   code: s.toString(),
                   map: s.generateMap({ hires: 'boundary' }),
@@ -1078,14 +1101,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       // With `cssCodeSplit: false`, CSS is emitted as a single stylesheet in the HTML,
       // so this per-chunk import map handling is irrelevant.
-      if (
-        this.environment.config.build.chunkImportMap &&
-        chunkCssReferences.size
-      ) {
+      const importMap = getImportMap(bundle, this.environment.config)
+      if (importMap && chunkCssReferences.size) {
         // The import map hash identifies the JS chunk independently of its content.
         // Since each chunk has at most one extracted CSS sidecar, we can reuse that
         // stable identity with a `.css` extension while mapping it to the CSS content hash.
-        const importMap = getImportMap(bundle, this.environment.config)!
         const importMapReverseMapping = Object.fromEntries(
           Object.entries(importMap.mapping).map(([k, v]) => [v, k]),
         )
@@ -1133,8 +1153,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const pureCssChunkNameSet = new Set(pureCssChunkNames)
 
         let importMapReverseMapping: Record<string, string> | undefined
-        if (this.environment.config.build.chunkImportMap) {
-          const importMap = getImportMap(bundle, this.environment.config)!
+        if (importMap) {
           importMapReverseMapping = Object.fromEntries(
             Object.entries(importMap.mapping).map(([k, v]) => [v, k]),
           )
@@ -1310,10 +1329,10 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
 
 function isCssScopeToRendered(
   cssScopeTo: Exclude<CustomPluginOptionsVite['cssScopeTo'], undefined>,
-  renderedModules: Record<string, RenderedModule | undefined>,
+  chunks: Record<string, RenderedChunk>,
 ) {
   const [importerId, exp] = cssScopeTo
-  const importer = renderedModules[importerId]
+  const importer = getRenderedModule(chunks, importerId)
   return (
     importer && (exp === undefined || importer.renderedExports.includes(exp))
   )
@@ -1449,7 +1468,7 @@ async function compileCSSPreprocessors(
     environment.getTopLevelConfig(),
   )
   const opts = {
-    ...((preprocessorOptions && preprocessorOptions[lang]) || {}),
+    ...(preprocessorOptions && preprocessorOptions[lang]),
     // important: set this for relative import resolving
     filename: cleanUrl(id),
     enableSourcemap: devSourcemap ?? false,

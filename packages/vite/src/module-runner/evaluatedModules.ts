@@ -4,9 +4,7 @@ import { DecodedMap } from './sourcemap/decoder'
 import type { ResolvedResult } from './types'
 import { decodeBase64 } from './utils'
 
-const MODULE_RUNNER_SOURCEMAPPING_REGEXP = new RegExp(
-  `//# ${SOURCEMAPPING_URL}=data:application/json;base64,(.+)`,
-)
+const MODULE_RUNNER_SOURCEMAPPING_PREFIX = `//# ${SOURCEMAPPING_URL}=data:application/json;base64,`
 
 export class EvaluatedModuleNode {
   public importers: Set<string> = new Set()
@@ -110,13 +108,7 @@ export class EvaluatedModules {
     if (mod.map) return mod.map
     if (!mod.meta || !('code' in mod.meta)) return null
 
-    const pattern = `//# ${SOURCEMAPPING_URL}=data:application/json;base64,`
-    const lastIndex = mod.meta.code.lastIndexOf(pattern)
-    if (lastIndex === -1) return null
-
-    const mapString = MODULE_RUNNER_SOURCEMAPPING_REGEXP.exec(
-      mod.meta.code.slice(lastIndex),
-    )?.[1]
+    const mapString = extractInlineSourceMap(mod.meta.code)
     if (!mapString) return null
     mod.map = new DecodedMap(JSON.parse(decodeBase64(mapString)), mod.file)
     return mod.map
@@ -127,6 +119,18 @@ export class EvaluatedModules {
     this.fileToModulesMap.clear()
     this.urlToIdModuleMap.clear()
   }
+}
+
+// Plain string search rather than a regexp: it's about twice as fast, which
+// adds up on modules with large inline maps
+function extractInlineSourceMap(code: string): string | undefined {
+  const start = code.lastIndexOf(MODULE_RUNNER_SOURCEMAPPING_PREFIX)
+  if (start === -1) return
+  const dataStart = start + MODULE_RUNNER_SOURCEMAPPING_PREFIX.length
+  let dataEnd = code.indexOf('\n', dataStart)
+  if (dataEnd === -1) dataEnd = code.length
+  if (code.charCodeAt(dataEnd - 1) === 13 /* \r */) dataEnd--
+  return code.slice(dataStart, dataEnd)
 }
 
 // unique id that is not available as "$bare_import" like "test"
