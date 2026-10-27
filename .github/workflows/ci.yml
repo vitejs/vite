@@ -82,13 +82,13 @@ jobs:
 
       - if: matrix.node_version != '20'
         name: Install pnpm and node ${{ matrix.node_version }}
-        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+        uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
         with:
           runtime: node@${{ matrix.node_version }}
           cache: true
       - if: matrix.node_version == '20' # use node 24 for builds
         name: Install pnpm and node 24 for builds
-        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+        uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
         with:
           runtime: node@24
           cache: true
@@ -164,7 +164,7 @@ jobs:
           persist-credentials: false
 
       - name: Install pnpm and node 24
-        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+        uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
         with:
           runtime: node@24
           cache: true

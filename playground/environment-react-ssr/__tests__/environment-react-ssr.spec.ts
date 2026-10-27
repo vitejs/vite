@@ -3,8 +3,9 @@ import path from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
 import { describe, expect, onTestFinished, test } from 'vitest'
 import {
+  bundledDevTodo,
+  bundledDevUnsupported,
   isBuild,
-  isBundledDev,
   page,
   readDepOptimizationMetadata,
   readFile,
@@ -12,17 +13,28 @@ import {
   testDir,
 } from '~utils'
 
-test('basic', async () => {
-  await page.getByText('hydrated: true').isVisible()
-  await page.getByText('Count: 0').isVisible()
-  await page.getByRole('button', { name: '+' }).click()
-  await page.getByText('Count: 1').isVisible()
-})
+const clientOptimizerUnsupported = bundledDevUnsupported(
+  'bundled dev has no dep optimizer for the client environment, so there is no client `.vite/deps` metadata',
+)
+
+test(
+  'basic',
+  bundledDevTodo(
+    '`server.transformIndexHtml` currently returns HTML that points at the source files, not at the files bundled dev produces; how it should work in bundled dev is not decided yet, e.g. return the HTML that the build HTML plugin emits as `index.html` in `bundledDev.memoryFiles`',
+    { vite: [20374] },
+  ),
+  async () => {
+    await expect
+      .poll(() => page.getByText('hydrated: true').isVisible())
+      .toBe(true)
+    await expect.poll(() => page.getByText('Count: 0').isVisible()).toBe(true)
+    await page.getByRole('button', { name: '+' }).click()
+    await expect.poll(() => page.getByText('Count: 1').isVisible()).toBe(true)
+  },
+)
 
 describe.runIf(!isBuild)('pre-bundling', () => {
-  // bundled dev by design: the client environment has no dep optimizer, so
-  // there is no .vite/deps folder to read. Dependencies come from the bundle.
-  test.skipIf(isBundledDev)('client', async () => {
+  test('client', clientOptimizerUnsupported, async () => {
     const metaJson = readDepOptimizationMetadata()
 
     expect(metaJson.optimized['react']).toBeTruthy()
@@ -55,49 +67,61 @@ describe.runIf(!isBuild)('pre-bundling', () => {
     expect(depsFilesWithProcessEnvNodeEnv.length).toBeGreaterThan(0)
   })
 
-  // bundled dev by design: there is no client dep-optimizer metadata to
-  // compare before and after. The reload this test checks cannot happen.
-  test.skipIf(isBundledDev)('deps reload', async () => {
-    const envs = ['client', 'server'] as const
+  function addImport(entry: 'client' | 'server') {
+    const filePath = path.resolve(testDir, `src/entry-${entry}.tsx`)
+    const originalContent = readFile(filePath)
+    fs.writeFileSync(
+      filePath,
+      `import 'react-fake-${entry}'\n${originalContent}`,
+      'utf-8',
+    )
+    onTestFinished(() => {
+      fs.writeFileSync(filePath, originalContent, 'utf-8')
+    })
+  }
 
+  function optimizedFakeDeps() {
+    return serverLogs
+      .map(
+        (log) =>
+          stripVTControlCharacters(log).match(
+            /dependenc(?:y|ies) optimized: (react-fake-.*)/,
+          )?.[1],
+      )
+      .filter(Boolean)
+  }
+
+  test('deps reload (client)', clientOptimizerUnsupported, async () => {
     const clientMeta = readDepOptimizationMetadata('client')
-    const ssrMeta = readDepOptimizationMetadata('ssr')
     expect(clientMeta.optimized['react-fake-client']).toBeFalsy()
     expect(clientMeta.optimized['react-fake-server']).toBeFalsy()
-    expect(ssrMeta.optimized['react-fake-server']).toBeFalsy()
-    expect(ssrMeta.optimized['react-fake-client']).toBeFalsy()
 
-    envs.forEach((env) => {
-      const filePath = path.resolve(testDir, `src/entry-${env}.tsx`)
-      const originalContent = readFile(filePath)
-      fs.writeFileSync(
-        filePath,
-        `import 'react-fake-${env}'\n${originalContent}`,
-        'utf-8',
-      )
-      onTestFinished(() => {
-        fs.writeFileSync(filePath, originalContent, 'utf-8')
-      })
-    })
+    addImport('client')
 
-    await expect
-      .poll(() =>
-        serverLogs
-          .map(
-            (log) =>
-              stripVTControlCharacters(log).match(
-                /dependenc(?:y|ies) optimized: (react-fake-.*)/,
-              )?.[1],
-          )
-          .filter(Boolean),
-      )
-      .toStrictEqual(['react-fake-server', 'react-fake-client'])
+    await expect.poll(optimizedFakeDeps).toContain('react-fake-client')
 
     const clientMetaNew = readDepOptimizationMetadata('client')
-    const ssrMetaNew = readDepOptimizationMetadata('ssr')
     expect(clientMetaNew.optimized['react-fake-client']).toBeTruthy()
     expect(clientMetaNew.optimized['react-fake-server']).toBeFalsy()
-    expect(ssrMetaNew.optimized['react-fake-server']).toBeTruthy()
-    expect(ssrMetaNew.optimized['react-fake-client']).toBeFalsy()
   })
+
+  test(
+    'deps reload (ssr)',
+    bundledDevTodo(
+      'under bundled dev, file changes are only handled for the bundled client environment, so the ssr environment keeps running the old code until restart',
+    ),
+    async () => {
+      const ssrMeta = readDepOptimizationMetadata('ssr')
+      expect(ssrMeta.optimized['react-fake-server']).toBeFalsy()
+      expect(ssrMeta.optimized['react-fake-client']).toBeFalsy()
+
+      addImport('server')
+
+      await expect.poll(optimizedFakeDeps).toContain('react-fake-server')
+
+      const ssrMetaNew = readDepOptimizationMetadata('ssr')
+      expect(ssrMetaNew.optimized['react-fake-server']).toBeTruthy()
+      expect(ssrMetaNew.optimized['react-fake-client']).toBeFalsy()
+    },
+  )
 })
