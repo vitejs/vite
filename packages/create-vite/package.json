@@ -1,6 +1,6 @@
 {
   "name": "create-vite",
-  "version": "9.3.1",
+  "version": "9.3.3",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -10,7 +10,7 @@
   },
   "files": [
     "index.js",
-    "template-*",
+    "template-*/**",
     "dist"
   ],
   "scripts": {

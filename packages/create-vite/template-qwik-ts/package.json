@@ -11,8 +11,8 @@
   "devDependencies": {
     "@types/node": "^24.19.2",
     "serve": "^14.2.6",
-    "typescript": "~6.0.3",
-    "vite": "^8.3.4"
+    "typescript": "~7.0.2",
+    "vite": "^8.3.5"
   },
   "dependencies": {
     "@builder.io/qwik": "^1.20.2"

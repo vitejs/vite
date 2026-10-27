@@ -128,6 +128,13 @@ export function tests() {
       },
 
       {
+        name: 'unsafe WASM import',
+        testId: 'unsafe-wasm-import',
+        content: /403 Restricted/,
+        status: '403',
+      },
+
+      {
         name: 'unsafe fetch',
         testId: 'unsafe',
         content: /403 Restricted/,
