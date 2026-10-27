@@ -51,6 +51,8 @@ export function createIsConfiguredAsExternal(
     isProduction: false,
     isBuild: true,
     conditions: targetConditions,
+    // kept apart from `config.packageCache` as `isProduction` is fixed here
+    packageCache: new Map(),
   }
 
   const isExternalizable = (
@@ -132,8 +134,10 @@ function createIsExternal(
   const isConfiguredAsExternal = createIsConfiguredAsExternal(environment)
 
   return (id: string, importer?: string) => {
-    if (processedIds.has(id)) {
-      return processedIds.get(id)!
+    // bare imports are resolved from the importer's directory, so cache per directory
+    const cacheKey = importer ? `${id}\0${path.dirname(importer)}` : id
+    if (processedIds.has(cacheKey)) {
+      return processedIds.get(cacheKey)!
     }
     let isExternal = false
     if (id[0] !== '.' && !path.isAbsolute(id)) {
@@ -141,7 +145,7 @@ function createIsExternal(
         isBuiltin(environment.config.resolve.builtins, id) ||
         isConfiguredAsExternal(id, importer)
     }
-    processedIds.set(id, isExternal)
+    processedIds.set(cacheKey, isExternal)
     return isExternal
   }
 }
