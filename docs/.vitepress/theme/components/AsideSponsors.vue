@@ -20,12 +20,14 @@ const sponsors = computed(() => {
 
 <template>
   <a class="viteconf" href="https://viteconf.org/" target="_blank">
-    <img
-      width="22"
-      height="22"
-      src="../../../images/viteconf.svg"
-      alt="ViteConf Logo"
-    />
+    <span class="viteconf-logo">
+      <img
+        width="22"
+        height="22"
+        src="../../../images/viteconf.svg"
+        alt="ViteConf Logo"
+      />
+    </span>
     <span>
       <p class="extra-info">Building Together</p>
       <p class="heading">ViteConf 2026</p>
@@ -57,6 +59,14 @@ const sponsors = computed(() => {
 }
 .viteconf:hover {
   border: 2px solid var(--vp-c-brand-light);
+}
+.viteconf-logo {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
 }
 .viteconf img {
   transition: transform 0.5s;
