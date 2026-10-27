@@ -1,0 +1,19 @@
+packages/vite/src/node/server/bundledDev.ts
+  s_c561e216d6e913::t_e0cb8d33739652 132-135,301-302,426,674-681
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "7f6025e51f9f2a09c9c99281230642e494504440",
+  "prompts": {},
+  "sessions": {
+    "s_c561e216d6e913": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e999271a8ffeLNibSTlhUcPthB",
+        "model": "unknown"
+      },
+      "human_author": "Vladimir Sheremet <vsheremet@cloudflare.com>"
+    }
+  }
+}
