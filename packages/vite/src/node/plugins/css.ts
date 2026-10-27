@@ -289,37 +289,45 @@ const cssModulesCache = new WeakMap<
   Map<string, Record<string, string>>
 >()
 
+const renderedModulesCache = new WeakMap<
+  Record<string, RenderedChunk>,
+  {
+    modules: Map<string, RenderedModule>
+    chunks: ArrayIterator<string>
+  }
+>()
+
+export function getRenderedModule(
+  chunks: Record<string, RenderedChunk>,
+  importerId: string,
+): RenderedModule | undefined {
+  let cache = renderedModulesCache.get(chunks)
+  if (!cache) {
+    cache = {
+      modules: new Map(),
+      chunks: Object.keys(chunks).values(),
+    }
+    renderedModulesCache.set(chunks, cache)
+  }
+
+  const cached = cache.modules.get(importerId)
+  if (cached) return cached
+
+  // Resume indexing at the next chunk, stopping once the importer is found.
+  for (const name of cache.chunks) {
+    const modules = chunks[name].modules
+    for (const id in modules) {
+      if (!cache.modules.has(id)) cache.modules.set(id, modules[id])
+    }
+    const importer = cache.modules.get(importerId)
+    if (importer) return importer
+  }
+}
+
 export const removedPureCssFilesCache: WeakMap<
   ResolvedConfig,
   Map<string, RenderedChunk>
 > = new WeakMap()
-
-// `meta.chunks` is the same object for every `renderChunk` call of an output,
-// so the rendered modules of all chunks are indexed once per output
-// instead of scanning every chunk on each lookup
-const renderedModulesCache = new WeakMap<
-  Record<string, RenderedChunk>,
-  Map<string, RenderedModule>
->()
-
-function getRenderedModules(
-  chunks: Record<string, RenderedChunk>,
-): Map<string, RenderedModule> {
-  let renderedModules = renderedModulesCache.get(chunks)
-  if (!renderedModules) {
-    renderedModules = new Map()
-    for (const name in chunks) {
-      const modules = chunks[name].modules
-      for (const id in modules) {
-        if (!renderedModules.has(id)) {
-          renderedModules.set(id, modules[id])
-        }
-      }
-    }
-    renderedModulesCache.set(chunks, renderedModules)
-  }
-  return renderedModules
-}
 
 // Used only if the config doesn't code-split CSS (builds a single CSS file)
 export const cssBundleNameCache: WeakMap<ResolvedConfig, string> = new WeakMap()
@@ -719,10 +727,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   this.getModuleInfo(id)?.meta?.vite?.cssScopeTo
                 if (
                   cssScopeTo &&
-                  !isCssScopeToRendered(
-                    cssScopeTo,
-                    getRenderedModules(meta.chunks),
-                  )
+                  !isCssScopeToRendered(cssScopeTo, meta.chunks)
                 ) {
                   continue
                 }
@@ -1324,10 +1329,10 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
 
 function isCssScopeToRendered(
   cssScopeTo: Exclude<CustomPluginOptionsVite['cssScopeTo'], undefined>,
-  renderedModules: Map<string, RenderedModule>,
+  chunks: Record<string, RenderedChunk>,
 ) {
   const [importerId, exp] = cssScopeTo
-  const importer = renderedModules.get(importerId)
+  const importer = getRenderedModule(chunks, importerId)
   return (
     importer && (exp === undefined || importer.renderedExports.includes(exp))
   )
