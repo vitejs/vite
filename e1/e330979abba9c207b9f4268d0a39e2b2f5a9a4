@@ -1,0 +1,27 @@
+playground/fs-serve/__tests__/commonTests.ts
+  s_6a41bf3f4dce20::t_49468cf728050a 130-136
+playground/fs-serve/root/matrixTestResultPlugin.ts
+  s_6a41bf3f4dce20::t_7fee98e587648e 12
+playground/fs-serve/root/src/index.html
+  s_6a41bf3f4dce20::t_43b42b79e10c49 86-90
+playground/fs-serve/root/unsafe.wasm
+  s_6a41bf3f4dce20::t_975bb077cccb18 1
+packages/vite/src/node/server/middlewares/transform.ts
+  s_6a41bf3f4dce20::t_0f6608755b4afe 56,68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e1e330979abba9c207b9f4268d0a39e2b2f5a9a4",
+  "prompts": {},
+  "sessions": {
+    "s_6a41bf3f4dce20": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a17c57-6244-7f11-a231-04c33f04fdfe",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
