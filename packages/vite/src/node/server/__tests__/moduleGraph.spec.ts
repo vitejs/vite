@@ -105,4 +105,65 @@ describe('moduleGraph', () => {
       )
     })
   })
+
+  describe('onFileDelete', () => {
+    it('removes module from all maps and breaks circular references', async () => {
+      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
+        id: url,
+      }))
+
+      const mod = await moduleGraph.ensureEntryFromUrl('/test.js', false)
+      moduleGraph.updateModuleTransformResult(mod, {
+        code: 'export default "test"',
+        map: null,
+        etag: 'W/"test-etag"',
+      })
+
+      // Verify module is registered in all maps
+      expect(moduleGraph.urlToModuleMap.get('/test.js')).toBe(mod)
+      expect(moduleGraph.idToModuleMap.get('/test.js')).toBe(mod)
+      expect(moduleGraph.fileToModulesMap.get('/test.js')).toContain(mod)
+      expect(moduleGraph.etagToModuleMap.get('W/"test-etag"')).toBe(mod)
+
+      // Add an imported module to verify circular reference cleanup
+      const dep = await moduleGraph.ensureEntryFromUrl('/dep.js', false)
+      mod.importedModules.add(dep)
+      dep.importers.add(mod)
+
+      moduleGraph.onFileDelete('/test.js')
+
+      // Module should be removed from all maps
+      expect(moduleGraph.urlToModuleMap.has('/test.js')).toBe(false)
+      expect(moduleGraph.idToModuleMap.has('/test.js')).toBe(false)
+      expect(moduleGraph.fileToModulesMap.has('/test.js')).toBe(false)
+      expect(moduleGraph.etagToModuleMap.has('W/"test-etag"')).toBe(false)
+
+      // Circular references should be broken
+      expect(mod.importedModules.size).toBe(0)
+      expect(dep.importers.has(mod)).toBe(false)
+    })
+
+    it('re-creates a fresh module when the file is re-created after deletion', async () => {
+      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
+        id: url,
+      }))
+
+      const mod1 = await moduleGraph.ensureEntryFromUrl('/test.js', false)
+      moduleGraph.updateModuleTransformResult(mod1, {
+        code: 'export default "v1"',
+        map: null,
+        etag: 'W/"v1"',
+      })
+
+      moduleGraph.onFileDelete('/test.js')
+
+      // Re-creating the file should produce a new module node, not reuse the
+      // stale one (which would keep the old transformResult)
+      const mod2 = await moduleGraph.ensureEntryFromUrl('/test.js', false)
+      expect(mod2).not.toBe(mod1)
+      expect(mod2.transformResult).toBe(null)
+      expect(moduleGraph.urlToModuleMap.get('/test.js')).toBe(mod2)
+      expect(moduleGraph.idToModuleMap.get('/test.js')).toBe(mod2)
+    })
+  })
 })

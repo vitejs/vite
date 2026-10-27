@@ -159,8 +159,29 @@ export class EnvironmentModuleGraph {
         mod.importedModules.forEach((importedMod) => {
           importedMod.importers.delete(mod)
         })
+        // Remove the module from the maps so that a re-created file gets a
+        // fresh module node instead of reusing the stale one (with its old
+        // transformResult). This also prevents a steady memory leak when
+        // files are repeatedly created and deleted.
+        this.urlToModuleMap.delete(mod.url)
+        if (mod.id) {
+          this.idToModuleMap.delete(mod.id)
+        }
+        if (mod.transformResult?.etag) {
+          this.etagToModuleMap.delete(mod.transformResult.etag)
+        }
+        // Remove from the unresolved URL cache so that re-ensuring the URL
+        // doesn't return the stale module node
+        for (const [key, value] of this._unresolvedUrlToModuleMap) {
+          if (value === mod) {
+            this._unresolvedUrlToModuleMap.delete(key)
+          }
+        }
+        // Break circular references so the module node can be GC'd
+        mod.importedModules.clear()
       })
     }
+    this.fileToModulesMap.delete(file)
   }
 
   invalidateModule(
