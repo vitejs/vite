@@ -43,6 +43,20 @@ describe('shouldExternalize', () => {
       shouldExternalize(environment, '@vitejs/child', parentImporter),
     ).toBe(true)
   })
+
+  test('resolves from root for an importer that does not exist on disk', async () => {
+    // same directory as `parentImporter`, but there is no such file
+    const virtualImporter = fileURLToPath(
+      new URL('./packages/parent/virtual.ts', import.meta.url),
+    )
+    const environment = await createEnvironment(true)
+    expect(
+      shouldExternalize(environment, '@vitejs/child', parentImporter),
+    ).toBe(true)
+    expect(
+      shouldExternalize(environment, '@vitejs/child', virtualImporter),
+    ).toBe(false)
+  })
 })
 
 async function createIsExternal(external?: true) {

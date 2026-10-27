@@ -2,7 +2,7 @@ import path from 'node:path'
 import type { PartialEnvironment } from './baseEnvironment'
 import type { Environment } from './environment'
 import type { InternalResolveOptions } from './plugins/resolve'
-import { tryNodeResolve } from './plugins/resolve'
+import { getNodeResolveBasedir, tryNodeResolve } from './plugins/resolve'
 import {
   bareImportRE,
   createDebugger,
@@ -130,12 +130,22 @@ function createIsExternal(
   environment: Environment,
 ): (id: string, importer?: string) => boolean {
   const processedIds = new Map<string, boolean>()
+  const importerBasedirs = new Map<string, string>()
 
   const isConfiguredAsExternal = createIsConfiguredAsExternal(environment)
 
+  const getBasedir = (importer: string) => {
+    let basedir = importerBasedirs.get(importer)
+    if (basedir === undefined) {
+      basedir = getNodeResolveBasedir(importer, environment.config.root)
+      importerBasedirs.set(importer, basedir)
+    }
+    return basedir
+  }
+
   return (id: string, importer?: string) => {
-    // bare imports are resolved from the importer's directory, so cache per directory
-    const cacheKey = importer ? `${id}\0${path.dirname(importer)}` : id
+    // the result depends on the directory bare imports are resolved from
+    const cacheKey = importer ? `${id}\0${getBasedir(importer)}` : id
     if (processedIds.has(cacheKey)) {
       return processedIds.get(cacheKey)!
     }
