@@ -4,9 +4,10 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import util from 'node:util'
 import * as prompts from '@clack/prompts'
-import { determineAgent } from '@vercel/detect-agent'
 import mri from 'mri'
+import { detectAgent } from 'std-env'
 import { xSync } from 'tinyexec'
+import packageInfo from '../package.json' with { type: 'json' }
 
 const {
   blue,
@@ -177,7 +178,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/start',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --build-tool vite --interactive',
       },
       {
         name: 'custom-tanstack-router-react',
@@ -185,7 +186,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --router-only --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --build-tool vite --router-only --interactive',
       },
       {
         name: 'redwoodsdk-standard',
@@ -287,7 +288,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/start',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --build-tool vite --interactive',
       },
       {
         name: 'custom-tanstack-router-solid',
@@ -295,7 +296,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --router-only --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --build-tool vite --router-only --interactive',
       },
       {
         name: 'custom-vike-solid',
@@ -471,11 +472,12 @@ async function init() {
     return
   }
 
+  console.log(`\n${cyan(`create-vite v${packageInfo.version}`)}\n`)
+
   const interactive = argInteractive ?? process.stdin.isTTY
 
   // Detect AI agent environment for better agent experience (AX)
-  const { isAgent } = await determineAgent()
-  if (isAgent && interactive) {
+  if (interactive && detectAgent().name) {
     console.log(
       '\nTo create in one go, run: create-vite <DIRECTORY> --no-interactive --template <TEMPLATE>\n',
     )
@@ -878,7 +880,7 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@eslint/js
   const eslintJsVersion = '10.0.1'
   // renovate: datasource=npm depName=eslint
-  const eslintVersion = '10.12.0'
+  const eslintVersion = '10.13.0'
   // renovate: datasource=npm depName=eslint-plugin-react-hooks
   const eslintPluginReactHooksVersion = '7.1.1'
   // renovate: datasource=npm depName=eslint-plugin-react-refresh
@@ -886,7 +888,7 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=globals
   const globalsVersion = '17.13.0'
   // renovate: datasource=npm depName=typescript-eslint
-  const typescriptEslintVersion = '8.71.1'
+  const typescriptEslintVersion = '8.72.0'
 
   const eslintConfigForTS = /* js */ `import js from '@eslint/js'
 import globals from 'globals'
@@ -953,6 +955,9 @@ export default defineConfig([
     )
     if (isTs) {
       devDepsEntries.push(['typescript-eslint', `^${typescriptEslintVersion}`])
+      // Keep TypeScript 6 until typescript-eslint supports TypeScript 7.
+      // https://github.com/typescript-eslint/typescript-eslint/issues/10940
+      asObject.devDependencies.typescript = '~6.0.3'
     }
     devDepsEntries.sort()
     asObject.devDependencies = Object.fromEntries(devDepsEntries)
