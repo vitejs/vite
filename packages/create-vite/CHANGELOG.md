@@ -1,3 +1,8 @@
+## <small>[9.3.3](https://github.com/vitejs/vite/compare/create-vite%409.3.2...create-vite%409.3.3) (2026-10-27)</small>
+### Bug Fixes
+
+* **create-vite:** include template files in package ([#23915](https://github.com/vitejs/vite/issues/23915)) ([f4abfb5](https://github.com/vitejs/vite/commit/f4abfb51b03b04b16b6322eec1b401dedee56748))
+
 ## <small>[9.3.2](https://github.com/vitejs/vite/compare/create-vite%409.3.1...create-vite%409.3.2) (2026-10-27)</small>
 ### Features
 
