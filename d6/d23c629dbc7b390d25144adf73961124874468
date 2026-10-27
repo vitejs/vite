@@ -1,0 +1,27 @@
+packages/vite/src/node/__tests__/plugins/importAnalysisBuild.spec.ts
+  s_73ca8db83ac21e::t_43f4e9257448f1 2
+packages/vite/src/node/__tests__/fixtures/dynamic-import-query-fragment/css-entry.js
+  s_73ca8db83ac21e::t_f4d50d4eef64e5 1
+packages/vite/src/node/__tests__/fixtures/dynamic-import-query-fragment/entry.js
+  s_73ca8db83ac21e::t_6bc63ac9c12b64 1
+packages/vite/src/node/__tests__/fixtures/dynamic-import-query-fragment/lazy.css
+  s_73ca8db83ac21e::t_42f15db71754fc 1-3
+packages/vite/src/node/__tests__/fixtures/dynamic-import-query-fragment/lazy.js
+  s_73ca8db83ac21e::t_d6d8a0a8de6e28 1-3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "d6d23c629dbc7b390d25144adf73961124874468",
+  "prompts": {},
+  "sessions": {
+    "s_73ca8db83ac21e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a17679-bf38-7981-9c68-0ec8113901cb",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
