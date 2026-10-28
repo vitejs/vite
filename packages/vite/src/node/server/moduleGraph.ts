@@ -159,14 +159,13 @@ export class EnvironmentModuleGraph {
         mod.importedModules.forEach((importedMod) => {
           importedMod.importers.delete(mod)
         })
-        // Also remove the deleted module from its importers' importedModules
-        // sets so that no stale references to the deleted node remain.
-        // Note: mod.importers itself is intentionally NOT cleared — the HMR
-        // pipeline (propagateUpdate) traverses it after onFileDelete returns
-        // to notify importers of the deletion.
-        mod.importers.forEach((importer) => {
-          importer.importedModules.delete(mod)
-        })
+        // Note: the deleted module is intentionally NOT removed from its
+        // importers' importedModules sets here. The HMR flow that follows
+        // (handleHMRUpdate → updateModules → re-transform importers →
+        // updateModuleInfo) relies on the importer's importedModules still
+        // containing the deleted module to detect it as no-longer-imported
+        // and trigger the prune callback. Removing it here would break
+        // pruning (see hmr-ssr file-delete-restore tests).
         // Remove the module from the maps so that a re-created file gets a
         // fresh module node instead of reusing the stale one (with its old
         // transformResult). This also prevents a steady memory leak when
