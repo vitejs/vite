@@ -1,7 +1,6 @@
-import path from 'node:path'
 import type { DefaultTreeAdapterMap } from 'parse5'
 import { VALID_ID_PREFIX } from '../../shared/constants'
-import { splitFileAndPostfix, unwrapId } from '../../shared/utils'
+import { splitFileAndPostfix } from '../../shared/utils'
 import { getNodeAssetAttributes } from '../assetSource'
 import { FS_PREFIX } from '../constants'
 import {
@@ -14,7 +13,6 @@ import {
 import { checkPublicFile } from '../publicDir'
 import {
   decodeURIIfPossible,
-  fsPathFromId,
   isDataUrl,
   isExternalUrl,
   isInternalRequest,
@@ -26,6 +24,7 @@ import {
   stripBase,
 } from '../utils'
 import { applyStaticAlias } from './middlewares/static'
+import { browserUrlToModuleUrl, moduleUrlToFilePath } from './moduleUrl'
 
 export function addHtmlUrlToSafeModulePaths(
   url: string,
@@ -56,21 +55,21 @@ export function addHtmlUrlToSafeModulePaths(
   if (resolvedUrl.origin !== 'http://example.com') return
   const decodedFile = decodeURIIfPossible(resolvedUrl.pathname)
   if (decodedFile === undefined) return
-  const moduleUrl = decodeURIIfPossible(resolvedUrl.pathname + postfix)
+  const decodedUrl = decodeURIIfPossible(resolvedUrl.pathname + postfix)
+  // The base is removed before resolving relative HTML URLs.
+  const moduleUrl =
+    decodedUrl === undefined ? undefined : browserUrlToModuleUrl(decodedUrl, '')
   if (isInternalRequest(decodedFile) && !decodedFile.startsWith(FS_PREFIX)) {
-    if (decodedFile.startsWith(VALID_ID_PREFIX) && moduleUrl !== undefined) {
-      return unwrapId(moduleUrl)
+    if (decodedFile.startsWith(VALID_ID_PREFIX)) {
+      return moduleUrl
     }
     return
   }
 
   const aliasedFile = applyStaticAlias(decodedFile, config.resolve.alias)
-  const filePath = normalizePath(
-    aliasedFile ||
-      (decodedFile.startsWith(FS_PREFIX)
-        ? fsPathFromId(decodedFile)
-        : path.join(config.root, decodedFile)),
-  )
+  const filePath = aliasedFile
+    ? normalizePath(aliasedFile)
+    : moduleUrlToFilePath(decodedFile, config.root)
   config.safeModulePaths.addId(filePath + postfix)
   if (!config.resolve.preserveSymlinks) {
     try {
