@@ -107,7 +107,7 @@ describe('moduleGraph', () => {
   })
 
   describe('onFileDelete', () => {
-    it('removes module from all maps and breaks circular references', async () => {
+    it('removes module from url/id/etag maps and breaks circular references', async () => {
       const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
         id: url,
       }))
@@ -132,11 +132,12 @@ describe('moduleGraph', () => {
 
       moduleGraph.onFileDelete('/test.js')
 
-      // Module should be removed from all maps
+      // Module should be removed from url/id/etag maps so a re-created file
+      // gets a fresh node, but kept in fileToModulesMap for HMR propagation
       expect(moduleGraph.urlToModuleMap.has('/test.js')).toBe(false)
       expect(moduleGraph.idToModuleMap.has('/test.js')).toBe(false)
-      expect(moduleGraph.fileToModulesMap.has('/test.js')).toBe(false)
       expect(moduleGraph.etagToModuleMap.has('W/"test-etag"')).toBe(false)
+      expect(moduleGraph.fileToModulesMap.get('/test.js')).toContain(mod)
 
       // Circular references should be broken
       expect(mod.importedModules.size).toBe(0)

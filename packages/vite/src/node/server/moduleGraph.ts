@@ -189,7 +189,9 @@ export class EnvironmentModuleGraph {
         mod.importedModules.clear()
       })
     }
-    this.fileToModulesMap.delete(file)
+    // Note: the module is intentionally kept in fileToModulesMap so that
+    // handleHMRUpdate (called right after onFileDelete by the file watcher)
+    // can still find it by file and propagate the deletion to importers.
   }
 
   invalidateModule(
