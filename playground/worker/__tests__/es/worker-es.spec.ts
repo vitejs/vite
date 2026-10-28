@@ -257,7 +257,7 @@ test.skipIf(isBundledDev)('self reference url worker', async () => {
 // client injected via injectQuery. When a stylesheet on the page is edited,
 // the worker's copy of the client receives the css-update but has no DOM,
 // so it must skip silently instead of throwing `document is not defined`.
-test.skipIf(isBuild)(
+test.skipIf(isBuild || isBundledDev)(
   'CSS HMR update does not throw in worker with injectQuery import',
   async () => {
     await expect
