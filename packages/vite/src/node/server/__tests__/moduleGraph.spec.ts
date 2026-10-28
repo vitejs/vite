@@ -165,5 +165,23 @@ describe('moduleGraph', () => {
       expect(moduleGraph.urlToModuleMap.get('/test.js')).toBe(mod2)
       expect(moduleGraph.idToModuleMap.get('/test.js')).toBe(mod2)
     })
+
+    it('removes deleted module from importers importedModules sets', async () => {
+      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
+        id: url,
+      }))
+
+      const importer = await moduleGraph.ensureEntryFromUrl('/main.js', false)
+      const dep = await moduleGraph.ensureEntryFromUrl('/dep.js', false)
+      importer.importedModules.add(dep)
+      dep.importers.add(importer)
+
+      moduleGraph.onFileDelete('/dep.js')
+
+      // The importer should no longer retain the deleted module
+      expect(importer.importedModules.has(dep)).toBe(false)
+      // The deleted module's own sets should also be cleared
+      expect(dep.importers.has(importer)).toBe(false)
+    })
   })
 })

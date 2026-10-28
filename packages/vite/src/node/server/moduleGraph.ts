@@ -159,6 +159,12 @@ export class EnvironmentModuleGraph {
         mod.importedModules.forEach((importedMod) => {
           importedMod.importers.delete(mod)
         })
+        // Also remove the deleted module from its importers' importedModules
+        // sets so that no stale references to the deleted node remain.
+        mod.importers.forEach((importer) => {
+          importer.importedModules.delete(mod)
+        })
+        mod.importers.clear()
         // Remove the module from the maps so that a re-created file gets a
         // fresh module node instead of reusing the stale one (with its old
         // transformResult). This also prevents a steady memory leak when
