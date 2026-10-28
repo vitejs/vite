@@ -45,6 +45,7 @@ import {
 import {
   addHtmlToSafeModulePaths,
   addHtmlUrlToSafeModulePaths,
+  getHtmlAssetFetchDest,
 } from '../htmlSafeModulePaths'
 import { browserUrlToModuleUrl, moduleUrlToFilePath } from '../moduleUrl'
 import {
@@ -142,7 +143,7 @@ const processNodeUrl = (
   config: ResolvedConfig,
   htmlPath: string,
   originalUrl: string | undefined,
-  registerSafeModulePath: (url: string) => void,
+  registerSafeModulePath: (url: string, preTransformUrl?: string) => void,
   server?: ViteDevServer,
   isClassicScriptLink?: boolean,
 ): string => {
@@ -180,6 +181,7 @@ const processNodeUrl = (
       }
     }
 
+    let preTransformModuleUrl: string | undefined
     if (server) {
       let decodedUrl: string
       try {
@@ -197,11 +199,11 @@ const processNodeUrl = (
       }
 
       if (preTransformUrl) {
-        preTransformRequest(server, moduleUrl)
+        preTransformModuleUrl = moduleUrl
       }
     }
 
-    registerSafeModulePath(url)
+    registerSafeModulePath(url, preTransformModuleUrl)
     return url
   }
 
@@ -256,14 +258,24 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   const styleUrl: AssetNode[] = []
   const inlineStyles: InlineStyleAttribute[] = []
   const inlineModuleUrls: string[] = []
-  const registerSafeModulePath = (url: string) => {
-    addHtmlUrlToSafeModulePaths(url, {
-      path: htmlPath,
-      filename,
-      server,
-      originalUrl,
-    })
+  const safeModulePathRegistrations: Promise<void>[] = []
+  const registerSafeModulePath = (
+    url: string,
+    fetchDest?: string,
+    preTransformUrl?: string,
+  ) => {
+    safeModulePathRegistrations.push(
+      addHtmlUrlToSafeModulePaths(
+        url,
+        { path: htmlPath, filename, server, originalUrl },
+        fetchDest,
+      ).then(() => {
+        if (preTransformUrl) preTransformRequest(server!, preTransformUrl)
+      }),
+    )
   }
+  const registerScript = (url: string, preTransformUrl?: string) =>
+    registerSafeModulePath(url, 'script', preTransformUrl)
 
   const addInlineModule = (
     node: DefaultTreeAdapterMap['element'],
@@ -322,7 +334,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           config,
           htmlPath,
           originalUrl,
-          registerSafeModulePath,
+          registerScript,
           server,
           !isModule,
         )
@@ -346,7 +358,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
             config,
             htmlPath,
             originalUrl,
-            registerSafeModulePath,
+            registerScript,
           )
           if (processedUrl !== url) {
             s.update(start, end, processedUrl)
@@ -389,7 +401,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           config,
           htmlPath,
           originalUrl,
-          registerSafeModulePath,
+          (url) =>
+            registerSafeModulePath(
+              url,
+              getHtmlAssetFetchDest(node.nodeName, attr.key, attr.attributes),
+            ),
         )
         if (processedUrl !== attr.value) {
           overwriteAttrValue(s, attr.location, processedUrl)
@@ -397,6 +413,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       }
     }
   })
+
+  await Promise.all(safeModulePathRegistrations)
 
   // invalidate the module so the newly cached contents will be served
   const clientModuleGraph = server?.environments.client.moduleGraph
