@@ -107,7 +107,7 @@ describe('moduleGraph', () => {
   })
 
   describe('onFileDelete', () => {
-    it('removes module from url/id/etag maps and breaks circular references', async () => {
+    it('clears transform result and breaks outgoing references', async () => {
       const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
         id: url,
       }))
@@ -118,33 +118,33 @@ describe('moduleGraph', () => {
         map: null,
         etag: 'W/"test-etag"',
       })
+      mod.info = { some: 'info' }
+      mod.meta = { some: 'meta' }
 
-      // Verify module is registered in all maps
-      expect(moduleGraph.urlToModuleMap.get('/test.js')).toBe(mod)
-      expect(moduleGraph.idToModuleMap.get('/test.js')).toBe(mod)
-      expect(moduleGraph.fileToModulesMap.get('/test.js')).toContain(mod)
-      expect(moduleGraph.etagToModuleMap.get('W/"test-etag"')).toBe(mod)
-
-      // Add an imported module to verify circular reference cleanup
+      // Add an imported module to verify outgoing reference cleanup
       const dep = await moduleGraph.ensureEntryFromUrl('/dep.js', false)
       mod.importedModules.add(dep)
       dep.importers.add(mod)
 
       moduleGraph.onFileDelete('/test.js')
 
-      // Module should be removed from url/id/etag maps so a re-created file
-      // gets a fresh node, but kept in fileToModulesMap for HMR propagation
-      expect(moduleGraph.urlToModuleMap.has('/test.js')).toBe(false)
-      expect(moduleGraph.idToModuleMap.has('/test.js')).toBe(false)
-      expect(moduleGraph.etagToModuleMap.has('W/"test-etag"')).toBe(false)
-      expect(moduleGraph.fileToModulesMap.get('/test.js')).toContain(mod)
+      // transformResult/info/meta should be cleared so stale source code
+      // is not served if the node is reused
+      expect(mod.transformResult).toBe(null)
+      expect(mod.info).toBeUndefined()
+      expect(mod.meta).toBeUndefined()
 
-      // Circular references should be broken
+      // Outgoing references should be broken
       expect(mod.importedModules.size).toBe(0)
       expect(dep.importers.has(mod)).toBe(false)
+
+      // Module stays in all maps for HMR propagation
+      expect(moduleGraph.urlToModuleMap.get('/test.js')).toBe(mod)
+      expect(moduleGraph.idToModuleMap.get('/test.js')).toBe(mod)
+      expect(moduleGraph.fileToModulesMap.get('/test.js')).toContain(mod)
     })
 
-    it('re-creates a fresh module when the file is re-created after deletion', async () => {
+    it('reuses module node with cleared transform result after deletion', async () => {
       const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
         id: url,
       }))
@@ -158,13 +158,12 @@ describe('moduleGraph', () => {
 
       moduleGraph.onFileDelete('/test.js')
 
-      // Re-creating the file should produce a new module node, not reuse the
-      // stale one (which would keep the old transformResult)
+      // Re-ensuring the URL reuses the same module node (it stays in the
+      // maps for HMR propagation), but the transformResult is cleared so
+      // stale source code is not served
       const mod2 = await moduleGraph.ensureEntryFromUrl('/test.js', false)
-      expect(mod2).not.toBe(mod1)
+      expect(mod2).toBe(mod1)
       expect(mod2.transformResult).toBe(null)
-      expect(moduleGraph.urlToModuleMap.get('/test.js')).toBe(mod2)
-      expect(moduleGraph.idToModuleMap.get('/test.js')).toBe(mod2)
     })
   })
 })

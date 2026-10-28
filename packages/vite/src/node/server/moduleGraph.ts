@@ -159,38 +159,21 @@ export class EnvironmentModuleGraph {
         mod.importedModules.forEach((importedMod) => {
           importedMod.importers.delete(mod)
         })
-        // Note: the deleted module is intentionally NOT removed from its
-        // importers' importedModules sets here. The HMR flow that follows
-        // (handleHMRUpdate → updateModules → re-transform importers →
-        // updateModuleInfo) relies on the importer's importedModules still
-        // containing the deleted module to detect it as no-longer-imported
-        // and trigger the prune callback. Removing it here would break
-        // pruning (see hmr-ssr file-delete-restore tests).
-        // Remove the module from the maps so that a re-created file gets a
-        // fresh module node instead of reusing the stale one (with its old
-        // transformResult). This also prevents a steady memory leak when
-        // files are repeatedly created and deleted.
-        this.urlToModuleMap.delete(mod.url)
-        if (mod.id) {
-          this.idToModuleMap.delete(mod.id)
-        }
-        if (mod.transformResult?.etag) {
-          this.etagToModuleMap.delete(mod.transformResult.etag)
-        }
-        // Remove from the unresolved URL cache so that re-ensuring the URL
-        // doesn't return the stale module node
-        for (const [key, value] of this._unresolvedUrlToModuleMap) {
-          if (value === mod) {
-            this._unresolvedUrlToModuleMap.delete(key)
-          }
-        }
-        // Break circular references so the module node can be GC'd
+        // Clear the transform result and module info so that if the module
+        // node is reused (it stays in the maps for HMR propagation), it does
+        // not serve stale source code or metadata. The module itself is kept
+        // in all maps (including fileToModulesMap) because handleHMRUpdate
+        // (called right after onFileDelete by the file watcher) needs to find
+        // it by file and propagate the deletion to importers.
+        mod.transformResult = null
+        mod.info = undefined
+        mod.meta = undefined
+        // Break outgoing references so the deleted module does not keep
+        // its imports alive. Note: mod.importers is intentionally NOT
+        // cleared — propagateUpdate traverses it after onFileDelete returns.
         mod.importedModules.clear()
       })
     }
-    // Note: the module is intentionally kept in fileToModulesMap so that
-    // handleHMRUpdate (called right after onFileDelete by the file watcher)
-    // can still find it by file and propagate the deletion to importers.
   }
 
   invalidateModule(
