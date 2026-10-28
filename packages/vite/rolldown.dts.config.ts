@@ -36,7 +36,7 @@ export default defineConfig({
   },
   output: {
     dir: './dist/node',
-    chunkFileNames: 'chunks/[name].d.ts',
+    chunkFileNames: 'chunks/[name].js',
     format: 'esm',
   },
   treeshake: {
