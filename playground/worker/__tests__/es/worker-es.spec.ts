@@ -1,7 +1,15 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { isBuild, isBundledDev, page, testDir } from '~utils'
+import {
+  browserLogs,
+  editFile,
+  isBuild,
+  isBundledDev,
+  page,
+  testDir,
+  untilBrowserLogAfter,
+} from '~utils'
 
 test.skipIf(isBundledDev)('normal', async () => {
   await expect.poll(() => page.textContent('.pong')).toMatch('pong')
@@ -244,3 +252,28 @@ test.skipIf(isBundledDev)('self reference url worker', async () => {
     .poll(() => page.textContent('.self-reference-url-worker'))
     .toMatch('pong: main\npong: nested\n')
 })
+
+// #23925: a module worker with a non-literal dynamic import gets the HMR
+// client injected via injectQuery. When a stylesheet on the page is edited,
+// the worker's copy of the client receives the css-update but has no DOM,
+// so it must skip silently instead of throwing `document is not defined`.
+test.skipIf(isBuild)(
+  'CSS HMR update does not throw in worker with injectQuery import',
+  async () => {
+    await expect
+      .poll(() => page.textContent('.hmr-css-worker'))
+      .toMatch('"A string"')
+
+    browserLogs.length = 0
+
+    await untilBrowserLogAfter(
+      () =>
+        editFile('hmr-worker-test.css', (code) => code.replace('red', 'green')),
+      '[vite] css hot updated: /hmr-worker-test.css',
+    )
+
+    expect(
+      browserLogs.some((msg) => msg.includes('document is not defined')),
+    ).toBe(false)
+  },
+)

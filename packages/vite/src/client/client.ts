@@ -220,6 +220,12 @@ async function handleMessage(payload: HotPayload) {
 
           // css-update
           // this is only sent when a css file referenced with <link> is updated
+          // workers (e.g. module workers with a dynamic import that pulls in
+          // /@vite/client) also receive this update but have no document to
+          // update the <link> tag on, so skip silently (#23925).
+          if (typeof document === 'undefined') {
+            return
+          }
           const { path, timestamp } = update
           const searchUrl = cleanUrl(path)
           // can't use querySelector with `[href*=]` here since the link may be
