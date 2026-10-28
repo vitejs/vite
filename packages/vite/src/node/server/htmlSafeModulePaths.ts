@@ -1,8 +1,14 @@
+import path from 'node:path'
 import type { DefaultTreeAdapterMap } from 'parse5'
-import { VALID_ID_PREFIX } from '../../shared/constants'
-import { splitFileAndPostfix } from '../../shared/utils'
+import { NULL_BYTE_PLACEHOLDER, VALID_ID_PREFIX } from '../../shared/constants'
+import {
+  cleanUrl,
+  joinUrlSegments,
+  splitFileAndPostfix,
+} from '../../shared/utils'
 import { getNodeAssetAttributes } from '../assetSource'
 import { FS_PREFIX } from '../constants'
+import { isDirectRequest } from '../plugins/css'
 import {
   type IndexHtmlTransformContext,
   extractImportExpressionFromClassicScript,
@@ -13,8 +19,11 @@ import {
 import { checkPublicFile } from '../publicDir'
 import {
   decodeURIIfPossible,
+  injectQuery,
+  isCSSRequest,
   isDataUrl,
   isExternalUrl,
+  isImportRequest,
   isInternalRequest,
   normalizePath,
   processSrcSetSync,
@@ -22,54 +31,114 @@ import {
   removeTimestampQuery,
   safeRealpathSync,
   stripBase,
+  urlRE,
 } from '../utils'
-import { applyStaticAlias } from './middlewares/static'
+import { resolveStaticPathname } from './middlewares/static'
+import { isTransformRequest } from './middlewares/transform'
 import { browserUrlToModuleUrl, moduleUrlToFilePath } from './moduleUrl'
 
-export function addHtmlUrlToSafeModulePaths(
+function htmlUrlToRequestUrl(
   url: string,
   ctx: IndexHtmlTransformContext,
 ): string | undefined {
-  const server = ctx.server
-  if (!server) return
-
-  const { config } = server
-  const withoutBase = stripBase(url, config.base)
-  url = withoutBase === url ? stripBase(url, config.decodedBase) : withoutBase
   url = url.split('#', 1)[0]
-  if (
-    !url ||
-    isExternalUrl(url) ||
-    isDataUrl(url) ||
-    checkPublicFile(url, config)
-  ) {
-    return
-  }
-  const { file, postfix } = splitFileAndPostfix(url)
+  if (!url || isExternalUrl(url) || isDataUrl(url)) return
+
+  const { config } = ctx.server!
   let resolvedUrl: URL
   try {
-    resolvedUrl = new URL(file, `http://example.com${ctx.path}`)
+    // ctx.path has already passed through the base and HTML fallback middleware.
+    const documentUrl = new URL(
+      ctx.originalUrl ?? joinUrlSegments(config.base, ctx.path),
+      'http://example.com',
+    )
+    resolvedUrl = new URL(url, documentUrl)
   } catch {
     return
   }
   if (resolvedUrl.origin !== 'http://example.com') return
-  const decodedFile = decodeURIIfPossible(resolvedUrl.pathname)
-  if (decodedFile === undefined) return
-  const decodedUrl = decodeURIIfPossible(resolvedUrl.pathname + postfix)
-  // The base is removed before resolving relative HTML URLs.
-  const moduleUrl =
-    decodedUrl === undefined ? undefined : browserUrlToModuleUrl(decodedUrl, '')
-  if (isInternalRequest(decodedFile) && !decodedFile.startsWith(FS_PREFIX)) {
-    if (decodedFile.startsWith(VALID_ID_PREFIX)) {
-      return moduleUrl
-    }
+
+  // The browser resolves the URL before the base middleware sees the request.
+  return stripBase(resolvedUrl.pathname + resolvedUrl.search, config.base)
+}
+
+export function getHtmlAssetFetchDest(
+  tag: string,
+  attr: string,
+  attributes: Record<string, string>,
+): string | undefined {
+  if (attr === 'src' && ['iframe', 'frame', 'fencedframe'].includes(tag)) {
+    return tag
+  }
+  if (tag !== 'link' || attr !== 'href') return
+
+  const rel = attributes.rel?.trim().toLowerCase().split(/\s+/)
+  if (rel?.includes('modulepreload')) return 'script'
+  if (rel?.includes('stylesheet')) return 'style'
+  if (rel?.includes('preload')) return attributes.as?.trim().toLowerCase()
+}
+
+export async function addHtmlUrlToSafeModulePaths(
+  url: string,
+  ctx: IndexHtmlTransformContext,
+  fetchDest?: string,
+): Promise<void> {
+  const server = ctx.server
+  if (!server) return
+
+  const { config } = server
+  const requestUrl = htmlUrlToRequestUrl(url, ctx)
+  if (!requestUrl) return
+  const pathname = decodeURIIfPossible(cleanUrl(requestUrl))
+  if (pathname === undefined) return
+  if (
+    isInternalRequest(pathname) &&
+    !pathname.startsWith(FS_PREFIX) &&
+    !pathname.startsWith(VALID_ID_PREFIX)
+  ) {
+    return
+  }
+  if (
+    !isInternalRequest(requestUrl) &&
+    !isImportRequest(requestUrl) &&
+    !urlRE.test(requestUrl) &&
+    checkPublicFile(pathname, config)
+  ) {
     return
   }
 
-  const aliasedFile = applyStaticAlias(decodedFile, config.resolve.alias)
-  const filePath = aliasedFile
-    ? normalizePath(aliasedFile)
-    : moduleUrlToFilePath(decodedFile, config.root)
+  const decodedUrl = decodeURIIfPossible(removeTimestampQuery(requestUrl))
+  if (decodedUrl !== undefined && isTransformRequest(decodedUrl, fetchDest)) {
+    let moduleUrl = browserUrlToModuleUrl(
+      removeImportQuery(decodedUrl.replace(NULL_BYTE_PLACEHOLDER, '\0')),
+      '',
+    )
+    if (
+      fetchDest === 'style' &&
+      isCSSRequest(moduleUrl) &&
+      !isDirectRequest(moduleUrl)
+    ) {
+      moduleUrl = injectQuery(moduleUrl, 'direct')
+    }
+    const resolved =
+      await server.environments.client.pluginContainer.resolveId(moduleUrl)
+    if (resolved) {
+      if (!resolved.external) config.safeModulePaths.addId(resolved.id)
+      return
+    }
+  }
+
+  if (isInternalRequest(pathname) && !pathname.startsWith(FS_PREFIX)) return
+
+  const filePath = pathname.startsWith(FS_PREFIX)
+    ? moduleUrlToFilePath(pathname, config.root)
+    : normalizePath(
+        path.join(
+          config.root,
+          resolveStaticPathname(pathname, config) || pathname,
+        ),
+      )
+  const { postfix } = splitFileAndPostfix(decodedUrl ?? requestUrl)
   config.safeModulePaths.addId(filePath + postfix)
   if (!config.resolve.preserveSymlinks) {
     try {
@@ -80,19 +149,19 @@ export function addHtmlUrlToSafeModulePaths(
       // Files referenced by HTML may not exist yet.
     }
   }
-  return moduleUrl
 }
 
 export async function addHtmlToSafeModulePaths(
   html: string,
   ctx: IndexHtmlTransformContext,
 ): Promise<void> {
-  const moduleUrls = new Set<string>()
-  const registerUrl = (url: string) => {
-    const moduleUrl = addHtmlUrlToSafeModulePaths(url, ctx)
-    if (moduleUrl) {
-      moduleUrls.add(removeImportQuery(removeTimestampQuery(moduleUrl)))
-    }
+  const urls = new Set<string>()
+  const registrations: Promise<void>[] = []
+  const registerUrl = (url: string, fetchDest?: string) => {
+    const key = `${fetchDest ?? ''}:${url}`
+    if (urls.has(key)) return
+    urls.add(key)
+    registrations.push(addHtmlUrlToSafeModulePaths(url, ctx, fetchDest))
   }
   await traverseHtml(
     html,
@@ -105,7 +174,7 @@ export async function addHtmlToSafeModulePaths(
         const { src, isModule, isIgnored } = getScriptInfo(node)
         if (!isIgnored) {
           if (src) {
-            registerUrl(src.value)
+            registerUrl(src.value, 'script')
           } else if (!isModule && node.childNodes.length) {
             const scriptNode = node.childNodes.at(
               -1,
@@ -113,7 +182,7 @@ export async function addHtmlToSafeModulePaths(
             for (const { url } of extractImportExpressionFromClassicScript(
               scriptNode,
             )) {
-              registerUrl(url)
+              registerUrl(url, 'script')
             }
           }
         }
@@ -129,18 +198,13 @@ export async function addHtmlToSafeModulePaths(
             return url
           })
         } else if (attr.type === 'src') {
-          registerUrl(attr.value)
+          registerUrl(
+            attr.value,
+            getHtmlAssetFetchDest(node.nodeName, attr.key, attr.attributes),
+          )
         }
       }
     },
   )
-  await Promise.all(
-    [...moduleUrls].map(async (url) => {
-      const resolved =
-        await ctx.server!.environments.client.pluginContainer.resolveId(url)
-      if (resolved && !resolved.external) {
-        ctx.server!.config.safeModulePaths.addId(resolved.id)
-      }
-    }),
-  )
+  await Promise.all(registrations)
 }

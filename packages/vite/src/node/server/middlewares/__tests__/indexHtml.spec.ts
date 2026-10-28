@@ -315,13 +315,13 @@ describe('indexHtml middleware — safe module paths', () => {
     test(`registers custom-resolved source and injected modules with base ${base}`, async () => {
       const root = path.join(FIXTURE_DIR, 'root')
       const modules = {
-        '/nested/custom.css?raw': 'style.css?raw',
+        '/nested/custom.css?direct&raw': 'style.css?raw',
         '/nested/custom-dynamic.js?url&label=hello world': 'dynamic.js?url',
         '/nested/custom-classic.js?raw': 'classic.js?raw',
         '/nested/custom-entry.data?raw': 'dynamic.js?raw',
         '/nested/custom-preload.data?url': 'classic.js?url',
         '/nested/custom-preload-script.data?raw': 'style.css?url',
-        '/nested/custom.svg': 'classic.js?raw&image',
+        '/nested/custom.svg?imported': 'classic.js?raw&image',
         'custom-entry': 'dynamic.js?raw&wrapped',
         'relative-entry': 'dynamic.js?raw&relative',
       }
@@ -366,7 +366,7 @@ describe('indexHtml middleware — safe module paths', () => {
       await server.transformIndexHtml(
         '/nested/index.html',
         `<link rel="stylesheet" href="custom.css?raw">
-         <img src="./custom.svg?t=1234567890123">
+         <img src="./custom.svg?imported&import&t=1234567890123">
          <script>import('./custom-dynamic.js?url&label=hello%20world&import&t=1234567890123')</script>`,
       )
 
@@ -376,9 +376,209 @@ describe('indexHtml middleware — safe module paths', () => {
         )
         const result = await server.environments.client.transformRequest(url)
         expect(result).not.toBeNull()
+        if (url.startsWith('/nested/')) {
+          expect(server.config.safeModulePaths).not.toContain(
+            normalizePath(path.join(root, url)),
+          )
+        }
       }
     })
   }
+
+  test('resolves browser URLs before removing the configured base', async () => {
+    const server = await createTestServer(
+      undefined,
+      [
+        {
+          name: 'inject-relative-entry',
+          transformIndexHtml() {
+            return [{ tag: 'script', attrs: { src: '../ui/classic.js?raw' } }]
+          },
+        },
+      ],
+      '/ui/',
+    )
+    server.config.server.fs.allow = []
+
+    await server.transformIndexHtml('/index.html', '')
+
+    const root = path.join(FIXTURE_DIR, 'root')
+    expect(server.config.safeModulePaths).toContain(
+      normalizePath(path.join(root, 'classic.js?raw')),
+    )
+    expect(server.config.safeModulePaths).not.toContain(
+      normalizePath(path.join(root, 'ui/classic.js')),
+    )
+    expect(
+      await server.environments.client.transformRequest('/classic.js?raw'),
+    ).not.toBeNull()
+  })
+
+  for (const base of ['/ui/', '/a%20b/', '/%E3%81%82/']) {
+    test(`uses the browser document location for injected URLs with base ${base}`, async () => {
+      const server = await createTestServer(
+        undefined,
+        [
+          {
+            name: 'inject-relative-image',
+            transformIndexHtml() {
+              return [{ tag: 'img', attrs: { src: './image.svg?size=2#icon' } }]
+            },
+          },
+        ],
+        base,
+      )
+      server.config.server.preTransformRequests = false
+
+      await server.transformIndexHtml('/index.html', '', `${base}client/route`)
+
+      expect(server.config.safeModulePaths).toContain(
+        normalizePath(path.join(FIXTURE_DIR, 'root/client/image.svg?size=2')),
+      )
+      expect(server.config.safeModulePaths).not.toContain(
+        normalizePath(path.join(FIXTURE_DIR, 'root/image.svg')),
+      )
+    })
+  }
+
+  test('uses the plugin target for script requests with arbitrary extensions', async () => {
+    const resolveId = vi.fn((id: string) => {
+      if (id === '/nested/entry.data?raw&label=hello world') {
+        return OUTSIDE_HTML_PATH + '?raw'
+      }
+    })
+    const server = await createTestServer(undefined, [
+      { name: 'resolve-html-script', enforce: 'pre', resolveId },
+    ])
+    server.config.server.fs.allow = []
+    server.config.server.preTransformRequests = false
+
+    await server.transformIndexHtml(
+      '/nested/index.html',
+      '<script src="./entry.data?raw&label=hello%20world&import#part"></script>',
+    )
+
+    expect(resolveId.mock.calls.map(([id]) => id)).toContain(
+      '/nested/entry.data?raw&label=hello world',
+    )
+    expect(server.config.safeModulePaths).toContain(OUTSIDE_HTML_PATH + '?raw')
+    expect(server.config.safeModulePaths).not.toContain(
+      normalizePath(path.join(FIXTURE_DIR, 'root/nested/entry.data')),
+    )
+    expect(
+      await server.environments.client.transformRequest(
+        '/nested/entry.data?raw&label=hello world',
+      ),
+    ).not.toBeNull()
+  })
+
+  test('maps static requests without running plugin resolution', async () => {
+    const resolveId = vi.fn((id: string) => {
+      if (id === '/image.svg') return OUTSIDE_HTML_PATH + '?raw'
+    })
+    const server = await createTestServer(undefined, [
+      {
+        name: 'resolve-html-image',
+        enforce: 'pre',
+        resolveId,
+        config() {
+          return {
+            resolve: {
+              alias: { '/images': '/static' },
+            },
+          }
+        },
+      },
+    ])
+    server.config.server.fs.allow = []
+    server.config.server.preTransformRequests = false
+
+    await server.transformIndexHtml(
+      '/index.html',
+      '<img src="/image.svg"><img src="/images/icon.svg">',
+    )
+
+    expect(resolveId.mock.calls.map(([id]) => id)).not.toContain('/image.svg')
+    expect(server.config.safeModulePaths).toContain(
+      normalizePath(path.join(FIXTURE_DIR, 'root/image.svg')),
+    )
+    expect(server.config.safeModulePaths).toContain(
+      normalizePath(path.join(FIXTURE_DIR, 'root/static/icon.svg')),
+    )
+    expect(server.config.safeModulePaths).not.toContain(OUTSIDE_HTML_PATH)
+    expect(server.config.safeModulePaths).not.toContain('/static/icon.svg')
+  })
+
+  test('registers plugin targets before warming HTML dependencies', async () => {
+    const server = await createTestServer(undefined, [
+      {
+        name: 'resolve-warmed-script',
+        enforce: 'pre',
+        async resolveId(id) {
+          if (id === '/entry.js?raw') return OUTSIDE_HTML_PATH + '?raw'
+        },
+      },
+    ])
+    server.config.server.fs.allow = []
+    const warmupRequest = vi
+      .spyOn(server, 'warmupRequest')
+      .mockImplementation(async (url) => {
+        if (url === '/entry.js?raw') {
+          expect(server.config.safeModulePaths).toContain(
+            OUTSIDE_HTML_PATH + '?raw',
+          )
+          expect(
+            await server.environments.client.transformRequest(url),
+          ).not.toBeNull()
+        }
+      })
+
+    await server.transformIndexHtml(
+      '/index.html',
+      '<script type="module" src="/entry.js?raw"></script>',
+    )
+
+    expect(warmupRequest).toHaveBeenCalledWith('/entry.js?raw')
+    await Promise.all(warmupRequest.mock.results.map(({ value }) => value))
+  })
+
+  test('maps configured iframe sources as document requests', async () => {
+    const resolveId = vi.fn((id: string) => {
+      if (id === '/classic.js') return OUTSIDE_HTML_PATH
+    })
+    const server = await createTestServer(undefined, [
+      {
+        name: 'resolve-frame-source',
+        enforce: 'pre',
+        resolveId,
+        config() {
+          return {
+            html: {
+              additionalAssetSources: {
+                iframe: { srcAttributes: ['src'] },
+              },
+            },
+          }
+        },
+      },
+    ])
+    server.config.server.fs.allow = []
+    server.config.server.preTransformRequests = false
+
+    await server.transformIndexHtml(
+      '/index.html',
+      '<iframe src="./classic.js"></iframe>',
+    )
+
+    expect(
+      isFileLoadingAllowed(
+        server.config,
+        normalizePath(path.join(FIXTURE_DIR, 'root/classic.js')),
+      ),
+    ).toBe(true)
+    expect(resolveId.mock.calls.map(([id]) => id)).not.toContain('/classic.js')
+    expect(server.config.safeModulePaths).not.toContain(OUTSIDE_HTML_PATH)
+  })
 
   test('registers aliased stylesheets at the path used for transformation', async () => {
     const server = await createTestServer(undefined, [
