@@ -23,6 +23,20 @@ export default defineConfig(({ command }) => ({
       : [
           path.resolve(import.meta.dirname, './missing-import/index.html'),
           path.resolve(import.meta.dirname, './css-style/index.html'),
+          path.resolve(import.meta.dirname, './entry-cycle/index.html'),
+          path.resolve(import.meta.dirname, './entry-cycle/entry-cycle.js'),
+          path.resolve(
+            import.meta.dirname,
+            './entry-import-removed/index.html',
+          ),
+          path.resolve(
+            import.meta.dirname,
+            './entry-import-removed/imported-entry.js',
+          ),
+          path.resolve(
+            import.meta.dirname,
+            './entry-import-removed/importing-entry.js',
+          ),
           ...acceptExportsPages,
         ]),
     path.resolve(

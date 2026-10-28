@@ -14,7 +14,7 @@ import {
 } from 'rolldown'
 import { isDynamicPattern } from 'tinyglobby'
 import type { DepsOptimizerEsbuildOptions } from '#types/internal/esbuildOptions'
-import { isWindows } from '../../shared/utils'
+import { isWindows, withTrailingSlash } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
 import {
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
@@ -22,6 +22,7 @@ import {
 } from '../constants'
 import type { Environment } from '../environment'
 import { transformWithOxc } from '../plugins/oxc'
+import { fileToModuleUrl } from '../server/moduleUrl'
 import {
   arraify,
   asyncFlatten,
@@ -32,7 +33,6 @@ import {
   lookupFile,
   normalizeId,
   normalizePath,
-  removeLeadingSlash,
   tryStatSync,
   unique,
 } from '../utils'
@@ -988,7 +988,7 @@ function getDepsCacheDirPrefix(environment: Environment): string {
 export function createIsOptimizedDepFile(
   environment: Environment,
 ): (id: string) => boolean {
-  const depsCacheDirPrefix = getDepsCacheDirPrefix(environment)
+  const depsCacheDirPrefix = withTrailingSlash(getDepsCacheDir(environment))
   return (id) => id.startsWith(depsCacheDirPrefix)
 }
 
@@ -996,18 +996,10 @@ export function createIsOptimizedDepUrl(
   environment: Environment,
 ): (url: string) => boolean {
   const { root } = environment.config
-  const depsCacheDir = getDepsCacheDirPrefix(environment)
-
-  // determine the url prefix of files inside cache directory
-  const depsCacheDirRelative = normalizePath(path.relative(root, depsCacheDir))
-  const depsCacheDirPrefix = depsCacheDirRelative.startsWith('../')
-    ? // if the cache directory is outside root, the url prefix would be something
-      // like '/@fs/absolute/path/to/node_modules/.vite'
-      `/@fs/${removeLeadingSlash(normalizePath(depsCacheDir))}`
-    : // if the cache directory is inside root, the url prefix would be something
-      // like '/node_modules/.vite'
-      `/${depsCacheDirRelative}`
-
+  const depsCacheDir = getDepsCacheDir(environment)
+  const depsCacheDirPrefix = withTrailingSlash(
+    fileToModuleUrl(depsCacheDir, root),
+  )
   return function isOptimizedDepUrl(url: string): boolean {
     return url.startsWith(depsCacheDirPrefix)
   }
@@ -1308,7 +1300,8 @@ const lockfilePaths = lockfileFormats.map((l) => l.path)
 const fallbackLockfileFormats = [
   {
     path: 'yarn.lock',
-    checkPatchesDir: '.yarn/patches',
+    // Included in lockfile
+    checkPatchesDir: false,
     manager: 'yarn',
   },
 ]

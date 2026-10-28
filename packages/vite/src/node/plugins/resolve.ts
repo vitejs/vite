@@ -16,7 +16,6 @@ import {
   DEP_VERSION_RE,
   DEV_PROD_CONDITION,
   ENV_ENTRY,
-  FS_PREFIX,
   SPECIAL_QUERY_RE,
 } from '../constants'
 import { canExternalizeFile } from '../external'
@@ -34,11 +33,11 @@ import {
   resolvePackageData,
 } from '../packages'
 import type { Plugin } from '../plugin'
+import { moduleUrlToFilePath } from '../server/moduleUrl'
 import {
   bareImportRE,
   createDebugger,
   deepImportRE,
-  fsPathFromId,
   getNpmPackageName,
   injectQuery,
   isBuiltin,
@@ -261,6 +260,7 @@ export function oxcResolvePlugin(
           tsconfig: partialEnv.config.tsconfig,
           resolveOptions: {
             isBuild: options.isBuild,
+            isBundled: partialEnv.config.isBundled,
             isProduction: options.isProduction,
             asSrc: options.asSrc ?? false,
             preferRelative: options.preferRelative ?? false,
@@ -281,6 +281,10 @@ export function oxcResolvePlugin(
           },
           environmentConsumer: partialEnv.config.consumer,
           environmentName: partialEnv.name,
+          convertExternalRequire:
+            options.isBuild &&
+            partialEnv.name === 'ssr' &&
+            partialEnv.config.ssr.target === 'webworker',
           builtins: partialEnv.config.resolve.builtins,
           external: options.external,
           noExternal: noExternal,
@@ -433,10 +437,7 @@ function optimizerResolvePlugin(
         // tryFileResolve or /fs/ resolution but these files may not yet
         // exists if we are in the middle of a deps re-processing
         if (asSrc && depsOptimizer.isOptimizedDepUrl(id)) {
-          const optimizedPath = id.startsWith(FS_PREFIX)
-            ? fsPathFromId(id)
-            : normalizePath(path.resolve(root, id.slice(1)))
-          return optimizedPath
+          return moduleUrlToFilePath(id, root)
         }
 
         if (!isDataUrl(id) && !isExternalUrl(id)) {
@@ -505,16 +506,41 @@ export function resolveSubpathImports(
   const basedir = path.dirname(importer)
   const pkgData = findNearestPackageData(basedir, options.packageCache)
   if (!pkgData) return
-
-  let { file: idWithoutPostfix, postfix } = splitFileAndPostfix(id.slice(1))
-  idWithoutPostfix = '#' + idWithoutPostfix
-
-  let importsPath = resolveExportsOrImports(
-    pkgData.data,
-    idWithoutPostfix,
-    options,
-    'imports',
-  )
+  // Imports keys may themselves contain `#` or `?` (e.g. `##/*`, `#a?b`).
+  // Try the full id first, then each query or hash boundary from right to left
+  // so that the longest matching key wins (#16085, #23622).
+  let importsPath: string | undefined
+  let postfix = ''
+  let fullIdError: unknown
+  for (
+    let postfixIndex = id.length;
+    postfixIndex > 0;
+    postfixIndex = Math.max(
+      id.lastIndexOf('?', postfixIndex - 1),
+      id.lastIndexOf('#', postfixIndex - 1),
+    )
+  ) {
+    const key = id.slice(0, postfixIndex)
+    try {
+      importsPath = resolveExportsOrImports(
+        pkgData.data,
+        key,
+        options,
+        'imports',
+      )
+      if (importsPath !== undefined) {
+        postfix = id.slice(postfixIndex)
+        break
+      }
+    } catch (e) {
+      if (Object.hasOwn(pkgData.data.imports, key)) throw e
+      // resolve.exports throws when no key matches; keep the full id error.
+      fullIdError ??= e
+    }
+  }
+  if (importsPath === undefined && fullIdError) {
+    throw fullIdError
+  }
 
   if (importsPath?.[0] === '.') {
     importsPath = path.relative(basedir, path.join(pkgData.dir, importsPath))

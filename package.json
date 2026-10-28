@@ -53,22 +53,22 @@
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.18.2",
     "@vitejs/release-scripts": "^1.10.0",
-    "eslint-plugin-n": "^18.4.1",
+    "eslint-plugin-n": "^18.5.0",
     "eslint-plugin-regexp": "^3.3.1",
     "execa": "^9.6.1",
     "lint-staged": "^17.6.0",
-    "oxfmt": "^0.72.0",
-    "oxlint": "^1.87.0",
-    "oxlint-tsgolint": "^7.0.2004",
+    "oxfmt": "^0.74.0",
+    "oxlint": "^1.89.0",
+    "oxlint-tsgolint": "^7.0.2005",
     "picocolors": "^1.1.1",
-    "playwright-chromium": "^1.64.0",
-    "rolldown": "~1.2.13",
+    "playwright-chromium": "^1.64.1",
+    "rolldown": "~1.2.15",
     "rollup": "^4.59.0",
     "simple-git-hooks": "^2.14.0",
     "tsx": "^4.23.15",
     "typescript": "~7.0.2",
     "vite": "workspace:*",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.5"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
@@ -87,7 +87,7 @@
       "oxlint --fix"
     ]
   },
-  "packageManager": "pnpm@12.11.2",
+  "packageManager": "pnpm@12.15.0",
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"
   }
