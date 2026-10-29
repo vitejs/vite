@@ -33,10 +33,10 @@ import {
 
 const devToolsIntegration = vi.hoisted(() => vi.fn())
 
-const execSyncMock = vi.hoisted(() => vi.fn())
-vi.mock('node:child_process', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('node:child_process')>()),
-  execSync: execSyncMock,
+const ignoreInput = vi.hoisted(() => vi.fn())
+vi.mock('@voidzero-dev/vite-task-client', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@voidzero-dev/vite-task-client')>()),
+  ignoreInput,
 }))
 
 vi.mock('@vitejs/devtools/integration', () => ({
@@ -2535,44 +2535,10 @@ describe('pnpm virtual store in server.fs.allow', () => {
     )
   })
 
-  test('does not read .modules.yaml during build', async () => {
-    const store = path.join(tmpDir, 'store')
-    fs.mkdirSync(store, { recursive: true })
-    writeModulesYaml('../../store')
-    const readFileSync = vi.spyOn(fs, 'readFileSync')
-    const resolved = await resolveServerOptions(root, {}, logger, true)
-    expect(resolved.fs.allow).not.toContain(normalizePath(store))
-    expect(readFileSync).not.toHaveBeenCalledWith(modulesYaml, 'utf-8')
-  })
-})
-
-describe('yarn PnP cache in server.fs.allow', () => {
-  const logger = { warn: vi.fn() } as unknown as Logger
-  const yarnCache = path.resolve('/yarn/cache')
-
-  beforeEach(() => {
-    // @ts-expect-error not typed
-    process.versions.pnp = '3'
-    execSyncMock
-      .mockReturnValueOnce(Buffer.from('false'))
-      .mockReturnValueOnce(Buffer.from(yarnCache))
-  })
-
-  afterEach(() => {
-    // @ts-expect-error not typed
-    delete process.versions.pnp
-    execSyncMock.mockReset()
-  })
-
-  test('allows the yarn cache when serving', async () => {
-    const resolved = await resolveServerOptions(process.cwd(), {}, logger)
-    expect(execSyncMock).toHaveBeenCalledTimes(2)
-    expect(resolved.fs.allow).toContain(normalizePath(yarnCache))
-  })
-
-  test('does not run yarn during build', async () => {
-    const resolved = await resolveServerOptions(process.cwd(), {}, logger, true)
-    expect(execSyncMock).not.toHaveBeenCalled()
-    expect(resolved.fs.allow).not.toContain(normalizePath(yarnCache))
+  test('tells Vite Task to ignore .modules.yaml', async () => {
+    writeModulesYaml('.pnpm')
+    ignoreInput.mockClear()
+    await resolveServerOptions(root, {}, logger)
+    expect(ignoreInput).toHaveBeenCalledWith(modulesYaml)
   })
 })
