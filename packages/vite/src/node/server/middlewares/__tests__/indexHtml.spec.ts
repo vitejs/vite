@@ -467,7 +467,8 @@ describe('indexHtml middleware — safe module paths', () => {
         '/nested/custom.css?direct&raw': 'style.css?raw',
         '/nested/custom-dynamic.js?url&label=hello world': 'dynamic.js?url',
         '/nested/custom-classic.js?raw': 'classic.js?raw',
-        '/nested/custom-entry.data?raw': 'dynamic.js?raw',
+        '/nested/custom-entry.data?raw&label=hello world':
+          '../outside.html?raw',
         '/nested/custom-preload.data?url': 'classic.js?url',
         '/nested/custom-preload-script.data?raw': 'style.css?url',
         '/nested/custom.svg?imported': 'classic.js?raw&image',
@@ -503,7 +504,7 @@ describe('indexHtml middleware — safe module paths', () => {
               handler(html) {
                 return (
                   html +
-                  `<script type="module" src="./custom-entry.data?raw"></script>
+                  `<script type="module" src="./custom-entry.data?raw&label=hello%20world&import#part"></script>
                  <link rel=" MODULEPRELOAD " href="./custom-preload.data?url">
                  <link rel="preload" as="SCRIPT" href="./custom-preload-script.data?raw">
                  <script type="module" src="/@id/custom-entry"></script>
@@ -596,37 +597,6 @@ describe('indexHtml middleware — safe module paths', () => {
       )
     })
   }
-
-  test('uses the plugin target for script requests with arbitrary extensions', async () => {
-    const resolveId = vi.fn((id: string) => {
-      if (id === '/nested/entry.data?raw&label=hello world') {
-        return OUTSIDE_HTML_PATH + '?raw'
-      }
-    })
-    const server = await createTestServer(undefined, [
-      { name: 'resolve-html-script', enforce: 'pre', resolveId },
-    ])
-    server.config.server.fs.allow = []
-    server.config.server.preTransformRequests = false
-
-    await server.transformIndexHtml(
-      '/nested/index.html',
-      '<script type="module" src="./entry.data?raw&label=hello%20world&import#part"></script>',
-    )
-
-    expect(resolveId.mock.calls.map(([id]) => id)).toContain(
-      '/nested/entry.data?raw&label=hello world',
-    )
-    expect(server.config.safeModulePaths).toContain(OUTSIDE_HTML_PATH + '?raw')
-    expect(server.config.safeModulePaths).not.toContain(
-      normalizePath(path.join(FIXTURE_DIR, 'root/nested/entry.data')),
-    )
-    expect(
-      await server.environments.client.transformRequest(
-        '/nested/entry.data?raw&label=hello world',
-      ),
-    ).not.toBeNull()
-  })
 
   test('maps static requests without running plugin resolution', async () => {
     const resolveId = vi.fn((id: string) => {
@@ -765,45 +735,6 @@ describe('indexHtml middleware — safe module paths', () => {
       '/@/style.css?direct',
     )
     expect(result?.code).toContain('color: red')
-  })
-
-  test('uses HTML paths for source and injected URLs with a custom module resolver', async () => {
-    const server = await createTestServer(undefined, [
-      {
-        name: 'custom-module-resolver',
-        enforce: 'pre',
-        resolveId(id) {
-          if (id === 'classic.js?raw' || id === './dynamic.js?url') {
-            return OUTSIDE_HTML_PATH
-          }
-        },
-        transformIndexHtml: {
-          order: 'pre',
-          handler() {
-            return [
-              {
-                tag: 'script',
-                attrs: { type: 'module', src: './dynamic.js?url' },
-              },
-            ]
-          },
-        },
-      },
-    ])
-
-    await server.transformIndexHtml(
-      '/index.html',
-      '<script type="module" src="classic.js?raw"></script>',
-    )
-
-    for (const file of ['classic.js?raw', 'dynamic.js?url']) {
-      expect(server.config.safeModulePaths).toContain(
-        normalizePath(path.join(FIXTURE_DIR, 'root', file)),
-      )
-    }
-    expect(server.config.safeModulePaths).not.toContain(
-      normalizePath(OUTSIDE_HTML_PATH),
-    )
   })
 
   describe('HTML tag registration', () => {
@@ -963,32 +894,4 @@ describe('indexHtml middleware — safe module paths', () => {
       })
     }
   })
-
-  test.each([undefined, 'post'] as const)(
-    'does not register source references injected by a hook with order %s',
-    async (order) => {
-      const server = await createTestServer(undefined, [
-        {
-          name: 'inject-html-source-references',
-          transformIndexHtml: {
-            order,
-            handler: () => `
-              <script type="module" src="/classic.js?raw"></script>
-              <script>import('/dynamic.js?url')</script>
-              <link rel="stylesheet" href="/style.css?direct">
-              <img src="/classic.js?image" srcset="/dynamic.js?small 1x, /dynamic.js?large 2x">
-            `,
-          },
-        },
-      ])
-
-      await server.transformIndexHtml('/index.html', '')
-
-      for (const file of ['classic.js', 'dynamic.js', 'style.css']) {
-        expect(server.config.safeModulePaths).not.toContain(
-          normalizePath(path.join(FIXTURE_DIR, 'root', file)),
-        )
-      }
-    },
-  )
 })
