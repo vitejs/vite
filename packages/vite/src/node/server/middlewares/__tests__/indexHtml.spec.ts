@@ -636,12 +636,13 @@ describe('indexHtml middleware — safe module paths', () => {
   })
 
   test('warms and registers plugin-resolved HTML dependencies', async () => {
+    const resolvedId = normalizePath(OUTSIDE_HTML_PATH) + '?raw'
     const server = await createTestServer(undefined, [
       {
         name: 'resolve-warmed-script',
         enforce: 'pre',
         async resolveId(id) {
-          if (id === '/entry.js?raw') return OUTSIDE_HTML_PATH + '?raw'
+          if (id === '/entry.js?raw') return resolvedId
         },
       },
     ])
@@ -654,12 +655,11 @@ describe('indexHtml middleware — safe module paths', () => {
     )
 
     expect(warmupRequest).toHaveBeenCalledWith('/entry.js?raw')
-    expect(server.config.safeModulePaths).toContain(OUTSIDE_HTML_PATH + '?raw')
+    expect(server.config.safeModulePaths).toContain(resolvedId)
     await Promise.all(warmupRequest.mock.results.map(({ value }) => value))
     expect(
-      server.environments.client.moduleGraph.getModuleById(
-        OUTSIDE_HTML_PATH + '?raw',
-      )?.transformResult?.code,
+      server.environments.client.moduleGraph.getModuleById(resolvedId)
+        ?.transformResult?.code,
     ).toContain('Outside root')
   })
 
