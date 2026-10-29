@@ -335,6 +335,8 @@ In addition, you can also pass a `maxWorkers: number` option to specify the max 
 
 Set to `false` to disable writing the bundle to disk. This is mostly used in [programmatic `build()` calls](/guide/api-javascript#build) where further post processing of the bundle is needed before writing to disk.
 
+This also applies when [`build.watch`](#build-watch) is enabled. To access the bundle in watch mode, use the [`generateBundle`](https://rolldown.rs/reference/Interface.Plugin#generatebundle) hook of a plugin.
+
 ## build.emptyOutDir
 
 - **Type:** `boolean`
