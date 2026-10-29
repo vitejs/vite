@@ -204,7 +204,6 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       })
       if (!requestUrl) return url
 
-      let preTransformUrl: string | undefined
       if (scriptType) {
         const decodedUrl = decodeURIIfPossible(requestUrl)
         if (decodedUrl === undefined) return url
@@ -215,17 +214,13 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
         }
         if (scriptType === 'module' && shouldPreTransform(decodedUrl, config)) {
-          preTransformUrl = moduleUrl
+          preTransformRequest(server!, moduleUrl)
         }
       }
 
       if (scriptType !== 'classic') {
         safeModulePathRegistrations.push(
-          addHtmlRequestToSafeModulePaths(requestUrl, server!, fetchDest).then(
-            () => {
-              if (preTransformUrl) preTransformRequest(server!, preTransformUrl)
-            },
-          ),
+          addHtmlRequestToSafeModulePaths(requestUrl, server!, fetchDest),
         )
       }
       return url
