@@ -1408,7 +1408,7 @@ if (!isBuild) {
   })
 
   const assetWatchTodo = bundledDevTodo(
-    'Editing an imported asset file (for example an `.svg`) pushes no update, because nothing watches the file. When a plugin `load` hook returns the content, the plugin must register the file. `vite:asset` does not call `this.addWatchFile` for an inlined asset. For an emitted asset it sets `originalFileName`, which Rolldown documents as watching the file, but Rolldown does not watch it',
+    'Editing an imported asset file (for example an `.svg`) does not reliably push an HMR update: the test passes when it runs alone, but times out waiting for the update when it runs after the earlier tests in this file',
     { rolldown: [10962] },
   )
 
@@ -1440,6 +1440,20 @@ if (!isBuild) {
     await expect
       .poll(() => el.evaluate((it) => `${it.clientHeight}`))
       .toMatch('40')
+  })
+
+  test('not inlined asset is up to date after a page reload', async () => {
+    await page.goto(viteTestUrl)
+    const el = page.locator('#logo-no-inline')
+    editFile('logo-no-inline.svg', (code) =>
+      code.replace(/height="\d+px"/, 'height="150px"'),
+    )
+    await expect
+      .poll(async () => {
+        await page.reload()
+        return el.evaluate((it) => `${it.clientHeight}`)
+      })
+      .toBe('150')
   })
 
   test('CSS HMR with this.addWatchFile', async () => {
