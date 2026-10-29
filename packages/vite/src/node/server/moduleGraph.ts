@@ -4,6 +4,7 @@ import { cleanUrl } from '../../shared/utils'
 import { FS_PREFIX } from '../constants'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
+  bareImportRE,
   monotonicDateNow,
   normalizePath,
   removeImportQuery,
@@ -474,7 +475,8 @@ export class EnvironmentModuleGraph {
     if (
       url !== resolvedId &&
       !url.includes('\0') &&
-      !url.startsWith(`virtual:`)
+      !url.startsWith(`virtual:`) &&
+      !bareImportRE.test(url)
     ) {
       const ext = extname(cleanUrl(resolvedId))
       if (ext) {
