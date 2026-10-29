@@ -1,0 +1,21 @@
+packages/vite/src/node/server/bundledDev.ts
+  s_c561e216d6e913::t_db1f613035a9f0 387,664
+packages/vite/src/node/server/middlewares/triggerLazyBundling.ts
+  s_c561e216d6e913::t_53d493738c1637 3,46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "86a5cf72eec1f1f73d572efe420c83cf5ee26167",
+  "prompts": {},
+  "sessions": {
+    "s_c561e216d6e913": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e999271a8ffeLNibSTlhUcPthB",
+        "model": "unknown"
+      },
+      "human_author": "Vladimir Sheremet <vsheremet@cloudflare.com>"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+packages/vite/src/node/server/htmlSafeModulePaths.ts
+  s_b968276635e19d::t_c5ec27cf628b3b 3-4,23-24,33,59-65,84,91-97,109,117,128-131,133,138-146
+packages/vite/src/node/server/middlewares/__tests__/indexHtml.spec.ts
+  s_b968276635e19d::t_f32dff25630774 11,278,287-288,295,300,303-311,314-382
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "3156980c0c7956329aa3aea1da4e16dedcf89357",
+  "prompts": {},
+  "sessions": {
+    "s_b968276635e19d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a15dcb-c2ce-7d02-9884-d671304b419e",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
