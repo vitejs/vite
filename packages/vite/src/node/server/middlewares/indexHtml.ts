@@ -31,6 +31,7 @@ import {
 } from '../../plugins/html'
 import { checkPublicFile } from '../../publicDir'
 import {
+  decodeURIIfPossible,
   ensureWatchedFile,
   getHash,
   injectQuery,
@@ -43,9 +44,9 @@ import {
   tryStatSync,
 } from '../../utils'
 import {
-  addHtmlToSafeModulePaths,
   addHtmlUrlToSafeModulePaths,
   getHtmlAssetFetchDest,
+  htmlUrlToRequestUrl,
 } from '../htmlSafeModulePaths'
 import { browserUrlToModuleUrl, moduleUrlToFilePath } from '../moduleUrl'
 import {
@@ -94,21 +95,18 @@ export function createDevHtmlTransformFn(
     { ...basePluginContextMeta, watchMode: true },
     config.logger,
   )
-  return async (
+  return (
     server: ViteDevServer,
     url: string,
     html: string,
     originalUrl?: string,
   ): Promise<string> => {
-    const ctx = {
+    return applyHtmlTransforms(html, transformHooks, pluginContext, {
       path: url,
       filename: getHtmlFilename(url, server),
       server,
       originalUrl,
-    }
-    html = await applyHtmlTransforms(html, transformHooks, pluginContext, ctx)
-    await addHtmlToSafeModulePaths(html, ctx)
-    return html
+    })
   }
 }
 
@@ -129,10 +127,6 @@ const wordCharRE = /\w/
 
 function isBareRelative(url: string) {
   return wordCharRE.test(url[0]) && !url.includes(':')
-}
-
-function getHtmlDirnameForRelativeUrl(htmlPath: string): string {
-  return htmlPath.endsWith('/') ? htmlPath : path.posix.dirname(htmlPath)
 }
 
 const multipleLeadingSlashesRE = /^\/{2,}/g
@@ -167,38 +161,31 @@ const processNodeUrl = (
       url = path.posix.join(config.base, url)
     }
 
-    let preTransformUrl: string | undefined
-
-    if (!isClassicScriptLink && shouldPreTransform(url, config)) {
-      if (url[0] === '/' && url[1] !== '/') {
-        preTransformUrl = url
-      } else if (url[0] === '.' || isBareRelative(url)) {
-        preTransformUrl = path.posix.join(
-          config.base,
-          getHtmlDirnameForRelativeUrl(htmlPath),
-          url,
-        )
-      }
-    }
-
     let preTransformModuleUrl: string | undefined
     if (server) {
-      let decodedUrl: string
-      try {
-        decodedUrl = decodeURI(preTransformUrl || url)
-      } catch {
+      const requestUrl = htmlUrlToRequestUrl(url, {
+        path: htmlPath,
+        originalUrl,
+        server,
+      })
+      if (!requestUrl) {
+        registerSafeModulePath(url)
+        return url
+      }
+      const decodedUrl = decodeURIIfPossible(requestUrl)
+      if (decodedUrl === undefined) {
         // Malformed uri. Skip pre-transform.
         registerSafeModulePath(url)
         return url
       }
-      const moduleUrl = browserUrlToModuleUrl(decodedUrl, config.decodedBase)
+      const moduleUrl = browserUrlToModuleUrl(decodedUrl, '')
       const mod =
         server.environments.client.moduleGraph.urlToModuleMap.get(moduleUrl)
       if (mod && mod.lastHMRTimestamp > 0) {
         url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
       }
 
-      if (preTransformUrl) {
+      if (!isClassicScriptLink && shouldPreTransform(decodedUrl, config)) {
         preTransformModuleUrl = moduleUrl
       }
     }
@@ -334,7 +321,9 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           config,
           htmlPath,
           originalUrl,
-          registerScript,
+          (url, preTransformUrl) => {
+            if (isModule) registerScript(url, preTransformUrl)
+          },
           server,
           !isModule,
         )

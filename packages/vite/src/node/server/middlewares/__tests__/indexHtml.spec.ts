@@ -194,6 +194,155 @@ describe('indexHtml middleware — HMR timestamp injection with non-root base', 
   })
 })
 
+describe('indexHtml middleware — browser request resolution', () => {
+  test.each([
+    {
+      name: 'a relative path starting with a tilde',
+      htmlPath: '/index.html',
+      src: '~dir/../src/main.ts',
+      moduleUrl: '/src/main.ts',
+      expectedSrc: '~dir/../src/main.ts?t=1234567890123',
+    },
+    {
+      name: 'path segments in a query',
+      htmlPath: '/nested/index.html',
+      src: '../src/main.ts?path=/../file',
+      moduleUrl: '/src/main.ts?path=/../file',
+      expectedSrc: '../src/main.ts?t=1234567890123&path=/../file',
+    },
+    {
+      name: 'a fragment',
+      htmlPath: '/nested/index.html',
+      src: '../src/main.ts#part',
+      moduleUrl: '/src/main.ts',
+      expectedSrc: '../src/main.ts?t=1234567890123#part',
+    },
+    {
+      name: 'a directory document URL with a query',
+      htmlPath: '/src/?q=/nested/file',
+      src: './main.ts',
+      moduleUrl: '/src/main.ts',
+      expectedSrc: './main.ts?t=1234567890123',
+    },
+    {
+      name: 'the original document location',
+      htmlPath: '/other/index.html',
+      originalUrl: '/ui/src/route',
+      src: './main.ts',
+      moduleUrl: '/src/main.ts',
+      expectedSrc: './main.ts?t=1234567890123',
+    },
+    {
+      name: 'SPA fallback rewriting',
+      htmlPath: '/index.html',
+      originalUrl: '/ui/client/route',
+      src: './src/main.ts',
+      moduleUrl: '/src/main.ts',
+      expectedSrc: '/ui/src/main.ts?t=1234567890123',
+    },
+    {
+      name: 'a module path starting with the base',
+      base: '/src/',
+      htmlPath: '/index.html',
+      src: '/src/main.ts',
+      moduleUrl: '/src/main.ts',
+      expectedSrc: '/src/src/main.ts?t=1234567890123',
+    },
+    {
+      name: 'an encoded base',
+      base: '/a%20b/',
+      htmlPath: '/src/index.html',
+      src: './main.ts',
+      moduleUrl: '/src/main.ts',
+      expectedSrc: './main.ts?t=1234567890123',
+    },
+    {
+      name: 'a relative classic script',
+      htmlPath: '/index.html',
+      src: './src/main.ts',
+      moduleUrl: '/src/main.ts',
+      expectedSrc: './src/main.ts?t=1234567890123',
+      classic: true,
+    },
+  ])(
+    'handles HMR, warmup, and safe paths with $name',
+    async ({
+      base = '/ui/',
+      htmlPath,
+      originalUrl,
+      src,
+      moduleUrl,
+      expectedSrc,
+      classic = false,
+    }) => {
+      const server = await createTestServer('fixtures/base-root', [], base)
+      const mod =
+        await server.environments.client.moduleGraph.ensureEntryFromUrl(
+          moduleUrl,
+        )
+      mod.lastHMRTimestamp = 1234567890123
+      server.config.safeModulePaths.clear()
+      const warmupRequest = vi
+        .spyOn(server, 'warmupRequest')
+        .mockResolvedValue(undefined)
+
+      const transformed = await server.transformIndexHtml(
+        htmlPath,
+        `<script${classic ? '' : ' type="module"'} src="${src}"></script>`,
+        originalUrl,
+      )
+
+      expect(transformed).toContain(`src="${expectedSrc}"`)
+      if (classic) {
+        expect(warmupRequest).not.toHaveBeenCalled()
+        expect(server.config.safeModulePaths).not.toContain(mod.id)
+      } else {
+        expect(warmupRequest).toHaveBeenCalledExactlyOnceWith(moduleUrl)
+        expect(server.config.safeModulePaths).toContain(mod.id)
+      }
+    },
+  )
+
+  test('does not warm an HTML document referenced by a query-only URL', async () => {
+    const server = await createTestServer('fixtures/base-root', [], '/ui/')
+    const warmupRequest = vi
+      .spyOn(server, 'warmupRequest')
+      .mockResolvedValue(undefined)
+
+    await server.transformIndexHtml(
+      '/index.html',
+      '<script type="module" src="?foo"></script>',
+    )
+
+    expect(warmupRequest).not.toHaveBeenCalled()
+  })
+
+  test('does not warm a public script referenced by an encoded relative URL', async () => {
+    const server = await createTestServer(
+      'fixtures/base-root',
+      [
+        {
+          name: 'public-html-assets',
+          config: () => ({
+            publicDir: path.join(FIXTURE_DIR, 'base-root/src'),
+          }),
+        },
+      ],
+      '/ui/',
+    )
+    const warmupRequest = vi
+      .spyOn(server, 'warmupRequest')
+      .mockResolvedValue(undefined)
+
+    await server.transformIndexHtml(
+      '/index.html',
+      '<script type="module" src="./%6dain.ts"></script>',
+    )
+
+    expect(warmupRequest).not.toHaveBeenCalled()
+  })
+})
+
 describe('indexHtml middleware — safe module paths', () => {
   for (const url of ['./malformed%zz.js', '\\\\%']) {
     test(`leaves malformed URL ${url} for the browser`, async () => {
@@ -202,7 +351,7 @@ describe('indexHtml middleware — safe module paths', () => {
       await expect(
         server.transformIndexHtml(
           '/index.html',
-          `<script src="${url}"></script>`,
+          `<script type="module" src="${url}"></script>`,
         ),
       ).resolves.toContain(`src="${url}"`)
     })
@@ -246,7 +395,7 @@ describe('indexHtml middleware — safe module paths', () => {
 
       await server.transformIndexHtml(
         htmlPath,
-        `<script src="${url}"></script>`,
+        `<script type="module" src="${url}"></script>`,
       )
 
       const { file: filename, postfix } = splitFileAndPostfix(file)
@@ -264,7 +413,7 @@ describe('indexHtml middleware — safe module paths', () => {
 
     await server.transformIndexHtml(
       '/index.html',
-      '<script src="../outside.html"></script>',
+      '<script type="module" src="../outside.html"></script>',
     )
 
     expect(server.config.safeModulePaths).toContain(
@@ -335,23 +484,29 @@ describe('indexHtml middleware — safe module paths', () => {
               const file = modules[id as keyof typeof modules]
               if (file) return path.join(root, file)
             },
-            transformIndexHtml() {
-              return [
-                { tag: 'script', attrs: { src: './custom-classic.js?raw' } },
-              ]
+            transformIndexHtml: {
+              order: 'pre',
+              handler() {
+                return [
+                  {
+                    tag: 'script',
+                    attrs: { type: 'module', src: './custom-classic.js?raw' },
+                  },
+                ]
+              },
             },
           },
           {
-            name: 'inject-post-html-module',
+            name: 'inject-html-module',
             transformIndexHtml: {
-              order: 'post',
+              order: 'pre',
               handler(html) {
                 return (
                   html +
                   `<script type="module" src="./custom-entry.data?raw"></script>
                  <link rel=" MODULEPRELOAD " href="./custom-preload.data?url">
                  <link rel="preload" as="SCRIPT" href="./custom-preload-script.data?raw">
-                 <script type="module" src="${base}@id/custom-entry"></script>
+                 <script type="module" src="/@id/custom-entry"></script>
                  <script type="module" src="../@id/relative-entry"></script>`
                 )
               },
@@ -391,8 +546,16 @@ describe('indexHtml middleware — safe module paths', () => {
       [
         {
           name: 'inject-relative-entry',
-          transformIndexHtml() {
-            return [{ tag: 'script', attrs: { src: '../ui/classic.js?raw' } }]
+          transformIndexHtml: {
+            order: 'pre',
+            handler() {
+              return [
+                {
+                  tag: 'script',
+                  attrs: { type: 'module', src: '../ui/classic.js?raw' },
+                },
+              ]
+            },
           },
         },
       ],
@@ -415,22 +578,15 @@ describe('indexHtml middleware — safe module paths', () => {
   })
 
   for (const base of ['/ui/', '/a%20b/', '/%E3%81%82/']) {
-    test(`uses the browser document location for injected URLs with base ${base}`, async () => {
-      const server = await createTestServer(
-        undefined,
-        [
-          {
-            name: 'inject-relative-image',
-            transformIndexHtml() {
-              return [{ tag: 'img', attrs: { src: './image.svg?size=2#icon' } }]
-            },
-          },
-        ],
-        base,
-      )
+    test(`uses the browser document location for asset URLs with base ${base}`, async () => {
+      const server = await createTestServer(undefined, undefined, base)
       server.config.server.preTransformRequests = false
 
-      await server.transformIndexHtml('/index.html', '', `${base}client/route`)
+      await server.transformIndexHtml(
+        '/other/index.html',
+        '<img src="./image.svg?size=2#icon">',
+        `${base}client/route`,
+      )
 
       expect(server.config.safeModulePaths).toContain(
         normalizePath(path.join(FIXTURE_DIR, 'root/client/image.svg?size=2')),
@@ -455,7 +611,7 @@ describe('indexHtml middleware — safe module paths', () => {
 
     await server.transformIndexHtml(
       '/nested/index.html',
-      '<script src="./entry.data?raw&label=hello%20world&import#part"></script>',
+      '<script type="module" src="./entry.data?raw&label=hello%20world&import#part"></script>',
     )
 
     expect(resolveId.mock.calls.map(([id]) => id)).toContain(
@@ -621,15 +777,23 @@ describe('indexHtml middleware — safe module paths', () => {
             return OUTSIDE_HTML_PATH
           }
         },
-        transformIndexHtml() {
-          return [{ tag: 'script', attrs: { src: './dynamic.js?url' } }]
+        transformIndexHtml: {
+          order: 'pre',
+          handler() {
+            return [
+              {
+                tag: 'script',
+                attrs: { type: 'module', src: './dynamic.js?url' },
+              },
+            ]
+          },
         },
       },
     ])
 
     await server.transformIndexHtml(
       '/index.html',
-      '<script src="classic.js?raw"></script>',
+      '<script type="module" src="classic.js?raw"></script>',
     )
 
     for (const file of ['classic.js?raw', 'dynamic.js?url']) {
@@ -655,42 +819,45 @@ describe('indexHtml middleware — safe module paths', () => {
         name: 'source HTML tags',
         html: `
           <link rel="stylesheet" href="./style.css?direct">
-          <script src="./classic.js?raw"></script>
+          <script type="module" src="./classic.js?raw"></script>
           <script>import('./dynamic.js?url')</script>
         `,
         plugins: [],
         files: ['style.css?direct', 'classic.js?raw', 'dynamic.js?url'],
       },
       {
-        name: 'plugin-injected tags',
+        name: 'tags injected by a pre hook',
         html: HTML_CONTENT,
         plugins: [
           {
             name: 'inject-safe-module-tags',
-            transformIndexHtml() {
-              return [
-                {
-                  tag: 'link',
-                  attrs: { rel: 'stylesheet', href: './style.css?direct' },
-                },
-                {
-                  tag: 'script',
-                  attrs: { src: './classic.js?raw' },
-                },
-              ]
+            transformIndexHtml: {
+              order: 'pre',
+              handler() {
+                return [
+                  {
+                    tag: 'link',
+                    attrs: { rel: 'stylesheet', href: './style.css?direct' },
+                  },
+                  {
+                    tag: 'script',
+                    attrs: { type: 'module', src: './classic.js?raw' },
+                  },
+                ]
+              },
             },
           },
         ],
         files: ['style.css?direct', 'classic.js?raw'],
       },
       {
-        name: 'HTML returned by a post hook',
+        name: 'HTML returned by a pre hook',
         html: HTML_CONTENT,
         plugins: [
           {
             name: 'inject-html-reference',
             transformIndexHtml: {
-              order: 'post',
+              order: 'pre',
               handler(html) {
                 return (
                   html + '<script type="module" src="/classic.js?raw"></script>'
@@ -740,27 +907,31 @@ describe('indexHtml middleware — safe module paths', () => {
                 },
               }
             },
-            transformIndexHtml() {
-              return [
-                {
-                  tag: 'div',
-                  injectTo: 'body',
-                  children: [
-                    {
-                      tag: 'img',
-                      attrs: {
-                        src: './classic.js?image',
-                        srcset: './classic.js?small 1x, ./dynamic.js?large 2x',
+            transformIndexHtml: {
+              order: 'pre',
+              handler() {
+                return [
+                  {
+                    tag: 'div',
+                    injectTo: 'body',
+                    children: [
+                      {
+                        tag: 'img',
+                        attrs: {
+                          src: './classic.js?image',
+                          srcset:
+                            './classic.js?small 1x, ./dynamic.js?large 2x',
+                        },
                       },
-                    },
-                    { tag: 'video', attrs: { poster: './style.css?poster' } },
-                    {
-                      tag: 'custom-img',
-                      attrs: { 'data-src': './style.css?custom' },
-                    },
-                  ],
-                },
-              ]
+                      { tag: 'video', attrs: { poster: './style.css?poster' } },
+                      {
+                        tag: 'custom-img',
+                        attrs: { 'data-src': './style.css?custom' },
+                      },
+                    ],
+                  },
+                ]
+              },
             },
           },
         ],
@@ -792,4 +963,32 @@ describe('indexHtml middleware — safe module paths', () => {
       })
     }
   })
+
+  test.each([undefined, 'post'] as const)(
+    'does not register source references injected by a hook with order %s',
+    async (order) => {
+      const server = await createTestServer(undefined, [
+        {
+          name: 'inject-html-source-references',
+          transformIndexHtml: {
+            order,
+            handler: () => `
+              <script type="module" src="/classic.js?raw"></script>
+              <script>import('/dynamic.js?url')</script>
+              <link rel="stylesheet" href="/style.css?direct">
+              <img src="/classic.js?image" srcset="/dynamic.js?small 1x, /dynamic.js?large 2x">
+            `,
+          },
+        },
+      ])
+
+      await server.transformIndexHtml('/index.html', '')
+
+      for (const file of ['classic.js', 'dynamic.js', 'style.css']) {
+        expect(server.config.safeModulePaths).not.toContain(
+          normalizePath(path.join(FIXTURE_DIR, 'root', file)),
+        )
+      }
+    },
+  )
 })
