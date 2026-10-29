@@ -192,5 +192,57 @@ describe('moduleGraph', () => {
       const mod = await moduleGraph.ensureEntryFromUrl('/test.js', false)
       expect(mod.transformResult).toBe(null)
     })
+
+    it('clears stale ETag mapping on file delete', async () => {
+      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
+        id: url,
+      }))
+
+      const mod = await moduleGraph.ensureEntryFromUrl('/test.js', false)
+      moduleGraph.updateModuleTransformResult(mod, {
+        code: 'export default "test"',
+        map: null,
+        etag: 'W/"test-etag"',
+      })
+
+      // ETag is registered before deletion
+      expect(moduleGraph.getModuleByEtag('W/"test-etag"')).toBe(mod)
+
+      moduleGraph.onFileDelete('/test.js')
+
+      // ETag mapping must be cleaned up so getModuleByEtag does not
+      // return a module whose transformResult has been cleared
+      expect(moduleGraph.getModuleByEtag('W/"test-etag"')).toBeUndefined()
+      expect(mod.transformResult).toBe(null)
+    })
+
+    it('clears transformResult for distinct deleted files', async () => {
+      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
+        id: url,
+      }))
+
+      // Simulate the original #23907 scenario: creating and deleting
+      // distinct filenames. Each file gets its own module node, and
+      // onFileDelete must clear the transformResult (the main memory
+      // consumer) for each one.
+      for (let i = 0; i < 5; i++) {
+        const mod = await moduleGraph.ensureEntryFromUrl(`/file${i}.js`, false)
+        moduleGraph.updateModuleTransformResult(mod, {
+          code: `export default "v${i}"`,
+          map: null,
+          etag: `W/"file${i}"`,
+        })
+        moduleGraph.onFileDelete(`/file${i}.js`)
+      }
+
+      // Each distinct file has its own node, but all transformResults
+      // (which hold the transformed source code) are cleared
+      for (let i = 0; i < 5; i++) {
+        const mod = moduleGraph.urlToModuleMap.get(`/file${i}.js`)
+        expect(mod).toBeDefined()
+        expect(mod!.transformResult).toBe(null)
+        expect(moduleGraph.getModuleByEtag(`W/"file${i}"`)).toBeUndefined()
+      }
+    })
   })
 })

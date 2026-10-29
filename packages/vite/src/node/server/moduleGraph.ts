@@ -165,7 +165,9 @@ export class EnvironmentModuleGraph {
         // in all maps (including fileToModulesMap) because handleHMRUpdate
         // (called right after onFileDelete by the file watcher) needs to find
         // it by file and propagate the deletion to importers.
-        mod.transformResult = null
+        // Use updateModuleTransformResult (not direct assignment) so the
+        // previous ETag is removed from etagToModuleMap.
+        this.updateModuleTransformResult(mod, null)
         mod.info = undefined
         mod.meta = undefined
         // Break outgoing references so the deleted module does not keep
