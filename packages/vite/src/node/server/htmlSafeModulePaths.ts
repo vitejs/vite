@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { NULL_BYTE_PLACEHOLDER, VALID_ID_PREFIX } from '../../shared/constants'
+import { NULL_BYTE_PLACEHOLDER } from '../../shared/constants'
 import {
   cleanUrl,
   joinUrlSegments,
@@ -76,15 +76,9 @@ export async function addHtmlRequestToSafeModulePaths(
   fetchDest?: string,
 ): Promise<void> {
   const { config } = server
-  const pathname = decodeURIIfPossible(cleanUrl(requestUrl))
-  if (pathname === undefined) return
-  if (
-    isInternalRequest(pathname) &&
-    !pathname.startsWith(FS_PREFIX) &&
-    !pathname.startsWith(VALID_ID_PREFIX)
-  ) {
-    return
-  }
+  const decodedUrl = decodeURIIfPossible(removeTimestampQuery(requestUrl))
+  if (decodedUrl === undefined) return
+  const pathname = cleanUrl(decodedUrl)
   if (
     !isInternalRequest(requestUrl) &&
     !isImportRequest(requestUrl) &&
@@ -94,8 +88,7 @@ export async function addHtmlRequestToSafeModulePaths(
     return
   }
 
-  const decodedUrl = decodeURIIfPossible(removeTimestampQuery(requestUrl))
-  if (decodedUrl !== undefined && isTransformRequest(decodedUrl, fetchDest)) {
+  if (isTransformRequest(decodedUrl, fetchDest)) {
     let moduleUrl = browserUrlToModuleUrl(
       removeImportQuery(decodedUrl.replace(NULL_BYTE_PLACEHOLDER, '\0')),
       '',
@@ -125,7 +118,7 @@ export async function addHtmlRequestToSafeModulePaths(
           resolveStaticPathname(pathname, config) || pathname,
         ),
       )
-  const { postfix } = splitFileAndPostfix(decodedUrl ?? requestUrl)
+  const { postfix } = splitFileAndPostfix(decodedUrl)
   config.safeModulePaths.addId(filePath + postfix)
   if (!config.resolve.preserveSymlinks) {
     try {
