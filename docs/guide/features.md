@@ -663,7 +663,7 @@ These rules are enforced to prevent accidentally importing files that are not in
 
 ## WebAssembly
 
-Vite supports importing pre-compiled `.wasm` files directly as an [ES module](#esm-integration) when you only need the module's exports. When you need explicit control over instantiation, import the compiled module with a [source phase import](#source-phase-imports), or use [`?init`](#manual-initialization).
+Vite supports importing pre-compiled `.wasm` files in two ways: directly as an [ES module](#esm-integration) when you only need the module's exports, or with [`?init`](#manual-initialization) when you need explicit control over instantiation.
 
 ### ESM Integration
 
@@ -691,9 +691,11 @@ export function add(a: number, b: number): number
 
 :::
 
+::: details Source Phase Imports Support
+
 #### Source Phase Imports
 
-The ESM Integration proposal also defines [source phase imports](https://github.com/tc39/proposal-source-phase-imports) for `.wasm` files, giving you the compiled [`WebAssembly.Module`](https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Module) without instantiating it, leaving instantiation entirely to you. This is the standard way to take control over instantiation and is the recommended alternative to [`?init`](#manual-initialization):
+The ESM Integration proposal also defines [source phase imports](https://github.com/tc39/proposal-source-phase-imports) for `.wasm` files, giving you the compiled [`WebAssembly.Module`](https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Module) without instantiating it, leaving instantiation entirely to you. This is the standard way to take control over instantiation and will be the recommended alternative to [`?init`](#manual-initialization) once [TypeScript 7.1](https://devblogs.microsoft.com/typescript/announcing-typescript-7-1-beta/#source-phase-imports) is released as stable:
 
 ```js
 import source mod from './example.wasm'
@@ -722,6 +724,8 @@ The dynamic form resolves to the `WebAssembly.Module` as well:
 ```js
 const mod = await import.source('./example.wasm')
 ```
+
+:::
 
 ### Manual Initialization
 
