@@ -7,7 +7,6 @@ import { get as httpsGet } from 'node:https'
 import type * as net from 'node:net'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
-import { determineAgent } from '@vercel/detect-agent'
 import { disableCache } from '@voidzero-dev/vite-task-client'
 import chokidar from 'chokidar'
 import connect from 'connect'
@@ -15,6 +14,7 @@ import corsMiddleware from 'cors'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import colors from 'picocolors'
 import type { SourceMap } from 'rolldown'
+import { detectAgent } from 'std-env'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { FSWatcher } from '#dep-types/chokidar'
 import type { Connect } from '#dep-types/connect'
@@ -291,7 +291,7 @@ export type HttpServer = http.Server | Http2SecureServer
 export async function resolveForwardConsoleOptions(
   value: boolean | ForwardConsoleOptions | undefined,
 ): Promise<ResolvedForwardConsoleOptions> {
-  value ??= (await determineAgent()).isAgent
+  value ??= !!detectAgent().name
 
   if (value === false) {
     return {
