@@ -1,7 +1,13 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
 import deepJson from 'vue/package.json'
-import { editFile, isBundled, isBundledDev, isServe, page } from '~utils'
+import {
+  bundledDevUnsupported,
+  editFile,
+  isBundled,
+  isServe,
+  page,
+} from '~utils'
 import hmrJson from '../../hmr.json'
 import testJson from '../../test.json'
 
@@ -33,11 +39,15 @@ test('dynamic import, named', async () => {
   expect(await page.textContent('.dynamic-named')).toBe(testJson.hello)
 })
 
-// bundled dev: fetch('/test.json') asks the server for a file in the project
-// root. That file is not in the bundle, and bundled dev serves only the bundle.
-test.skipIf(isBundledDev)('fetch', async () => {
-  expect(await page.textContent('.fetch')).toBe(stringified)
-})
+test(
+  'fetch',
+  bundledDevUnsupported(
+    'bundled dev serves only the bundle output and the public directory, never a single project file',
+  ),
+  async () => {
+    expect(await page.textContent('.fetch')).toBe(stringified)
+  },
+)
 
 test('?url', async () => {
   expect(await page.textContent('.url')).toMatch(

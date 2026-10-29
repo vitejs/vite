@@ -3,34 +3,14 @@ import { defaultExclude, defineConfig } from 'vitest/config'
 
 const isBuild = !!process.env.VITE_TEST_BUILD
 const isBundledDev = !isBuild && !!process.env.VITE_TEST_BUNDLED_DEV
+const isBundled = isBuild || isBundledDev
 
 // Spec files that do not pass yet with `experimental.bundledDev` forced on
 // (`pnpm run test-serve-bundled`) — remove entries as bundled dev gains
 // support (vitejs/vite#23028). A file where only a few cases fail is not
-// listed here; those cases are marked `test.skipIf(isBundledDev)` instead.
-const bundledDevExclude = [
-  './playground/assets/__tests__/runtime-base/assets-runtime-base.spec.ts',
-  './playground/backend-integration/__tests__/backend-integration.spec.ts',
-  './playground/chunk-importmap/__tests__/chunk-importmap.spec.ts',
-  './playground/csp/__tests__/csp.spec.ts',
-  './playground/css-codesplit/__tests__/css-codesplit.spec.ts',
-  './playground/css-no-codesplit/__tests__/css-no-codesplit.spec.ts',
-  './playground/forward-console/__test__/forward-console.spec.ts',
-  './playground/fs-serve/__tests__/base/fs-serve-base.spec.ts',
-  './playground/fs-serve/__tests__/deny/fs-serve-deny.spec.ts',
-  './playground/fs-serve/__tests__/fs-serve.spec.ts',
-  './playground/hmr-ssr/__tests__/hmr-ssr.spec.ts',
-  './playground/legacy/__tests__/chunk-importmap/legacy-chunk-importmap.spec.ts',
-  './playground/object-hooks/__tests__/object-hooks.spec.ts',
-  './playground/optimize-deps/__tests__/optimize-deps.spec.ts',
-  './playground/tailwind-v3/__test__/tailwind-v3.spec.ts',
-  './playground/tailwind/__test__/tailwind.spec.ts',
-  './playground/transform-plugin/__tests__/base/transform-plugin.spec.ts',
-  './playground/worker/__tests__/es/worker-es.spec.ts',
-  './playground/worker/__tests__/iife/worker-iife.spec.ts',
-  './playground/worker/__tests__/relative-base-iife/worker-relative-base-iife.spec.ts',
-  './playground/worker/__tests__/relative-base/worker-relative-base.spec.ts',
-]
+// listed here; those cases use `bundledDevTodo()` / `bundledDevUnsupported()`
+// from `playground/test-utils.ts` instead.
+const bundledDevExclude = ['./playground/hmr-ssr/__tests__/hmr-ssr.spec.ts']
 
 const timeout = process.env.PWDEBUG ? Infinity : process.env.CI ? 50000 : 30000
 
@@ -45,12 +25,24 @@ export default defineConfig({
     include: ['./playground/**/*.spec.[tj]s'],
     exclude: [
       ...(isBundledDev ? bundledDevExclude : []),
-      ...(isBuild
+      ...(isBundled
         ? [
             './playground/object-hooks/**/*.spec.[tj]s', // object hook sequential
           ]
         : []),
       ...defaultExclude,
+    ],
+    tags: [
+      {
+        name: 'bundled-dev/unsupported',
+        description: 'Does not apply to bundled dev, by design.',
+        skip: isBundledDev,
+      },
+      {
+        name: 'bundled-dev/todo',
+        description: 'Does not pass under bundled dev yet (vitejs/vite#23028).',
+        todo: isBundledDev,
+      },
     ],
     setupFiles: ['./playground/vitestSetup.ts'],
     globalSetup: ['./playground/vitestGlobalSetup.ts'],
@@ -69,6 +61,7 @@ export default defineConfig({
     env: {
       NODE_ENV: process.env.VITE_TEST_BUILD ? 'production' : 'development',
     },
+    isolate: false,
   },
   oxc: {
     target: 'node20',
