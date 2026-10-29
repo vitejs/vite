@@ -1,5 +1,7 @@
+import fs from 'node:fs'
+import os from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, onTestFinished, test } from 'vitest'
 import { loadEnv } from '../env'
 
 const dirname = import.meta.dirname
@@ -78,5 +80,15 @@ describe('loadEnv', () => {
           "VITE_USER_NODE_ENV": "test",
         }
       `)
+  })
+
+  test('UTF-8 BOM', () => {
+    const dir = fs.mkdtempSync(join(os.tmpdir(), 'vite-env-'))
+    onTestFinished(() => fs.rmSync(dir, { recursive: true, force: true }))
+    fs.writeFileSync(join(dir, '.env'), '\uFEFFVITE_BOM_A=a\nVITE_BOM_B=b\n')
+    expect(loadEnv('bom', dir)).toMatchObject({
+      VITE_BOM_A: 'a',
+      VITE_BOM_B: 'b',
+    })
   })
 })

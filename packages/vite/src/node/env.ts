@@ -6,7 +6,13 @@ import { getEnvs } from '@voidzero-dev/vite-task-client'
 import { type DotenvPopulateInput, expand } from 'dotenv-expand'
 import colors from 'picocolors'
 import type { UserConfig } from './config'
-import { arraify, createDebugger, normalizePath, tryStatSync } from './utils'
+import {
+  arraify,
+  createDebugger,
+  normalizePath,
+  stripBomTag,
+  tryStatSync,
+} from './utils'
 
 const debug = createDebugger('vite:env')
 
@@ -56,7 +62,9 @@ export function loadEnv(
       // Support FIFOs (named pipes) for apps like 1Password
       if (!stat || (!stat.isFile() && !stat.isFIFO())) return []
 
-      const parsedEnv = parseEnv(fs.readFileSync(filePath, 'utf-8'))
+      const parsedEnv = parseEnv(
+        stripBomTag(fs.readFileSync(filePath, 'utf-8')),
+      )
       return Object.entries(parsedEnv as Record<string, string>)
     }),
   )
