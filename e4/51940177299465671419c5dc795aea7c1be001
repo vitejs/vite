@@ -1,0 +1,19 @@
+packages/vite/src/node/server/middlewares/__tests__/indexHtml.spec.ts
+  s_241ea94efe60f7::t_abe735583d6234 428
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e451940177299465671419c5dc795aea7c1be001",
+  "prompts": {},
+  "sessions": {
+    "s_241ea94efe60f7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1872f-c306-7c71-898c-ed6ac1c81a54",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
