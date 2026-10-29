@@ -1,0 +1,21 @@
+packages/vite/src/node/plugins/forwardConsole.ts
+  s_00f933455dd444::t_856a2d203bd472 31-37,43-45,66-78
+packages/vite/src/node/__tests__/plugins/forwardConsole.spec.ts
+  s_00f933455dd444::t_2ed72c7a2a58f1 1-67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "d45b1628eacfb2555b2ef5fcdf939c19360af2ce",
+  "prompts": {},
+  "sessions": {
+    "s_00f933455dd444": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a186ce-615e-7652-b373-238b52c005d7",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}

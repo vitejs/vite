@@ -1,0 +1,21 @@
+playground/optimize-deps/__tests__/optimize-deps.spec.ts
+  s_4a9c455b67d95e::t_9d76a6d7922c45 12,27-35
+packages/vite/src/node/optimizer/index.ts
+  s_4a9c455b67d95e::t_9ea4565ff262bc 443,540,990-1005
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f8cf8f042a90aa988829ea9b96c3f0c40c2f052a",
+  "prompts": {},
+  "sessions": {
+    "s_4a9c455b67d95e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18680-b589-7450-add3-b7f803cf4c0f",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
