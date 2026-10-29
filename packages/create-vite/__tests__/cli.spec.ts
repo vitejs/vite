@@ -206,6 +206,15 @@ test('scaffolds react-ts with Oxlint by default', () => {
   expect(pkg).toContain('"oxlint"')
   expect(pkg).not.toContain('eslint')
   expect(pkg).toContain('"lint": "oxlint"')
+  const templatePkg = JSON.parse(
+    fs.readFileSync(
+      path.join(CLI_PATH, 'template-react-ts', 'package.json'),
+      'utf-8',
+    ),
+  )
+  expect(JSON.parse(pkg).devDependencies.typescript).toBe(
+    templatePkg.devDependencies.typescript,
+  )
 
   const readme = fs.readFileSync(path.join(genPath, 'README.md'), 'utf-8')
   expect(readme).toContain('Expanding the Oxlint configuration')
@@ -225,7 +234,25 @@ test('scaffolds React template with ESLint when --eslint is passed', () => {
   expect(pkg).toContain('"eslint"')
   expect(pkg).not.toContain('oxlint')
   expect(pkg).toContain('"lint": "eslint ."')
+  expect(JSON.parse(pkg).devDependencies.typescript).toBeUndefined()
+  expect(JSON.parse(pkg).devDependencies['typescript-eslint']).toBeUndefined()
 })
+
+test.each(['react-ts', 'react-compiler-ts'])(
+  'keeps TypeScript 6 for %s when --eslint is passed',
+  (template) => {
+    run([projectName, '--template', template, '--eslint'], {
+      cwd: import.meta.dirname,
+    })
+
+    const pkg = JSON.parse(
+      fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8'),
+    )
+    expect(pkg.devDependencies.typescript).toBe('~6.0.3')
+    expect(pkg.devDependencies['typescript-eslint']).toBeDefined()
+    expect(pkg.devDependencies.oxlint).toBeUndefined()
+  },
+)
 
 test('ignores --eslint with a warning for non-React templates', () => {
   const { stdout, stderr } = run(

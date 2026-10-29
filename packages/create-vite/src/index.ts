@@ -943,6 +943,11 @@ export default defineConfig([
 
   editFile(path.resolve(root, 'package.json'), (content) => {
     const asObject = JSON.parse(content)
+    if (isTs) {
+      // Keep TypeScript 6 until typescript-eslint supports TypeScript 7.
+      // https://github.com/typescript-eslint/typescript-eslint/issues/10940
+      asObject.devDependencies.typescript = '~6.0.3'
+    }
     const devDepsEntries = Object.entries(asObject.devDependencies).filter(
       ([name]) => name !== 'oxlint',
     )
@@ -955,9 +960,6 @@ export default defineConfig([
     )
     if (isTs) {
       devDepsEntries.push(['typescript-eslint', `^${typescriptEslintVersion}`])
-      // Keep TypeScript 6 until typescript-eslint supports TypeScript 7.
-      // https://github.com/typescript-eslint/typescript-eslint/issues/10940
-      asObject.devDependencies.typescript = '~6.0.3'
     }
     devDepsEntries.sort()
     asObject.devDependencies = Object.fromEntries(devDepsEntries)
