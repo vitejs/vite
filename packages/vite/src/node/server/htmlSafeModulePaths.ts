@@ -1,21 +1,13 @@
 import path from 'node:path'
-import type { DefaultTreeAdapterMap } from 'parse5'
 import { NULL_BYTE_PLACEHOLDER, VALID_ID_PREFIX } from '../../shared/constants'
 import {
   cleanUrl,
   joinUrlSegments,
   splitFileAndPostfix,
 } from '../../shared/utils'
-import { getNodeAssetAttributes } from '../assetSource'
 import { FS_PREFIX } from '../constants'
 import { isDirectRequest } from '../plugins/css'
-import {
-  type IndexHtmlTransformContext,
-  extractImportExpressionFromClassicScript,
-  getScriptInfo,
-  nodeIsElement,
-  traverseHtml,
-} from '../plugins/html'
+import type { IndexHtmlTransformContext } from '../plugins/html'
 import { checkPublicFile } from '../publicDir'
 import {
   decodeURIIfPossible,
@@ -26,7 +18,6 @@ import {
   isImportRequest,
   isInternalRequest,
   normalizePath,
-  processSrcSetSync,
   removeImportQuery,
   removeTimestampQuery,
   safeRealpathSync,
@@ -37,9 +28,9 @@ import { resolveStaticPathname } from './middlewares/static'
 import { isTransformRequest } from './middlewares/transform'
 import { browserUrlToModuleUrl, moduleUrlToFilePath } from './moduleUrl'
 
-function htmlUrlToRequestUrl(
+export function htmlUrlToRequestUrl(
   url: string,
-  ctx: IndexHtmlTransformContext,
+  ctx: Pick<IndexHtmlTransformContext, 'path' | 'originalUrl' | 'server'>,
 ): string | undefined {
   url = url.split('#', 1)[0]
   if (!url || isExternalUrl(url) || isDataUrl(url)) return
@@ -149,62 +140,4 @@ export async function addHtmlUrlToSafeModulePaths(
       // Files referenced by HTML may not exist yet.
     }
   }
-}
-
-export async function addHtmlToSafeModulePaths(
-  html: string,
-  ctx: IndexHtmlTransformContext,
-): Promise<void> {
-  const urls = new Set<string>()
-  const registrations: Promise<void>[] = []
-  const registerUrl = (url: string, fetchDest?: string) => {
-    const key = `${fetchDest ?? ''}:${url}`
-    if (urls.has(key)) return
-    urls.add(key)
-    registrations.push(addHtmlUrlToSafeModulePaths(url, ctx, fetchDest))
-  }
-  await traverseHtml(
-    html,
-    ctx.filename,
-    () => {},
-    (node) => {
-      if (!nodeIsElement(node)) return
-
-      if (node.nodeName === 'script') {
-        const { src, isModule, isIgnored } = getScriptInfo(node)
-        if (!isIgnored) {
-          if (src) {
-            registerUrl(src.value, 'script')
-          } else if (!isModule && node.childNodes.length) {
-            const scriptNode = node.childNodes.at(
-              -1,
-            ) as DefaultTreeAdapterMap['textNode']
-            for (const { url } of extractImportExpressionFromClassicScript(
-              scriptNode,
-            )) {
-              registerUrl(url, 'script')
-            }
-          }
-        }
-      }
-
-      for (const attr of getNodeAssetAttributes(
-        node,
-        ctx.server!.config.html?.additionalAssetSources,
-      )) {
-        if (attr.type === 'srcset') {
-          processSrcSetSync(attr.value, ({ url }) => {
-            registerUrl(url)
-            return url
-          })
-        } else if (attr.type === 'src') {
-          registerUrl(
-            attr.value,
-            getHtmlAssetFetchDest(node.nodeName, attr.key, attr.attributes),
-          )
-        }
-      }
-    },
-  )
-  await Promise.all(registrations)
 }
