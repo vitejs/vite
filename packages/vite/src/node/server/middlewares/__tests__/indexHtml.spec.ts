@@ -425,7 +425,7 @@ describe('indexHtml middleware — safe module paths', () => {
   })
 
   test('registers symlinked module and static asset paths', async () => {
-    const dir = fs.realpathSync(
+    const dir = fs.realpathSync.native(
       fs.mkdtempSync(path.join(os.tmpdir(), 'vite-html-')),
     )
     const root = path.join(dir, 'root')
