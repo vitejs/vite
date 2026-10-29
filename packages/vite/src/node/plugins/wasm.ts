@@ -1,15 +1,15 @@
 import fsp from 'node:fs/promises'
-import MagicString from 'magic-string'
 import {
+  ImportType,
   init as esModuleLexerInit,
   parse as parseImports,
 } from 'es-module-lexer'
+import MagicString from 'magic-string'
 import { exactRegex } from 'rolldown/filter'
 import { cleanUrl } from '../../shared/utils'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
-import { fileToUrl } from './asset'
 import { injectQuery } from '../utils'
-import { assetUrlRE, fileToUrl } from './asset'
+import { fileToUrl } from './asset'
 
 const wasmHelperId = '\0vite/wasm-helper.js'
 
@@ -25,12 +25,9 @@ const wasmDirectRE = /(?<![?#].*)\.wasm$/
 const wasmInstanceSuffix = '?vite-wasm-instance'
 const wasmInstanceRE = /[?&]vite-wasm-instance(?:&|$)/
 
-
 // Detects the `import source` / `import.source(...)` phase forms cheaply so we
 // only run the full lexer pass over modules that actually use them.
 const wasmSourcePhaseRE = /\bimport\s+source\b|\bimport\s*\.\s*source\b/
-
-const wasmInitUrlRE: RegExp = /__VITE_WASM_INIT__([\w$]+)__/g
 
 // Enabled per spec
 const wasmCompileOptions = {
@@ -182,8 +179,11 @@ export const wasmHelperPlugin = (): Plugin => {
 
           let s: MagicString | undefined
           for (const imp of imports) {
-            // 4 = `import source ...`, 5 = `import.source(...)`
-            if (imp.t !== 4 && imp.t !== 5) continue
+            if (
+              imp.t !== ImportType.StaticSourcePhase &&
+              imp.t !== ImportType.DynamicSourcePhase
+            )
+              continue
             const specifier = imp.n
             if (specifier === undefined) continue
             // Source phase imports are only meaningful for `.wasm` in Vite.
@@ -191,7 +191,7 @@ export const wasmHelperPlugin = (): Plugin => {
 
             s ??= new MagicString(code)
             const sourced = injectQuery(specifier, 'source')
-            if (imp.t === 5) {
+            if (imp.t === ImportType.DynamicSourcePhase) {
               // `import.source(spec)` resolves to the module source object (the
               // `WebAssembly.Module`), whereas `import(spec)` resolves to the
               // namespace, so rewrite to `import(spec?source).then(m => m.default)`.
@@ -271,7 +271,7 @@ export const compileWasm = ${compileWasmCode}
           if (isSource) {
             return `
 import { compileWasm } from "${wasmHelperId}"
-export default await compileWasm(${JSON.stringify(url)})
+export default await compileWasm(${urlExpr})
 `
           }
 
