@@ -9,6 +9,7 @@ import { FS_PREFIX } from '../constants'
 import { isDirectRequest } from '../plugins/css'
 import type { IndexHtmlTransformContext } from '../plugins/html'
 import { checkPublicFile } from '../publicDir'
+import type { ViteDevServer } from '../server'
 import {
   decodeURIIfPossible,
   injectQuery,
@@ -69,17 +70,12 @@ export function getHtmlAssetFetchDest(
   if (rel?.includes('preload')) return attributes.as?.trim().toLowerCase()
 }
 
-export async function addHtmlUrlToSafeModulePaths(
-  url: string,
-  ctx: IndexHtmlTransformContext,
+export async function addHtmlRequestToSafeModulePaths(
+  requestUrl: string,
+  server: ViteDevServer,
   fetchDest?: string,
 ): Promise<void> {
-  const server = ctx.server
-  if (!server) return
-
   const { config } = server
-  const requestUrl = htmlUrlToRequestUrl(url, ctx)
-  if (!requestUrl) return
   const pathname = decodeURIIfPossible(cleanUrl(requestUrl))
   if (pathname === undefined) return
   if (
