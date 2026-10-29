@@ -44,76 +44,44 @@ const wasmReservedModules = new Set<string>([
   wasmCompileOptions.importedStringConstants,
 ])
 
-// Decodes a base64 wasm data URL to bytes in both browser and SSR runtimes.
-const dataUrlToBytes = (url: string) => {
-  const urlContent = url.replace(/^data:.*?base64,/, '')
-  if (typeof Buffer === 'function' && typeof Buffer.from === 'function') {
-    return Buffer.from(urlContent, 'base64')
-  } else if (typeof atob === 'function') {
-    const binaryString = atob(urlContent)
-    const bytes = new Uint8Array(binaryString.length)
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i)
-    }
-    return bytes
-  }
-  throw new Error(
-    'Failed to decode base64-encoded data URL, Buffer and atob are not supported',
-  )
-}
-
-const dataUrlToBytesCode = dataUrlToBytes.toString()
-
-const wasmHelper = async (opts = {}, url: string) => {
-  let result
-  if (url.startsWith('data:')) {
-    result = await WebAssembly.instantiate(
-      dataUrlToBytes(url),
-      opts,
-      wasmCompileOptions,
-    )
-  } else {
-    result = await instantiateFromUrl(url, opts)
-  }
-  return result.instance
-}
-
-const wasmHelperCode = wasmHelper.toString()
-
-// Compiles a `.wasm` to a `WebAssembly.Module` without instantiating it, backing
-// the source phase import (`import source mod from './mod.wasm'`). Callers own
-// instantiation, mirroring the native source phase import semantics.
+// Compiles a `.wasm` to a `WebAssembly.Module` without instantiating it.
 const compileWasm = async (url: string) => {
   if (url.startsWith('data:')) {
-    return WebAssembly.compile(dataUrlToBytes(url), wasmCompileOptions)
+    let buffer: BufferSource
+    const urlContent = url.replace(/^data:.*?base64,/, '')
+    if (typeof Buffer === 'function' && typeof Buffer.from === 'function') {
+      buffer = Buffer.from(urlContent, 'base64')
+    } else if (typeof atob === 'function') {
+      const binaryString = atob(urlContent)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      buffer = bytes
+    } else {
+      throw new Error(
+        'Failed to decode base64-encoded data URL, Buffer and atob are not supported',
+      )
+    }
+    return WebAssembly.compile(buffer, wasmCompileOptions)
   }
   return compileFromUrl(url)
 }
 
 const compileWasmCode = compileWasm.toString()
 
-const instantiateFromUrl = async (url: string, opts?: WebAssembly.Imports) => {
+const initWasm = async (url: string, opts = {}) => {
+  return WebAssembly.instantiate(await compileWasm(url), opts)
+}
+
+const initWasmCode = initWasm.toString()
+
+const compileFromUrl = async (url: string) => {
   // https://github.com/mdn/webassembly-examples/issues/5
-  // WebAssembly.instantiateStreaming requires the server to provide the
+  // WebAssembly.compileStreaming requires the server to provide the
   // correct MIME type for .wasm files, which unfortunately doesn't work for
   // a lot of static file servers, so we just work around it by getting the
   // raw buffer.
-  const response = await fetch(url)
-  const contentType = response.headers.get('Content-Type') || ''
-  if (
-    'instantiateStreaming' in WebAssembly &&
-    contentType.startsWith('application/wasm')
-  ) {
-    return WebAssembly.instantiateStreaming(response, opts, wasmCompileOptions)
-  } else {
-    const buffer = await response.arrayBuffer()
-    return WebAssembly.instantiate(buffer, opts, wasmCompileOptions)
-  }
-}
-
-const instantiateFromUrlCode = instantiateFromUrl.toString()
-
-const compileFromUrl = async (url: string) => {
   const response = await fetch(url)
   const contentType = response.headers.get('Content-Type') || ''
   if (
@@ -128,18 +96,6 @@ const compileFromUrl = async (url: string) => {
 }
 
 const compileFromUrlCode = compileFromUrl.toString()
-
-const instantiateFromFile = async (
-  fileUrlString: string,
-  opts?: WebAssembly.Imports,
-) => {
-  const { readFile } = await import('node:fs/promises')
-  const fileUrl = new URL(fileUrlString, /** #__KEEP__ */ import.meta.url)
-  const buffer = await readFile(fileUrl)
-  return WebAssembly.instantiate(buffer, opts, wasmCompileOptions)
-}
-
-const instantiateFromFileCode = instantiateFromFile.toString()
 
 const compileFromFile = async (fileUrlString: string) => {
   const { readFile } = await import('node:fs/promises')
@@ -232,11 +188,9 @@ export const wasmHelperPlugin = (): Plugin => {
           if (id === wasmHelperId) {
             return `
 const wasmCompileOptions = ${JSON.stringify(wasmCompileOptions)}
-const dataUrlToBytes = ${dataUrlToBytesCode}
-const instantiateFromUrl = ${ssr ? instantiateFromFileCode : instantiateFromUrlCode}
 const compileFromUrl = ${ssr ? compileFromFileCode : compileFromUrlCode}
-export default ${wasmHelperCode}
 export const compileWasm = ${compileWasmCode}
+export const initWasm = ${initWasmCode}
 `
           }
 
@@ -263,8 +217,8 @@ export const compileWasm = ${compileWasmCode}
 
           if (isInit) {
             return `
-  import initWasm from "${wasmHelperId}"
-  export default opts => initWasm(opts, ${urlExpr})
+  import { initWasm } from "${wasmHelperId}"
+  export default opts => initWasm(${urlExpr}, opts)
   `
           }
 
@@ -281,7 +235,7 @@ export default await compileWasm(${urlExpr})
           })
 
           return `
-import __vite__initWasm from "${wasmHelperId}"
+import { initWasm as __vite__initWasm } from "${wasmHelperId}"
 const __vite__wasmUrl = ${urlExpr}
 ${glueCode}
 `
@@ -374,7 +328,7 @@ function generateInstanceGlue(
     },
   )
 
-  const initCode = `const __vite__wasmModule = (await ${names.initWasm}(${codegenSimpleObject(importObject)}, ${names.wasmUrl})).exports;`
+  const initCode = `const __vite__wasmModule = (await ${names.initWasm}(${names.wasmUrl}, ${codegenSimpleObject(importObject)})).exports;`
 
   if (wasmInfo.exports.length === 0) {
     return [...importStatements, initCode].join('\n')
