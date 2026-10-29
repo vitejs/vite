@@ -165,5 +165,32 @@ describe('moduleGraph', () => {
       expect(mod2).toBe(mod1)
       expect(mod2.transformResult).toBe(null)
     })
+
+    it('keeps fileToModulesMap bounded on repeated create/delete cycles', async () => {
+      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
+        id: url,
+      }))
+
+      // Simulate repeated create/delete cycles. onFileDelete preserves the
+      // module node in fileToModulesMap for HMR propagation, but the node is
+      // reused on recreation so the set must not grow unboundedly.
+      for (let i = 0; i < 5; i++) {
+        const mod = await moduleGraph.ensureEntryFromUrl('/test.js', false)
+        moduleGraph.updateModuleTransformResult(mod, {
+          code: `export default "v${i}"`,
+          map: null,
+          etag: `W/"v${i}"`,
+        })
+        moduleGraph.onFileDelete('/test.js')
+      }
+
+      const fileMods = moduleGraph.fileToModulesMap.get('/test.js')
+      expect(fileMods).toBeDefined()
+      expect(fileMods!.size).toBe(1)
+
+      // Final recreation reuses the same node with cleared transformResult
+      const mod = await moduleGraph.ensureEntryFromUrl('/test.js', false)
+      expect(mod.transformResult).toBe(null)
+    })
   })
 })
