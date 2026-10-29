@@ -635,7 +635,7 @@ describe('indexHtml middleware — safe module paths', () => {
     expect(server.config.safeModulePaths).not.toContain('/static/icon.svg')
   })
 
-  test('registers plugin targets before warming HTML dependencies', async () => {
+  test('warms and registers plugin-resolved HTML dependencies', async () => {
     const server = await createTestServer(undefined, [
       {
         name: 'resolve-warmed-script',
@@ -646,18 +646,7 @@ describe('indexHtml middleware — safe module paths', () => {
       },
     ])
     server.config.server.fs.allow = []
-    const warmupRequest = vi
-      .spyOn(server, 'warmupRequest')
-      .mockImplementation(async (url) => {
-        if (url === '/entry.js?raw') {
-          expect(server.config.safeModulePaths).toContain(
-            OUTSIDE_HTML_PATH + '?raw',
-          )
-          expect(
-            await server.environments.client.transformRequest(url),
-          ).not.toBeNull()
-        }
-      })
+    const warmupRequest = vi.spyOn(server, 'warmupRequest')
 
     await server.transformIndexHtml(
       '/index.html',
@@ -665,7 +654,13 @@ describe('indexHtml middleware — safe module paths', () => {
     )
 
     expect(warmupRequest).toHaveBeenCalledWith('/entry.js?raw')
+    expect(server.config.safeModulePaths).toContain(OUTSIDE_HTML_PATH + '?raw')
     await Promise.all(warmupRequest.mock.results.map(({ value }) => value))
+    expect(
+      server.environments.client.moduleGraph.getModuleById(
+        OUTSIDE_HTML_PATH + '?raw',
+      )?.transformResult?.code,
+    ).toContain('Outside root')
   })
 
   test('maps configured iframe sources as document requests', async () => {
