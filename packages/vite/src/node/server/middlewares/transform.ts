@@ -8,7 +8,6 @@ import {
   NULL_BYTE_PLACEHOLDER,
 } from '../../../shared/constants'
 import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
-import type { ResolvedConfig } from '../../config'
 import {
   DEP_VERSION_RE,
   ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
@@ -26,6 +25,7 @@ import {
   removeImportQuery,
   removeTimestampQuery,
 } from '../../utils'
+import type { DevEnvironment } from '../environment'
 import { moduleUrlToFilePath } from '../moduleUrl'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { send } from '../send'
@@ -67,9 +67,10 @@ const wasmRE = /(?<![?#].*)\.wasm$/
 const wasmInstanceRE = /[?&]vite-wasm-instance(?:&|$)/
 
 export function isServerAccessDeniedForTransform(
-  config: ResolvedConfig,
+  environment: DevEnvironment,
   id: string,
 ): boolean {
+  const { config } = environment
   if (
     config.server.fs.strict === 'extended' ||
     rawRE.test(id) ||
@@ -80,8 +81,8 @@ export function isServerAccessDeniedForTransform(
     wasmInstanceRE.test(id)
   ) {
     return (
-      checkLoadingAccess(config, cleanUrl(id)) !== 'allowed' ||
-      checkLoadingAccess(config, id) !== 'allowed'
+      checkLoadingAccess(environment, cleanUrl(id)) !== 'allowed' ||
+      checkLoadingAccess(environment, id) !== 'allowed'
     )
   }
   return false
@@ -338,12 +339,9 @@ export function transformMiddleware(
       }
       if (e?.code === ERR_DENIED_ID) {
         const id: string = e.id
-        let servingAccessResult = checkLoadingAccess(
-          server.config,
-          cleanUrl(id),
-        )
+        let servingAccessResult = checkLoadingAccess(environment, cleanUrl(id))
         if (servingAccessResult === 'allowed') {
-          servingAccessResult = checkLoadingAccess(server.config, id)
+          servingAccessResult = checkLoadingAccess(environment, id)
         }
         if (servingAccessResult === 'denied') {
           respondWithAccessDenied(id, server, res)

@@ -76,6 +76,7 @@ export async function addHtmlRequestToSafeModulePaths(
   fetchDest?: string,
 ): Promise<void> {
   const { config } = server
+  const { safeModulePaths } = server.environments.client
   const decodedUrl = decodeURIIfPossible(removeTimestampQuery(requestUrl))
   if (decodedUrl === undefined) return
   const pathname = cleanUrl(decodedUrl)
@@ -103,7 +104,7 @@ export async function addHtmlRequestToSafeModulePaths(
     const resolved =
       await server.environments.client.pluginContainer.resolveId(moduleUrl)
     if (resolved) {
-      if (!resolved.external) config.safeModulePaths.addId(resolved.id)
+      if (!resolved.external) safeModulePaths.addId(resolved.id)
       return
     }
   }
@@ -119,12 +120,10 @@ export async function addHtmlRequestToSafeModulePaths(
         ),
       )
   const { postfix } = splitFileAndPostfix(decodedUrl)
-  config.safeModulePaths.addId(filePath + postfix)
+  safeModulePaths.addId(filePath + postfix)
   if (!config.resolve.preserveSymlinks) {
     try {
-      config.safeModulePaths.addId(
-        normalizePath(safeRealpathSync(filePath)) + postfix,
-      )
+      safeModulePaths.addId(normalizePath(safeRealpathSync(filePath)) + postfix)
     } catch {
       // Files referenced by HTML may not exist yet.
     }

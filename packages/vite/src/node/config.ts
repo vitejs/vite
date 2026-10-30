@@ -359,6 +359,8 @@ export type ResolvedEnvironmentOptions = {
   plugins: readonly Plugin[]
   /** @internal */
   optimizeDepsPluginNames: string[]
+  /** @internal */
+  safeModulePaths: SafeModulePaths
 }
 
 export type DefaultEnvironmentOptions = Omit<
@@ -783,8 +785,6 @@ export interface ResolvedConfig extends Readonly<
     /** @internal */
     fsDenyGlob: AnymatchFn
     /** @internal */
-    safeModulePaths: SafeModulePaths
-    /** @internal */
     [SYMBOL_RESOLVED_CONFIG]: true
   } & PluginHookUtils
 > {}
@@ -1072,6 +1072,7 @@ function resolveEnvironmentOptions(
     plugins: undefined!, // to be resolved later
     // will be set by `setOptimizeDepsPluginNames` later
     optimizeDepsPluginNames: undefined!,
+    safeModulePaths: new SafeModulePaths(),
   }
 }
 
@@ -2181,7 +2182,6 @@ export async function resolveConfig(
         dot: true,
       },
     ),
-    safeModulePaths: new SafeModulePaths(),
     [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {

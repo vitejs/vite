@@ -252,7 +252,7 @@ async function loadAndTransform(
   if (
     !options.skipFsCheck &&
     id[0] !== '\0' &&
-    isServerAccessDeniedForTransform(config, id)
+    isServerAccessDeniedForTransform(environment, id)
   ) {
     const err: any = new Error(`Denied ID ${id}`)
     err.code = ERR_DENIED_ID
@@ -276,10 +276,7 @@ async function loadAndTransform(
     // as string
     // only try the fallback if access is allowed, skip for out of root url
     // like /service-worker.js or /api/users
-    if (
-      options.skipFsCheck ||
-      isFileLoadingAllowed(environment.getTopLevelConfig(), slash(file))
-    ) {
+    if (options.skipFsCheck || isFileLoadingAllowed(config, slash(file))) {
       try {
         code = await fsp.readFile(file, 'utf-8')
         debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)

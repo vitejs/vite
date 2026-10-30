@@ -7,13 +7,14 @@ async function createRolldownDepPluginTransform(cacheDir: string) {
   const baseConfig = {
     cacheDir: normalizePath(cacheDir),
     optimizeDeps: { extensions: [] },
-    safeModulePaths: new SafeModulePaths(),
     server: { fs: { allow: [] } },
     resolve: { builtins: [] },
     createResolver: () => ({}),
   }
 
   const mockEnvironment = {
+    mode: 'dev',
+    safeModulePaths: new SafeModulePaths(),
     config: baseConfig,
     getTopLevelConfig: () => baseConfig,
   } as any
