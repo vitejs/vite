@@ -10,7 +10,6 @@ import {
   editFile,
   getBg,
   getColor,
-  gotoLatestBuild,
   hotUpdatedLog,
   isBuild,
   isBundledDev,
@@ -524,8 +523,10 @@ if (!isBuild) {
     const CONNECTED = /connected/
 
     const baseDir = 'accept-exports'
-    const openPage = (testDir: string) =>
-      gotoLatestBuild(`${viteTestUrl}/${testDir}/`)
+    const openPage = async (testDir: string) => {
+      await page.goto(`${viteTestUrl}/${testDir}/`, { waitUntil: 'commit' })
+      await page.waitForSelector('html[data-hmr-ready="true"]')
+    }
 
     describe('when all used exports are accepted', () => {
       const testDir = baseDir + '/main-accepted'
@@ -1144,7 +1145,10 @@ if (!isBuild) {
             "export { value as childValue } from './child'",
           ),
         )
-      }, 'file-delete-restore/child.js hot data after prune: undefined')
+      }, [
+        'file-delete-restore/child.js hot data after prune: undefined',
+        hotUpdatedLog(parentFile),
+      ])
       await expect
         .poll(() => page.textContent('.file-delete-restore'))
         .toMatch('parent:child')
@@ -1352,7 +1356,35 @@ if (!isBuild) {
   )
 
   test('import.meta.hot?.accept', async () => {
-    await gotoLatestBuild(viteTestUrl)
+    if (isBundledDev) {
+      // Navigation can finish before the new HMR client registers.
+      let delayRegistration = true
+      await page.routeWebSocket('**', (socket) => {
+        const server = socket.connectToServer()
+        const queuedMessages: (string | Buffer)[] = []
+        let queueMessages = false
+        socket.onMessage((message) => {
+          if (
+            delayRegistration &&
+            String(message).includes('vite:client-connected')
+          ) {
+            delayRegistration = false
+            queueMessages = true
+            setTimeout(() => {
+              for (const queued of queuedMessages) server.send(queued)
+              queueMessages = false
+            }, 500)
+          }
+          if (queueMessages) {
+            queuedMessages.push(message)
+          } else {
+            server.send(message)
+          }
+        })
+      })
+    }
+    await page.goto(viteTestUrl)
+    await page.waitForSelector('html[data-hmr-ready="true"]')
 
     const el = page.locator('.optional-chaining')
     await untilBrowserLogAfter(
