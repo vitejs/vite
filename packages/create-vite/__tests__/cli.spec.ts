@@ -234,13 +234,12 @@ test('scaffolds React template with ESLint when --eslint is passed', () => {
   expect(pkg).toContain('"eslint"')
   expect(pkg).not.toContain('oxlint')
   expect(pkg).toContain('"lint": "eslint ."')
-  expect(JSON.parse(pkg).devDependencies.typescript).toBeUndefined()
-  expect(JSON.parse(pkg).devDependencies['typescript-eslint']).toBeUndefined()
+  expect(pkg).not.toContain('"typescript"')
+  expect(pkg).not.toContain('"typescript-eslint"')
 })
 
-test.each(['react-ts', 'react-compiler-ts'])(
-  'keeps TypeScript 6 for %s when --eslint is passed',
-  (template) => {
+for (const template of ['react-ts', 'react-compiler-ts']) {
+  test(`keeps TypeScript 6 for ${template} when --eslint is passed`, () => {
     run([projectName, '--template', template, '--eslint'], {
       cwd: import.meta.dirname,
     })
@@ -251,8 +250,8 @@ test.each(['react-ts', 'react-compiler-ts'])(
     expect(pkg.devDependencies.typescript).toBe('~6.0.3')
     expect(pkg.devDependencies['typescript-eslint']).toBeDefined()
     expect(pkg.devDependencies.oxlint).toBeUndefined()
-  },
-)
+  })
+}
 
 test('ignores --eslint with a warning for non-React templates', () => {
   const { stdout, stderr } = run(
