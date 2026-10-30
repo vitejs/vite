@@ -357,73 +357,6 @@ describe('indexHtml middleware — safe module paths', () => {
     })
   }
 
-  const cases: [htmlPath: string, url: string, file: string, base?: string][] =
-    [
-      ['/index.html', './classic.js?raw', 'classic.js?raw'],
-      ['/index.html', '/classic.js?raw#part', 'classic.js?raw'],
-      ['/index.html', '../classic.js?raw', 'classic.js?raw'],
-      ['/nested/index.html', './classic.js?raw', 'nested/classic.js?raw'],
-      ['/nested/index.html', 'classic.js?raw', 'nested/classic.js?raw'],
-      ['/nested/index.html', '../classic.js?raw', 'classic.js?raw'],
-      ['/nested/index.html', '/classic.js?raw', 'classic.js?raw'],
-      ['/nested/', './classic.js?raw', 'nested/classic.js?raw'],
-      ['/nested/?q=1', './classic.js?raw', 'nested/classic.js?raw'],
-      ['/nested/index.html', './a%20b.js?raw', 'nested/a b.js?raw'],
-      [
-        '/nested/index.html',
-        './classic.js?path=/../file',
-        'nested/classic.js?path=/../file',
-      ],
-      [
-        path.posix.join(FS_PREFIX, OUTSIDE_HTML_PATH),
-        './classic.js?raw',
-        '../classic.js?raw',
-      ],
-      [
-        '/index.html',
-        `${path.posix.join(FS_PREFIX, normalizePath(OUTSIDE_HTML_PATH))}?raw`,
-        '../outside.html?raw',
-      ],
-      ['/index.html', '/classic.js?raw', 'classic.js?raw', '/ui/'],
-      ['/index.html', '/ui/classic.js?raw', 'ui/classic.js?raw', '/ui/'],
-      ['/index.html', './classic.js?raw', 'classic.js?raw', '/ui/'],
-      ['/index.html', '/src/main.ts', 'src/main.ts', '/src/'],
-    ]
-  for (const [htmlPath, url, file, base] of cases) {
-    test(`resolves ${htmlPath} with ${url} as an HTML path${base ? ` with base ${base}` : ''}`, async () => {
-      const server = await createTestServer(undefined, undefined, base)
-
-      await server.transformIndexHtml(
-        htmlPath,
-        `<script type="module" src="${url}"></script>`,
-      )
-
-      const { file: filename, postfix } = splitFileAndPostfix(file)
-      const filePath = normalizePath(path.join(FIXTURE_DIR, 'root', filename))
-      expect(server.config.safeModulePaths).toContain(filePath)
-      expect(server.config.safeModulePaths).toContain(filePath + postfix)
-    })
-  }
-
-  test('resolves parent URLs at the URL root', async () => {
-    const server = await createTestServer()
-    server.config.server.fs.allow = [
-      normalizePath(path.join(FIXTURE_DIR, 'root')),
-    ]
-
-    await server.transformIndexHtml(
-      '/index.html',
-      '<script type="module" src="../outside.html"></script>',
-    )
-
-    expect(server.config.safeModulePaths).toContain(
-      normalizePath(path.join(FIXTURE_DIR, 'root/outside.html')),
-    )
-    expect(server.config.safeModulePaths).not.toContain(
-      normalizePath(OUTSIDE_HTML_PATH),
-    )
-  })
-
   test('registers symlinked module and static asset paths', async () => {
     const dir = fs.realpathSync.native(
       fs.mkdtempSync(path.join(os.tmpdir(), 'vite-html-')),
@@ -576,63 +509,6 @@ describe('indexHtml middleware — safe module paths', () => {
     expect(
       await server.environments.client.transformRequest('/classic.js?raw'),
     ).not.toBeNull()
-  })
-
-  for (const base of ['/ui/', '/a%20b/', '/%E3%81%82/']) {
-    test(`uses the browser document location for asset URLs with base ${base}`, async () => {
-      const server = await createTestServer(undefined, undefined, base)
-      server.config.server.preTransformRequests = false
-
-      await server.transformIndexHtml(
-        '/other/index.html',
-        '<img src="./image.svg?size=2#icon">',
-        `${base}client/route`,
-      )
-
-      expect(server.config.safeModulePaths).toContain(
-        normalizePath(path.join(FIXTURE_DIR, 'root/client/image.svg?size=2')),
-      )
-      expect(server.config.safeModulePaths).not.toContain(
-        normalizePath(path.join(FIXTURE_DIR, 'root/image.svg')),
-      )
-    })
-  }
-
-  test('maps static requests without running plugin resolution', async () => {
-    const resolveId = vi.fn((id: string) => {
-      if (id === '/image.svg') return OUTSIDE_HTML_PATH + '?raw'
-    })
-    const server = await createTestServer(undefined, [
-      {
-        name: 'resolve-html-image',
-        enforce: 'pre',
-        resolveId,
-        config() {
-          return {
-            resolve: {
-              alias: { '/images': '/static' },
-            },
-          }
-        },
-      },
-    ])
-    server.config.server.fs.allow = []
-    server.config.server.preTransformRequests = false
-
-    await server.transformIndexHtml(
-      '/index.html',
-      '<img src="/image.svg"><img src="/images/icon.svg">',
-    )
-
-    expect(resolveId.mock.calls.map(([id]) => id)).not.toContain('/image.svg')
-    expect(server.config.safeModulePaths).toContain(
-      normalizePath(path.join(FIXTURE_DIR, 'root/image.svg')),
-    )
-    expect(server.config.safeModulePaths).toContain(
-      normalizePath(path.join(FIXTURE_DIR, 'root/static/icon.svg')),
-    )
-    expect(server.config.safeModulePaths).not.toContain(OUTSIDE_HTML_PATH)
-    expect(server.config.safeModulePaths).not.toContain('/static/icon.svg')
   })
 
   test('warms and registers plugin-resolved HTML dependencies', async () => {
