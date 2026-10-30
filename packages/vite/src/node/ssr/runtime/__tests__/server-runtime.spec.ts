@@ -228,6 +228,23 @@ describe('module runner initialization', async () => {
     expect(fn.called).toBe(true)
   })
 
+  it('re-imports a bare specifier entry on full reload (#19975)', async ({
+    server,
+    runner,
+  }) => {
+    await runner.import('@vitejs/esm-external')
+    const id = posix.join(server.config.root, 'fixtures/esm-external/index.mjs')
+    const initial = runner.evaluatedModules.getModuleById(id)
+    expect(initial).toBeDefined()
+
+    server.environments.ssr.hot.send({ type: 'full-reload' })
+    await vi.waitFor(() => {
+      const reloaded = runner.evaluatedModules.getModuleById(id)
+      expect(reloaded).toBeDefined()
+      expect(reloaded).not.toBe(initial)
+    })
+  })
+
   it('importing native node package', async ({ runner }) => {
     const mod = await runner.import('/fixtures/native.js')
     expect(mod.readdirSync).toBe(readdirSync)
