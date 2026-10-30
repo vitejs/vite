@@ -1,6 +1,7 @@
 import { stripVTControlCharacters } from 'node:util'
 import MagicString from 'magic-string'
 import { describe, expect, it, vi } from 'vitest'
+import { promiseWithResolvers } from '../../../shared/utils'
 import type { UserConfig } from '../../config'
 import { resolveConfig } from '../../config'
 import { createLogger } from '../../logger'
@@ -479,6 +480,45 @@ describe('plugin container', () => {
   })
 
   describe('closeBundle', () => {
+    for (const rejectClose of [false, true]) {
+      it(`waits for an overlapping close when closeBundle rejects: ${rejectClose}`, async () => {
+        const finish = promiseWithResolvers<void>()
+        const error = new Error('closeBundle failed')
+        const closeBundle = vi.fn(() => finish.promise)
+        const environment = await getDevEnvironment({
+          plugins: [
+            {
+              name: 'delayed-close-bundle',
+              closeBundle,
+            },
+          ],
+        })
+
+        const closes = [
+          environment.pluginContainer.close(),
+          environment.pluginContainer.close(),
+        ]
+        const results = Promise.allSettled(closes)
+        try {
+          await expect(
+            Promise.race([closes[1], Promise.resolve('pending')]),
+          ).resolves.toBe('pending')
+        } finally {
+          if (rejectClose) finish.reject(error)
+          else finish.resolve()
+          await results
+        }
+        const expected = rejectClose
+          ? { status: 'rejected', reason: error }
+          : { status: 'fulfilled', value: undefined }
+        expect(await results).toStrictEqual([expected, expected])
+        await expect(
+          environment.pluginContainer.close(),
+        ).resolves.toBeUndefined()
+        expect(closeBundle).toHaveBeenCalledOnce()
+      })
+    }
+
     it('passes buildEnd errors to closeBundle', async () => {
       const buildEndError = new Error('buildEnd failed')
       let closeBundleError: Error | undefined
