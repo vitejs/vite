@@ -108,6 +108,7 @@ export function loadEnv(
 
 export function resolveEnvPrefix({
   envPrefix = 'VITE_',
+  displayName = 'vite',
 }: UserConfig): string[] {
   envPrefix = arraify(envPrefix)
   if (envPrefix.includes('')) {
@@ -119,7 +120,7 @@ export function resolveEnvPrefix({
     // eslint-disable-next-line no-console
     console.warn(
       colors.yellow(
-        `[vite] Warning: envPrefix option contains values with whitespace, which does not work in practice.`,
+        `[${displayName}] Warning: envPrefix option contains values with whitespace, which does not work in practice.`,
       ),
     )
   }

@@ -570,6 +570,54 @@ export default defineConfig({
 })
 ```
 
+## displayName
+
+- **Type:** `string`
+- **Default:** `'vite'`
+
+The name shown in user-facing output in place of "vite". This covers the dev server and build banners, the default logger prefix (`[vite]`), and the messages the HMR client logs to the browser console. It is meant for tools built on top of Vite that want their own name in the output.
+
+Setting it also leaves the names of Vite's own plugins (such as `vite:css`) out of error messages, warnings and the error overlay; see [`hiddenPluginNames`](#hiddenpluginnames). It does not rename plugins, or change [`envPrefix`](#envprefix) or internal URLs such as `/@vite/client`. When using [`customLogger`](#customlogger), pass the same name to `createLogger(level, { displayName })` to keep the prefix consistent.
+
+```js
+export default defineConfig({
+  displayName: 'my-tool',
+})
+```
+
+## hiddenPluginNames
+
+- **Type:** `(string | RegExp)[]`
+- **Default:** `[]`
+
+Plugin names to leave out of error messages, warnings and the error overlay. A string matches a name exactly; a RegExp is tested against it. When [`displayName`](#displayname) is set, the names of Vite's own plugins (`vite:*`) are left out as well.
+
+It is meant for tools built on top of Vite whose users neither added nor configure those plugins, so their names give the user nothing to act on. The plugins keep their names; only the output leaves them out.
+
+```js
+export default defineConfig({
+  displayName: 'my-tool',
+  hiddenPluginNames: [/^my-tool:/],
+})
+```
+
+## configHint
+
+- **Type:** `{ file: string; key?: string }`
+
+Where users set Vite's options, for the messages that tell them to change one: the error overlay's tip and the error for a blocked host. By default these name `vite.config.js`, or the overlay the config file that was loaded.
+
+`file` is the file users edit, and `key` the property Vite's options sit under in it, if any. It is meant for tools built on top of Vite that take Vite's options in their own config file:
+
+```js
+export default defineConfig({
+  displayName: 'my-tool',
+  // The overlay's tip says to set `vite.server.hmr.overlay` to `false`
+  // in `my-tool.config.js`.
+  configHint: { file: 'my-tool.config.js', key: 'vite' },
+})
+```
+
 ## clearScreen
 
 - **Type:** `boolean`

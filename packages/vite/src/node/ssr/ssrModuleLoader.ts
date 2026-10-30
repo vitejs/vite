@@ -58,9 +58,12 @@ async function instantiateModule(
     }
 
     environment.logger.error(
-      buildErrorMessage(e, [
-        colors.red(`Error when evaluating SSR module ${url}: ${e.message}`),
-      ]),
+      buildErrorMessage(
+        e,
+        [colors.red(`Error when evaluating SSR module ${url}: ${e.message}`)],
+        true,
+        environment.config.hiddenPluginNames,
+      ),
       {
         timestamp: true,
         clear: environment.config.clearScreen,
