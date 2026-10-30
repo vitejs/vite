@@ -480,65 +480,44 @@ describe('plugin container', () => {
   })
 
   describe('closeBundle', () => {
-    it.each([false, true])(
-      'waits for an overlapping close when closeBundle rejects: %s',
-      async (rejectClose) => {
-        const started = promiseWithResolvers<void>()
+    for (const rejectClose of [false, true]) {
+      it(`waits for an overlapping close when closeBundle rejects: ${rejectClose}`, async () => {
         const finish = promiseWithResolvers<void>()
         const error = new Error('closeBundle failed')
-        let hookCalls = 0
-        let hookFinished = false
+        const closeBundle = vi.fn(() => finish.promise)
         const environment = await getDevEnvironment({
           plugins: [
             {
               name: 'delayed-close-bundle',
-              async closeBundle() {
-                hookCalls++
-                started.resolve()
-                await finish.promise
-                hookFinished = true
-                if (rejectClose) throw error
-              },
+              closeBundle,
             },
           ],
         })
 
-        const firstClose = environment.pluginContainer.close()
-        await started.promise
-        const secondClose = environment.pluginContainer.close()
-        let secondSettled = false
-        void secondClose.then(
-          () => (secondSettled = true),
-          () => (secondSettled = true),
-        )
-        let results: PromiseSettledResult<void>[]
+        const closes = [
+          environment.pluginContainer.close(),
+          environment.pluginContainer.close(),
+        ]
+        const results = Promise.allSettled(closes)
         try {
-          await Promise.resolve()
-          expect(secondSettled).toBe(false)
-          expect(hookFinished).toBe(false)
+          await expect(
+            Promise.race([closes[1], Promise.resolve('pending')]),
+          ).resolves.toBe('pending')
         } finally {
-          finish.resolve()
-          results = await Promise.allSettled([firstClose, secondClose])
+          if (rejectClose) finish.reject(error)
+          else finish.resolve()
+          await results
         }
-        expect(hookCalls).toBe(1)
-        expect(hookFinished).toBe(true)
-        expect(results).toEqual(
-          rejectClose
-            ? [
-                { status: 'rejected', reason: error },
-                { status: 'rejected', reason: error },
-              ]
-            : [
-                { status: 'fulfilled', value: undefined },
-                { status: 'fulfilled', value: undefined },
-              ],
-        )
+        const expected = rejectClose
+          ? { status: 'rejected', reason: error }
+          : { status: 'fulfilled', value: undefined }
+        expect(await results).toStrictEqual([expected, expected])
         await expect(
           environment.pluginContainer.close(),
         ).resolves.toBeUndefined()
-        expect(hookCalls).toBe(1)
-      },
-    )
+        expect(closeBundle).toHaveBeenCalledOnce()
+      })
+    }
 
     it('passes buildEnd errors to closeBundle', async () => {
       const buildEndError = new Error('buildEnd failed')
