@@ -52,3 +52,17 @@
 <img id="logo-no-inline" />
 <div class="circular"></div>
 <div class="prune">prune-init</div>
+
+<div class="self-accepting-boundary-value"></div>
+<div class="self-accepting-parent-evaluations">0</div>
+<div class="self-accepting-parent-identity"></div>
+<button class="self-accepting-lazy-import">load lazy importer</button>
+<script type="module">
+  import { singleton } from './self-accepting-lazy/parent.js'
+
+  document.querySelector('.self-accepting-lazy-import').onclick = async () => {
+    const lazy = await import('./self-accepting-lazy/lazy.js')
+    document.querySelector('.self-accepting-parent-identity').textContent =
+      String(lazy.singleton === singleton)
+  }
+</script>

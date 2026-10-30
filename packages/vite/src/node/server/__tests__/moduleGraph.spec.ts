@@ -5,6 +5,116 @@ import { EnvironmentModuleGraph } from '../moduleGraph'
 
 describe('moduleGraph', () => {
   describe('invalidateModule', () => {
+    it('invalidates transforms above a self-accepting boundary without changing their HMR timestamps', async () => {
+      const graph = new EnvironmentModuleGraph('client', async (url) => ({
+        id: url,
+      }))
+      const [dep, boundary, parent, lazy] = await Promise.all(
+        ['/dep.js', '/boundary.js', '/parent.js', '/lazy.js'].map((url) =>
+          graph.ensureEntryFromUrl(url),
+        ),
+      )
+      dep.importers.add(boundary)
+      boundary.importers.add(parent)
+      parent.importers.add(lazy)
+      boundary.isSelfAccepting = true
+      parent.staticImportedUrls = new Set([boundary.url])
+      const transform = { code: 'import "/boundary.js"', etag: 'parent' }
+      graph.updateModuleTransformResult(parent, transform)
+      parent.lastHMRTimestamp = 1
+      parent.lastHMRInvalidationReceived = true
+
+      graph.invalidateModule(dep, new Set(), 2, true)
+
+      expect(dep.lastHMRTimestamp).toBe(2)
+      expect(boundary.lastHMRTimestamp).toBe(2)
+      expect(parent.lastHMRTimestamp).toBe(1)
+      expect(lazy.lastHMRTimestamp).toBe(0)
+      expect(parent.lastHMRInvalidationReceived).toBe(true)
+      expect(parent.lastInvalidationTimestamp).toBe(2)
+      expect(parent.transformResult).toBeNull()
+      expect(parent.invalidationState).toBe(transform)
+      expect(graph.etagToModuleMap.has(transform.etag)).toBe(false)
+      expect(lazy.invalidationState).toBe('HARD_INVALIDATED')
+    })
+
+    it.each([
+      [true, true],
+      [false, true],
+      [true, false],
+      [false, false],
+    ])(
+      'timestamps shared importers on an affected path (boundary first: %s, static imports: %s)',
+      async (boundaryFirst, staticImports) => {
+        const graph = new EnvironmentModuleGraph('client', async (url) => ({
+          id: url,
+        }))
+        const [dep, boundary, affected, shared, ancestor] = await Promise.all(
+          [
+            '/dep.js',
+            '/boundary.js',
+            '/affected.js',
+            '/shared.js',
+            '/ancestor.js',
+          ].map((url) => graph.ensureEntryFromUrl(url)),
+        )
+        dep.importers = new Set(
+          boundaryFirst ? [boundary, affected] : [affected, boundary],
+        )
+        boundary.isSelfAccepting = true
+        boundary.importers.add(shared)
+        affected.importers.add(shared)
+        shared.importers.add(ancestor)
+        // Include a cycle to ensure revisiting an affected path terminates.
+        ancestor.importers.add(shared)
+        if (staticImports) {
+          boundary.staticImportedUrls = new Set([dep.url])
+          affected.staticImportedUrls = new Set([dep.url])
+          shared.staticImportedUrls = new Set([
+            boundary.url,
+            affected.url,
+            ancestor.url,
+          ])
+          ancestor.staticImportedUrls = new Set([shared.url])
+        }
+        for (const mod of [boundary, affected, shared, ancestor]) {
+          graph.updateModuleTransformResult(mod, { code: '' })
+        }
+
+        graph.invalidateModule(dep, new Set(), 2, true)
+
+        for (const mod of [dep, boundary, affected, shared, ancestor]) {
+          expect(mod.lastHMRTimestamp, mod.url).toBe(2)
+          expect(mod.transformResult, mod.url).toBeNull()
+        }
+      },
+    )
+
+    it('allows an explicit HMR invalidation above a self-accepting boundary', async () => {
+      const graph = new EnvironmentModuleGraph('client', async (url) => ({
+        id: url,
+      }))
+      const [boundary, parent, accepting] = await Promise.all(
+        ['/boundary.js', '/parent.js', '/accepting.js'].map((url) =>
+          graph.ensureEntryFromUrl(url),
+        ),
+      )
+      boundary.isSelfAccepting = true
+      boundary.importers.add(parent)
+      parent.importers.add(accepting)
+      accepting.acceptedHmrDeps.add(parent)
+      const transform = { code: 'import "/parent.js"' }
+      graph.updateModuleTransformResult(accepting, transform)
+      const seen = new Set<typeof boundary>()
+
+      graph.invalidateModule(boundary, seen, 2, true)
+      expect(parent.lastHMRTimestamp).toBe(0)
+      graph.invalidateModule(parent, seen, 2, true)
+      expect(parent.lastHMRTimestamp).toBe(2)
+      expect(accepting.lastHMRTimestamp).toBe(0)
+      expect(accepting.transformResult).toBe(transform)
+    })
+
     it('removes an ssr error', async () => {
       const moduleGraph = new EnvironmentModuleGraph('ssr', async (url) => ({
         id: url,
