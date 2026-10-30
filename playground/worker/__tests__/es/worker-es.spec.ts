@@ -256,9 +256,10 @@ test.skipIf(isBundledDev)('self reference url worker', async () => {
 // #23925: a module worker with a non-literal dynamic import gets the HMR
 // client injected via injectQuery. When a stylesheet on the page is edited,
 // the worker's copy of the client receives the css-update but has no DOM,
-// so it must skip silently instead of throwing `document is not defined`.
+// so it must warn that CSS imports in workers don't work instead of throwing
+// `document is not defined`.
 test.skipIf(isBuild || isBundledDev)(
-  'CSS HMR update does not throw in worker with injectQuery import',
+  'CSS HMR update warns instead of throwing in worker with injectQuery import',
   async () => {
     await expect
       .poll(() => page.textContent('.hmr-css-worker'))
@@ -275,5 +276,10 @@ test.skipIf(isBuild || isBundledDev)(
     expect(
       browserLogs.some((msg) => msg.includes('document is not defined')),
     ).toBe(false)
+    expect(
+      browserLogs.some((msg) =>
+        msg.includes('CSS imports in workers do not work'),
+      ),
+    ).toBe(true)
   },
 )
