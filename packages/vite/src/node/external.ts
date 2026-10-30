@@ -2,7 +2,7 @@ import path from 'node:path'
 import type { PartialEnvironment } from './baseEnvironment'
 import type { Environment } from './environment'
 import type { InternalResolveOptions } from './plugins/resolve'
-import { tryNodeResolve } from './plugins/resolve'
+import { getNodeResolveBasedir, tryNodeResolve } from './plugins/resolve'
 import {
   bareImportRE,
   createDebugger,
@@ -51,6 +51,8 @@ export function createIsConfiguredAsExternal(
     isProduction: false,
     isBuild: true,
     conditions: targetConditions,
+    // kept apart from `config.packageCache` as `isProduction` is fixed here
+    packageCache: new Map(),
   }
 
   const isExternalizable = (
@@ -128,12 +130,24 @@ function createIsExternal(
   environment: Environment,
 ): (id: string, importer?: string) => boolean {
   const processedIds = new Map<string, boolean>()
+  const importerBasedirs = new Map<string, string>()
 
   const isConfiguredAsExternal = createIsConfiguredAsExternal(environment)
 
+  const getBasedir = (importer: string) => {
+    let basedir = importerBasedirs.get(importer)
+    if (basedir === undefined) {
+      basedir = getNodeResolveBasedir(importer, environment.config.root)
+      importerBasedirs.set(importer, basedir)
+    }
+    return basedir
+  }
+
   return (id: string, importer?: string) => {
-    if (processedIds.has(id)) {
-      return processedIds.get(id)!
+    // the result depends on the directory bare imports are resolved from
+    const cacheKey = importer ? `${id}\0${getBasedir(importer)}` : id
+    if (processedIds.has(cacheKey)) {
+      return processedIds.get(cacheKey)!
     }
     let isExternal = false
     if (id[0] !== '.' && !path.isAbsolute(id)) {
@@ -141,7 +155,7 @@ function createIsExternal(
         isBuiltin(environment.config.resolve.builtins, id) ||
         isConfiguredAsExternal(id, importer)
     }
-    processedIds.set(id, isExternal)
+    processedIds.set(cacheKey, isExternal)
     return isExternal
   }
 }
