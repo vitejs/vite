@@ -9,11 +9,16 @@ import type {
   OutputOptions,
   RolldownOptions,
   RolldownOutput,
+  RolldownWatcher,
   RollupLog,
 } from 'rolldown'
 import { afterEach, describe, expect, assert, test, vi } from 'vitest'
 import { BuildEnvironment, normalizePath, resolveConfig } from '..'
-import type { LibraryFormats, LibraryOptions } from '../build'
+import type {
+  BuildEnvironmentOptions,
+  LibraryFormats,
+  LibraryOptions,
+} from '../build'
 import {
   ChunkMetadataMap,
   build,
@@ -2087,6 +2092,66 @@ test('copies public directory after building same environment with write false f
   await expect(
     fsp.readFile(resolve(root, 'dist/favicon.svg'), 'utf-8'),
   ).resolves.toBe('<svg></svg>')
+})
+
+describe('watch mode with build.write', () => {
+  const root = resolve(dirname, 'fixtures/watch-write')
+  const outDir = resolve(root, 'dist')
+
+  async function buildOnceInWatchMode(buildOptions: BuildEnvironmentOptions) {
+    await fsp.rm(outDir, { recursive: true, force: true })
+    const generatedFiles: string[] = []
+    const watcher = (await build({
+      root,
+      configFile: false,
+      logLevel: 'silent',
+      build: {
+        rolldownOptions: { input: '/entry.js' },
+        ...buildOptions,
+      },
+      plugins: [
+        {
+          name: 'collect-generated-files',
+          generateBundle(_, bundle) {
+            generatedFiles.push(...Object.keys(bundle))
+          },
+        },
+      ],
+    })) as RolldownWatcher
+    try {
+      await new Promise<void>((resolve, reject) => {
+        watcher.on('event', (event) => {
+          if (event.code === 'BUNDLE_END') resolve()
+          else if (event.code === 'ERROR') reject(event.error)
+        })
+      })
+    } finally {
+      await watcher.close()
+    }
+    return generatedFiles
+  }
+
+  afterEach(() => fsp.rm(outDir, { recursive: true, force: true }))
+
+  test('does not write to disk when build.write is false', async () => {
+    const generatedFiles = await buildOnceInWatchMode({
+      write: false,
+      watch: {},
+    })
+    expect(generatedFiles).toContainEqual(expect.stringMatching(/entry.*\.js$/))
+    await expect(fsp.access(outDir)).rejects.toMatchObject({ code: 'ENOENT' })
+  })
+
+  test('writes to disk when build.write is true', async () => {
+    const generatedFiles = await buildOnceInWatchMode({
+      write: true,
+      watch: {},
+    })
+    expect(generatedFiles).toContainEqual(expect.stringMatching(/entry.*\.js$/))
+    for (const file of generatedFiles) {
+      await expect(fsp.access(resolve(outDir, file))).resolves.toBeUndefined()
+    }
+  })
 })
 
 async function buildProjectWithRenderBuiltUrl(
