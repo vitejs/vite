@@ -418,9 +418,16 @@ Whether to enable sourcemaps during dev.
 
 Selects the engine used for CSS processing. Check out [Lightning CSS](../guide/features.md#lightning-css) for more information.
 
-::: info Duplicate `@import`s
-Note that postcss (postcss-import) has a different behavior with duplicated `@import` from browsers. See [postcss/postcss-import#462](https://github.com/postcss/postcss-import/issues/462).
-:::
+## css.unresolvedUrlSeverity
+
+- **Type:** `'warn' | 'error' | 'silent'`
+- **Default:** `'warn'`
+
+Configures the severity of unresolved CSS `url()` references during build time.
+
+- `'warn'`: Vite logs a warning and leaves the URL unchanged for runtime resolution.
+- `'error'`: Vite throws a build error with source details.
+- `'silent'`: Vite silently leaves the URL unchanged without logging a warning.
 
 ## css.lightningcss
 
