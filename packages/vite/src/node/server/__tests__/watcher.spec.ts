@@ -150,6 +150,57 @@ describe('watcher configuration', () => {
     expect(addedFiles).toEqual([resolve(root, '../custom-public/foo.txt')])
   })
 
+  it('should deduplicate watch registrations for out-of-root files and re-watch on unlink', async () => {
+    const addedFiles: string[] = []
+    let addWatchFile!: (id: string) => void
+    server = await createServer({
+      root,
+      plugins: [
+        {
+          name: 'capture-add-watch-file',
+          buildStart() {
+            addWatchFile = (id: string) => this.addWatchFile(id)
+          },
+        },
+      ],
+    })
+
+    await server.environments.client.pluginContainer.buildStart()
+
+    const originalAdd = server.watcher.add.bind(server.watcher)
+    server.watcher.add = (file: string | string[]) => {
+      addedFiles.push(...(Array.isArray(file) ? file : [file]))
+      return originalAdd(file)
+    }
+
+    const outsideFile = join(resolve(root, '../custom-public'), 'foo.txt')
+
+    // First call adds the file
+    addWatchFile(outsideFile)
+    expect(addedFiles).toEqual([resolve(outsideFile)])
+
+    // Subsequent calls do not re-add or leak listeners
+    addWatchFile(outsideFile)
+    addWatchFile(outsideFile)
+    expect(addedFiles).toHaveLength(1)
+
+    // Unlinking the file drops it from the set so a recreated file can be watched again
+    server.watcher.emit('unlink', outsideFile)
+    addWatchFile(outsideFile)
+    expect(addedFiles).toHaveLength(2)
+    expect(addedFiles).toEqual([resolve(outsideFile), resolve(outsideFile)])
+
+    // Unlinking the directory drops files under it so they can be watched again
+    server.watcher.emit('unlinkDir', resolve(root, '../custom-public'))
+    addWatchFile(outsideFile)
+    expect(addedFiles).toHaveLength(3)
+    expect(addedFiles).toEqual([
+      resolve(outsideFile),
+      resolve(outsideFile),
+      resolve(outsideFile),
+    ])
+  })
+
   it('should watch the root directory, config file dependencies, dotenv files, and the public directory', async () => {
     server = await createServer({ root })
     await new Promise((resolve) => server!.watcher.once('ready', resolve))

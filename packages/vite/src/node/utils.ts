@@ -782,6 +782,8 @@ function optimizeSafeRealPathSync() {
   })
 }
 
+const ensuredWatchFiles = new WeakMap<FSWatcher, Set<string>>()
+
 export function ensureWatchedFile(
   watcher: FSWatcher,
   file: string | null,
@@ -792,11 +794,32 @@ export function ensureWatchedFile(
     // only need to watch if out of root
     !normalizePath(file).startsWith(withTrailingSlash(root)) &&
     // some rollup plugins use null bytes for private resolved Ids
-    !file.includes('\0') &&
-    fs.existsSync(file)
+    !file.includes('\0')
   ) {
+    let ensured = ensuredWatchFiles.get(watcher)
+    if (!ensured) {
+      const files = new Set<string>()
+      ensuredWatchFiles.set(watcher, files)
+      ensured = files
+      watcher.on?.('unlink', (unlinked) => {
+        files.delete(path.resolve(unlinked))
+      })
+      watcher.on?.('unlinkDir', (unlinkedDir) => {
+        const dir = path.resolve(unlinkedDir) + path.sep
+        for (const f of files) {
+          if (f.startsWith(dir)) {
+            files.delete(f)
+          }
+        }
+      })
+    }
+
+    const resolved = path.resolve(file)
+    if (ensured.has(resolved) || !fs.existsSync(file)) return
+
+    ensured.add(resolved)
     // resolve file to normalized system path
-    watcher.add(path.resolve(file))
+    watcher.add(resolved)
   }
 }
 
