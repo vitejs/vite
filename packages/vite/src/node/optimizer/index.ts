@@ -764,6 +764,10 @@ export function runOptimizeDeps(
       optimizerContext.cancelled = true
       const { context } = await preparedRun
       context?.cancel()
+      // The build can't be interrupted once it is writing the output, so wait
+      // for it to settle before removing the processing dir. Otherwise it
+      // would be recreated after the cancellation resolved.
+      await runResult.catch(() => {})
       cleanUp()
     },
     result: runResult,
