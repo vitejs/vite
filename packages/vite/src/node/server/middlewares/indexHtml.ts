@@ -197,10 +197,9 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         url = path.posix.join(config.base, url)
       }
 
-      const requestUrl = htmlUrlToRequestUrl(url, {
+      const requestUrl = htmlUrlToRequestUrl(url, base, {
         path: htmlPath,
         originalUrl,
-        server,
       })
       if (!requestUrl) return url
 

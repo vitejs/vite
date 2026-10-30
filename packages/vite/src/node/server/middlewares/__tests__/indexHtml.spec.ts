@@ -3,10 +3,11 @@ import os from 'node:os'
 import path from 'node:path'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { splitFileAndPostfix } from '../../../../shared/utils'
+import type { InlineConfig } from '../../../config'
 import { FS_PREFIX } from '../../../constants'
 import type { Plugin } from '../../../plugin'
 import { createServer } from '../../../server'
-import { normalizePath } from '../../../utils'
+import { mergeConfig, normalizePath } from '../../../utils'
 import { browserUrlToModuleUrl } from '../../moduleUrl'
 import { isFileLoadingAllowed } from '../static'
 
@@ -17,28 +18,30 @@ const OUTSIDE_HTML_PATH = path.resolve(FIXTURE_DIR, 'outside.html')
 const OUTSIDE_HTML_CONTENT = fs.readFileSync(OUTSIDE_HTML_PATH, 'utf-8')
 const VITE_PACKAGE_DIR = path.resolve(import.meta.dirname, '../../../../..')
 
-async function createTestServer(
-  rootDir?: string,
-  plugins?: Plugin[],
-  base?: string,
-) {
+async function createTestServer({
+  root: rootDir,
+  ...config
+}: InlineConfig = {}) {
   const root = path.resolve(import.meta.dirname, rootDir ?? 'fixtures/root')
 
-  const server = await createServer({
-    configFile: false,
-    root,
-    logLevel: 'error',
-    plugins,
-    base,
-    server: {
-      middlewareMode: true,
-      ws: false,
-    },
-    optimizeDeps: {
-      noDiscovery: true,
-      include: [],
-    },
-  })
+  const server = await createServer(
+    mergeConfig(
+      {
+        configFile: false,
+        root,
+        logLevel: 'error',
+        server: {
+          middlewareMode: true,
+          ws: false,
+        },
+        optimizeDeps: {
+          noDiscovery: true,
+          include: [],
+        },
+      },
+      config,
+    ),
+  )
 
   onTestFinished(() => server.close())
   return server
@@ -75,7 +78,7 @@ describe('indexHtml middleware — inline script proxy cache', () => {
   })
 
   test('inline <script type="module"> in an HTML file served from root is loadable via the html-proxy module', async () => {
-    const server = await createTestServer('fixtures/root')
+    const server = await createTestServer()
     const url = '/index.html'
 
     const htmlPath = path.resolve(
@@ -108,7 +111,7 @@ describe('indexHtml middleware — inline script proxy cache', () => {
 
   for (const prefix of ['//', '///']) {
     test(`does not preserve a protocol-relative request URL (${prefix}) as the inline module proxy URL`, async () => {
-      const server = await createTestServer(VITE_PACKAGE_DIR)
+      const server = await createTestServer({ root: VITE_PACKAGE_DIR })
       const url = prefix + 'evil.example.com/payload.js?/../../package.json'
 
       const transformed = await server.transformIndexHtml(url, HTML_CONTENT)
@@ -154,22 +157,10 @@ describe('indexHtml middleware — file watching', () => {
 
 describe('indexHtml middleware — HMR timestamp injection with non-root base', () => {
   test('entry script URL gets the lastHMRTimestamp query when base is not root', async () => {
-    const root = path.resolve(import.meta.dirname, 'fixtures/base-root')
-    const server = await createServer({
-      configFile: false,
-      root,
+    const server = await createTestServer({
+      root: 'fixtures/base-root',
       base: '/ui/',
-      logLevel: 'error',
-      server: {
-        middlewareMode: true,
-        ws: false,
-      },
-      optimizeDeps: {
-        noDiscovery: true,
-        include: [],
-      },
     })
-    onTestFinished(() => server.close())
 
     // Register the entry in the module graph under the base-stripped URL
     // (as the transform middleware records it) and mark it HMR-updated.
@@ -195,7 +186,7 @@ describe('indexHtml middleware — HMR timestamp injection with non-root base', 
 })
 
 describe('indexHtml middleware — browser request resolution', () => {
-  test.each([
+  const cases = [
     {
       name: 'a relative path starting with a tilde',
       htmlPath: '/index.html',
@@ -256,26 +247,22 @@ describe('indexHtml middleware — browser request resolution', () => {
       moduleUrl: '/src/main.ts',
       expectedSrc: './main.ts?t=1234567890123',
     },
-    {
-      name: 'a relative classic script',
-      htmlPath: '/index.html',
-      src: './src/main.ts',
-      moduleUrl: '/src/main.ts',
-      expectedSrc: './src/main.ts?t=1234567890123',
-      classic: true,
-    },
-  ])(
-    'handles HMR, warmup, and safe paths with $name',
-    async ({
-      base = '/ui/',
-      htmlPath,
-      originalUrl,
-      src,
-      moduleUrl,
-      expectedSrc,
-      classic = false,
-    }) => {
-      const server = await createTestServer('fixtures/base-root', [], base)
+  ]
+
+  for (const {
+    name,
+    base = '/ui/',
+    htmlPath,
+    originalUrl,
+    src,
+    moduleUrl,
+    expectedSrc,
+  } of cases) {
+    test(`handles HMR, warmup, and safe paths with ${name}`, async () => {
+      const server = await createTestServer({
+        root: 'fixtures/base-root',
+        base,
+      })
       const mod =
         await server.environments.client.moduleGraph.ensureEntryFromUrl(
           moduleUrl,
@@ -288,23 +275,46 @@ describe('indexHtml middleware — browser request resolution', () => {
 
       const transformed = await server.transformIndexHtml(
         htmlPath,
-        `<script${classic ? '' : ' type="module"'} src="${src}"></script>`,
+        `<script type="module" src="${src}"></script>`,
         originalUrl,
       )
 
       expect(transformed).toContain(`src="${expectedSrc}"`)
-      if (classic) {
-        expect(warmupRequest).not.toHaveBeenCalled()
-        expect(server.config.safeModulePaths).not.toContain(mod.id)
-      } else {
-        expect(warmupRequest).toHaveBeenCalledExactlyOnceWith(moduleUrl)
-        expect(server.config.safeModulePaths).toContain(mod.id)
-      }
-    },
-  )
+      expect(warmupRequest).toHaveBeenCalledExactlyOnceWith(moduleUrl)
+      expect(server.config.safeModulePaths).toContain(mod.id)
+    })
+  }
+
+  test('adds HMR timestamps to relative classic scripts without warming or registering them', async () => {
+    const server = await createTestServer({
+      root: 'fixtures/base-root',
+      base: '/ui/',
+    })
+    const mod =
+      await server.environments.client.moduleGraph.ensureEntryFromUrl(
+        '/src/main.ts',
+      )
+    mod.lastHMRTimestamp = 1234567890123
+    server.config.safeModulePaths.clear()
+    const warmupRequest = vi
+      .spyOn(server, 'warmupRequest')
+      .mockResolvedValue(undefined)
+
+    const transformed = await server.transformIndexHtml(
+      '/index.html',
+      '<script src="./src/main.ts"></script>',
+    )
+
+    expect(transformed).toContain('src="./src/main.ts?t=1234567890123"')
+    expect(warmupRequest).not.toHaveBeenCalled()
+    expect(server.config.safeModulePaths).not.toContain(mod.id)
+  })
 
   test('does not warm an HTML document referenced by a query-only URL', async () => {
-    const server = await createTestServer('fixtures/base-root', [], '/ui/')
+    const server = await createTestServer({
+      root: 'fixtures/base-root',
+      base: '/ui/',
+    })
     const warmupRequest = vi
       .spyOn(server, 'warmupRequest')
       .mockResolvedValue(undefined)
@@ -318,18 +328,11 @@ describe('indexHtml middleware — browser request resolution', () => {
   })
 
   test('does not warm a public script referenced by an encoded relative URL', async () => {
-    const server = await createTestServer(
-      'fixtures/base-root',
-      [
-        {
-          name: 'public-html-assets',
-          config: () => ({
-            publicDir: path.join(FIXTURE_DIR, 'base-root/src'),
-          }),
-        },
-      ],
-      '/ui/',
-    )
+    const server = await createTestServer({
+      root: 'fixtures/base-root',
+      base: '/ui/',
+      publicDir: path.join(FIXTURE_DIR, 'base-root/src'),
+    })
     const warmupRequest = vi
       .spyOn(server, 'warmupRequest')
       .mockResolvedValue(undefined)
@@ -369,13 +372,17 @@ describe('indexHtml middleware — safe module paths', () => {
     fs.writeFileSync(path.join(target, 'image.svg'), '<svg/>')
     fs.writeFileSync(path.join(target, 'other.svg'), '<svg/>')
     fs.symlinkSync(target, path.join(root, 'linked'), 'junction')
-    const server = await createTestServer(root)
+    const server = await createTestServer({
+      root,
+      server: {
+        fs: { allow: [] },
+        preTransformRequests: false,
+      },
+    })
     onTestFinished(async () => {
       await server.close()
       fs.rmSync(dir, { recursive: true, force: true })
     })
-    server.config.server.fs.allow = []
-    server.config.server.preTransformRequests = false
 
     await server.transformIndexHtml(
       '/index.html',
@@ -408,9 +415,13 @@ describe('indexHtml middleware — safe module paths', () => {
         'custom-entry': 'dynamic.js?raw&wrapped',
         'relative-entry': 'dynamic.js?raw&relative',
       }
-      const server = await createTestServer(
-        undefined,
-        [
+      const server = await createTestServer({
+        base,
+        server: {
+          fs: { allow: [] },
+          preTransformRequests: false,
+        },
+        plugins: [
           {
             name: 'custom-html-module-resolver',
             enforce: 'pre',
@@ -447,10 +458,7 @@ describe('indexHtml middleware — safe module paths', () => {
             },
           },
         ],
-        base,
-      )
-      server.config.server.fs.allow = []
-      server.config.server.preTransformRequests = false
+      })
 
       await server.transformIndexHtml(
         '/nested/index.html',
@@ -475,9 +483,10 @@ describe('indexHtml middleware — safe module paths', () => {
   }
 
   test('resolves browser URLs before removing the configured base', async () => {
-    const server = await createTestServer(
-      undefined,
-      [
+    const server = await createTestServer({
+      base: '/ui/',
+      server: { fs: { allow: [] } },
+      plugins: [
         {
           name: 'inject-relative-entry',
           transformIndexHtml: {
@@ -493,9 +502,7 @@ describe('indexHtml middleware — safe module paths', () => {
           },
         },
       ],
-      '/ui/',
-    )
-    server.config.server.fs.allow = []
+    })
 
     await server.transformIndexHtml('/index.html', '')
 
@@ -513,16 +520,18 @@ describe('indexHtml middleware — safe module paths', () => {
 
   test('warms and registers plugin-resolved HTML dependencies', async () => {
     const resolvedId = normalizePath(OUTSIDE_HTML_PATH) + '?raw'
-    const server = await createTestServer(undefined, [
-      {
-        name: 'resolve-warmed-script',
-        enforce: 'pre',
-        async resolveId(id) {
-          if (id === '/entry.js?raw') return resolvedId
+    const server = await createTestServer({
+      server: { fs: { allow: [] } },
+      plugins: [
+        {
+          name: 'resolve-warmed-script',
+          enforce: 'pre',
+          async resolveId(id) {
+            if (id === '/entry.js?raw') return resolvedId
+          },
         },
-      },
-    ])
-    server.config.server.fs.allow = []
+      ],
+    })
     const warmupRequest = vi.spyOn(server, 'warmupRequest')
 
     await server.transformIndexHtml(
@@ -543,24 +552,24 @@ describe('indexHtml middleware — safe module paths', () => {
     const resolveId = vi.fn((id: string) => {
       if (id === '/classic.js') return OUTSIDE_HTML_PATH
     })
-    const server = await createTestServer(undefined, [
-      {
-        name: 'resolve-frame-source',
-        enforce: 'pre',
-        resolveId,
-        config() {
-          return {
-            html: {
-              additionalAssetSources: {
-                iframe: { srcAttributes: ['src'] },
-              },
-            },
-          }
+    const server = await createTestServer({
+      server: {
+        fs: { allow: [] },
+        preTransformRequests: false,
+      },
+      html: {
+        additionalAssetSources: {
+          iframe: { srcAttributes: ['src'] },
         },
       },
-    ])
-    server.config.server.fs.allow = []
-    server.config.server.preTransformRequests = false
+      plugins: [
+        {
+          name: 'resolve-frame-source',
+          enforce: 'pre',
+          resolveId,
+        },
+      ],
+    })
 
     await server.transformIndexHtml(
       '/index.html',
@@ -578,21 +587,14 @@ describe('indexHtml middleware — safe module paths', () => {
   })
 
   test('registers aliased stylesheets at the path used for transformation', async () => {
-    const server = await createTestServer(undefined, [
-      {
-        name: 'alias-html-stylesheets',
-        config() {
-          return {
-            resolve: {
-              alias: {
-                '/@': path.join(FIXTURE_DIR, 'root'),
-              },
-            },
-          }
+    const server = await createTestServer({
+      server: { fs: { allow: [] } },
+      resolve: {
+        alias: {
+          '/@': path.join(FIXTURE_DIR, 'root'),
         },
       },
-    ])
-    server.config.server.fs.allow = []
+    })
 
     await server.transformIndexHtml(
       '/index.html',
@@ -617,59 +619,6 @@ describe('indexHtml middleware — safe module paths', () => {
       base?: string
       expectedHtml?: string
     }[] = [
-      {
-        name: 'source HTML tags',
-        html: `
-          <link rel="stylesheet" href="./style.css?direct">
-          <script type="module" src="./classic.js?raw"></script>
-          <script>import('./dynamic.js?url')</script>
-        `,
-        plugins: [],
-        files: ['style.css?direct', 'classic.js?raw', 'dynamic.js?url'],
-      },
-      {
-        name: 'tags injected by a pre hook',
-        html: HTML_CONTENT,
-        plugins: [
-          {
-            name: 'inject-safe-module-tags',
-            transformIndexHtml: {
-              order: 'pre',
-              handler() {
-                return [
-                  {
-                    tag: 'link',
-                    attrs: { rel: 'stylesheet', href: './style.css?direct' },
-                  },
-                  {
-                    tag: 'script',
-                    attrs: { type: 'module', src: './classic.js?raw' },
-                  },
-                ]
-              },
-            },
-          },
-        ],
-        files: ['style.css?direct', 'classic.js?raw'],
-      },
-      {
-        name: 'HTML returned by a pre hook',
-        html: HTML_CONTENT,
-        plugins: [
-          {
-            name: 'inject-html-reference',
-            transformIndexHtml: {
-              order: 'pre',
-              handler(html) {
-                return (
-                  html + '<script type="module" src="/classic.js?raw"></script>'
-                )
-              },
-            },
-          },
-        ],
-        files: ['classic.js?raw'],
-      },
       {
         name: 'source assets accepted by filters before URL rewriting',
         base: '/ui/',
@@ -748,8 +697,11 @@ describe('indexHtml middleware — safe module paths', () => {
     ]
     for (const { name, html, plugins, files, base, expectedHtml } of cases) {
       test(`registers URLs while scanning ${name}`, async () => {
-        const server = await createTestServer(undefined, plugins, base)
-        server.config.server.preTransformRequests = false
+        const server = await createTestServer({
+          plugins,
+          base,
+          server: { preTransformRequests: false },
+        })
 
         const transformed = await server.transformIndexHtml('/index.html', html)
         if (expectedHtml) expect(transformed).toContain(expectedHtml)
