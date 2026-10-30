@@ -1,0 +1,19 @@
+packages/vite/src/node/server/__tests__/htmlSafeModulePaths.spec.ts
+  s_26bb893f136073::t_8b83e1b4a24bb1 1-167
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "ca428a5b6457015596cce4d27243ea99d442aac4",
+  "prompts": {},
+  "sessions": {
+    "s_26bb893f136073": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18add-945c-7820-9127-cf0e7d6c1915",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
