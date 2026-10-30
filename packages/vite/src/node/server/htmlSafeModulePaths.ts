@@ -31,17 +31,17 @@ import { browserUrlToModuleUrl, moduleUrlToFilePath } from './moduleUrl'
 
 export function htmlUrlToRequestUrl(
   url: string,
-  ctx: Pick<IndexHtmlTransformContext, 'path' | 'originalUrl' | 'server'>,
+  base: string,
+  ctx: Pick<IndexHtmlTransformContext, 'path' | 'originalUrl'>,
 ): string | undefined {
   url = url.split('#', 1)[0]
   if (!url || isExternalUrl(url) || isDataUrl(url)) return
 
-  const { config } = ctx.server!
   let resolvedUrl: URL
   try {
     // ctx.path has already passed through the base and HTML fallback middleware.
     const documentUrl = new URL(
-      ctx.originalUrl ?? joinUrlSegments(config.base, ctx.path),
+      ctx.originalUrl ?? joinUrlSegments(base, ctx.path),
       'http://example.com',
     )
     resolvedUrl = new URL(url, documentUrl)
@@ -51,7 +51,7 @@ export function htmlUrlToRequestUrl(
   if (resolvedUrl.origin !== 'http://example.com') return
 
   // The browser resolves the URL before the base middleware sees the request.
-  return stripBase(resolvedUrl.pathname + resolvedUrl.search, config.base)
+  return stripBase(resolvedUrl.pathname + resolvedUrl.search, base)
 }
 
 export function getHtmlAssetFetchDest(
