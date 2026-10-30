@@ -1841,6 +1841,68 @@ test('build and environments.client.build has the same reference', async () => {
   )
 })
 
+test('css.devSourcemap is deprecated in favor of dev.sourcemap.css', async () => {
+  const logger = createLogger('silent')
+  const warn = vi.spyOn(logger, 'warn')
+  const resolved = await resolveConfig(
+    {
+      configFile: false,
+      customLogger: logger,
+      css: { devSourcemap: true },
+      dev: { sourcemap: { js: false } },
+      environments: {
+        inherited: {},
+        inheritedWithJsOverride: { dev: { sourcemap: { js: true } } },
+        custom: { dev: { sourcemap: { css: false } } },
+      },
+    },
+    'serve',
+  )
+
+  expect(resolved.dev.sourcemap).toStrictEqual({ js: false, css: true })
+  expect(resolved.environments.client.dev.sourcemap).toStrictEqual({
+    js: false,
+    css: true,
+  })
+  expect(resolved.environments.inherited.dev.sourcemap).toStrictEqual({
+    js: false,
+    css: true,
+  })
+  expect(
+    resolved.environments.inheritedWithJsOverride.dev.sourcemap,
+  ).toStrictEqual({
+    js: true,
+    css: true,
+  })
+  expect(resolved.environments.custom.dev.sourcemap).toStrictEqual({
+    js: false,
+    css: false,
+  })
+  expect(warn).toHaveBeenCalledWith(
+    expect.stringContaining(
+      'The `css.devSourcemap` option is deprecated. Please use `dev.sourcemap.css` instead.',
+    ),
+  )
+})
+
+test('dev.sourcemap.css takes precedence over css.devSourcemap', async () => {
+  const resolved = await resolveConfig(
+    {
+      configFile: false,
+      logLevel: 'silent',
+      css: { devSourcemap: true },
+      dev: { sourcemap: { css: false } },
+    },
+    'serve',
+  )
+
+  expect(resolved.dev.sourcemap).toStrictEqual({ js: true, css: false })
+  expect(resolved.environments.client.dev.sourcemap).toStrictEqual({
+    js: true,
+    css: false,
+  })
+})
+
 test('preTransformRequests', async () => {
   async function testConfig(inlineConfig: InlineConfig) {
     return Object.fromEntries(

@@ -172,6 +172,7 @@ export interface CSSOptions {
    * Enables css sourcemaps during dev
    * @default false
    * @experimental
+   * @deprecated Use `dev.sourcemap.css` instead.
    */
   devSourcemap?: boolean
 
@@ -216,7 +217,7 @@ const _cssConfigDefaults = Object.freeze({
   // preprocessorOptions
   preprocessorMaxWorkers: true,
   // postcss
-  /** @experimental */
+  /** @deprecated @experimental */
   devSourcemap: false,
   // lightningcss
 } satisfies CSSOptions)
@@ -635,7 +636,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         if (config.command === 'serve') {
           const getContentWithSourcemap = async (content: string) => {
-            if (config.css.devSourcemap) {
+            if (this.environment.config.dev.sourcemap.css) {
               const sourcemap = this.getCombinedSourcemap()
               if (sourcemap.mappings) {
                 await injectSourcesContent(
@@ -1463,7 +1464,7 @@ async function compileCSSPreprocessors(
   deps?: Set<string>
 }> {
   const { config } = environment
-  const { preprocessorOptions, devSourcemap } = config.css
+  const { preprocessorOptions } = config.css
   const atImportResolvers = getAtImportResolvers(
     environment.getTopLevelConfig(),
   )
@@ -1471,7 +1472,7 @@ async function compileCSSPreprocessors(
     ...(preprocessorOptions && preprocessorOptions[lang]),
     // important: set this for relative import resolving
     filename: cleanUrl(id),
-    enableSourcemap: devSourcemap ?? false,
+    enableSourcemap: config.dev.sourcemap.css,
   }
 
   const preProcessor = workerController[lang]
@@ -1578,14 +1579,14 @@ async function compileCSS(
   if (!transformResult) {
     return {
       code,
-      map: config.css.devSourcemap ? preprocessorMap : { mappings: '' },
+      map: config.dev.sourcemap.css ? preprocessorMap : { mappings: '' },
       deps,
     }
   }
 
   return {
     ...transformResult,
-    map: config.css.devSourcemap
+    map: config.dev.sourcemap.css
       ? combineSourcemapsIfExists(
           cleanUrl(id),
           typeof transformResult.map === 'string'
@@ -1615,7 +1616,7 @@ async function compilePostCSS(
   | undefined
 > {
   const { config } = environment
-  const { modules: modulesOptions, devSourcemap } = config.css
+  const { modules: modulesOptions } = config.css
   const isModule = modulesOptions !== false && cssModuleRE.test(id)
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
@@ -1771,7 +1772,7 @@ async function compilePostCSS(
     { ...postcssOptions, parser: postcssParser },
     deps,
     environment.logger,
-    devSourcemap,
+    config.dev.sourcemap.css,
   )
   return { ...result, modules }
 }
@@ -1782,7 +1783,6 @@ async function transformSugarSS(
   code: string,
 ) {
   const { config } = environment
-  const { devSourcemap } = config.css
 
   const sssParser = await loadSss(config.root)
   const result = await runPostCSS(
@@ -1792,7 +1792,7 @@ async function transformSugarSS(
     { parser: sssParser },
     undefined,
     environment.logger,
-    devSourcemap,
+    config.dev.sourcemap.css,
   )
   return result
 }
@@ -3423,7 +3423,7 @@ async function compileLightningCSS(
           sourceMap:
             config.command === 'build'
               ? !!config.build.sourcemap
-              : config.css.devSourcemap,
+              : config.dev.sourcemap.css,
           analyzeDependencies: { preserveImports: true },
           cssModules: cssModuleRE.test(id)
             ? (config.css.lightningcss?.cssModules ?? true)
