@@ -310,10 +310,17 @@ function preload(
             document.head.appendChild(link)
             if (isCss) {
               return new Promise((res, rej) => {
-                link.addEventListener('load', res)
-                link.addEventListener('error', () =>
-                  rej(new Error(`Unable to preload CSS for ${dep}`)),
-                )
+                const handleSettle = (e: Event) => {
+                  link.removeEventListener('load', handleSettle)
+                  link.removeEventListener('error', handleSettle)
+                  if (e.type === 'error') {
+                    rej(new Error(`Unable to preload CSS for ${dep}`))
+                  } else {
+                    res(e)
+                  }
+                }
+                link.addEventListener('load', handleSettle)
+                link.addEventListener('error', handleSettle)
               })
             }
           })
