@@ -299,6 +299,12 @@ async function prepareRolldownScanner(
       transform: transformOptions,
       input: entries,
       logLevel: 'silent',
+      // The scanner must crawl dynamic imports even when they are only
+      // reachable through unreferenced code (e.g. an event handler in a
+      // single-file component that is only used by the template), so that
+      // their dependencies are pre-bundled at startup. Tree-shaking would
+      // drop that code before the imports are collected.
+      treeshake: false,
       plugins,
     })
   }
