@@ -25,7 +25,7 @@ vite --config my-config.js
 <ScrimbaLink href="https://scrimba.com/intro-to-vite-c03p6pbbdq/~05jg?via=vite" title="Configuring Vite">Watch an interactive lesson on Scrimba</ScrimbaLink>
 
 ::: tip CONFIG LOADING
-By default, Vite uses [Rolldown](https://rolldown.rs/) to bundle the config into a temporary file and load it. If you're using an environment that supports TypeScript (e.g. Node 22.18+), or if you're only writing plain JavaScript, you can specify `--configLoader native` to use the environment's native runtime to load the config file. `configLoader: 'native'` is planned to become the default in a future major version.
+By default, Vite uses [Rolldown](https://rolldown.rs/) to bundle the config into a temporary file and load it. Bundling externalizes dependencies, so importing untranspiled TypeScript from other packages in a monorepo can fail. Use `--configLoader runner` to transform those imports on the fly, or `--configLoader native` when your runtime supports TypeScript (e.g. Node 22.18+) or the config is plain JavaScript. `configLoader: 'native'` is planned to become the default in a future major version.
 :::
 
 ## Config Intellisense
