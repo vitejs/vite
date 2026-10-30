@@ -251,13 +251,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   }
   if (Array.isArray(options.polyfills)) {
     options.polyfills.forEach((i) => {
-      if (i.startsWith(`regenerator`)) {
-        legacyPolyfills.add(`regenerator-runtime/runtime.js`)
-      } else {
-        legacyPolyfills.add(
-          i.includes('/') ? `core-js/${i}` : `core-js/modules/${i}.js`,
-        )
-      }
+      legacyPolyfills.add(resolvePolyfillSpecifier(i))
     })
   }
   if (Array.isArray(options.additionalLegacyPolyfills)) {
@@ -265,6 +259,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       legacyPolyfills.add(i)
     })
   }
+  const isModernPolyfillExcluded = createPolyfillExcludeFilter(
+    options.excludeModernPolyfills,
+  )
+  const isLegacyPolyfillExcluded = createPolyfillExcludeFilter(
+    options.excludeLegacyPolyfills,
+  )
 
   let overriddenBuildTarget = false
   let overriddenBuildTargetOnlyModern = false
@@ -367,8 +367,18 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
       if (!isLegacyBundle(bundle)) {
         // Merge discovered modern polyfills to `modernPolyfills`
-        for (const { modern } of chunkFileNameToPolyfills.values()) {
-          modern.forEach((p) => modernPolyfills.add(p))
+        const excludedModernPolyfills = mergeDetectedPolyfills(
+          modernPolyfills,
+          [...chunkFileNameToPolyfills.values()].flatMap(({ modern }) => [
+            ...modern,
+          ]),
+          isModernPolyfillExcluded,
+        )
+        if (isDebug && options.excludeModernPolyfills?.length) {
+          console.log(
+            `[@vitejs/plugin-legacy] excluded modern polyfills:`,
+            excludedModernPolyfills,
+          )
         }
         if (!modernPolyfills.size) {
           return
@@ -399,9 +409,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         return
       }
 
-      // Merge discovered legacy polyfills to `legacyPolyfills`
+      const discoveredLegacyPolyfills = new Set<string>()
       for (const { legacy } of chunkFileNameToPolyfills.values()) {
-        legacy.forEach((p) => legacyPolyfills.add(p))
+        legacy.forEach((p) => discoveredLegacyPolyfills.add(p))
       }
 
       // legacy bundle
@@ -412,7 +422,20 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           `Promise.resolve(); Promise.all();`,
           targets,
           assumptions,
-          legacyPolyfills,
+          discoveredLegacyPolyfills,
+        )
+      }
+
+      // Merge discovered legacy polyfills to `legacyPolyfills`
+      const excludedLegacyPolyfills = mergeDetectedPolyfills(
+        legacyPolyfills,
+        discoveredLegacyPolyfills,
+        isLegacyPolyfillExcluded,
+      )
+      if (isDebug && options.excludeLegacyPolyfills?.length) {
+        console.log(
+          `[@vitejs/plugin-legacy] excluded legacy polyfills:`,
+          excludedLegacyPolyfills,
         )
       }
 
@@ -895,6 +918,60 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   }
 
   return [legacyConfigPlugin, legacyGenerateBundlePlugin, legacyPostPlugin]
+}
+
+function resolvePolyfillSpecifier(specifier: string): string {
+  if (specifier.startsWith(`regenerator`)) {
+    return `regenerator-runtime/runtime.js`
+  }
+  return specifier.includes('/')
+    ? `core-js/${specifier}`
+    : `core-js/modules/${specifier}.js`
+}
+
+function createPolyfillExcludeFilter(
+  exclude: (string | RegExp)[] | undefined,
+): (polyfill: string) => boolean {
+  if (!exclude?.length) {
+    return () => false
+  }
+  const ids = new Set<string>()
+  const patterns: RegExp[] = []
+  for (const i of exclude) {
+    if (typeof i === 'string') {
+      ids.add(resolvePolyfillSpecifier(i))
+    } else {
+      patterns.push(i)
+    }
+  }
+  return (polyfill) =>
+    ids.has(polyfill) ||
+    patterns.some((re) => {
+      // reset in case of `g` or `y` flags, which make `test` stateful
+      re.lastIndex = 0
+      return re.test(polyfill)
+    })
+}
+
+/**
+ * Adds the detected polyfills that are not excluded to `polyfills`, and
+ * returns the excluded ones that are not included anyway (e.g. because they
+ * are also listed in `additionalLegacyPolyfills`).
+ */
+function mergeDetectedPolyfills(
+  polyfills: Set<string>,
+  detected: Iterable<string>,
+  isExcluded: (polyfill: string) => boolean,
+): Set<string> {
+  const excluded = new Set<string>()
+  for (const p of detected) {
+    if (!isExcluded(p)) {
+      polyfills.add(p)
+    } else if (!polyfills.has(p)) {
+      excluded.add(p)
+    }
+  }
+  return excluded
 }
 
 function getImportMapFilename(config: ResolvedConfig): string {
