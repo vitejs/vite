@@ -464,7 +464,7 @@ export function resolveBuildEnvironmentOptions(
     } satisfies BuildEnvironmentOptions,
     raw,
   )
-  setupRollupOptionCompat(merged, 'build')
+  setupRollupOptionCompat(merged)
   if (isBundledDev) {
     merged.chunkImportMap = false
   }
@@ -520,7 +520,7 @@ export function resolveBuildEnvironmentOptions(
   }
   // The object spread above evaluates the `rollupOptions` getter set up on
   // `merged` and copies it as a plain data property.
-  setupRollupOptionCompat(resolved, 'build')
+  setupRollupOptionCompat(resolved)
 
   return resolved
 }
