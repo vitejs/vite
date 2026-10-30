@@ -19,7 +19,7 @@ import type {
 import { stripLiteral } from 'strip-literal'
 import { cleanUrl } from '../../shared/utils'
 import { getNodeAssetAttributes } from '../assetSource'
-import { toOutputFilePathInHtml } from '../build'
+import { build, toOutputFilePathInHtml } from '../build'
 import type { ResolvedConfig, ResolvedEnvironmentOptions } from '../config'
 import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
 import { resolveEnvPrefix } from '../env'
@@ -445,6 +445,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   postHooks.push(injectNonceAttributeTagHook(config))
   postHooks.push(postImportMapHook(config))
   const processedHtml = perEnvironmentState(() => new Map<string, string>())
+  const inlineScriptMap = perEnvironmentState(
+    () => new Map<string, { index: number; src: string }[]>(),
+  )
 
   const isExcludedUrl = (url: string) =>
     url[0] === '#' || isExternalUrl(url) || isDataUrl(url)
@@ -555,6 +558,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         const setModuleSideEffectPromises: Promise<void>[] = []
+        const inlineScriptPromises: Promise<void>[] = []
+        const inlineScripts: { index: number; src: string }[] = []
+        inlineScriptMap(this).set(id, inlineScripts)
         await traverseHtml(html, id, config.logger.warn, (node) => {
           if (!nodeIsElement(node)) {
             return
@@ -582,8 +588,47 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               }
 
               if (isModule) {
-                inlineModuleIndex++
-                if (url && !isExcludedUrl(url) && !isPublicFile) {
+                const inlineQuery = url && /[?&]inline(?:&|$)/.test(url)
+                if (
+                  inlineQuery &&
+                  url &&
+                  !isExcludedUrl(url) &&
+                  !isPublicFile
+                ) {
+                  const src = url
+                    .replace(/([?&])inline(?:&|$)/, (_, prefix) =>
+                      prefix === '?' ? '?' : '',
+                    )
+                    .replace(/[?&]$/, '')
+                  const index = inlineScripts.length
+                  inlineScripts.push({ index, src })
+                  inlineScriptPromises.push(
+                    this.resolve(src, id).then((resolved) => {
+                      if (!resolved) {
+                        throw new Error(`Failed to resolve ${src} from ${id}`)
+                      }
+                      inlineScripts[index]!.src = resolved.id
+                    }),
+                  )
+                  const scriptAttrs = node.attrs
+                    .filter(
+                      (attr) =>
+                        attr.prefix === undefined &&
+                        !['src', 'type', 'vite-ignore'].includes(attr.name) &&
+                        attr.name !== 'data-vite-inline-script',
+                    )
+                    .map(({ name, value }) =>
+                      value === '' ? name : `${name}="${escapeHtml(value)}"`,
+                    )
+                    .join(' ')
+                  s.update(
+                    nodeStartWithLeadingWhitespace(node),
+                    node.sourceCodeLocation!.endOffset,
+                    `<script${scriptAttrs ? ` ${scriptAttrs}` : ''} ` +
+                      `data-vite-inline-script="${index}"></script>`,
+                  )
+                } else if (url && !isExcludedUrl(url) && !isPublicFile) {
+                  inlineModuleIndex++
                   setModuleSideEffectPromises.push(
                     this.resolve(url, id).then((resolved) => {
                       if (!resolved) {
@@ -608,6 +653,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   js += `\nimport ${JSON.stringify(url)}`
                   shouldRemove = true
                 } else if (node.childNodes.length) {
+                  inlineModuleIndex++
                   const scriptNode =
                     node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
                   const contents = scriptNode.value
@@ -829,6 +875,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         await Promise.all(setModuleSideEffectPromises)
+        await Promise.all(inlineScriptPromises)
 
         // Force rollup to keep this module from being shared between other entry points.
         // If the resulting chunk is empty, it will be removed in generateBundle.
@@ -1081,6 +1128,50 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             chunk,
           },
         )
+        const inlineScripts = inlineScriptMap(this).get(normalizedId)
+        if (inlineScripts) {
+          for (const inlineScript of inlineScripts) {
+            const output = await build({
+              ...config.inlineConfig,
+              root: config.root,
+              mode: config.mode,
+              logLevel: 'silent',
+              build: {
+                ...config.inlineConfig.build,
+                write: false,
+                emptyOutDir: false,
+                lib: {
+                  entry: inlineScript.src,
+                  formats: ['iife'],
+                  name: 'ViteInlineScript',
+                },
+              },
+            })
+            const chunks = (Array.isArray(output) ? output : [output]).flatMap(
+              (item) => ('output' in item ? item.output : []),
+            )
+            const chunk = chunks.find((item) => item.type === 'chunk')
+            if (!chunk) {
+              throw new Error(
+                `Failed to generate inline script bundle for ${inlineScript.src}`,
+              )
+            }
+            const code = chunk.code
+            const marker = new RegExp(
+              `<script\\b([^>]*)data-vite-inline-script=["']${inlineScript.index}["']([^>]*)><\\/script>`,
+            )
+            const inlinedResult = result.replace(marker, (_, before, after) => {
+              const safeCode = code.replace(/<\/script/gi, '<\\/script')
+              return `<script${before}${after}>${safeCode}</script>`
+            })
+            if (inlinedResult === result) {
+              throw new Error(
+                `Failed to locate inline script placeholder for ${inlineScript.src}`,
+              )
+            }
+            result = inlinedResult
+          }
+        }
         // resolve asset url references
         result = result.replace(assetUrlRE, (_, fileHash, urlId) => {
           const file = this.getFileName(fileHash)
