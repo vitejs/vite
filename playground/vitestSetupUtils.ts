@@ -52,6 +52,35 @@ export const viteBinPath = path.posix.join(
   'packages/vite/bin/vite.js',
 )
 
+// These playgrounds still rely on Vite's default server.fs.allow.
+const playgroundsUsingDefaultFsAllow = new Set([
+  'alias',
+  'assets',
+  'base',
+  'build-old',
+  'chunk-importmap',
+  'csp',
+  'css',
+  'css-codesplit',
+  'css-lightningcss',
+  'css-no-codesplit',
+  'css-sourcemap',
+  'dynamic-import',
+  'glob-import',
+  'hmr',
+  'html',
+  'json',
+  'legacy',
+  'multiple-entrypoints',
+  'optimize-deps',
+  'resolve',
+  'tailwind',
+  'tailwind-v3',
+  'tsconfig-json-load-error',
+  'wasm',
+  'worker',
+])
+
 // #endregion
 
 // #region context
@@ -256,6 +285,9 @@ async function loadConfig(configEnv: ConfigEnv) {
     logLevel: 'silent',
     configFile: false,
     server: {
+      ...(playgroundsUsingDefaultFsAllow.has(testName)
+        ? {}
+        : { fs: { allow: [] } }),
       watch: {
         // During tests we edit the files too fast and sometimes chokidar
         // misses change events, so enforce polling for consistency
