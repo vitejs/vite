@@ -621,9 +621,9 @@ function rolldownScanPlugin(
           }
         }
 
-        // bare imports: record and externalize ----------------------------------
+        // bare and subpath imports: record and externalize ---------------------
         // avoid matching windows volume
-        if (/^[\w@][^:]/.test(id)) {
+        if (/^[\w@#][^:]/.test(id)) {
           if (moduleListContains(exclude, id)) {
             return externalUnlessEntry({ path: id })
           }

@@ -1,3 +1,4 @@
+import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import { rolldownDepPlugin } from '../../optimizer/rolldownDepPlugin'
 import { normalizePath } from '../../utils'
@@ -128,5 +129,74 @@ describe('rolldownDepPlugin transform', async () => {
     ).toMatchInlineSnapshot(
       `"new URL('' + "../../src/asset.js", import.meta.url)"`,
     )
+  })
+})
+
+describe('rolldownDepPlugin resolveId', () => {
+  const baseConfig = {
+    cacheDir: '/root/.vite',
+    optimizeDeps: { extensions: [] },
+    server: { fs: { allow: [] } },
+    resolve: { builtins: [] },
+    createResolver: () => () => undefined,
+  }
+
+  const mockEnvironment = {
+    config: baseConfig,
+    getTopLevelConfig: () => baseConfig,
+  } as any
+
+  const plugins = rolldownDepPlugin(mockEnvironment, {}, [])
+  const plugin = plugins.find(
+    (p: any) => p.name === 'vite:dep-pre-bundle',
+  ) as any
+
+  test('matches bare imports and subpath imports with filter', () => {
+    const filter = plugin.resolveId.filter.id as RegExp
+    expect(filter.test('lodash')).toBe(true)
+    expect(filter.test('@vue/reactivity')).toBe(true)
+    expect(filter.test('#mode')).toBe(true)
+    expect(filter.test('#internal/subpath')).toBe(true)
+
+    expect(filter.test('./relative')).toBe(false)
+    expect(filter.test('../parent')).toBe(false)
+    expect(filter.test('/root/file')).toBe(false)
+    expect(filter.test('C:\\path\\file')).toBe(false)
+    expect(filter.test('D:/path/file')).toBe(false)
+  })
+
+  test('delegates subpath import to resolver', async () => {
+    let calledWith: any = null
+    const resolverMockConfig = {
+      ...baseConfig,
+      resolve: { builtins: [], mainFields: [], conditions: [] },
+      createResolver: () => async (id: string, importer?: string) => {
+        calledWith = { id, importer }
+        return '/root/node_modules/my-lib/dev.js'
+      },
+    }
+    const env = {
+      name: 'client',
+      config: resolverMockConfig,
+      getTopLevelConfig: () => resolverMockConfig,
+    } as any
+
+    const pluginsWithResolver = rolldownDepPlugin(env, {}, [])
+    const depPlugin = pluginsWithResolver.find(
+      (p: any) => p.name === 'vite:dep-pre-bundle',
+    ) as any
+
+    const res = await depPlugin.resolveId.handler(
+      '#mode',
+      '/root/node_modules/my-lib/index.js',
+      { kind: 'import-statement' },
+    )
+    expect(calledWith).toEqual({
+      id: '#mode',
+      importer: '/root/node_modules/my-lib/index.js',
+    })
+    expect(res).toEqual({
+      id: path.resolve('/root/node_modules/my-lib/dev.js'),
+    })
   })
 })
