@@ -24,7 +24,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
         port: hmrPort,
       },
       fs: {
-        // TODO: expose `config.safeModulePaths.add` and use it
+        // TODO: expose `environment.safeModulePaths.add` and use it
         allow: [resolve('main.js')],
       },
     },

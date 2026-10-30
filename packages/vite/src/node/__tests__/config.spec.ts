@@ -1532,21 +1532,6 @@ describe('resolveConfig', () => {
     })
   })
 
-  test('registers IDs with cleaned paths and preserves exact filesystem paths', async () => {
-    const config = await resolveConfig({}, 'serve')
-    const safeModulePaths = config.safeModulePaths
-
-    safeModulePaths.addId('/foo/bar?raw')
-    expect(Array.from(safeModulePaths)).toStrictEqual([
-      '/foo/bar?raw',
-      '/foo/bar',
-    ])
-
-    safeModulePaths.clear()
-    safeModulePaths.add('/foo#dir/bar?literal')
-    expect(Array.from(safeModulePaths)).toStrictEqual(['/foo#dir/bar?literal'])
-  })
-
   test('allows glob characters in input', async () => {
     const input = 'src/*.ts'
 

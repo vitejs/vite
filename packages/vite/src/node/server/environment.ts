@@ -34,6 +34,7 @@ import {
   ERR_CLOSED_SERVER,
   createEnvironmentPluginContainer,
 } from './pluginContainer'
+import type { SafeModulePaths } from './safeModulePaths'
 import type { TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { warmupFiles } from './warmup'
@@ -56,6 +57,8 @@ export interface DevEnvironmentContext {
 export class DevEnvironment extends BaseEnvironment {
   mode = 'dev' as const
   moduleGraph: EnvironmentModuleGraph
+  /** @internal */
+  safeModulePaths: SafeModulePaths
 
   depsOptimizer?: DepsOptimizer
   /**
@@ -126,6 +129,7 @@ export class DevEnvironment extends BaseEnvironment {
       ) as ResolvedEnvironmentOptions
     }
     super(name, config, options)
+    this.safeModulePaths = options.safeModulePaths
     if (
       options.isBundled ||
       (name === 'client' && config.experimental.bundledDev)
@@ -249,7 +253,7 @@ export class DevEnvironment extends BaseEnvironment {
         if (resolved && !resolved.external) {
           const file = cleanUrl(resolved.id)
           if (path.isAbsolute(file)) {
-            this.getTopLevelConfig().safeModulePaths.addId(resolved.id)
+            this.safeModulePaths.addId(resolved.id)
           }
         }
       }

@@ -6,6 +6,10 @@ import { promiseWithResolvers } from '../../shared/utils'
 import { createLogger } from '../logger'
 import { _createServer } from '../server'
 import { DevEnvironment } from '../server/environment'
+import {
+  isFileLoadingAllowed,
+  isFileServingAllowed,
+} from '../server/middlewares/static'
 import { normalizePath } from '../utils'
 import { createTestServer } from './testUtils'
 
@@ -58,10 +62,77 @@ describe('the dev server', () => {
     }
   })
 
-  test('resolves each environment input as a safe module', async () => {
+  test('aliases the client safe module paths across restarts', async () => {
+    server = await createServer({
+      configFile: false,
+      root: import.meta.dirname,
+      logLevel: 'silent',
+      optimizeDeps: { noDiscovery: true },
+      server: { middlewareMode: true, ws: false },
+    })
+
+    expect(server.safeModulePaths).toBe(
+      server.environments.client.safeModulePaths,
+    )
+    server.safeModulePaths.add('/client-plugin-entry.js')
+    expect(server.environments.client.safeModulePaths).toContain(
+      '/client-plugin-entry.js',
+    )
+    expect(server.environments.ssr.safeModulePaths).not.toContain(
+      '/client-plugin-entry.js',
+    )
+
+    await server.restart()
+
+    expect(server.safeModulePaths).toBe(
+      server.environments.client.safeModulePaths,
+    )
+  })
+
+  test('applies server.fs.allow and deny to every environment', async () => {
+    const root = normalizePath(
+      path.join(import.meta.dirname, 'fixtures', 'input-option'),
+    )
+    const allowedFile = path.posix.join(root, 'entry.js')
+    const deniedFile = path.posix.join(root, 'private.txt')
+    const outsideFile = path.posix.join(root, '../outside.js')
+
+    server = await createServer({
+      configFile: false,
+      root,
+      environments: { custom: {} },
+      optimizeDeps: { noDiscovery: true },
+      server: {
+        fs: { strict: true, allow: [root], deny: ['**/private.txt'] },
+        middlewareMode: true,
+        ws: false,
+      },
+    })
+
+    for (const environment of Object.values(server.environments)) {
+      expect(
+        isFileLoadingAllowed(environment.config, allowedFile),
+        environment.name,
+      ).toBe(true)
+      expect(
+        isFileLoadingAllowed(environment.config, outsideFile),
+        environment.name,
+      ).toBe(false)
+      environment.safeModulePaths.addId(deniedFile)
+      expect(
+        isFileLoadingAllowed(environment.config, deniedFile),
+        environment.name,
+      ).toBe(false)
+    }
+  })
+
+  test('resolves environment inputs into separate safe module paths', async () => {
     const root = path.join(import.meta.dirname, 'fixtures', 'input-option')
-    const clientEntry = normalizePath(path.join(root, 'client-entry.js'))
-    const ssrEntry = normalizePath(path.join(root, 'ssr-entry.js'))
+    const entries: Record<string, string> = {
+      client: normalizePath(path.join(root, 'client-entry.js')),
+      ssr: normalizePath(path.join(root, 'ssr-entry.js')),
+      custom: normalizePath(path.join(root, 'custom-entry.js')),
+    }
 
     const server = await createTestServer({
       configFile: false,
@@ -69,6 +140,7 @@ describe('the dev server', () => {
       input: 'virtual:client-entry',
       environments: {
         ssr: { input: { main: 'virtual:ssr-entry' } },
+        custom: { input: 'virtual:custom-entry' },
       },
       optimizeDeps: { noDiscovery: true },
       server: { fs: { allow: [] }, middlewareMode: true, ws: false },
@@ -77,20 +149,147 @@ describe('the dev server', () => {
           name: 'resolve-environment-entries',
           resolveId(id) {
             if (id === `virtual:${this.environment.name}-entry`) {
-              return this.environment.name === 'client' ? clientEntry : ssrEntry
+              return entries[this.environment.name]
             }
           },
         },
       ],
     })
 
-    expect(new Set(server.config.safeModulePaths)).toStrictEqual(
-      new Set([clientEntry]),
+    await Promise.all(
+      Object.values(server.environments).map((environment) =>
+        environment.pluginContainer.buildStart(),
+      ),
     )
-    await server.environments.ssr.pluginContainer.buildStart()
-    expect(new Set(server.config.safeModulePaths)).toStrictEqual(
-      new Set([clientEntry, ssrEntry]),
+    for (const environment of Object.values(server.environments)) {
+      expect(
+        new Set(environment.safeModulePaths),
+        environment.name,
+      ).toStrictEqual(new Set([entries[environment.name]]))
+      for (const [name, entry] of Object.entries(entries)) {
+        expect(
+          isFileLoadingAllowed(environment.config, entry),
+          `${environment.name}: ${name}`,
+        ).toBe(name === environment.name)
+      }
+    }
+  })
+
+  test('keeps SSR imports out of the client safe module paths', async () => {
+    const root = path.join(import.meta.dirname, 'fixtures', 'input-option')
+    const importedFile = normalizePath(path.join(root, 'entry.js'))
+    const importedId = importedFile + '?raw'
+    const importedUrl = path.posix.join('/@fs/', importedId)
+
+    server = await createServer({
+      configFile: false,
+      root,
+      logLevel: 'silent',
+      environments: {
+        ssr: { input: 'virtual:ssr-entry' },
+      },
+      optimizeDeps: { noDiscovery: true },
+      server: {
+        fs: { strict: 'extended', allow: [] },
+        host: '127.0.0.1',
+        port: 0,
+        ws: false,
+      },
+      plugins: [
+        {
+          name: 'ssr-entry',
+          resolveId(id) {
+            if (id === 'virtual:ssr-entry') return '\0ssr-entry'
+          },
+          load(id) {
+            if (id === '\0ssr-entry') {
+              return `import ${JSON.stringify(importedUrl)}`
+            }
+          },
+        },
+      ],
+    })
+
+    const { client, ssr } = server.environments
+    await ssr.transformRequest('virtual:ssr-entry')
+    expect(ssr.safeModulePaths).toContain(importedId)
+    expect(client.safeModulePaths).not.toContain(importedId)
+    expect(isFileLoadingAllowed(ssr.config, importedFile)).toBe(true)
+    expect(isFileLoadingAllowed(client.config, importedFile)).toBe(false)
+    expect(isFileServingAllowed(importedUrl, server)).toBe(false)
+    expect(isFileServingAllowed(server.config, importedUrl)).toBe(false)
+    expect(isFileServingAllowed(ssr.config, importedUrl)).toBe(true)
+    expect(isFileServingAllowed(client.config, importedUrl)).toBe(false)
+    expect((await ssr.transformRequest(importedUrl))?.code).toContain(
+      'export default',
     )
+    await expect(client.transformRequest(importedUrl)).rejects.toMatchObject({
+      code: 'ERR_DENIED_ID',
+    })
+
+    await server.listen()
+    const baseUrl = server.resolvedUrls!.local[0]
+    for (const url of [
+      importedUrl,
+      path.posix.join('/@fs/', importedFile),
+      '/entry.js',
+    ]) {
+      expect((await fetch(new URL(url, baseUrl))).status).toBe(403)
+    }
+
+    await server.transformIndexHtml(
+      '/index.html',
+      `<script type="module" src="${importedUrl}"></script>`,
+    )
+    expect((await fetch(new URL(importedUrl, baseUrl))).status).toBe(200)
+  })
+
+  test('serves asset URLs emitted by SSR outside the filesystem allow list', async () => {
+    const root = path.join(import.meta.dirname, 'fixtures', 'input-option')
+    const assetFile = normalizePath(
+      path.join(root, '../public-dir-write-false/public/favicon.svg'),
+    )
+    const assetId = assetFile + '?no-inline'
+    const assetUrl = path.posix.join('/@fs/', assetId)
+
+    server = await createServer({
+      configFile: false,
+      root,
+      logLevel: 'silent',
+      environments: { ssr: { input: 'virtual:ssr-entry' } },
+      optimizeDeps: { noDiscovery: true },
+      server: {
+        fs: { allow: [root] },
+        host: '127.0.0.1',
+        port: 0,
+        ws: false,
+      },
+      plugins: [
+        {
+          name: 'ssr-asset-entry',
+          resolveId(id) {
+            if (id === 'virtual:ssr-entry') return '\0ssr-entry'
+          },
+          load(id) {
+            if (id === '\0ssr-entry')
+              return `import ${JSON.stringify(assetUrl)}`
+          },
+        },
+      ],
+    })
+
+    const { client, ssr } = server.environments
+    await ssr.transformRequest('virtual:ssr-entry')
+    expect(client.safeModulePaths).not.toContain(assetFile)
+    expect((await ssr.transformRequest(assetUrl))?.code).toContain(assetUrl)
+    expect(client.safeModulePaths).toContain(assetFile)
+
+    await server.listen()
+    const response = await fetch(
+      new URL(assetUrl, server.resolvedUrls!.local[0]),
+    )
+    expect(response.status).toBe(200)
+    expect(await response.text()).toContain('<svg')
   })
 
   test('does not mark an external environment input as safe', async () => {
@@ -115,7 +314,9 @@ describe('the dev server', () => {
       ],
     })
 
-    expect(server.config.safeModulePaths).not.toContain(externalEntry)
+    expect(server.environments.client.safeModulePaths).not.toContain(
+      externalEntry,
+    )
   })
 
   test('does not mark unresolved SSR imports as safe', async () => {
@@ -144,7 +345,9 @@ describe('the dev server', () => {
 
     await server.environments.ssr.transformRequest('/unresolved-entry.js')
 
-    expect(server.config.safeModulePaths).not.toContain(unresolvedImport)
+    expect(server.environments.ssr.safeModulePaths).not.toContain(
+      unresolvedImport,
+    )
   })
 
   test('silently resolves index.html as the fallback for every environment', async () => {
@@ -178,7 +381,7 @@ describe('the dev server', () => {
     expect(resolvedEnvironments).toStrictEqual(new Set(['client']))
     await server.environments.ssr.pluginContainer.buildStart()
     expect(resolvedEnvironments).toStrictEqual(new Set(['client', 'ssr']))
-    expect(new Set(server.config.safeModulePaths)).toStrictEqual(
+    expect(new Set(server.environments.client.safeModulePaths)).toStrictEqual(
       new Set([clientEntry]),
     )
     expect(logger.warn).not.toHaveBeenCalled()

@@ -495,7 +495,10 @@ export function indexHtmlMiddleware(
       }
 
       if (isDev) {
-        const servingAccessResult = checkLoadingAccess(server.config, filePath)
+        const servingAccessResult = checkLoadingAccess(
+          server.environments.client,
+          filePath,
+        )
         if (servingAccessResult === 'denied') {
           return respondWithAccessDenied(filePath, server, res)
         }

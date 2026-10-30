@@ -356,9 +356,11 @@ export function rolldownDepPlugin(
             // we resolve the relative path from the original library file (id) and
             // then rewrite it relative to the bundle (deps) directory.
             const absolutePath = path.resolve(path.dirname(id), url)
-            environment
-              .getTopLevelConfig()
-              .safeModulePaths.add(normalizePath(cleanUrl(absolutePath)))
+            if (environment.mode === 'dev') {
+              environment.safeModulePaths.add(
+                normalizePath(cleanUrl(absolutePath)),
+              )
+            }
             const relativePath = path.relative(bundleOutputDir, absolutePath)
             const normalizedRelativePath = normalizePath(relativePath)
             s.update(
