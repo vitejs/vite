@@ -43,9 +43,19 @@ const documentFetchDests = new Set([
   'frame',
   'fencedframe',
 ])
-function isDocumentFetchDest(req: Connect.IncomingMessage) {
-  const fetchDest = req.headers['sec-fetch-dest']
+function isDocumentFetchDest(fetchDest: string | undefined) {
   return fetchDest !== undefined && documentFetchDests.has(fetchDest)
+}
+
+export function isTransformRequest(url: string, fetchDest?: string): boolean {
+  return (
+    !isDocumentFetchDest(fetchDest) &&
+    (fetchDest === 'script' ||
+      isJSRequest(url) ||
+      isImportRequest(url) ||
+      isCSSRequest(url) ||
+      isHTMLProxy(url))
+  )
 }
 
 // TODO: consolidate this regex pattern with the url, raw, and inline checks in plugins
@@ -86,7 +96,7 @@ export function cachedTransformMiddleware(
   return function viteCachedTransformMiddleware(req, res, next) {
     const environment = server.environments.client
 
-    if (isDocumentFetchDest(req)) {
+    if (isDocumentFetchDest(req.headers['sec-fetch-dest'])) {
       res.appendHeader('Vary', 'Sec-Fetch-Dest')
       return next()
     }
@@ -131,7 +141,7 @@ export function transformMiddleware(
     if (
       (req.method !== 'GET' && req.method !== 'HEAD') ||
       knownIgnoreList.has(req.url!) ||
-      isDocumentFetchDest(req)
+      isDocumentFetchDest(req.headers['sec-fetch-dest'])
     ) {
       return next()
     }
@@ -223,13 +233,7 @@ export function transformMiddleware(
         warnAboutExplicitPublicPathInUrl(url)
       }
 
-      if (
-        req.headers['sec-fetch-dest'] === 'script' ||
-        isJSRequest(url) ||
-        isImportRequest(url) ||
-        isCSSRequest(url) ||
-        isHTMLProxy(url)
-      ) {
+      if (isTransformRequest(url, req.headers['sec-fetch-dest'])) {
         // strip ?import
         url = removeImportQuery(url)
         // Strip valid id prefix. This is prepended to resolved Ids that are

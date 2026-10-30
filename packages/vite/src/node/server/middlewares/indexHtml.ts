@@ -31,6 +31,7 @@ import {
 } from '../../plugins/html'
 import { checkPublicFile } from '../../publicDir'
 import {
+  decodeURIIfPossible,
   ensureWatchedFile,
   getHash,
   injectQuery,
@@ -42,6 +43,11 @@ import {
   processSrcSetSync,
   tryStatSync,
 } from '../../utils'
+import {
+  addHtmlRequestToSafeModulePaths,
+  getHtmlAssetFetchDest,
+  htmlUrlToRequestUrl,
+} from '../htmlSafeModulePaths'
 import { browserUrlToModuleUrl, moduleUrlToFilePath } from '../moduleUrl'
 import {
   BasicMinimalPluginContext,
@@ -123,83 +129,8 @@ function isBareRelative(url: string) {
   return wordCharRE.test(url[0]) && !url.includes(':')
 }
 
-function getHtmlDirnameForRelativeUrl(htmlPath: string): string {
-  return htmlPath.endsWith('/') ? htmlPath : path.posix.dirname(htmlPath)
-}
-
 const multipleLeadingSlashesRE = /^\/{2,}/g
 
-const processNodeUrl = (
-  url: string,
-  useSrcSetReplacer: boolean,
-  config: ResolvedConfig,
-  htmlPath: string,
-  originalUrl?: string,
-  server?: ViteDevServer,
-  isClassicScriptLink?: boolean,
-): string => {
-  // prefix with base (dev only, base is never relative)
-  const replacer = (url: string) => {
-    if (
-      (url[0] === '/' && url[1] !== '/') ||
-      // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
-      // path will add `/a/` prefix, it will caused 404.
-      //
-      // skip if url contains `:` as it implies a url protocol or Windows path that we don't want to replace.
-      //
-      // rewrite `./index.js` -> `localhost:5173/a/index.js`.
-      // rewrite `../index.js` -> `localhost:5173/index.js`.
-      // rewrite `relative/index.js` -> `localhost:5173/a/relative/index.js`.
-      ((url[0] === '.' || isBareRelative(url)) &&
-        originalUrl &&
-        originalUrl !== '/' &&
-        htmlPath === '/index.html')
-    ) {
-      url = path.posix.join(config.base, url)
-    }
-
-    let preTransformUrl: string | undefined
-
-    if (!isClassicScriptLink && shouldPreTransform(url, config)) {
-      if (url[0] === '/' && url[1] !== '/') {
-        preTransformUrl = url
-      } else if (url[0] === '.' || isBareRelative(url)) {
-        preTransformUrl = path.posix.join(
-          config.base,
-          getHtmlDirnameForRelativeUrl(htmlPath),
-          url,
-        )
-      }
-    }
-
-    if (server) {
-      let decodedUrl: string
-      try {
-        decodedUrl = decodeURI(preTransformUrl || url)
-      } catch {
-        // Malformed uri. Skip pre-transform.
-        return url
-      }
-      const moduleUrl = browserUrlToModuleUrl(decodedUrl, config.decodedBase)
-      const mod =
-        server.environments.client.moduleGraph.urlToModuleMap.get(moduleUrl)
-      if (mod && mod.lastHMRTimestamp > 0) {
-        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
-      }
-
-      if (preTransformUrl) {
-        preTransformRequest(server, moduleUrl)
-      }
-    }
-
-    return url
-  }
-
-  const processedUrl = useSrcSetReplacer
-    ? processSrcSetSync(url, ({ url }) => replacer(url))
-    : replacer(url)
-  return processedUrl
-}
 const devHtmlHook: IndexHtmlTransformHook = async (
   html,
   { path: htmlPath, filename, server, originalUrl },
@@ -246,6 +177,58 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   const styleUrl: AssetNode[] = []
   const inlineStyles: InlineStyleAttribute[] = []
   const inlineModuleUrls: string[] = []
+  const safeModulePathRegistrations: Promise<void>[] = []
+  const processNodeUrl = (
+    url: string,
+    useSrcSetReplacer: boolean,
+    fetchDest?: string,
+    scriptType?: 'module' | 'classic',
+  ): string => {
+    const replacer = (url: string) => {
+      // Prefix absolute URLs with base, and relative URLs when serving the SPA
+      // fallback so they resolve from the root HTML document.
+      if (
+        (url[0] === '/' && url[1] !== '/') ||
+        ((url[0] === '.' || isBareRelative(url)) &&
+          originalUrl &&
+          originalUrl !== '/' &&
+          htmlPath === '/index.html')
+      ) {
+        url = path.posix.join(config.base, url)
+      }
+
+      const requestUrl = htmlUrlToRequestUrl(url, base, {
+        path: htmlPath,
+        originalUrl,
+      })
+      if (!requestUrl) return url
+
+      if (scriptType) {
+        const decodedUrl = decodeURIIfPossible(requestUrl)
+        if (decodedUrl === undefined) return url
+        const moduleUrl = browserUrlToModuleUrl(decodedUrl, '')
+        const mod =
+          server!.environments.client.moduleGraph.urlToModuleMap.get(moduleUrl)
+        if (mod && mod.lastHMRTimestamp > 0) {
+          url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+        }
+        if (scriptType === 'module' && shouldPreTransform(decodedUrl, config)) {
+          preTransformRequest(server!, moduleUrl)
+        }
+      }
+
+      if (scriptType !== 'classic') {
+        safeModulePathRegistrations.push(
+          addHtmlRequestToSafeModulePaths(requestUrl, server!, fetchDest),
+        )
+      }
+      return url
+    }
+
+    return useSrcSetReplacer
+      ? processSrcSetSync(url, ({ url }) => replacer(url))
+      : replacer(url)
+  }
 
   const addInlineModule = (
     node: DefaultTreeAdapterMap['element'],
@@ -301,11 +284,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         const processedUrl = processNodeUrl(
           src.value,
           /* useSrcSetReplacer */ false,
-          config,
-          htmlPath,
-          originalUrl,
-          server,
-          !isModule,
+          'script',
+          isModule ? 'module' : 'classic',
         )
         if (processedUrl !== src.value) {
           overwriteAttrValue(s, srcSourceCodeLocation!, processedUrl)
@@ -321,13 +301,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           start,
           end,
         } of extractImportExpressionFromClassicScript(scriptNode)) {
-          const processedUrl = processNodeUrl(
-            url,
-            false,
-            config,
-            htmlPath,
-            originalUrl,
-          )
+          const processedUrl = processNodeUrl(url, false, 'script')
           if (processedUrl !== url) {
             s.update(start, end, processedUrl)
           }
@@ -366,9 +340,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         const processedUrl = processNodeUrl(
           attr.value,
           attr.type === 'srcset',
-          config,
-          htmlPath,
-          originalUrl,
+          getHtmlAssetFetchDest(node.nodeName, attr.key, attr.attributes),
         )
         if (processedUrl !== attr.value) {
           overwriteAttrValue(s, attr.location, processedUrl)
@@ -376,6 +348,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       }
     }
   })
+
+  await Promise.all(safeModulePathRegistrations)
 
   // invalidate the module so the newly cached contents will be served
   const clientModuleGraph = server?.environments.client.moduleGraph
