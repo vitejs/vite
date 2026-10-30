@@ -47,23 +47,22 @@ const wasmReservedModules = new Set<string>([
 // Compiles a `.wasm` to a `WebAssembly.Module` without instantiating it.
 const compileWasm = async (url: string) => {
   if (url.startsWith('data:')) {
-    let buffer: BufferSource
     const urlContent = url.replace(/^data:.*?base64,/, '')
+    let bytes: Uint8Array<ArrayBuffer>
     if (typeof Buffer === 'function' && typeof Buffer.from === 'function') {
-      buffer = Buffer.from(urlContent, 'base64')
+      bytes = Buffer.from(urlContent, 'base64')
     } else if (typeof atob === 'function') {
       const binaryString = atob(urlContent)
-      const bytes = new Uint8Array(binaryString.length)
+      bytes = new Uint8Array(binaryString.length)
       for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i)
       }
-      buffer = bytes
     } else {
       throw new Error(
         'Failed to decode base64-encoded data URL, Buffer and atob are not supported',
       )
     }
-    return WebAssembly.compile(buffer, wasmCompileOptions)
+    return WebAssembly.compile(bytes, wasmCompileOptions)
   }
   return compileFromUrl(url)
 }
