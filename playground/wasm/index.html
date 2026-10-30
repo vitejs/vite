@@ -158,23 +158,25 @@
   import lightUrl from './light.wasm?url'
   text('.url', lightUrl)
 
-  // Source phase tests use top-level await, so they run after the listeners
-  // above are registered to avoid racing the test clicks.
+  ;(async () => {
+    const addInstance = await WebAssembly.instantiate(addModule)
+    text('.source-phase-wasm .result', addInstance.exports.add(1, 2))
+  })()
 
-  // Source phase import: `addModule` is the compiled WebAssembly.Module, the
-  // consumer owns instantiation.
-  const addInstance = await WebAssembly.instantiate(addModule)
-  text('.source-phase-wasm .result', addInstance.exports.add(1, 2))
+  ;(async () => {
+    const dynamicModule = await import.source('./add.wasm')
+    const dynamicInstance = await WebAssembly.instantiate(dynamicModule)
+    text(
+      '.source-phase-wasm-dynamic .result',
+      dynamicInstance.exports.add(3, 4),
+    )
+  })()
 
-  // Dynamic source phase import also yields a WebAssembly.Module.
-  const dynamicModule = await import.source('./add.wasm')
-  const dynamicInstance = await WebAssembly.instantiate(dynamicModule)
-  text('.source-phase-wasm-dynamic .result', dynamicInstance.exports.add(3, 4))
-
-  // Source phase import instantiated with the wasm's own imports satisfied.
-  const lwiInstance = await WebAssembly.instantiate(lightWithImportsModule, {
-    './imports.js': { imported_func },
-  })
-  lwiInstance.exports.exported_func()
-  text('.source-phase-wasm-with-imports .result', getResult())
+  ;(async () => {
+    const lwiInstance = await WebAssembly.instantiate(lightWithImportsModule, {
+      './imports.js': { imported_func },
+    })
+    lwiInstance.exports.exported_func()
+    text('.source-phase-wasm-with-imports .result', getResult())
+  })()
 </script>
