@@ -465,11 +465,12 @@ describe('sass package resolution', () => {
   const fixtureRoot = path.resolve(dirname, 'fixtures/sass-package-resolution')
   const importer = path.resolve(fixtureRoot, 'entry.scss')
 
-  async function getSassResolver() {
+  async function getSassResolver(conditions?: string[]) {
     const config = await resolveConfig(
       { configFile: false, root: fixtureRoot },
       'serve',
     )
+    config.resolve.conditions = conditions ?? []
     const environment = new PartialEnvironment('client', config)
     const resolvers = createCSSResolvers(config)
     return (id: string) => resolvers.sass(environment, id, importer)
@@ -483,6 +484,32 @@ describe('sass package resolution', () => {
         path.resolve(
           fixtureRoot,
           'node_modules/sass-pkg-with-index/index.scss',
+        ),
+      ),
+    )
+  })
+
+  test('resolves to index.scss at package root via exports', async () => {
+    const resolve = await getSassResolver()
+    const resolved = await resolve('sass-pkg-with-exports')
+    expect(resolved).toBe(
+      normalizePath(
+        path.resolve(
+          fixtureRoot,
+          'node_modules/sass-pkg-with-exports/index.scss',
+        ),
+      ),
+    )
+  })
+
+  test('resolves to custom.scss via exports', async () => {
+    const resolve = await getSassResolver(['custom'])
+    const resolved = await resolve('sass-pkg-with-exports')
+    expect(resolved).toBe(
+      normalizePath(
+        path.resolve(
+          fixtureRoot,
+          'node_modules/sass-pkg-with-exports/custom.scss',
         ),
       ),
     )
