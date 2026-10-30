@@ -70,6 +70,15 @@ class WorkerOutputCache {
   private assets = new Map<string, WorkerBundleAsset>()
   private invalidatedBundles = new Set</* inputId */ string>()
   /**
+   * In-flight worker bundle builds keyed by input id, so concurrent requests
+   * for the same worker share a single build instead of starting duplicate
+   * identical builds while the first one is still running.
+   */
+  private pendingBundles = new Map<
+    /* inputId */ string,
+    Promise<WorkerBundle>
+  >()
+  /**
    * Worker references grouped by their containing bundle and module.
    * `referencingModuleId` is the module whose inclusion keeps the reference
    * live: the worker wrapper module for a `?worker` import, or the importing
@@ -238,6 +247,22 @@ class WorkerOutputCache {
     return this.bundles.get(file)
   }
 
+  getPendingWorkerBundle(file: string): Promise<WorkerBundle> | undefined {
+    return this.pendingBundles.get(file)
+  }
+
+  setPendingWorkerBundle(file: string, pending: Promise<WorkerBundle>): void {
+    this.pendingBundles.set(file, pending)
+    // settle via `then` with both handlers so a rejected build cannot surface
+    // as an unhandled rejection through the cleanup chain
+    const settle = () => {
+      if (this.pendingBundles.get(file) === pending) {
+        this.pendingBundles.delete(file)
+      }
+    }
+    pending.then(settle, settle)
+  }
+
   getAssets() {
     return this.assets.values()
   }
@@ -349,6 +374,25 @@ async function bundleWorkerEntry(
     )
   }
 
+  // If another build of this worker is already in flight, wait for it instead
+  // of starting a duplicate build. The circular-import check above must run
+  // first so that a worker importing itself fails instead of waiting on its
+  // own build.
+  const pendingBundle = workerOutput.getPendingWorkerBundle(input)
+  if (pendingBundle) {
+    return pendingBundle
+  }
+
+  const build = buildWorkerBundle(config, input, newBundleChain)
+  workerOutput.setPendingWorkerBundle(input, build)
+  return build
+}
+
+async function buildWorkerBundle(
+  config: ResolvedConfig,
+  input: string,
+  newBundleChain: string[],
+): Promise<WorkerBundle> {
   // bundle the file as entry to support imports
   const { rolldown } = await import('rolldown')
   const { plugins, rolldownOptions, format } = config.worker
