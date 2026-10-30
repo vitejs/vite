@@ -28,7 +28,7 @@ import {
 } from '../../utils'
 import { moduleUrlToFilePath } from '../moduleUrl'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
-import { send } from '../send'
+import { send, send304 } from '../send'
 import { applySourcemapIgnoreList } from '../sourcemap'
 import { ERR_DENIED_ID, ERR_LOAD_URL } from '../transformRequest'
 import { checkLoadingAccess, respondWithAccessDenied } from './static'
@@ -105,8 +105,15 @@ export function cachedTransformMiddleware(
         const maybeMixedEtag = isCSSRequest(req.url!)
         if (!maybeMixedEtag) {
           debugCache?.(`[304] ${prettifyUrl(req.url!, server.config.root)}`)
-          res.statusCode = 304
-          return res.end()
+          const isDep =
+            DEP_VERSION_RE.test(req.url!) ||
+            environment.depsOptimizer?.isOptimizedDepUrl(req.url!)
+          send304(res, {
+            etag: ifNoneMatch,
+            cacheControl: isDep ? 'max-age=31536000,immutable' : 'no-cache',
+            headers: server.config.server.headers,
+          })
+          return
         }
       }
     }
@@ -255,8 +262,12 @@ export function transformMiddleware(
               ?.etag === ifNoneMatch
           ) {
             debugCache?.(`[304] ${prettifyUrl(url, server.config.root)}`)
-            res.statusCode = 304
-            return res.end()
+            send304(res, {
+              etag: ifNoneMatch,
+              cacheControl: 'no-cache',
+              headers: server.config.server.headers,
+            })
+            return
           }
         }
 
