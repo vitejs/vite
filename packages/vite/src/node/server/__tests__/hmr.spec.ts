@@ -53,3 +53,57 @@ test('does not schedule stale HMR with a custom environment handler', async () =
   })
   expect(hotUpdateEnvironmentsCalls).toBe(0)
 })
+
+test('reloadModule does not cache a transform that started before it', async () => {
+  let version = 'v0'
+  let gate = Promise.resolve()
+  let onTransform: (() => void) | undefined
+  const server = await createServer({
+    configFile: false,
+    root: import.meta.dirname,
+    logLevel: 'silent',
+    server: { middlewareMode: true, ws: false },
+    plugins: [
+      {
+        name: 'in-memory-state',
+        resolveId(id) {
+          if (id === 'virtual:state') return '\0virtual:state'
+        },
+        load(id) {
+          if (id === '\0virtual:state') {
+            return `export const version = ${JSON.stringify(version)}\nimport.meta.hot.accept()\n`
+          }
+        },
+        async transform(_code, id) {
+          if (id === '\0virtual:state') {
+            onTransform?.()
+            await gate
+          }
+        },
+      },
+    ],
+  })
+  onTestFinished(async () => {
+    await server.close()
+  })
+  const env = server.environments.client
+  await env.transformRequest('virtual:state')
+  const mod = env.moduleGraph.getModuleById('\0virtual:state')!
+
+  let release!: () => void
+  gate = new Promise((resolve) => (release = resolve))
+  version = 'v1'
+  await env.reloadModule(mod)
+  const transforming = new Promise<void>((resolve) => (onTransform = resolve))
+  const first = env.transformRequest('virtual:state')
+  await transforming
+
+  version = 'v2'
+  await env.reloadModule(mod)
+  const second = env.transformRequest('virtual:state')
+  release()
+  await Promise.all([first, second])
+
+  expect((await second)?.code).toContain('"v2"')
+  expect((await env.transformRequest('virtual:state'))?.code).toContain('"v2"')
+})
