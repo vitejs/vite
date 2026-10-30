@@ -33,6 +33,48 @@ describe('the dev server', () => {
     await server?.close()
   })
 
+  test('retains a successful load when an overlapping load fails', async () => {
+    const id = '\0overlapping-load.js'
+    const loadStarted = promiseWithResolvers<void>()
+    const firstLoad = promiseWithResolvers<string>()
+    let loadCount = 0
+
+    server = await createServer({
+      configFile: false,
+      optimizeDeps: { noDiscovery: true },
+      server: { middlewareMode: true, ws: false },
+      plugins: [
+        {
+          name: 'overlapping-load',
+          resolveId(source) {
+            if (source === '/entry.js' || source === '/alias.js') return id
+          },
+          load(source) {
+            if (source !== id) return
+            loadStarted.resolve()
+            loadCount++
+            return loadCount === 1 ? firstLoad.promise : 'export default 1'
+          },
+        },
+      ],
+    })
+
+    const environment = server.environments.client
+    const firstRequestFailure = expect(
+      environment.transformRequest('/entry.js'),
+    ).rejects.toThrow('stale load failed')
+
+    try {
+      await loadStarted.promise
+      await environment.transformRequest('/alias.js')
+    } finally {
+      firstLoad.reject(new Error('stale load failed'))
+      await firstRequestFailure
+    }
+
+    expect(environment.moduleGraph.getModuleById(id)).toBeDefined()
+  })
+
   test('releases previous environments after initialization', async () => {
     const previousServer = await createServer({
       configFile: false,
