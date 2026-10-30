@@ -5,7 +5,6 @@ import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { splitFileAndPostfix } from '../../../../shared/utils'
 import type { InlineConfig } from '../../../config'
 import { FS_PREFIX } from '../../../constants'
-import type { Plugin } from '../../../plugin'
 import { createServer } from '../../../server'
 import { mergeConfig, normalizePath } from '../../../utils'
 import { browserUrlToModuleUrl } from '../../moduleUrl'
@@ -611,53 +610,42 @@ describe('indexHtml middleware — safe module paths', () => {
   })
 
   describe('HTML tag registration', () => {
-    const cases: {
-      name: string
-      html: string
-      plugins: Plugin[]
-      files: string[]
-      base?: string
-      expectedHtml?: string
-    }[] = [
-      {
-        name: 'source assets accepted by filters before URL rewriting',
+    test('registers source assets accepted by filters before URL rewriting', async () => {
+      const server = await createTestServer({
         base: '/ui/',
-        html: '<custom-img data-src="/style.css?filtered"></custom-img>',
-        expectedHtml: 'data-src="/ui/style.css?filtered"',
-        plugins: [
-          {
-            name: 'filter-source-assets',
-            config() {
-              return {
-                html: {
-                  additionalAssetSources: {
-                    'custom-img': {
-                      srcAttributes: ['data-src'],
-                      filter: ({ value }) => value.startsWith('/style.css'),
-                    },
-                  },
-                },
-              }
+        server: { preTransformRequests: false },
+        html: {
+          additionalAssetSources: {
+            'custom-img': {
+              srcAttributes: ['data-src'],
+              filter: ({ value }) => value.startsWith('/style.css'),
             },
           },
-        ],
-        files: ['style.css?filtered'],
-      },
-      {
-        name: 'nested injected asset tags, srcsets, and additional asset sources',
-        html: HTML_CONTENT,
+        },
+      })
+
+      const transformed = await server.transformIndexHtml(
+        '/index.html',
+        '<custom-img data-src="/style.css?filtered"></custom-img>',
+      )
+
+      expect(transformed).toContain('data-src="/ui/style.css?filtered"')
+      const filePath = normalizePath(path.join(FIXTURE_DIR, 'root/style.css'))
+      expect(server.config.safeModulePaths).toContain(filePath)
+      expect(server.config.safeModulePaths).toContain(filePath + '?filtered')
+    })
+
+    test('registers nested injected asset tags, srcsets, and additional asset sources', async () => {
+      const server = await createTestServer({
+        server: { preTransformRequests: false },
+        html: {
+          additionalAssetSources: {
+            'custom-img': { srcAttributes: ['data-src'] },
+          },
+        },
         plugins: [
           {
             name: 'inject-html-assets',
-            config() {
-              return {
-                html: {
-                  additionalAssetSources: {
-                    'custom-img': { srcAttributes: ['data-src'] },
-                  },
-                },
-              }
-            },
             transformIndexHtml: {
               order: 'pre',
               handler() {
@@ -686,35 +674,24 @@ describe('indexHtml middleware — safe module paths', () => {
             },
           },
         ],
-        files: [
-          'classic.js?image',
-          'classic.js?small',
-          'dynamic.js?large',
-          'style.css?poster',
-          'style.css?custom',
-        ],
-      },
-    ]
-    for (const { name, html, plugins, files, base, expectedHtml } of cases) {
-      test(`registers URLs while scanning ${name}`, async () => {
-        const server = await createTestServer({
-          plugins,
-          base,
-          server: { preTransformRequests: false },
-        })
-
-        const transformed = await server.transformIndexHtml('/index.html', html)
-        if (expectedHtml) expect(transformed).toContain(expectedHtml)
-
-        for (const file of files) {
-          const { file: filename, postfix } = splitFileAndPostfix(file)
-          const filePath = normalizePath(
-            path.resolve(FIXTURE_DIR, 'root', filename),
-          )
-          expect(server.config.safeModulePaths).toContain(filePath)
-          expect(server.config.safeModulePaths).toContain(filePath + postfix)
-        }
       })
-    }
+
+      await server.transformIndexHtml('/index.html', HTML_CONTENT)
+
+      for (const file of [
+        'classic.js?image',
+        'classic.js?small',
+        'dynamic.js?large',
+        'style.css?poster',
+        'style.css?custom',
+      ]) {
+        const { file: filename, postfix } = splitFileAndPostfix(file)
+        const filePath = normalizePath(
+          path.resolve(FIXTURE_DIR, 'root', filename),
+        )
+        expect(server.config.safeModulePaths).toContain(filePath)
+        expect(server.config.safeModulePaths).toContain(filePath + postfix)
+      }
+    })
   })
 })
