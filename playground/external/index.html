@@ -9,7 +9,9 @@
         "imports": {
           "vue": "/vue@3.4.38.js",
           "slash5": "/slash@5.js",
-          "slash3": "/slash@3.0.0.js"
+          "slash3": "/slash@3.0.0.js",
+          "plugin-external": "/plugin-external.js",
+          "plugin-external-mapped": "/plugin-external.js"
         }
       }
     </script>
@@ -20,6 +22,20 @@
     <p>Imported slash5 exists: <span id="imported-slash5-exists"></span></p>
     <p>Imported slash3 exists: <span id="imported-slash3-exists"></span></p>
     <p>Required slash3 exists: <span id="required-slash3-exists"></span></p>
+    <p>
+      Plugin external static import: <span id="plugin-external-static"></span>
+    </p>
+    <p>
+      Plugin external dynamic import: <span id="plugin-external-dynamic"></span>
+    </p>
+    <p>
+      Plugin rewritten external static import:
+      <span id="plugin-external-rewritten-static"></span>
+    </p>
+    <p>
+      Plugin rewritten external dynamic import:
+      <span id="plugin-external-rewritten-dynamic"></span>
+    </p>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

@@ -43,6 +43,22 @@ export default defineConfig({
   },
   plugins: [
     {
+      name: 'external-importmap',
+      enforce: 'pre',
+      resolveId: {
+        filter: { id: /^plugin-external(?:-rewritten)?$/ },
+        handler(id) {
+          return {
+            id:
+              id === 'plugin-external-rewritten'
+                ? 'plugin-external-mapped'
+                : id,
+            external: true,
+          }
+        },
+      },
+    },
+    {
       name: 'serve-npm-code-directly',
       configureServer({ middlewares }) {
         middlewares.use(serveNpmCodeDirectlyMiddleware)
