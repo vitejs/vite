@@ -1,3 +1,4 @@
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import net from 'node:net'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
@@ -140,4 +141,25 @@ describe.runIf(isServe)('invalid request', () => {
       }
     })
   }
+})
+
+// `:` is a valid file name character outside Windows
+describe.runIf(isServe && !isBundledDev && !isWindows)('`:` in path', () => {
+  test('serves a file in a directory whose name contains `:`', async () => {
+    const dir = path.resolve(
+      import.meta.dirname.replace('playground', 'playground-temp'),
+      '../root/src/route:name',
+    )
+    await mkdir(dir, { recursive: true })
+    await writeFile(path.join(dir, 'index.js'), 'export default "colon"')
+    try {
+      const response = await fetch(
+        `${viteTestUrl.replace(/\/$/, '')}/src/route:name/index.js`,
+      )
+      expect(response.status).toBe(200)
+      expect(await response.text()).toContain('colon')
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
 })
