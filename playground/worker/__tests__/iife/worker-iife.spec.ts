@@ -127,6 +127,13 @@ describe.runIf(isBuild)('build', () => {
     const manifest = readManifest('iife')
     expect(manifest['index.html']).toBeDefined()
   })
+
+  test('should include imported worker URLs in the manifest assets', async () => {
+    const manifest = readManifest('iife')
+    expect(manifest['worker/main-url.js']).toMatchObject({
+      assets: expect.arrayContaining(['assets/worker_entry-simple-worker.js']),
+    })
+  })
 })
 
 test.skipIf(isBundledDev)('module worker', async () => {
