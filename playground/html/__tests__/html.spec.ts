@@ -274,6 +274,21 @@ describe('link with props', () => {
   })
 })
 
+// building moves a bundled stylesheet link to the end of `<head>`, so a
+// stylesheet Vite leaves in place after it wins the cascade instead of losing
+// it. That can't be fixed by placement alone, so warn about it (#8739).
+describe.runIf(isBuild)('link order', () => {
+  test('warns when a stylesheet link is authored after a bundled one', () => {
+    expect(serverLogs.join('\n')).toContain(
+      '<link rel="stylesheet" href="/link-order-public.css"> in "/link-order/index.html" is authored after',
+    )
+  })
+
+  test('does not warn when the authored order already survives', () => {
+    expect(serverLogs.join('\n')).not.toContain('/link-order/ordered.html')
+  })
+})
+
 describe.runIf(isServe)('SPA fallback', () => {
   test('should serve index.html via page navigation even when path matches file basename', async () => {
     const response = await page.goto(viteTestUrl + '/test')
