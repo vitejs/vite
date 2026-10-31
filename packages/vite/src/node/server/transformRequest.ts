@@ -264,9 +264,33 @@ async function loadAndTransform(
   let map: SourceDescription['map'] = null
   let moduleType: ModuleType | undefined
 
+  // Ensure the module node exists before `load` runs, so that module info
+  // and files registered via `this.addWatchFile` in the `load` hook can be
+  // associated with this module (#23860)
+  let removeModuleOnLoadFailure = false
+  if (!mod) {
+    // Roll back the node created below only if this request is the one that
+    // introduces it to the graph. If the url or the resolved id is already
+    // registered, another request owns the node and a failed load here must
+    // not remove it (#23861)
+    removeModuleOnLoadFailure =
+      !moduleGraph._getUnresolvedUrlToModule(
+        removeImportQuery(removeTimestampQuery(url)),
+      ) && !moduleGraph.getModuleById(id)
+    mod = await moduleGraph._ensureEntryFromUrl(url, undefined, resolved)
+  }
+
   // load
   const loadStart = debugLoad ? performance.now() : 0
-  const loadResult = await pluginContainer.load(id)
+  let loadResult: Awaited<ReturnType<typeof pluginContainer.load>>
+  try {
+    loadResult = await pluginContainer.load(id)
+  } catch (e) {
+    // Roll back the module node created above so that the failed load does
+    // not leave an orphaned entry behind (#23861)
+    if (removeModuleOnLoadFailure) moduleGraph._removeModule(mod, url)
+    throw e
+  }
 
   if (loadResult == null) {
     const file = cleanUrl(id)
@@ -285,6 +309,7 @@ async function loadAndTransform(
         debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
       } catch (e) {
         if (e.code !== 'ENOENT' && e.code !== 'EISDIR') {
+          if (removeModuleOnLoadFailure) moduleGraph._removeModule(mod, url)
           throw e
         }
       }
@@ -338,6 +363,11 @@ async function loadAndTransform(
       }. ${msg}`,
     )
     err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
+    // Roll back the module node created above so that the failed load does
+    // not leave an orphaned entry behind. Otherwise the orphaned entry
+    // prevents re-resolving the url on subsequent requests, e.g. when the
+    // file is created later (#23861)
+    if (removeModuleOnLoadFailure) moduleGraph._removeModule(mod, url)
     throw err
   }
   if (moduleType === undefined) {
@@ -349,9 +379,6 @@ async function loadAndTransform(
 
   if (environment._closing && environment.config.dev.recoverable)
     throwClosedServerError()
-
-  // ensure module in graph after successful load
-  mod ??= await moduleGraph._ensureEntryFromUrl(url, undefined, resolved)
 
   // transform
   const transformStart = debugTransform ? performance.now() : 0
