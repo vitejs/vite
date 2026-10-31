@@ -41,6 +41,11 @@ import {
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import type { MinimalPluginContextWithoutEnvironment } from '../plugin'
+import {
+  annotatePluginError,
+  getHookHandler,
+  getSortedPluginsByHook,
+} from '../plugins'
 import { reloadOnTsconfigChange } from '../plugins/esbuild'
 import { initPublicFiles } from '../publicDir'
 import { bindCLIShortcuts } from '../shortcuts'
@@ -1026,8 +1031,16 @@ export async function _createServer(
     config.logger,
   )
   const postHooks: ((() => void) | void)[] = []
-  for (const hook of config.getSortedPluginHooks('configureServer')) {
-    postHooks.push(await hook.call(configureServerContext, reflexServer))
+  for (const plugin of getSortedPluginsByHook(
+    'configureServer',
+    config.plugins,
+  )) {
+    const hook = getHookHandler(plugin.configureServer)
+    try {
+      postHooks.push(await hook.call(configureServerContext, reflexServer))
+    } catch (error) {
+      throw annotatePluginError(error, plugin, 'configureServer')
+    }
   }
 
   // Internal middlewares ------------------------------------------------------

@@ -78,6 +78,7 @@ import type { Environment } from '../environment'
 import type { Logger } from '../logger'
 import type { Plugin } from '../plugin'
 import {
+  annotatePluginError,
   createPluginHookUtils,
   getCachedFilterForPlugin,
   getHookHandler,
@@ -310,9 +311,19 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       if ((hook as { sequential?: boolean }).sequential) {
         await Promise.all(parallelPromises)
         parallelPromises.length = 0
-        await handler.apply(context(plugin), args(plugin))
+        try {
+          await handler.apply(context(plugin), args(plugin))
+        } catch (error) {
+          throw annotatePluginError(error, plugin, hookName)
+        }
       } else {
-        parallelPromises.push(handler.apply(context(plugin), args(plugin)))
+        parallelPromises.push(
+          Promise.resolve()
+            .then(() => handler.apply(context(plugin), args(plugin)))
+            .catch((error) => {
+              throw annotatePluginError(error, plugin, hookName)
+            }),
+        )
       }
     }
     await Promise.all(parallelPromises)

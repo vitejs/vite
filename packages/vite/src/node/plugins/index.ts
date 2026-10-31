@@ -218,6 +218,20 @@ export function getHookHandler<T extends ObjectHook<Function>>(
   return (typeof hook === 'object' ? hook.handler : hook) as HookHandler<T>
 }
 
+export function annotatePluginError(
+  error: unknown,
+  plugin: Plugin,
+  hook: string,
+): unknown {
+  const err =
+    error && typeof error === 'object'
+      ? (error as Record<string, unknown>)
+      : ({ message: String(error) } as Record<string, unknown>)
+  err.plugin ??= plugin.name
+  err.hook ??= hook
+  return err
+}
+
 type FilterForPluginValue = {
   resolveId?: PluginFilter | undefined
   load?: PluginFilter | undefined

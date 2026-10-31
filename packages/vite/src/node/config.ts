@@ -87,6 +87,7 @@ import type {
   PluginWithRequiredHook,
 } from './plugin'
 import {
+  annotatePluginError,
   createPluginHookUtils,
   getHookHandler,
   getSortedPluginsByHook,
@@ -1963,9 +1964,18 @@ export async function resolveConfig(
 
     // run configResolved hooks
     await Promise.all(
-      createPluginHookUtils(workerResolved.plugins)
-        .getSortedPluginHooks('configResolved')
-        .map((hook) => hook.call(resolvedConfigContext, workerResolved)),
+      getSortedPluginsByHook('configResolved', workerResolved.plugins).map(
+        async (plugin) => {
+          try {
+            return await getHookHandler(plugin.configResolved).call(
+              resolvedConfigContext,
+              workerResolved,
+            )
+          } catch (error) {
+            throw annotatePluginError(error, plugin, 'configResolved')
+          }
+        },
+      ),
     )
 
     // Resolve environment plugins after configResolved because there are
@@ -2211,9 +2221,18 @@ export async function resolveConfig(
 
   // call configResolved hooks
   await Promise.all(
-    resolved
-      .getSortedPluginHooks('configResolved')
-      .map((hook) => hook.call(resolvedConfigContext, resolved)),
+    getSortedPluginsByHook('configResolved', resolved.plugins).map(
+      async (plugin) => {
+        try {
+          return await getHookHandler(plugin.configResolved).call(
+            resolvedConfigContext,
+            resolved,
+          )
+        } catch (error) {
+          throw annotatePluginError(error, plugin, 'configResolved')
+        }
+      },
+    ),
   )
 
   // Resolve environment plugins after configResolved because there are
@@ -2833,7 +2852,12 @@ async function runConfigHook(
   for (const p of getSortedPluginsByHook('config', plugins)) {
     const hook = p.config
     const handler = getHookHandler(hook)
-    const res = await handler.call(context, conf, configEnv)
+    let res
+    try {
+      res = await handler.call(context, conf, configEnv)
+    } catch (error) {
+      throw annotatePluginError(error, p, 'config')
+    }
     if (res && res !== conf) {
       if (hasBothRollupOptionsAndRolldownOptions(res)) {
         context.warn(
@@ -2876,10 +2900,15 @@ async function runConfigEnvironmentHook(
     const hook = p.configEnvironment
     const handler = getHookHandler(hook)
     for (const name of environmentNames) {
-      const res = await handler.call(context, name, environments[name], {
-        ...configEnv,
-        isSsrTargetWebworker: isSsrTargetWebworkerSet && name === 'ssr',
-      })
+      let res
+      try {
+        res = await handler.call(context, name, environments[name], {
+          ...configEnv,
+          isSsrTargetWebworker: isSsrTargetWebworkerSet && name === 'ssr',
+        })
+      } catch (error) {
+        throw annotatePluginError(error, p, 'configEnvironment')
+      }
       if (res) {
         environments[name] = mergeConfig(environments[name], res)
       }
