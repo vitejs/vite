@@ -7,7 +7,7 @@ import { get as httpsGet } from 'node:https'
 import type * as net from 'node:net'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
-import { disableCache } from '@voidzero-dev/vite-task-client'
+import { disableCache, ignoreInput } from '@voidzero-dev/vite-task-client'
 import chokidar from 'chokidar'
 import connect from 'connect'
 import corsMiddleware from 'cors'
@@ -1340,6 +1340,10 @@ export async function resolveServerOptions(
     'node_modules',
     '.modules.yaml',
   )
+  // pnpm rewrites .modules.yaml on every install (e.g. its `prunedAt`
+  // timestamp). Tell Vite Task to ignore it, so an install alone doesn't
+  // invalidate cached builds.
+  ignoreInput(pnpmModulesYaml)
   try {
     const content = fs.readFileSync(pnpmModulesYaml, 'utf-8')
     const parsed = JSON.parse(content)
