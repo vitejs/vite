@@ -30,6 +30,7 @@
     "@vitejs/test-dep-linked": "link:./dep-linked",
     "@vitejs/test-dep-linked-include": "link:./dep-linked-include",
     "@vitejs/test-dep-node-env": "file:./dep-node-env",
+    "@vitejs/test-dep-with-subpath-imports": "file:./dep-with-subpath-imports",
     "@vitejs/test-dep-not-js": "file:./dep-not-js",
     "@vitejs/test-dep-optimize-exports-with-glob": "file:./dep-optimize-exports-with-glob",
     "@vitejs/test-dep-optimize-exports-with-root-glob": "file:./dep-optimize-exports-with-root-glob",
