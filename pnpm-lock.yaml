@@ -1395,6 +1395,9 @@ importers:
       '@vitejs/test-dep-with-plus-subpath':
         specifier: file:./dep-with-plus-subpath
         version: file:playground/optimize-deps/dep-with-plus-subpath
+      '@vitejs/test-dep-with-subpath-imports':
+        specifier: file:./dep-with-subpath-imports
+        version: file:playground/optimize-deps/dep-with-subpath-imports
       '@vitejs/test-nested-exclude':
         specifier: file:./nested-exclude
         version: file:playground/optimize-deps/nested-exclude
@@ -1551,6 +1554,8 @@ importers:
   playground/optimize-deps/dep-with-optional-peer-dep-submodule: {}
 
   playground/optimize-deps/dep-with-plus-subpath: {}
+
+  playground/optimize-deps/dep-with-subpath-imports: {}
 
   playground/optimize-deps/longfilename: {}
 
@@ -4821,6 +4826,9 @@ packages:
 
   '@vitejs/test-dep-with-plus-subpath@file:playground/optimize-deps/dep-with-plus-subpath':
     resolution: {directory: playground/optimize-deps/dep-with-plus-subpath, type: directory}
+
+  '@vitejs/test-dep-with-subpath-imports@file:playground/optimize-deps/dep-with-subpath-imports':
+    resolution: {directory: playground/optimize-deps/dep-with-subpath-imports, type: directory}
 
   '@vitejs/test-dynamic-import-dep-cjs-compiled-from-cjs@file:playground/dynamic-import/dep-cjs-compiled-from-cjs':
     resolution: {directory: playground/dynamic-import/dep-cjs-compiled-from-cjs, type: directory}
@@ -10457,6 +10465,8 @@ snapshots:
   '@vitejs/test-dep-with-optional-peer-dep@file:playground/optimize-deps/dep-with-optional-peer-dep': {}
 
   '@vitejs/test-dep-with-plus-subpath@file:playground/optimize-deps/dep-with-plus-subpath': {}
+
+  '@vitejs/test-dep-with-subpath-imports@file:playground/optimize-deps/dep-with-subpath-imports': {}
 
   '@vitejs/test-dynamic-import-dep-cjs-compiled-from-cjs@file:playground/dynamic-import/dep-cjs-compiled-from-cjs': {}
 
