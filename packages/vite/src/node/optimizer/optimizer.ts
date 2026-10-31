@@ -271,15 +271,19 @@ export function createDepsOptimizer(
                 // is discovered while crawling static imports, then there will be a
                 // full-page reload if new common chunks are generated between the old
                 // and new optimized deps.
-                optimizationResult.result.then((result) => {
-                  // Check if the crawling of static imports has already finished. In that
-                  // case, the result is handled by the onCrawlEnd callback
-                  if (!waitingForCrawlEnd) return
+                optimizationResult.result.then(
+                  (result) => {
+                    // Check if the crawling of static imports has already finished. In that
+                    // case, the result is handled by the onCrawlEnd callback
+                    if (!waitingForCrawlEnd) return
 
-                  optimizationResult = undefined // signal that we'll be using the result
+                    optimizationResult = undefined // signal that we'll be using the result
 
-                  runOptimizer(result)
-                })
+                    runOptimizer(result)
+                  },
+                  // errors are handled by the onCrawlEnd callback
+                  () => {},
+                )
               }
             } catch (e) {
               logger.error(e.stack || e.message)
@@ -664,7 +668,24 @@ export function createDepsOptimizer(
       const afterScanResult = optimizationResult.result
       optimizationResult = undefined // signal that we'll be using the result
 
-      const result = await afterScanResult
+      let result: DepOptimizationResult
+      try {
+        result = await afterScanResult
+      } catch (e) {
+        logger.error(
+          colors.red(`error while updating dependencies:\n${e.stack}`),
+          { timestamp: true, error: e },
+        )
+        // Resolve the processing promises of the deps found by the scanner and
+        // the ones discovered while crawling, so that requests don't hang
+        startNextDiscoveredBatch()
+        resolveEnqueuedProcessingPromises()
+
+        // Reset missing deps, let the server rediscover the dependencies
+        metadata.discovered = {}
+        currentlyProcessing = false
+        return
+      }
       currentlyProcessing = false
 
       const crawlDeps = Object.keys(metadata.discovered)
