@@ -15,6 +15,7 @@ import {
   injectInlinedCSS,
   preprocessCSS,
   resolveLibCssFilename,
+  rewriteCssImageSet,
 } from '../../plugins/css'
 import { normalizePath } from '../../utils'
 
@@ -65,6 +66,38 @@ describe('search css url function', () => {
     const css = 'background-image: url(public/awkward-name\\)2.png);'
     const match = cssUrlRE.exec(css)
     expect(match?.[1].trim()).toBe('public/awkward-name\\)2.png')
+  })
+})
+
+describe('rewriteCssImageSet', () => {
+  const replacer = async (url: string) => `/rewritten/${url}`
+
+  test('rewrites urls in image-set candidates', async () => {
+    const css = 'background: image-set(url("a.png") 1x, "b.png" 2x)'
+    expect(await rewriteCssImageSet(css, replacer)).toBe(
+      'background: image-set(url("/rewritten/a.png") 1x, url("/rewritten/b.png") 2x)',
+    )
+  })
+
+  test('does not truncate candidates containing nested functions', async () => {
+    const css =
+      'background: image-set(url("a.png") 1x, linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1)) 2x)'
+    expect(await rewriteCssImageSet(css, replacer)).toBe(
+      'background: image-set(url("/rewritten/a.png") 1x, linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1)) 2x)',
+    )
+  })
+
+  test('handles -webkit-image-set and multiple occurrences', async () => {
+    const css =
+      'background: -webkit-image-set("a.png" 1x); background: image-set("b.png" 2x)'
+    expect(await rewriteCssImageSet(css, replacer)).toBe(
+      'background: -webkit-image-set(url("/rewritten/a.png") 1x); background: image-set(url("/rewritten/b.png") 2x)',
+    )
+  })
+
+  test('keeps image-set with unbalanced parentheses as-is', async () => {
+    const css = 'background: image-set(url("a.png") 1x'
+    expect(await rewriteCssImageSet(css, replacer)).toBe(css)
   })
 })
 
