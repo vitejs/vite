@@ -75,6 +75,62 @@ describe('the dev server', () => {
     expect(environment.moduleGraph.getModuleById(id)).toBeDefined()
   })
 
+  test('retains an in-flight load when the creating load fails', async () => {
+    const id = '\0overlapping-load.js'
+    const firstLoadStarted = promiseWithResolvers<void>()
+    const firstLoad = promiseWithResolvers<string>()
+    const secondLoadStarted = promiseWithResolvers<void>()
+    const secondLoad = promiseWithResolvers<string>()
+    let loadCount = 0
+
+    server = await createServer({
+      configFile: false,
+      optimizeDeps: { noDiscovery: true },
+      server: { middlewareMode: true, ws: false },
+      plugins: [
+        {
+          name: 'overlapping-load',
+          resolveId(source) {
+            if (source === '/entry.js' || source === '/alias.js') return id
+          },
+          load(source) {
+            if (source !== id) return
+            loadCount++
+            if (loadCount === 1) {
+              firstLoadStarted.resolve()
+              return firstLoad.promise
+            }
+            secondLoadStarted.resolve()
+            return secondLoad.promise
+          },
+        },
+      ],
+    })
+
+    const environment = server.environments.client
+    const firstRequestFailure = expect(
+      environment.transformRequest('/entry.js'),
+    ).rejects.toThrow('first load failed')
+
+    // the first request creates the module node and parks inside its load hook
+    await firstLoadStarted.promise
+
+    // the second request reaches the same node through another url and also
+    // parks inside its load hook
+    const secondRequest = expect(
+      environment.transformRequest('/alias.js'),
+    ).resolves.toBeDefined()
+    await secondLoadStarted.promise
+
+    firstLoad.reject(new Error('first load failed'))
+    await firstRequestFailure
+
+    secondLoad.resolve('export default 1')
+    await secondRequest
+
+    expect(environment.moduleGraph.getModuleById(id)).toBeDefined()
+  })
+
   test('releases previous environments after initialization', async () => {
     const previousServer = await createServer({
       configFile: false,

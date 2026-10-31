@@ -442,19 +442,28 @@ export class EnvironmentModuleGraph {
 
   /**
    * @internal
-   * Remove a module node from the graph. This is used to roll back a module
-   * node that was created before a failed `load` hook, so that the next
-   * request for the same url can re-resolve from scratch (#23861)
+   * Remove a module node that was created for `rawUrl` before a failed `load`
+   * hook, so that the next request for the same url can re-resolve from
+   * scratch (#23861). The node is kept as-is when a completed transform, an
+   * importer, or another url is already attached to it, so that a module
+   * loaded concurrently through a different url is not detached from the
+   * graph.
    */
-  _removeModule(mod: EnvironmentModuleNode): void {
+  _removeModule(mod: EnvironmentModuleNode, rawUrl: string): void {
+    if (mod.transformResult || mod.importers.size) return
+    rawUrl = removeImportQuery(removeTimestampQuery(rawUrl))
+    for (const [url, value] of this.urlToModuleMap) {
+      if (value === mod && url !== rawUrl) return
+    }
+    for (const [url, value] of this._unresolvedUrlToModuleMap) {
+      if (value === mod && url !== rawUrl) return
+    }
     if (this.urlToModuleMap.get(mod.url) === mod) {
       this.urlToModuleMap.delete(mod.url)
     }
     if (mod.id && this.idToModuleMap.get(mod.id) === mod) {
       this.idToModuleMap.delete(mod.id)
     }
-    const etag = mod.transformResult?.etag
-    if (etag) this.etagToModuleMap.delete(etag)
     if (mod.file) {
       const fileMappedModules = this.fileToModulesMap.get(mod.file)
       if (fileMappedModules) {
