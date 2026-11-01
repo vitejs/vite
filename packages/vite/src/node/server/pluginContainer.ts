@@ -186,6 +186,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   private _started = false
   private _buildStartPromise: Promise<void> | undefined
   private _closed = false
+  private _closePromise: Promise<void> | undefined
 
   /**
    * @internal use `createEnvironmentPluginContainer` instead
@@ -634,8 +635,18 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   }
 
   async close(): Promise<void> {
-    if (this._closed) return
+    if (this._closed) return this._closePromise
     this._closed = true
+    this._closePromise = this._close()
+    try {
+      await this._closePromise
+    } finally {
+      // Once cleanup settles, repeated closes remain a no-op, including after errors.
+      this._closePromise = undefined
+    }
+  }
+
+  private async _close(): Promise<void> {
     await Promise.allSettled(this._processesing)
     const config = this.environment.getTopLevelConfig()
     let buildEndError: Error | undefined

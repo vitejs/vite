@@ -3,6 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import {
+  browserErrors,
   isBuild,
   isBundled,
   isBundledDev,
@@ -145,6 +146,28 @@ test('access property of browser:false module', async () => {
   )
 })
 
+test('named import from a Node built-in does not break the build', async () => {
+  if (isBundled) {
+    await expect
+      .poll(() => page.textContent('.node-builtin-named-import'))
+      .toMatch('[success]')
+  } else {
+    // plain dev reads the named import at once, and the stub throws
+    expect(browserErrors.map((e) => e.message)).toContainEqual(
+      expect.stringContaining('Cannot access "node:fs.readFileSync"'),
+    )
+  }
+})
+
+test.runIf(isBundled)(
+  'reading a named import from a Node built-in',
+  async () => {
+    await expect
+      .poll(() => page.textContent('.node-builtin-named-import-read'))
+      .toMatch(isBuild ? 'undefined' : 'Cannot access "node:fs.readFileSync"')
+  },
+)
+
 test('Resolve browser field even if module field exists', async () => {
   expect(await page.textContent('.browser-module1')).toMatch('[success]')
 })
@@ -247,6 +270,46 @@ test('Resolving #/ root alias pattern with imports field', async () => {
   // This tests the new Node.js behavior from https://github.com/nodejs/node/pull/60864
   // which allows "#/*" patterns (slash immediately after #) in package.json imports
   expect(await page.textContent('.imports-root-slash')).toMatch('[success]')
+})
+
+test('Resolving ## prefixed pattern with imports field', async () => {
+  // subpath imports keys may contain more than one leading `#` (e.g. `##/*`)
+  expect(await page.textContent('.imports-double-hash')).toMatch('[success]')
+})
+
+test('Resolving key containing # with imports field', async () => {
+  // subpath imports keys may contain `#` outside the leading position
+  expect(await page.textContent('.imports-mid-hash')).toMatch('[success]')
+})
+
+test('Resolving key containing ? with imports field', async () => {
+  // subpath imports keys may contain `?` and are matched literally,
+  // taking precedence over stripping it as a query postfix
+  expect(await page.textContent('.imports-question-mark')).toMatch('[success]')
+})
+
+test('Resolving with hash postfix with imports field', async () => {
+  expect(await page.textContent('.imports-hash-hash')).toBe(
+    '[success] subpath imports #hash',
+  )
+})
+
+test('Resolving #hash?query with imports field', async () => {
+  expect(await page.textContent('.imports-hash-query')).toBe(
+    '[success] subpath imports #hash',
+  )
+})
+
+test('Resolving #mid#hash#fragment?query with imports field', async () => {
+  expect(await page.textContent('.imports-mid-hash-postfix')).toBe(
+    '[success] subpath imports with # inside key',
+  )
+})
+
+test('Resolving #question?mark?query#fragment with imports field', async () => {
+  expect(await page.textContent('.imports-question-mark-postfix')).toBe(
+    '[success] subpath imports with ? inside key',
+  )
 })
 
 test("Resolve doesn't interrupt page request with trailing query and .css", async () => {

@@ -1,3 +1,51 @@
+## <small>[9.3.3](https://github.com/vitejs/vite/compare/create-vite%409.3.2...create-vite%409.3.3) (2026-10-27)</small>
+### Bug Fixes
+
+* **create-vite:** include template files in package ([#23915](https://github.com/vitejs/vite/issues/23915)) ([f4abfb5](https://github.com/vitejs/vite/commit/f4abfb51b03b04b16b6322eec1b401dedee56748))
+
+## <small>[9.3.2](https://github.com/vitejs/vite/compare/create-vite%409.3.1...create-vite%409.3.2) (2026-10-27)</small>
+### Features
+
+* **create-vite:** use typescript v7 where possible ([#23910](https://github.com/vitejs/vite/issues/23910)) ([0cf91e8](https://github.com/vitejs/vite/commit/0cf91e8435df9e984121893963af09965088e6d4))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#23896](https://github.com/vitejs/vite/issues/23896)) ([46b91c5](https://github.com/vitejs/vite/commit/46b91c5bf9c2901b8511c893bc3fc38b8bba6e4f))
+* **deps:** update dependency preact to v11 ([#23867](https://github.com/vitejs/vite/issues/23867)) ([0672bf8](https://github.com/vitejs/vite/commit/0672bf86b5963de640c8ca7a05c11848577547c9))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency tsdown to ^0.23.2 ([#23895](https://github.com/vitejs/vite/issues/23895)) ([ac9a56d](https://github.com/vitejs/vite/commit/ac9a56d8925bf05d0b18bca0b273362d697bb4f4))
+
+## <small>[9.3.1](https://github.com/vitejs/vite/compare/create-vite%409.3.0...create-vite%409.3.1) (2026-10-20)</small>
+### Bug Fixes
+
+* **create-vite:** use typescript v6 for now ([#23841](https://github.com/vitejs/vite/issues/23841)) ([15c85dd](https://github.com/vitejs/vite/commit/15c85ddae2bbbc3808d96a223a5a18a800883252))
+* **create-vite:** use Vite for TanStack projects ([#23838](https://github.com/vitejs/vite/issues/23838)) ([467f7ac](https://github.com/vitejs/vite/commit/467f7ac3b8c7cca0b33290e7fd86f3fc79ce92cb))
+
+## [9.3.0](https://github.com/vitejs/vite/compare/create-vite%409.2.1...create-vite%409.3.0) (2026-10-19)
+### Features
+
+* **create-vite:** print version before scaffolding ([#23806](https://github.com/vitejs/vite/issues/23806)) ([a3001c5](https://github.com/vitejs/vite/commit/a3001c5e3f4febb3099b097f4828ea567e1b253f))
+* **create-vite:** use typescript v7 where possible ([#23794](https://github.com/vitejs/vite/issues/23794)) ([9df8bbc](https://github.com/vitejs/vite/commit/9df8bbcbc5307158a3562039fb82ad29e2b232f7))
+
+### Bug Fixes
+
+* **create-vite:** add router only options for tanstack router/start ([#23543](https://github.com/vitejs/vite/issues/23543)) ([f155b62](https://github.com/vitejs/vite/commit/f155b62ceabbaaf71abbf59933968787e3961c56))
+* **deps:** update all non-major dependencies ([#23482](https://github.com/vitejs/vite/issues/23482)) ([3c752c8](https://github.com/vitejs/vite/commit/3c752c8932bc0599465ba4a6d8f44aaf1e934c3d))
+* **deps:** update all non-major dependencies ([#23537](https://github.com/vitejs/vite/issues/23537)) ([e8990c4](https://github.com/vitejs/vite/commit/e8990c4d6101dfaca2654ed8ab4d0574ee920248))
+* **deps:** update all non-major dependencies ([#23601](https://github.com/vitejs/vite/issues/23601)) ([9944fa6](https://github.com/vitejs/vite/commit/9944fa6033873f13ae88f59e023ab642c50fee2b))
+* **deps:** update all non-major dependencies ([#23648](https://github.com/vitejs/vite/issues/23648)) ([8a4c19c](https://github.com/vitejs/vite/commit/8a4c19cfc035f2dd203f2fa6d00ab9256a5e77c9))
+* **deps:** update all non-major dependencies ([#23731](https://github.com/vitejs/vite/issues/23731)) ([cf80aa5](https://github.com/vitejs/vite/commit/cf80aa552cac02eac0293330ccd5fde3c7ae8d29))
+* **deps:** update all non-major dependencies ([#23826](https://github.com/vitejs/vite/issues/23826)) ([77d8373](https://github.com/vitejs/vite/commit/77d8373510da1b26ce057eb2248e570b7f63fde9))
+* **deps:** update rolldown-related dependencies ([#23483](https://github.com/vitejs/vite/issues/23483)) ([9aecbbf](https://github.com/vitejs/vite/commit/9aecbbfa5fb5da4b9981c099cb9746a9fd210806))
+* **deps:** update rolldown-related dependencies ([#23733](https://github.com/vitejs/vite/issues/23733)) ([43f0d05](https://github.com/vitejs/vite/commit/43f0d052e514c3ad2dea2f7dc44b0720e1f62f48))
+
+### Code Refactoring
+
+* **create-vite:** use `tinyexec` instead of `cross-spawn` ([#23541](https://github.com/vitejs/vite/issues/23541)) ([e5d9af2](https://github.com/vitejs/vite/commit/e5d9af29a3571f388c4bc2a8d4c3387e46ff1da0))
+* **deps:** replace `@vercel/detect-agent` with `std-env` ([#23744](https://github.com/vitejs/vite/issues/23744)) ([ce4293f](https://github.com/vitejs/vite/commit/ce4293f15cc5cd221c5ed60f5cd64e82ca5cbaf5))
+
 ## <small>[9.2.1](https://github.com/vitejs/vite/compare/create-vite%409.2.0...create-vite%409.2.1) (2026-09-10)</small>
 ### Bug Fixes
 

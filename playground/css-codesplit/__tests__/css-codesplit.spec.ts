@@ -27,7 +27,7 @@ test('should load dynamic import with inline', async () => {
 test('should load dynamic import with module', async () => {
   await expect.poll(() => page.textContent('.dynamic-module')).toMatch('_mod_')
 
-  expect(await getColor('.mod')).toBe('yellow')
+  await expect.poll(() => getColor('.mod')).toBe('yellow')
 })
 
 test('style order should be consistent when style tag is inserted by JS', async () => {

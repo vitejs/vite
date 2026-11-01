@@ -6,7 +6,12 @@ const dirname = import.meta.dirname
 
 // files that the `@vite-ignore` imports ask for at runtime, so the bundler
 // never sees them
-const runtimeFiles = ['views/qux.js', 'files/mxd.js', 'files/mxd.json']
+const runtimeFiles = [
+  'views/qux.js',
+  'files/mxd.js',
+  'files/mxd.json',
+  'nested/hello.js',
+]
 
 export default defineConfig({
   plugins: [
@@ -15,6 +20,7 @@ export default defineConfig({
       writeBundle() {
         fs.mkdirSync(path.resolve(dirname, 'dist/views'))
         fs.mkdirSync(path.resolve(dirname, 'dist/files'))
+        fs.mkdirSync(path.resolve(dirname, 'dist/nested'))
         for (const file of runtimeFiles) {
           fs.copyFileSync(
             path.resolve(dirname, file),

@@ -44,6 +44,30 @@ describe('static file aliases', () => {
       replacement: '/root/aliased/',
       expected: '/root/aliased/file.txt',
     },
+    'replacement containing $$': {
+      pathname: '/images/file.txt',
+      find: '/images',
+      replacement: '/root/$$assets',
+      expected: '/root/$$assets/file.txt',
+    },
+    'replacement containing $&': {
+      pathname: '/images/file.txt',
+      find: '/images',
+      replacement: '/root/$&',
+      expected: '/root/$&/file.txt',
+    },
+    "replacement containing $'": {
+      pathname: '/images/file.txt',
+      find: '/images',
+      replacement: "/root/$'",
+      expected: "/root/$'/file.txt",
+    },
+    'regex alias capture group': {
+      pathname: '/regex/file.txt',
+      find: /^\/regex\/(.*)$/,
+      replacement: '/root/aliased/$1',
+      expected: '/root/aliased/file.txt',
+    },
   }
 
   for (const [

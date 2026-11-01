@@ -39,4 +39,28 @@ describe.runIf(isBuild)('build', () => {
     await page.waitForSelector('#about output')
     expect(await chunkPreloads()).toHaveLength(1)
   })
+
+  test('removes load/error listeners once the preload link settles', async () => {
+    await page.reload()
+    await page.waitForSelector('#done')
+    await page.click('#hello .load')
+    await page.waitForSelector('#hello output')
+
+    const client = await page.context().newCDPSession(page)
+    try {
+      const { result: link } = await client.send('Runtime.evaluate', {
+        expression: `document.querySelector('link[rel="stylesheet"][href*="/assets/hello-"]')`,
+      })
+      expect(link.subtype).toBe('node')
+
+      const { listeners } = await client.send('DOMDebugger.getEventListeners', {
+        objectId: link.objectId!,
+      })
+      expect(
+        listeners.filter(({ type }) => type === 'load' || type === 'error'),
+      ).toStrictEqual([])
+    } finally {
+      await client.detach()
+    }
+  })
 })

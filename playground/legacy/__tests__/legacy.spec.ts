@@ -19,9 +19,7 @@ test('should work', async () => {
   await expect.poll(() => page.textContent('#app')).toMatch('Hello')
 })
 
-// bundled dev: import.meta.env.LEGACY is not replaced — needs a fix in vite's
-// legacy-env define handling (vitejs/vite#23028)
-test.skipIf(isBundledDev)('import.meta.env.LEGACY', async () => {
+test('import.meta.env.LEGACY', async () => {
   await expect
     .poll(() => page.textContent('#env'))
     .toMatch(isBuild ? 'true' : 'false')

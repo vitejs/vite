@@ -1,5 +1,6 @@
 import { equal } from 'node:assert'
 import browserExportsMessage from '@vitejs/test-browser-exports'
+import { format as cjsBuiltinRequire } from '@vitejs/test-cjs-node-builtin'
 import { msg as linkedMsg } from '@vitejs/test-resolve-linked'
 import workerExportsMessage from '@vitejs/test-worker-exports'
 import React from 'react'
@@ -20,6 +21,7 @@ addEventListener('fetch', function (event) {
     <p class="browser-exports">${browserExportsMessage}</p>
     <p class="worker-exports">${workerExportsMessage}</p>
     <p class="nodejs-compat">${equal('a', 'a') || '[success] nodejs compat'}</p>
+    <p class="cjs-node-builtin">${cjsBuiltinRequire()}</p>
     `,
       {
         headers: {

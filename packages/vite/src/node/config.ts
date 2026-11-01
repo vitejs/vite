@@ -1714,6 +1714,10 @@ export async function resolveConfig(
     },
   }
 
+  if (isBuild && config.build?.ssr === true) {
+    config.environments.ssr.input ??= config.input
+  }
+
   for (const name of Object.keys(config.environments)) {
     config.environments[name] = mergeConfig(
       name === 'client'

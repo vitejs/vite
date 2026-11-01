@@ -1507,6 +1507,30 @@ describe('resolveConfig', () => {
     expect(config.environments.ssr.build.rolldownOptions.input).toBeUndefined()
   })
 
+  test('top-level input applies to the SSR environment when build.ssr is true in build', async () => {
+    const config = await resolveConfig(
+      {
+        input: 'src/entry-server.ts',
+        build: { ssr: true },
+      },
+      'build',
+    )
+
+    expect(config.environments.ssr.input).toBe('src/entry-server.ts')
+  })
+
+  test('top-level input does not apply to the SSR environment when build.ssr is true in dev', async () => {
+    const config = await resolveConfig(
+      {
+        input: 'src/entry-server.ts',
+        build: { ssr: true },
+      },
+      'serve',
+    )
+
+    expect(config.environments.ssr.input).toBeUndefined()
+  })
+
   test('per-environment input overrides the top-level value', async () => {
     const config = await resolveConfig(
       {

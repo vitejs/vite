@@ -5,12 +5,12 @@ import type {
   ImportSpecifier,
 } from 'es-module-lexer'
 import type { OutputChunk } from 'rolldown'
+import { joinUrlSegments } from '../../shared/utils'
 import { perEnvironmentState } from '../environment'
 import type { Plugin } from '../plugin'
 import { preloadMethod } from '../plugins/importAnalysisBuild'
 import {
   generateCodeFrame,
-  joinUrlSegments,
   normalizePath,
   numberToPos,
   sortObjectKeys,
