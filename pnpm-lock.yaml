@@ -485,6 +485,9 @@ importers:
       launch-editor-middleware:
         specifier: ^2.14.2
         version: 2.14.2
+      lightningcss-wasm:
+        specifier: ^1.33.0
+        version: 1.33.0
       magic-string:
         specifier: ^1.4.3
         version: 1.4.3
@@ -6374,6 +6377,12 @@ packages:
     os: [linux]
     libc: [musl]
 
+  lightningcss-wasm@1.33.0:
+    resolution: {integrity: sha512-OLAtqEyInBSVWjPrTjpLzcZUMUHO0q+2PFBXKr86nxZOu0P38givj/ZMtRaZ0d38pMTb9wQx+LtaLtHclv+sEA==}
+    engines: {node: '>= 12.0.0'}
+    bundledDependencies:
+      - napi-wasm
+
   lightningcss-win32-arm64-msvc@1.32.0:
     resolution: {integrity: sha512-8SbC8BR40pS6baCM8sbtYDSwEVQd4JlFTOlaD3gWGHfThTcABnNDBda6eTZeqbofalIJhFx0qKzgHJmcPTnGdw==}
     engines: {node: '>= 12.0.0'}
@@ -11919,6 +11928,8 @@ snapshots:
 
   lightningcss-linux-x64-musl@1.33.0:
     optional: true
+
+  lightningcss-wasm@1.33.0: {}
 
   lightningcss-win32-arm64-msvc@1.32.0:
     optional: true

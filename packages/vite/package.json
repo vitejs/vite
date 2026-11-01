@@ -105,6 +105,7 @@
     "host-validation-middleware": "^0.1.4",
     "http-proxy-3": "^1.23.3",
     "launch-editor-middleware": "^2.14.2",
+    "lightningcss-wasm": "^1.33.0",
     "magic-string": "^1.4.3",
     "mlly": "^1.8.2",
     "mrmime": "^2.0.1",
@@ -139,6 +140,7 @@
     "esbuild": "^0.27.0 || ^0.28.0",
     "jiti": ">=1.21.0",
     "less": "^4.0.0",
+    "lightningcss-wasm": "^1.33.0",
     "sass": "^1.70.0",
     "sass-embedded": "^1.70.0",
     "stylus": ">=0.54.8",
@@ -170,6 +172,9 @@
       "optional": true
     },
     "less": {
+      "optional": true
+    },
+    "lightningcss-wasm": {
       "optional": true
     },
     "sugarss": {

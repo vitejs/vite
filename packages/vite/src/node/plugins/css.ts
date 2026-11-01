@@ -3305,7 +3305,36 @@ const absoluteOrProtocolRelativeUrlRE = /^(?:[a-z]+:)?\/\//i
 
 const importEsbuild = createCachedImport(() => import('esbuild'))
 
-const importLightningCSS = createCachedImport(() => import('lightningcss'))
+type LightningCSS = typeof import('lightningcss')
+
+const importLightningCSS = createCachedImport(async () => {
+  try {
+    return await import('lightningcss')
+  } catch (e) {
+    // Lightning CSS has no native package for some platforms.
+    const lightningCSSWasm = await import('lightningcss-wasm').catch(() => {
+      throw e
+    })
+    return serializeBundleAsync(lightningCSSWasm)
+  }
+})
+
+/**
+ * `lightningcss-wasm` keeps the state of a pending `bundleAsync` call in
+ * memory that all calls share, so overlapping calls break each other.
+ */
+function serializeBundleAsync(lightningCSS: LightningCSS): LightningCSS {
+  let queue: Promise<unknown> = Promise.resolve()
+  return {
+    ...lightningCSS,
+    bundleAsync(options) {
+      const result = queue.then(() => lightningCSS.bundleAsync(options))
+      queue = result.catch(() => {})
+      return result
+    },
+  }
+}
+
 async function compileLightningCSS(
   environment: PartialEnvironment,
   id: string,

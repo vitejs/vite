@@ -356,6 +356,8 @@ Default and named imports from CSS files (e.g `import style from './foo.css'`) a
 
 Vite uses [Lightning CSS](https://lightningcss.dev/) to minify CSS in production builds by default. However, PostCSS is still used for other CSS processing.
 
+On platforms that Lightning CSS doesn't provide a native package for, install [`lightningcss-wasm`](https://www.npmjs.com/package/lightningcss-wasm) and Vite will use it instead.
+
 There is experimental support for using Lightning CSS for CSS processing entirely. You can opt into it by adding [`css.transformer: 'lightningcss'`](../config/shared-options.md#css-transformer).
 
 To configure it, you can pass Lightning CSS options to the [`css.lightningcss`](../config/shared-options.md#css-lightningcss) config option. To configure CSS Modules, you should use [`css.lightningcss.cssModules`](https://lightningcss.dev/css-modules.html) instead of [`css.modules`](../config/shared-options.md#css-modules) (which configures the way PostCSS handles CSS modules).

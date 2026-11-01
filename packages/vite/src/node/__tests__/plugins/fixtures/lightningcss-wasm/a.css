@@ -1,0 +1,5 @@
+@import './a-dep.css';
+
+.a {
+  color: #ff0000;
+}
