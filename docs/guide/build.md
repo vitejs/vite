@@ -4,6 +4,12 @@ When it is time to deploy your app for production, simply run the `vite build` c
 
 <ScrimbaLink href="https://scrimba.com/intro-to-vite-c03p6pbbdq/~037q?via=vite" title="Building for Production">Watch an interactive lesson on Scrimba</ScrimbaLink>
 
+## Caching
+
+[`cacheDir`](/config/shared-options.md#cachedir) (default `node_modules/.vite`) stores the [dependency pre-bundle](./dep-pre-bundling) used by the **dev server**. Production builds do **not** read or write that cache: each `vite build` resolves and transforms modules again with Rolldown. That is intentional — build-time dependency pre-bundling was removed ([Vite 5.1](/blog/announcing-vite5-1#removed-experimental-build-time-pre-bundling)).
+
+For faster CI builds, cache `node_modules` (and your package manager store). Do not expect reusing `cacheDir` across production builds to skip work. Persist `build.outDir` only when you need the previous artifacts themselves, not as an incremental compile cache.
+
 ## Browser Compatibility
 
 By default, the production bundle targets the minimum browser versions compatible with [Baseline](https://web-platform-dx.github.io/baseline/) Widely Available as of a date fixed for each major release. The default browser support range for this major is:

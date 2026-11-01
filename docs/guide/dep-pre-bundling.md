@@ -22,7 +22,7 @@ This is Vite performing what we call "dependency pre-bundling". This process ser
    By pre-bundling `lodash-es` into a single module, we now only need one HTTP request instead!
 
 ::: tip NOTE
-Dependency pre-bundling only applies in development mode.
+Dependency pre-bundling only applies in development mode. `vite build` does not use the pre-bundle cache under [`cacheDir`](/config/shared-options.md#cachedir); see [Building for Production → Caching](./build#caching).
 :::
 
 ## Automatic Dependency Discovery
