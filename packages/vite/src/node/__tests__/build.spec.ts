@@ -1539,7 +1539,9 @@ test('chunkImportMap with a non-root base', async () => {
 
 test('chunkImportMap file names do not depend on the build folder', async () => {
   const fixture = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
-  const parent = await fsp.mkdtemp(join(tmpdir(), 'vite-chunk-import-map-'))
+  const parent = await fsp.realpath(
+    await fsp.mkdtemp(join(tmpdir(), 'vite-chunk-import-map-')),
+  )
   const buildFrom = async (folder: string) => {
     const root = join(parent, folder)
     await fsp.cp(fixture, root, { recursive: true })
