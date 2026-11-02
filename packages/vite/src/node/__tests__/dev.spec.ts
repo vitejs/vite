@@ -62,7 +62,7 @@ describe('the dev server', () => {
     }
   })
 
-  test('aliases the client safe module paths across restarts', async () => {
+  test('aliases config.safeModulePaths to the client safe module paths across restarts', async () => {
     server = await createServer({
       configFile: false,
       root: import.meta.dirname,
@@ -71,10 +71,10 @@ describe('the dev server', () => {
       server: { middlewareMode: true, ws: false },
     })
 
-    expect(server.safeModulePaths).toBe(
+    expect(server.config.safeModulePaths).toBe(
       server.environments.client.safeModulePaths,
     )
-    server.safeModulePaths.add('/client-plugin-entry.js')
+    server.config.safeModulePaths.add('/client-plugin-entry.js')
     expect(server.environments.client.safeModulePaths).toContain(
       '/client-plugin-entry.js',
     )
@@ -84,7 +84,7 @@ describe('the dev server', () => {
 
     await server.restart()
 
-    expect(server.safeModulePaths).toBe(
+    expect(server.config.safeModulePaths).toBe(
       server.environments.client.safeModulePaths,
     )
   })
@@ -241,6 +241,9 @@ describe('the dev server', () => {
       '/index.html',
       `<script type="module" src="${importedUrl}"></script>`,
     )
+    expect(isFileServingAllowed(importedUrl, server)).toBe(true)
+    expect(isFileServingAllowed(server.config, importedUrl)).toBe(true)
+    expect(isFileServingAllowed(client.config, importedUrl)).toBe(true)
     expect((await fetch(new URL(importedUrl, baseUrl))).status).toBe(200)
   })
 
