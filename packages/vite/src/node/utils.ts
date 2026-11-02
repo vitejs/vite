@@ -826,14 +826,13 @@ function joinSrcset(ret: ImageCandidate[]) {
  */
 const imageCandidateRegex =
   /(?:^|\s|(?<=,))(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>[\w.][^,]+))?(?:,|$)/g
-const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
+// Normalize candidate separators without changing quoted CSS URL contents.
+const srcsetWhitespaceRE = /(?<![^\s,(])("[^"]*"|'[^']*')|(?:\s|\\[tnfr])+/g
 
 export function parseSrcset(string: string): ImageCandidate[] {
   const matches = string
     .trim()
-    .replace(escapedSpaceCharacters, ' ')
-    .replace(/,\s+/, ', ')
-    .replaceAll(/\s+/g, ' ')
+    .replace(srcsetWhitespaceRE, (_match, quoted) => quoted ?? ' ')
     .matchAll(imageCandidateRegex)
   return Array.from(matches, ({ groups }) => ({
     url: groups?.url?.trim() ?? '',

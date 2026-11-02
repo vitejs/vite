@@ -747,6 +747,36 @@ describe('processSrcSetSync', () => {
     expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
   })
 
+  test.each(['"', "'"])(
+    'should preserve whitespace inside %s-quoted image-set URLs',
+    (quote) => {
+      const url = `${quote}./nested/image  with   spaces.png${quote}`
+      const source = `  ${url}\t.5x,\r\n${url}   2x\t type("image/png") `
+      expect(processSrcSetSync(source, ({ url }) => url)).toBe(
+        `${url} .5x, ${url} 2x type("image/png")`,
+      )
+      expect(processSrcSetSync(` ${url},${url} `, ({ url }) => url)).toBe(
+        `${url}, ${url}`,
+      )
+      expect(processSrcSetSync(`url(${url})\t2x`, ({ url }) => url)).toBe(
+        `url(${url}) 2x`,
+      )
+    },
+  )
+
+  test('should normalize srcset descriptors when URLs contain quotes', () => {
+    const source = `foo'bar.png   400w   300h, baz'qux.png\t800w`
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(
+      "foo'bar.png 400w 300h, baz'qux.png 800w",
+    )
+  })
+
+  test('should preserve escaped whitespace inside quoted image-set URLs', () => {
+    const source = String.raw`"./nested/image\t\n\f\r.png"\t1x, 'image  two.png'\n2x`
+    const result = String.raw`"./nested/image\t\n\f\r.png" 1x, 'image  two.png' 2x`
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
   test('should parse image-set-options with resolution', async () => {
     const source = ` "foo.png" 1x,
                      "foo-2x.png" 2x,
