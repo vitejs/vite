@@ -119,6 +119,61 @@ describe('watcher configuration', () => {
     }
   })
 
+  it('closes the watcher when a configureServer hook throws', async () => {
+    let capturedWatcher: ViteDevServer['watcher'] | undefined
+    await expect(
+      createServer({
+        configFile: false,
+        logLevel: 'silent',
+        server: {
+          middlewareMode: true,
+        },
+        plugins: [
+          {
+            name: 'throw-in-configure-server',
+            configureServer(server) {
+              capturedWatcher = server.watcher
+              throw new Error('configureServer failed')
+            },
+          },
+        ],
+      }),
+    ).rejects.toThrow('configureServer failed')
+
+    expect(capturedWatcher).toBeDefined()
+    expectWatcherToBeClosed(capturedWatcher!)
+  })
+
+  it('closes the watcher when a buildStart hook throws', async () => {
+    let capturedWatcher: ViteDevServer['watcher'] | undefined
+    await expect(
+      createServer({
+        configFile: false,
+        logLevel: 'silent',
+        server: {
+          middlewareMode: true,
+        },
+        plugins: [
+          {
+            name: 'capture-watcher',
+            configureServer(server) {
+              capturedWatcher = server.watcher
+            },
+          },
+          {
+            name: 'throw-in-build-start',
+            buildStart() {
+              throw new Error('buildStart failed')
+            },
+          },
+        ],
+      }),
+    ).rejects.toThrow('buildStart failed')
+
+    expect(capturedWatcher).toBeDefined()
+    expectWatcherToBeClosed(capturedWatcher!)
+  })
+
   it('should not re-add files inside the root when addWatchFile is called with native paths', async () => {
     const addedFiles: string[] = []
     let addWatchFile!: (id: string) => void

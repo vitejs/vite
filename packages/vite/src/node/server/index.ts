@@ -646,11 +646,7 @@ export async function _createServer(
 
   // Promise used by `server.close()` to ensure `closeServer()` is only called once
   let closeServerPromise: Promise<void> | undefined
-  const closeServer = async (reason: 'restart' | 'close') => {
-    if (!middlewareMode) {
-      teardownSIGTERMListener(closeServerAndExit)
-    }
-
+  const closeServerResources = async () => {
     await Promise.allSettled([
       watcher.close(),
       ws.close(),
@@ -664,6 +660,13 @@ export async function _createServer(
     ])
     server.resolvedUrls = null
     server._ssrCompatModuleRunner = undefined
+  }
+  const closeServer = async (reason: 'restart' | 'close') => {
+    if (!middlewareMode) {
+      teardownSIGTERMListener(closeServerAndExit)
+    }
+
+    await closeServerResources()
 
     // Run `closeServer` plugin hooks after the server has been torn down.
     const closeServerContext = new BasicMinimalPluginContext(
@@ -1021,13 +1024,28 @@ export async function _createServer(
 
   // apply configureServer hooks ------------------------------------------------
 
+  // If a plugin hook throws while the server is starting, tear down the
+  // resources that were already created (file watcher, web socket server,
+  // environments, HTTP server) so `createServer` doesn't leak them.
+  const abortStartup = async (error: unknown): Promise<never> => {
+    if (!middlewareMode) {
+      teardownSIGTERMListener(closeServerAndExit)
+    }
+    await closeServerResources()
+    throw error
+  }
+
   const configureServerContext = new BasicMinimalPluginContext(
     { ...basePluginContextMeta, watchMode: true },
     config.logger,
   )
   const postHooks: ((() => void) | void)[] = []
-  for (const hook of config.getSortedPluginHooks('configureServer')) {
-    postHooks.push(await hook.call(configureServerContext, reflexServer))
+  try {
+    for (const hook of config.getSortedPluginHooks('configureServer')) {
+      postHooks.push(await hook.call(configureServerContext, reflexServer))
+    }
+  } catch (e) {
+    await abortStartup(e)
   }
 
   // Internal middlewares ------------------------------------------------------
@@ -1096,7 +1114,11 @@ export async function _createServer(
 
   // This is applied before the html middleware so that user middleware can
   // serve custom content instead of index.html.
-  postHooks.forEach((fn) => fn && fn())
+  try {
+    postHooks.forEach((fn) => fn && fn())
+  } catch (e) {
+    await abortStartup(e)
+  }
 
   if (config.appType === 'spa' || config.appType === 'mpa') {
     // transform index.html
@@ -1152,7 +1174,11 @@ export async function _createServer(
       return listen(port, ...args)
     }) as any
   } else {
-    await initServer(false)
+    try {
+      await initServer(false)
+    } catch (e) {
+      await abortStartup(e)
+    }
   }
 
   return server
