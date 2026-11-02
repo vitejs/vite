@@ -27,7 +27,8 @@ const wasmInstanceRE = /[?&]vite-wasm-instance(?:&|$)/
 
 // Detects the `import source` / `import.source(...)` phase forms cheaply so we
 // only run the full lexer pass over modules that actually use them.
-const wasmSourcePhaseRE = /\bimport\s+source\b|\bimport\s*\.\s*source\b/
+const wasmSourcePhaseRE =
+  /\bimport\s+source\s+\S+\s+from\b|\bimport\s*\.\s*source\b/
 
 // Enabled per spec
 const wasmCompileOptions = {
