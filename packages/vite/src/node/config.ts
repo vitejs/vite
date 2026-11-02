@@ -87,6 +87,7 @@ import type {
   PluginWithRequiredHook,
 } from './plugin'
 import {
+  attachPluginContext,
   createPluginHookUtils,
   getHookHandler,
   getSortedPluginsByHook,
@@ -1964,8 +1965,17 @@ export async function resolveConfig(
     // run configResolved hooks
     await Promise.all(
       createPluginHookUtils(workerResolved.plugins)
-        .getSortedPluginHooks('configResolved')
-        .map((hook) => hook.call(resolvedConfigContext, workerResolved)),
+        .getSortedPlugins('configResolved')
+        .map(async (p) => {
+          const hook = p.configResolved
+          const handler = getHookHandler(hook)
+          try {
+            await handler.call(resolvedConfigContext, workerResolved)
+          } catch (err) {
+            attachPluginContext(err, p.name, 'configResolved')
+            throw err
+          }
+        }),
     )
 
     // Resolve environment plugins after configResolved because there are
@@ -2211,9 +2221,16 @@ export async function resolveConfig(
 
   // call configResolved hooks
   await Promise.all(
-    resolved
-      .getSortedPluginHooks('configResolved')
-      .map((hook) => hook.call(resolvedConfigContext, resolved)),
+    resolved.getSortedPlugins('configResolved').map(async (p) => {
+      const hook = p.configResolved
+      const handler = getHookHandler(hook)
+      try {
+        await handler.call(resolvedConfigContext, resolved)
+      } catch (err) {
+        attachPluginContext(err, p.name, 'configResolved')
+        throw err
+      }
+    }),
   )
 
   // Resolve environment plugins after configResolved because there are
@@ -2833,7 +2850,13 @@ async function runConfigHook(
   for (const p of getSortedPluginsByHook('config', plugins)) {
     const hook = p.config
     const handler = getHookHandler(hook)
-    const res = await handler.call(context, conf, configEnv)
+    let res
+    try {
+      res = await handler.call(context, conf, configEnv)
+    } catch (err) {
+      attachPluginContext(err, p.name, 'config')
+      throw err
+    }
     if (res && res !== conf) {
       if (hasBothRollupOptionsAndRolldownOptions(res)) {
         context.warn(

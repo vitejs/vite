@@ -499,4 +499,24 @@ describe('the dev server', () => {
     // The user-facing server retains the config from the forced follow-up.
     expect(server.config.environments.client.optimizeDeps.force).toBe(true)
   })
+
+  test('attaches plugin and hook when configureServer throws', async () => {
+    const plugin: Plugin = {
+      name: 'throw-in-configure-server',
+      configureServer() {
+        throw new Error('boom in configureServer')
+      },
+    }
+    await expect(
+      createServer({
+        root: import.meta.dirname,
+        configFile: false,
+        plugins: [plugin],
+      }),
+    ).rejects.toMatchObject({
+      message: 'boom in configureServer',
+      plugin: 'throw-in-configure-server',
+      hook: 'configureServer',
+    })
+  })
 })

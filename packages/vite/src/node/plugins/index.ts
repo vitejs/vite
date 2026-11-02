@@ -182,6 +182,23 @@ export function createPluginHookUtils(
   }
 }
 
+export function attachPluginContext(
+  err: unknown,
+  pluginName: string,
+  hookName: string,
+): void {
+  if (err && typeof err === 'object') {
+    try {
+      if (!('plugin' in err)) {
+        ;(err as any).plugin = pluginName
+      }
+      if (!('hook' in err)) {
+        ;(err as any).hook = hookName
+      }
+    } catch {}
+  }
+}
+
 export function getSortedPluginsByHook<K extends keyof Plugin>(
   hookName: K,
   plugins: readonly Plugin[],

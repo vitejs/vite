@@ -2490,3 +2490,37 @@ describe('resolveServerOptions', () => {
     }
   })
 })
+
+describe('plugin error context', () => {
+  test('attaches plugin and hook when plugin throws in config hook', async () => {
+    const plugin: Plugin = {
+      name: 'throw-in-config',
+      config() {
+        throw new Error('boom in config')
+      },
+    }
+    await expect(
+      resolveConfig({ configFile: false, plugins: [plugin] }, 'build'),
+    ).rejects.toMatchObject({
+      message: 'boom in config',
+      plugin: 'throw-in-config',
+      hook: 'config',
+    })
+  })
+
+  test('attaches plugin and hook when plugin throws in configResolved hook', async () => {
+    const plugin: Plugin = {
+      name: 'throw-in-config-resolved',
+      configResolved() {
+        throw new Error('boom in configResolved')
+      },
+    }
+    await expect(
+      resolveConfig({ configFile: false, plugins: [plugin] }, 'build'),
+    ).rejects.toMatchObject({
+      message: 'boom in configResolved',
+      plugin: 'throw-in-config-resolved',
+      hook: 'configResolved',
+    })
+  })
+})

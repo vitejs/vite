@@ -572,6 +572,26 @@ describe('plugin container', () => {
       expect(closeBundleCalled).toBe(true)
       expect(closeBundleError).toBeUndefined()
     })
+
+    it('attaches plugin and hook when buildStart throws', async () => {
+      const environment = await getDevEnvironment({
+        plugins: [
+          {
+            name: 'throw-in-build-start',
+            buildStart() {
+              throw new Error('boom in buildStart')
+            },
+          },
+        ],
+      })
+      await expect(
+        environment.pluginContainer.buildStart(),
+      ).rejects.toMatchObject({
+        message: 'boom in buildStart',
+        plugin: 'throw-in-build-start',
+        hook: 'buildStart',
+      })
+    })
   })
 })
 
