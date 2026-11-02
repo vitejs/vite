@@ -49,6 +49,10 @@ export function getChunkImportMapKeySignatures(
     path.isAbsolute(id)
       ? [true, normalizePath(path.relative(cwd, id))]
       : [false, id]
+  const isSmaller = (
+    [aIsPath, a]: [boolean, string],
+    [bIsPath, b]: [boolean, string],
+  ) => (aIsPath !== bIsPath ? !aIsPath : a < b)
   const signatures = new Map<string, string>()
   const usedNames = new Set<string>()
   for (const [fileName, chunk] of Object.entries(chunks)) {
@@ -69,11 +73,7 @@ export function getChunkImportMapKeySignatures(
         .map(toStableId)
         .reduce<[boolean, string] | undefined>(
           (smallest, id) =>
-            smallest === undefined ||
-            id[0] < smallest[0] ||
-            (id[0] === smallest[0] && id[1] < smallest[1])
-              ? id
-              : smallest,
+            smallest === undefined || isSmaller(id, smallest) ? id : smallest,
           undefined,
         )
       if (moduleId !== undefined) {
