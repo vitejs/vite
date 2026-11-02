@@ -10,12 +10,11 @@ export async function createServer(root = process.cwd(), hmrPort) {
 
   const app = express()
 
+  const { createServer: createViteServer, normalizePath } = await import('vite')
   /**
    * @type {import('vite').ViteDevServer}
    */
-  const vite = await (
-    await import('vite')
-  ).createServer({
+  const vite = await createViteServer({
     root,
     logLevel: isTest ? 'error' : 'info',
     server: {
@@ -24,12 +23,12 @@ export async function createServer(root = process.cwd(), hmrPort) {
         port: hmrPort,
       },
       fs: {
-        // TODO: expose `environment.safeModulePaths.add` and use it
-        allow: [resolve('main.js')],
+        allow: [],
       },
     },
     appType: 'custom',
   })
+  const mainFile = normalizePath(resolve('main.js'))
   app.use(vite.middlewares)
 
   app.use('*all', async (req, res) => {
@@ -39,9 +38,11 @@ export async function createServer(root = process.cwd(), hmrPort) {
 
       // `main.js` imports dependencies that are yet to be discovered and optimized, aka "missing" deps.
       // Loading `main.js` in SSR should not trigger optimizing the "missing" deps
+      vite.environments.ssr.addSafeModule(mainFile)
       const { name } = await vite.ssrLoadModule('./main.js')
 
       // Loading `main.js` in the client should trigger optimizing the "missing" deps
+      vite.environments.client.addSafeModule(mainFile)
       const appHtml = `<div id="app">${name}</div>
 <script type='module'>
   import { name } from './main.js'
