@@ -118,12 +118,72 @@ describe('the dev server', () => {
         isFileLoadingAllowed(environment.config, outsideFile),
         environment.name,
       ).toBe(false)
-      environment.safeModulePaths.addId(deniedFile)
+      environment.addSafeModule(deniedFile)
       expect(
         isFileLoadingAllowed(environment.config, deniedFile),
         environment.name,
       ).toBe(false)
     }
+  })
+
+  test('registers a safe module in the current environment when a transform adds its reference', async () => {
+    const root = path.join(import.meta.dirname, 'fixtures', 'input-option')
+    const runtimeFile = normalizePath(path.join(root, 'plugin-runtime.js'))
+    const runtimeId = runtimeFile + '?custom'
+    const runtimeUrl = path.posix.join('/@custom/', runtimeId)
+    const callInLoad = vi.fn()
+
+    server = await createServer({
+      configFile: false,
+      root,
+      logLevel: 'silent',
+      optimizeDeps: { noDiscovery: true },
+      server: {
+        fs: { strict: 'extended', allow: [] },
+        middlewareMode: true,
+        ws: false,
+      },
+      plugins: [
+        {
+          name: 'plugin-runtime',
+          resolveId(source) {
+            if (source === 'virtual:entry') return '\0entry'
+            if (source === runtimeUrl) return runtimeId
+          },
+          load(id) {
+            callInLoad()
+            if (id === '\0entry') return ''
+            if (id === runtimeId) return 'export default 42'
+          },
+          transform(_code, id) {
+            if (id !== '\0entry') return
+            if (this.environment.mode === 'dev') {
+              this.environment.addSafeModule(runtimeId)
+            }
+            return `export const runtimeUrl = ${JSON.stringify(runtimeUrl)}`
+          },
+        },
+      ],
+    })
+
+    const { client, ssr } = server.environments
+    await ssr.pluginContainer.resolveId(runtimeUrl)
+    expect(isFileLoadingAllowed(ssr.config, runtimeId)).toBe(false)
+    expect((await ssr.transformRequest('virtual:entry'))?.code).toContain(
+      runtimeUrl,
+    )
+    expect(isFileLoadingAllowed(ssr.config, runtimeId)).toBe(true)
+    expect(isFileLoadingAllowed(ssr.config, runtimeFile)).toBe(true)
+    expect(isFileLoadingAllowed(ssr.config, runtimeFile + '?other')).toBe(false)
+    expect(isFileLoadingAllowed(client.config, runtimeId)).toBe(false)
+    expect(isFileLoadingAllowed(client.config, runtimeFile)).toBe(false)
+    expect(await ssr.transformRequest(runtimeUrl)).not.toBeNull()
+
+    callInLoad.mockClear()
+    await expect(client.transformRequest(runtimeUrl)).rejects.toMatchObject({
+      code: 'ERR_DENIED_ID',
+    })
+    expect(callInLoad).not.toHaveBeenCalled()
   })
 
   test('resolves environment inputs into separate safe module paths', async () => {
