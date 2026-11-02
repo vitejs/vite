@@ -340,6 +340,14 @@ export default defineConfig({
 
 Besides the `builder.buildApp` config option, plugins can define a `buildApp` hook to participate in the app build. The config option and the plugin hooks run in a defined order: hooks with order `'pre'` or `null` run first, then the configured `builder.buildApp`, then hooks with order `'post'`. Within a hook, `environment.isBuilt` tells you whether an environment has already been built, which lets a plugin avoid building it twice.
 
+### The `postBuildApp` plugin hook
+
+- **Type:** `(this: MinimalPluginContextWithoutEnvironment) => Promise<void>`
+- **Kind:** `async`, `sequential`
+- **Scope:** [Global](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks)
+
+Plugins can define a `postBuildApp` hook to run after the app build completes. It runs after all `buildApp` hooks, the configured `builder.buildApp`, and the fallback build of all environments when no environment was explicitly built. These hooks run in order: hooks with order `'pre'` run first, followed by hooks with no order, and then hooks with order `'post'`. This hook can be used for app-level post-build work such as prerendering or generating deployment configuration.
+
 ### Building programmatically with `createBuilder`
 
 To trigger an app build from your own code, use `createBuilder` instead of the standalone `build` function. `createBuilder` is the build-time equivalent of `createServer`: it resolves the config and returns a `ViteBuilder`, whose `buildApp` method builds every configured environment. You can also build a single environment with `builder.build(environment)`.

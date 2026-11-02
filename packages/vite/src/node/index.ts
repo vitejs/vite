@@ -151,6 +151,7 @@ export type { ServerWatchOptions } from './watch'
 export type {
   ViteBuilder,
   BuildAppHook,
+  PostBuildAppHook,
   BuilderOptions,
   BuildOptions,
   BuildEnvironmentOptions,
