@@ -167,4 +167,49 @@ describe('watcher configuration', () => {
       )
     })
   })
+
+  it('closes the watcher when configureServer throws during createServer', async () => {
+    let capturedWatcher: ViteDevServer['watcher'] | undefined
+    await expect(
+      createServer({
+        root,
+        plugins: [
+          {
+            name: 'throw-in-configure-server',
+            configureServer(server) {
+              capturedWatcher = server.watcher
+              throw new Error('boom in configureServer')
+            },
+          },
+        ],
+      }),
+    ).rejects.toThrow('boom in configureServer')
+
+    expect(capturedWatcher).toBeDefined()
+    expectWatcherToBeClosed(capturedWatcher!)
+  })
+
+  it('closes the watcher when buildStart throws during createServer', async () => {
+    let capturedWatcher: ViteDevServer['watcher'] | undefined
+    await expect(
+      createServer({
+        root,
+        server: { middlewareMode: true },
+        plugins: [
+          {
+            name: 'capture-and-throw-in-build-start',
+            configureServer(server) {
+              capturedWatcher = server.watcher
+            },
+            buildStart() {
+              throw new Error('boom in buildStart')
+            },
+          },
+        ],
+      }),
+    ).rejects.toThrow('boom in buildStart')
+
+    expect(capturedWatcher).toBeDefined()
+    expectWatcherToBeClosed(capturedWatcher!)
+  })
 })
