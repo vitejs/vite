@@ -1,5 +1,6 @@
 import fsp from 'node:fs/promises'
-import { basename, resolve } from 'node:path'
+import { tmpdir } from 'node:os'
+import { basename, join, resolve } from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
 import colors from 'picocolors'
 import type {
@@ -1534,6 +1535,35 @@ test('chunkImportMap with a non-root base', async () => {
   )![0]
   // The import map maps the specifier without the base to the actual URL.
   expect(entry.code).toContain(JSON.stringify(cssSpecifier.slice(base.length)))
+})
+
+test('chunkImportMap file names do not depend on the build folder', async () => {
+  const fixture = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
+  const parent = await fsp.mkdtemp(join(tmpdir(), 'vite-chunk-import-map-'))
+  const buildFrom = async (folder: string) => {
+    const root = join(parent, folder)
+    await fsp.cp(fixture, root, { recursive: true })
+    const result = (await build({
+      root,
+      logLevel: 'silent',
+      build: {
+        chunkImportMap: true,
+        write: false,
+        // Rolldown's import map keys are relative to `cwd`, so build each
+        // copy as if it was started from its own folder.
+        rolldownOptions: { input: '/entry.js', cwd: root },
+      },
+    })) as RolldownOutput
+    return result.output.map((output) => output.fileName).sort()
+  }
+
+  try {
+    const first = await buildFrom('project')
+    const second = await buildFrom('project-in-a-longer-folder')
+    expect(second).toStrictEqual(first)
+  } finally {
+    await fsp.rm(parent, { recursive: true, force: true })
+  }
 })
 
 test('chunkImportMap is emitted when emitAssets is false', async () => {
