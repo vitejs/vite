@@ -37,6 +37,35 @@ A plugin could use the `environment` instance to change how a module is processe
   }
 ```
 
+## Registering Safe Modules
+
+During dev, plugins can call `this.environment.addSafeModule(id)` to allow a resolved module ID to be loaded outside [`server.fs.allow`](/config/server-options#server-fs-allow).
+
+For filesystem modules, pass a normalized absolute path, optionally with a query. Use Vite's `normalizePath` utility to normalize filesystem paths. The method registers both the full ID and the path with its query and hash removed. Other query variants must be registered separately.
+
+When a plugin adds a reference that Vite cannot discover through import analysis, register the referenced ID in the same `transform` hook. This allows the referenced module to pass the access check when it is requested later.
+
+```ts
+import type { Plugin } from 'vite'
+
+// runtimeId is a normalized absolute path, optionally with a query.
+// runtimeUrl is the URL to insert into the transformed code.
+function runtimePlugin(runtimeId: string, runtimeUrl: string): Plugin {
+  return {
+    name: 'plugin-runtime',
+    transform: {
+      filter: { code: '__RUNTIME_URL__' },
+      handler(code) {
+        if (this.environment.mode === 'dev') {
+          this.environment.addSafeModule(runtimeId)
+        }
+        return code.replaceAll('__RUNTIME_URL__', JSON.stringify(runtimeUrl))
+      },
+    },
+  }
+}
+```
+
 ## Registering New Environments Using Hooks
 
 Plugins can add new environments in the `config` hook. For example, [RSC support](/plugins/#vitejs-plugin-rsc) uses an additional environment to have a separate module graph with the `react-server` condition:
