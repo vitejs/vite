@@ -1,0 +1,21 @@
+docs/guide/api-environment-instances.md
+  s_f1ad81eb29efc3::t_387a17760eca89 89-95
+packages/vite/src/node/server/environment.ts
+  s_f1ad81eb29efc3::t_81b0e5402b88e5 281-290
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e50683f30cc5b961d03a8f1cb3df2b1da35432d5",
+  "prompts": {},
+  "sessions": {
+    "s_f1ad81eb29efc3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18c79-487a-7ac3-8280-594556276586",
+        "model": "unknown"
+      },
+      "human_author": "sapphi-red <green@sapphi.red>"
+    }
+  }
+}
