@@ -784,6 +784,11 @@ export interface ResolvedConfig extends Readonly<
     webSocketToken: string
     /** @internal */
     fsDenyGlob: AnymatchFn
+    /**
+     * @internal
+     * @deprecated Use `config.environments.client.safeModulePaths` instead.
+     */
+    safeModulePaths: SafeModulePaths
     /** @internal */
     [SYMBOL_RESOLVED_CONFIG]: true
   } & PluginHookUtils
@@ -2182,6 +2187,7 @@ export async function resolveConfig(
         dot: true,
       },
     ),
+    safeModulePaths: resolvedEnvironments.client.safeModulePaths,
     [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {

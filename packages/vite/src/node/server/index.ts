@@ -369,11 +369,6 @@ export interface ViteDevServer {
    */
   environments: Record<'client' | 'ssr' | (string & {}), DevEnvironment>
   /**
-   * @internal
-   * @deprecated Use `server.environments.client.safeModulePaths` instead.
-   */
-  safeModulePaths: DevEnvironment['safeModulePaths']
-  /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
    */
@@ -699,7 +694,6 @@ export async function _createServer(
     },
 
     environments,
-    safeModulePaths: environments.client.safeModulePaths,
     get pluginContainer() {
       warnFutureDeprecation(config, 'removeServerPluginContainer')
       return pluginContainer
