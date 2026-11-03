@@ -119,8 +119,12 @@ if (typeof window !== 'undefined') {
 
 function cleanUrl(pathname: string): string {
   const url = new URL(pathname, 'http://vite.dev')
-  url.searchParams.delete('direct')
-  return url.pathname + url.search
+  const query = url.search
+    .slice(1)
+    .split('&')
+    .filter((p) => p && p !== 'direct' && !p.startsWith('direct='))
+    .join('&')
+  return url.pathname + (query ? `?${query}` : '')
 }
 
 let isFirstUpdate = true
