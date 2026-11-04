@@ -5996,8 +5996,8 @@ packages:
   focus-trap@8.2.3:
     resolution: {integrity: sha512-LTNHZwcFM7bSdU1cG1ExoaTEzoGmdjw+EzDotolZmLTCbm0ll2k6J3NL+WfqP14nGLxAp+XDJgwlT2DtNhcukA==}
 
-  follow-redirects@1.16.1:
-    resolution: {integrity: sha512-FNvFGzoMLWmE6Yj9spb/zjd7yiNCHiAW9/Tg9CXrQ8wuu32HtlJOwWO11OJafl5FfY3DxTdQ0vj42zU1kvv5jg==}
+  follow-redirects@1.16.2:
+    resolution: {integrity: sha512-/kVP2U8z596Ia0gwFrwyIeo74ta5aVmSeU1FfAUMAmcEP5EP7zydmag3SLiN64NaRKef3lxsq7i/g7ltJQDGow==}
     engines: {node: '>=4.0'}
     peerDependencies:
       debug: '*'
@@ -11736,7 +11736,7 @@ snapshots:
     dependencies:
       tabbable: 6.5.0
 
-  follow-redirects@1.16.1(obug@1.0.2):
+  follow-redirects@1.16.2(obug@1.0.2):
     optionalDependencies:
       debug: obug@1.0.2(ms@2.1.3)
 
@@ -11896,7 +11896,7 @@ snapshots:
   http-proxy-3@1.23.3(ms@2.1.3):
     dependencies:
       debug: obug@1.0.2(ms@2.1.3)
-      follow-redirects: 1.16.1(obug@1.0.2)
+      follow-redirects: 1.16.2(obug@1.0.2)
     transitivePeerDependencies:
       - ms
 
