@@ -385,28 +385,17 @@ function waitForSuccessfulPing(socketUrl: string) {
   )
   const objURL = URL.createObjectURL(blob)
 
-  // Handle TrustedTypes enforcement - create a policy to bless the blob URL
-  let workerURL: string | TrustedScriptURL = objURL
-  if (typeof trustedTypes !== 'undefined') {
-    try {
-      const policy = trustedTypes.createPolicy('vite-hmr', {
-        createScriptURL: (url: string) => {
-          if (url.startsWith('blob:')) {
-            return url
-          }
-          throw new Error('URL not allowed')
-        },
-      })
-      workerURL = policy.createScriptURL(objURL)
-    } catch {
-      // Policy creation blocked (e.g., CSP doesn't allow 'vite-hmr' policy)
-      // Fall back to main thread implementation
-      URL.revokeObjectURL(objURL)
+  let sharedWorker: SharedWorker
+  try {
+    sharedWorker = new SharedWorker(objURL)
+  } catch (error) {
+    URL.revokeObjectURL(objURL)
+    // Trusted Types enforcement rejects string worker URLs.
+    if (error instanceof TypeError) {
       return useMainThreadFallback()
     }
+    throw error
   }
-
-  const sharedWorker = new SharedWorker(workerURL as string)
   return new Promise<void>((resolve, reject) => {
     const onVisibilityChange = () => {
       sharedWorker.port.postMessage({ visibility: document.visibilityState })
