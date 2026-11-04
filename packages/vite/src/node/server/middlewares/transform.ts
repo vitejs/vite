@@ -53,6 +53,7 @@ const urlRE = /[?&]url\b/
 const rawRE = /[?&]raw\b/
 const inlineRE = /[?&]inline\b/
 const svgRE = /\.svg\b/
+const wasmRE = /(?<![?#].*)\.wasm$/
 const wasmInstanceRE = /[?&]vite-wasm-instance(?:&|$)/
 
 export function isServerAccessDeniedForTransform(
@@ -64,6 +65,7 @@ export function isServerAccessDeniedForTransform(
     urlRE.test(id) ||
     inlineRE.test(id) ||
     svgRE.test(id) ||
+    wasmRE.test(id) ||
     wasmInstanceRE.test(id)
   ) {
     return (

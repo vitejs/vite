@@ -1306,6 +1306,51 @@ if (!isBuild) {
       .toBe(isBundledDev ? 'count is 2!' : 'count is 1!')
   })
 
+  // Plain dev serves no built chunk that a page could load as an entry.
+  test.runIf(isBundledDev)(
+    'updating a module in an import cycle with an entry reloads the page',
+    async () => {
+      await page.goto(viteTestUrl + '/entry-cycle/index.html')
+      const display = () => page.textContent('.entry-cycle-display')
+      await expect.poll(display).toBe('entry imports dep')
+
+      // Nothing accepts the update, and the walk from dep.js comes back to it
+      // through entry-cycle.js. Only a page load runs the entry again.
+      const loadPromise = page.waitForEvent('load')
+      editFile('entry-cycle/dep.js', (code) =>
+        code.replace('imports dep', 'imports dep!'),
+      )
+      await loadPromise
+      await expect.poll(display).toBe('entry imports dep!')
+    },
+  )
+
+  test.runIf(isBundledDev)(
+    'updating an entry that another entry no longer imports reloads the page',
+    async () => {
+      await page.goto(viteTestUrl + '/entry-import-removed/index.html')
+      const imported = () => page.textContent('.entry-import-removed-imported')
+      await expect.poll(imported).toBe('imported entry')
+
+      // imported-entry.js has no importer left, but the page still runs it
+      await untilBrowserLogAfter(
+        () =>
+          editFile('entry-import-removed/importing-entry.js', (code) =>
+            code.replace("import './imported-entry.js'\n", ''),
+          ),
+        hotUpdatedLog('entry-import-removed/importing-entry.js'),
+      )
+
+      // Only a page load runs the entry again.
+      const loadPromise = page.waitForEvent('load')
+      editFile('entry-import-removed/imported-entry.js', (code) =>
+        code.replace("'imported entry'", "'imported entry!'"),
+      )
+      await loadPromise
+      await expect.poll(imported).toBe('imported entry!')
+    },
+  )
+
   test('import.meta.hot?.accept', async () => {
     await gotoLatestBuild(viteTestUrl)
 

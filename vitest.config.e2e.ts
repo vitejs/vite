@@ -61,6 +61,7 @@ export default defineConfig({
     env: {
       NODE_ENV: process.env.VITE_TEST_BUILD ? 'production' : 'development',
     },
+    isolate: false,
   },
   oxc: {
     target: 'node20',

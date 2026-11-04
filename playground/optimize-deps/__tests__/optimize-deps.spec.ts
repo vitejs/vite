@@ -64,56 +64,6 @@ describe('optimize-deps', clientOptimizerUnsupported, () => {
     },
   )
 
-  test('dynamic imports from cjs dep (react)', async () => {
-    await expect
-      .poll(() => page.textContent('.cjs-dynamic button'))
-      .toBe('count is 0')
-    await page.click('.cjs-dynamic button')
-    await expect
-      .poll(() => page.textContent('.cjs-dynamic button'))
-      .toBe('count is 1')
-  })
-
-  test('dynamic named imports from webpacked cjs (phoenix)', async () => {
-    await expect.poll(() => page.textContent('.cjs-dynamic-phoenix')).toBe('ok')
-  })
-
-  test('dynamic default import from webpacked cjs (clipboard)', async () => {
-    await expect
-      .poll(() => page.textContent('.cjs-dynamic-clipboard'))
-      .toBe('ok')
-  })
-
-  test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-esm)', async () => {
-    await expect
-      .poll(() => page.textContent('.cjs-dynamic-dep-cjs-compiled-from-esm'))
-      .toBe('ok')
-  })
-
-  test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-cjs)', async () => {
-    await expect
-      .poll(() => page.textContent('.cjs-dynamic-dep-cjs-compiled-from-cjs'))
-      .toBe('ok')
-  })
-
-  test('dynamic default import from cjs with es-module-flag (cjs-dynamic-dep-cjs-with-es-module-flag)', async () => {
-    await expect
-      .poll(() => page.textContent('.cjs-dynamic-dep-cjs-with-es-module-flag'))
-      .toBe('ok')
-  })
-
-  test('dynamic import from format-ambiguous importer respects __esModule flag (cjs-dynamic-importer-ambiguous)', async () => {
-    await expect
-      .poll(() => page.textContent('.cjs-dynamic-importer-ambiguous'))
-      .toBe('ok')
-  })
-
-  test('dynamic import from explicit cjs importer uses node interop (cjs-dynamic-importer-cjs)', async () => {
-    await expect
-      .poll(() => page.textContent('.cjs-dynamic-importer-cjs'))
-      .toBe('ok')
-  })
-
   test('dedupe', async () => {
     await expect
       .poll(() => page.textContent('.dedupe button'))

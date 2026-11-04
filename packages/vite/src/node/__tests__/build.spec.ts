@@ -502,6 +502,74 @@ describe('build', () => {
     })
   })
 
+  for (const suffix of ['?dpl=test', '#fragment']) {
+    describe(`dynamic imports with ${suffix}`, () => {
+      async function buildProject(library = false) {
+        const root = resolve(dirname, 'fixtures/dynamic-import-query-fragment')
+        const entry = resolve(root, library ? 'css-entry.js' : 'entry.js')
+        const result = await build({
+          root,
+          configFile: false,
+          logLevel: 'silent',
+          input: entry,
+          build: {
+            write: false,
+            minify: false,
+            cssCodeSplit: true,
+            lib: library ? { entry, formats: ['es'] } : false,
+          },
+          plugins: [
+            {
+              name: 'append-query-or-fragment',
+              // Append a query string or fragment before Vite looks up output chunks.
+              // experimental.renderBuiltUrl rewrites preload URLs after that lookup
+              // and leaves the import specifiers unchanged.
+              renderChunk(code) {
+                return code.replace(
+                  /(import\(["'`])([^"'`]+\.m?js)(["'`]\))/g,
+                  `$1$2${suffix}$3`,
+                )
+              },
+            },
+          ],
+        })
+        if ('on' in result) throw new Error('Unexpected watcher result')
+        return Array.isArray(result) ? result[0] : result
+      }
+
+      test('preserves CSS dependencies of lazy JavaScript chunks', async () => {
+        const { output } = await buildProject()
+        const entry = output.find(
+          (chunk): chunk is OutputChunk =>
+            chunk.type === 'chunk' && chunk.isEntry,
+        )
+        assert(entry)
+        const css = output.find(
+          (asset) => asset.type === 'asset' && asset.fileName.endsWith('.css'),
+        )
+        assert(css)
+        expect(entry.code).toContain(suffix)
+        expect(entry.code).toContain(css.fileName)
+      })
+
+      test('removes imports of deleted CSS-only chunks in library builds', async () => {
+        const { output } = await buildProject(true)
+        const entry = output.find(
+          (chunk): chunk is OutputChunk =>
+            chunk.type === 'chunk' && chunk.isEntry,
+        )
+        assert(entry)
+        expect(
+          output.some(
+            (asset) =>
+              asset.type === 'asset' && asset.fileName.endsWith('.css'),
+          ),
+        ).toBe(true)
+        expect(entry.code).not.toMatch(/\bimport\s*\(/)
+      })
+    })
+  }
+
   test.for([
     [true, true],
     [true, false],

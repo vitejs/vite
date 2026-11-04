@@ -83,6 +83,11 @@
     // imported before with query
     { testId: 'safe-imported-query', path: '/safe.json?query' },
 
+    {
+      testId: 'unsafe-wasm-import',
+      path: '/root/unsafe.wasm?import',
+    },
+
     // outside of allowed dir
     { testId: 'unsafe', path: '/root/unsafe.txt' },
     // outside of allowed dir and root

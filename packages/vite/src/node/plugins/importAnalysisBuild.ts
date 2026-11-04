@@ -6,6 +6,7 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import type { RenderedChunk, SourceMap } from 'rolldown'
 import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
+import { cleanUrl } from '../../shared/utils'
 import type { PartialEnvironment } from '../baseEnvironment'
 import { toOutputFilePathInJS } from '../build'
 import type { ResolvedConfig } from '../config'
@@ -309,10 +310,17 @@ function preload(
             document.head.appendChild(link)
             if (isCss) {
               return new Promise((res, rej) => {
-                link.addEventListener('load', res)
-                link.addEventListener('error', () =>
-                  rej(new Error(`Unable to preload CSS for ${dep}`)),
-                )
+                const handleSettle = (e: Event) => {
+                  link.removeEventListener('load', handleSettle)
+                  link.removeEventListener('error', handleSettle)
+                  if (e.type === 'error') {
+                    rej(new Error(`Unable to preload CSS for ${dep}`))
+                  } else {
+                    res(e)
+                  }
+                }
+                link.addEventListener('load', handleSettle)
+                link.addEventListener('error', handleSettle)
               })
             }
           })
@@ -565,7 +573,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
                 const normalizedFile = path.posix.join(
                   path.posix.dirname(chunk.fileName),
-                  url,
+                  cleanUrl(url),
                 )
                 const fileName =
                   importMap?.mapping[normalizedFile] ?? normalizedFile
@@ -671,7 +679,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
               if (url) {
                 normalizedFile = path.posix.join(
                   path.posix.dirname(chunk.fileName),
-                  url,
+                  cleanUrl(url),
                 )
 
                 let shouldRewriteImport = false

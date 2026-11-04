@@ -14,7 +14,7 @@ import {
 } from 'rolldown'
 import { isDynamicPattern } from 'tinyglobby'
 import type { DepsOptimizerEsbuildOptions } from '#types/internal/esbuildOptions'
-import { isWindows } from '../../shared/utils'
+import { isWindows, withTrailingSlash } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
 import {
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
@@ -988,7 +988,7 @@ function getDepsCacheDirPrefix(environment: Environment): string {
 export function createIsOptimizedDepFile(
   environment: Environment,
 ): (id: string) => boolean {
-  const depsCacheDirPrefix = getDepsCacheDirPrefix(environment)
+  const depsCacheDirPrefix = withTrailingSlash(getDepsCacheDir(environment))
   return (id) => id.startsWith(depsCacheDirPrefix)
 }
 
@@ -996,8 +996,10 @@ export function createIsOptimizedDepUrl(
   environment: Environment,
 ): (url: string) => boolean {
   const { root } = environment.config
-  const depsCacheDir = getDepsCacheDirPrefix(environment)
-  const depsCacheDirPrefix = fileToModuleUrl(depsCacheDir, root)
+  const depsCacheDir = getDepsCacheDir(environment)
+  const depsCacheDirPrefix = withTrailingSlash(
+    fileToModuleUrl(depsCacheDir, root),
+  )
   return function isOptimizedDepUrl(url: string): boolean {
     return url.startsWith(depsCacheDirPrefix)
   }
