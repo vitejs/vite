@@ -12,7 +12,15 @@ import type {
   RolldownOutput,
   RollupLog,
 } from 'rolldown'
-import { afterEach, describe, expect, assert, test, vi } from 'vitest'
+import {
+  afterEach,
+  describe,
+  expect,
+  assert,
+  onTestFinished,
+  test,
+  vi,
+} from 'vitest'
 import { BuildEnvironment, normalizePath, resolveConfig } from '..'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import {
@@ -1542,6 +1550,8 @@ test('chunkImportMap file names do not depend on the build folder', async () => 
   const parent = await fsp.realpath(
     await fsp.mkdtemp(join(tmpdir(), 'vite-chunk-import-map-')),
   )
+  onTestFinished(() => fsp.rm(parent, { recursive: true, force: true }))
+
   const buildFrom = async (folder: string) => {
     const root = join(parent, folder)
     await fsp.cp(fixture, root, { recursive: true })
@@ -1559,13 +1569,9 @@ test('chunkImportMap file names do not depend on the build folder', async () => 
     return result.output.map((output) => output.fileName).sort()
   }
 
-  try {
-    const first = await buildFrom('project')
-    const second = await buildFrom('project-in-a-longer-folder')
-    expect(second).toStrictEqual(first)
-  } finally {
-    await fsp.rm(parent, { recursive: true, force: true })
-  }
+  const first = await buildFrom('project')
+  const second = await buildFrom('project-in-a-longer-folder')
+  expect(second).toStrictEqual(first)
 })
 
 test('chunkImportMap is emitted when emitAssets is false', async () => {
