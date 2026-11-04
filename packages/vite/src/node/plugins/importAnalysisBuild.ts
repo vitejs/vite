@@ -17,6 +17,7 @@ import {
   combineSourcemaps,
   generateCodeFrame,
   getFileStartIndex,
+  normalizePath,
   numberToPos,
 } from '../utils'
 import { removedPureCssFilesCache } from './css'
@@ -42,7 +43,16 @@ type ChunkImportMapKeyChunk = Pick<
  */
 export function getChunkImportMapKeySignatures(
   chunks: Record<string, ChunkImportMapKeyChunk>,
+  cwd: string,
 ): Map<string, string> {
+  const toStableId = (id: string): [boolean, string] =>
+    path.isAbsolute(id)
+      ? [true, normalizePath(path.relative(cwd, id))]
+      : [false, id]
+  const isSmaller = (
+    [aIsPath, a]: [boolean, string],
+    [bIsPath, b]: [boolean, string],
+  ) => (aIsPath !== bIsPath ? !aIsPath : a < b)
   const signatures = new Map<string, string>()
   const usedNames = new Set<string>()
   for (const [fileName, chunk] of Object.entries(chunks)) {
@@ -51,18 +61,23 @@ export function getChunkImportMapKeySignatures(
     if (!chunk.fileName.includes('!~{')) {
       signatures.set(fileName, JSON.stringify(['file', fileName]))
     } else if (chunk.facadeModuleId != null) {
-      signatures.set(fileName, JSON.stringify(['facade', chunk.facadeModuleId]))
+      signatures.set(
+        fileName,
+        JSON.stringify(['facade', ...toStableId(chunk.facadeModuleId)]),
+      )
     } else if (!usedNames.has(chunk.name)) {
       usedNames.add(chunk.name)
       signatures.set(fileName, JSON.stringify(['name', chunk.name]))
     } else {
-      const moduleId = chunk.moduleIds.reduce<string | undefined>(
-        (smallest, id) =>
-          smallest === undefined || id < smallest ? id : smallest,
-        undefined,
-      )
+      let moduleId: [boolean, string] | undefined
+      for (const id of chunk.moduleIds) {
+        const stableId = toStableId(id)
+        if (moduleId === undefined || isSmaller(stableId, moduleId)) {
+          moduleId = stableId
+        }
+      }
       if (moduleId !== undefined) {
-        signatures.set(fileName, JSON.stringify(['module', moduleId]))
+        signatures.set(fileName, JSON.stringify(['module', ...moduleId]))
       } else {
         // Rolldown leaves duplicate-named chunks without module IDs unmapped.
         signatures.set(fileName, JSON.stringify(['file', fileName]))
@@ -462,6 +477,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       if (graph.chunkImportMapKeySignatures.size === 0) {
         graph.chunkImportMapKeySignatures = getChunkImportMapKeySignatures(
           graph.chunks,
+          path.resolve(
+            environment.config.build.rolldownOptions.cwd ?? process.cwd(),
+          ),
         )
       }
       const getKey = (fileName: string) =>
