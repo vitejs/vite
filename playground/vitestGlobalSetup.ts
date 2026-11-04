@@ -91,5 +91,12 @@ function copyWithFriendlyError(
 
 function filterForPlaygroundCopy(file: string): boolean {
   file = file.replace(/\\/g, '/')
-  return !file.includes('__tests__') && !/dist(?:\/|$)/.test(file)
+  return (
+    !file.includes('__tests__') &&
+    !/dist(?:\/|$)/.test(file) &&
+    // the glob-import symlink is created at runtime by its vite.config with a
+    // target relative to the playground dir; copying it would resolve the
+    // target to the original playground location, outside the copied root
+    !file.endsWith('glob-import/root/follow-symlinks/linked/my-lib')
+  )
 }
