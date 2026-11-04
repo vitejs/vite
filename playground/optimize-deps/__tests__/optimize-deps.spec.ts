@@ -106,6 +106,12 @@ describe('optimize-deps', clientOptimizerUnsupported, () => {
       .toMatch(isBuild ? 'prod' : 'dev')
   })
 
+  test('import from dep with subpath imports (#) conditions', async () => {
+    await expect
+      .poll(() => page.textContent('.subpath-imports'))
+      .toMatch(isBuild ? 'production' : 'development')
+  })
+
   test('import from dep with .notjs files', async () => {
     await expect.poll(() => page.textContent('.not-js')).toMatch(`[success]`)
   })
