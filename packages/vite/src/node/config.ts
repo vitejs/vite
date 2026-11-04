@@ -1762,6 +1762,20 @@ export async function resolveConfig(
     )
   }
 
+  // CSS emitted by a server environment is still loaded by browsers, so it
+  // follows the client target instead of the server's JS target.
+  const clientCssTarget = resolvedEnvironments.client.build.cssTarget
+  for (const [environmentName, environment] of Object.entries(
+    resolvedEnvironments,
+  )) {
+    if (
+      environment.consumer === 'server' &&
+      config.environments[environmentName].build?.cssTarget === undefined
+    ) {
+      environment.build.cssTarget = clientCssTarget
+    }
+  }
+
   // Backward compatibility: merge environments.client.optimizeDeps back into optimizeDeps
   // The same object is assigned back for backward compatibility. The ecosystem is modifying
   // optimizeDeps in the ResolvedConfig hook, so these changes will be reflected on the
