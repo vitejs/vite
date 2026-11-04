@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import os, { type NetworkInterfaceInfoIPv4 } from 'node:os'
@@ -66,6 +67,78 @@ WEIBLwjKCAscrtyayXWp6zUTmgvb8PQf//3Mh2DiEngAi3WI/nL+8Y0RkqbvxBar
 X2JN
 -----END CERTIFICATE-----
 `.trim()
+
+describe('normalizePath', () => {
+  test.each([
+    ['', '.'],
+    ['.', '.'],
+    ['/', '/'],
+    ['./foo/../bar/', 'bar/'],
+    ['/foo//bar/../baz', '/foo/baz'],
+    ['C:/foo/../bar', 'C:/bar'],
+    ['//./nul/vfs/1/entry.js', '//./nul/vfs/1/entry.js'],
+    ['//./nul/vfs/1/./src/../entry.js', '//./nul/vfs/1/entry.js'],
+    ['//?/C:/foo/../bar', '//?/C:/bar'],
+    ['//?/UNC/server/share/src/../entry.js', '//?/UNC/server/share/entry.js'],
+    ['//server/share/src/../entry.js', '//server/share/entry.js'],
+    ['//server/share/../entry.js', '//server/share/entry.js'],
+    ['//server/share', '//server/share/'],
+    ['//server/share/', '//server/share/'],
+    ['///foo//bar', '/foo/bar'],
+  ])('normalizes %j to %j', (input, expected) => {
+    expect(normalizePath(input)).toBe(expected)
+    expect(normalizePath(expected)).toBe(expected)
+  })
+
+  test.skipIf(!isWindows).each([
+    ['C:\\foo\\..\\bar', 'C:/bar'],
+    ['\\\\.\\nul\\vfs\\1\\entry.js', '//./nul/vfs/1/entry.js'],
+    ['\\\\?\\C:\\foo\\..\\bar', '//?/C:/bar'],
+    ['\\\\server\\share\\src\\..\\entry.js', '//server/share/entry.js'],
+  ])('normalizes native Windows path %j to %j', (input, expected) => {
+    expect(normalizePath(input)).toBe(expected)
+  })
+
+  test.skipIf(isWindows)('preserves backslashes in POSIX filenames', () => {
+    expect(normalizePath('/foo\\bar/./entry.js')).toBe('/foo\\bar/entry.js')
+  })
+
+  test.runIf(process.allowedNodeEnvironmentFlags.has('--experimental-vfs'))(
+    'keeps node:vfs mount paths accessible through node:fs',
+    () => {
+      const vite = new URL('../../../dist/node/index.js', import.meta.url).href
+      execFileSync(
+        process.execPath,
+        [
+          '--experimental-vfs',
+          '--input-type=module',
+          '--eval',
+          `
+            import assert from 'node:assert/strict'
+            import { readFileSync, writeFileSync } from 'node:fs'
+            import os from 'node:os'
+            import path from 'node:path'
+            import { create } from 'node:vfs'
+            import { normalizePath } from ${JSON.stringify(vite)}
+
+            const filesystem = create()
+            // Early Node 26 releases require an explicit mount point.
+            filesystem.mount(path.join(os.devNull, 'vfs', 'vite-normalize-path'))
+            const root = filesystem.mountPoint
+            try {
+              const filename = path.join(root, 'entry.js')
+              writeFileSync(filename, 'export default 1')
+              assert.equal(readFileSync(normalizePath(filename), 'utf8'), 'export default 1')
+            } finally {
+              filesystem.unmount()
+            }
+          `,
+        ],
+        { timeout: 30000 },
+      )
+    },
+  )
+})
 
 describe('bareImportRE', () => {
   test('should work with normal package name', () => {
