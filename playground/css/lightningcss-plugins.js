@@ -1,7 +1,7 @@
 import path from 'node:path'
-import { normalizePath } from 'vite'
 import { bundle as bundleWithLightningCss } from 'lightningcss'
 import { globSync } from 'tinyglobby'
+import { normalizePath } from 'vite'
 
 /**
  * @param {string} filename
@@ -27,8 +27,8 @@ function obtainLightningCssAst(filename) {
   }
 }
 
-/** @returns {import('lightningcss').Visitor} */
-export function testDirDep() {
+/** @type {import('lightningcss').VisitorFunction<{}>} */
+export function testDirDep({ addDependency }) {
   /** @type {string[]} */
   let currentStyleSheetSources
   return {
@@ -43,11 +43,11 @@ export function testDirDep() {
           const pattern = normalizePath(
             path.resolve(path.dirname(from), './glob-dep/**/*.css'),
           )
-          // FIXME: there's no way to add a dependency
           const files = globSync(pattern, {
             expandDirectories: false,
             absolute: true,
           })
+          addDependency({ type: 'glob', glob: pattern })
           return files.flatMap((file) => obtainLightningCssAst(file).rules)
         },
       },
@@ -138,8 +138,7 @@ export function nestedLikePlugin() {
                   selector[0].type === 'nesting' &&
                   selector[1].type === 'type'
                 ) {
-                  const lastParentSelectorComponent =
-                    parentSelector[parentSelector.length - 1]
+                  const lastParentSelectorComponent = parentSelector.at(-1)
                   if ('name' in lastParentSelectorComponent) {
                     const newSelector = [
                       ...parentSelector.slice(0, -1),

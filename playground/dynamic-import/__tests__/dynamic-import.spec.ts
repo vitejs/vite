@@ -1,9 +1,11 @@
-import { expect, test } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import {
   browserLogs,
+  bundledDevTodo,
   findAssetFile,
   getColor,
   isBuild,
+  isBundled,
   page,
   serverLogs,
 } from '~utils'
@@ -100,6 +102,12 @@ test('should load dynamic import with vars alias', async () => {
     .toMatch('hi')
 })
 
+test('should load dynamic import with vars subpath imports', async () => {
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-vars-subpath-imports'))
+    .toMatch('hi')
+})
+
 test('should load dynamic import with vars raw', async () => {
   await expect
     .poll(() => page.textContent('.dynamic-import-with-vars-raw'))
@@ -109,7 +117,7 @@ test('should load dynamic import with vars raw', async () => {
 test('should load dynamic import with vars url', async () => {
   await expect
     .poll(() => page.textContent('.dynamic-import-with-vars-url'))
-    .toMatch(isBuild ? 'data:text/javascript' : '/alias/url.js')
+    .toMatch(isBundled ? 'data:text/javascript' : '/alias/url.js')
 })
 
 test('should load dynamic import with vars worker', async () => {
@@ -133,6 +141,31 @@ test('should work with load ../ and contain itself directory', async () => {
   await expect
     .poll(() => page.textContent('.dynamic-import-nested-self'))
     .toMatch('dynamic-import-nested-self-content')
+})
+
+test('dynamic import with await in the argument', async () => {
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-await-in-the-argument'))
+    .toMatch('hello')
+})
+
+// #22700: nested `import('a').then(() => import('b'))` where `a` has a CSS
+// side-effect dep — the outer import's CSS must still be loaded in build output
+test('should load css of nested dynamic import', async () => {
+  await expect
+    .poll(() => page.textContent('.then-css-outer'))
+    .toMatch('then-css-outer')
+  await expect.poll(() => getColor('.then-css-outer')).toBe('red')
+  await expect
+    .poll(() => page.textContent('.then-css-inner'))
+    .toMatch('then-css-inner')
+  await expect.poll(() => getColor('.then-css-inner')).toBe('green')
+})
+
+test('should handle object rest destructuring of a dynamic import', async () => {
+  await expect
+    .poll(() => page.textContent('.dynamic-import-rest'))
+    .toMatch('a rest-b rest-c')
 })
 
 test('should work a load path that contains parentheses.', async () => {
@@ -193,4 +226,59 @@ test.runIf(isBuild)('should not preload for non-analyzable urls', () => {
   const js = findAssetFile(/index-[-\w]{8}\.js$/)
   // should match e.g. await import(e.jss);o(".view",p===i)
   expect(js).to.match(/\.jss\);/)
+})
+
+describe(
+  'dynamic import of a CommonJS dep',
+  bundledDevTodo(
+    'lazy compilation loses the `default` export of a dynamically imported CommonJS module',
+    { vite: [23558] },
+  ),
+  () => {
+    test('plain module.exports object', async () => {
+      await expect
+        .poll(() => page.textContent('.cjs-dynamic-plain-object'))
+        .toBe('ok')
+    })
+
+    test('webpack UMD', async () => {
+      await expect.poll(() => page.textContent('.cjs-dynamic-umd')).toBe('ok')
+    })
+
+    test('compiled from ESM, with the __esModule flag', async () => {
+      await expect
+        .poll(() => page.textContent('.cjs-dynamic-dep-cjs-compiled-from-esm'))
+        .toBe('ok')
+    })
+
+    test('compiled from CJS', async () => {
+      await expect
+        .poll(() => page.textContent('.cjs-dynamic-dep-cjs-compiled-from-cjs'))
+        .toBe('ok')
+    })
+
+    test('module.exports object with the __esModule flag', async () => {
+      await expect
+        .poll(() =>
+          page.textContent('.cjs-dynamic-dep-cjs-with-es-module-flag'),
+        )
+        .toBe('ok')
+    })
+
+    test('from an explicit CJS importer uses node interop', async () => {
+      await expect
+        .poll(() => page.textContent('.cjs-dynamic-importer-cjs'))
+        .toBe('ok')
+    })
+  },
+)
+
+test('dynamic import of a CommonJS dep from an ambiguous importer respects the __esModule flag', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-importer-ambiguous'))
+    .toBe('ok')
+})
+
+test('dynamic named import from an ESM dep', async () => {
+  await expect.poll(() => page.textContent('.esm-dynamic-named')).toBe('ok')
 })

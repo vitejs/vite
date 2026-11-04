@@ -1,9 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import type { Plugin } from '../plugin'
-import { isInNodeModules, sortObjectKeys } from '../utils'
 import type { PackageCache } from '../packages'
 import { findNearestMainPackageData } from '../packages'
+import type { Plugin } from '../plugin'
+import { isInNodeModules, sortObjectKeys } from '../utils'
 
 export interface LicenseEntry {
   /**
@@ -69,6 +69,7 @@ export function licensePlugin(): Plugin {
           if (!pkgData) continue
 
           // Grab the package.json keys and check if already exists in the licenses
+          // oxlint-disable-next-line typescript/no-useless-default-assignment -- version might be actually missing
           const { name, version = '0.0.0', license } = pkgData.data
           const key = `${name}@${version}`
           if (licenses[key]) continue

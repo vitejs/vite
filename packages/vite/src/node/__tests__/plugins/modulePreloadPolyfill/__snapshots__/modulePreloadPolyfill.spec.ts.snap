@@ -3,7 +3,7 @@
 exports[`load > doesn't load modulepreload polyfill when format is cjs 1`] = `""`;
 
 exports[`load > loads modulepreload polyfill 1`] = `
-"//#region \\0vite/modulepreload-polyfill.js
+"// \\0vite/modulepreload-polyfill.js
 (function polyfill() {
 	const relList = document.createElement("link").relList;
 	if (relList && relList.supports && relList.supports("modulepreload")) return;
@@ -33,6 +33,5 @@ exports[`load > loads modulepreload polyfill 1`] = `
 		fetch(link.href, fetchOpts);
 	}
 })();
-//#endregion
 "
 `;

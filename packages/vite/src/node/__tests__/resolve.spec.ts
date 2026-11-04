@@ -1,9 +1,28 @@
 import { join } from 'node:path'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
+import { build } from '../build'
+import type { EnvironmentOptions, InlineConfig } from '../config'
+import { resolveSubpathImports } from '../plugins/resolve'
 import { createServer } from '../server'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
-import type { EnvironmentOptions, InlineConfig } from '../config'
-import { build } from '../build'
+import { normalizePath } from '../utils'
+
+for (const id of ['#hash#blocked', '#hash?blocked']) {
+  test(`does not fall back from explicitly blocked imports key ${id}`, () => {
+    expect(() =>
+      resolveSubpathImports(
+        id,
+        join(import.meta.dirname, 'fixtures/resolve-subpath-imports/index.js'),
+        {
+          conditions: [],
+          externalConditions: [],
+          isProduction: false,
+          isRequire: false,
+        },
+      ),
+    ).toThrow(`Missing "${id}" specifier`)
+  })
+}
 
 describe('import and resolveId', () => {
   async function createTestServer() {
@@ -11,6 +30,11 @@ describe('import and resolveId', () => {
       configFile: false,
       root: import.meta.dirname,
       logLevel: 'error',
+      // the scanner would otherwise crawl every HTML fixture under `__tests__`
+      optimizeDeps: {
+        noDiscovery: true,
+        include: [],
+      },
       server: {
         middlewareMode: true,
         ws: false,
@@ -207,9 +231,7 @@ describe('file url', () => {
 
     test('non declared builtin', async () => {
       const resolved = await run({
-        builtins: [
-          /* empty */
-        ],
+        builtins: [/* empty */],
         idToResolve: 'my-env:custom-builtin',
       })
       expect(resolved).toBeNull()
@@ -218,9 +240,7 @@ describe('file url', () => {
     test('non declared node builtin', async () => {
       await expect(
         run({
-          builtins: [
-            /* empty */
-          ],
+          builtins: [/* empty */],
           idToResolve: 'node:fs',
         }),
       ).rejects.toThrowError(
@@ -285,7 +305,7 @@ describe('file url', () => {
       build: {
         ssr: true,
         outDir: 'dist/basic',
-        rollupOptions: {
+        rolldownOptions: {
           input: { index: fileUrl.href },
         },
       },
@@ -300,7 +320,7 @@ describe('file url', () => {
       build: {
         ssr: true,
         outDir: 'dist/virtual',
-        rollupOptions: {
+        rolldownOptions: {
           input: { index: 'virtual:test-dep/static' },
         },
       },
@@ -309,5 +329,65 @@ describe('file url', () => {
       join(import.meta.dirname, 'fixtures/file-url/dist/virtual/index.js')
     )
     expect(mod2.default.default).toBe('ok')
+  })
+})
+
+describe('alias replacement with $ patterns', () => {
+  const fixtureDir = join(import.meta.dirname, 'fixtures/alias-special-pattern')
+
+  async function resolveWithAlias(
+    alias: NonNullable<InlineConfig['resolve']>['alias'],
+    id: string,
+  ) {
+    const server = await createServer({
+      configFile: false,
+      root: import.meta.dirname,
+      logLevel: 'error',
+      resolve: { alias },
+      // the scanner would otherwise crawl every HTML fixture under `__tests__`
+      optimizeDeps: {
+        noDiscovery: true,
+        include: [],
+      },
+      server: {
+        middlewareMode: true,
+        ws: false,
+      },
+    })
+    onTestFinished(() => server.close())
+    // The SSR dev plugin container exercises @rollup/plugin-alias, which we want to test here.
+    // Builds use Rolldown's native alias plugin for aliases.
+    return server.environments.ssr.pluginContainer.resolveId(id)
+  }
+
+  test('$$ in string replacement is inserted literally', async () => {
+    const resolved = await resolveWithAlias(
+      { '@dollar-double': join(fixtureDir, '$$') },
+      '@dollar-double',
+    )
+    expect(resolved?.id).toBe(normalizePath(join(fixtureDir, '$$/index.js')))
+  })
+
+  test('$& in string replacement is inserted literally', async () => {
+    const resolved = await resolveWithAlias(
+      { '@dollar-ampersand': join(fixtureDir, '$&') },
+      '@dollar-ampersand',
+    )
+    expect(resolved?.id).toBe(normalizePath(join(fixtureDir, '$&/index.js')))
+  })
+
+  test('capture groups in regex replacement still work', async () => {
+    const resolved = await resolveWithAlias(
+      [
+        {
+          find: /^@regex-capture\/(.*)$/,
+          replacement: join(fixtureDir, 'regex-target') + '/$1',
+        },
+      ],
+      '@regex-capture/file',
+    )
+    expect(resolved?.id).toBe(
+      normalizePath(join(fixtureDir, 'regex-target/file.js')),
+    )
   })
 })

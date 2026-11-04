@@ -8,6 +8,9 @@ describe('getCommonBase()', async () => {
   it('common base', () => {
     expect(getCommonBase(['/a/b/**/*.vue', '/a/b/**/*.jsx'])).toBe('/a/b')
   })
+  it('does not treat a path prefix as a common directory', () => {
+    expect(getCommonBase(['/a/foo/*.js', '/a/foobar/*.js'])).toBe('/a')
+  })
   it('static file', () => {
     expect(
       getCommonBase(['/a/b/**/*.vue', '/a/b/**/*.jsx', '/a/b/foo.js']),

@@ -4,15 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "imports": {
-    "#imports/*": "./imports-path/*"
+    "#imports/*": "./root/imports-path/*"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "vite root",
+    "build": "vite build root",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
-    "preview": "vite preview"
+    "preview": "vite preview root"
   },
   "dependencies": {
-    "@vitejs/test-import-meta-glob-pkg": "file:./import-meta-glob-pkg"
+    "@vitejs/test-import-meta-glob-pkg": "file:./root/import-meta-glob-pkg"
   }
 }

@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vitest'
 import type { OutputBundle, OutputChunk } from 'rolldown'
+import { describe, expect, test } from 'vitest'
 import { getCssFilesForChunk } from '../plugins/html'
 
 function createChunk(
@@ -226,6 +226,32 @@ describe('getCssFilesForChunk', () => {
       'leaf.css',
       'mid.css',
       'entry2.css',
+    ])
+  })
+
+  test('chunk reached through an import cycle is not cached with a partial list (#23628)', () => {
+    //   index        dashboard
+    //     |              |
+    //   shared  <-->  feature
+    const shared = createChunk('shared.js', ['feature.js'], ['shared.css'])
+    const feature = createChunk('feature.js', ['shared.js'], ['feature.css'])
+    const index = createChunk('index.js', ['shared.js'], ['index.css'])
+    const dashboard = createChunk(
+      'dashboard.js',
+      ['feature.js'],
+      ['dashboard.css'],
+    )
+    const bundle = createBundle(index, dashboard, shared, feature)
+    const cache = new Map<OutputChunk, string[]>()
+    expect(getCssFilesForChunk(index, bundle, cache)).toStrictEqual([
+      'feature.css',
+      'shared.css',
+      'index.css',
+    ])
+    expect(getCssFilesForChunk(dashboard, bundle, cache)).toStrictEqual([
+      'shared.css',
+      'feature.css',
+      'dashboard.css',
     ])
   })
 

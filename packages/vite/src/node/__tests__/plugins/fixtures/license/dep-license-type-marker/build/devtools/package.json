@@ -1,0 +1,6 @@
+{
+  "name": "@vitejs/test-dep-license-type-marker-devtools",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js"
+}

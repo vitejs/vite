@@ -1,5 +1,7 @@
 import { extname } from 'node:path'
 import type { ModuleInfo, PartialResolvedId } from 'rolldown'
+import { cleanUrl } from '../../shared/utils'
+import { FS_PREFIX } from '../constants'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
   monotonicDateNow,
@@ -7,8 +9,6 @@ import {
   removeImportQuery,
   removeTimestampQuery,
 } from '../utils'
-import { FS_PREFIX } from '../constants'
-import { cleanUrl } from '../../shared/utils'
 import type { TransformResult } from './transformRequest'
 
 export class EnvironmentModuleNode {

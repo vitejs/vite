@@ -1,12 +1,12 @@
 import path from 'node:path'
 import picomatch from 'picomatch'
 import { globSync } from 'tinyglobby'
-import type { ResolvedConfig } from '../config'
-import { escapeRegex, getNpmPackageName } from '../utils'
-import { resolvePackageData } from '../packages'
 import { slash } from '../../shared/utils'
+import type { ResolvedConfig } from '../config'
 import type { Environment } from '../environment'
 import { createBackCompatIdResolver } from '../idResolver'
+import { resolvePackageData } from '../packages'
+import { escapeRegex, getNpmPackageName } from '../utils'
 
 export function createOptimizeDepsIncludeResolver(
   environment: Environment,
@@ -131,6 +131,9 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
               .filter(Boolean),
           )
         } else {
+          // null export value means the subpath is intentionally private/blocked
+          // https://nodejs.org/api/packages.html#subpath-patterns
+          if (exports[key] == null) continue
           possibleExportPaths.push(key.slice(2))
         }
       }

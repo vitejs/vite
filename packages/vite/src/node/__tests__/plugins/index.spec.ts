@@ -11,7 +11,7 @@ const getConfigWithPlugin = (
     configFile: false,
     server: { middlewareMode: true, ws: false },
     optimizeDeps: { noDiscovery: true, include: [] },
-    build: { rollupOptions: { input }, write: false },
+    build: { rolldownOptions: { input }, write: false },
     plugins,
     logLevel: 'silent',
   }
@@ -88,7 +88,7 @@ describe('hook filter with plugin container', async () => {
   })
 })
 
-describe('hook filter with build', async () => {
+test('hook filter with build', async () => {
   const resolveId = vi.fn()
   const load = vi.fn()
   const transformWithId = vi.fn()
@@ -140,30 +140,25 @@ describe('hook filter with build', async () => {
     ],
     ['foo.js', 'foo.ts'],
   )
+
   await build(config)
 
-  test('resolveId', async () => {
-    expect(resolveId).toHaveBeenCalledTimes(1)
-    expect(resolveId).toHaveBeenCalledWith('foo.js', undefined, any)
-  })
+  expect(resolveId).toHaveBeenCalledTimes(1)
+  expect(resolveId).toHaveBeenCalledWith('foo.js', undefined, any)
 
-  test('load', async () => {
-    expect(load).toHaveBeenCalledTimes(1)
-    expect(load).toHaveBeenCalledWith('foo.js', any)
-  })
+  expect(load).toHaveBeenCalledTimes(1)
+  expect(load).toHaveBeenCalledWith('foo.js', any)
 
-  test('transform', async () => {
-    expect(transformWithId).toHaveBeenCalledTimes(1)
-    expect(transformWithId).toHaveBeenCalledWith(
-      expect.stringContaining('import_meta'),
-      'foo.js',
-      any,
-    )
-    expect(transformWithCode).toHaveBeenCalledTimes(1)
-    expect(transformWithCode).toHaveBeenCalledWith(
-      expect.stringContaining('import.meta'),
-      'foo.ts',
-      any,
-    )
-  })
+  expect(transformWithId).toHaveBeenCalledTimes(1)
+  expect(transformWithId).toHaveBeenCalledWith(
+    expect.stringContaining('import_meta'),
+    'foo.js',
+    any,
+  )
+  expect(transformWithCode).toHaveBeenCalledTimes(1)
+  expect(transformWithCode).toHaveBeenCalledWith(
+    expect.stringContaining('import.meta'),
+    'foo.ts',
+    any,
+  )
 })

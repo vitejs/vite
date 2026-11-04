@@ -13,24 +13,24 @@ import type {
   TransformPluginContext,
   TransformResult,
 } from 'rolldown'
+import type { PartialEnvironment } from './baseEnvironment'
+import type { BuildAppHook } from './build'
 import type {
   ConfigEnv,
   EnvironmentOptions,
   ResolvedConfig,
   UserConfig,
 } from './config'
-import type { ServerHook } from './server'
-import type { BuildAppHook } from './build'
-import type { IndexHtmlTransform } from './plugins/html'
-import type { EnvironmentModuleNode } from './server/moduleGraph'
-import type { ModuleNode } from './server/mixedModuleGraph'
-import type { HmrContext, HotUpdateOptions } from './server/hmr'
-import type { DevEnvironment } from './server/environment'
 import type { Environment } from './environment'
-import type { PartialEnvironment } from './baseEnvironment'
-import type { PreviewServerHook } from './preview'
-import { arraify, asyncFlatten } from './utils'
+import type { IndexHtmlTransform } from './plugins/html'
 import type { StringFilter } from './plugins/pluginFilter'
+import type { ClosePreviewServerHook, PreviewServerHook } from './preview'
+import type { CloseServerHook, ServerHook } from './server'
+import type { DevEnvironment } from './server/environment'
+import type { HmrContext, HotUpdateOptions } from './server/hmr'
+import type { ModuleNode } from './server/mixedModuleGraph'
+import type { EnvironmentModuleNode } from './server/moduleGraph'
+import { arraify, asyncFlatten } from './utils'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -304,6 +304,20 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
    */
   configurePreviewServer?: ObjectHook<PreviewServerHook>
   /**
+   * Run logic when the server is restarted or closed. The hook receives a
+   * `reason` that is `'restart'` when the server is restarting and `'close'`
+   * when it is closing.
+   *
+   * The hooks are called after the server is torn down. Hooks can be async
+   * functions and will be called in parallel.
+   */
+  closeServer?: ObjectHook<CloseServerHook>
+  /**
+   * Same as `closeServer` but for the preview server. The preview server never
+   * restarts, so no `reason` is provided.
+   */
+  closePreviewServer?: ObjectHook<ClosePreviewServerHook>
+  /**
    * Transform index.html.
    * The hook receives the following arguments:
    *
@@ -387,6 +401,13 @@ export type PluginOption = Thenable<
   | PluginOption[]
 >
 
+const ignoredEnvironmentPluginHooks = [
+  'config',
+  'configEnvironment',
+  'configureServer',
+  'configResolved',
+] as const
+
 export async function resolveEnvironmentPlugins(
   environment: PartialEnvironment,
 ): Promise<Plugin[]> {
@@ -398,11 +419,20 @@ export async function resolveEnvironmentPlugins(
         continue
       }
       if (applied !== true) {
-        environmentPlugins.push(
-          ...((await asyncFlatten(arraify(applied))).filter(
-            Boolean,
-          ) as Plugin[]),
-        )
+        const appliedPlugins = (await asyncFlatten(arraify(applied))).filter(
+          Boolean,
+        ) as Plugin[]
+        for (const appliedPlugin of appliedPlugins) {
+          const ignoredHooks = ignoredEnvironmentPluginHooks.filter(
+            (hook) => appliedPlugin[hook],
+          )
+          if (ignoredHooks.length > 0) {
+            environment.logger.warnOnce(
+              `Plugin "${appliedPlugin.name}" defines Vite-specific hooks (${ignoredHooks.join(', ')}) in a plugin returned from applyToEnvironment. These hooks will be ignored.`,
+            )
+          }
+        }
+        environmentPlugins.push(...appliedPlugins)
         continue
       }
     }

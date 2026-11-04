@@ -1,11 +1,11 @@
 import type { ModuleInfo } from 'rolldown'
 import { monotonicDateNow } from '../utils'
-import type { TransformResult } from './transformRequest'
 import type {
   EnvironmentModuleGraph,
   EnvironmentModuleNode,
   ResolvedUrl,
 } from './moduleGraph'
+import type { TransformResult } from './transformRequest'
 
 /**
  * Backward compatible ModuleNode and ModuleGraph with mixed nodes from both the client and ssr environments

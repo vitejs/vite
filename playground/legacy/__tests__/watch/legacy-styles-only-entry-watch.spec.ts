@@ -3,9 +3,8 @@ import {
   editFile,
   findAssetFile,
   isBuild,
-  notifyRebuildComplete,
   readManifest,
-  watcher,
+  waitForRebuild,
 } from '~utils'
 
 test.runIf(isBuild)('rebuilds styles only entry on change', async () => {
@@ -20,10 +19,9 @@ test.runIf(isBuild)('rebuilds styles only entry on change', async () => {
   expect(numberOfManifestEntries).toBe(3)
 
   editFile('style-only-entry.css', (originalContents) =>
-    originalContents.replace('#ff69b4', '#ffb6c1'),
+    originalContents.replace('#ff69b4', '#ffb6c1 '),
   )
-  await notifyRebuildComplete(watcher)
-
+  await waitForRebuild('style-only-entry.css')
   const updatedManifest = readManifest('watch')
   expect(Object.keys(updatedManifest)).toHaveLength(numberOfManifestEntries)
 

@@ -1,15 +1,15 @@
 import fs from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import type { ModuleRunner } from 'vite/module-runner'
 import type { TestAPI } from 'vitest'
 import { afterEach, beforeEach, onTestFinished, test } from 'vitest'
-import type { ModuleRunner } from 'vite/module-runner'
-import type { ServerModuleRunnerOptions } from '../serverModuleRunner'
-import type { ViteDevServer } from '../../../server'
 import type { InlineConfig } from '../../../config'
+import type { ViteDevServer } from '../../../server'
 import { createServer } from '../../../server'
-import { createServerModuleRunner } from '../serverModuleRunner'
 import type { DevEnvironment } from '../../../server/environment'
+import type { ServerModuleRunnerOptions } from '../serverModuleRunner'
+import { createServerModuleRunner } from '../serverModuleRunner'
 
 interface TestClient {
   server: ViteDevServer

@@ -14,21 +14,15 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@91ab88e2619ed1f46221f0ba42d1492c02baf788 # v6.0.6
-
-      - name: Set node version to 24
-        uses: actions/setup-node@v6
+      - name: Install pnpm and node 24
+        uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
         with:
-          node-version: 24
-          cache: "pnpm"
-
-      - name: Install deps
-        run: pnpm install
+          runtime: node@24
+          cache: true
 
       # Install playwright's binary under custom directory to cache
       - name: (non-windows) Set Playwright path and Get playwright version

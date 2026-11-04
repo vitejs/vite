@@ -15,7 +15,7 @@ export default defineConfig({
     watch: null,
     minify: false,
     assetsInlineLimit: 0,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         entryFileNames: 'entries/[name].js',
         chunkFileNames: 'chunks/[name]-[hash].js',
@@ -24,6 +24,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    ...baseConfig.plugins,
     {
       name: 'dynamic-base-assets-globals',
       transformIndexHtml(_, ctx) {

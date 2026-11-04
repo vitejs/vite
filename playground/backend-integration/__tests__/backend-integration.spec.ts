@@ -2,10 +2,12 @@ import { describe, expect, test, vi } from 'vitest'
 import {
   browserErrors,
   browserLogs,
+  bundledDevUnsupported,
   editFile,
   getColor,
   getCssRuleBg,
   isBuild,
+  isBundledDev,
   isServe,
   listAssets,
   page,
@@ -34,6 +36,12 @@ describe('asset imports from js', () => {
       '.asset-reference.outside-root .asset-url',
     )
     if (isBuild) {
+      expect(text).toMatch(/\/dev\/assets\/logo-[-\w]{8}\.png/)
+    } else if (isBundledDev) {
+      // asset url is prefixed with server.origin
+      expect(text).toMatch(
+        `http://localhost:${ports['backend-integration']}/dev/assets/`,
+      )
       expect(text).toMatch(/\/dev\/assets\/logo-[-\w]{8}\.png/)
     } else {
       // asset url is prefixed with server.origin
@@ -103,6 +111,10 @@ describe.runIf(isBuild)('build', () => {
 })
 
 describe.runIf(isServe)('serve', () => {
+  const cssLinkUnsupported = bundledDevUnsupported(
+    'bundled dev turns a `<link rel="stylesheet">` to a project CSS file (without `media` or `disabled`) into a CSS import, served as a `<style>` injected by a JS module, so there is no `<link>` tag to swap on a CSS edit; the edit still hot updates in place',
+  )
+
   test('No ReferenceError', async () => {
     browserErrors.forEach((error) => {
       expect(error.name).not.toBe('ReferenceError')
@@ -115,11 +127,17 @@ describe.runIf(isServe)('serve', () => {
       code.replace('black', 'red'),
     )
     await expect.poll(() => getColor('body')).toBe('red') // successful HMR
-
-    // Verify that the base (/dev/) was added during the css-update
-    const link = await page.$('link[rel="stylesheet"]:last-of-type')
-    expect(await link.getAttribute('href')).toContain('/dev/global.css?t=')
   })
+
+  test(
+    'preserve the base in CSS HMR link href',
+    cssLinkUnsupported,
+    async () => {
+      // Verify that the base (/dev/) was added during the css-update
+      const link = await page.$('link[rel="stylesheet"]:last-of-type')
+      expect(await link.getAttribute('href')).toContain('/dev/global.css?t=')
+    },
+  )
 
   test('server.origin is applied to non-public CSS url()', async () => {
     const bg = await getCssRuleBg('.outside-root--aliased')
@@ -142,7 +160,9 @@ describe.runIf(isServe)('serve', () => {
         editFile('frontend/entrypoints/main.ts', (code) =>
           code.replace('text-black', 'text-[rgb(204,0,0)]'),
         ),
-      '[vite] css hot updated: /global.css',
+      isBundledDev
+        ? '[vite] hot updated: playground-temp/backend-integration/frontend/entrypoints/global.css'
+        : '[vite] css hot updated: /global.css',
     )
     await expect.poll(() => getColor(el)).toBe('rgb(204, 0, 0)')
   })
