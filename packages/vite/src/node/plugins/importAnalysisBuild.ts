@@ -69,13 +69,13 @@ export function getChunkImportMapKeySignatures(
       usedNames.add(chunk.name)
       signatures.set(fileName, JSON.stringify(['name', chunk.name]))
     } else {
-      const moduleId = chunk.moduleIds
-        .map(toStableId)
-        .reduce<[boolean, string] | undefined>(
-          (smallest, id) =>
-            smallest === undefined || isSmaller(id, smallest) ? id : smallest,
-          undefined,
-        )
+      let moduleId: [boolean, string] | undefined
+      for (const id of chunk.moduleIds) {
+        const stableId = toStableId(id)
+        if (moduleId === undefined || isSmaller(stableId, moduleId)) {
+          moduleId = stableId
+        }
+      }
       if (moduleId !== undefined) {
         signatures.set(fileName, JSON.stringify(['module', ...moduleId]))
       } else {
