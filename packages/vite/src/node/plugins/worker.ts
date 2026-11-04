@@ -30,10 +30,24 @@ import {
   urlRE,
 } from '../utils'
 import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
+import { getChunkOriginalFileName, type Manifest } from './manifest'
+
+type WorkerChunkManifest = {
+  fileName: string
+  name: string
+  originalFileName: string | undefined
+  isEntry: boolean
+  isDynamicEntry: boolean
+  imports: string[]
+  dynamicImports: string[]
+  importedCss: string[]
+  importedAssets: string[]
+}
 
 type WorkerBundle = {
   entryFilename: string
   entryCode: string
+  chunkManifests: WorkerChunkManifest[]
   referencedAssets: Set<string>
   moduleIds: Set<string>
   watchedFiles: string[]
@@ -59,6 +73,14 @@ type WorkerBundleId = string
 
 /** `undefined` identifies the main bundle. */
 type BundleId = WorkerBundleId | undefined
+
+const workerManifests = new WeakMap<Environment, Manifest>()
+
+export function getWorkerManifest(
+  environment: Environment,
+): Manifest | undefined {
+  return workerManifests.get(environment)
+}
 
 class WorkerOutputCache {
   /**
@@ -90,6 +112,7 @@ class WorkerOutputCache {
     watchedFiles: string[],
     outputEntryFilename: string,
     outputEntryCode: string,
+    chunkManifests: WorkerChunkManifest[],
     outputAssets: WorkerBundleAsset[],
     moduleIds: Set<string>,
     logger: Logger,
@@ -100,6 +123,7 @@ class WorkerOutputCache {
     const bundle: WorkerBundle = {
       entryFilename: outputEntryFilename,
       entryCode: outputEntryCode,
+      chunkManifests: chunkManifests,
       referencedAssets: new Set(outputAssets.map((asset) => asset.fileName)),
       moduleIds,
       watchedFiles,
@@ -240,6 +264,50 @@ class WorkerOutputCache {
 
   getAssets() {
     return this.assets.values()
+  }
+
+  getChunkManifest(liveFileNames?: Set<string>): Manifest {
+    const manifest: Manifest = {}
+    for (const bundle of this.bundles.values()) {
+      // Inline workers are bundled but their entry is not emitted.
+      if (!this.assets.has(bundle.entryFilename)) continue
+
+      const keysByFileName = new Map(
+        bundle.chunkManifests.map((chunk) => [
+          chunk.fileName,
+          `_worker_${chunk.fileName}`,
+        ]),
+      )
+
+      for (const chunk of bundle.chunkManifests) {
+        if (liveFileNames && !liveFileNames.has(chunk.fileName)) continue
+
+        const imports = chunk.imports.flatMap((fileName) => {
+          const key = keysByFileName.get(fileName)
+          return key ? [key] : []
+        })
+        const dynamicImports = chunk.dynamicImports.flatMap((fileName) => {
+          const key = keysByFileName.get(fileName)
+          return key ? [key] : []
+        })
+
+        manifest[keysByFileName.get(chunk.fileName)!] = {
+          src: chunk.originalFileName,
+          file: chunk.fileName,
+          css: chunk.importedCss.length > 0 ? chunk.importedCss : undefined,
+          assets:
+            chunk.importedAssets.length > 0 ? chunk.importedAssets : undefined,
+          isWorkerEntry: chunk.isEntry,
+          name: chunk.name,
+          isDynamicEntry: chunk.isDynamicEntry,
+          isWorker: true,
+          imports: imports.length > 0 ? imports : undefined,
+          dynamicImports:
+            dynamicImports.length > 0 ? dynamicImports : undefined,
+        }
+      }
+    }
+    return manifest
   }
 
   /**
@@ -436,6 +504,29 @@ async function bundleWorkerEntry(
   }
 
   const moduleIds = collectIncludedModuleIds(result.output)
+  const chunkManifests = result.output.flatMap(
+    (output): WorkerChunkManifest[] => {
+      if (output.type !== 'chunk') return []
+      const metadata = chunkMetadataMap.get(output)
+      return [
+        {
+          fileName: output.fileName,
+          name: output.name,
+          originalFileName: getChunkOriginalFileName(
+            output,
+            config.root,
+            false,
+          ),
+          isEntry: output.isEntry,
+          isDynamicEntry: output.isDynamicEntry,
+          imports: output.imports,
+          dynamicImports: output.dynamicImports,
+          importedCss: [...metadata.importedCss],
+          importedAssets: [...metadata.importedAssets],
+        },
+      ]
+    },
+  )
 
   const {
     output: [outputChunk, ...outputChunks],
@@ -469,6 +560,7 @@ async function bundleWorkerEntry(
       watchedFiles,
       outputChunk.fileName,
       outputChunk.code,
+      chunkManifests,
       assets,
       moduleIds,
       config.logger,
@@ -593,6 +685,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     buildStart() {
       if (isWorker) return
       emittedAssets.clear()
+      workerManifests.delete(this.environment)
       workerOutputCaches.get(config)!.clearEntryReferenceIds(this.environment)
     },
 
@@ -810,6 +903,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       const liveFileNames = shouldFilter
         ? cache.getLiveAssetFileNames(liveModuleIds)
         : undefined
+      workerManifests.set(
+        this.environment,
+        cache.getChunkManifest(liveFileNames),
+      )
       for (const asset of cache.getAssets()) {
         if (liveFileNames && !liveFileNames.has(asset.fileName)) continue
         if (emittedAssets.has(asset.fileName)) continue

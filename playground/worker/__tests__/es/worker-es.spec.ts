@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { isBuild, isBundledDev, page, testDir } from '~utils'
+import { isBuild, isBundledDev, page, readManifest, testDir } from '~utils'
 
 test.skipIf(isBundledDev)('normal', async () => {
   await expect.poll(() => page.textContent('.pong')).toMatch('pong')
@@ -95,6 +95,43 @@ test.skipIf(isBundledDev)('deeply nested workers', async () => {
 })
 
 describe.runIf(isBuild)('build', () => {
+  test('includes worker entries and chunks in the manifest', () => {
+    const assetsDir = path.resolve(testDir, 'dist/es/assets')
+    const emittedWorkerFiles = fs
+      .readdirSync(assetsDir)
+      .filter((file) => /^worker_(?:entry|chunk)-/.test(file))
+      .map((file) => `assets/${file}`)
+
+    const manifest = readManifest('es')
+    const workerChunks = Object.entries(manifest).filter(
+      ([, chunk]) => chunk.isWorker,
+    )
+    expect(workerChunks.every(([key]) => key.startsWith('_worker_'))).toBe(true)
+    expect(workerChunks.map(([, chunk]) => chunk.file).sort()).toStrictEqual(
+      emittedWorkerFiles.sort(),
+    )
+
+    const workerEntry =
+      manifest[
+        '_worker_assets/worker_entry-emit-chunk-dynamic-import-worker.js'
+      ]
+    expect(workerEntry).toMatchObject({
+      file: 'assets/worker_entry-emit-chunk-dynamic-import-worker.js',
+      isWorker: true,
+      isWorkerEntry: true,
+      dynamicImports: [expect.stringMatching(/^_worker_/)],
+    })
+    expect(workerEntry.isEntry).toBeUndefined()
+    expect(manifest[workerEntry.dynamicImports![0]]).toMatchObject({
+      file: expect.stringMatching(/^assets\/worker_chunk-module0-/),
+      isWorker: true,
+      isDynamicEntry: true,
+    })
+    expect(
+      manifest['_worker_assets/worker_entry-my-worker.js'].assets,
+    ).toStrictEqual([expect.stringMatching(/^assets\/worker_asset-vite-/)])
+  })
+
   // assert correct files
   test('inlined code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/es/assets')
