@@ -6,6 +6,8 @@
 <h2>From dependency</h2>
 <p class="dep"></p>
 
+<script type="module" src="./dynamic.js"></script>
+
 <script type="module">
   import * as data from './data.json' with { type: 'json' }
   text('.src', data.foo)

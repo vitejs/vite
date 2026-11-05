@@ -6,7 +6,7 @@ import type {
   ExportSpecifier,
   ImportSpecifier,
 } from 'es-module-lexer'
-import { init, parse as parseImports } from 'es-module-lexer'
+import { ImportType, init, parse as parseImports } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import type { StaticImport } from 'mlly'
 import { ESM_STATIC_IMPORT_RE, parseStaticImport } from 'mlly'
@@ -73,6 +73,7 @@ import {
 } from '../utils'
 import { isDirectCSSRequest } from './css'
 import { serializeDefine } from './define'
+import { isJSONRequest } from './json'
 import { throwOutdatedRequest } from './optimizedDeps'
 import { getAliasPatternMatcher } from './preAlias'
 import { browserExternalId } from './resolve'
@@ -102,6 +103,64 @@ interface UrlPosition {
 
 export function isExplicitImportRequired(url: string): boolean {
   return !isJSRequest(url) && !isCSSRequest(url)
+}
+
+function isStaticProperty(
+  property: ESTree.ObjectPropertyKind,
+  name: string,
+): property is ESTree.ObjectProperty {
+  return (
+    property.type === 'Property' &&
+    property.kind === 'init' &&
+    !property.computed &&
+    ((property.key.type === 'Identifier' && property.key.name === name) ||
+      (property.key.type === 'Literal' && property.key.value === name))
+  )
+}
+
+function stripJsonImportAttributes(
+  s: MagicString,
+  importExpression: string,
+  offset: number,
+): void {
+  let statement: ESTree.Statement
+  try {
+    statement = parseAst(importExpression).body[0]
+  } catch {
+    // Some expressions, such as yield, require their enclosing context.
+    return
+  }
+  if (
+    statement.type !== 'ExpressionStatement' ||
+    statement.expression.type !== 'ImportExpression' ||
+    statement.expression.options?.type !== 'ObjectExpression'
+  ) {
+    return
+  }
+  for (const property of statement.expression.options.properties) {
+    if (
+      !isStaticProperty(property, 'with') &&
+      !isStaticProperty(property, 'assert')
+    ) {
+      continue
+    }
+    const attributes = property.value
+    if (
+      attributes.type === 'ObjectExpression' &&
+      attributes.properties.length === 1
+    ) {
+      const type = attributes.properties[0]
+      if (
+        isStaticProperty(type, 'type') &&
+        type.value.type === 'Literal' &&
+        type.value.value === 'json'
+      ) {
+        // JSON is served as JavaScript. Keep the options object so native
+        // accessor processing, validation, and expression evaluation survive.
+        s.remove(offset + attributes.start + 1, offset + attributes.end - 1)
+      }
+    }
+  }
 }
 
 function extractImportedBindings(
@@ -693,6 +752,19 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               !isExternalUrl(moduleUrl) && !isDataUrl(moduleUrl)
             if (isLocalImport) {
               orderedImportedUrls[index] = moduleUrl
+
+              if (
+                importSpecifier.t === ImportType.Dynamic &&
+                attributeIndex > -1 &&
+                id != null &&
+                isJSONRequest(id)
+              ) {
+                stripJsonImportAttributes(
+                  str(),
+                  source.slice(expStart, expEnd),
+                  expStart,
+                )
+              }
             }
 
             if (enablePartialAccept && importedBindings) {
