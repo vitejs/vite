@@ -805,8 +805,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           liveModuleIds,
         )) {
           // Still used through another live worker (e.g. its importer is
-          // tree-shaken here but kept in a worker). Rolldown ignores emitting
-          // the same file again, so removing it here would drop it.
+          // tree-shaken here but kept in a worker).
           if (liveFileNames.has(workerBundle.entryFilename)) continue
           const emittedAsset = bundle[workerBundle.entryFilename]
           if (emittedAsset?.type === 'asset') {
