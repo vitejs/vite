@@ -209,7 +209,8 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       environment.mode === 'dev' ? environment.moduleGraph : undefined
   }
 
-  private _updateModuleLoadAddedImports(
+  /** @internal */
+  _updateModuleLoadAddedImports(
     id: string,
     addedImports: Set<string> | null,
   ): void {
@@ -474,7 +475,11 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     }
   }
 
-  async load(id: string): Promise<LoadResult | null> {
+  async load(id: string): Promise<
+    Partial<SourceDescription> & {
+      addedImports: Set<string> | null
+    }
+  > {
     let ssr = this.environment.config.consumer === 'server'
     const topLevelConfig = this.environment.getTopLevelConfig()
     const options = { ssr }
@@ -518,11 +523,14 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
           ctx._updateModuleInfo(id, result)
         }
         this._updateModuleLoadAddedImports(id, ctx._addedImports)
-        return result
+        return {
+          ...(typeof result === 'string' ? { code: result } : result),
+          addedImports: ctx._addedImports,
+        }
       }
     }
     this._updateModuleLoadAddedImports(id, ctx._addedImports)
-    return null
+    return { addedImports: ctx._addedImports }
   }
 
   async transform(
@@ -843,7 +851,7 @@ class PluginContext
     this._updateModuleInfo(options.id, options)
 
     const loadResult = await this._container.load(options.id)
-    const code = typeof loadResult === 'object' ? loadResult?.code : loadResult
+    const code = loadResult.code
     if (code != null) {
       await this._container.transform(code, options.id)
     }
@@ -1305,7 +1313,8 @@ class PluginContainer {
       ssr?: boolean
     },
   ): Promise<LoadResult | null> {
-    return this._getPluginContainer(options).load(id)
+    const result = await this._getPluginContainer(options).load(id)
+    return result.code == null ? null : { ...result, code: result.code }
   }
 
   async transform(

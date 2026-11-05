@@ -1449,8 +1449,45 @@ if (!isBuild) {
     await expect.poll(() => getColor('.css-deps')).toBe('green')
   })
 
+  test('CSS HMR with this.addWatchFile in load hook (#23860)', async () => {
+    await page.goto(viteTestUrl + '/css-deps/index.html')
+    await expect.poll(() => getColor('.css-deps-load')).toBe('red')
+    editFile('css-deps/dep-load.js', (code) => code.replace(`red`, `green`))
+    await expect.poll(() => getColor('.css-deps-load')).toBe('green')
+  })
+
   const missingFileTodo = bundledDevTodo(
     'This test should move to a standalone playground. Bundled dev builds all pages in one build, so a page whose import is missing when the server starts fails the build for every page. So `missing-file/index.html` is not a build input here, and under bundled dev the test opens the root page. Even in a standalone playground, creating the missing file does not recover the build, because the dev engine does not watch missing import paths',
+  )
+
+  test(
+    'loads a previously missing file after it is created',
+    missingFileTodo,
+    async () => {
+      const file = 'missing-file/created.ts'
+      const [response] = await Promise.all([
+        page.waitForResponse(viteTestUrl + '/' + file),
+        page.goto(viteTestUrl + '/missing-file/direct-script.html'),
+      ])
+      expect(response.status()).toBe(404)
+
+      // TypeScript syntax requires the created file to pass through transforms.
+      addFile(
+        file,
+        `const message: string = 'created file'
+document.querySelector('.created-file').textContent = message`,
+      )
+      try {
+        await expect
+          .poll(async () => {
+            await page.reload()
+            return page.textContent('.created-file')
+          })
+          .toBe('created file')
+      } finally {
+        removeFile(file)
+      }
+    },
   )
 
   test(

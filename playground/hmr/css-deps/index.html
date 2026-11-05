@@ -1,8 +1,14 @@
 <div class="css-deps">should be red</div>
+<div class="css-deps-load">should be red</div>
+
+<!-- Loaded via <link> instead of a JS import, so the module graph node does
+  not exist yet when the virtual module's `load` hook runs (#23860) -->
+<link rel="stylesheet" href="/css-deps/main-load.css" />
 
 <script type="module">
   import './main.css'
   // Import dep.js so that not only the CSS depends on dep.js, as Vite will do
   // a full page reload if the only importers are CSS files.
   import './dep.js'
+  import './dep-load.js'
 </script>
