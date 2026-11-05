@@ -538,7 +538,7 @@ test.runIf(!isBundled)(
     expect(response.status).toBe(200)
     expect(html).toContain('url(./protocol-relative.png)')
     expect(html).toContain(
-      'src="/protocol-relative.html?html-proxy&index=0.js"',
+      'src="/protocol-relative.html?html-proxy&amp;index=0.js"',
     )
     expect(html).not.toContain('url(//protocol-relative.png)')
     expect(html).not.toContain('src="//protocol-relative.html?html-proxy')
