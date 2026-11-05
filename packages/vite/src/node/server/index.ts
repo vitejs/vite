@@ -15,6 +15,7 @@ import launchEditorMiddleware from 'launch-editor-middleware'
 import colors from 'picocolors'
 import type { SourceMap } from 'rolldown'
 import { detectAgent } from 'std-env'
+import { escapePath } from 'tinyglobby'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { FSWatcher } from '#dep-types/chokidar'
 import type { Connect } from '#dep-types/connect'
@@ -567,6 +568,7 @@ export async function _createServer(
     resolvedOutDirs,
     emptyOutDir,
     config.cacheDir,
+    config.root,
   )
 
   const middlewares = connect() as Connect.Server
@@ -1290,10 +1292,21 @@ export async function resolveServerOptions(
   setupHmrWsOptionCompat(_server)
 
   const workspaceRoot = searchForWorkspaceRoot(root)
+  const resolvedRoot = normalizePath(path.resolve(root))
+  const hasAncestorGit = /(?:^|\/)\.git(?:$|\/)/.test(resolvedRoot)
+  const deny = hasAncestorGit
+    ? _server.fs.deny.map((pattern) =>
+        pattern === '**/.git/**'
+          ? `${escapePath(resolvedRoot)}/**/.git/**`
+          : pattern,
+      )
+    : _server.fs.deny
+
   const server: ResolvedServerOptions = {
     ..._server,
     fs: {
       ..._server.fs,
+      deny,
       // run searchForWorkspaceRoot only if needed
       allow: raw?.fs?.allow ?? [workspaceRoot],
     },

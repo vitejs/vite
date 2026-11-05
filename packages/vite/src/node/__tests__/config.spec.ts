@@ -2489,4 +2489,37 @@ describe('resolveServerOptions', () => {
       warnFn.mockClear()
     }
   })
+
+  test('scopes **/.git/** in fs.deny when root contains ancestor .git directory', async () => {
+    const gitWorktreeRoot = normalizePath(
+      path.resolve('/path/to/repo/.git/worktrees/my-branch'),
+    )
+    const resolved = await resolveServerOptions(gitWorktreeRoot, {}, logger)
+    expect(resolved.fs.deny).toContain(`${gitWorktreeRoot}/**/.git/**`)
+    expect(resolved.fs.deny).not.toContain('**/.git/**')
+  })
+
+  test('retains global **/.git/** in fs.deny when root does not contain .git', async () => {
+    const normalRoot = '/path/to/repo'
+    const resolved = await resolveServerOptions(normalRoot, {}, logger)
+    expect(resolved.fs.deny).toContain('**/.git/**')
+  })
+
+  test('scopes explicit **/.git/** in user-defined fs.deny when root contains .git', async () => {
+    const gitWorktreeRoot = normalizePath(
+      path.resolve('/path/to/repo/.git/worktrees/my-branch'),
+    )
+    const resolved = await resolveServerOptions(
+      gitWorktreeRoot,
+      {
+        fs: {
+          deny: ['.env', '**/.git/**'],
+        },
+      },
+      logger,
+    )
+    expect(resolved.fs.deny).toContain(`${gitWorktreeRoot}/**/.git/**`)
+    expect(resolved.fs.deny).toContain('.env')
+    expect(resolved.fs.deny).not.toContain('**/.git/**')
+  })
 })
