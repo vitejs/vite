@@ -293,5 +293,13 @@ export interface ViteFetchResult {
    * Invalidate module on the client side.
    */
   invalidate: boolean
+  /**
+   * Source map of `code` as a JSON string. Set when the runner asked for
+   * `separateSourceMap` and the environment's `dev.sourcemapForDebugger` is
+   * disabled, in which case `code` has no inline source map.
+   */
+  sourceMap?: string
 }
 ```
+
+By default the source map is inlined at the end of `code` as a `sourceMappingURL` comment. Debuggers, Node's own source map support and `NODE_V8_COVERAGE` read it from there. When the environment's `dev.sourcemapForDebugger` option is disabled, module runners that don't use the `'node'` interceptor get the map in `sourceMap` instead, so the evaluated code has no source map comment and is cheaper to compile. Stack traces are still mapped by the `'prepareStackTrace'` interceptor, which `createServerModuleRunner` uses by default in that case.

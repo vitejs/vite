@@ -69,7 +69,10 @@ const prepareStackTrace = {
   },
 }
 
-function resolveSourceMapOptions(options: ServerModuleRunnerOptions) {
+function resolveSourceMapOptions(
+  environment: DevEnvironment,
+  options: ServerModuleRunnerOptions,
+) {
   if (options.sourcemapInterceptor != null) {
     if (options.sourcemapInterceptor === 'prepareStackTrace') {
       return prepareStackTrace
@@ -79,7 +82,13 @@ function resolveSourceMapOptions(options: ServerModuleRunnerOptions) {
     }
     return options.sourcemapInterceptor
   }
-  if (typeof process !== 'undefined' && 'setSourceMapsEnabled' in process) {
+  // Node's own source map support reads the map from the evaluated code,
+  // which only has it when `dev.sourcemapForDebugger` is enabled
+  if (
+    environment.config.dev.sourcemapForDebugger &&
+    typeof process !== 'undefined' &&
+    'setSourceMapsEnabled' in process
+  ) {
     return 'node'
   }
   return prepareStackTrace
@@ -160,7 +169,7 @@ export function createServerModuleRunner(
       }),
       hmr,
       createImportMeta: createNodeImportMeta,
-      sourcemapInterceptor: resolveSourceMapOptions(options),
+      sourcemapInterceptor: resolveSourceMapOptions(environment, options),
     },
     options.evaluator,
   )
