@@ -37,6 +37,7 @@
     "playground/html/invalidClick.html",
     "playground/html/invalidEscape.html",
     "playground/html/valid.html",
+    "playground/html/tag-removal/*.html",
     "playground/external/public/slash@3.0.0.js",
     "playground/ssr-html/public/slash@3.0.0.js",
     "playground/worker/classic-worker.js",
