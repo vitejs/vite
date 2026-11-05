@@ -98,8 +98,9 @@ export class EvaluatedModules {
   }
 
   /**
-   * Extracts the inlined source map from the module code and returns the decoded
-   * source map. If the source map is not inlined, it will return null.
+   * Returns the decoded source map of the module, either the one the server
+   * sent separately or the one inlined in the module code. If there is none,
+   * it will return null.
    * @param id Resolved module ID
    */
   getModuleSourceMapById(id: string): DecodedMap | null {
@@ -107,6 +108,11 @@ export class EvaluatedModules {
     if (!mod) return null
     if (mod.map) return mod.map
     if (!mod.meta || !('code' in mod.meta)) return null
+
+    if (mod.meta.sourceMap) {
+      mod.map = new DecodedMap(JSON.parse(mod.meta.sourceMap), mod.file)
+      return mod.map
+    }
 
     const mapString = extractInlineSourceMap(mod.meta.code)
     if (!mapString) return null
