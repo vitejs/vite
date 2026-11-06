@@ -402,6 +402,8 @@ Specifies the maximum number of threads CSS preprocessors can use. `true` means 
 
 Depending on the preprocessor options, Vite may run the preprocessors on the main thread even if this option is not set to `0`.
 
+Sass runs in its own compiler process instead of Vite's workers, so for Sass this option limits how many files are compiled at once. `0` uses the same limit as `true`. The Sass compiler itself compiles at most 15 files at a time (7 on 32-bit systems), so values above 15 don't make Sass faster.
+
 ## css.devSourcemap
 
 - **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13845)
