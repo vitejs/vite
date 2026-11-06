@@ -44,8 +44,21 @@ const input = {
   ),
 }
 
-export default defineConfig({
-  input,
+const serveInput = {
+  ...input,
+  ...(process.env.VITE_TEST_BUNDLED_DEV
+    ? {}
+    : {
+        invalid: resolve(dirname, 'invalid.html'),
+        invalidClick: resolve(dirname, 'invalidClick.html'),
+        invalidEscape: resolve(dirname, 'invalidEscape.html'),
+      }),
+  protocolRelative: resolve(dirname, 'protocol-relative.html'),
+  relativeInput: resolve(dirname, 'relative-input.html'),
+}
+
+export default defineConfig(({ command }) => ({
+  input: command === 'serve' ? serveInput : input,
 
   base: './',
   build: {
@@ -277,7 +290,7 @@ ${
     },
     serveExternalPathPlugin(),
   ],
-})
+}))
 
 /** @returns {import('vite').Plugin} */
 function serveExternalPathPlugin() {
