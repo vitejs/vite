@@ -293,6 +293,7 @@ export class DevEnvironment extends BaseEnvironment {
 
   async reloadModule(module: EnvironmentModuleNode): Promise<void> {
     if (this.config.server.hmr !== false && module.file) {
+      this.moduleGraph.invalidateModule(module)
       updateModules(this, module.file, [module], monotonicDateNow())
     }
   }
