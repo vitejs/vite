@@ -134,6 +134,7 @@ test('successfully scaffolds a project based on vue starter template', () => {
     [
       projectName,
       '--interactive',
+      '--no-devtools',
       '--no-immediate',
       '--template',
       'vue',
@@ -155,6 +156,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
     [
       `subfolder/${projectName}`,
       '--interactive',
+      '--no-devtools',
       '--no-immediate',
       '--template',
       'react',
@@ -270,11 +272,96 @@ test('ignores --eslint with a warning for non-React templates', () => {
   expect(fs.existsSync(path.join(genPath, 'eslint.config.js'))).toBe(false)
 })
 
+test('does not add devtools by default', () => {
+  run([projectName, '--template', 'vue'], { cwd: import.meta.dirname })
+  const pkg = fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8')
+  const config = fs.readFileSync(path.join(genPath, 'vite.config.js'), 'utf-8')
+  expect(pkg).not.toContain('@vitejs/devtools')
+  expect(config).not.toContain('devtools')
+})
+
+test('adds devtools for dev server only when --devtools is passed without a value', () => {
+  run([projectName, '--template', 'vue', '--devtools'], {
+    cwd: import.meta.dirname,
+  })
+  const pkg = JSON.parse(
+    fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8'),
+  )
+  const config = fs.readFileSync(path.join(genPath, 'vite.config.js'), 'utf-8')
+  expect(pkg.devDependencies['@vitejs/devtools']).toBeDefined()
+  expect(pkg.devDependencies['@vitejs/devtools-vite']).toBeDefined()
+  expect(pkg.devDependencies['@vitejs/devtools-rolldown']).toBeUndefined()
+  expect(config).toContain(`apply: 'serve'`)
+})
+
+test('adds devtools for dev and build with --devtools all', () => {
+  run([projectName, '--template', 'vue', '--devtools', 'all'], {
+    cwd: import.meta.dirname,
+  })
+  const pkg = JSON.parse(
+    fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8'),
+  )
+  const config = fs.readFileSync(path.join(genPath, 'vite.config.js'), 'utf-8')
+  expect(Object.keys(pkg.devDependencies)).toEqual(
+    expect.arrayContaining([
+      '@vitejs/devtools',
+      '@vitejs/devtools-vite',
+      '@vitejs/devtools-rolldown',
+    ]),
+  )
+  expect(config).toContain('devtools: true,')
+})
+
+test('adds devtools for dev server only with --devtools dev', () => {
+  run([projectName, '--template', 'react-ts', '--devtools', 'dev'], {
+    cwd: import.meta.dirname,
+  })
+  const pkg = JSON.parse(
+    fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8'),
+  )
+  const config = fs.readFileSync(path.join(genPath, 'vite.config.ts'), 'utf-8')
+  expect(pkg.devDependencies['@vitejs/devtools']).toBeDefined()
+  expect(pkg.devDependencies['@vitejs/devtools-vite']).toBeDefined()
+  expect(pkg.devDependencies['@vitejs/devtools-rolldown']).toBeUndefined()
+  expect(config).toContain(`apply: 'serve'`)
+})
+
+test('creates a vite config with devtools for build only on vanilla templates', () => {
+  run([projectName, '--template', 'vanilla-ts', '--devtools', 'build'], {
+    cwd: import.meta.dirname,
+  })
+  const pkg = JSON.parse(
+    fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8'),
+  )
+  const config = fs.readFileSync(path.join(genPath, 'vite.config.ts'), 'utf-8')
+  expect(pkg.devDependencies['@vitejs/devtools-vite']).toBeUndefined()
+  expect(pkg.devDependencies['@vitejs/devtools-rolldown']).toBeDefined()
+  expect(config).toContain(`import { defineConfig } from 'vite'`)
+  expect(config).toContain(`apply: 'build'`)
+})
+
+test('does not add devtools with --no-devtools', () => {
+  run([projectName, '--template', 'vue', '--no-devtools'], {
+    cwd: import.meta.dirname,
+  })
+  const pkg = fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8')
+  expect(pkg).not.toContain('@vitejs/devtools')
+})
+
+test('errors on an invalid --devtools value', () => {
+  expect(() =>
+    run([projectName, '--template', 'vue', '--devtools', 'foo'], {
+      cwd: import.meta.dirname,
+    }),
+  ).toThrow('Invalid `--devtools` value: foo')
+})
+
 test('works with the -t alias', () => {
   const { stdout } = run(
     [
       projectName,
       '--interactive',
+      '--no-devtools',
       '--no-immediate',
       '-t',
       'vue',
