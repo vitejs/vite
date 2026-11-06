@@ -891,3 +891,95 @@ console.log("foo");`,
     `)
   })
 })
+
+describe('unresolved CSS url severity', () => {
+  async function transformWithSeverity(severity?: 'warn' | 'error' | 'silent') {
+    let warnMessage = ''
+    let errorMessage = ''
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        css: severity ? { unresolvedUrlSeverity: severity } : {},
+        customLogger: {
+          warnOnce(msg) {
+            warnMessage = msg
+          },
+          warn(msg) {
+            warnMessage = msg
+          },
+          error(msg) {
+            errorMessage = msg
+          },
+          info() {
+            return
+          },
+          hasWarned: false,
+          clearScreen() {
+            return
+          },
+          hasErrorLogged() {
+            return false
+          },
+        },
+      },
+      'build',
+    )
+    const environment = new PartialEnvironment('client', config)
+    const { transform, buildStart } = cssPlugin(config)
+
+    // @ts-expect-error buildStart is function
+    await buildStart.call({})
+
+    let thrownError: any
+    let result: any
+    try {
+      // @ts-expect-error transform.handler is function
+      result = await transform.handler.call(
+        {
+          addWatchFile() {
+            return
+          },
+          environment,
+          error(err: any) {
+            thrownError = err
+            throw typeof err === 'string' ? new Error(err) : err
+          },
+        },
+        `.bg { background: url('./non-existent-asset.png'); }`,
+        path.resolve(dirname, 'fixtures/style.css'),
+      )
+    } catch (e) {
+      thrownError = e
+    }
+
+    return { result, thrownError, warnMessage, errorMessage }
+  }
+
+  test('defaults to warn', async () => {
+    const { thrownError, warnMessage } = await transformWithSeverity()
+    expect(thrownError).toBeUndefined()
+    expect(warnMessage).toContain('non-existent-asset.png')
+    expect(warnMessage).toContain("didn't resolve at build time")
+  })
+
+  test('logs warning when set to warn explicitly', async () => {
+    const { thrownError, warnMessage } = await transformWithSeverity('warn')
+    expect(thrownError).toBeUndefined()
+    expect(warnMessage).toContain('non-existent-asset.png')
+  })
+
+  test('throws error when set to error', async () => {
+    const { thrownError, warnMessage } = await transformWithSeverity('error')
+    expect(warnMessage).toBe('')
+    expect(thrownError).toBeDefined()
+    expect(thrownError.message).toContain(
+      'Could not resolve "./non-existent-asset.png"',
+    )
+  })
+
+  test('silent does not warn or throw', async () => {
+    const { thrownError, warnMessage } = await transformWithSeverity('silent')
+    expect(thrownError).toBeUndefined()
+    expect(warnMessage).toBe('')
+  })
+})
