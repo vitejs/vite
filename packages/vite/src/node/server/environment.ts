@@ -279,6 +279,16 @@ export class DevEnvironment extends BaseEnvironment {
   }
 
   /**
+   * Register a resolved module ID as safe to load in this environment, even
+   * outside `server.fs.allow`. Filesystem IDs must be normalized absolute paths
+   * and may include a query. `server.fs.deny` still applies.
+   * Call from the plugin's `transform` hook when it adds a reference to the module.
+   */
+  addSafeModule(id: string): void {
+    this.safeModulePaths.addId(id)
+  }
+
+  /**
    * Called by the module runner to retrieve information about the specified
    * module. Internally calls `transformRequest` and wraps the result in the
    * format that the module runner understands.
