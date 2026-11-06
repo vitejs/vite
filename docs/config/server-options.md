@@ -336,6 +336,33 @@ To fix it, you could either:
 
 :::
 
+## server.watch.ignoredFromGitignore
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+When set to `true`, files and directories matched by the patterns in the `.gitignore` at the project root are also ignored by the dev server watcher. This is useful to avoid overhead from tools that write a lot of files into the project, such as test runners or coverage tools, without listing their output directories in `server.watch.ignored` manually.
+
+Env files, the Vite config file and its dependencies, and the public directory are always watched, even when matched by a pattern.
+
+```js
+export default defineConfig({
+  server: {
+    watch: {
+      ignoredFromGitignore: true,
+    },
+  },
+})
+```
+
+::: warning
+
+- Only the `.gitignore` at the project root is read. Nested `.gitignore` files and `.git/info/exclude` are not taken into account.
+- `.gitignore` patterns are designed for version control, not for watching. If a framework generates files into a gitignored directory (for example `.nuxt/`, `.svelte-kit/`, or `.astro/`), re-include them with `!` patterns or their changes will not be picked up.
+- This option only affects the chokidar watcher. It is not applied to the Rolldown file watcher used in bundled-dev mode.
+
+:::
+
 ## server.middlewareMode
 
 - **Type:** `boolean | { server: http.Server }`
