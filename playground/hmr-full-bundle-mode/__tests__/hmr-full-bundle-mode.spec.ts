@@ -9,6 +9,7 @@ import {
   page,
   readFile,
   serverLogs,
+  viteServer,
 } from '~utils'
 
 const assetUrl = /asset-[\w-]+\.png/
@@ -482,6 +483,120 @@ if (isBuild) {
     await expect
       .poll(() => page.textContent('.worker-plain'))
       .toBe('worker-plain-updated')
+  })
+
+  test('drops an hmr patch once the client has evaluated it', async () => {
+    const bundledDev = viteServer.environments.client.bundledDev as any
+    const original = readFile('hmr.js')
+    const applyEdit = async (text: string) => {
+      const hmrPatchFileRes = page.waitForResponse(/\/hmr_patch_\d+\.js$/)
+      editFile('hmr.js', () =>
+        original.replace("const foo = 'hello'", `const foo = '${text}'`),
+      )
+      await expect.poll(() => page.textContent('.hmr')).toBe(text)
+      await bundledDev.devEngine.ensureLatestBuildOutput()
+      return new URL((await hmrPatchFileRes).url()).pathname.slice(1)
+    }
+    onTestFinished(async () => {
+      addFile('hmr.js', original)
+      await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+    })
+    await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+
+    const patchFile = await applyEdit('hello1')
+    await expect.poll(() => bundledDev.memoryFiles.has(patchFile)).toBe(false)
+    // DevTools can still fetch the source map of a patch that has run
+    expect(bundledDev.memoryFiles.has(`${patchFile}.map`)).toBe(true)
+
+    // the full build after the next edit drops it
+    await applyEdit('hello2, longer')
+    expect(bundledDev.memoryFiles.has(`${patchFile}.map`)).toBe(false)
+  })
+
+  test('drops an hmr patch the client reloaded instead of fetching', async () => {
+    const bundledDev = viteServer.environments.client.bundledDev as any
+    const original = readFile('dead-accept.js')
+    const patchFiles = () =>
+      [...bundledDev.memoryFiles.files.keys()].filter((fileName: string) =>
+        /^hmr_patch_\d+\.js$/.test(fileName),
+      ) as string[]
+    const reloadWithEdit = async (text: string) => {
+      editFile('dead-accept.js', () =>
+        original.replace("'dead-accept'", `'${text}'`),
+      )
+      await expect.poll(() => page.textContent('.dead-accept')).toBe(text)
+      await bundledDev.devEngine.ensureLatestBuildOutput()
+    }
+    onTestFinished(async () => {
+      addFile('dead-accept.js', original)
+      await expect
+        .poll(() => page.textContent('.dead-accept'))
+        .toBe('dead-accept')
+    })
+
+    await expect
+      .poll(() => page.textContent('.dead-accept'))
+      .toBe('dead-accept')
+    const patchesBefore = new Set(patchFiles())
+    await reloadWithEdit('dead-accept-first')
+    const skippedPatch = patchFiles().find((f) => !patchesBefore.has(f))
+    expect(skippedPatch).toBeDefined()
+
+    // the full build after the next edit drops the patch nobody fetched
+    await reloadWithEdit('dead-accept-second')
+    expect(bundledDev.memoryFiles.has(skippedPatch)).toBe(false)
+    expect(bundledDev.memoryFiles.has(`${skippedPatch}.map`)).toBe(false)
+  })
+
+  test('drops a chunk a rebuild renamed once no page loaded before it is open', async () => {
+    const bundledDev = viteServer.environments.client.bundledDev as any
+    const original = readFile('dynamic.js')
+    const dynamicChunk = () =>
+      bundledDev.previousChunkFiles
+        .map(([fileName]: [string]) => fileName)
+        .find((fileName: string) =>
+          /^assets\/dynamic-[\w-]+\.js$/.test(fileName),
+        ) as string
+    const rebuildWithEdit = async (edit: string) => {
+      const before = dynamicChunk()
+      editFile('dynamic.js', () =>
+        original.replace("'loaded'", `'loaded ${edit}'`),
+      )
+      await expect
+        .poll(async () => {
+          await bundledDev.devEngine.ensureLatestBuildOutput()
+          return dynamicChunk()
+        })
+        .not.toBe(before)
+    }
+    onTestFinished(async () => {
+      addFile('dynamic.js', original)
+      await bundledDev.devEngine.ensureLatestBuildOutput()
+    })
+
+    await bundledDev.devEngine.ensureLatestBuildOutput()
+    const firstChunk = dynamicChunk()
+    const asset = new URL(
+      (await page.textContent('.asset'))!,
+      page.url(),
+    ).pathname.slice(1)
+
+    // the page loaded before the rename can still request the old name, so it
+    // stays served across rebuilds while that page is open
+    await rebuildWithEdit('first edit')
+    await rebuildWithEdit('second edit, longer')
+    expect(bundledDev.memoryFiles.has(firstChunk)).toBe(true)
+
+    // once that page has reloaded onto the latest build, the old name goes
+    await page.reload()
+    await expect.poll(() => page.textContent('.asset')).toBeTruthy()
+    await expect.poll(() => bundledDev.memoryFiles.has(firstChunk)).toBe(false)
+    expect(bundledDev.memoryFiles.has(dynamicChunk())).toBe(true)
+
+    // a rebuild only re-emits the assets that changed, so the unchanged ones
+    // are still served
+    expect(bundledDev.memoryFiles.has('index.html')).toBe(true)
+    expect(bundledDev.memoryFiles.has(asset)).toBe(true)
   })
 
   test('lazy bundling errors return 500', async () => {
