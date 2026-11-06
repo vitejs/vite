@@ -2605,6 +2605,7 @@ const makeScssWorker = (
   resolvers: CSSAtImportResolvers,
   _maxWorkers: number | undefined,
 ) => {
+  let sassPromise: Promise<typeof Sass> | undefined
   let compilerPromise: Promise<Sass.AsyncCompiler> | undefined
 
   // we use the compiler api provided by sass
@@ -2625,7 +2626,7 @@ const makeScssWorker = (
 
   const worker: WorkerType = {
     async run(sassPath, data, options) {
-      const sass: typeof Sass = await import(sassPath)
+      const sass: typeof Sass = await (sassPromise ??= import(sassPath))
       compilerPromise ??= sass.initAsyncCompiler()
       const compiler = await compilerPromise
 
