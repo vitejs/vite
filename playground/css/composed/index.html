@@ -1,0 +1,12 @@
+<div class="composed">Composed module</div>
+<div class="standalone">Standalone values</div>
+<pre class="direct"></pre>
+<script type="module">
+  import classes from './entry.module.css'
+  import standalone from './standalone/entry.module.css'
+  import direct from './shared/shared.module.css?inline'
+
+  document.querySelector('.composed').className += ` ${classes.entry}`
+  document.querySelector('.standalone').className += ` ${standalone.standalone}`
+  document.querySelector('.direct').textContent = direct
+</script>

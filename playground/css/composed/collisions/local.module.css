@@ -1,0 +1,5 @@
+@value icon: url('/probe/values/image.svg');
+
+.entry {
+  background-image: url('/values/image.svg'), icon;
+}
