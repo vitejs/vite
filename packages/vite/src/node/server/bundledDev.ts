@@ -249,6 +249,7 @@ export class BundledDev {
 
         this.storeOutputFiles(result.output)
         this.releaseSupersededOutput(result.output)
+        this.releaseUnappliedHmrPatches()
 
         // Trigger a full reload if there's no error in the result and a reload is pending from HMR.
         if (this.fullReloadPending) {
@@ -395,6 +396,8 @@ export class BundledDev {
     this.assetFileBySource.clear()
     this.renamedAssets = []
     this.retiredOutput = []
+    this.pushedHmrPatches = []
+    this.unappliedHmrPatches = []
     await this._devEngine?.close()
     this.initialBuildCompleted = false
   }
@@ -438,6 +441,10 @@ export class BundledDev {
   private renamedAssets: [string, OutputFile][] = []
   /** Files to drop at the next full build. */
   private retiredOutput: [string, OutputFile][] = []
+  /** HMR patches (and their source maps) pushed since the latest full build. */
+  private pushedHmrPatches: [string, string | undefined][] = []
+  /** HMR patches to drop at the next full build if no client evaluated them. */
+  private unappliedHmrPatches: [string, string | undefined][] = []
 
   private storeOutputFiles(output: OutputFile[]): void {
     for (const outputFile of output) {
@@ -510,6 +517,23 @@ export class BundledDev {
         ? [[fileName, file]]
         : []
     })
+  }
+
+  /**
+   * A client skips fetching a patch when it decides to reload instead (for
+   * example, no HMR boundary), so it never reports it delivered. A client
+   * fetches a patch as soon as it is pushed, so one still undelivered a full
+   * build later is not fetched any more. It stays in `pendingPayloadFilenames`
+   * so a late delivery report still reaches the dev engine.
+   */
+  private releaseUnappliedHmrPatches(): void {
+    for (const [fileName, sourcemapFileName] of this.unappliedHmrPatches) {
+      if (!this.pendingPayloadFilenames.has(fileName)) continue
+      this.memoryFiles.delete(fileName)
+      if (sourcemapFileName) this.memoryFiles.delete(sourcemapFileName)
+    }
+    this.unappliedHmrPatches = this.pushedHmrPatches
+    this.pushedHmrPatches = []
   }
 
   private async getRolldownOptions() {
@@ -585,6 +609,10 @@ export class BundledDev {
     })
 
     this.pendingPayloadFilenames.add(hmrOutput.filename)
+    this.pushedHmrPatches.push([
+      hmrOutput.filename,
+      hmrOutput.sourcemapFilename ?? undefined,
+    ])
     this.memoryFiles.set(hmrOutput.filename, {
       // ensure that the generated hmr patch contains ESM syntax
       // this is to avoid attacks like GHSA-4v9v-hfq4-rm2v

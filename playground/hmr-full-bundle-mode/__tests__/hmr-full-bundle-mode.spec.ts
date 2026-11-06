@@ -504,6 +504,41 @@ if (isBuild) {
     await expect.poll(() => bundledDev.memoryFiles.has(patchFile)).toBe(false)
   })
 
+  test('drops an hmr patch the client reloaded instead of fetching', async () => {
+    const bundledDev = viteServer.environments.client.bundledDev as any
+    const original = readFile('dead-accept.js')
+    const patchFiles = () =>
+      [...bundledDev.memoryFiles.files.keys()].filter((fileName: string) =>
+        /^hmr_patch_\d+\.js$/.test(fileName),
+      ) as string[]
+    const reloadWithEdit = async (text: string) => {
+      editFile('dead-accept.js', () =>
+        original.replace("'dead-accept'", `'${text}'`),
+      )
+      await expect.poll(() => page.textContent('.dead-accept')).toBe(text)
+      await bundledDev.devEngine.ensureLatestBuildOutput()
+    }
+    onTestFinished(async () => {
+      addFile('dead-accept.js', original)
+      await expect
+        .poll(() => page.textContent('.dead-accept'))
+        .toBe('dead-accept')
+    })
+
+    await expect
+      .poll(() => page.textContent('.dead-accept'))
+      .toBe('dead-accept')
+    const patchesBefore = new Set(patchFiles())
+    await reloadWithEdit('dead-accept-first')
+    const skippedPatch = patchFiles().find((f) => !patchesBefore.has(f))
+    expect(skippedPatch).toBeDefined()
+
+    // the full build after the next edit drops the patch nobody fetched
+    await reloadWithEdit('dead-accept-second')
+    expect(bundledDev.memoryFiles.has(skippedPatch)).toBe(false)
+    expect(bundledDev.memoryFiles.has(`${skippedPatch}.map`)).toBe(false)
+  })
+
   test('drops a chunk a rebuild renamed once the next rebuild lands', async () => {
     const bundledDev = viteServer.environments.client.bundledDev as any
     const original = readFile('dynamic.js')
