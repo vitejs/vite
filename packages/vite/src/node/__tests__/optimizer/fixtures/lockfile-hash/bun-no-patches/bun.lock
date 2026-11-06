@@ -1,0 +1,14 @@
+{
+  "lockfileVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "t",
+      "dependencies": {
+        "fake-dep": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "fake-dep": ["fake-dep@1.0.0", {}, ""],
+  },
+}
