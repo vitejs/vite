@@ -185,8 +185,13 @@ export class EnvironmentModuleGraph {
       mod.invalidationState = 'HARD_INVALIDATED'
     }
 
-    // Skip updating the module if it was already invalidated before and the invalidation state has not changed
-    if (seen.has(mod) && prevInvalidationState === mod.invalidationState) {
+    // Revisit a module if another path reaches it with an HMR update after a
+    // self-accepting boundary only invalidated its transform.
+    if (
+      seen.has(mod) &&
+      prevInvalidationState === mod.invalidationState &&
+      (!isHmr || mod.lastHMRTimestamp === timestamp)
+    ) {
       return
     }
     seen.add(mod)
@@ -224,7 +229,9 @@ export class EnvironmentModuleGraph {
           importer,
           seen,
           timestamp,
-          isHmr,
+          // Importers above a self-accepting boundary keep their module identity,
+          // but their transforms still need to reference the updated boundary.
+          isHmr && !mod.isSelfAccepting,
           shouldSoftInvalidateImporter,
         )
       }
