@@ -812,33 +812,152 @@ function joinSrcset(ret: ImageCandidate[]) {
 }
 
 /**
- This regex represents a loose rule of an “image candidate string” and "image set options".
+ Parses a list of “image candidate strings” (srcset / image-set options).
 
  @see https://html.spec.whatwg.org/multipage/images.html#srcset-attribute
  @see https://drafts.csswg.org/css-images-4/#image-set-notation
 
-  The Regex has named capturing groups `url` and `descriptor`.
-  The `url` group can be:
+  A candidate is a `url` followed by an optional `descriptor`.
+  The `url` can be:
   * any CSS function
   * CSS string (single or double-quoted)
   * URL string (unquoted)
   The `descriptor` is anything after the space and before the comma.
+
+  Commas and spaces inside functions (e.g. a `linear-gradient()` containing
+  `rgba()`) or quoted strings don't act as separators, so candidates are
+  split with a parenthesis-aware scan instead of a regex.
  */
-const imageCandidateRegex =
-  /(?:^|\s|(?<=,))(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>[\w.][^,]+))?(?:,|$)/g
 const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
 
 export function parseSrcset(string: string): ImageCandidate[] {
-  const matches = string
+  const input = string
     .trim()
     .replace(escapedSpaceCharacters, ' ')
     .replace(/,\s+/, ', ')
     .replaceAll(/\s+/g, ' ')
-    .matchAll(imageCandidateRegex)
-  return Array.from(matches, ({ groups }) => ({
-    url: groups?.url?.trim() ?? '',
-    descriptor: groups?.descriptor?.trim() ?? '',
-  })).filter(({ url }) => !!url)
+
+  const candidates: ImageCandidate[] = []
+  let i = 0
+  while (i < input.length) {
+    const char = input[i]
+    if (char === ' ' || char === ',') {
+      i++
+      continue
+    }
+
+    let url: string
+    if (char === '"' || char === "'") {
+      // CSS string (single or double-quoted)
+      const end = scanQuotedString(input, i)
+      url = input.slice(i, end)
+      i = end
+    } else if (/[\w-]/.test(char) && input.includes('(', i)) {
+      // maybe a CSS function, e.g. `url(...)` or `linear-gradient(...)`
+      const openParen = input.indexOf('(', i)
+      const beforeParen = input.slice(i, openParen)
+      if (/^[\w-]+$/.test(beforeParen)) {
+        const end = scanBalancedParens(input, openParen)
+        url = input.slice(i, end)
+        i = end
+      } else {
+        url = scanUnquotedUrl(input, i)
+        i += url.length
+      }
+    } else {
+      // URL string (unquoted)
+      url = scanUnquotedUrl(input, i)
+      i += url.length
+    }
+
+    // The descriptor is anything after the space and before the comma
+    let descriptor = ''
+    i = skipSpaces(input, i)
+    if (i < input.length && input[i] !== ',') {
+      const end = findTopLevelComma(input, i)
+      descriptor = input.slice(i, end).trim()
+      i = end
+    }
+
+    if (url) {
+      candidates.push({ url, descriptor })
+    }
+  }
+  return candidates
+}
+
+function skipSpaces(input: string, i: number): number {
+  while (input[i] === ' ') {
+    i++
+  }
+  return i
+}
+
+function scanQuotedString(input: string, start: number): number {
+  const quote = input[start]
+  for (let i = start + 1; i < input.length; i++) {
+    if (input[i] === '\\') {
+      i++ // skip escaped characters, e.g. `\"`
+    } else if (input[i] === quote) {
+      return i + 1
+    }
+  }
+  return input.length
+}
+
+function scanBalancedParens(input: string, openParen: number): number {
+  let depth = 0
+  for (let i = openParen; i < input.length; i++) {
+    const char = input[i]
+    if (char === '\\') {
+      i++ // skip escaped characters, e.g. `\)` in an unquoted url
+    } else if (char === '"' || char === "'") {
+      i = scanQuotedString(input, i) - 1
+    } else if (char === '(') {
+      depth++
+    } else if (char === ')') {
+      depth--
+      if (depth === 0) {
+        return i + 1
+      }
+    }
+  }
+  return input.length
+}
+
+// An unquoted url ends at whitespace. Commas inside it are kept (e.g.
+// `https://example.com/dpr_1,f_auto`), except for trailing ones, which are
+// candidate separators.
+function scanUnquotedUrl(input: string, start: number): string {
+  let end = start
+  while (end < input.length && input[end] !== ' ') {
+    end++
+  }
+  let url = input.slice(start, end)
+  while (url.endsWith(',')) {
+    url = url.slice(0, -1)
+  }
+  return url
+}
+
+// Finds the next comma that is not inside parentheses or a quoted string
+function findTopLevelComma(input: string, start: number): number {
+  let depth = 0
+  for (let i = start; i < input.length; i++) {
+    const char = input[i]
+    if (char === '\\') {
+      i++
+    } else if (char === '"' || char === "'") {
+      i = scanQuotedString(input, i) - 1
+    } else if (char === '(') {
+      depth++
+    } else if (char === ')') {
+      depth--
+    } else if (char === ',' && depth === 0) {
+      return i
+    }
+  }
+  return input.length
 }
 
 export function processSrcSet(
