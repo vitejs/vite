@@ -782,6 +782,50 @@ function optimizeSafeRealPathSync() {
   })
 }
 
+// Files added to each watcher via `ensureWatchedFile`, keyed by the resolved
+// absolute path passed to `watcher.add`.
+// On macOS, chokidar's FSEvents path does not deduplicate repeated `add()` calls
+// for the same path: each call registers another filtered listener (and closer),
+// so re-adding on every transform leaks listeners and grows heap/event cost
+// without bound. The `fs.watch` path dedupes internally, but skipping the
+// redundant `add()` here fixes both. A WeakMap keeps one set per watcher so
+// server restarts (new watcher) start fresh and closed watchers can be GC'd.
+const ensuredWatchedFiles = new WeakMap<FSWatcher, Set<string>>()
+
+// Keep the dedup set in sync when the watcher is unwatched or closed so that
+// `ensureWatchedFile` can later re-add a file if it is still needed.
+// Wrappers are installed lazily, once per watcher, on first use.
+function getEnsuredWatchedFiles(watcher: FSWatcher): Set<string> {
+  let watched = ensuredWatchedFiles.get(watcher)
+  if (watched) return watched
+  watched = new Set<string>()
+  ensuredWatchedFiles.set(watcher, watched)
+
+  const unwatch = watcher.unwatch.bind(watcher)
+  watcher.unwatch = function (...args: Parameters<FSWatcher['unwatch']>) {
+    const [paths] = args
+    const list = Array.isArray(paths) ? paths : [paths]
+    for (const p of list) {
+      // A glob unwatch may cover ensured files; drop the whole cache so a
+      // later `ensureWatchedFile` re-adds the file if it is still needed.
+      if (/[*?[{]/.test(p)) {
+        watched!.clear()
+      } else {
+        watched!.delete(path.resolve(p))
+      }
+    }
+    return unwatch(...args)
+  }
+
+  const close = watcher.close.bind(watcher)
+  watcher.close = function (...args: Parameters<FSWatcher['close']>) {
+    watched!.clear()
+    return close(...args)
+  }
+
+  return watched
+}
+
 export function ensureWatchedFile(
   watcher: FSWatcher,
   file: string | null,
@@ -796,7 +840,11 @@ export function ensureWatchedFile(
     fs.existsSync(file)
   ) {
     // resolve file to normalized system path
-    watcher.add(path.resolve(file))
+    const resolved = path.resolve(file)
+    const watched = getEnsuredWatchedFiles(watcher)
+    if (watched.has(resolved)) return
+    watcher.add(resolved)
+    watched.add(resolved)
   }
 }
 
