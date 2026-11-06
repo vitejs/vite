@@ -143,6 +143,86 @@ composes: bar from '@/css/bar.module.css';
     const result2 = await transform(css, '/foo.module.css?direct') // client
     expect(result1.code).toBe(result2.code)
   })
+
+  test.each([
+    '?inline',
+    '?inline=',
+    '?inline=true',
+    '?inline&direct',
+    '?direct&inline',
+    '?inline&inline',
+    '?inline=1&inline=0',
+  ])('lightningcss module names match for %s', async (query) => {
+    const { transform } = await createCssPluginTransform({
+      configFile: false,
+      css: { transformer: 'lightningcss' },
+    })
+    const css = '.foo { color: red; } .bar { composes: foo; color: blue; }'
+    const normal = await transform(css, '/foo.module.css')
+    const inline = await transform(css, `/foo.module.css${query}`)
+    expect(inline.code).toBe(normal.code)
+  })
+
+  test.each([
+    '?inline&vue&type=style&index=0',
+    '?vue&inline&type=style&index=0',
+    '?vue&type=style&index=0&inline',
+  ])('lightningcss preserves style identity in %s', async (query) => {
+    const { transform } = await createCssPluginTransform({
+      configFile: false,
+      css: { transformer: 'lightningcss' },
+    })
+    const css = '.foo { color: red; }'
+    const first = await transform(css, '/foo.module.css?vue&type=style&index=0')
+    const second = await transform(
+      css,
+      '/foo.module.css?vue&type=style&index=1',
+    )
+    const inline = await transform(css, `/foo.module.css${query}`)
+    expect(inline.code).toBe(first.code)
+    expect(inline.code).not.toBe(second.code)
+  })
+
+  test.each([
+    ['/dir&inline&name/foo.module.css', '/dir&name/foo.module.css'],
+    ['/foo.module.css?inline-css', '/foo.module.css?-css'],
+    ['/foo.module.css?inline-css', '/foo.module.css'],
+  ])('lightningcss preserves the identity of %s', async (id, otherId) => {
+    const { transform } = await createCssPluginTransform({
+      configFile: false,
+      css: { transformer: 'lightningcss' },
+    })
+    const css = '.foo { color: red; }'
+    const result = await transform(css, id)
+    const other = await transform(css, otherId)
+    expect(result.code).not.toBe(other.code)
+  })
+
+  test.each([
+    { id: '/foo.css', cssModules: true },
+    { id: '/foo.module.css', cssModules: false },
+  ])(
+    'lightningcss preserves non-module queries for $id',
+    async ({ id, cssModules }) => {
+      const sources: string[] = []
+      const { transform } = await createCssPluginTransform({
+        configFile: false,
+        css: {
+          transformer: 'lightningcss',
+          lightningcss: {
+            cssModules,
+            visitor: {
+              StyleSheet(stylesheet) {
+                sources.push(...stylesheet.sources.map(normalizePath))
+              },
+            },
+          },
+        },
+      })
+      await transform('.foo { color: red; }', `${id}?inline&query=foo`)
+      expect(sources[0]).toContain(`${id}?inline&query=foo`)
+    },
+  )
 })
 
 describe('url()', () => {

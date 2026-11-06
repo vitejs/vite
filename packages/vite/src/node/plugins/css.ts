@@ -3319,7 +3319,20 @@ async function compileLightningCSS(
   modules?: Record<string, string>
 }> {
   const { config } = environment
-  const filename = removeDirectQuery(id)
+  const cssModules = cssModuleRE.test(id)
+    ? (config.css.lightningcss?.cssModules ?? true)
+    : undefined
+  let filename = removeDirectQuery(id)
+  if (cssModules) {
+    // Keep CSS Module names stable across stylesheet and string imports.
+    filename = filename.replace(/\?.*$/, (query) => {
+      const params = query
+        .slice(1)
+        .split('&')
+        .filter((param) => param !== 'inline' && !param.startsWith('inline='))
+      return params.length ? `?${params.join('&')}` : ''
+    })
+  }
 
   let res: LightningCssTransformAttributeResult | LightningCssTransformResult
   try {
@@ -3425,9 +3438,7 @@ async function compileLightningCSS(
               ? !!config.build.sourcemap
               : config.css.devSourcemap,
           analyzeDependencies: { preserveImports: true },
-          cssModules: cssModuleRE.test(id)
-            ? (config.css.lightningcss?.cssModules ?? true)
-            : undefined,
+          cssModules,
         })
   } catch (e) {
     e.message = `[lightningcss] ${e.message}`
