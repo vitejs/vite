@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type {
@@ -488,7 +489,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       if (defaultCssTarget && config.build.cssTarget === defaultCssTarget) {
         const { default: browserslistToEsbuild } =
           await import('browserslist-to-esbuild')
-        const { default: resolveBabelTargets } = _require(
+        const { default: resolveBabelTargets } = createRequire(import.meta.url)(
           '@babel/helper-compilation-targets',
         )
         const resolvedTargets = resolveBabelTargets(
