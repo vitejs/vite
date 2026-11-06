@@ -9,6 +9,7 @@ import {
 } from '../shared/moduleRunnerTransport'
 import { moduleUrlToBrowserUrl } from '../shared/utils'
 import type { BundledDevHMRClient } from './bundledDevHmrClient'
+import { logPrefix } from './logPrefix'
 import { ErrorOverlay, cspNonce, overlayId } from './overlay'
 // @ts-expect-error internal virtual module
 import '@vite/env'
@@ -25,8 +26,7 @@ declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
 declare const __WS_TOKEN__: string
 declare const __SERVER_FORWARD_CONSOLE__: any
-
-console.debug('[vite] connecting...')
+console.debug(`${logPrefix} connecting...`)
 
 const importMetaUrl = new URL(import.meta.url)
 
@@ -73,7 +73,7 @@ export const transport = normalizeModuleRunnerTransport(
             try {
               await wsTransport.connect(handlers)
               console.info(
-                '[vite] Direct websocket connection fallback. Check out https://vite.dev/config/server-options.html#server-hmr to remove the previous connection error.',
+                `${logPrefix} Direct websocket connection fallback. Check out https://vite.dev/config/server-options.html#server-hmr to remove the previous connection error.`,
               )
             } catch (e) {
               if (
@@ -85,7 +85,7 @@ export const transport = normalizeModuleRunnerTransport(
                   currentScriptHostURL.host +
                   currentScriptHostURL.pathname.replace(/@vite\/client$/, '')
                 console.error(
-                  '[vite] failed to connect to websocket.\n' +
+                  `${logPrefix} failed to connect to websocket.\n` +
                     'your current setup:\n' +
                     `  (browser) ${currentScriptHost} <--[HTTP]--> ${serverHost} (server)\n` +
                     `  (browser) ${socketHost} <--[WebSocket (failing)]--> ${directSocketHost} (server)\n` +
@@ -95,7 +95,7 @@ export const transport = normalizeModuleRunnerTransport(
             }
             return
           }
-          console.error(`[vite] failed to connect to websocket (${e}). `)
+          console.error(`${logPrefix} failed to connect to websocket (${e}). `)
           throw e
         }
       },
@@ -142,8 +142,8 @@ export const pageReload = debounceReload(20)
 
 const hmrClient = new HMRClient(
   {
-    error: (err) => console.error('[vite]', err),
-    debug: (...msg) => console.debug('[vite]', ...msg),
+    error: (err) => console.error(logPrefix, err),
+    debug: (...msg) => console.debug(logPrefix, ...msg),
   },
   transport,
   async function importUpdatedModule({
@@ -202,7 +202,7 @@ async function handleMessage(payload: HotPayload) {
   const activeHmrClient = bundledDevClient ?? hmrClient
   switch (payload.type) {
     case 'connected':
-      console.debug(`[vite] connected.`)
+      console.debug(`${logPrefix} connected.`)
       break
     case 'bundled-dev-update':
       bundledDevClient!.handlePush(payload)
@@ -249,7 +249,7 @@ async function handleMessage(payload: HotPayload) {
             newLinkTag.href = new URL(browserUrl, el.href).href
             const removeOldEl = () => {
               el.remove()
-              console.debug(`[vite] css hot updated: ${searchUrl}`)
+              console.debug(`${logPrefix} css hot updated: ${searchUrl}`)
               resolve()
             }
             newLinkTag.addEventListener('load', removeOldEl)
@@ -265,7 +265,9 @@ async function handleMessage(payload: HotPayload) {
       await activeHmrClient.notifyListeners(payload.event, payload.data)
       if (payload.event === 'vite:ws:disconnect') {
         if (hasDocument && !willUnload) {
-          console.log(`[vite] server connection lost. Polling for restart...`)
+          console.log(
+            `${logPrefix} server connection lost. Polling for restart...`,
+          )
           const socket = payload.data.webSocket as WebSocket
           const url = new URL(socket.url)
           url.search = '' // remove query string including `token`
@@ -316,7 +318,7 @@ async function handleMessage(payload: HotPayload) {
           createErrorOverlay(err)
         } else {
           console.error(
-            `[vite] Internal Server Error\n${err.message}\n${err.stack}`,
+            `${logPrefix} Internal Server Error\n${err.message}\n${err.stack}`,
           )
         }
       }
@@ -373,6 +375,8 @@ function waitForSuccessfulPing(socketUrl: string) {
   const blob = new Blob(
     [
       '"use strict";',
+      // the functions below are stringified, so module-scope values they use must be redeclared
+      `const logPrefix = ${JSON.stringify(logPrefix)};`,
       `const waitForSuccessfulPingInternal = ${waitForSuccessfulPingInternal.toString()};`,
       `const fn = ${pingWorkerContentMain.toString()};`,
       `fn(${JSON.stringify(socketUrl)})`,
@@ -430,17 +434,17 @@ function pingWorkerContentMain(socketUrl: string) {
     port.addEventListener('message', (event) => {
       const { visibility } = event.data
       visibilityManager.currentState = visibility
-      console.debug('[vite] new window visibility', visibility)
+      console.debug(`${logPrefix} new window visibility`, visibility)
       for (const listener of visibilityManager.listeners) {
         listener(visibility)
       }
     })
     port.start()
 
-    console.debug('[vite] connected from window')
+    console.debug(`${logPrefix} connected from window`)
     waitForSuccessfulPingInternal(socketUrl, visibilityManager).then(
       () => {
-        console.debug('[vite] ping successful')
+        console.debug(`${logPrefix} ping successful`)
         try {
           port.postMessage({ type: 'success' })
         } catch (error) {
@@ -448,7 +452,7 @@ function pingWorkerContentMain(socketUrl: string) {
         }
       },
       (error) => {
-        console.debug('[vite] error happened', error)
+        console.debug(`${logPrefix} error happened`, error)
         try {
           port.postMessage({ type: 'error', error })
         } catch (error) {
