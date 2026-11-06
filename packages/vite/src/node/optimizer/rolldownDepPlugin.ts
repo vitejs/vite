@@ -187,6 +187,15 @@ export function rolldownDepPlugin(
 
           const resolved = await resolve(id, importer, kind)
           if (resolved) {
+            // An excluded package can expose a `.vue` subpath that resolves to
+            // JavaScript. Keep the original specifier external before the
+            // dependency plugin gets a chance to bundle the resolved file.
+            if (moduleListContains(external, id)) {
+              return {
+                id,
+                external: 'absolute',
+              }
+            }
             // `resolved` can be javascript even when `id` matches `allExternalTypes`
             // due to cjs resolution (e.g. require("./test.pdf") for "./test.pdf.js")
             // or package name (e.g. import "some-package.pdf")
