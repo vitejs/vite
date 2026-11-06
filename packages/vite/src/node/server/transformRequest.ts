@@ -393,7 +393,9 @@ async function loadAndTransform(
       logger,
     )
 
-    if (path.isAbsolute(mod.file)) {
+    // an indexed ("sections") sourcemap has no top-level `sources` (each
+    // section carries its own nested map), so there's nothing to rewrite here
+    if (path.isAbsolute(mod.file) && normalizedMap.sources) {
       let modDirname
       for (
         let sourcesIndex = 0;
