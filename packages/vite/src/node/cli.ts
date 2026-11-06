@@ -6,6 +6,7 @@ import { cac } from 'cac'
 import colors from 'picocolors'
 import { createBuilder } from './build'
 import type { BuildEnvironmentOptions } from './build'
+import { commandLockPlugin, createCommandLock } from './commandLock'
 import type { InlineConfig } from './config'
 import { VERSION } from './constants'
 import type { LogLevel } from './logger'
@@ -52,6 +53,7 @@ interface GlobalCLIOptions {
   filter?: string
   m?: string
   mode?: string
+  bypassLock?: boolean
   force?: boolean
   w?: boolean
 }
@@ -127,6 +129,7 @@ function cleanGlobalCLIOptions<Options extends GlobalCLIOptions>(
   delete ret.filter
   delete ret.m
   delete ret.mode
+  delete ret.bypassLock
   delete ret.force
   delete ret.w
 
@@ -197,6 +200,7 @@ cli
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
   .option('-f, --filter <filter>', `[string] filter debug logs`)
   .option('-m, --mode <mode>', `[string] set env mode`)
+  .option('--bypass-lock', `[boolean] disable process locks`)
 
 // dev
 cli
@@ -234,6 +238,7 @@ cli
           configLoader: options.configLoader,
           logLevel: options.logLevel,
           clearScreen: options.clearScreen,
+          plugins: options.bypassLock ? [] : [commandLockPlugin()],
           server: cleanGlobalCLIOptions(options),
           forceOptimizeDeps: options.force,
           experimental: {
@@ -376,6 +381,9 @@ cli
           ...(options.app ? { builder: {} } : {}),
         }
         const builder = await createBuilder(inlineConfig, null)
+        if (!options.bypassLock) {
+          await createCommandLock(builder.config, 'build', null)
+        }
         await builder.buildApp()
         await builder.runDevTools()
       } catch (e) {
@@ -459,6 +467,7 @@ cli
           configLoader: options.configLoader,
           logLevel: options.logLevel,
           mode: options.mode,
+          plugins: options.bypassLock ? [] : [commandLockPlugin()],
           build: {
             outDir: options.outDir,
           },

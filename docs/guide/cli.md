@@ -1,5 +1,9 @@
 # Command Line Interface
 
+## Process locks
+
+The `vite`, `vite build`, and `vite preview` commands create lock files in the `lock` subdirectory of [`cacheDir`](/config/shared-options#cachedir). If a lock belongs to another running process with the same command, project root, config file, and mode, Vite exits. To run another instance, pass `--bypass-lock`.
+
 ## Dev server
 
 ### `vite`
@@ -23,6 +27,7 @@ vite [root]
 | `--strictPort`            | Exit if specified port is already in use (`boolean`)                                                                                                                                  |
 | `--force`                 | Force the optimizer to ignore the cache and re-bundle (`boolean`)                                                                                                                     |
 | `--experimentalBundle`    | Use experimental full bundle mode (this is highly experimental) (`boolean`)                                                                                                           |
+| `--bypass-lock`           | Allow running alongside another Vite process for this project (`boolean`)                                                                                                             |
 | `-c, --config <file>`     | Use specified config file (`string`)                                                                                                                                                  |
 | `--base <path>`           | Public base path (default: `/`) (`string`)                                                                                                                                            |
 | `-l, --logLevel <level>`  | info \| warn \| error \| silent (`string`)                                                                                                                                            |
@@ -62,6 +67,7 @@ vite build [root]
 | `--ssrManifest [name]`         | Emit ssr manifest json (`boolean \| string`)                                                                                                                                          |
 | `--emptyOutDir`                | Force empty outDir when it's outside of root (`boolean`)                                                                                                                              |
 | `-w, --watch`                  | Rebuilds when modules have changed on disk (`boolean`)                                                                                                                                |
+| `--bypass-lock`                | Allow running alongside another Vite process for this project (`boolean`)                                                                                                             |
 | `-c, --config <file>`          | Use specified config file (`string`)                                                                                                                                                  |
 | `--base <path>`                | Public base path (default: `/`) (`string`)                                                                                                                                            |
 | `-l, --logLevel <level>`       | info \| warn \| error \| silent (`string`)                                                                                                                                            |
@@ -124,6 +130,7 @@ vite preview [root]
 | `--strictPort`            | Exit if specified port is already in use (`boolean`)                                                                                                                                  |
 | `--open [path]`           | Open browser on startup (`boolean \| string`)                                                                                                                                         |
 | `--outDir <dir>`          | Output directory (default: `dist`) (`string`)                                                                                                                                         |
+| `--bypass-lock`           | Allow running alongside another Vite process for this project (`boolean`)                                                                                                             |
 | `-c, --config <file>`     | Use specified config file (`string`)                                                                                                                                                  |
 | `--base <path>`           | Public base path (default: `/`) (`string`)                                                                                                                                            |
 | `-l, --logLevel <level>`  | info \| warn \| error \| silent (`string`)                                                                                                                                            |
