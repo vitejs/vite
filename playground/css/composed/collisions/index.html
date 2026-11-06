@@ -1,0 +1,49 @@
+<div class="local">Local values</div>
+<div class="imported">Imported value</div>
+<pre class="exported"></pre>
+<script type="module">
+  import localEmbedded from './local-embedded.module.css'
+  import importedEmbedded from './imported-embedded.module.css'
+  import local from './local.module.css'
+  import localFunctions from './local-functions.module.css'
+  import importedFunctions from './imported-functions.module.css'
+  import composedFunctions from './composed-functions.module.css'
+  import imported from './imported.module.css'
+
+  for (const [prefix, styles] of [
+    ['local-function', localFunctions],
+    ['imported-function', importedFunctions],
+  ]) {
+    for (const key of ['pathUrl', 'pathSet', 'urlSet', 'combined']) {
+      if (!styles[key]) continue
+      const element = document.createElement('div')
+      element.textContent = key
+      element.className = `${prefix}-${key} ${styles[key]}`
+      document.body.append(element)
+    }
+  }
+  for (const [prefix, styles] of [
+    ['local-embedded', localEmbedded],
+    ['imported-embedded', importedEmbedded],
+  ]) {
+    for (const [key, value] of Object.entries(styles)) {
+      if (key === 'prefix' || key === 'fragment') continue
+      const element = document.createElement('div')
+      element.textContent = key
+      element.className = `${prefix}-${key} ${value}`
+      document.body.append(element)
+    }
+  }
+  const composed = document.createElement('div')
+  composed.textContent = 'Composed functions'
+  composed.className = `composed-functions ${composedFunctions.entry}`
+  document.body.append(composed)
+  const exported = document.createElement('pre')
+  exported.className = 'function-exports'
+  exported.textContent = localFunctions.combinedUrl
+  document.body.append(exported)
+
+  document.querySelector('.local').className += ` ${local.entry}`
+  document.querySelector('.imported').className += ` ${imported.entry}`
+  document.querySelector('.exported').textContent = imported.icon
+</script>

@@ -1,0 +1,13 @@
+@value (imagePath as importedPath, imageUrl as importedUrl) from './values/functions.module.css';
+
+.pathUrl {
+  background-image: url(importedPath);
+}
+
+.pathSet {
+  background-image: image-set(importedPath 1x);
+}
+
+.urlSet {
+  background-image: image-set(importedUrl 1x);
+}

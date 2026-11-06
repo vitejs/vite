@@ -1,0 +1,3 @@
+.entry {
+  composes: shared from './shared/shared.module.css';
+}

@@ -15,6 +15,7 @@ const dirname = import.meta.dirname
 export default defineConfig({
   input: {
     index: path.resolve(dirname, './index.html'),
+    composed: path.resolve(dirname, './composed/index.html'),
     treeshakeScoped: path.resolve(dirname, './treeshake-scoped/index.html'),
     empty: path.resolve(dirname, './empty.css'),
   },
@@ -45,6 +46,9 @@ export default defineConfig({
     },
   ],
   build: {
+    assetsInlineLimit(file) {
+      if (file.includes('/composed/')) return false
+    },
     cssTarget: 'chrome61',
     rolldownOptions: {
       output: {
