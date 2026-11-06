@@ -3,6 +3,7 @@ import type { PartialResolvedId } from 'rolldown'
 import type { PartialEnvironment } from './baseEnvironment'
 import type { ResolvedConfig } from './config'
 import type { Environment } from './environment'
+import { externalizeUrlPlugin } from './plugins/externalizeUrl'
 import { oxcResolvePlugin } from './plugins/resolve'
 import type { InternalResolveOptions } from './plugins/resolve'
 import type { EnvironmentPluginContainer } from './server/pluginContainer'
@@ -61,6 +62,11 @@ export function createIdResolver(
         [
           // @ts-expect-error  the aliasPlugin uses rollup types
           aliasPlugin({ entries: environment.config.resolve.alias }),
+          ...(config.command === 'serve' &&
+          options?.asSrc !== false &&
+          !environment.config.isBundled
+            ? [externalizeUrlPlugin()]
+            : []),
           ...oxcResolvePlugin(
             {
               root: config.root,

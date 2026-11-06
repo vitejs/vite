@@ -54,7 +54,6 @@ import {
   injectQuery,
   isBuiltin,
   isCSSRequest,
-  isDataUrl,
   isDefined,
   isExternalUrl,
   isFilePathESM,
@@ -344,15 +343,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           )
         }
 
-        // Compatibility: plugin-resolved remote URLs are rewritten as-is.
-        if (isExternalUrl(resolved.id)) {
-          return { ...resolved, external: true }
-        }
-        // Compatibility: dev plugins can mark an ID external while relying on
-        // import analysis to rewrite it and track it as a local dependency.
-        if (resolved.external) {
-          return { ...resolved, external: false }
-        }
         return resolved
       }
 
@@ -362,15 +352,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       ): Promise<PartialResolvedId | null> => {
         // Optimization: @vite/client already uses its BrowserURL
         if (specifier === clientPublicPath) {
-          return { id: specifier, external: true }
-        }
-        // Compatibility: remote and data imports without aliases bypass resolver
-        // hooks, even if a plugin could resolve them to local modules.
-        if (
-          ((isExternalUrl(specifier) && !specifier.startsWith('file://')) ||
-            isDataUrl(specifier)) &&
-          !matchAlias(specifier)
-        ) {
           return { id: specifier, external: true }
         }
         if (ssr && !matchAlias(specifier)) {
@@ -385,6 +366,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // warn imports to non-asset /public files
         if (
           specifier[0] === '/' &&
+          !isExternalUrl(specifier) &&
           !(
             config.assetsInclude(cleanUrl(specifier)) || urlRE.test(specifier)
           ) &&
@@ -476,7 +458,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      const orderedImportedUrls = new Array<string | undefined>(imports.length)
+      const orderedImportedModules = new Array<
+        string | EnvironmentModuleNode | undefined
+      >(imports.length)
       const orderedAcceptedUrls = new Array<Set<UrlPosition> | undefined>(
         imports.length,
       )
@@ -588,7 +572,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               return
             }
             const id = resolved?.id
-            const { moduleUrl } = await getImportModule(
+            const { moduleUrl, module: depModule } = await getImportModule(
               specifier,
               resolved,
               start,
@@ -687,13 +671,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
 
             // record for HMR import chain analysis
-            // This check is needed until all remote and data URLs are marked
-            // external during resolution and skipped before reaching here.
-            const isLocalImport =
-              !isExternalUrl(moduleUrl) && !isDataUrl(moduleUrl)
-            if (isLocalImport) {
-              orderedImportedUrls[index] = moduleUrl
-            }
+            orderedImportedModules[index] = depModule ?? moduleUrl
 
             if (enablePartialAccept && importedBindings) {
               extractImportedBindings(
@@ -706,7 +684,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
             if (
               !isDynamicImport &&
-              isLocalImport &&
               environment.config.dev.preTransformRequests
             ) {
               // pre-transform known direct imports
@@ -759,13 +736,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }),
       )
 
-      const _orderedImportedUrls = orderedImportedUrls.filter(isDefined)
-      const importedUrls = new Set(_orderedImportedUrls)
-      // `importedUrls` will be mixed with watched files for the module graph,
+      const importedModules = new Set(orderedImportedModules.filter(isDefined))
+      // `importedModules` will be mixed with watched files for the module graph,
       // `staticImportedUrls` will only contain the static top-level imports and
       // dynamic imports
       const staticImportedUrls = new Set(
-        _orderedImportedUrls.map((url) => removeTimestampQuery(url)),
+        [...importedModules].map((mod) =>
+          typeof mod === 'string' ? removeTimestampQuery(mod) : mod.url,
+        ),
       )
       const acceptedUrls = mergeAcceptedUrls(orderedAcceptedUrls)
       const acceptedExports = mergeAcceptedUrls(orderedAcceptedExports)
@@ -812,7 +790,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       // normalize and rewrite accepted urls
-      const normalizedAcceptedUrls = new Set<string>()
+      const normalizedAcceptedModules = new Set<EnvironmentModuleNode>()
       for (const { url, start, end } of acceptedUrls) {
         const resolved = await resolveId(url, start).catch(() => null)
         if (!resolved || resolved.external) {
@@ -828,7 +806,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             start,
           )
         }
-        normalizedAcceptedUrls.add(mod.url)
+        normalizedAcceptedModules.add(mod)
         str().overwrite(start, end, JSON.stringify(mod.url), {
           contentOnly: true,
         })
@@ -846,18 +824,19 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           const modules = await Promise.all(
             [...pluginImports].map(async (specifier) => {
               const resolved = await resolveId(specifier, 0)
-              if (resolved?.external) return
-              const { moduleUrl } = await getImportModule(
+              // Explicitly watched files remain dependencies even when a
+              // resolver marks them external for source imports.
+              const { moduleUrl, module } = await getImportModule(
                 specifier,
                 resolved,
                 0,
                 true,
               )
-              return moduleUrl
+              return module ?? moduleUrl
             }),
           )
           for (const mod of modules) {
-            if (mod != null) importedUrls.add(mod)
+            importedModules.add(mod)
           }
         }
         // HMR transforms are no-ops in SSR, so an `accept` call will
@@ -878,9 +857,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
         const prunedImports = await moduleGraph.updateModuleInfo(
           importerModule,
-          importedUrls,
+          importedModules,
           importedBindings,
-          normalizedAcceptedUrls,
+          normalizedAcceptedModules,
           isPartiallySelfAccepting ? acceptedExports : null,
           isSelfAccepting,
           staticImportedUrls,
@@ -892,7 +871,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       debug?.(
         `${timeFrom(msAtStart)} ${colors.dim(
-          `[${importedUrls.size} imports rewritten] ${prettifyUrl(
+          `[${importedModules.size} imports rewritten] ${prettifyUrl(
             importer,
             root,
           )}`,
