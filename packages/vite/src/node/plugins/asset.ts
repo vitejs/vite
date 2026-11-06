@@ -257,6 +257,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         }
 
         id = removeUrlQuery(id)
+        if (this.environment.config.isBundled && !checkPublicFile(id, config)) {
+          // `originalFileName` on the emitted asset does not make Rolldown
+          // watch the file, so register it to rebuild when it changes.
+          this.addWatchFile(cleanUrl(id))
+        }
         let resolved: FileToBuiltUrlResult
         if (!this.environment.config.isBundled) {
           resolved = {
