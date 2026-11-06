@@ -249,7 +249,7 @@ export class BundledDev {
 
         this.storeOutputFiles(result.output)
         this.releaseSupersededOutput(result.output)
-        this.releaseUnappliedHmrPatches()
+        this.releaseExpiredHmrPatches()
 
         // Trigger a full reload if there's no error in the result and a reload is pending from HMR.
         if (this.fullReloadPending) {
@@ -397,7 +397,7 @@ export class BundledDev {
     this.renamedAssets = []
     this.retiredOutput = []
     this.pushedHmrPatches = []
-    this.unappliedHmrPatches = []
+    this.previousHmrPatches = []
     await this._devEngine?.close()
     this.initialBuildCompleted = false
   }
@@ -443,8 +443,8 @@ export class BundledDev {
   private retiredOutput: [string, OutputFile][] = []
   /** HMR patches (and their source maps) pushed since the latest full build. */
   private pushedHmrPatches: [string, string | undefined][] = []
-  /** HMR patches to drop at the next full build if no client evaluated them. */
-  private unappliedHmrPatches: [string, string | undefined][] = []
+  /** HMR patches (and their source maps) to drop at the next full build. */
+  private previousHmrPatches: [string, string | undefined][] = []
 
   private storeOutputFiles(output: OutputFile[]): void {
     for (const outputFile of output) {
@@ -520,19 +520,19 @@ export class BundledDev {
   }
 
   /**
-   * A client skips fetching a patch when it decides to reload instead (for
-   * example, no HMR boundary), so it never reports it delivered. A client
-   * fetches a patch as soon as it is pushed, so one still undelivered a full
-   * build later is not fetched any more. It stays in `pendingPayloadFilenames`
-   * so a late delivery report still reaches the dev engine.
+   * A client fetches a patch as soon as it is pushed, so a full build later
+   * nothing fetches it any more. That covers a patch a client skipped by
+   * reloading instead (for example, no HMR boundary), which is never reported
+   * delivered; it stays in `pendingPayloadFilenames` so a late delivery report
+   * still reaches the dev engine. A delivered patch's source map is kept until
+   * then too, so DevTools can still fetch it after the patch has run.
    */
-  private releaseUnappliedHmrPatches(): void {
-    for (const [fileName, sourcemapFileName] of this.unappliedHmrPatches) {
-      if (!this.pendingPayloadFilenames.has(fileName)) continue
+  private releaseExpiredHmrPatches(): void {
+    for (const [fileName, sourcemapFileName] of this.previousHmrPatches) {
       this.memoryFiles.delete(fileName)
       if (sourcemapFileName) this.memoryFiles.delete(sourcemapFileName)
     }
-    this.unappliedHmrPatches = this.pushedHmrPatches
+    this.previousHmrPatches = this.pushedHmrPatches
     this.pushedHmrPatches = []
   }
 

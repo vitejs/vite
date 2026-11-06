@@ -486,22 +486,31 @@ if (isBuild) {
   })
 
   test('drops an hmr patch once the client has evaluated it', async () => {
-    const bundledDev = viteServer.environments.client.bundledDev!
-    await expect.poll(() => page.textContent('.hmr')).toBe('hello')
-    const hmrPatchFileRes = page.waitForResponse(/\/hmr_patch_\d+\.js$/)
-    editFile('hmr.js', (code) =>
-      code.replace("const foo = 'hello'", "const foo = 'hello1'"),
-    )
-    onTestFinished(async () => {
-      editFile('hmr.js', (code) =>
-        code.replace("const foo = 'hello1'", "const foo = 'hello'"),
+    const bundledDev = viteServer.environments.client.bundledDev as any
+    const original = readFile('hmr.js')
+    const applyEdit = async (text: string) => {
+      const hmrPatchFileRes = page.waitForResponse(/\/hmr_patch_\d+\.js$/)
+      editFile('hmr.js', () =>
+        original.replace("const foo = 'hello'", `const foo = '${text}'`),
       )
+      await expect.poll(() => page.textContent('.hmr')).toBe(text)
+      await bundledDev.devEngine.ensureLatestBuildOutput()
+      return new URL((await hmrPatchFileRes).url()).pathname.slice(1)
+    }
+    onTestFinished(async () => {
+      addFile('hmr.js', original)
       await expect.poll(() => page.textContent('.hmr')).toBe('hello')
     })
-    await expect.poll(() => page.textContent('.hmr')).toBe('hello1')
+    await expect.poll(() => page.textContent('.hmr')).toBe('hello')
 
-    const patchFile = new URL((await hmrPatchFileRes).url()).pathname.slice(1)
+    const patchFile = await applyEdit('hello1')
     await expect.poll(() => bundledDev.memoryFiles.has(patchFile)).toBe(false)
+    // DevTools can still fetch the source map of a patch that has run
+    expect(bundledDev.memoryFiles.has(`${patchFile}.map`)).toBe(true)
+
+    // the full build after the next edit drops it
+    await applyEdit('hello2, longer')
+    expect(bundledDev.memoryFiles.has(`${patchFile}.map`)).toBe(false)
   })
 
   test('drops an hmr patch the client reloaded instead of fetching', async () => {
