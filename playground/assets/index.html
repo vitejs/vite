@@ -332,6 +332,9 @@
 <img class="import-meta-url-dep-img" />
 <code class="import-meta-url-dep"></code>
 
+<h2>assets of a tree-shaken module (sideEffects: false dep)</h2>
+<code class="unused-asset-dep"></code>
+
 <h2>new URL('/...', import.meta.url)</h2>
 <img class="import-meta-url-base-path-img" />
 <code class="import-meta-url-base-path"></code>
@@ -527,6 +530,7 @@
   import './css/icons.css'
   import './css/manual-chunks.css'
   import { multilineUrl } from './multiline-import-meta-url.js'
+  import { usedUrl } from '@vitejs/test-assets-unused-asset-dep'
 
   text('.base', `import.meta.${``}env.BASE_URL: ${import.meta.env.BASE_URL}`)
 
@@ -654,6 +658,10 @@
   const metaUrlDep = new URL('@/asset.png', import.meta.url)
   text('.import-meta-url-dep', metaUrlDep)
   document.querySelector('.import-meta-url-dep-img').src = metaUrlDep
+
+  // `unusedUrl` / `unusedUrlImport` are not imported, so `unused.js` and its
+  // assets must not reach the output (#24002)
+  text('.unused-asset-dep', usedUrl)
 
   // testing URLs for public assets served at the public base path
   // equivalent to `new URL(`${import.meta.env.BASE_URL}/icon.png`, import.meta.url)

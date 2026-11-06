@@ -1,0 +1,8 @@
+{
+  "name": "@vitejs/test-assets-unused-asset-dep",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "index.js",
+  "sideEffects": false
+}
