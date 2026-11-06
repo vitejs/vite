@@ -959,3 +959,25 @@ test.runIf(isBuild)('assets inside <template> is rewrote', async () => {
     /<img class="template" src="\/foo\/bar\/assets\/asset-[-\w]+\.png" \/>/,
   )
 })
+
+test.runIf(isBuild)(
+  'omits unused code-owned assets and retains a live lazy URL',
+  async () => {
+    expect(
+      listAssets('foo').filter((name) =>
+        name.startsWith('conditional-unused-'),
+      ),
+    ).toEqual([])
+    expect(
+      listAssets('foo').filter((name) => name.startsWith('conditional-used-')),
+    ).toHaveLength(1)
+    const bytes = await page.evaluate(async () => {
+      const url = (globalThis as any).loadConditionalAsset()
+      const response = await fetch(url)
+      if (!response.ok)
+        throw new Error(`Asset request failed: ${response.status}`)
+      return [...new Uint8Array(await response.arrayBuffer())]
+    })
+    expect(bytes).toEqual([0, 97, 115, 109, 1, 0, 0, 0, 0, 1, 0])
+  },
+)

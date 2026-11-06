@@ -768,3 +768,9 @@
     document.querySelector(el).textContent = text
   }
 </script>
+
+<script type="module">
+  import { loadUnused } from './conditional-dead.js'
+  import { loadUsed } from './conditional-used.js'
+  globalThis.loadConditionalAsset = loadUsed
+</script>
