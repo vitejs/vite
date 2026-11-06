@@ -739,6 +739,19 @@ test('new URL("@/...", import.meta.url)', async () => {
   expect(await page.textContent('.import-meta-url-dep')).toMatch(assetMatch)
 })
 
+test('assets of a tree-shaken module are not emitted (#24002)', async () => {
+  // only `usedUrl` is imported from the `sideEffects: false` dep, so the
+  // module referencing `unused.txt` and `unused-url-import.txt?url` is dropped
+  expect(await page.textContent('.unused-asset-dep')).toMatch(
+    /\/used(-[-\w]{8})?\.txt$/,
+  )
+  if (isBuild) {
+    const assets = listAssets('foo')
+    expect(assets).toContainEqual(expect.stringMatching(/^used-[-\w]{8}\.txt$/))
+    expect(assets.filter((f) => f.startsWith('unused'))).toEqual([])
+  }
+})
+
 test('new URL("/...", import.meta.url)', async () => {
   expect(await page.textContent('.import-meta-url-base-path')).toMatch(
     iconMatch,
