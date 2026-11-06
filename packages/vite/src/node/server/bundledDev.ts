@@ -6,6 +6,7 @@ import {
   type BindingClientHmrUpdate,
   type DevEngine,
   dev,
+  freeExternalMemory,
 } from 'rolldown/experimental'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
 import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
@@ -27,6 +28,7 @@ import { prepareError } from './middlewares/error'
 const debug = createDebugger('vite:full-bundle-mode')
 
 type HmrOutput = BindingClientHmrUpdate['update']
+type OutputFile = RolldownOutput['output'][number]
 
 type MemoryFile = {
   source: string | Uint8Array
@@ -60,6 +62,10 @@ export class MemoryFiles {
 
   has(file: string): boolean {
     return this.files.has(file)
+  }
+
+  delete(file: string): void {
+    this.files.delete(file)
   }
 
   clear(): void {
@@ -242,6 +248,7 @@ export class BundledDev {
         this.lastBuildError = null
 
         this.storeOutputFiles(result.output)
+        this.releaseSupersededOutput(result.output)
 
         // Trigger a full reload if there's no error in the result and a reload is pending from HMR.
         if (this.fullReloadPending) {
@@ -375,12 +382,19 @@ export class BundledDev {
   markPayloadDelivered(filename: string): void {
     if (this.pendingPayloadFilenames.delete(filename)) {
       this.devEngine.notifyPayloadDelivered(filename)
+      // The client has evaluated the HMR patch and never requests it again.
+      this.memoryFiles.delete(filename)
     }
   }
 
   async close(): Promise<void> {
     this._closed = true
     this.memoryFiles.clear()
+    this.outputFileOwners.clear()
+    this.previousChunkFiles = []
+    this.assetFileBySource.clear()
+    this.renamedAssets = []
+    this.retiredOutput = []
     await this._devEngine?.close()
     this.initialBuildCompleted = false
   }
@@ -408,10 +422,35 @@ export class BundledDev {
     }
   }
 
-  private storeOutputFiles(output: RolldownOutput['output'][number][]): void {
-    // NOTE: don't clear memoryFiles here as incremental build reuses the files
+  /**
+   * Rolldown output objects keep their code and source map in native memory
+   * that V8 does not account for, so they are freed explicitly as soon as
+   * nothing serves them. `outputFileOwners` maps each served name to the object
+   * that serves it, so one replaced by a later build or lazy compile is freed
+   * when it is replaced.
+   */
+  private outputFileOwners = new Map<string, OutputFile>()
+  /** The chunks and chunk source maps of the latest full build, by served name. */
+  private previousChunkFiles: [string, OutputFile][] = []
+  /** The served name of each asset, by the source file it was emitted from. */
+  private assetFileBySource = new Map<string, string>()
+  /** Assets emitted again under a new name since the latest full build. */
+  private renamedAssets: [string, OutputFile][] = []
+  /** Files to drop at the next full build. */
+  private retiredOutput: [string, OutputFile][] = []
+
+  private storeOutputFiles(output: OutputFile[]): void {
     for (const outputFile of output) {
-      this.memoryFiles.set(normalizePath(outputFile.fileName), () => {
+      const fileName = normalizePath(outputFile.fileName)
+      const previousOwner = this.outputFileOwners.get(fileName)
+      if (previousOwner && previousOwner !== outputFile) {
+        freeExternalMemory(previousOwner)
+      }
+      this.outputFileOwners.set(fileName, outputFile)
+      if (outputFile.type === 'asset') {
+        this.recordAssetSources(fileName, outputFile.originalFileNames)
+      }
+      this.memoryFiles.set(fileName, () => {
         const source =
           outputFile.type === 'chunk' ? outputFile.code : outputFile.source
         return {
@@ -420,6 +459,57 @@ export class BundledDev {
         }
       })
     }
+  }
+
+  private recordAssetSources(fileName: string, sources: string[]): void {
+    for (const source of sources) {
+      const previousFileName = this.assetFileBySource.get(source)
+      const previousOwner =
+        previousFileName && this.outputFileOwners.get(previousFileName)
+      if (previousFileName !== fileName && previousOwner) {
+        this.renamedAssets.push([previousFileName!, previousOwner])
+      }
+      this.assetFileBySource.set(source, fileName)
+    }
+  }
+
+  /**
+   * Every full build emits all chunks, so a chunk (or chunk source map) missing
+   * from the new output is gone, for example renamed by a new content hash. An
+   * asset is only emitted when it changes, so one is retired only once it is
+   * emitted under a new name. A retired file stays served until the next full
+   * build, so a page loaded before the rebuild can still fetch it.
+   */
+  private releaseSupersededOutput(output: OutputFile[]): void {
+    for (const [fileName, file] of this.retiredOutput) {
+      if (this.outputFileOwners.get(fileName) !== file) continue
+      this.outputFileOwners.delete(fileName)
+      const staticFile = this.staticFiles.get(fileName)
+      if (staticFile) {
+        this.memoryFiles.set(fileName, staticFile)
+      } else {
+        this.memoryFiles.delete(fileName)
+      }
+      freeExternalMemory(file)
+    }
+    this.retiredOutput = [
+      ...this.previousChunkFiles,
+      ...this.renamedAssets,
+    ].filter(([fileName, file]) => this.outputFileOwners.get(fileName) === file)
+    this.renamedAssets = []
+    const chunkSourcemaps = new Set(
+      output.flatMap((file) =>
+        file.type === 'chunk' && file.sourcemapFileName
+          ? [normalizePath(file.sourcemapFileName)]
+          : [],
+      ),
+    )
+    this.previousChunkFiles = output.flatMap((file): [string, OutputFile][] => {
+      const fileName = normalizePath(file.fileName)
+      return file.type === 'chunk' || chunkSourcemaps.has(fileName)
+        ? [[fileName, file]]
+        : []
+    })
   }
 
   private async getRolldownOptions() {

@@ -9,6 +9,7 @@ import {
   page,
   readFile,
   serverLogs,
+  viteServer,
 } from '~utils'
 
 const assetUrl = /asset-[\w-]+\.png/
@@ -482,6 +483,74 @@ if (isBuild) {
     await expect
       .poll(() => page.textContent('.worker-plain'))
       .toBe('worker-plain-updated')
+  })
+
+  test('drops an hmr patch once the client has evaluated it', async () => {
+    const bundledDev = viteServer.environments.client.bundledDev!
+    await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+    const hmrPatchFileRes = page.waitForResponse(/\/hmr_patch_\d+\.js$/)
+    editFile('hmr.js', (code) =>
+      code.replace("const foo = 'hello'", "const foo = 'hello1'"),
+    )
+    onTestFinished(async () => {
+      editFile('hmr.js', (code) =>
+        code.replace("const foo = 'hello1'", "const foo = 'hello'"),
+      )
+      await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+    })
+    await expect.poll(() => page.textContent('.hmr')).toBe('hello1')
+
+    const patchFile = new URL((await hmrPatchFileRes).url()).pathname.slice(1)
+    await expect.poll(() => bundledDev.memoryFiles.has(patchFile)).toBe(false)
+  })
+
+  test('drops a chunk a rebuild renamed once the next rebuild lands', async () => {
+    const bundledDev = viteServer.environments.client.bundledDev as any
+    const original = readFile('dynamic.js')
+    const dynamicChunk = () =>
+      bundledDev.previousChunkFiles
+        .map(([fileName]: [string]) => fileName)
+        .find((fileName: string) =>
+          /^assets\/dynamic-[\w-]+\.js$/.test(fileName),
+        ) as string
+    const rebuildWithEdit = async (edit: string) => {
+      const before = dynamicChunk()
+      editFile('dynamic.js', () =>
+        original.replace("'loaded'", `'loaded ${edit}'`),
+      )
+      await expect
+        .poll(async () => {
+          await bundledDev.devEngine.ensureLatestBuildOutput()
+          return dynamicChunk()
+        })
+        .not.toBe(before)
+    }
+    onTestFinished(async () => {
+      addFile('dynamic.js', original)
+      await bundledDev.devEngine.ensureLatestBuildOutput()
+    })
+
+    await bundledDev.devEngine.ensureLatestBuildOutput()
+    const firstChunk = dynamicChunk()
+    const asset = new URL(
+      (await page.textContent('.asset'))!,
+      page.url(),
+    ).pathname.slice(1)
+
+    // the rebuild that renames the chunk keeps serving its old name, for pages
+    // loaded before it
+    await rebuildWithEdit('first edit')
+    expect(bundledDev.memoryFiles.has(firstChunk)).toBe(true)
+
+    // the rebuild after that drops it
+    await rebuildWithEdit('second edit, longer')
+    expect(bundledDev.memoryFiles.has(firstChunk)).toBe(false)
+    expect(bundledDev.memoryFiles.has(dynamicChunk())).toBe(true)
+
+    // a rebuild only re-emits the assets that changed, so the unchanged ones
+    // are still served
+    expect(bundledDev.memoryFiles.has('index.html')).toBe(true)
+    expect(bundledDev.memoryFiles.has(asset)).toBe(true)
   })
 
   test('lazy bundling errors return 500', async () => {
