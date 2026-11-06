@@ -1,0 +1,7 @@
+@value imagePath: './image.svg';
+@value imageUrl: url('./image.svg');
+
+.functions {
+  background-image:
+    url(imagePath), image-set(imagePath 1x), image-set(imageUrl 1x);
+}

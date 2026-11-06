@@ -1,0 +1,33 @@
+@value (prefix, fragment) from './values/embedded.module.css';
+
+.quotedPath {
+  background-image: url('./values/prefix.svg');
+}
+
+.unquotedPath {
+  background-image: url(./values/prefix.svg);
+}
+
+.stringSetPath {
+  background-image: image-set('./values/prefix.svg' 1x);
+}
+
+.urlSetPath {
+  background-image: image-set(url('./values/prefix.svg') 1x);
+}
+
+.quotedFragment {
+  background-image: url('./values/image.svg#fragment');
+}
+
+.unquotedFragment {
+  background-image: url(./values/image.svg#fragment);
+}
+
+.stringSetFragment {
+  background-image: image-set('./values/image.svg#fragment' 1x);
+}
+
+.urlSetFragment {
+  background-image: image-set(url('./values/image.svg#fragment') 1x);
+}
