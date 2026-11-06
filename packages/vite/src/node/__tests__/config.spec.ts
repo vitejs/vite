@@ -1495,6 +1495,27 @@ describe('resolveConfig', () => {
     )
   })
 
+  test('warns when `optimizeDeps.rollupOptions` is set in user config', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const isDeprecationWarning = (call: unknown[]) =>
+      String(call[0]).includes('`optimizeDeps.rollupOptions`')
+
+    await resolveConfig(
+      { optimizeDeps: { rollupOptions: { treeshake: false } } },
+      'serve',
+    )
+    expect(warnSpy.mock.calls.filter(isDeprecationWarning)).toHaveLength(1)
+
+    warnSpy.mockClear()
+    await resolveConfig(
+      { optimizeDeps: { rolldownOptions: { treeshake: false } } },
+      'serve',
+    )
+    expect(warnSpy.mock.calls.filter(isDeprecationWarning)).toHaveLength(0)
+
+    warnSpy.mockRestore()
+  })
+
   test('top-level input applies to the client environment only (non-inherit)', async () => {
     const config = await resolveConfig({ input: 'src/main.ts' }, 'serve')
 
