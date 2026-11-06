@@ -18,6 +18,7 @@ const input = {
   inline1: resolve(dirname, 'inline/shared-1.html'),
   inline2: resolve(dirname, 'inline/shared-2.html'),
   inline3: resolve(dirname, 'inline/unique.html'),
+  inlineScript: resolve(dirname, 'inline/script.html'),
   unicodePath: resolve(
     dirname,
     'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
