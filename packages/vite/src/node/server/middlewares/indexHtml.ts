@@ -512,12 +512,17 @@ export function indexHtmlMiddleware(
       }
 
       let filePath: string
-      if (isDev) {
-        filePath = moduleUrlToFilePath(decodeURIComponent(url), root)
-      } else {
-        filePath = normalizePath(
-          path.resolve(path.join(root, decodeURIComponent(url))),
-        )
+      try {
+        if (isDev) {
+          filePath = moduleUrlToFilePath(decodeURIComponent(url), root)
+        } else {
+          filePath = normalizePath(
+            path.resolve(path.join(root, decodeURIComponent(url))),
+          )
+        }
+      } catch {
+        // ignore malformed URI
+        return next()
       }
 
       if (isDev) {
