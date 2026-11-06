@@ -270,7 +270,8 @@ module.exports = Object.create(new Proxy({}, {
       key !== 'constructor' &&
       key !== 'splice'
     ) {
-      console.warn(\`Module "${path}" has been externalized for browser compatibility. Cannot access "${path}.\${key}" in client code. See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\`)
+      const path = ${JSON.stringify(path)}
+      console.warn(\`Module "\${path}" has been externalized for browser compatibility. Cannot access "\${path}.\${key}" in client code. See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\`)
     }
   }
 }))`,
@@ -289,7 +290,9 @@ module.exports = Object.create(new Proxy({}, {
           } else {
             const [, peerDep, parentDep] = path.split(':')
             return {
-              contents: `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`,
+              contents:
+                `const peerDep = ${JSON.stringify(peerDep)};const parentDep = ${JSON.stringify(parentDep)};` +
+                `throw new Error(\`Could not resolve "\${peerDep}" imported by "\${parentDep}".${isProduction ? '' : ' Is it installed?'}\`)`,
             }
           }
         },
