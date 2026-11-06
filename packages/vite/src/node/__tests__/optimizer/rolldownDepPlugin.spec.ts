@@ -1,11 +1,13 @@
 import { describe, expect, test } from 'vitest'
 import { rolldownDepPlugin } from '../../optimizer/rolldownDepPlugin'
+import { SafeModulePaths } from '../../server/safeModulePaths'
 import { normalizePath } from '../../utils'
 
 async function createRolldownDepPluginTransform(cacheDir: string) {
   const baseConfig = {
     cacheDir: normalizePath(cacheDir),
     optimizeDeps: { extensions: [] },
+    safeModulePaths: new SafeModulePaths(),
     server: { fs: { allow: [] } },
     resolve: { builtins: [] },
     createResolver: () => ({}),

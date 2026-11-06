@@ -247,9 +247,9 @@ export class DevEnvironment extends BaseEnvironment {
       )
       for (const resolved of resolvedEntries) {
         if (resolved && !resolved.external) {
-          const resolvedId = cleanUrl(resolved.id)
-          if (path.isAbsolute(resolvedId)) {
-            this.getTopLevelConfig().safeModulePaths.add(resolvedId)
+          const file = cleanUrl(resolved.id)
+          if (path.isAbsolute(file)) {
+            this.getTopLevelConfig().safeModulePaths.addId(resolved.id)
           }
         }
       }
