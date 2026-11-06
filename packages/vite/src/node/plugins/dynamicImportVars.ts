@@ -6,6 +6,7 @@ import MagicString from 'magic-string'
 import { viteDynamicImportVarsPlugin as nativeDynamicImportVarsPlugin } from 'rolldown/experimental'
 import { exactRegex } from 'rolldown/filter'
 import { parseAst } from 'rolldown/parseAst'
+import { isDynamicPattern } from 'tinyglobby'
 import type { PartialEnvironment } from '../baseEnvironment'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
@@ -86,6 +87,17 @@ function parseDynamicImportPattern(
     requestQueryMaybeEscapedSplitRE,
     2,
   )
+
+  // When the module path is static and only the query string contains a
+  // runtime variable (e.g. `./foo.js?bar=${baz}`), `dynamicImportToGlob`
+  // doesn't produce any glob wildcard in the path. Routing such imports
+  // through `import.meta.glob` would generate glob keys without the query,
+  // so the runtime lookup would always fail with "Unknown variable dynamic
+  // import". Leave the dynamic import untouched in that case.
+  if (!isDynamicPattern(userPattern)) {
+    return null
+  }
+
   let [rawPattern, search] = filename.split(requestQuerySplitRE, 2)
   let globParams: DynamicImportRequest | null = null
   if (search) {
