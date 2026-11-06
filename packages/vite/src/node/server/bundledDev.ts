@@ -148,6 +148,7 @@ export class BundledDev {
       'vite:client-connected',
       async (payload, client) => {
         this.clients.setupIfNeeded(client, payload.clientId)
+        this.clientFullBuilds.set(payload.clientId, this.fullBuilds)
         this.devEngine.registerClient(payload.clientId)
       },
     )
@@ -170,6 +171,8 @@ export class BundledDev {
       if (clientId) {
         this.devEngine.removeClient(clientId)
         this.reloadNeededClientIds.delete(clientId)
+        this.clientFullBuilds.delete(clientId)
+        this.dropUnreachableOutput()
       }
     })
     this.environment.hot.on(
@@ -396,6 +399,8 @@ export class BundledDev {
     this.assetFileBySource.clear()
     this.renamedAssets = []
     this.retiredOutput = []
+    this.fullBuilds = 0
+    this.clientFullBuilds.clear()
     this.pushedHmrPatches = []
     this.previousHmrPatches = []
     await this._devEngine?.close()
@@ -439,8 +444,16 @@ export class BundledDev {
   private assetFileBySource = new Map<string, string>()
   /** Assets emitted again under a new name since the latest full build. */
   private renamedAssets: [string, OutputFile][] = []
-  /** Files to drop at the next full build. */
-  private retiredOutput: [string, OutputFile][] = []
+  /**
+   * Files the latest output no longer serves under that name, with the full
+   * build that left them out. They are dropped once no connected page can
+   * still request them.
+   */
+  private retiredOutput: [string, OutputFile, number][] = []
+  /** Full builds so far. */
+  private fullBuilds = 0
+  /** The full build that was current when each connected client connected. */
+  private clientFullBuilds = new Map<string, number>()
   /** HMR patches (and their source maps) pushed since the latest full build. */
   private pushedHmrPatches: [string, string | undefined][] = []
   /** HMR patches (and their source maps) to drop at the next full build. */
@@ -484,25 +497,20 @@ export class BundledDev {
    * Every full build emits all chunks, so a chunk (or chunk source map) missing
    * from the new output is gone, for example renamed by a new content hash. An
    * asset is only emitted when it changes, so one is retired only once it is
-   * emitted under a new name. A retired file stays served until the next full
-   * build, so a page loaded before the rebuild can still fetch it.
+   * emitted under a new name. A page keeps requesting the files of the build it
+   * loaded (lazy chunks, for example), so a retired file stays served while a
+   * page loaded before its retirement is still connected.
    */
   private releaseSupersededOutput(output: OutputFile[]): void {
-    for (const [fileName, file] of this.retiredOutput) {
-      if (this.outputFileOwners.get(fileName) !== file) continue
-      this.outputFileOwners.delete(fileName)
-      const staticFile = this.staticFiles.get(fileName)
-      if (staticFile) {
-        this.memoryFiles.set(fileName, staticFile)
-      } else {
-        this.memoryFiles.delete(fileName)
-      }
-      freeExternalMemory(file)
-    }
-    this.retiredOutput = [
+    this.fullBuilds++
+    for (const [fileName, file] of [
       ...this.previousChunkFiles,
       ...this.renamedAssets,
-    ].filter(([fileName, file]) => this.outputFileOwners.get(fileName) === file)
+    ]) {
+      if (this.outputFileOwners.get(fileName) === file) {
+        this.retiredOutput.push([fileName, file, this.fullBuilds])
+      }
+    }
     this.renamedAssets = []
     const chunkSourcemaps = new Set(
       output.flatMap((file) =>
@@ -517,6 +525,34 @@ export class BundledDev {
         ? [[fileName, file]]
         : []
     })
+    this.dropUnreachableOutput()
+  }
+
+  /**
+   * A client is recorded with the full build that was current when it
+   * connected, but the page may have loaded the build before it, so a file
+   * retired at build N is dropped only once every connected client connected
+   * after build N. With no client connected, that is the next full build.
+   */
+  private dropUnreachableOutput(): void {
+    const oldestClientBuild = this.clientFullBuilds.size
+      ? Math.min(...this.clientFullBuilds.values())
+      : this.fullBuilds
+    this.retiredOutput = this.retiredOutput.filter(
+      ([fileName, file, retiredAt]) => {
+        if (this.outputFileOwners.get(fileName) !== file) return false
+        if (retiredAt >= oldestClientBuild) return true
+        this.outputFileOwners.delete(fileName)
+        const staticFile = this.staticFiles.get(fileName)
+        if (staticFile) {
+          this.memoryFiles.set(fileName, staticFile)
+        } else {
+          this.memoryFiles.delete(fileName)
+        }
+        freeExternalMemory(file)
+        return false
+      },
+    )
   }
 
   /**

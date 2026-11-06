@@ -548,7 +548,7 @@ if (isBuild) {
     expect(bundledDev.memoryFiles.has(`${skippedPatch}.map`)).toBe(false)
   })
 
-  test('drops a chunk a rebuild renamed once the next rebuild lands', async () => {
+  test('drops a chunk a rebuild renamed once no page loaded before it is open', async () => {
     const bundledDev = viteServer.environments.client.bundledDev as any
     const original = readFile('dynamic.js')
     const dynamicChunk = () =>
@@ -581,14 +581,16 @@ if (isBuild) {
       page.url(),
     ).pathname.slice(1)
 
-    // the rebuild that renames the chunk keeps serving its old name, for pages
-    // loaded before it
+    // the page loaded before the rename can still request the old name, so it
+    // stays served across rebuilds while that page is open
     await rebuildWithEdit('first edit')
+    await rebuildWithEdit('second edit, longer')
     expect(bundledDev.memoryFiles.has(firstChunk)).toBe(true)
 
-    // the rebuild after that drops it
-    await rebuildWithEdit('second edit, longer')
-    expect(bundledDev.memoryFiles.has(firstChunk)).toBe(false)
+    // once that page has reloaded onto the latest build, the old name goes
+    await page.reload()
+    await expect.poll(() => page.textContent('.asset')).toBeTruthy()
+    await expect.poll(() => bundledDev.memoryFiles.has(firstChunk)).toBe(false)
     expect(bundledDev.memoryFiles.has(dynamicChunk())).toBe(true)
 
     // a rebuild only re-emits the assets that changed, so the unchanged ones
