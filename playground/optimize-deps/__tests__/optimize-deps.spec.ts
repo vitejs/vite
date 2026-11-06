@@ -9,6 +9,7 @@ import {
   isServe,
   page,
   readDepOptimizationMetadata,
+  readFile,
   serverLogs,
   viteTestUrl,
 } from '~utils'
@@ -23,6 +24,15 @@ const clientOptimizerUnsupported = {
 }
 
 describe('optimize-deps', clientOptimizerUnsupported, () => {
+  test.runIf(isServe)('tags the cache directory with CACHEDIR.TAG', () => {
+    expect(readFile('node_modules/.vite/CACHEDIR.TAG')).toMatchInlineSnapshot(`
+      "Signature: 8a477f597d28d172789f06886806bc55
+      # This file is a cache directory tag created by Vite.
+      # For information about cache directory tags see https://bford.info/cachedir/
+      "
+    `)
+  })
+
   test('default + named imports from cjs dep (react)', async () => {
     await expect.poll(() => page.textContent('.cjs button')).toBe('count is 0')
     await page.click('.cjs button')
