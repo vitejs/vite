@@ -305,6 +305,16 @@ export default defineConfig({
 })
 ```
 
+## server.preTransformRequests
+
+- **Type:** `boolean`
+- **Default:** `true` for the client environment, `false` for other environments
+- **Related:** [Warm Up Frequently Used Files](/guide/performance.html#warm-up-frequently-used-files)
+
+Pre-transform known direct imports. When a module is transformed, Vite starts transforming its static imports right away, instead of waiting for the browser to request them. This reduces request waterfalls during the initial page load. When [`server.open`](#server-open) is set, Vite also requests the opened URL in advance, so that its imports start being processed before the browser opens.
+
+Setting this option applies it to all environments. Set it to `false` to transform modules only when they are requested, for example to reduce the work done by the dev server on startup.
+
 ## server.watch
 
 - **Type:** `object | null`
