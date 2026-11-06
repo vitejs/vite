@@ -412,3 +412,36 @@ test('scan import.meta.glob package imports patterns', async (ctx) => {
 
   await expect(result).resolves.toEqual({ deps: {}, missing: {} })
 })
+
+// regression test for https://github.com/vitejs/vite/issues/23880
+// a dynamic import() inside a function that is never referenced must still
+// be crawled, since single-file component handlers are only used in templates
+test('scan crawls dynamic imports inside unreferenced functions', async (ctx) => {
+  const server = await createServer({
+    configFile: false,
+    logLevel: 'error',
+    root: path.join(
+      import.meta.dirname,
+      'fixtures',
+      'scan-dynamic-import-unreferenced',
+    ),
+    optimizeDeps: {
+      entries: ['./entry.js'],
+      force: true,
+      noDiscovery: false,
+    },
+  })
+  ctx.onTestFinished(() => server.close())
+
+  const { cancel, result } = scanImports(
+    devToScanEnvironment(server.environments.client),
+  )
+  ctx.onTestFinished(cancel)
+
+  await expect(result).resolves.toMatchObject({
+    deps: {
+      vue: expect.any(String),
+    },
+    missing: {},
+  })
+})
