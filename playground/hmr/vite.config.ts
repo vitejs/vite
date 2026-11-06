@@ -61,6 +61,33 @@ export default defineConfig(({ command }) => ({
     },
   },
   plugins: [
+    // A round trip settles fallback reloads and client registration before edits.
+    {
+      name: 'test-hmr-ready',
+      apply: 'serve',
+      configureServer(server) {
+        server.environments.client.hot.on('test:ready', (_data, client) => {
+          client.send('test:ready')
+        })
+      },
+      transformIndexHtml: {
+        order: 'pre',
+        handler() {
+          return [
+            {
+              tag: 'script',
+              attrs: { type: 'module' },
+              children: `
+              import.meta.hot.on('test:ready', () => {
+                document.documentElement.dataset.hmrReady = 'true'
+              })
+              import.meta.hot.send('test:ready')
+            `,
+            },
+          ]
+        },
+      },
+    },
     {
       name: 'mock-custom',
       async hotUpdate({ file, read }) {
