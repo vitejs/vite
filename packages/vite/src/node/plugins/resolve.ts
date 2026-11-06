@@ -719,6 +719,25 @@ function tryCleanFsResolve(
   }
 }
 
+/**
+ * The directory `tryNodeResolve` starts resolving a bare import from:
+ * the importer's directory if the importer exists on disk, otherwise `root`.
+ */
+export function getNodeResolveBasedir(
+  importer: string | null | undefined,
+  root: string,
+): string {
+  if (
+    importer &&
+    path.isAbsolute(importer) &&
+    // css processing appends `*` for importer
+    (importer.endsWith('*') || fs.existsSync(cleanUrl(importer)))
+  ) {
+    return path.dirname(importer)
+  }
+  return root
+}
+
 export function tryNodeResolve(
   id: string,
   importer: string | null | undefined,
@@ -734,19 +753,9 @@ export function tryNodeResolve(
   // trim them to support importing package with queries (e.g. `import css from 'normalize.css?inline'`)
   const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : cleanUrl(id)
 
-  let basedir: string
-  if (dedupe.includes(pkgId)) {
-    basedir = root
-  } else if (
-    importer &&
-    path.isAbsolute(importer) &&
-    // css processing appends `*` for importer
-    (importer.endsWith('*') || fs.existsSync(cleanUrl(importer)))
-  ) {
-    basedir = path.dirname(importer)
-  } else {
-    basedir = root
-  }
+  const basedir = dedupe.includes(pkgId)
+    ? root
+    : getNodeResolveBasedir(importer, root)
 
   const isModuleBuiltin = (id: string) => isBuiltin(options.builtins, id)
 
