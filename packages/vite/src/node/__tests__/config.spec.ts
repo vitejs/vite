@@ -695,9 +695,7 @@ describe('mergeConfig', () => {
     expect(mergedConfig.build.rolldownOptions).toStrictEqual(expected)
     expect(mergedConfig.worker.rollupOptions).toStrictEqual(expected)
     expect(mergedConfig.worker.rolldownOptions).toStrictEqual(expected)
-    expect(mergedConfig.optimizeDeps.rollupOptions).toStrictEqual(expected)
     expect(mergedConfig.optimizeDeps.rolldownOptions).toStrictEqual(expected)
-    expect(mergedConfig.ssr.optimizeDeps.rollupOptions).toStrictEqual(expected)
     expect(mergedConfig.ssr.optimizeDeps.rolldownOptions).toStrictEqual(
       expected,
     )
@@ -774,9 +772,7 @@ describe('mergeConfig', () => {
     expect(mergedConfig.build.rolldownOptions).toStrictEqual(expected)
     expect(mergedConfig.worker.rollupOptions).toStrictEqual(expected)
     expect(mergedConfig.worker.rolldownOptions).toStrictEqual(expected)
-    expect(mergedConfig.optimizeDeps.rollupOptions).toStrictEqual(expected)
     expect(mergedConfig.optimizeDeps.rolldownOptions).toStrictEqual(expected)
-    expect(mergedConfig.ssr.optimizeDeps.rollupOptions).toStrictEqual(expected)
     expect(mergedConfig.ssr.optimizeDeps.rolldownOptions).toStrictEqual(
       expected,
     )
@@ -792,18 +788,6 @@ describe('mergeConfig', () => {
       worker: {
         rollupOptions: {
           treeshake: false,
-        },
-      },
-      optimizeDeps: {
-        rollupOptions: {
-          treeshake: false,
-        },
-      },
-      ssr: {
-        optimizeDeps: {
-          rollupOptions: {
-            treeshake: false,
-          },
         },
       },
     })
@@ -823,22 +807,6 @@ describe('mergeConfig', () => {
           },
         },
       },
-      optimizeDeps: {
-        rolldownOptions: {
-          output: {
-            minifyInternalExports: true,
-          },
-        },
-      },
-      ssr: {
-        optimizeDeps: {
-          rollupOptions: {
-            output: {
-              minifyInternalExports: true,
-            },
-          },
-        },
-      },
     })
 
     const mergedConfig = mergeConfig(baseConfig, newConfig) as UserConfig
@@ -853,15 +821,6 @@ describe('mergeConfig', () => {
     expect(mergedConfig.build!.rolldownOptions).toStrictEqual(expected)
     expect(mergedConfig.worker!.rollupOptions).toStrictEqual(expected)
     expect(mergedConfig.worker!.rolldownOptions).toStrictEqual(expected)
-    expect(mergedConfig.optimizeDeps!.rollupOptions).toStrictEqual(expected)
-    expect(mergedConfig.optimizeDeps!.rolldownOptions).toStrictEqual(expected)
-    expect(mergedConfig.ssr!.optimizeDeps!.rollupOptions).toStrictEqual(
-      expected,
-    )
-    expect(mergedConfig.ssr!.optimizeDeps!.rolldownOptions).toStrictEqual(
-      expected,
-    )
-
     const upOutput = mergedConfig.build!.rollupOptions!.output!
     if (Array.isArray(upOutput)) throw new Error()
     const downOutput = mergedConfig.build!.rolldownOptions!.output!
@@ -1489,9 +1448,6 @@ describe('resolveConfig', () => {
     )
     expect(resolved.worker!.rollupOptions).toStrictEqual(
       resolved.worker!.rolldownOptions,
-    )
-    expect(resolved.optimizeDeps!.rollupOptions).toStrictEqual(
-      resolved.optimizeDeps!.rolldownOptions,
     )
   })
 

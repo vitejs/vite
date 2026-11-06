@@ -105,15 +105,6 @@ export interface DepOptimizationConfig {
    */
   esbuildOptions?: DepsOptimizerEsbuildOptions
   /**
-   * @deprecated Use `rolldownOptions` instead.
-   */
-  rollupOptions?: Omit<RolldownOptions, 'input' | 'logLevel' | 'output'> & {
-    output?: Omit<
-      RolldownOutputOptions,
-      'format' | 'sourcemap' | 'dir' | 'banner'
-    >
-  }
-  /**
    * Options to pass to rolldown during the dep scanning and optimization
    *
    * Certain options are omitted since changing them would not be compatible
