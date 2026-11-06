@@ -41,6 +41,12 @@ defineConfig({
       '/test': {
         bypass: () => false,
       },
+      '/dynamic-target': {
+        target: (req) =>
+          req.url?.startsWith('/dynamic-target/local')
+            ? 'http://localhost:3000'
+            : 'http://localhost:3001',
+      },
     },
   },
   // @ts-expect-error --- invalid option should error

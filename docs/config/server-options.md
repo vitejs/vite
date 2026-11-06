@@ -129,6 +129,13 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
+      // with a dynamic target:
+      '/dynamic': {
+        target: (req) =>
+          req.url?.startsWith('/dynamic/legacy')
+            ? 'http://localhost:4000'
+            : 'http://localhost:5000',
+      },
       // with RegExp:
       // http://localhost:5173/fallback/
       //   -> http://jsonplaceholder.typicode.com/
