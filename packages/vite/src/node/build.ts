@@ -61,6 +61,7 @@ import { type LicenseOptions, licensePlugin } from './plugins/license'
 import { manifestPlugin } from './plugins/manifest'
 import { prepareOutDirPlugin } from './plugins/prepareOutDir'
 import { buildReporterPlugin } from './plugins/reporter'
+import { requestEntrypointsPlugin } from './plugins/requestEntrypoints'
 import { type TerserOptions, terserPlugin } from './plugins/terser'
 import { webWorkerPostPlugin } from './plugins/worker'
 import {
@@ -533,6 +534,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   return {
     pre: [
       ...(isBuild && !config.isWorker ? [prepareOutDirPlugin()] : []),
+      ...(config.isWorker ? [] : [requestEntrypointsPlugin()]),
       perEnvironmentPlugin(
         'vite:rollup-options-plugins',
         async (environment) => {

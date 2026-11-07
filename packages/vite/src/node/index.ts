@@ -126,6 +126,10 @@ export type {
   DevEnvironmentOptions,
   ResolvedDevEnvironmentOptions,
   ResolvedDevToolsConfig,
+  RequestEntrypointType,
+  RequestEntrypointOptions,
+  ResolvedRequestEntrypoint,
+  RequestEntrypointOutput,
 } from './config'
 export type { HtmlAssetSource } from './assetSource'
 export type {
