@@ -94,6 +94,52 @@ describe('build', () => {
     assertOutputHashContentChange(result[0], result[1])
   })
 
+  test('transform hook meta keeps rolldown magicString and ast', async () => {
+    const metaTypes: Array<
+      [string | undefined, string | undefined, boolean | undefined]
+    > = []
+    const result = (await build({
+      root: resolve(dirname, 'packages/build-project'),
+      logLevel: 'silent',
+      build: {
+        write: false,
+        minify: false,
+      },
+      plugins: [
+        {
+          name: 'test',
+          resolveId(id) {
+            if (id === 'entry.js') {
+              return '\0' + id
+            }
+          },
+          load(id) {
+            if (id === '\0entry.js') {
+              return `console.log('foo')`
+            }
+          },
+          transform(_code, id, options) {
+            if (id === '\0entry.js') {
+              metaTypes.push([
+                typeof options?.magicString,
+                typeof options?.ast,
+                options?.ssr,
+              ])
+              const magicString = options!.magicString!
+              magicString.replaceAll(`'foo'`, `'bar'`)
+              return { code: magicString }
+            }
+          },
+        },
+      ],
+    })) as RolldownOutput
+    expect(metaTypes).toEqual([['object', 'object', false]])
+    const [chunk] = result.output.filter(
+      (chunk): chunk is OutputChunk => chunk.type === 'chunk',
+    )
+    expect(chunk?.code).toContain(`console.log("bar")`)
+  })
+
   test('file hash should change when renderBuiltUrl changes', async () => {
     const createRenderBuiltUrl = (base: string) => (filename: string) =>
       `${base}/${filename}`
