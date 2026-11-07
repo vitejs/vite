@@ -27,6 +27,7 @@ import { isResolvedConfig, resolveConfig } from '../config'
 import {
   CLIENT_DIR,
   DEFAULT_DEV_PORT,
+  DEFAULT_SERVER_FS_DENY,
   defaultAllowedOrigins,
 } from '../constants'
 import { warnFutureDeprecation } from '../deprecations'
@@ -1251,14 +1252,7 @@ const _serverConfigDefaults = Object.freeze({
   fs: {
     strict: true,
     // allow
-    deny: [
-      '.env',
-      '.env.*',
-      '*.{crt,pem,key,p12,pfx,cer,der}',
-      '.npmrc',
-      '.yarnrc.yml',
-      '**/.git/**',
-    ],
+    deny: [...DEFAULT_SERVER_FS_DENY],
   },
   // origin
   preTransformRequests: true,

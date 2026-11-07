@@ -440,6 +440,20 @@ Blocklist for sensitive files being restricted to be served by Vite dev server. 
 
 Setting this option replaces the default list entirely. Include any default patterns you want to keep in your custom list.
 
+To extend the defaults, import `defaultServerFsDeny` from `vite`. It is a frozen, readonly array:
+
+```js
+import { defaultServerFsDeny, defineConfig } from 'vite'
+
+export default defineConfig({
+  server: {
+    fs: {
+      deny: [...defaultServerFsDeny, '**/.local/**'],
+    },
+  },
+})
+```
+
 ::: tip NOTE
 
 This blocklist does not apply to [the public directory](/guide/assets.md#the-public-directory). All files in the public directory are served without any filtering, since they are copied directly to the output directory during build.
