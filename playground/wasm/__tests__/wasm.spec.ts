@@ -1,5 +1,61 @@
 import { expect, test } from 'vitest'
-import { isBundled, page } from '~utils'
+import { browser, isBundled, page, viteTestUrl } from '~utils'
+
+test('buttons wait for wasm module initialization', async () => {
+  const delayedPage = await browser.newPage()
+  try {
+    await delayedPage.addInitScript(() => {
+      const ready = new Promise<void>((resolve) => {
+        window.addEventListener('test:release-wasm', () => resolve(), {
+          once: true,
+        })
+      })
+      function holdInstantiation<T extends (...args: never[]) => unknown>(
+        instantiate: T,
+      ): T {
+        return new Proxy(instantiate, {
+          async apply(target, thisArg, args) {
+            document.documentElement.dataset.wasmPending = 'true'
+            await ready
+            return Reflect.apply(target, thisArg, args)
+          },
+        })
+      }
+      WebAssembly.instantiate = holdInstantiation(WebAssembly.instantiate)
+      WebAssembly.instantiateStreaming = holdInstantiation(
+        WebAssembly.instantiateStreaming,
+      )
+    })
+    await delayedPage.goto(viteTestUrl)
+    await delayedPage.waitForFunction(
+      () => document.documentElement.dataset.wasmPending === 'true',
+    )
+    expect(
+      await delayedPage.evaluate(() =>
+        Array.from(
+          document.querySelectorAll<HTMLButtonElement>('button.run'),
+          (button) => button.disabled,
+        ),
+      ),
+    ).toEqual([true, true, true])
+
+    await delayedPage.evaluate(() =>
+      window.dispatchEvent(new Event('test:release-wasm')),
+    )
+    for (const [selector, result] of [
+      ['.inline-wasm', '42'],
+      ['.output-wasm', '24'],
+      ['.init-returns-instance', 'true'],
+    ]) {
+      await delayedPage.click(`${selector} .run`)
+      await expect
+        .poll(() => delayedPage.textContent(`${selector} .result`))
+        .toBe(result)
+    }
+  } finally {
+    await delayedPage.close()
+  }
+})
 
 test('should work when inlined', async () => {
   await page.click('.inline-wasm .run')

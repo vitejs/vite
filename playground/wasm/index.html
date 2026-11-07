@@ -2,19 +2,19 @@
 
 <div class="inline-wasm">
   <h3>When wasm is inline, result should be 42</h3>
-  <button class="run">Click to run</button>
+  <button class="run" disabled>Click to run</button>
   <span class="result"></span>
 </div>
 
 <div class="output-wasm">
   <h3>When wasm is output, result should be 24</h3>
-  <button class="run">Click to run</button>
+  <button class="run" disabled>Click to run</button>
   <span class="result"></span>
 </div>
 
 <div class="init-returns-instance">
   <h3>init function returns WebAssembly.Instance</h3>
-  <button class="run">Click to run</button>
+  <button class="run" disabled>Click to run</button>
   <span class="result"></span>
 </div>
 
@@ -139,4 +139,9 @@
 
   import lightUrl from './light.wasm?url'
   text('.url', lightUrl)
+
+  // Direct WASM imports can delay listener registration past the load event.
+  document.querySelectorAll('button.run').forEach((button) => {
+    button.disabled = false
+  })
 </script>
