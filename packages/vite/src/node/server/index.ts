@@ -1312,12 +1312,15 @@ export async function resolveServerOptions(
     // search for package root to find a path that exists
     try {
       const enableGlobalCache =
-        execSync('yarn config get enableGlobalCache', { cwd })
+        execSync('yarn config get enableGlobalCache', {
+          cwd,
+          windowsHide: true,
+        })
           .toString()
           .trim() === 'true'
       const yarnCacheDir = execSync(
         `yarn config get ${enableGlobalCache ? 'globalFolder' : 'cacheFolder'}`,
-        { cwd },
+        { cwd, windowsHide: true },
       )
         .toString()
         .trim()
