@@ -1544,7 +1544,13 @@ function injectSsrFlag<T extends Record<string, any>>(
   pluginName: string,
 ): T & { ssr?: boolean } {
   let ssr = environment.config.consumer === 'server'
-  const newOptions = { ...options, ssr } as T & {
+  // Copy with property descriptors instead of spreading: the options object
+  // provided by rolldown exposes `meta.magicString` and `meta.ast` as
+  // non-enumerable getters, which a spread would silently drop.
+  const newOptions = Object.defineProperties(
+    { ssr },
+    Object.getOwnPropertyDescriptors(options ?? {}),
+  ) as T & {
     ssr?: boolean
   }
 
