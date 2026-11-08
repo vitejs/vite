@@ -686,6 +686,47 @@ describe('build', () => {
     ) as OutputChunk
     expect(foo.code).not.contains('import "external"')
   })
+
+  test('transform hook meta keeps non-enumerable properties from rolldown', async () => {
+    const seen: { magicString?: unknown; ast?: unknown; ssr?: unknown } = {}
+    await build({
+      logLevel: 'silent',
+      build: {
+        write: false,
+        lib: { entry: 'foo.js', formats: ['es'] },
+        rolldownOptions: {
+          experimental: { nativeMagicString: true },
+        },
+      },
+      plugins: [
+        {
+          name: 'virtual-entry',
+          resolveId(id) {
+            if (basename(id) === 'foo.js') return 'foo.js'
+          },
+          load(id) {
+            if (id === 'foo.js') {
+              return `export const foo = 1`
+            }
+          },
+        },
+        {
+          name: 'probe-meta',
+          transform(_code, id, meta) {
+            if (id === 'foo.js') {
+              seen.magicString = (meta as any).magicString
+              seen.ast = (meta as any).ast
+              seen.ssr = (meta as any).ssr
+            }
+          },
+        },
+      ],
+    })
+
+    expect(seen.magicString).toBeDefined()
+    expect(seen.ast).toBeDefined()
+    expect(seen.ssr).toBe(false)
+  })
 })
 
 const baseLibOptions: LibraryOptions = {
