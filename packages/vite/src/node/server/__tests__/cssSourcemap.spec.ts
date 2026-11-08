@@ -9,7 +9,9 @@ import { createTestServer } from '../../__tests__/testUtils'
 test.each(['postcss', 'lightningcss'] as const)(
   '%s CSS sourcemap sources with a base and an import outside root',
   async (transformer) => {
-    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'vite-css-map-'))
+    // Match Vite's realpath resolution when the temp directory is an alias.
+    const tempDir = await fs.realpath(os.tmpdir())
+    const workspace = await fs.mkdtemp(path.join(tempDir, 'vite-css-map-'))
     onTestFinished(() => fs.rm(workspace, { recursive: true, force: true }))
 
     const root = path.join(workspace, 'app')
