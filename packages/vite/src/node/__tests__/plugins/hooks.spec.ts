@@ -583,6 +583,36 @@ describe('closeServer hook', () => {
   })
 })
 
+describe('createServer startup failure', () => {
+  test.each(['configureServer', 'buildStart'] as const)(
+    'closes the server when %s throws in middleware mode',
+    async (hook) => {
+      const error = new Error(`${hook} failed`)
+      const afterClose = vi.fn(() => {
+        throw new Error('close failed')
+      })
+
+      await expect(
+        createServerWithPlugin({
+          name: 'test',
+          configureServer(server) {
+            const close = server.close.bind(server)
+            server.close = async () => {
+              await close()
+              afterClose()
+            }
+            if (hook === 'configureServer') throw error
+          },
+          buildStart() {
+            if (hook === 'buildStart') throw error
+          },
+        }),
+      ).rejects.toBe(error)
+      expect(afterClose).toHaveBeenCalledOnce()
+    },
+  )
+})
+
 describe('closePreviewServer hook', () => {
   test('is called on preview server.close()', async () => {
     const closePreviewServer = vi.fn()
