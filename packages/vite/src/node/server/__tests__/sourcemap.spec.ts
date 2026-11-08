@@ -1,11 +1,46 @@
 import { describe, expect, test, vi } from 'vitest'
 import { isWindows } from '../../../shared/utils'
+import { resolveConfig } from '../../config'
 import { createLogger } from '../../logger'
 import {
+  getDevCssSourcemapSources,
   getNodeModulesPackageRoot,
   injectSourcesContent,
   type SourceMapLike,
 } from '../sourcemap'
+
+test('CSS maps distinguish Windows drives from source URL schemes', async () => {
+  const config = {
+    ...(await resolveConfig({ configFile: false, base: '/custom/' }, 'serve')),
+    root: 'C:/project',
+  }
+  const virtualId = '\0virtual:generated.css'
+  const url = 'https://example.com/source.css'
+  const sources = [
+    'C:\\project\\nested\\a b.css',
+    'D:/shared.css',
+    virtualId,
+    url,
+    '//example.com/relative.css',
+  ]
+  const map = { sources }
+  expect(getDevCssSourcemapSources(map, config)).toEqual([
+    '/custom/nested/a%20b.css',
+    'file:///D:/shared.css',
+    virtualId,
+    url,
+    '//example.com/relative.css',
+  ])
+  expect(
+    getDevCssSourcemapSources(map, config, 'C:/project/nested/style.css'),
+  ).toEqual(['a%20b.css', 'file:///D:/shared.css', virtualId, url, sources[4]])
+  expect(
+    getDevCssSourcemapSources(
+      { ...map, sourceRoot: 'https://example.com/' },
+      config,
+    ),
+  ).toEqual(sources)
+})
 
 describe('getNodeModulesPackageRoot', () => {
   const cases = [
