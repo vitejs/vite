@@ -1161,7 +1161,9 @@ export async function _createServer(
     // close() on when createServer rejects.
     // this goes through server.close() because plugins wrap it. @cloudflare/vite-plugin
     // stops workerd from its wrapper, so calling _closeServer() here would leave workerd running
-    await server.close().catch(() => {})
+    try {
+      await server.close()
+    } catch {}
     throw e
   }
 

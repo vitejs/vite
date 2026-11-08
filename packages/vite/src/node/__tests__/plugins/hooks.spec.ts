@@ -588,18 +588,17 @@ describe('createServer startup failure', () => {
     'closes the server when %s throws in middleware mode',
     async (hook) => {
       const error = new Error(`${hook} failed`)
-      const afterClose = vi.fn(() => {
-        throw new Error('close failed')
-      })
+      const closeWrapper = vi.fn()
 
       await expect(
         createServerWithPlugin({
           name: 'test',
           configureServer(server) {
             const close = server.close.bind(server)
-            server.close = async () => {
-              await close()
-              afterClose()
+            server.close = () => {
+              void close()
+              closeWrapper()
+              throw new Error('close failed')
             }
             if (hook === 'configureServer') throw error
           },
@@ -608,7 +607,7 @@ describe('createServer startup failure', () => {
           },
         }),
       ).rejects.toBe(error)
-      expect(afterClose).toHaveBeenCalledOnce()
+      expect(closeWrapper).toHaveBeenCalledOnce()
     },
   )
 })
