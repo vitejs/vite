@@ -242,9 +242,9 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
         )
         if (!file) return
 
-        for (const { src, replacement, pattern } of deps[file]) {
-          const magicString = new MagicString(code)
+        const magicString = new MagicString(code)
 
+        for (const { src, replacement, pattern } of deps[file]) {
           if (src) {
             const pos = code.indexOf(src)
             if (pos < 0) {
@@ -274,13 +274,14 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
               )
             }
           }
-
-          code = magicString.toString()
         }
 
         console.log(`shimmed: ${file}`)
 
-        return code
+        return {
+          code: magicString.toString(),
+          map: magicString.generateMap({ source: id, hires: 'boundary' }),
+        }
       },
     },
     buildEnd(err) {
