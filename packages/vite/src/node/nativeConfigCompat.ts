@@ -172,6 +172,9 @@ export function analyzeConfigModuleReferences(
       const node = _node as ESTree.Node
       switch (node.type) {
         case 'ImportDeclaration':
+          // type-only imports are erased by the native loader, so they are
+          // never resolved and cannot cause a runtime incompatibility
+          if (node.importKind === 'type') break
           addImportRef(
             node.source,
             hasTypeJson(node.attributes),
@@ -180,6 +183,7 @@ export function analyzeConfigModuleReferences(
           break
         case 'ExportNamedDeclaration':
         case 'ExportAllDeclaration':
+          if (node.exportKind === 'type') break
           if (node.source)
             addImportRef(
               node.source,
