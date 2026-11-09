@@ -872,6 +872,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                 code,
                 edits,
               ) ??
+                // for edits it can't shift, e.g. `Promise.resolve({})`
+                // replacing an import that spans lines
                 combineSourcemaps(chunk.fileName, [
                   s.generateDecodedMap({
                     source: chunk.fileName,
