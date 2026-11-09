@@ -68,3 +68,9 @@ test('wasm using js-string builtins and imported string constants', async () => 
     .poll(() => page.textContent('.direct-wasm-string-builtins .result'))
     .toMatch('5')
 })
+
+test('wasm importing its JS glue from an optimized dependency', async () => {
+  await expect
+    .poll(() => page.textContent('.wasm-from-optimized-dep .result'))
+    .toMatch('42')
+})

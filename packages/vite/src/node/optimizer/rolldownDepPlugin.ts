@@ -1,3 +1,4 @@
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import MagicString from 'magic-string'
 import type { ImportKind, Plugin, RolldownPlugin } from 'rolldown'
@@ -12,6 +13,7 @@ import { assetImportMetaUrlRE } from '../plugins/assetImportMetaUrl'
 import { isModuleCSSRequest } from '../plugins/css'
 import { hasViteIgnoreRE } from '../plugins/importAnalysis'
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
+import { parseWasm } from '../plugins/wasm'
 import {
   escapeRegex,
   flattenId,
@@ -153,6 +155,73 @@ export function rolldownDepPlugin(
     }
   }
 
+  // A wasm module wires its JS imports at serve time through the wasm plugin,
+  // which generates imports of the original JS modules for the imports object
+  // (see `plugins/wasm.ts`). If the optimizer inlines a copy of such a module,
+  // the module ends up instantiated twice: the wasm callbacks use the
+  // unbundled copy while the rest of the code uses the bundled one. This
+  // breaks modules that keep state in module-scoped variables, e.g.
+  // wasm-bindgen's JS glue, which receives the wasm instance through
+  // `__wbg_set_wasm`. Keep these modules external so both sides resolve to the
+  // same module instance. https://github.com/vitejs/vite/issues/24025
+  const qualifiedEntries = new Set(
+    Object.values(qualified).map((entry) => normalizePath(entry)),
+  )
+  const wasmFilesInDirCache = new Map<string, Promise<string[]>>()
+  const wasmImportedFilesCache = new Map<string, Promise<Set<string>>>()
+
+  const getWasmFilesInDir = (dir: string): Promise<string[]> => {
+    let wasmFiles = wasmFilesInDirCache.get(dir)
+    if (!wasmFiles) {
+      wasmFiles = fsp
+        .readdir(dir)
+        .then((entries) =>
+          entries
+            .filter((entry) => entry.endsWith('.wasm'))
+            .map((entry) => path.join(dir, entry)),
+        )
+        .catch(() => [])
+      wasmFilesInDirCache.set(dir, wasmFiles)
+    }
+    return wasmFiles
+  }
+
+  const getWasmImportedFiles = (wasmFile: string): Promise<Set<string>> => {
+    let importedFiles = wasmImportedFilesCache.get(wasmFile)
+    if (!importedFiles) {
+      importedFiles = parseWasm(wasmFile)
+        .then(async ({ imports }) => {
+          const resolvedFiles = new Set<string>()
+          for (const { from } of imports) {
+            if (!from.startsWith('.')) continue
+            const imported = await resolve(from, wasmFile, 'import-statement')
+            if (imported && JS_TYPES_RE.test(imported)) {
+              resolvedFiles.add(imported)
+            }
+          }
+          return resolvedFiles
+        })
+        // The wasm is parsed again at serve time, which reports the error with
+        // the proper context if the file is malformed.
+        .catch(() => new Set<string>())
+      wasmImportedFilesCache.set(wasmFile, importedFiles)
+    }
+    return importedFiles
+  }
+
+  const isWasmImportedFile = async (file: string): Promise<boolean> => {
+    if (!JS_TYPES_RE.test(file) || qualifiedEntries.has(normalizePath(file))) {
+      return false
+    }
+    const dir = path.dirname(file)
+    for (const wasmFile of await getWasmFilesInDir(dir)) {
+      if ((await getWasmImportedFiles(wasmFile)).has(file)) {
+        return true
+      }
+    }
+    return false
+  }
+
   const allExternalTypesReg = new RegExp(
     `\\.(?:` + allExternalTypes.join('|') + `)(\\?.*)?$`,
   )
@@ -253,6 +322,10 @@ export function rolldownDepPlugin(
           // use vite's own resolver
           const resolved = await resolve(id, importer, kind)
           if (resolved) {
+            // keep JS modules imported by wasm binaries external
+            if (await isWasmImportedFile(resolved)) {
+              return resolveAssets(resolved, kind)
+            }
             return resolveResult(id, resolved, kind)
           }
         },
@@ -371,6 +444,30 @@ export function rolldownDepPlugin(
               code: s.toString(),
               map: s.generateMap({ hires: 'boundary' }),
             }
+          }
+        },
+      },
+    },
+    {
+      name: 'vite:dep-pre-bundle-relative',
+      // Relative imports are resolved by rolldown's resolver unless a plugin
+      // handles them. Only JS modules imported by wasm binaries are resolved
+      // here so they can be kept external (see `isWasmImportedFile` above).
+      resolveId: {
+        filter: { id: /^\.{1,2}\// },
+        async handler(id, importer) {
+          if (!importer || id.includes('?')) {
+            return
+          }
+          // Cheap pre-check: only resolve imports targeting a directory that
+          // contains a wasm file.
+          const dir = path.dirname(path.resolve(path.dirname(importer), id))
+          if ((await getWasmFilesInDir(dir)).length === 0) {
+            return
+          }
+          const resolved = await resolve(id, importer, 'import-statement')
+          if (resolved && (await isWasmImportedFile(resolved))) {
+            return resolveAssets(resolved, 'import-statement')
           }
         },
       },
