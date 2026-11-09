@@ -19,6 +19,7 @@ import {
   isBundledDev,
   isServe,
   page,
+  playgroundTempDir,
   viteServer,
   viteTestUrl,
 } from '~utils'
@@ -598,10 +599,7 @@ export function tests() {
   })
 
   describe.runIf(isServe)('fetchModule via WebSocket', () => {
-    const root = path.resolve(
-      import.meta.dirname.replace('playground', 'playground-temp'),
-      '..',
-    )
+    const root = path.resolve(playgroundTempDir, 'fs-serve')
 
     const fetchModuleViaWebSocket = async (filePath: string) => {
       const resolvedPath = path.resolve(root, filePath)

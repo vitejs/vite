@@ -599,7 +599,7 @@ test('?raw import', async () => {
     .poll(() => page.textContent('.raw-html'))
     .toBe('<div>partial updated</div>\n')
 
-  // bundled dev logs `playground-temp/assets/nested/...` where dev logs the URL
+  // bundled dev logs `playground-temp-serve-bundled/assets/nested/...` where dev logs the URL
   // path `/nested/...`. This is a gap on the vite side, not in rolldown
   // (vitejs/vite#23028). Two causes:
   // - the server never passes `cwd` to rolldown (bundledDev.ts), so module ids
