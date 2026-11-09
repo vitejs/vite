@@ -476,12 +476,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      const orderedImportedUrls = new Array<string | undefined>(imports.length)
-      const orderedAcceptedUrls = new Array<Set<UrlPosition> | undefined>(
-        imports.length,
-      )
-      const orderedAcceptedExports = new Array<Set<string> | undefined>(
-        imports.length,
+      const orderedImportedUrls: Array<string | undefined> = Array.from({
+        length: imports.length,
+      })
+      const orderedAcceptedUrls: Array<Set<UrlPosition> | undefined> =
+        Array.from({ length: imports.length })
+      const orderedAcceptedExports: Array<Set<string> | undefined> = Array.from(
+        { length: imports.length },
       )
 
       let _isNodeModeResult = config.legacy?.inconsistentCjsInterop

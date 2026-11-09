@@ -388,12 +388,14 @@ export function tests() {
   test('URL separation', async () => {
     const urlSeparated = await page.$('.url-separated')
     const baseUrl = 'url(images/dog.webp)'
-    const cases = new Array(5)
+    const cases = Array.from({ length: 5 })
       .fill('')
       .flatMap((_, i) =>
         [',', ' ,', ', ', ' , '].map(
           (sep) =>
-            `background-image:${new Array(i + 1).fill(baseUrl).join(sep)};`,
+            `background-image:${Array.from({ length: i + 1 })
+              .fill(baseUrl)
+              .join(sep)};`,
         ),
       )
 
