@@ -2031,6 +2031,34 @@ describe('loadConfigFromFile', () => {
       expect(await loadWithWarnings('json-ok')).toHaveLength(0)
     })
 
+    // uses a `.ts` config with TypeScript-only syntax; skipped on Node
+    // versions without type stripping support
+    test.skipIf(!supportsTypeStripping)(
+      'does not warn on type-only JSON imports',
+      async () => {
+        expect(
+          await loadWithWarnings('json-type-only', 'vite.config.ts'),
+        ).toHaveLength(0)
+      },
+    )
+
+    test.skipIf(!supportsTypeStripping)(
+      'warns on an inline type-only specifier from JSON without attributes',
+      async () => {
+        const messages = await loadWithWarnings(
+          'json-inline-type',
+          'vite.config.ts',
+        )
+        expect(messages).toMatchInlineSnapshot(`
+          [
+            "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+            - JSON import "./data.json" without import attributes (vite.config.ts:1:38). Add \`with { type: 'json' }\`
+          Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+          ]
+        `)
+      },
+    )
+
     test('warns on named import from JSON module', async () => {
       const messages = await loadWithWarnings('json-named-import')
       expect(messages).toMatchInlineSnapshot(`
