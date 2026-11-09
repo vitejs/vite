@@ -19,6 +19,8 @@ import {
   getFileStartIndex,
   normalizePath,
   numberToPos,
+  type SourceEdit,
+  shiftSourcemapForEdits,
 } from '../utils'
 import { removedPureCssFilesCache } from './css'
 import { getImportMap, getImportMapFilename } from './html'
@@ -654,6 +656,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           }
 
           const s = new MagicString(code)
+          const edits: SourceEdit[] = []
+          const update = (start: number, end: number, content: string) => {
+            s.update(start, end, content)
+            edits.push({ start, end, content })
+          }
           const rewroteMarkerStartPos = new Set() // position of the leading double quote
 
           const fileDeps: FileDep[] = []
@@ -736,7 +743,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                   ),
                 )
                 if (shouldRewriteImport) {
-                  s.update(expStart, expEnd, 'Promise.resolve({})')
+                  update(expStart, expEnd, 'Promise.resolve({})')
                 }
               }
 
@@ -808,7 +815,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                   )
                 }
 
-                s.update(
+                update(
                   markerStartPos,
                   markerStartPos + preloadMarker.length,
                   renderedDeps.length > 0
@@ -830,11 +837,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             const mapDepsCode = `const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=${fileDepsCode})))=>i.map(i=>d[i]);\n`
 
             // inject extra code at the top or next line of hashbang
-            if (code.startsWith('#!')) {
-              s.prependLeft(getFileStartIndex(code), mapDepsCode)
-            } else {
-              s.prepend(mapDepsCode)
-            }
+            const fileStartIndex = getFileStartIndex(code)
+            s.prependLeft(fileStartIndex, mapDepsCode)
+            edits.push({
+              start: fileStartIndex,
+              end: fileStartIndex,
+              content: mapDepsCode,
+            })
           }
 
           // there may still be markers due to inlined dynamic imports, remove
@@ -842,7 +851,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           let markerStartPos = findPreloadMarker(code)
           while (markerStartPos >= 0) {
             if (!rewroteMarkerStartPos.has(markerStartPos)) {
-              s.update(
+              update(
                 markerStartPos,
                 markerStartPos + preloadMarker.length,
                 'void 0',
@@ -857,19 +866,22 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           if (s.hasChanged()) {
             chunk.code = s.toString()
             if (buildSourcemap && chunk.map) {
-              const nextMap = s.generateDecodedMap({
-                source: chunk.fileName,
-                hires: 'boundary',
-              })
               const originalFile = chunk.map.file
-              const map = combineSourcemaps(chunk.fileName, [
-                nextMap as DecodedSourceMap,
+              const map = (shiftSourcemapForEdits(
                 chunk.map as RawSourceMap,
-              ]) as SourceMap
+                code,
+                edits,
+              ) ??
+                combineSourcemaps(chunk.fileName, [
+                  s.generateDecodedMap({
+                    source: chunk.fileName,
+                    hires: 'boundary',
+                  }) as DecodedSourceMap,
+                  chunk.map as RawSourceMap,
+                ])) as SourceMap
+              map.toString = () => JSON.stringify(map)
               map.toUrl = () => genSourceMapUrl(map)
-              if (originalFile) {
-                map.file = originalFile
-              }
+              map.file = originalFile || chunk.fileName
 
               const originalDebugId = chunk.map.debugId
               chunk.map = map
