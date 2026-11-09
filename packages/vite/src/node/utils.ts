@@ -728,6 +728,7 @@ export async function recursiveReaddir(dir: string): Promise<string[]> {
 // https://github.com/nodejs/node/issues/37737
 export let safeRealpathSync:
   | typeof windowsSafeRealPathSync
+  | typeof windowsLazyRealpathSync
   | typeof windowsMappedRealpathSync
   | typeof fs.realpathSync.native = isWindows
   ? windowsSafeRealPathSync
@@ -737,11 +738,7 @@ export let safeRealpathSync:
 // MIT License, Copyright (c) 2017 Larry Bahr
 const windowsNetworkMap = new Map()
 const parseNetUseRE = /^\w* +(\w:) +([^ ]+)\s/
-
-// `idle`: `net use` is not started yet
-// `pending`: `net use` is running, or has failed
-// `done`: the `net use` output is parsed into `windowsNetworkMap`
-let windowsNetUseState: 'idle' | 'pending' | 'done' = 'idle'
+let windowsNetUseStarted = false
 
 function windowsMappedRealpathSync(path: string): string {
   const realPath = fs.realpathSync.native(path)
@@ -750,19 +747,27 @@ function windowsMappedRealpathSync(path: string): string {
     // `fs.realpathSync`
     return realPath
   }
-  if (windowsNetUseState === 'done') {
-    for (const [network, volume] of windowsNetworkMap) {
-      if (realPath.startsWith(network)) return realPath.replace(network, volume)
-    }
-    // no mapped drive matches, e.g. the path was a UNC path from the start
+  for (const [network, volume] of windowsNetworkMap) {
+    if (realPath.startsWith(network)) return realPath.replace(network, volume)
+  }
+  // no mapped drive matches, e.g. the path was a UNC path from the start
+  return realPath
+}
+
+function windowsLazyRealpathSync(path: string): string {
+  const realPath = fs.realpathSync.native(path)
+  if (!realPath.startsWith('\\\\')) {
+    // local path, `fs.realpathSync.native` resolves it the same way as
+    // `fs.realpathSync`
     return realPath
   }
-  if (windowsNetUseState === 'idle') {
-    windowsNetUseState = 'pending'
+  if (!windowsNetUseStarted) {
+    windowsNetUseStarted = true
     exec('net use', { windowsHide: true }, (error, stdout) => {
-      // on error, stay `pending` to keep using the `fs.realpathSync` fallback
-      // for network paths
-      if (error) return
+      if (error) {
+        safeRealpathSync = fs.realpathSync
+        return
+      }
       const lines = stdout.split('\n')
       // OK           Y:        \\NETWORKA\Foo         Microsoft Windows Network
       // OK           Z:        \\NETWORKA\Bar         Microsoft Windows Network
@@ -770,7 +775,10 @@ function windowsMappedRealpathSync(path: string): string {
         const m = parseNetUseRE.exec(line)
         if (m) windowsNetworkMap.set(m[2], m[1])
       }
-      windowsNetUseState = 'done'
+      safeRealpathSync =
+        windowsNetworkMap.size > 0
+          ? windowsMappedRealpathSync
+          : fs.realpathSync.native
     })
   }
   // `fs.realpathSync` does not resolve mapped drive letters into UNC paths
@@ -800,7 +808,7 @@ function optimizeSafeRealPathSync() {
       return
     }
   }
-  safeRealpathSync = windowsMappedRealpathSync
+  safeRealpathSync = windowsLazyRealpathSync
 }
 
 export function ensureWatchedFile(
