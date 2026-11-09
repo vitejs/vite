@@ -2603,8 +2603,10 @@ function cleanScssBugUrl(url: string) {
 const makeScssWorker = (
   environment: PartialEnvironment,
   resolvers: CSSAtImportResolvers,
+  sassPath: string,
   _maxWorkers: number | undefined,
 ) => {
+  const importSass = createCachedImport<typeof Sass>(() => import(sassPath))
   let compilerPromise: Promise<Sass.AsyncCompiler> | undefined
 
   // we use the compiler api provided by sass
@@ -2612,7 +2614,6 @@ const makeScssWorker = (
   type WorkerType = InstanceType<
     typeof WorkerWithFallback<
       [
-        sassPath: string,
         data: string,
         // additionalData can a function that is not cloneable but it won't be used
         options: SassStylePreprocessorInternalOptions & {
@@ -2624,8 +2625,8 @@ const makeScssWorker = (
   >
 
   const worker: WorkerType = {
-    async run(sassPath, data, options) {
-      const sass: typeof Sass = await import(sassPath)
+    async run(data, options) {
+      const sass = await importSass()
       compilerPromise ??= sass.initAsyncCompiler()
       const compiler = await compilerPromise
 
@@ -2741,7 +2742,12 @@ const scssProcessor = (
         }
       }
 
-      worker ??= makeScssWorker(environment, resolvers, maxWorkers)
+      worker ??= makeScssWorker(
+        environment,
+        resolvers,
+        pathToFileURL(sassPackage.path).href,
+        maxWorkers,
+      )
 
       const { content: data, map: additionalMap } = await getSource(
         source,
@@ -2755,11 +2761,7 @@ const scssProcessor = (
         additionalData: undefined,
       }
       try {
-        const result = await worker.run(
-          pathToFileURL(sassPackage.path).href,
-          data,
-          optionsWithoutAdditionalData,
-        )
+        const result = await worker.run(data, optionsWithoutAdditionalData)
         const deps = result.stats.includedFiles.map((f) => cleanScssBugUrl(f))
         const map: ExistingRawSourceMap | undefined = result.map
           ? JSON.parse(result.map.toString())
