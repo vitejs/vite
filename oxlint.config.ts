@@ -19,7 +19,7 @@ export default defineConfig({
     'packages/create-vite/template-*',
     '**/dist/**',
     '**/fixtures/**',
-    '**/playground-temp/**',
+    '**/playground-temp-*/**',
     '**/temp/**',
     '**/.vitepress/cache/**',
     '**/*.snap',
