@@ -10,7 +10,7 @@ overrides:
   vite: workspace:*
   debug: npm:obug@^1.0.2
 
-packageExtensionsChecksum: sha256-TN34VxQ4aEf/0bmMCAf/tyq2fur66+GWTFoIOcaYREE=
+packageExtensionsChecksum: sha256-ALP5Ia6zsiM9yjyXFaKKa/8ZJft4ePXCKiURYJcKc6g=
 
 patchedDependencies:
   chokidar@3.6.0:
@@ -10862,6 +10862,7 @@ snapshots:
   '@vue/compiler-core@3.4.38':
     dependencies:
       '@babel/parser': 7.29.8
+      '@babel/types': 7.29.8
       '@vue/shared': 3.4.38
       entities: 4.5.0
       estree-walker: 2.0.2
@@ -10870,6 +10871,7 @@ snapshots:
   '@vue/compiler-core@3.5.41':
     dependencies:
       '@babel/parser': 7.29.8
+      '@babel/types': 7.29.8
       '@vue/shared': 3.5.41
       entities: 7.0.1
       estree-walker: 2.0.2
@@ -10888,6 +10890,7 @@ snapshots:
   '@vue/compiler-sfc@3.4.38':
     dependencies:
       '@babel/parser': 7.29.8
+      '@babel/types': 7.29.8
       '@vue/compiler-core': 3.4.38
       '@vue/compiler-dom': 3.4.38
       '@vue/compiler-ssr': 3.4.38
@@ -10900,6 +10903,7 @@ snapshots:
   '@vue/compiler-sfc@3.5.41':
     dependencies:
       '@babel/parser': 7.29.8
+      '@babel/types': 7.29.8
       '@vue/compiler-core': 3.5.41
       '@vue/compiler-dom': 3.5.41
       '@vue/compiler-ssr': 3.5.41
@@ -10938,6 +10942,7 @@ snapshots:
     dependencies:
       '@volar/language-core': 2.4.28
       '@vue/compiler-dom': 3.5.41
+      '@vue/compiler-sfc': 3.5.41
       '@vue/shared': 3.5.41
       alien-signals: 3.2.1
       muggle-string: 0.4.1
