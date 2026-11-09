@@ -19,7 +19,7 @@ export default defineConfig({
     'packages/create-vite/template-*',
     '**/dist/**',
     '**/fixtures/**',
-    '**/playground-temp/**',
+    '**/playground-temp-*/**',
     '**/temp/**',
     '**/.vitepress/cache/**',
     '**/*.snap',
@@ -88,16 +88,9 @@ export default defineConfig({
     'typescript/no-implied-eval': 'off', // we intentionally use `Function()`
     'typescript/no-floating-promises': 'off',
     'typescript/no-redundant-type-constituents': 'off', // hard to handle some cases
-    'typescript/no-unnecessary-type-assertion': 'off',
     'typescript/prefer-string-starts-ends-with': 'off', // prefer indexed access for better performance
-    'typescript/require-await': 'off', // does not handle inferred required async functions well
     'typescript/restrict-template-expressions': 'off', // does not matter for us
     'typescript/unbound-method': 'off',
-
-    // These correctness rules are disabled for compatibility with the codebase.
-    'typescript/no-misused-spread': 'off',
-    'typescript/require-array-sort-compare': 'off',
-    'unicorn/no-new-array': 'off',
     // https://github.com/oxc-project/oxc/issues/14895
     'typescript/consistent-generic-constructors': 'off',
 

@@ -7,6 +7,7 @@ import {
   isBundled,
   isServe,
   page,
+  readFile,
   serverLogs,
   untilBrowserLogAfter,
   viteServer,
@@ -538,7 +539,7 @@ test.runIf(!isBundled)(
     expect(response.status).toBe(200)
     expect(html).toContain('url(./protocol-relative.png)')
     expect(html).toContain(
-      'src="/protocol-relative.html?html-proxy&index=0.js"',
+      'src="/protocol-relative.html?html-proxy&amp;index=0.js"',
     )
     expect(html).not.toContain('url(//protocol-relative.png)')
     expect(html).not.toContain('src="//protocol-relative.html?html-proxy')
@@ -570,3 +571,19 @@ test.runIf(isServe)(
     )
   },
 )
+
+describe.runIf(isBuild)('HTML tag removal', () => {
+  for (const kind of ['module-script', 'stylesheet']) {
+    test(`removes adjacent ${kind} tags (#23819)`, async () => {
+      const path = `/tag-removal/${kind}.html`
+      const html = readFile(`dist${path}`)
+      expect(html).not.toMatch(/(?:main\.js|nested\.js|main\.css)/)
+
+      await page.goto(viteTestUrl + path)
+      expect(await page.textContent('h1')).toBe('keep')
+      if (kind === 'stylesheet') {
+        expect(await getColor('h1')).toBe('blue')
+      }
+    })
+  }
+})

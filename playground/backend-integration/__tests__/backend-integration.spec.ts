@@ -161,7 +161,7 @@ describe.runIf(isServe)('serve', () => {
           code.replace('text-black', 'text-[rgb(204,0,0)]'),
         ),
       isBundledDev
-        ? '[vite] hot updated: playground-temp/backend-integration/frontend/entrypoints/global.css'
+        ? '[vite] hot updated: playground-temp-serve-bundled/backend-integration/frontend/entrypoints/global.css'
         : '[vite] css hot updated: /global.css',
     )
     await expect.poll(() => getColor(el)).toBe('rgb(204, 0, 0)')
