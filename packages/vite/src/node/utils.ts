@@ -1013,7 +1013,59 @@ export function shiftSourcemapForEdits(
     const lineEdits = columnEdits.get(i)
     lines.push(lineEdits ? shiftSegments(segments, lineEdits) : segments)
   })
-  return { ...map, mappings: encode(lines) }
+  const names = removeRedundantSegments(lines, map.names)
+  return { ...map, names, mappings: encode(lines) }
+}
+
+/**
+ * Drops the segments `combineSourcemaps` would leave out (see gen-mapping's
+ * `maybeAddSegment`) and the names no segment uses. Lookups are unchanged.
+ */
+function removeRedundantSegments(
+  lines: SourceMapSegment[][],
+  names: string[],
+): string[] {
+  const usedNames: string[] = []
+  const newNameIndex = new Map<number, number>()
+  for (let i = 0; i < lines.length; i++) {
+    const kept: SourceMapSegment[] = []
+    const segments = lines[i]
+    for (let s = 0; s < segments.length; s++) {
+      const segment = segments[s]
+      // lookups use the first of several segments at one column, so dropping
+      // it would change what the column maps to
+      const sharesColumn = segments[s + 1]?.[0] === segment[0]
+      const previous = kept.at(-1)
+      if (segment.length === 1) {
+        if (sharesColumn || (previous && previous.length !== 1)) {
+          kept.push(segment)
+        }
+        continue
+      }
+      if (segment.length === 5) {
+        let index = newNameIndex.get(segment[4])
+        if (index === undefined) {
+          index = usedNames.push(names[segment[4]]) - 1
+          newNameIndex.set(segment[4], index)
+        }
+        segment[4] = index
+      }
+      if (
+        !sharesColumn &&
+        previous &&
+        previous.length !== 1 &&
+        previous[1] === segment[1] &&
+        previous[2] === segment[2] &&
+        previous[3] === segment[3] &&
+        previous[4] === segment[4]
+      ) {
+        continue
+      }
+      kept.push(segment)
+    }
+    lines[i] = kept
+  }
+  return usedNames
 }
 
 function shiftSegments(

@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import os, { type NetworkInterfaceInfoIPv4 } from 'node:os'
 import path from 'node:path'
 import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
-import { encode } from '@jridgewell/sourcemap-codec'
+import { decode, encode } from '@jridgewell/sourcemap-codec'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
 import { fileURLToPath } from 'mlly'
@@ -1197,6 +1197,34 @@ describe('shiftSourcemapForEdits', () => {
         { start: 24, end: 34, content: '[]' },
       ],
     )
+  })
+
+  test('drops redundant segments and unused names', () => {
+    const map: RawSourceMap = {
+      version: 3,
+      file: 'index.js',
+      sources: ['src/index.js'],
+      names: ['unused', 'foo'],
+      mappings: encode([
+        [[0], [5, 0, 0, 0], [9, 0, 0, 0], [12], [14], [16, 0, 1, 0]],
+        [
+          [0, 0, 2, 0],
+          [7, 0, 2, 0],
+          [7, 0, 2, 0, 1],
+          [9, 0, 2, 0, 1],
+        ],
+      ]),
+    }
+    const shifted = shiftSourcemapForEdits(map, 'x'.repeat(20) + '\n', [])!
+    expect(shifted.names).toStrictEqual(['foo'])
+    expect(decode(shifted.mappings)).toStrictEqual([
+      [[5, 0, 0, 0], [12], [16, 0, 1, 0]],
+      [
+        [0, 0, 2, 0],
+        [7, 0, 2, 0],
+        [7, 0, 2, 0, 0],
+      ],
+    ])
   })
 
   test('returns undefined for edits it does not support', () => {
