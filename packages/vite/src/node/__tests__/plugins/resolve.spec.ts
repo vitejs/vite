@@ -59,7 +59,9 @@ describe('externalized module error stubs escape module names', () => {
       `${optionalPeerDepId}:${peerDep}:${parentDep}:false`,
     )
     expect(() => evaluateStub(loadResult)).toThrow(
-      new Error(`Could not resolve "${peerDep}" imported by "${parentDep}".`),
+      new Error(
+        `Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?`,
+      ),
     )
   })
 
@@ -76,9 +78,7 @@ describe('externalized module error stubs escape module names', () => {
       `${optionalPeerDepId}:${peerDep}:${parentDep}`,
     )
     expect(() => evaluateStub(code)).toThrow(
-      new Error(
-        `Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?`,
-      ),
+      new Error(`Could not resolve "${peerDep}" imported by "${parentDep}".`),
     )
   })
 })
