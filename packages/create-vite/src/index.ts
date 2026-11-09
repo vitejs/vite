@@ -830,7 +830,7 @@ function setupReactCompiler(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=babel-plugin-react-compiler
   const reactCompilerPluginVersion = '1.0.0'
   // renovate: datasource=npm depName=@babel/core
-  const babelCoreVersion = '7.29.7'
+  const babelCoreVersion = '7.29.13'
   // renovate: datasource=npm depName=@types/babel__core
   const typesBabelCoreVersion = '7.20.5'
 
@@ -887,7 +887,7 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=eslint-plugin-react-refresh
   const eslintPluginReactRefreshVersion = '0.5.7'
   // renovate: datasource=npm depName=globals
-  const globalsVersion = '17.13.0'
+  const globalsVersion = '17.14.0'
   // renovate: datasource=npm depName=typescript-eslint
   const typescriptEslintVersion = '8.72.1'
 
