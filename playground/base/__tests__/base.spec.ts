@@ -33,3 +33,12 @@ test('404s a path outside the base', async () => {
     'The server is configured with a public base URL of /foo',
   )
 })
+
+// #10217: a root-absolute URL in HTML that is neither a public file nor a
+// JS/CSS request should be left untouched in dev, matching the build output,
+// instead of being prefixed with `base`.
+test('does not prefix base to non-asset root-absolute HTML URLs', async () => {
+  const html = await (await fetch(viteTestUrl)).text()
+  expect(html).toContain('href="/manifest.json"')
+  expect(html).not.toContain('/foo/manifest.json')
+})
