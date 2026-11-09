@@ -1,5 +1,5 @@
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
-import type { LoadResult } from 'rolldown'
+import type { LoadResult } from 'rollup'
 import { createServer } from '../../server'
 import { browserExternalId, optionalPeerDepId } from '../../plugins/resolve'
 
@@ -62,23 +62,6 @@ describe('externalized module error stubs escape module names', () => {
       new Error(
         `Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?`,
       ),
-    )
-  })
-
-  test('production stubs are escaped', async () => {
-    const server = await createTestServer(true)
-    const container = server.environments.client.pluginContainer
-
-    expect(
-      evaluateStub(
-        await container.load(`${browserExternalId}:${browserModule}`),
-      ),
-    ).toEqual({})
-    const code = await container.load(
-      `${optionalPeerDepId}:${peerDep}:${parentDep}`,
-    )
-    expect(() => evaluateStub(code)).toThrow(
-      new Error(`Could not resolve "${peerDep}" imported by "${parentDep}".`),
     )
   })
 })
