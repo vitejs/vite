@@ -1,3 +1,8 @@
+## <small>[8.1.7](https://github.com/vitejs/vite/compare/v8.1.6...v8.1.7) (2026-11-09)</small>
+### Bug Fixes
+
+* **deps:** update Rolldown to v1.1.7 ([#24042](https://github.com/vitejs/vite/issues/24042)) ([8ef8a1b](https://github.com/vitejs/vite/commit/8ef8a1b27bcd0e8e7693569f98b52b1b111025ca))
+
 ## <small>[8.1.6](https://github.com/vitejs/vite/compare/v8.1.5...v8.1.6) (2026-10-06)</small>
 ### Bug Fixes
 
