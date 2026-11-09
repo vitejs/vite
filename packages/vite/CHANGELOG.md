@@ -1,3 +1,9 @@
+## <small>6.4.6 (2026-11-09)</small>
+
+* fix: escape ids in resolve virtual modules (#24044) ([4b42910](https://github.com/vitejs/vite/commit/4b4291018a34d1591a6a18ab5c406d5b6a7a4ea1)), closes [#24044](https://github.com/vitejs/vite/issues/24044)
+
+
+
 ## <small>6.4.5 (2026-10-21)</small>
 
 * fix: check `server.fs` after stripping query as well (#22160) (#23855) ([91e40d7](https://github.com/vitejs/vite/commit/91e40d7bf9777057bbd31c3eb036a54c9465697e)), closes [#22160](https://github.com/vitejs/vite/issues/22160) [#23855](https://github.com/vitejs/vite/issues/23855)
