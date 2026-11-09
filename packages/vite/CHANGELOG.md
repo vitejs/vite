@@ -1,3 +1,8 @@
+## <small>[7.3.8](https://github.com/vitejs/vite/compare/v7.3.7...v7.3.8) (2026-11-09)</small>
+### Bug Fixes
+
+* escape ids in resolve virtual modules ([#24043](https://github.com/vitejs/vite/issues/24043)) ([e5f23b6](https://github.com/vitejs/vite/commit/e5f23b60f0c46a906a60986faad88a5bd7611a15))
+
 ## <small>[7.3.7](https://github.com/vitejs/vite/compare/v7.3.6...v7.3.7) (2026-10-06)</small>
 ### Bug Fixes
 
