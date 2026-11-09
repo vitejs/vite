@@ -320,7 +320,8 @@ That said, Vite does provide built-in support for `.scss`, `.sass`, `.less`, `.s
 
 ```bash
 # .scss and .sass
-npm add -D sass-embedded # or sass
+npm add -D sass-embedded # recommended for performance
+npm add -D sass # if the platform is not supported
 
 # .less
 npm add -D less
@@ -328,8 +329,6 @@ npm add -D less
 # .styl and .stylus
 npm add -D stylus
 ```
-
-For Sass, we recommend `sass-embedded` because it is often much faster than `sass`. If `sass-embedded` is installed, Vite uses it instead of `sass`. Use `sass` if `sass-embedded` does not support your platform.
 
 If using Vue single file components, this also automatically enables `<style lang="sass">` et al.
 
