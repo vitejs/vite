@@ -50,7 +50,7 @@ describe('indexHtml middleware — inline script proxy cache', () => {
     ).toBeTruthy()
 
     const proxyModuleUrl = browserUrlToModuleUrl(
-      proxyUrlMatch![1],
+      proxyUrlMatch![1].replaceAll('&amp;', '&'),
       server.config.decodedBase,
     )
     const result =
@@ -85,7 +85,7 @@ describe('indexHtml middleware — inline script proxy cache', () => {
     ).toBeTruthy()
 
     const proxyModuleUrl = browserUrlToModuleUrl(
-      proxyUrlMatch![1],
+      proxyUrlMatch![1].replaceAll('&amp;', '&'),
       server.config.decodedBase,
     )
     const result =
@@ -108,7 +108,7 @@ describe('indexHtml middleware — inline script proxy cache', () => {
         'devHtmlHook should have rewritten the inline <script> to a ?html-proxy src',
       ).toBeTruthy()
       expect(proxyUrlMatch![1]).toMatchInlineSnapshot(
-        `"/@id/__x00__/evil.example.com/payload.js?/../../package.json?html-proxy&index=0.js"`,
+        `"/@id/__x00__/evil.example.com/payload.js?/../../package.json?html-proxy&amp;index=0.js"`,
       )
       expect(proxyUrlMatch![1]).not.toMatch(/^\/\//)
     })

@@ -1,24 +1,14 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { afterEach, expect, test } from 'vitest'
-import type { ViteDevServer } from '../..'
-import { createServer } from '../..'
-
-const servers = new Set<ViteDevServer>()
-let root: string | undefined
-
-afterEach(async () => {
-  await Promise.allSettled([...servers].map((server) => server.close()))
-  servers.clear()
-  if (root) fs.rmSync(root, { recursive: true, force: true })
-  root = undefined
-})
+import { expect, onTestFinished, test } from 'vitest'
+import { createTestServer } from '../testUtils'
 
 test('closes temporary Rolldown bundles used to analyze custom optimizeDeps extensions', async () => {
-  root = fs.mkdtempSync(
+  const root = fs.mkdtempSync(
     path.join(fs.realpathSync(os.tmpdir()), 'vite-optimizer-extension-close-'),
   )
+  onTestFinished(() => fs.rmSync(root, { recursive: true, force: true }))
   const cacheDir = path.join(root, '.vite')
   const depDir = path.join(root, 'node_modules', 'custom-extension-dep')
   fs.mkdirSync(depDir, { recursive: true })
@@ -57,7 +47,7 @@ test('closes temporary Rolldown bundles used to analyze custom optimizeDeps exte
     },
   }
 
-  const server = await createServer({
+  await createTestServer({
     configFile: false,
     root,
     cacheDir,
@@ -76,7 +66,6 @@ test('closes temporary Rolldown bundles used to analyze custom optimizeDeps exte
       ws: false,
     },
   })
-  servers.add(server)
 
   // One bundle analyzes exports for the custom extension and another performs
   // the dependency prebundle. Every Rolldown JavaScript-API bundle should be

@@ -164,7 +164,9 @@ export function matchImportsToPreloadMarkers(
   code: string,
   imports: readonly ImportSpecifier[],
 ): number[] {
-  const importMarkerPos = new Array<number>(imports.length).fill(-1)
+  const importMarkerPos = Array.from<number>({ length: imports.length }).fill(
+    -1,
+  )
   if (imports.length === 0) return importMarkerPos
 
   const openImports: number[] = []
