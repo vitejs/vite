@@ -473,13 +473,16 @@ export function resolvePlugin(
           if (isProduction) {
             return `export default {}`
           } else {
-            id = id.slice(browserExternalId.length + 1)
+            const modulePath = JSON.stringify(
+              id.slice(browserExternalId.length + 1),
+            )
             return `\
-  export default new Proxy({}, {
-    get(_, key) {
-      throw new Error(\`Module "${id}" has been externalized for browser compatibility. Cannot access "${id}.\${key}" in client code.  See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\`)
-    }
-  })`
+export default new Proxy({}, {
+  get(_, key) {
+    const path = ${modulePath}
+    throw new Error(\`Module "\${path}" has been externalized for browser compatibility. Cannot access "\${path}.\${key}" in client code.  See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\`)
+  }
+})`
           }
         }
         if (id.startsWith(optionalPeerDepId)) {
@@ -491,9 +494,12 @@ export function resolvePlugin(
           if (isRequire === 'true' && isProduction) {
             return 'export default {}'
           }
+          const peerDepString = JSON.stringify(peerDep)
+          const parentDepString = JSON.stringify(parentDep)
           return (
             'export default {};' +
-            `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}".${isProduction ? '' : ' Is it installed?'}\`)`
+            `const peerDep = ${peerDepString};const parentDep = ${parentDepString};` +
+            `throw new Error(\`Could not resolve "\${peerDep}" imported by "\${parentDep}".${isProduction ? '' : ' Is it installed?'}\`)`
           )
         }
       },
