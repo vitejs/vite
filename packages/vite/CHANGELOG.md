@@ -1,3 +1,20 @@
+## <small>[8.3.7](https://github.com/vitejs/vite/compare/v8.3.6...v8.3.7) (2026-11-09)</small>
+### Bug Fixes
+
+* **deps:** update Rolldown to v1.2.18 ([#24038](https://github.com/vitejs/vite/issues/24038)) ([517affb](https://github.com/vitejs/vite/commit/517affb174632db347a6a2426f12eab020277946))
+
+### Miscellaneous Chores
+
+* enable more lint rules ([#24035](https://github.com/vitejs/vite/issues/24035)) ([72f86e5](https://github.com/vitejs/vite/commit/72f86e57dab05e87641599bff041d68821c837f3))
+
+### Tests
+
+* use `onTestFinished` for tear downs ([#24003](https://github.com/vitejs/vite/issues/24003)) ([a579e35](https://github.com/vitejs/vite/commit/a579e352a66fbdce6a51d4e1f67006ccf4f91343))
+
+### Build System
+
+* generate sourcemaps in shim-deps plugin ([#24023](https://github.com/vitejs/vite/issues/24023)) ([c02138c](https://github.com/vitejs/vite/commit/c02138c51193fd892025f0c28524dcb9e128446f))
+
 ## <small>[8.3.6](https://github.com/vitejs/vite/compare/v8.3.5...v8.3.6) (2026-11-05)</small>
 ### Bug Fixes
 
