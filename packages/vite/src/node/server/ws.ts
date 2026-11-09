@@ -1,22 +1,22 @@
-import path from 'node:path'
+import crypto from 'node:crypto'
 import type { IncomingMessage, Server } from 'node:http'
 import { STATUS_CODES, createServer as createHttpServer } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import { createServer as createHttpsServer } from 'node:https'
 import type { Socket } from 'node:net'
+import path from 'node:path'
 import type { Duplex } from 'node:stream'
-import crypto from 'node:crypto'
+import { isHostAllowed } from 'host-validation-middleware'
 import colors from 'picocolors'
 import type { WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
-import { isHostAllowed } from 'host-validation-middleware'
 import type { WebSocket as WebSocketTypes } from '#dep-types/ws'
+import type { InferCustomEventPayload } from '#types/customEvent'
 import type {
   ErrorPayload,
   FullReloadPayload,
   HotPayload,
 } from '#types/hmrPayload'
-import type { InferCustomEventPayload } from '#types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
 import type { NormalizedHotChannel, NormalizedHotChannelClient } from './hmr'
@@ -231,6 +231,12 @@ export function createWebSocketServer(
         parsedUrl.pathname === hmrBase
       ) {
         handleUpgrade(req, socket as Socket, head, protocol === 'vite-ping')
+      } else {
+        // Node.js detaches its own socket error handler before emitting
+        // `upgrade`, so a socket that no listener takes over would crash the
+        // process when the client resets the connection (e.g. ECONNRESET).
+        // Other listeners (proxy, plugins) still receive the error as usual.
+        socket.on('error', noop)
       }
     }
     wsServer.on('upgrade', hmrServerWsListener)
@@ -461,7 +467,7 @@ export function createWebSocketServer(
 
     [isWebSocketServer]: true,
     get clients() {
-      return new Set(Array.from(wss.clients).map(getSocketClient))
+      return new Set([...wss.clients].map(getSocketClient))
     },
   }
 }

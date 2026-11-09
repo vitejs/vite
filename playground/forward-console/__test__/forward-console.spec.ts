@@ -55,7 +55,7 @@ test.runIf(isServe)('console.error', async () => {
   await expect
     .poll(() => normalizeLogs(serverLogs.slice(logIndex)))
     .toContain(
-      `[console.error] format: string=hello number=12.9 int=42 float=3.5 json={"id":1} object={"enabled":true} object2={"nested":{"deep":1}} style= literal=% trailing done`,
+      `[console.error] format: string=hello number=12.9 int=42 float=3.5 json={"id":1} object={ enabled: true } object2={ nested: { deep: 1 } } style= literal=% trailing done`,
     )
 })
 

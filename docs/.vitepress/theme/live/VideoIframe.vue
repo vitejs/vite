@@ -1,6 +1,6 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Header from '@components/oss/Header.vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useYoutubePlayer } from './useYoutubePlayer'
 
 const props = defineProps({

@@ -1,22 +1,22 @@
 import { isAbsolute, posix } from 'node:path'
-import picomatch from 'picomatch'
-import { stripLiteral } from 'strip-literal'
-import colors from 'picocolors'
-import type { ESTree } from 'rolldown/utils'
-import type { CustomPluginOptions, RollupError } from 'rolldown'
 import MagicString from 'magic-string'
-import { stringifyQuery } from 'ufo'
-import { parseAstAsync } from 'rolldown/parseAst'
-import { escapePath, glob } from 'tinyglobby'
+import colors from 'picocolors'
+import picomatch from 'picomatch'
+import type { CustomPluginOptions, RollupError } from 'rolldown'
 import { viteImportGlobPlugin as nativeImportGlobPlugin } from 'rolldown/experimental'
+import { parseAstAsync } from 'rolldown/parseAst'
+import type { ESTree } from 'rolldown/utils'
+import { stripLiteral } from 'strip-literal'
+import { escapePath, glob } from 'tinyglobby'
+import { stringifyQuery } from 'ufo'
 import type { GeneralImportGlobOptions } from '#types/importGlob'
+import { slash } from '../../shared/utils'
+import type { ResolvedConfig } from '../config'
+import type { Environment } from '../environment'
+import type { Logger } from '../logger'
 import type { Plugin } from '../plugin'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
-import type { ResolvedConfig } from '../config'
 import { evalValue, normalizePath, transformStableResult } from '../utils'
-import type { Logger } from '../logger'
-import { slash } from '../../shared/utils'
-import type { Environment } from '../environment'
 
 export interface ParsedImportGlob {
   index: number
@@ -86,11 +86,13 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
             const affirmedMatcher = picomatch(affirmed, {
               noextglob: true,
               dot: !!i.options.exhaustive,
+              nocase: !(i.options.caseSensitive ?? true),
               ignore: i.options.exhaustive ? [] : ['**/node_modules/**'],
             })
             const negatedMatcher = picomatch(negated, {
               noextglob: true,
               dot: !!i.options.exhaustive,
+              nocase: !(i.options.caseSensitive ?? true),
               ignore: i.options.exhaustive ? [] : ['**/node_modules/**'],
             })
 
@@ -137,6 +139,7 @@ const knownOptions = {
   exhaustive: ['boolean'],
   query: ['object', 'string'],
   base: ['string'],
+  caseSensitive: ['boolean'],
 }
 
 const forceDefaultAs = ['raw', 'url']
@@ -259,7 +262,7 @@ export async function parseImportGlob(
     // skip invalid js code
     return []
   }
-  const matches = Array.from(cleanCode.matchAll(importGlobRE))
+  const matches = [...cleanCode.matchAll(importGlobRE)]
 
   const tasks = matches.map(async (match, index) => {
     const start = match.index!
@@ -461,6 +464,7 @@ export async function transformGlobImport(
               cwd,
               dot: !!options.exhaustive,
               expandDirectories: false,
+              caseSensitiveMatch: options.caseSensitive ?? true,
               ignore: options.exhaustive ? [] : ['**/node_modules/**'],
               extglob: false,
             })

@@ -1,6 +1,7 @@
-import path from 'node:path'
 import fs from 'node:fs'
+import path from 'node:path'
 import { parseErrorStacktrace } from '@vitest/utils/source-map'
+import convertSourceMap from 'convert-source-map'
 import c from 'picocolors'
 import type {
   ForwardConsolePayload,
@@ -9,6 +10,8 @@ import type {
 } from '#types/customEvent'
 import type { DevEnvironment, Plugin } from '..'
 import { normalizePath } from '..'
+import { cleanUrl } from '../../shared/utils'
+import type { MemoryFiles } from '../server/bundledDev'
 import { extractSourcemapFromFile } from '../server/sourcemap'
 import { generateCodeFrame } from '../utils'
 
@@ -23,18 +26,27 @@ export function forwardConsolePlugin(pluginOpts: {
     configureServer(server) {
       for (const name of pluginOpts.environments) {
         const environment = server.environments[name]
+        const bundledDevOutDir = getBundledDevOutDir(environment)
         environment.hot.on('vite:forward-console', (payload) => {
           if (
             payload.type === 'error' ||
             payload.type === 'unhandled-rejection'
           ) {
-            const output = formatError(payload, environment, sourceMapCache)
+            const output = escapeUnsupportedAnsiSequences(
+              formatError(
+                payload,
+                environment,
+                sourceMapCache,
+                bundledDevOutDir,
+              ),
+            )
             environment.config.logger.error(output, {
               timestamp: true,
             })
           } else {
-            const output =
-              c.dim(`[console.${payload.data.level}] `) + payload.data.message
+            const output = escapeUnsupportedAnsiSequences(
+              c.dim(`[console.${payload.data.level}] `) + payload.data.message,
+            )
             if (payload.data.level === 'error') {
               environment.config.logger.error(output, {
                 timestamp: true,
@@ -55,6 +67,19 @@ export function forwardConsolePlugin(pluginOpts: {
   }
 }
 
+export function escapeUnsupportedAnsiSequences(message: string): string {
+  // Browser logs may contain terminal controls that write to the clipboard (OSC 52)
+  // or ring the terminal bell (BEL). Escape them to prevent side effects, preserving
+  // only SGR sequences recognized by Chrome DevTools.
+  // C1 controls can invoke terminal commands without an ESC character.
+  // https://developer.chrome.com/docs/devtools/console/format-style#style-ansi
+  return message.replace(
+    // eslint-disable-next-line no-control-regex
+    /[\x07\x80-\x9f]|\x1b(?!\[[\d;]*m)/g,
+    (char) => `\\x${char.charCodeAt(0).toString(16).padStart(2, '0')}`,
+  )
+}
+
 function formatError(
   payload: Extract<
     ForwardConsolePayload,
@@ -62,12 +87,14 @@ function formatError(
   >,
   environment: DevEnvironment,
   sourceMapCache: Map<string, any>,
+  bundledDevOutDir: string,
 ) {
   const error = payload.data
   const { stacks, nearest } = resolveErrorStack(
     error,
     environment,
     sourceMapCache,
+    bundledDevOutDir,
   )
 
   let output = ''
@@ -96,9 +123,21 @@ function resolveErrorStack(
   error: { name: string; message: string; stack?: string },
   environment: DevEnvironment,
   sourceMapCache: Map<string, any>,
+  bundledDevOutDir: string,
 ) {
+  const memoryFiles = environment.bundledDev?.memoryFiles
   const stacks = parseErrorStacktrace(error, {
     getUrlId(id) {
+      if (memoryFiles) {
+        return (
+          getBundledDevChunkPath(
+            environment,
+            memoryFiles,
+            bundledDevOutDir,
+            id,
+          ) ?? id
+        )
+      }
       const moduleGraph = environment.moduleGraph
       const mod = moduleGraph.getModuleById(id)
       if (mod) {
@@ -120,6 +159,9 @@ function resolveErrorStack(
       return id
     },
     getSourceMap(id) {
+      if (memoryFiles) {
+        return getBundledDevSourceMap(memoryFiles, bundledDevOutDir, id)
+      }
       if (sourceMapCache.has(id)) {
         return sourceMapCache.get(id)
       }
@@ -151,6 +193,14 @@ function resolveErrorStack(
   })
 
   const nearest = stacks.find((stack) => {
+    if (memoryFiles) {
+      return (
+        !environment.config.dev.sourcemapIgnoreList(
+          stack.file,
+          `${stack.file}.map`,
+        ) && fs.existsSync(stack.file)
+      )
+    }
     const modules = environment.moduleGraph.getModulesByFile(stack.file)
     return (
       [...(modules || [])].some((m) => m.transformResult) &&
@@ -170,6 +220,7 @@ export function runtimeErrorsPlugin(): Plugin {
     configureServer(server) {
       const environment = server.environments.client
       if (!environment) return
+      const bundledDevOutDir = getBundledDevOutDir(environment)
 
       environment.hot.on(
         'vite:runtime-error',
@@ -179,6 +230,7 @@ export function runtimeErrorsPlugin(): Plugin {
             { name, message, stack },
             environment,
             sourceMapCache,
+            bundledDevOutDir,
           )
 
           const resolvedStack =
@@ -223,5 +275,64 @@ export function runtimeErrorsPlugin(): Plugin {
         },
       )
     },
+  }
+}
+
+// Under bundled dev, the client module graph is empty and the browser runs
+// bundle chunks served from `memoryFiles`. Their source maps list the sources
+// relative to the output dir, so chunk URLs are turned into paths inside it.
+function getBundledDevOutDir(environment: DevEnvironment): string {
+  return normalizePath(
+    path.resolve(environment.config.root, environment.config.build.outDir),
+  )
+}
+
+function getBundledDevChunkPath(
+  environment: DevEnvironment,
+  memoryFiles: MemoryFiles,
+  outDir: string,
+  url: string,
+): string | undefined {
+  const { decodedBase } = environment.config
+  url = cleanUrl(url)
+  if (!url.startsWith(decodedBase)) return
+  const fileName = url.slice(decodedBase.length)
+  if (memoryFiles.has(fileName)) {
+    return `${outDir}/${fileName}`
+  }
+}
+
+function getBundledDevSourceMap(
+  memoryFiles: MemoryFiles,
+  outDir: string,
+  chunkPath: string,
+) {
+  if (!chunkPath.startsWith(`${outDir}/`)) return null
+  const chunkFileName = chunkPath.slice(outDir.length + 1)
+  const readFile = (fileName: string) => {
+    const source = memoryFiles.get(fileName)?.source
+    return typeof source === 'string'
+      ? source
+      : source && Buffer.from(source).toString('utf-8')
+  }
+  const code = readFile(chunkFileName)
+  if (code === undefined) return null
+  try {
+    const converter =
+      convertSourceMap.fromSource(code) ||
+      convertSourceMap.fromMapFileSource(code, (mapFileName: string) => {
+        const mapFilePath = path.posix.join(
+          path.posix.dirname(chunkFileName),
+          mapFileName,
+        )
+        const map = readFile(mapFilePath)
+        if (map === undefined) {
+          throw new Error(`${mapFilePath} is not in memoryFiles`)
+        }
+        return map
+      })
+    return converter?.toObject() ?? null
+  } catch {
+    return null
   }
 }

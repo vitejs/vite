@@ -1,8 +1,8 @@
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
+import { PartialEnvironment } from '../baseEnvironment'
 import { resolveConfig } from '../config'
 import { createIsConfiguredAsExternal } from '../external'
-import { PartialEnvironment } from '../baseEnvironment'
 
 describe('createIsConfiguredAsExternal', () => {
   test('default', async () => {

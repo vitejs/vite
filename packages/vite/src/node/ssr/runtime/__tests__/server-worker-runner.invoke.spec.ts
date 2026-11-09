@@ -1,32 +1,31 @@
-import { BroadcastChannel, Worker } from 'node:worker_threads'
 import path from 'node:path'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import type { BirpcReturn } from 'birpc'
+import { BroadcastChannel, Worker } from 'node:worker_threads'
 import { createBirpc } from 'birpc'
+import { describe, expect, it as baseIt, vi } from 'vitest'
 import { DevEnvironment } from '../../..'
-import { type ViteDevServer, createServer } from '../../../server'
+import { createServer } from '../../../server'
 
-describe('running module runner inside a worker and using the ModuleRunnerTransport#invoke API', () => {
-  let worker: Worker
-  let server: ViteDevServer
-  let rpc: BirpcReturn<
-    unknown,
-    { invoke: (data: any) => Promise<{ result: any } | { error: any }> }
-  >
-  let handleInvoke: (data: any) => Promise<{ result: any } | { error: any }>
-
-  beforeAll(async () => {
-    worker = new Worker(
+const it = baseIt
+  // eslint-disable-next-line no-empty-pattern
+  .extend('worker', async ({}, { onCleanup }) => {
+    const worker = new Worker(
       new URL('./fixtures/worker.invoke.mjs', import.meta.url),
       {
         stdout: true,
       },
     )
+    onCleanup(async () => {
+      await worker.terminate()
+    })
     await new Promise<void>((resolve, reject) => {
       worker.on('message', () => resolve())
       worker.on('error', reject)
     })
-    server = await createServer({
+    return worker
+  })
+  // eslint-disable-next-line no-empty-pattern
+  .extend('server', async ({}, { onCleanup }) => {
+    const server = await createServer({
       root: import.meta.dirname,
       logLevel: 'error',
       server: {
@@ -51,9 +50,14 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
         },
       },
     })
-    handleInvoke = (data: any) =>
-      server.environments.worker.hot.handleInvoke(data)
-    rpc = createBirpc(
+    onCleanup(() => server.close())
+    return server
+  })
+  .extend('handleInvoke', ({ server }) =>
+    vi.fn((data: any) => server.environments.worker.hot.handleInvoke(data)),
+  )
+  .extend('run', ({ worker, handleInvoke }, { onCleanup }) => {
+    const rpc = createBirpc(
       {
         invoke: (data: any) => handleInvoke(data),
       },
@@ -62,62 +66,59 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
         on: (data) => worker.on('message', data),
       },
     )
-  })
-
-  afterAll(async () => {
-    await Promise.allSettled([server.close(), worker.terminate()])
-    rpc.$close()
-  })
-
-  async function run(id: string) {
     const channel = new BroadcastChannel('vite-worker:invoke')
-    return new Promise<any>((resolve, reject) => {
-      channel.onmessage = (event) => {
-        try {
-          resolve(event.data)
-        } catch (e) {
-          reject(e)
-        }
-      }
-      channel.postMessage({ id })
+    onCleanup(() => {
+      channel.close()
+      rpc.$close()
     })
-  }
+    return async (id: string) => {
+      return new Promise<any>((resolve, reject) => {
+        channel.onmessage = (event) => {
+          try {
+            resolve(event.data)
+          } catch (e) {
+            reject(e)
+          }
+        }
+        channel.postMessage({ id })
+      })
+    }
+  })
 
-  it('correctly runs ssr code', async () => {
+describe('running module runner inside a worker and using the ModuleRunnerTransport#invoke API', () => {
+  it('correctly runs ssr code', async ({ run }) => {
     const output = await run('./fixtures/default-string.ts')
     expect(output).toStrictEqual({
       result: 'hello world',
     })
   })
 
-  it('triggers an error', async () => {
-    handleInvoke = async () => ({ error: new Error('This is an Invoke Error') })
+  it('triggers an error', async ({ run, handleInvoke }) => {
+    handleInvoke.mockResolvedValue({
+      error: new Error('This is an Invoke Error'),
+    })
     const output = await run('dummy')
     expect(output).not.toHaveProperty('result')
     expect(output.error).toContain('Error: This is an Invoke Error')
   })
 
-  it('triggers an unknown error', async () => {
-    handleInvoke = async () => ({ error: 'a string instead of an error' })
+  it('triggers an unknown error', async ({ run, handleInvoke }) => {
+    handleInvoke.mockResolvedValue({ error: 'a string instead of an error' })
     const output = await run('dummy')
     expect(output).not.toHaveProperty('result')
     expect(output.error).toContain('Error: Unknown invoke error')
   })
 
-  it('resolves builtin module without server round-trip', async () => {
-    handleInvoke = (data: any) =>
-      server.environments.worker.hot.handleInvoke(data)
-
+  it('resolves builtin module without server round-trip', async ({ run }) => {
     const output = await run('./fixtures/builtin-import.ts')
     expect(output).toHaveProperty('result')
     expect(output.result).toBe('baz.txt')
     expect(output.error).toBeUndefined()
   })
 
-  it('server.fs check is applied to the custom transport by default', async () => {
-    handleInvoke = (data: any) =>
-      server.environments.worker.hot.handleInvoke(data)
-
+  it('server.fs check is applied to the custom transport by default', async ({
+    run,
+  }) => {
     const output = await run('./fixture-outside.js')
     expect(output).toHaveProperty('error')
     expect(output.error).toContain('Failed to load url')

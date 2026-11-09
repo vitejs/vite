@@ -1,7 +1,7 @@
 import path from 'node:path'
-import { normalizePath } from 'vite'
 import { bundle as bundleWithLightningCss } from 'lightningcss'
 import { globSync } from 'tinyglobby'
+import { normalizePath } from 'vite'
 
 /**
  * @param {string} filename
@@ -138,8 +138,7 @@ export function nestedLikePlugin() {
                   selector[0].type === 'nesting' &&
                   selector[1].type === 'type'
                 ) {
-                  const lastParentSelectorComponent =
-                    parentSelector[parentSelector.length - 1]
+                  const lastParentSelectorComponent = parentSelector.at(-1)
                   if ('name' in lastParentSelectorComponent) {
                     const newSelector = [
                       ...parentSelector.slice(0, -1),

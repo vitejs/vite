@@ -1,3 +1,96 @@
+## <small>[8.2.4](https://github.com/vitejs/vite/compare/plugin-legacy%408.2.3...plugin-legacy%408.2.4) (2026-11-05)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#23217](https://github.com/vitejs/vite/issues/23217)) ([ba958bd](https://github.com/vitejs/vite/commit/ba958bddfc9cabe302c6b34269dcf5c9634531e0))
+* **deps:** update all non-major dependencies ([#23337](https://github.com/vitejs/vite/issues/23337)) ([d550815](https://github.com/vitejs/vite/commit/d55081581ddd4d55667fef38e85d02ab7f879f15))
+* **deps:** update all non-major dependencies ([#23404](https://github.com/vitejs/vite/issues/23404)) ([238ad81](https://github.com/vitejs/vite/commit/238ad811c7fb9e4730cbd317d0657867ed3447b3))
+* **deps:** update all non-major dependencies ([#23445](https://github.com/vitejs/vite/issues/23445)) ([fc7c104](https://github.com/vitejs/vite/commit/fc7c104e74d35a97fa313d5dd6f1b5e7d5b26159))
+* **deps:** update all non-major dependencies ([#23482](https://github.com/vitejs/vite/issues/23482)) ([3c752c8](https://github.com/vitejs/vite/commit/3c752c8932bc0599465ba4a6d8f44aaf1e934c3d))
+* **deps:** update all non-major dependencies ([#23601](https://github.com/vitejs/vite/issues/23601)) ([9944fa6](https://github.com/vitejs/vite/commit/9944fa6033873f13ae88f59e023ab642c50fee2b))
+* **deps:** update all non-major dependencies ([#23648](https://github.com/vitejs/vite/issues/23648)) ([8a4c19c](https://github.com/vitejs/vite/commit/8a4c19cfc035f2dd203f2fa6d00ab9256a5e77c9))
+* **deps:** update all non-major dependencies ([#23896](https://github.com/vitejs/vite/issues/23896)) ([46b91c5](https://github.com/vitejs/vite/commit/46b91c5bf9c2901b8511c893bc3fc38b8bba6e4f))
+* **deps:** update all non-major dependencies ([#23966](https://github.com/vitejs/vite/issues/23966)) ([b3cb057](https://github.com/vitejs/vite/commit/b3cb0575aff63004a71301a1ec798aeea2aa05d7))
+* **deps:** update rolldown-related dependencies ([#23483](https://github.com/vitejs/vite/issues/23483)) ([9aecbbf](https://github.com/vitejs/vite/commit/9aecbbfa5fb5da4b9981c099cb9746a9fd210806))
+* **deps:** update rolldown-related dependencies ([#23733](https://github.com/vitejs/vite/issues/23733)) ([43f0d05](https://github.com/vitejs/vite/commit/43f0d052e514c3ad2dea2f7dc44b0720e1f62f48))
+* **deps:** update rolldown-related dependencies ([#23967](https://github.com/vitejs/vite/issues/23967)) ([0105733](https://github.com/vitejs/vite/commit/0105733e610dd5b770bb5397e8d9fbc54a9f6312))
+* respect `build.sourcemap` from environment ([#23879](https://github.com/vitejs/vite/issues/23879)) ([82e7aa0](https://github.com/vitejs/vite/commit/82e7aa0374a15e1c67594557ab5893c91578f897))
+
+### Miscellaneous Chores
+
+* **deps:** update dependency tsdown to ^0.23.2 ([#23895](https://github.com/vitejs/vite/issues/23895)) ([ac9a56d](https://github.com/vitejs/vite/commit/ac9a56d8925bf05d0b18bca0b273362d697bb4f4))
+* **deps:** use typescript v7 ([#23778](https://github.com/vitejs/vite/issues/23778)) ([928e721](https://github.com/vitejs/vite/commit/928e721b36690ac0f3f118290a21fc0cc4349055))
+* merge prereleases in changelog ([#23466](https://github.com/vitejs/vite/issues/23466)) ([99bd9d1](https://github.com/vitejs/vite/commit/99bd9d1d46153fa939f4a304cc0177db42e28776))
+* use oxfmt `sortImports` ([#23319](https://github.com/vitejs/vite/issues/23319)) ([97ad042](https://github.com/vitejs/vite/commit/97ad042170f4c71b518239723b733dd98e8e3e76))
+
+### Code Refactoring
+
+* **plugin-legacy:** use JSON import for core-js version ([#23771](https://github.com/vitejs/vite/issues/23771)) ([0075c4b](https://github.com/vitejs/vite/commit/0075c4bdd8d2cd731a839411cf36cf9f8d754a8a))
+
+## <small>[8.2.3](https://github.com/vitejs/vite/compare/plugin-legacy%408.2.2...plugin-legacy%408.2.3) (2026-08-06)</small>
+### Bug Fixes
+
+* **build:** make client chunkImportMap work with `sharedPlugins: true` ([#23184](https://github.com/vitejs/vite/issues/23184)) ([15f0307](https://github.com/vitejs/vite/commit/15f03073c915d6ffb9a1fda447ef66b02bf5cde8))
+* **deps:** update all non-major dependencies ([#23069](https://github.com/vitejs/vite/issues/23069)) ([4c07b74](https://github.com/vitejs/vite/commit/4c07b74416f859d7e8bdace13409ef2d080edf76))
+* **deps:** update all non-major dependencies ([#23136](https://github.com/vitejs/vite/issues/23136)) ([14454fd](https://github.com/vitejs/vite/commit/14454fd8c9a399bc3fdc193e28465b6fcf001e4d))
+* **deps:** update rolldown-related dependencies ([#23070](https://github.com/vitejs/vite/issues/23070)) ([7ac6f7f](https://github.com/vitejs/vite/commit/7ac6f7f590747bbdab9958e2c016e3dd04f10542))
+
+## <small>[8.2.2](https://github.com/vitejs/vite/compare/plugin-legacy%408.2.1...plugin-legacy%408.2.2) (2026-07-23)</small>
+### Features
+
+* update rolldown-related dependencies and use client-side HMR in bundled-dev ([#22961](https://github.com/vitejs/vite/issues/22961)) ([960e9ef](https://github.com/vitejs/vite/commit/960e9efbc1372000caac46cc2f123cef4824e2bb))
+
+### Bug Fixes
+
+* **deps:** update dependency magic-string to v1 ([#22998](https://github.com/vitejs/vite/issues/22998)) ([c60b4d7](https://github.com/vitejs/vite/commit/c60b4d7cdb85b7d4f78671cdcfb863e5f8b66bb7))
+* **legacy:** don't use newer syntax when minifying legacy chunks ([#23013](https://github.com/vitejs/vite/issues/23013)) ([989a42e](https://github.com/vitejs/vite/commit/989a42ec52b527846bf43a8281fefd0a3aab7358))
+
+## <small>[8.2.1](https://github.com/vitejs/vite/compare/plugin-legacy@8.2.0...plugin-legacy@8.2.1) (2026-07-16)</small>
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#22921](https://github.com/vitejs/vite/issues/22921)) ([fef682d](https://github.com/vitejs/vite/commit/fef682d3f067d534a559faf6fd9baedda2e9f8f1))
+* **deps:** update rolldown-related dependencies ([#22922](https://github.com/vitejs/vite/issues/22922)) ([3c345e4](https://github.com/vitejs/vite/commit/3c345e475a5546a1cc6374682af89caebfe9c593))
+* **legacy:** don't use newer syntax when minifying polyfill chunks ([#22939](https://github.com/vitejs/vite/issues/22939)) ([c4df6ef](https://github.com/vitejs/vite/commit/c4df6ef9c3c0d796fb5f7968422ed14d528e3388))
+
+## [8.2.0](https://github.com/vitejs/vite/compare/plugin-legacy@8.1.0...plugin-legacy@8.2.0) (2026-07-09)
+### Features
+
+* **legacy:** prefer oxc as minifier (fix [#21973](https://github.com/vitejs/vite/issues/21973)) ([#22468](https://github.com/vitejs/vite/issues/22468)) ([ab5dafa](https://github.com/vitejs/vite/commit/ab5dafa8e66296ef201f615489fb57954bb740ce))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#22734](https://github.com/vitejs/vite/issues/22734)) ([e635f49](https://github.com/vitejs/vite/commit/e635f493faa24930ae637318d6564539bc668e89))
+* **deps:** update rolldown-related dependencies ([#22591](https://github.com/vitejs/vite/issues/22591)) ([2ce6677](https://github.com/vitejs/vite/commit/2ce6677a151c53a019baec32859b646267f9d320))
+
+### Code Refactoring
+
+* **legacy:** use `babel-plugin-polyfill-*` consistently ([#22874](https://github.com/vitejs/vite/issues/22874)) ([9dddae6](https://github.com/vitejs/vite/commit/9dddae69a214bd468223d33f9e64c580ef1bb0d6))
+
+## [8.1.0](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.2...plugin-legacy@8.1.0) (2026-06-23)
+
+### Features
+
+* **build:** chunk importmap ([#21580](https://github.com/vitejs/vite/issues/21580)) ([e180312](https://github.com/vitejs/vite/commit/e1803128e5698202e22c6e5e17dc9ebd83d4f3f5))
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#22511](https://github.com/vitejs/vite/issues/22511)) ([2686d7d](https://github.com/vitejs/vite/commit/2686d7d0b722402204d3bcc687a87adea1bcf9fa))
+* **deps:** update all non-major dependencies ([#22637](https://github.com/vitejs/vite/issues/22637)) ([44bb9d9](https://github.com/vitejs/vite/commit/44bb9d95a246011a2fba9a19cadeac4181bef1b4))
+* **deps:** update all non-major dependencies ([#22681](https://github.com/vitejs/vite/issues/22681)) ([f4f0633](https://github.com/vitejs/vite/commit/f4f063382dde0d67b2158374c56443d0bf5c9501))
+
+### Miscellaneous Chores
+
+* **deps:** update rolldown-related dependencies ([#22566](https://github.com/vitejs/vite/issues/22566)) ([3052a67](https://github.com/vitejs/vite/commit/3052a67d9350f4c5076ab1c222c4a21a589cbcdd))
+
+### Code Refactoring
+
+* use rolldownOptions where possible ([#21205](https://github.com/vitejs/vite/issues/21205)) ([7ca7c1b](https://github.com/vitejs/vite/commit/7ca7c1bedf0a9754e7631cbe615e41231b0aeb80))
+
+### Beta Changelogs
+
+#### [8.1.0-beta.0](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.2...plugin-legacy@8.1.0-beta.0) (2026-06-15)
+
+See [8.1.0-beta.0 changelog](https://github.com/vitejs/vite/blob/plugin-legacy@8.1.0-beta.0/packages/plugin-legacy/CHANGELOG.md)
+
 ## <small>[8.0.2](https://github.com/vitejs/vite/compare/plugin-legacy@8.0.1...plugin-legacy@8.0.2) (2026-05-14)</small>
 ### Bug Fixes
 

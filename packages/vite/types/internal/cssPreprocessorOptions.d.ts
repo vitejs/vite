@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
+// @ts-ignore `less` may not be installed
+import type Less from 'less'
 // @ts-ignore `sass` may not be installed
 import type DartSass from 'sass'
 // @ts-ignore `sass-embedded` may not be installed
 import type SassEmbedded from 'sass-embedded'
-// @ts-ignore `less` may not be installed
-import type Less from 'less'
 // @ts-ignore `stylus` may not be installed
 import type Stylus from 'stylus'
 
