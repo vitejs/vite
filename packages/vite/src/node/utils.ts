@@ -1629,6 +1629,7 @@ export function mergeAlias(
   if (!a) return b
   if (!b) return a
   if (isObject(a) && isObject(b)) {
+    // oxlint-disable-next-line typescript/no-misused-spread - merging objects are fine
     return { ...a, ...b }
   }
   // the order is flipped because the alias is resolved from top-down,

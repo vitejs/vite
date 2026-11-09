@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { ImportType, init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
-import type { Plugin } from 'rolldown'
+import type { OutputOptions, Plugin } from 'rolldown'
 import { defineConfig } from 'rolldown'
 import pkg from './package.json' with { type: 'json' }
 import licensePlugin from './rollupLicensePlugin'
@@ -156,7 +156,7 @@ const moduleRunnerConfig = defineConfig({
   ],
   plugins: [bundleSizeLimit(55), enableSourceMapsInWatchModePlugin()],
   output: {
-    ...sharedNodeOptions.output,
+    ...(sharedNodeOptions.output as OutputOptions),
     minify: {
       compress: true,
       mangle: false,

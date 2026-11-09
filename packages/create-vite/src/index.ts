@@ -846,6 +846,7 @@ function setupReactCompiler(root: string, isTs: boolean) {
     if (isTs) {
       devDepsEntries.push(['@types/babel__core', `^${typesBabelCoreVersion}`])
     }
+    // oxlint-disable-next-line typescript/require-array-sort-compare
     devDepsEntries.sort()
     asObject.devDependencies = Object.fromEntries(devDepsEntries)
     return JSON.stringify(asObject, null, 2) + '\n'
@@ -961,6 +962,7 @@ export default defineConfig([
     if (isTs) {
       devDepsEntries.push(['typescript-eslint', `^${typescriptEslintVersion}`])
     }
+    // oxlint-disable-next-line typescript/require-array-sort-compare
     devDepsEntries.sort()
     asObject.devDependencies = Object.fromEntries(devDepsEntries)
     asObject.scripts.lint = 'eslint .'
