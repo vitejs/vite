@@ -53,10 +53,15 @@ export function resolveEmptyOutDir(
  * Watch options for the dev server. Accepts both chokidar options and Rolldown
  * watch options. The chokidar options are used by the chokidar watcher, while
  * the Rolldown options are used by the Rolldown file watcher when bundled dev
- * mode is enabled.
+ * mode is enabled. Keep Vite's options flat and preserve the debounceDuration
+ * name when adapting to Rolldown's nested watcher options.
  */
 export type ServerWatchOptions = WatchOptions &
-  Omit<DevWatchOptions, 'enabled' | 'skipWrite'>
+  Omit<DevWatchOptions, 'enabled' | 'skipWrite' | 'watcher'> &
+  Omit<NonNullable<DevWatchOptions['watcher']>, 'debounceDelay'> & {
+    /** Debounce delay in milliseconds for the Rolldown file watcher. */
+    debounceDuration?: number
+  }
 
 export function resolveChokidarOptions(
   options: ServerWatchOptions | undefined,
@@ -117,12 +122,14 @@ export function convertToDevWatchOptions(
   if (!options) return {}
 
   return {
-    usePolling: options.usePolling,
-    pollInterval: options.pollInterval ?? options.interval,
-    useDebounce: options.useDebounce,
-    debounceDuration: options.debounceDuration,
-    debounceTickRate: options.debounceTickRate,
-    compareContentsForPolling: options.compareContentsForPolling,
+    watcher: {
+      usePolling: options.usePolling,
+      pollInterval: options.pollInterval ?? options.interval,
+      useDebounce: options.useDebounce,
+      debounceDelay: options.debounceDuration,
+      debounceTickRate: options.debounceTickRate,
+      compareContentsForPolling: options.compareContentsForPolling,
+    },
     include: options.include,
     exclude: options.exclude,
   }
