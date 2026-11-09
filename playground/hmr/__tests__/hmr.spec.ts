@@ -88,9 +88,9 @@ if (!isBuild) {
         '(self-accepting 1) foo is now: 2',
         '(self-accepting 2) foo is now: 2',
         // bundled dev: the client logs rolldown module ids (cwd-relative, like
-        // `playground-temp/hmr/hmr.ts`). The same `cwd` issue as in hot update log in #23028.
+        // `playground-temp-serve-bundled/hmr/hmr.ts`). The same `cwd` issue as in hot update log in #23028.
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hmr.ts'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hmr.ts'
           : '[vite] hot updated: /hmr.ts',
         '>>> vite:afterUpdate -- update',
       ],
@@ -109,7 +109,7 @@ if (!isBuild) {
         '(self-accepting 1) foo is now: 3',
         '(self-accepting 2) foo is now: 3',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hmr.ts'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hmr.ts'
           : '[vite] hot updated: /hmr.ts',
         '>>> vite:afterUpdate -- update',
       ],
@@ -129,7 +129,7 @@ if (!isBuild) {
         '(hot data) value from execution: 1',
         '(hot data) value from dispose: 1',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hotData.js'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hotData.js'
           : '[vite] hot updated: /hotData.js',
         '>>> vite:afterUpdate -- update',
       ],
@@ -146,7 +146,7 @@ if (!isBuild) {
         '(hot data) value from execution: 2',
         '(hot data) value from dispose: 2',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hotData.js'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hotData.js'
           : '[vite] hot updated: /hotData.js',
         '>>> vite:afterUpdate -- update',
       ],
@@ -170,7 +170,7 @@ if (!isBuild) {
         '(multi deps) foo is now: 2',
         '(multi deps) nested foo is now: 1',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hmrDep.js via playground-temp/hmr/hmr.ts'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hmrDep.js via playground-temp-serve-bundled/hmr/hmr.ts'
           : '[vite] hot updated: /hmrDep.js via /hmr.ts',
         '>>> vite:afterUpdate -- update',
       ],
@@ -192,7 +192,7 @@ if (!isBuild) {
         '(multi deps) foo is now: 3',
         '(multi deps) nested foo is now: 1',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hmrDep.js via playground-temp/hmr/hmr.ts'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hmrDep.js via playground-temp-serve-bundled/hmr/hmr.ts'
           : '[vite] hot updated: /hmrDep.js via /hmr.ts',
         '>>> vite:afterUpdate -- update',
       ],
@@ -217,7 +217,7 @@ if (!isBuild) {
         '(multi deps) foo is now: 3',
         '(multi deps) nested foo is now: 2',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hmrDep.js via playground-temp/hmr/hmr.ts'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hmrDep.js via playground-temp-serve-bundled/hmr/hmr.ts'
           : '[vite] hot updated: /hmrDep.js via /hmr.ts',
         '>>> vite:afterUpdate -- update',
       ],
@@ -239,7 +239,7 @@ if (!isBuild) {
         '(multi deps) foo is now: 3',
         '(multi deps) nested foo is now: 3',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hmrDep.js via playground-temp/hmr/hmr.ts'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hmrDep.js via playground-temp-serve-bundled/hmr/hmr.ts'
           : '[vite] hot updated: /hmrDep.js via /hmr.ts',
         '>>> vite:afterUpdate -- update',
       ],
@@ -1380,7 +1380,7 @@ if (!isBuild) {
       serverLogs.slice(lastServerLogIndex).map(stripVTControlCharacters),
     ).toContain(
       isBundledDev
-        ? 'hmr update playground-temp/hmr/self-accept-within-circular/c.js'
+        ? 'hmr update playground-temp-serve-bundled/hmr/self-accept-within-circular/c.js'
         : 'hmr update /self-accept-within-circular/c.js',
     )
   })
