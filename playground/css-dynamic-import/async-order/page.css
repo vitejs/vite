@@ -1,0 +1,4 @@
+/* Same specificity as base.css - later in cascade should win */
+.async-order-el {
+  color: green;
+}
