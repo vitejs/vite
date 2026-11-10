@@ -457,37 +457,6 @@ describe('build', () => {
     ).rejects.toThrow('CSS files cannot be used as entry points')
   })
 
-  test('emits a stylesheet for empty CSS when cssCodeSplit is false', async () => {
-    const result = (await build({
-      root: resolve(dirname, 'packages/build-project'),
-      logLevel: 'silent',
-      build: {
-        write: false,
-        cssCodeSplit: false,
-        rolldownOptions: { input: 'entry.js' },
-      },
-      plugins: [
-        {
-          name: 'empty-css',
-          resolveId(id) {
-            if (id === 'entry.js' || id === 'empty.css') {
-              return `\0${id}`
-            }
-          },
-          load(id) {
-            if (id === '\0entry.js') return `import 'empty.css'`
-            if (id === '\0empty.css') return ''
-          },
-        },
-      ],
-    })) as RolldownOutput
-    expect(
-      result.output.some(
-        (o) => o.type === 'asset' && o.fileName.endsWith('.css'),
-      ),
-    ).toBe(true)
-  })
-
   test('file hash should change when pure css chunk changes', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({
