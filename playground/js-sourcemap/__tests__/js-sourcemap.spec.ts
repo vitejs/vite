@@ -37,7 +37,7 @@ async function getDepJs(entry: string, depIdFragment: string) {
   const depUrlMatch = js.match(
     new RegExp(`from\\s+"([^"]*${depIdFragment}[^"]*)"`),
   )
-  expect(depUrlMatch).toBeTruthy()
+  expect(depUrlMatch).not.toBeNull()
 
   const depUrl = depUrlMatch![1]
   expect(depUrl).toContain('/deps/')
@@ -95,7 +95,7 @@ async function getServedEntryChunk() {
   const entryUrl = new URL(srcMatches[0][1], page.url())
   const js = await (await page.request.get(entryUrl.href)).text()
   const mapUrlMatch = js.match(/^\/\/# sourceMappingURL=(\S+)$/m)
-  expect(mapUrlMatch).toBeTruthy()
+  expect(mapUrlMatch).not.toBeNull()
   const mapRes = await page.request.get(new URL(mapUrlMatch![1], entryUrl).href)
   expect(mapRes.status()).toBe(200)
   return { js, map: await mapRes.json() }
@@ -279,7 +279,7 @@ if (!isBuild) {
     const js = await res.text()
     // Find the rewritten import URL for the malicious dep
     const depUrlMatch = js.match(/from\s+"([^"]*malicious-sourcemap[^"]*)"/)
-    expect(depUrlMatch).toBeTruthy()
+    expect(depUrlMatch).not.toBeNull()
     const depUrl = depUrlMatch![1]
     const depRes = await page.request.get(new URL(depUrl, page.url()).href)
     const depJs = await depRes.text()
@@ -300,7 +300,7 @@ if (!isBuild) {
       const js = await res.text()
       // Find the rewritten import URL for the optimized malicious dep
       const depUrlMatch = js.match(/from\s+"([^"]*optimized-malicious[^"]*)"/)
-      expect(depUrlMatch).toBeTruthy()
+      expect(depUrlMatch).not.toBeNull()
       const depUrl = depUrlMatch![1]
       // Ensure the dep was actually optimized (served from .vite/deps)
       expect(depUrl).toContain('.vite/deps')
@@ -408,7 +408,7 @@ describe.runIf(isBuild)('build tests', () => {
 
   test('__vite__mapDeps injected after banner', async () => {
     const js = findAssetFile(/after-preload-dynamic-hashbang-[-\w]{8}\.js$/)
-    expect(js.split('\n').slice(0, 2)).toEqual([
+    expect(js.split('\n').slice(0, 2)).toStrictEqual([
       '#!/usr/bin/env node',
       expect.stringContaining('const __vite__mapDeps=(i'),
     ])
@@ -494,7 +494,7 @@ describe.runIf(isBuild)('build tests', () => {
       expect(
         sourceDebugId,
         'Debug ID in source didnt match debug ID in sourcemap',
-      ).toEqual(mapDebugId)
+      ).toBe(mapDebugId)
     }
   })
 })

@@ -295,10 +295,10 @@ describe('build', () => {
     ])
     expect(
       getImportMapKeyChanges(withoutPreload[0], withoutPreload[1]),
-    ).toEqual(importMapKeyChanges)
+    ).toStrictEqual(importMapKeyChanges)
     expect(
       getOutputHashChanges(withoutPreload[0], withoutPreload[1]).unchanged,
-    ).toEqual(expect.arrayContaining(['_entry', '_lazy']))
+    ).toStrictEqual(expect.arrayContaining(['_entry', '_lazy']))
     assertOutputHashContentChange(withoutPreload[0], withoutPreload[1])
   })
 
@@ -746,7 +746,7 @@ describe('resolveBuildOutputs', () => {
     const outputs: OutputOptions[] = [{ format: 'es' }]
     const resolvedOutputs = resolveBuildOutputs(outputs, libOptions, logger)
 
-    expect(resolvedOutputs).toEqual([
+    expect(resolvedOutputs).toStrictEqual([
       {
         format: 'es',
       },
@@ -758,7 +758,7 @@ describe('resolveBuildOutputs', () => {
     const libOptions: LibraryOptions = { ...baseLibOptions, name: 'lib' }
     const resolvedOutputs = resolveBuildOutputs(void 0, libOptions, logger)
 
-    expect(resolvedOutputs).toEqual([
+    expect(resolvedOutputs).toStrictEqual([
       {
         format: 'es',
       },
@@ -773,7 +773,7 @@ describe('resolveBuildOutputs', () => {
     const outputs: OutputOptions[] = [{ format: 'es' }]
     const resolvedOutputs = resolveBuildOutputs(outputs, false, logger)
 
-    expect(resolvedOutputs).toEqual(outputs)
+    expect(resolvedOutputs).toStrictEqual(outputs)
   })
 
   test('logs a warning when outputs is an array and formats are specified', () => {
@@ -1217,19 +1217,18 @@ describe('resolveBuildOutputs', () => {
       name: 'entryA',
     }
 
-    expect(resolveBuildOutputs(undefined, libOptions, {} as Logger)).toEqual([
-      { format: 'es' },
-      { format: 'umd' },
-    ])
+    expect(
+      resolveBuildOutputs(undefined, libOptions, {} as Logger),
+    ).toStrictEqual([{ format: 'es' }, { format: 'umd' }])
     expect(
       resolveBuildOutputs({ name: 'A' }, libOptions, {} as Logger),
-    ).toEqual([
+    ).toStrictEqual([
       { format: 'es', name: 'A' },
       { format: 'umd', name: 'A' },
     ])
     expect(
       resolveBuildOutputs([{ name: 'A' }], libOptions, {} as Logger),
-    ).toEqual([{ name: 'A' }])
+    ).toStrictEqual([{ name: 'A' }])
   })
 
   test('default format: multiple entries', () => {
@@ -1237,19 +1236,18 @@ describe('resolveBuildOutputs', () => {
       entry: ['entryA.js', 'entryB.js'],
     }
 
-    expect(resolveBuildOutputs(undefined, libOptions, {} as Logger)).toEqual([
-      { format: 'es' },
-      { format: 'cjs' },
-    ])
+    expect(
+      resolveBuildOutputs(undefined, libOptions, {} as Logger),
+    ).toStrictEqual([{ format: 'es' }, { format: 'cjs' }])
     expect(
       resolveBuildOutputs({ name: 'A' }, libOptions, {} as Logger),
-    ).toEqual([
+    ).toStrictEqual([
       { format: 'es', name: 'A' },
       { format: 'cjs', name: 'A' },
     ])
     expect(
       resolveBuildOutputs([{ name: 'A' }], libOptions, {} as Logger),
-    ).toEqual([{ name: 'A' }])
+    ).toStrictEqual([{ name: 'A' }])
   })
 
   test('umd or iife: should not support multiple entries', () => {
@@ -1297,7 +1295,7 @@ describe('resolveBuildOutputs', () => {
         },
         log,
       ),
-    ).toEqual([{ name: 'A' }])
+    ).toStrictEqual([{ name: 'A' }])
     expect(log.warn).toHaveBeenLastCalledWith(
       colors.yellow(
         `"build.lib.formats" will be ignored because "build.rolldownOptions.output" is already an array format.`,
@@ -1485,7 +1483,7 @@ test.for([true, false])(
       ([client, ssr, custom1, custom2] as RolldownOutput[]).map(
         (o) => o.output[0].code.split('\n').length,
       ),
-    ).toEqual([1, 7, 1, 7])
+    ).toStrictEqual([1, 7, 1, 7])
   },
 )
 
@@ -1903,7 +1901,7 @@ test('sharedConfigBuild and emitAssets', async () => {
     ['client', 'ssr', 'custom'].map(
       (name) => builder.environments[name].config.build.emitAssets,
     ),
-  ).toEqual([true, true, true])
+  ).toStrictEqual([true, true, true])
 
   await builder.buildApp()
 
@@ -1919,7 +1917,7 @@ test('sharedConfigBuild and emitAssets', async () => {
         ),
       ),
     ),
-  ).toEqual([
+  ).toStrictEqual([
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
@@ -2237,7 +2235,7 @@ function assertOutputHashContentChange(
         expect(
           chunk.code,
           `the ${chunk.fileName} chunk has the same hash but different contents between builds`,
-        ).toEqual(chunk2.code)
+        ).toStrictEqual(chunk2.code)
       }
     }
   }
