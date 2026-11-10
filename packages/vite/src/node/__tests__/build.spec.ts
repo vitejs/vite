@@ -512,6 +512,63 @@ describe('build', () => {
     ).rejects.toThrow('CSS files cannot be used as entry points')
   })
 
+  describe('empty CSS assets', () => {
+    async function buildProject(
+      css: string,
+      cssCodeSplit: boolean,
+      input = 'entry.js',
+    ) {
+      return (await build({
+        root: resolve(dirname, 'packages/build-project'),
+        configFile: false,
+        logLevel: 'silent',
+        build: {
+          write: false,
+          cssCodeSplit,
+          rolldownOptions: { input },
+        },
+        plugins: [
+          {
+            name: 'test-empty-css',
+            resolveId(id) {
+              if (id === 'entry.js' || id === 'empty.css') {
+                return '\0' + id
+              }
+            },
+            load(id) {
+              if (id === '\0entry.js') {
+                return `import 'empty.css'; console.log('entry')`
+              }
+              if (id === '\0empty.css') return css
+            },
+          },
+        ],
+      })) as RolldownOutput
+    }
+
+    for (const css of ['', '.empty {}']) {
+      for (const cssCodeSplit of [true, false]) {
+        test(`skips empty CSS ${JSON.stringify(css)} (cssCodeSplit: ${cssCodeSplit})`, async () => {
+          const { output } = await buildProject(css, cssCodeSplit)
+          expect(output.filter((file) => file.type === 'chunk')).toHaveLength(1)
+          expect(
+            output.filter((file) => file.fileName.endsWith('.css')),
+          ).toHaveLength(0)
+        })
+      }
+
+      test(`preserves an empty CSS entrypoint (${JSON.stringify(css)})`, async () => {
+        const { output } = await buildProject(css, true, 'empty.css')
+        expect(output).toHaveLength(1)
+        expect(output[0]).toMatchObject({
+          type: 'asset',
+          fileName: expect.stringMatching(/\.css$/),
+          source: '',
+        })
+      })
+    }
+  })
+
   test('file hash should change when pure css chunk changes', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({
