@@ -255,7 +255,7 @@ export async function preview(
   app.use(
     compression({
       // Compress text and structured data, plus mime-db types such as WebAssembly.
-      mimes: compressibleMimeTypesRE,
+      mimes: /text|javascript|\/json|xml|application\/wasm/i,
     }),
   )
 
