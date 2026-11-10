@@ -133,7 +133,7 @@ describe('build', () => {
         },
       ],
     })) as RolldownOutput
-    expect(metaTypes).toEqual([['object', 'object', false]])
+    expect(metaTypes).toStrictEqual([['object', 'object', false]])
     const [chunk] = result.output.filter(
       (chunk): chunk is OutputChunk => chunk.type === 'chunk',
     )
