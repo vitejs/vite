@@ -154,7 +154,7 @@ export function rolldownDepPlugin(
   }
 
   const allExternalTypesReg = new RegExp(
-    `\\.(` + allExternalTypes.join('|') + `)(\\?.*)?$`,
+    `\\.(?:` + allExternalTypes.join('|') + `)(\\?.*)?$`,
   )
 
   function resolveEntry(id: string) {

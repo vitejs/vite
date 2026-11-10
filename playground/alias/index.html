@@ -14,12 +14,12 @@
 <script type="module">
   // no node: protocol intentionally
   import { msg as fsMsg } from 'fs'
+  import { msg as urlConflictMsg } from '//url_conflict.js'
+  import { msg as moduleMsg } from 'aliased-module/index.js'
+  import { msg as customResolverMsg } from 'custom-resolver'
+  import { msg as depMsg } from 'dep'
   import { msg as fsDirMsg } from 'fs-dir/test'
   import { msg as regexMsg } from 'regex/test'
-  import { msg as depMsg } from 'dep'
-  import { msg as moduleMsg } from 'aliased-module/index.js'
-  import { msg as urlConflictMsg } from '//url_conflict.js'
-  import { msg as customResolverMsg } from 'custom-resolver'
 
   function text(el, text) {
     document.querySelector(el).textContent = text
@@ -33,8 +33,8 @@
   text('.url-conflict', urlConflictMsg)
   text('.custom-resolver', customResolverMsg)
 
-  import { createApp } from 'vue'
   import { ref } from 'foo'
+  import { createApp } from 'vue'
   // vue is aliased to the full browser build AND optimized.
   // should resolve as expected
   createApp({
