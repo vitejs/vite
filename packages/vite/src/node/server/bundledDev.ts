@@ -250,7 +250,6 @@ export class BundledDev {
 
         this.storeOutputFiles(result.output)
 
-        // Reload only after fresh output is available, including error recovery.
         if (this.fullReloadPending) {
           this.fullReloadPending = false
           this.reloadNeededClientIds.clear()
