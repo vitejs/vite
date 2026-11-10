@@ -27,7 +27,7 @@ for (const version of shouldFailVersions) {
         ecmaVersion: version,
         sourceType: 'module',
       })
-    }).toThrow()
+    }).toThrow('Unexpected token')
   })
 }
 

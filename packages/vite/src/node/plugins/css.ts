@@ -915,6 +915,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                 isPureCssChunk &&
                 (opts.format === 'es' || opts.format === 'cjs')
               ) {
+                if (
+                  chunk.isEntry &&
+                  !this.environment.config.build.cssCodeSplit
+                ) {
+                  this.error(
+                    `When "build.cssCodeSplit: false" is set, CSS files cannot be used as entry points (found "${chunk.facadeModuleId ?? chunk.name}").`,
+                  )
+                }
                 // this is a shared CSS-only chunk that is empty.
                 pureCssChunks.add(chunk)
               }

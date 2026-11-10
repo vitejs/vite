@@ -103,7 +103,7 @@ describe(
       releaseWait()
       const results = await Promise.allSettled([importA, importB] as const)
 
-      expect(results).toEqual([
+      expect(results).toStrictEqual([
         {
           status: 'fulfilled',
           value: expect.objectContaining({ result: 'a' }),

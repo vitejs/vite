@@ -47,7 +47,7 @@ describe('indexHtml middleware — inline script proxy cache', () => {
     expect(
       proxyUrlMatch,
       'devHtmlHook should have rewritten the inline <script> to a ?html-proxy src',
-    ).toBeTruthy()
+    ).not.toBeNull()
 
     const proxyModuleUrl = browserUrlToModuleUrl(
       proxyUrlMatch![1].replaceAll('&amp;', '&'),
@@ -82,7 +82,7 @@ describe('indexHtml middleware — inline script proxy cache', () => {
     expect(
       proxyUrlMatch,
       'devHtmlHook should rewrite the inline <script> to a ?html-proxy src',
-    ).toBeTruthy()
+    ).not.toBeNull()
 
     const proxyModuleUrl = browserUrlToModuleUrl(
       proxyUrlMatch![1].replaceAll('&amp;', '&'),
@@ -106,7 +106,7 @@ describe('indexHtml middleware — inline script proxy cache', () => {
       expect(
         proxyUrlMatch,
         'devHtmlHook should have rewritten the inline <script> to a ?html-proxy src',
-      ).toBeTruthy()
+      ).not.toBeNull()
       expect(proxyUrlMatch![1]).toMatchInlineSnapshot(
         `"/@id/__x00__/evil.example.com/payload.js?/../../package.json?html-proxy&amp;index=0.js"`,
       )
@@ -168,7 +168,7 @@ describe('indexHtml middleware — HMR timestamp injection with non-root base', 
     expect(
       mod,
       'entry module should be registered under the base-stripped URL',
-    ).toBeTruthy()
+    ).toBeDefined()
     const timestamp = 1234567890
     mod!.lastHMRTimestamp = timestamp
 

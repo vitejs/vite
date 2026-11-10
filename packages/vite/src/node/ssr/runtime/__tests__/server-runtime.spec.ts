@@ -25,7 +25,7 @@ describe('module runner initialization', () => {
 
   it('correctly runs ssr code', async ({ runner }) => {
     const mod = await runner.import('/fixtures/simple.js')
-    expect(mod.test).toEqual('I am initialized')
+    expect(mod.test).toBe('I am initialized')
 
     // loads the same module if id is a file url
     const fileUrl = new _URL('./fixtures/simple.js', import.meta.url)
@@ -77,7 +77,7 @@ describe('module runner initialization', () => {
 
   it('css is loaded correctly', async ({ runner }) => {
     const css = await runner.import('/fixtures/test.css')
-    expect(css.default).toBe(undefined)
+    expect(css.default).toBeUndefined()
     const module = await runner.import('/fixtures/test.module.css')
     expect(module).toMatchObject({
       default: {
@@ -287,7 +287,7 @@ describe('module runner initialization', () => {
     runner,
   }) => {
     const mod = await runner.import('/fixtures/no-this/importer.js')
-    expect(mod.result).toBe(undefined)
+    expect(mod.result).toBeUndefined()
   })
 
   it.for([
@@ -297,7 +297,7 @@ describe('module runner initialization', () => {
     '/fixtures/cyclic2/test4/index.js',
   ] as const)(`cyclic %s`, async (entry, { runner }) => {
     const mod = await runner.import(entry)
-    expect({ ...mod }).toEqual({
+    expect({ ...mod }).toStrictEqual({
       dep1: {
         ok: true,
       },

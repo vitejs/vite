@@ -295,10 +295,10 @@ describe('build', () => {
     ])
     expect(
       getImportMapKeyChanges(withoutPreload[0], withoutPreload[1]),
-    ).toEqual(importMapKeyChanges)
+    ).toStrictEqual(importMapKeyChanges)
     expect(
       getOutputHashChanges(withoutPreload[0], withoutPreload[1]).unchanged,
-    ).toEqual(expect.arrayContaining(['_entry', '_lazy']))
+    ).toStrictEqual(expect.arrayContaining(['_entry', '_lazy']))
     assertOutputHashContentChange(withoutPreload[0], withoutPreload[1])
   })
 
@@ -465,6 +465,51 @@ describe('build', () => {
     })) as RolldownOutput
     const chunk = result.output.find((o) => o.type === 'chunk')
     expect(chunk?.code).toContain('from-virtual-top-level-input')
+  })
+
+  test('throws early for a CSS input when cssCodeSplit is false', async () => {
+    await expect(
+      build({
+        root: resolve(dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        build: {
+          write: false,
+          cssCodeSplit: false,
+          rolldownOptions: { input: 'entry.scss' },
+        },
+      }),
+    ).rejects.toThrow('should not include CSS files')
+  })
+
+  test('throws for an input resolved to CSS when cssCodeSplit is false', async () => {
+    const input = 'virtual:entry'
+    const resolvedInput = '\0virtual-entry.css'
+    await expect(
+      build({
+        root: resolve(dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        build: {
+          write: false,
+          cssCodeSplit: false,
+          rolldownOptions: { input },
+        },
+        plugins: [
+          {
+            name: 'virtual-css-entry',
+            resolveId(id) {
+              if (id === input) {
+                return resolvedInput
+              }
+            },
+            load(id) {
+              if (id === resolvedInput) {
+                return `.entry { color: red }`
+              }
+            },
+          },
+        ],
+      }),
+    ).rejects.toThrow('CSS files cannot be used as entry points')
   })
 
   test('file hash should change when pure css chunk changes', async () => {
@@ -683,8 +728,8 @@ describe('build', () => {
       const foo = esBundle.output.find(
         (chunk) => chunk.type === 'chunk' && chunk.isEntry,
       ) as OutputChunk
-      expect(foo.code).not.contains('JSON_ARR')
-      expect(foo.code).not.contains('JSON_OBJ')
+      expect(foo.code).not.toContain('JSON_ARR')
+      expect(foo.code).not.toContain('JSON_OBJ')
     },
   )
 
@@ -746,7 +791,7 @@ describe('resolveBuildOutputs', () => {
     const outputs: OutputOptions[] = [{ format: 'es' }]
     const resolvedOutputs = resolveBuildOutputs(outputs, libOptions, logger)
 
-    expect(resolvedOutputs).toEqual([
+    expect(resolvedOutputs).toStrictEqual([
       {
         format: 'es',
       },
@@ -758,7 +803,7 @@ describe('resolveBuildOutputs', () => {
     const libOptions: LibraryOptions = { ...baseLibOptions, name: 'lib' }
     const resolvedOutputs = resolveBuildOutputs(void 0, libOptions, logger)
 
-    expect(resolvedOutputs).toEqual([
+    expect(resolvedOutputs).toStrictEqual([
       {
         format: 'es',
       },
@@ -773,7 +818,7 @@ describe('resolveBuildOutputs', () => {
     const outputs: OutputOptions[] = [{ format: 'es' }]
     const resolvedOutputs = resolveBuildOutputs(outputs, false, logger)
 
-    expect(resolvedOutputs).toEqual(outputs)
+    expect(resolvedOutputs).toStrictEqual(outputs)
   })
 
   test('logs a warning when outputs is an array and formats are specified', () => {
@@ -1217,19 +1262,18 @@ describe('resolveBuildOutputs', () => {
       name: 'entryA',
     }
 
-    expect(resolveBuildOutputs(undefined, libOptions, {} as Logger)).toEqual([
-      { format: 'es' },
-      { format: 'umd' },
-    ])
+    expect(
+      resolveBuildOutputs(undefined, libOptions, {} as Logger),
+    ).toStrictEqual([{ format: 'es' }, { format: 'umd' }])
     expect(
       resolveBuildOutputs({ name: 'A' }, libOptions, {} as Logger),
-    ).toEqual([
+    ).toStrictEqual([
       { format: 'es', name: 'A' },
       { format: 'umd', name: 'A' },
     ])
     expect(
       resolveBuildOutputs([{ name: 'A' }], libOptions, {} as Logger),
-    ).toEqual([{ name: 'A' }])
+    ).toStrictEqual([{ name: 'A' }])
   })
 
   test('default format: multiple entries', () => {
@@ -1237,19 +1281,18 @@ describe('resolveBuildOutputs', () => {
       entry: ['entryA.js', 'entryB.js'],
     }
 
-    expect(resolveBuildOutputs(undefined, libOptions, {} as Logger)).toEqual([
-      { format: 'es' },
-      { format: 'cjs' },
-    ])
+    expect(
+      resolveBuildOutputs(undefined, libOptions, {} as Logger),
+    ).toStrictEqual([{ format: 'es' }, { format: 'cjs' }])
     expect(
       resolveBuildOutputs({ name: 'A' }, libOptions, {} as Logger),
-    ).toEqual([
+    ).toStrictEqual([
       { format: 'es', name: 'A' },
       { format: 'cjs', name: 'A' },
     ])
     expect(
       resolveBuildOutputs([{ name: 'A' }], libOptions, {} as Logger),
-    ).toEqual([{ name: 'A' }])
+    ).toStrictEqual([{ name: 'A' }])
   })
 
   test('umd or iife: should not support multiple entries', () => {
@@ -1297,7 +1340,7 @@ describe('resolveBuildOutputs', () => {
         },
         log,
       ),
-    ).toEqual([{ name: 'A' }])
+    ).toStrictEqual([{ name: 'A' }])
     expect(log.warn).toHaveBeenLastCalledWith(
       colors.yellow(
         `"build.lib.formats" will be ignored because "build.rolldownOptions.output" is already an array format.`,
@@ -1485,7 +1528,7 @@ test.for([true, false])(
       ([client, ssr, custom1, custom2] as RolldownOutput[]).map(
         (o) => o.output[0].code.split('\n').length,
       ),
-    ).toEqual([1, 7, 1, 7])
+    ).toStrictEqual([1, 7, 1, 7])
   },
 )
 
@@ -1903,7 +1946,7 @@ test('sharedConfigBuild and emitAssets', async () => {
     ['client', 'ssr', 'custom'].map(
       (name) => builder.environments[name].config.build.emitAssets,
     ),
-  ).toEqual([true, true, true])
+  ).toStrictEqual([true, true, true])
 
   await builder.buildApp()
 
@@ -1919,7 +1962,7 @@ test('sharedConfigBuild and emitAssets', async () => {
         ),
       ),
     ),
-  ).toEqual([
+  ).toStrictEqual([
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
@@ -2009,7 +2052,7 @@ describe('onRollupLog', () => {
     const logs = loggerSpy.mock.calls.map((args) =>
       stripVTControlCharacters(args[0]),
     )
-    expect(logs).contain(`[plugin ${pluginName}] ${msgInfo}`)
+    expect(logs).toContain(`[plugin ${pluginName}] ${msgInfo}`)
   })
 
   test('Rollup logs of warn should be handled by vite', async () => {
@@ -2020,7 +2063,7 @@ describe('onRollupLog', () => {
     const logs = loggerSpy.mock.calls.map((args) =>
       stripVTControlCharacters(args[0]),
     )
-    expect(logs).contain(`[plugin ${pluginName}] ${msgWarn}`)
+    expect(logs).toContain(`[plugin ${pluginName}] ${msgWarn}`)
   })
 
   test('onLog passed by user is called', async () => {
@@ -2237,7 +2280,7 @@ function assertOutputHashContentChange(
         expect(
           chunk.code,
           `the ${chunk.fileName} chunk has the same hash but different contents between builds`,
-        ).toEqual(chunk2.code)
+        ).toStrictEqual(chunk2.code)
       }
     }
   }

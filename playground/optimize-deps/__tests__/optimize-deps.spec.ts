@@ -257,18 +257,16 @@ describe('optimize-deps', clientOptimizerUnsupported, () => {
       expect(await page.textContent('.browser-false-optimized')).toBe(
         '[success]',
       )
-      expect(browserLogs).not.toEqual(
-        expect.arrayContaining([
-          expect.stringContaining(
-            'Module "browser-false-only" has been externalized for browser compatibility',
-          ),
-        ]),
+      expect(browserLogs).not.toContainEqual(
+        expect.stringContaining(
+          'Module "browser-false-only" has been externalized for browser compatibility',
+        ),
       )
     },
   )
 
   test.runIf(isServe)('error on builtin modules usage', () => {
-    expect(browserLogs).toEqual(
+    expect(browserLogs).toStrictEqual(
       expect.arrayContaining([
         // from dep-with-builtin-module-esm
         expect.stringMatching(/dep-with-builtin-module-esm.*is not a function/),
@@ -291,7 +289,7 @@ describe('optimize-deps', clientOptimizerUnsupported, () => {
       ]),
     )
 
-    expect(browserErrors.map((error) => error.message)).toEqual(
+    expect(browserErrors.map((error) => error.message)).toStrictEqual(
       expect.arrayContaining([
         // from user source code
         expect.stringContaining(
@@ -343,23 +341,25 @@ describe('optimize-deps', clientOptimizerUnsupported, () => {
   describe.runIf(isServe)('optimizeDeps config', () => {
     test('supports include glob syntax', () => {
       const metadata = readDepOptimizationMetadata()
-      expect(Object.keys(metadata.optimized)).to.include.members([
-        '@vitejs/test-dep-optimize-exports-with-glob',
-        '@vitejs/test-dep-optimize-exports-with-glob/named',
-        '@vitejs/test-dep-optimize-exports-with-glob/glob-dir/foo',
-        '@vitejs/test-dep-optimize-exports-with-glob/glob-dir/bar',
-        '@vitejs/test-dep-optimize-exports-with-glob/glob-dir/nested/baz',
-        '@vitejs/test-dep-optimize-exports-with-root-glob',
-        '@vitejs/test-dep-optimize-exports-with-root-glob/file1.js',
-        '@vitejs/test-dep-optimize-exports-with-root-glob/index.js',
-        '@vitejs/test-dep-optimize-exports-with-root-glob/dir/file2.js',
-        '@vitejs/test-dep-optimize-with-glob',
-        '@vitejs/test-dep-optimize-with-glob/index.js',
-        '@vitejs/test-dep-optimize-with-glob/named.js',
-        '@vitejs/test-dep-optimize-with-glob/glob/foo.js',
-        '@vitejs/test-dep-optimize-with-glob/glob/bar.js',
-        '@vitejs/test-dep-optimize-with-glob/glob/nested/baz.js',
-      ])
+      expect(Object.keys(metadata.optimized)).toStrictEqual(
+        expect.arrayContaining([
+          '@vitejs/test-dep-optimize-exports-with-glob',
+          '@vitejs/test-dep-optimize-exports-with-glob/named',
+          '@vitejs/test-dep-optimize-exports-with-glob/glob-dir/foo',
+          '@vitejs/test-dep-optimize-exports-with-glob/glob-dir/bar',
+          '@vitejs/test-dep-optimize-exports-with-glob/glob-dir/nested/baz',
+          '@vitejs/test-dep-optimize-exports-with-root-glob',
+          '@vitejs/test-dep-optimize-exports-with-root-glob/file1.js',
+          '@vitejs/test-dep-optimize-exports-with-root-glob/index.js',
+          '@vitejs/test-dep-optimize-exports-with-root-glob/dir/file2.js',
+          '@vitejs/test-dep-optimize-with-glob',
+          '@vitejs/test-dep-optimize-with-glob/index.js',
+          '@vitejs/test-dep-optimize-with-glob/named.js',
+          '@vitejs/test-dep-optimize-with-glob/glob/foo.js',
+          '@vitejs/test-dep-optimize-with-glob/glob/bar.js',
+          '@vitejs/test-dep-optimize-with-glob/glob/nested/baz.js',
+        ]),
+      )
     })
   })
 
@@ -416,8 +416,10 @@ describe('optimize-deps', clientOptimizerUnsupported, () => {
       await expect
         .poll(() => page.textContent('.svelte-deep-import'))
         .toBe('[success]')
-      expect(serverLogs.join('\n')).not.toContain(
-        "Could not resolve './relative.svelte' in virtual-module:",
+      expect(serverLogs).not.toContainEqual(
+        expect.stringContaining(
+          "Could not resolve './relative.svelte' in virtual-module:",
+        ),
       )
     },
   )
