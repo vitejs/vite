@@ -6,6 +6,7 @@ import connect from 'connect'
 import corsMiddleware from 'cors'
 import sirv from 'sirv'
 import type { Connect } from '#dep-types/connect'
+import { compressibleMimeTypesRE } from './compressibleMimeTypes'
 import { resolveConfig } from './config'
 import type { InlineConfig, ResolvedConfig } from './config'
 import { DEFAULT_PREVIEW_PORT } from './constants'
@@ -252,7 +253,12 @@ export async function preview(
     app.use(proxyMiddleware(httpServer, proxy, config))
   }
 
-  app.use(compression())
+  app.use(
+    compression({
+      // Compress text and structured data, plus mime-db types such as WebAssembly.
+      mimes: compressibleMimeTypesRE,
+    }),
+  )
 
   // base
   if (config.base !== '/') {
