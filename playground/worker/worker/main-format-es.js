@@ -48,3 +48,13 @@ importMetaGlobWorker.postMessage('1')
 importMetaGlobWorker.addEventListener('message', (e) => {
   text('.importMetaGlob-worker', JSON.stringify(e.data))
 })
+
+// #23925: a module worker with a non-literal dynamic import gets the HMR
+// client injected; CSS updates must not throw `document is not defined`.
+const hmrCssWorker = new Worker(
+  new URL('../hmr-css-worker.js', import.meta.url),
+  { type: 'module' },
+)
+hmrCssWorker.addEventListener('message', (ev) => {
+  text('.hmr-css-worker', JSON.stringify(ev.data))
+})
