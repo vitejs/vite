@@ -1276,9 +1276,13 @@ describe('resolveEnvPrefix', () => {
 
   test(`throw error if envPrefix contains ''`, () => {
     let config: UserConfig = { envPrefix: '' }
-    expect(() => resolveEnvPrefix(config)).toThrow()
+    expect(() => resolveEnvPrefix(config)).toThrow(
+      'could lead unexpected exposure of sensitive information',
+    )
     config = { envPrefix: ['', 'CUSTOM_'] }
-    expect(() => resolveEnvPrefix(config)).toThrow()
+    expect(() => resolveEnvPrefix(config)).toThrow(
+      'could lead unexpected exposure of sensitive information',
+    )
   })
 
   test(`show a warning message if envPrefix contains a whitespace`, () => {
@@ -1432,12 +1436,12 @@ describe('resolveConfig', () => {
     ).toBeUndefined()
   })
 
-  test('resolveConfig with root path including "#" and "?" and "*" should warn ', async () => {
+  test('resolveConfig with root path including "#" and "?" and "*" should warn', async () => {
     expect.assertions(1)
 
     const logger = createLogger('info')
     logger.warn = (str) => {
-      expect(str).to.include(
+      expect(str).toContain(
         'Consider renaming the directory without the characters',
       )
     }

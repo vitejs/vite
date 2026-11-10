@@ -14,7 +14,7 @@ describe('moduleGraph', () => {
       const entryModule = await moduleGraph.ensureEntryFromUrl(entryUrl, false)
       entryModule.ssrError = new Error(`unable to execute module`)
 
-      expect(entryModule.ssrError).to.be.a('error')
+      expect(entryModule.ssrError).toBeInstanceOf(Error)
       moduleGraph.invalidateModule(entryModule)
       expect(entryModule.ssrError).toBe(null)
     })
@@ -32,7 +32,7 @@ describe('moduleGraph', () => {
       const mod1 = await moduleGraph.ensureEntryFromUrl('/x.js', false)
       mod1.meta = meta
       const mod2 = await moduleGraph.ensureEntryFromUrl('/xx.js', false)
-      expect(mod2.meta).to.equal(meta)
+      expect(mod2.meta).toStrictEqual(meta)
     })
 
     it('ensure backward compatibility', async () => {

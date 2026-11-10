@@ -137,6 +137,7 @@ describe.runIf(isServe)('invalid request', () => {
     },
   ]
   for (const { name, target, status, content } of testCases) {
+    // oxlint-disable-next-line vitest/valid-title
     test(name, async () => {
       const response = await sendRawRequest(viteTestUrl, target)
       expect(response).toContain(status)
