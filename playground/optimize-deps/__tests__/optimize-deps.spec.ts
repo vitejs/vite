@@ -343,23 +343,25 @@ describe('optimize-deps', clientOptimizerUnsupported, () => {
   describe.runIf(isServe)('optimizeDeps config', () => {
     test('supports include glob syntax', () => {
       const metadata = readDepOptimizationMetadata()
-      expect(Object.keys(metadata.optimized)).to.include.members([
-        '@vitejs/test-dep-optimize-exports-with-glob',
-        '@vitejs/test-dep-optimize-exports-with-glob/named',
-        '@vitejs/test-dep-optimize-exports-with-glob/glob-dir/foo',
-        '@vitejs/test-dep-optimize-exports-with-glob/glob-dir/bar',
-        '@vitejs/test-dep-optimize-exports-with-glob/glob-dir/nested/baz',
-        '@vitejs/test-dep-optimize-exports-with-root-glob',
-        '@vitejs/test-dep-optimize-exports-with-root-glob/file1.js',
-        '@vitejs/test-dep-optimize-exports-with-root-glob/index.js',
-        '@vitejs/test-dep-optimize-exports-with-root-glob/dir/file2.js',
-        '@vitejs/test-dep-optimize-with-glob',
-        '@vitejs/test-dep-optimize-with-glob/index.js',
-        '@vitejs/test-dep-optimize-with-glob/named.js',
-        '@vitejs/test-dep-optimize-with-glob/glob/foo.js',
-        '@vitejs/test-dep-optimize-with-glob/glob/bar.js',
-        '@vitejs/test-dep-optimize-with-glob/glob/nested/baz.js',
-      ])
+      expect(Object.keys(metadata.optimized)).toStrictEqual(
+        expect.arrayContaining([
+          '@vitejs/test-dep-optimize-exports-with-glob',
+          '@vitejs/test-dep-optimize-exports-with-glob/named',
+          '@vitejs/test-dep-optimize-exports-with-glob/glob-dir/foo',
+          '@vitejs/test-dep-optimize-exports-with-glob/glob-dir/bar',
+          '@vitejs/test-dep-optimize-exports-with-glob/glob-dir/nested/baz',
+          '@vitejs/test-dep-optimize-exports-with-root-glob',
+          '@vitejs/test-dep-optimize-exports-with-root-glob/file1.js',
+          '@vitejs/test-dep-optimize-exports-with-root-glob/index.js',
+          '@vitejs/test-dep-optimize-exports-with-root-glob/dir/file2.js',
+          '@vitejs/test-dep-optimize-with-glob',
+          '@vitejs/test-dep-optimize-with-glob/index.js',
+          '@vitejs/test-dep-optimize-with-glob/named.js',
+          '@vitejs/test-dep-optimize-with-glob/glob/foo.js',
+          '@vitejs/test-dep-optimize-with-glob/glob/bar.js',
+          '@vitejs/test-dep-optimize-with-glob/glob/nested/baz.js',
+        ]),
+      )
     })
   })
 

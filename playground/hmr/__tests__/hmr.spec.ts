@@ -892,9 +892,13 @@ if (!isBuild) {
         })
       }
 
-      describe('import * from ...', () => testStarExports('star-imports'))
+      describe('import * from ...', () => {
+        testStarExports('star-imports')
+      })
 
-      describe('dynamic import(...)', () => testStarExports('dynamic-imports'))
+      describe('dynamic import(...)', () => {
+        testStarExports('dynamic-imports')
+      })
     })
   })
 
@@ -1035,6 +1039,7 @@ if (!isBuild) {
           () => removeFile(childFile),
           `${childFile} is disposed`,
         ),
+        // oxlint-disable-next-line vitest/require-awaited-expect-poll -- https://github.com/oxc-project/oxc/issues/29173
         expect
           .poll(() => page.textContent('.file-delete-restore'))
           .toMatch('parent:not-child'),

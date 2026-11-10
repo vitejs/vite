@@ -225,7 +225,7 @@ test.runIf(isBuild)('dynamic import treeshaken file', async () => {
 test.runIf(isBuild)('should not preload for non-analyzable urls', () => {
   const js = findAssetFile(/index-[-\w]{8}\.js$/)
   // should match e.g. await import(e.jss);o(".view",p===i)
-  expect(js).to.match(/\.jss\);/)
+  expect(js).toMatch(/\.jss\);/)
 })
 
 describe(

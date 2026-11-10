@@ -773,9 +773,13 @@ describe('acceptExports', () => {
       })
     }
 
-    describe('import * from ...', () => testStarExports('star-imports'))
+    describe('import * from ...', () => {
+      testStarExports('star-imports')
+    })
 
-    describe('dynamic import(...)', () => testStarExports('dynamic-imports'))
+    describe('dynamic import(...)', () => {
+      testStarExports('dynamic-imports')
+    })
   })
 })
 

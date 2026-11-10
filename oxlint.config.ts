@@ -5,7 +5,7 @@ export default defineConfig({
   options: {
     typeAware: true,
   },
-  plugins: ['typescript', 'node', 'import', 'unicorn'],
+  plugins: ['typescript', 'node', 'import', 'unicorn', 'vitest'],
   jsPlugins: ['eslint-plugin-n', 'eslint-plugin-regexp', '@e18e/eslint-plugin'],
   categories: {
     correctness: 'error',
@@ -94,8 +94,21 @@ export default defineConfig({
     // https://github.com/oxc-project/oxc/issues/14895
     'typescript/consistent-generic-constructors': 'off',
 
+    // These type-aware rules are disabled for compatibility with the codebase.
+    'vitest/no-conditional-expect': 'off',
+    'vitest/no-conditional-tests': 'off',
+
     'import/no-duplicates': 'error',
     'import/default': 'off',
+
+    'vitest/valid-expect': ['error', { maxArgs: 2 }],
+    'vitest/valid-title': 'off',
+    'vitest/no-disabled-tests': 'off',
+    'vitest/expect-expect': 'off',
+    // https://github.com/oxc-project/oxc/issues/29167
+    'vitest/no-standalone-expect': 'off',
+    // https://github.com/oxc-project/oxc/issues/29165
+    'vitest/require-mock-type-parameters': 'off',
 
     'node/no-exports-assign': 'error',
     'n/no-unpublished-bin': 'error',
