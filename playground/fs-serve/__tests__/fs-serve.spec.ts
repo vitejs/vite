@@ -41,7 +41,7 @@ describe.runIf(isServe)('invalid request', () => {
         },
       )
       client.on('data', (data) => {
-        buf.push(data)
+        buf.push(data as Buffer)
       })
       client.on('end', (hadError) => {
         if (!hadError) {
