@@ -629,7 +629,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // `foo.module.css` => modulesCode
         // `foo.module.css?inline` => cssContent
         const modulesCode =
-          modules && !inlined && getCssModulesCode(modules, config.build.target)
+          modules &&
+          !inlined &&
+          dataToEsm(modules, {
+            namedExports: true,
+            preferConst: true,
+            includeArbitraryNames:
+              isArbitraryModuleNamespaceIdentifierNameSupported(
+                config.build.target,
+              ),
+          })
 
         if (config.command === 'serve') {
           const getContentWithSourcemap = async (content: string) => {
@@ -3655,33 +3664,18 @@ const arbitraryModuleNamespaceIdentifierNameSupport: Record<
   electron: [12, 0],
 }
 
-// Reserved-word class names (e.g. `switch`, `default`) and other keys that are
-// valid `IdentifierName`s are handled by `dataToEsm`, which emits the ES2015-safe
-// `export { _x as switch }` form. The quoted arbitrary-namespace form (ES2022+)
-// is gated on `includeArbitraryNames` based on the build target.
-const getCssModulesCode = (
-  modules: Record<string, string>,
-  esbuildTarget: string | string[] | false,
-): string =>
-  dataToEsm(modules, {
-    namedExports: true,
-    preferConst: true,
-    includeArbitraryNames:
-      isArbitraryModuleNamespaceIdentifierNameSupported(esbuildTarget),
-  })
-
 export const isArbitraryModuleNamespaceIdentifierNameSupported = (
-  esbuildTarget: string | string[] | false,
+  oxcTarget: string | string[] | false,
 ): boolean => {
   if (
-    !esbuildTarget ||
-    esbuildTarget === 'esnext' ||
-    esbuildTarget === 'baseline-widely-available'
+    !oxcTarget ||
+    oxcTarget === 'esnext' ||
+    oxcTarget === 'baseline-widely-available'
   ) {
     return true
   }
 
-  return arraify(esbuildTarget).every((entry) => {
+  return arraify(oxcTarget).every((entry) => {
     if (entry === 'esnext') {
       return true
     }
