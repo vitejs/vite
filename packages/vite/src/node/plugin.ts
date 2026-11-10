@@ -168,11 +168,13 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
         /**
          * A lazily-created MagicString instance for the module's code.
          * Only available during build.
+         * @experimental
          */
         magicString?: RolldownMagicString | undefined
         /**
          * The lazily-parsed AST of the module's code.
          * Only available during build.
+         * @experimental
          */
         ast?: ESTree.Program | undefined
       },
