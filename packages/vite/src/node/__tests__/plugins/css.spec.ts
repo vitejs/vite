@@ -362,17 +362,17 @@ describe('convertTargets', () => {
     )
     expect(
       isArbitraryModuleNamespaceIdentifierNameSupported([
-        'chrome90',
+        'chrome88',
         'safari14.1',
       ]),
     ).toBe(true)
     expect(
       isArbitraryModuleNamespaceIdentifierNameSupported([
-        'chrome90',
+        'chrome88',
         'safari14.0',
       ]),
     ).toBe(false)
-    expect(isArbitraryModuleNamespaceIdentifierNameSupported('chrome89')).toBe(
+    expect(isArbitraryModuleNamespaceIdentifierNameSupported('chrome87')).toBe(
       false,
     )
   })
