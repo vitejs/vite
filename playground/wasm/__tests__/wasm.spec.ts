@@ -1,7 +1,10 @@
 import { expect, test } from 'vitest'
-import { isBuild, isBundledDev, page } from '~utils'
+import { isBundled, page } from '~utils'
 
 test('should work when inlined', async () => {
+  // `.url` is populated last in the script tag, so it signals initialization is complete.
+  await expect.poll(() => page.textContent('.url')).toBeTruthy()
+
   await page.click('.inline-wasm .run')
   await expect
     .poll(() => page.textContent('.inline-wasm .result'))
@@ -22,9 +25,9 @@ test('init function returns WebAssembly.Instance', async () => {
     .toMatch('true')
 })
 
-test.skipIf(isBundledDev)('?url', async () => {
+test('?url', async () => {
   expect(await page.textContent('.url')).toMatch(
-    isBuild ? 'data:application/wasm' : '/light.wasm',
+    isBundled ? 'data:application/wasm' : '/light.wasm',
   )
 })
 

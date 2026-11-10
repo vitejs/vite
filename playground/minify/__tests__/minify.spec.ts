@@ -19,3 +19,15 @@ test.runIf(isBuild)('no minifySyntax', () => {
   expect(cssContent).toContain('color:#ff0000')
   expect(cssContent).not.toContain('/*! explicit comment */')
 })
+
+test.runIf(isBuild)('minifies inline style with esbuild', () => {
+  expect(readFile('dist/index.html')).toContain(
+    '<style>.inline-style{color:#ff0000}</style>',
+  )
+})
+
+test.runIf(isBuild)('escapes closing style tags with esbuild', () => {
+  expect(readFile('dist/index.html')).toContain(
+    '<style>.escaped-closing-style{content:"<\\/style>"}</style>',
+  )
+})

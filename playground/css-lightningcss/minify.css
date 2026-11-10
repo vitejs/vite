@@ -1,3 +1,15 @@
 .test-minify {
   color: rgba(255, 255, 0, 0.7);
 }
+
+@media (min-width: 100px) {
+  .test-media-query-1 {
+    color: red;
+  }
+}
+
+@media (min-width: 200px) {
+  .test-media-query-2 {
+    color: blue;
+  }
+}

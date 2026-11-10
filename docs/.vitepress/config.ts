@@ -1,16 +1,14 @@
-import path from 'node:path'
+import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
+import type { FooterLink } from '@voidzero-dev/vitepress-theme'
+import { extendConfig } from '@voidzero-dev/vitepress-theme/config'
 import type { HeadConfig } from 'vitepress'
 import { defineConfig } from 'vitepress'
-import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
+import { graphvizMarkdownPlugin } from 'vitepress-plugin-graphviz'
 import {
   groupIconMdPlugin,
   groupIconVitePlugin,
 } from 'vitepress-plugin-group-icons'
-import { graphvizMarkdownPlugin } from 'vitepress-plugin-graphviz'
 import llmstxt from 'vitepress-plugin-llms'
-import { markdownItImageSize } from 'markdown-it-image-size'
-import { extendConfig } from '@voidzero-dev/vitepress-theme/config'
-import type { FooterLink } from '@voidzero-dev/vitepress-theme'
 import packageJson from '../../packages/vite/package.json' with { type: 'json' }
 import { buildEnd } from './buildEnd.config.ts'
 
@@ -108,18 +106,16 @@ const config = defineConfig({
     zh: { label: '简体中文', link: 'https://cn.vite.dev' },
     ja: { label: '日本語', link: 'https://ja.vite.dev' },
     es: { label: 'Español', link: 'https://es.vite.dev' },
-    pt: { label: 'Português', link: 'https://pt.vite.dev' },
     ko: { label: '한국어', link: 'https://ko.vite.dev' },
     de: { label: 'Deutsch', link: 'https://de.vite.dev' },
-    fa: { label: 'فارسی', link: 'https://fa.vite.dev' },
   },
 
   themeConfig: {
     variant: 'vite',
     banner: {
-      id: 'cloudflare-supports-vite',
-      text: `Cloudflare supports Vite's mission`,
-      url: '/blog/cloudflare-supports-vite',
+      id: 'viteconf-2026',
+      text: 'ViteConf 2026 - October 15, Online',
+      url: 'https://viteconf.org/',
     },
 
     editLink: {
@@ -543,21 +539,10 @@ const config = defineConfig({
           includeSnippet: true,
         },
       })
-      md.use(markdownItImageSize, {
-        publicDir: path.resolve(import.meta.dirname, '../public'),
-      })
       await graphvizMarkdownPlugin(md)
     },
   },
   vite: {
-    resolve: {
-      alias: {
-        '@components/oss/TopBanner.vue': path.resolve(
-          import.meta.dirname,
-          'theme/components/TopBanner.vue',
-        ),
-      },
-    },
     plugins: [
       groupIconVitePlugin({
         customIcon: {

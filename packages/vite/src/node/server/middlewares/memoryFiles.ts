@@ -1,7 +1,7 @@
 import * as mrmime from 'mrmime'
 import type { Connect } from '#dep-types/connect'
-import { cleanUrl } from '../../../shared/utils'
 import type { ViteDevServer } from '..'
+import { cleanUrl } from '../../../shared/utils'
 
 export function memoryFilesMiddleware(
   server: ViteDevServer,
@@ -39,7 +39,7 @@ export function memoryFilesMiddleware(
         res.setHeader('Etag', file.etag)
       }
 
-      const mime = mrmime.lookup(filePath)
+      const mime = file.contentType ?? mrmime.lookup(filePath)
       if (mime) {
         res.setHeader('Content-Type', mime)
       }
@@ -48,7 +48,6 @@ export function memoryFilesMiddleware(
         res.setHeader(name, headers[name]!)
       }
 
-      res.on('finish', () => bundledDev.markPayloadDelivered(filePath))
       return res.end(file.source)
     }
     next()

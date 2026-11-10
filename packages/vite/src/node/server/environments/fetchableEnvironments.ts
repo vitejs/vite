@@ -1,7 +1,7 @@
 import type { ResolvedConfig } from '../../config'
+import type { Environment } from '../../environment'
 import type { DevEnvironmentContext } from '../environment'
 import { DevEnvironment } from '../environment'
-import type { Environment } from '../../environment'
 
 export interface FetchableDevEnvironmentContext extends DevEnvironmentContext {
   handleRequest(request: Request): Promise<Response> | Response

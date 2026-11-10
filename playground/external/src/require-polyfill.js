@@ -1,5 +1,5 @@
-import * as vue from 'vue'
 import slash3 from 'slash3'
+import * as vue from 'vue'
 
 export default (id) => {
   if (id === 'vue') return vue

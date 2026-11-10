@@ -9,17 +9,12 @@ jobs:
     if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-slim
     permissions:
-      contents: read # to check out the repo for local actions
       issues: write # for actions/issues-helper to update issues
       pull-requests: write # for actions/issues-helper to update PRs
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
       - name: contribution welcome
         if: github.event.label.name == 'contribution welcome' || github.event.label.name == 'help wanted'
-        uses: ./.github/actions/issues-helper
+        uses: $/.github/actions/issues-helper
         with:
           actions: "remove-labels"
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -28,7 +23,7 @@ jobs:
 
       - name: remove pending
         if: (github.event.label.name == 'enhancement' || contains(github.event.label.description, '(priority)') || github.event.label.name == 'needs reproduction') && contains(github.event.issue.labels.*.name, 'pending triage')
-        uses: ./.github/actions/issues-helper
+        uses: $/.github/actions/issues-helper
         with:
           actions: "remove-labels"
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -37,7 +32,7 @@ jobs:
 
       - name: needs reproduction
         if: github.event.label.name == 'needs reproduction'
-        uses: ./.github/actions/issues-helper
+        uses: $/.github/actions/issues-helper
         with:
           actions: "create-comment"
           token: ${{ secrets.GITHUB_TOKEN }}

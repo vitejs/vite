@@ -1,7 +1,7 @@
 import type { Mock } from 'vitest'
 import { describe, expect, test, vi } from 'vitest'
-import { createServer } from '../server'
 import { preview } from '../preview'
+import { createServer } from '../server'
 import { bindCLIShortcuts } from '../shortcuts'
 
 describe('bindCLIShortcuts', () => {

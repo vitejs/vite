@@ -1,5 +1,5 @@
-import { runInThisContext } from 'node:vm'
 import { resolve } from 'node:path'
+import { runInThisContext } from 'node:vm'
 import { describe, expect } from 'vitest'
 import type { ViteDevServer } from '../../..'
 import type { ModuleRunnerContext } from '../../../../module-runner'
@@ -11,8 +11,8 @@ import {
   resolvePath,
 } from './utils'
 
-describe('module runner initialization', async () => {
-  const it = await createModuleRunnerTester(
+describe('module runner initialization', () => {
+  const it = createModuleRunnerTester(
     {},
     {
       sourcemapInterceptor: 'prepareStackTrace',
@@ -92,6 +92,41 @@ describe('module runner initialization', async () => {
     )
   })
 
+  it('stack traces work when Object.prototype is frozen', async ({
+    runner,
+    server,
+  }) => {
+    const methodError = await getError(async () => {
+      const mod = await runner.import('/fixtures/throws-error-method.ts')
+      mod.throwError()
+    })
+
+    // simulate `Object.freeze(Object.prototype)` in user code without
+    // permanently freezing it for the other tests in this worker: assigning
+    // an inherited `constructor` throws exactly like it does when frozen
+    const original = Object.getOwnPropertyDescriptor(
+      Object.prototype,
+      'constructor',
+    )!
+    Object.defineProperty(Object.prototype, 'constructor', {
+      configurable: true,
+      get: () => original.value,
+      set: () => {
+        throw new TypeError(
+          `Cannot assign to read only property 'constructor' of object '#<Object>'`,
+        )
+      },
+    })
+    try {
+      // reading `.stack` for the first time invokes `prepareStackTrace`
+      expect(serializeStack(server, methodError)).toBe(
+        '    at Module.throwError (<root>/fixtures/throws-error-method.ts:6:9)',
+      )
+    } finally {
+      Object.defineProperty(Object.prototype, 'constructor', original)
+    }
+  })
+
   it('deep stacktrace', async ({ runner, server }) => {
     const methodError = await getError(async () => {
       const mod = await runner.import('/fixtures/has-error-deep.ts')
@@ -102,6 +137,16 @@ describe('module runner initialization', async () => {
       '    at crash (<root>/fixtures/has-error-deep.ts:2:9)',
       '    at Module.main (<root>/fixtures/has-error-deep.ts:6:3)',
     ])
+  })
+
+  it('prints the file name of a frame without a source map', async ({
+    runner,
+  }) => {
+    // when a script's sourceURL differs from its file name, the file name is what gets printed
+    const error = await getError(() =>
+      runner.import('/fixtures/has-error-no-source-map.js'),
+    )
+    expect(error.stack!.split('\n')[1]).toBe('    at inVm (original.js:1:26)')
   })
 
   it('call site of an imported binding matches Node column', async ({
@@ -120,6 +165,21 @@ describe('module runner initialization', async () => {
       'Error: crash',
       '    at crash (<root>/fixtures/has-error-toplevel-dep.js:2:9)',
       '    at <root>/fixtures/has-error-toplevel.js:3:1',
+    ])
+  })
+
+  it('maps stack traces when the module path contains a space', async ({
+    runner,
+    server,
+  }) => {
+    const methodError = await getError(async () => {
+      const mod = await runner.import('/fixtures/with space/has-error-deep.ts')
+      mod.main()
+    })
+    expect(serializeStackDeep(server, methodError).slice(0, 3)).toEqual([
+      'Error: crash',
+      '    at crash (<root>/fixtures/with space/has-error-deep.ts:2:9)',
+      '    at Module.main (<root>/fixtures/with space/has-error-deep.ts:6:3)',
     ])
   })
 
@@ -182,7 +242,7 @@ describe('module runner initialization', async () => {
   })
 })
 
-describe('module runner with node:vm executor', async () => {
+describe('module runner with node:vm executor', () => {
   class Evaluator extends ESModulesEvaluator {
     async runInlinedModule(_: ModuleRunnerContext, __: string) {
       // Mimics VitestModuleEvaluator
@@ -199,7 +259,7 @@ describe('module runner with node:vm executor', async () => {
     }
   }
 
-  const it = await createModuleRunnerTester(
+  const it = createModuleRunnerTester(
     {},
     {
       sourcemapInterceptor: 'prepareStackTrace',
@@ -218,7 +278,7 @@ describe('module runner with node:vm executor', async () => {
   })
 })
 
-describe('module runner interceptor with inline data: source map', async () => {
+describe('module runner interceptor with inline data: source map', () => {
   const syntheticFile = '/virtual-bufferless/inline-map.js'
   // Minimal map pointing every generated position at line 1, column 0 of
   // "inline-map-original.ts"
@@ -247,7 +307,7 @@ describe('module runner interceptor with inline data: source map', async () => {
     }
   }
 
-  const it = await createModuleRunnerTester(
+  const it = createModuleRunnerTester(
     {},
     {
       sourcemapInterceptor: {

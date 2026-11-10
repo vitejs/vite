@@ -1,12 +1,13 @@
+import type { SpawnOptions } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import util from 'node:util'
-import type { SpawnOptions } from 'node:child_process'
-import spawn from 'cross-spawn'
-import mri from 'mri'
+import util, { type InspectColor } from 'node:util'
 import * as prompts from '@clack/prompts'
-import { determineAgent } from '@vercel/detect-agent'
+import mri from 'mri'
+import { detectAgent } from 'std-env'
+import { xSync } from 'tinyexec'
+import packageInfo from '../package.json' with { type: 'json' }
 
 const {
   blue,
@@ -36,7 +37,7 @@ const argv = mri<{
 })
 const cwd = process.cwd()
 
-// prettier-ignore
+// oxfmt-ignore
 const helpMessage = `\
 Usage: create-vite [OPTION]... [DIRECTORY]
 
@@ -172,12 +173,20 @@ const FRAMEWORKS: Framework[] = [
         customCommand: 'npm create react-router@latest TARGET_DIR',
       },
       {
+        name: 'custom-tanstack-start-react',
+        display: 'TanStack Start ↗',
+        link: 'https://tanstack.com/start',
+        color: cyan,
+        customCommand:
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --build-tool vite --interactive',
+      },
+      {
         name: 'custom-tanstack-router-react',
         display: 'TanStack Router ↗',
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --build-tool vite --router-only --interactive',
       },
       {
         name: 'redwoodsdk-standard',
@@ -274,12 +283,20 @@ const FRAMEWORKS: Framework[] = [
         color: yellow,
       },
       {
+        name: 'custom-tanstack-start-solid',
+        display: 'TanStack Start ↗',
+        link: 'https://tanstack.com/start',
+        color: cyan,
+        customCommand:
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --build-tool vite --interactive',
+      },
+      {
         name: 'custom-tanstack-router-solid',
         display: 'TanStack Router ↗',
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --build-tool vite --router-only --interactive',
       },
       {
         name: 'custom-vike-solid',
@@ -399,15 +416,17 @@ const renameFiles: Record<string, string | undefined> = {
 const defaultTargetDir = 'vite-project'
 
 function run([command, ...args]: string[], options?: SpawnOptions) {
-  const { status, error } = spawn.sync(command, args, options)
-  if (status != null && status > 0) {
-    process.exit(status)
-  }
-
-  if (error) {
+  let exitCode: number | undefined
+  try {
+    ;({ exitCode } = xSync(command, args, { nodeOptions: options }))
+  } catch (error) {
     console.error(`\n${command} ${args.join(' ')} error!`)
     console.error(error)
     process.exit(1)
+  }
+
+  if (exitCode != null && exitCode > 0) {
+    process.exit(exitCode)
   }
 }
 
@@ -453,11 +472,12 @@ async function init() {
     return
   }
 
+  console.log(`\n${cyan(`create-vite v${packageInfo.version}`)}\n`)
+
   const interactive = argInteractive ?? process.stdin.isTTY
 
   // Detect AI agent environment for better agent experience (AX)
-  const { isAgent } = await determineAgent()
-  if (isAgent && interactive) {
+  if (interactive && detectAgent().name) {
     console.log(
       '\nTo create in one go, run: create-vite <DIRECTORY> --no-interactive --template <TEMPLATE>\n',
     )
@@ -621,10 +641,10 @@ async function init() {
     const replacedArgs = args.map((arg) =>
       arg.replace('TARGET_DIR', () => targetDir),
     )
-    const { status } = spawn.sync(command, replacedArgs, {
-      stdio: 'inherit',
+    const { exitCode } = xSync(command, replacedArgs, {
+      nodeOptions: { stdio: 'inherit' },
     })
-    process.exit(status ?? 0)
+    process.exit(exitCode ?? 0)
   }
 
   // 5. Ask whether to use ESLint instead of Oxlint (React templates only)
@@ -806,11 +826,11 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
 
 function setupReactCompiler(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@rolldown/plugin-babel
-  const babelPluginVersion = '0.2.3'
+  const babelPluginVersion = '0.3.0'
   // renovate: datasource=npm depName=babel-plugin-react-compiler
   const reactCompilerPluginVersion = '1.0.0'
   // renovate: datasource=npm depName=@babel/core
-  const babelCoreVersion = '7.29.7'
+  const babelCoreVersion = '7.29.13'
   // renovate: datasource=npm depName=@types/babel__core
   const typesBabelCoreVersion = '7.20.5'
 
@@ -826,6 +846,7 @@ function setupReactCompiler(root: string, isTs: boolean) {
     if (isTs) {
       devDepsEntries.push(['@types/babel__core', `^${typesBabelCoreVersion}`])
     }
+    // oxlint-disable-next-line typescript/require-array-sort-compare
     devDepsEntries.sort()
     asObject.devDependencies = Object.fromEntries(devDepsEntries)
     return JSON.stringify(asObject, null, 2) + '\n'
@@ -850,7 +871,9 @@ import babel from '@rolldown/plugin-babel'`,
   )
   updateReactCompilerReadme(
     root,
-    'The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.\n\nNote: This will impact Vite dev & build performances.',
+    'The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.\n\n' +
+      'Note: This will impact Vite dev & build performances.\n' +
+      'You can also try [the experimental native React Compiler support in plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md#rust-react-compiler) by using `compiler: true` in the plugin options instead of using the Babel plugin.',
   )
 }
 
@@ -858,15 +881,15 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@eslint/js
   const eslintJsVersion = '10.0.1'
   // renovate: datasource=npm depName=eslint
-  const eslintVersion = '10.7.0'
+  const eslintVersion = '10.14.0'
   // renovate: datasource=npm depName=eslint-plugin-react-hooks
   const eslintPluginReactHooksVersion = '7.1.1'
   // renovate: datasource=npm depName=eslint-plugin-react-refresh
-  const eslintPluginReactRefreshVersion = '0.5.3'
+  const eslintPluginReactRefreshVersion = '0.5.7'
   // renovate: datasource=npm depName=globals
-  const globalsVersion = '17.7.0'
+  const globalsVersion = '17.14.0'
   // renovate: datasource=npm depName=typescript-eslint
-  const typescriptEslintVersion = '8.64.0'
+  const typescriptEslintVersion = '8.72.1'
 
   const eslintConfigForTS = /* js */ `import js from '@eslint/js'
 import globals from 'globals'
@@ -921,6 +944,11 @@ export default defineConfig([
 
   editFile(path.resolve(root, 'package.json'), (content) => {
     const asObject = JSON.parse(content)
+    if (isTs) {
+      // Keep TypeScript 6 until typescript-eslint supports TypeScript 7.
+      // https://github.com/typescript-eslint/typescript-eslint/issues/10940
+      asObject.devDependencies.typescript = '~6.0.3'
+    }
     const devDepsEntries = Object.entries(asObject.devDependencies).filter(
       ([name]) => name !== 'oxlint',
     )
@@ -934,6 +962,7 @@ export default defineConfig([
     if (isTs) {
       devDepsEntries.push(['typescript-eslint', `^${typescriptEslintVersion}`])
     }
+    // oxlint-disable-next-line typescript/require-array-sort-compare
     devDepsEntries.sort()
     asObject.devDependencies = Object.fromEntries(devDepsEntries)
     asObject.scripts.lint = 'eslint .'
@@ -1013,7 +1042,7 @@ If you are developing a production application, we recommend updating the config
 ${eslintTypeAwareConfig}
 \`\`\`
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
 
 \`\`\`js
 ${eslintReactConfig}
@@ -1060,6 +1089,10 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         if (pkgManager === 'bun') {
           return 'bun x create-'
         }
+        // nub has no `create` verb; `nubx` runs the create- package directly
+        if (pkgManager === 'nub') {
+          return 'nubx create-'
+        }
         // Deno uses `run -A npm:create-` instead of `create` or `init` to also provide needed perms
         if (pkgManager === 'deno') {
           return 'deno run -A npm:create-'
@@ -1086,6 +1119,9 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
         }
         if (pkgManager === 'bun') {
           return 'bun x '
+        }
+        if (pkgManager === 'nub') {
+          return 'nubx '
         }
         if (pkgManager === 'deno') {
           return 'deno run -A npm:'
@@ -1129,11 +1165,9 @@ function getRunCommand(agent: string, script: string) {
   }
 }
 
-type ColorName = Exclude<Parameters<typeof util.styleText>[0], any[]>
-
 function createColors() {
-  return new Proxy({} as Record<ColorName, ColorFunc>, {
-    get(_, prop: ColorName) {
+  return new Proxy({} as Record<InspectColor, ColorFunc>, {
+    get(_, prop: InspectColor) {
       // eslint-disable-next-line n/no-unsupported-features/node-builtins -- our supported nodejs range supports `styleText` but in experimental state, which is fine
       return (str: string) => util.styleText(prop, str)
     },

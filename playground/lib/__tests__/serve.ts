@@ -1,8 +1,8 @@
 // this is automatically detected by playground/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
-import path from 'node:path'
 import http from 'node:http'
+import path from 'node:path'
 import sirv from 'sirv'
 import {
   isBuild,
@@ -68,7 +68,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
     await build({
       root: rootDir,
       logLevel: 'warn', // output esbuild warns
-      configFile: path.resolve(dirname, '../vite.multiple-output.config.js'),
+      configFile: path.resolve(rootDir, 'vite.multiple-output.config.js'),
     })
 
     await build({

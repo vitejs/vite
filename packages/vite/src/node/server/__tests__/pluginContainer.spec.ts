@@ -1,10 +1,12 @@
 import { stripVTControlCharacters } from 'node:util'
+import MagicString from 'magic-string'
 import { describe, expect, it, vi } from 'vitest'
+import { promiseWithResolvers } from '../../../shared/utils'
 import type { UserConfig } from '../../config'
 import { resolveConfig } from '../../config'
+import { createLogger } from '../../logger'
 import type { Plugin } from '../../plugin'
 import { DevEnvironment } from '../environment'
-import { createLogger } from '../../logger'
 
 describe('plugin container', () => {
   describe('getModuleInfo', () => {
@@ -324,6 +326,54 @@ describe('plugin container', () => {
     })
   })
 
+  describe('transform', () => {
+    it('combines a plugin sourcemap with `sources: [""]` (#13657)', async () => {
+      const entryUrl = '/zoo.js'
+      const originalCode = `export const zoo = 'zoo'\n`
+
+      const plugin: Plugin = {
+        name: 'p1',
+        transform(code, id) {
+          if (id === entryUrl) {
+            const ms = new MagicString(code)
+            ms.append('// add comment')
+            return {
+              code: ms.toString(),
+              // NOTE: MagicString without `filename` option generates
+              //       a sourcemap with `sources: ['']` or `sources: [null]`
+              map: ms.generateMap({ hires: true }),
+            }
+          }
+        },
+      }
+
+      const environment = await getDevEnvironment({ plugins: [plugin] })
+      await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      const result = await environment.pluginContainer.transform(
+        originalCode,
+        entryUrl,
+      )
+
+      expect(result.code).toContain('// add comment')
+      // the empty source must be replaced with the module id + original code
+      expect(result.map).toMatchInlineSnapshot(`
+        {
+          "file": undefined,
+          "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;",
+          "names": [],
+          "sources": [
+            "/zoo.js",
+          ],
+          "sourcesContent": [
+            "export const zoo = 'zoo'
+        ",
+          ],
+          "version": 3,
+        }
+      `)
+    })
+  })
+
   describe('resolveId', () => {
     describe('skipSelf', () => {
       it('should skip the plugin itself when skipSelf is true', async () => {
@@ -331,6 +381,7 @@ describe('plugin container', () => {
         const plugin: Plugin = {
           name: 'p1',
           async resolveId(id, importer) {
+            if (id !== '/x.js') return
             calledCount++
             if (calledCount <= 1) {
               return await this.resolve(id, importer, { skipSelf: true })
@@ -425,6 +476,101 @@ describe('plugin container', () => {
         const result = await environment.pluginContainer.resolveId('foo')
         expect(result).toStrictEqual({ id: 'success' })
       })
+    })
+  })
+
+  describe('closeBundle', () => {
+    for (const rejectClose of [false, true]) {
+      it(`waits for an overlapping close when closeBundle rejects: ${rejectClose}`, async () => {
+        const finish = promiseWithResolvers<void>()
+        const error = new Error('closeBundle failed')
+        const closeBundle = vi.fn(() => finish.promise)
+        const environment = await getDevEnvironment({
+          plugins: [
+            {
+              name: 'delayed-close-bundle',
+              closeBundle,
+            },
+          ],
+        })
+
+        const closes = [
+          environment.pluginContainer.close(),
+          environment.pluginContainer.close(),
+        ]
+        const results = Promise.allSettled(closes)
+        try {
+          await expect(
+            Promise.race([closes[1], Promise.resolve('pending')]),
+          ).resolves.toBe('pending')
+        } finally {
+          if (rejectClose) finish.reject(error)
+          else finish.resolve()
+          await results
+        }
+        const expected = rejectClose
+          ? { status: 'rejected', reason: error }
+          : { status: 'fulfilled', value: undefined }
+        expect(await results).toStrictEqual([expected, expected])
+        await expect(
+          environment.pluginContainer.close(),
+        ).resolves.toBeUndefined()
+        expect(closeBundle).toHaveBeenCalledOnce()
+      })
+    }
+
+    it('passes buildEnd errors to closeBundle', async () => {
+      const buildEndError = new Error('buildEnd failed')
+      let closeBundleError: Error | undefined
+      const environment = await getDevEnvironment({
+        plugins: [
+          {
+            name: 'failing-build-end',
+            buildEnd() {
+              throw buildEndError
+            },
+          },
+          {
+            name: 'close-bundle-cleanup',
+            closeBundle(error) {
+              closeBundleError = error
+            },
+          },
+        ],
+      })
+
+      await expect(environment.pluginContainer.close()).rejects.toBe(
+        buildEndError,
+      )
+      expect(closeBundleError).toBe(buildEndError)
+    })
+
+    it('passes no error to closeBundle when buildEnd succeeds', async () => {
+      let buildEndCalled = false
+      let closeBundleCalled = false
+      let closeBundleError: Error | undefined
+      const environment = await getDevEnvironment({
+        plugins: [
+          {
+            name: 'successful-build-end',
+            buildEnd() {
+              buildEndCalled = true
+            },
+          },
+          {
+            name: 'close-bundle-cleanup',
+            closeBundle(error) {
+              closeBundleCalled = true
+              closeBundleError = error
+            },
+          },
+        ],
+      })
+
+      await expect(environment.pluginContainer.close()).resolves.toBeUndefined()
+      expect(buildEndCalled).toBe(true)
+      expect(closeBundleCalled).toBe(true)
+      expect(closeBundleError).toBeUndefined()
     })
   })
 })

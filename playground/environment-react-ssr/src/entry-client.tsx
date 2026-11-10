@@ -1,5 +1,5 @@
-import ReactDomClient from 'react-dom/client'
 import React from 'react'
+import ReactDomClient from 'react-dom/client'
 import Root from './root'
 
 async function main() {

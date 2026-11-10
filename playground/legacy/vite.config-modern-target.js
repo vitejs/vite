@@ -3,6 +3,9 @@ import legacy from '@vitejs/plugin-legacy'
 import { defineConfig } from 'vite'
 
 export default defineConfig(({ isPreview }) => ({
+  input: {
+    index: path.resolve(import.meta.dirname, 'modern-target.html'),
+  },
   base: !isPreview ? './' : '/modern-target/',
   plugins: [
     legacy({
@@ -12,13 +15,7 @@ export default defineConfig(({ isPreview }) => ({
       renderLegacyChunks: false,
     }),
   ],
-
   build: {
     outDir: 'dist/modern-target',
-    rolldownOptions: {
-      input: {
-        index: path.resolve(import.meta.dirname, 'modern-target.html'),
-      },
-    },
   },
 }))

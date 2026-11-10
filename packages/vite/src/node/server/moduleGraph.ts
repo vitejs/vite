@@ -1,5 +1,7 @@
 import { extname } from 'node:path'
 import type { ModuleInfo, PartialResolvedId } from 'rolldown'
+import { cleanUrl } from '../../shared/utils'
+import { FS_PREFIX } from '../constants'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
   monotonicDateNow,
@@ -7,8 +9,6 @@ import {
   removeImportQuery,
   removeTimestampQuery,
 } from '../utils'
-import { FS_PREFIX } from '../constants'
-import { cleanUrl } from '../../shared/utils'
 import type { TransformResult } from './transformRequest'
 
 export class EnvironmentModuleNode {
@@ -264,7 +264,9 @@ export class EnvironmentModuleGraph {
     let noLongerImported: Set<EnvironmentModuleNode> | undefined
 
     let resolvePromises = []
-    let resolveResults = new Array(importedModules.size)
+    let resolveResults: Array<EnvironmentModuleNode> = Array.from({
+      length: importedModules.size,
+    })
     let index = 0
     // update import graph
     for (const imported of importedModules) {
@@ -302,7 +304,7 @@ export class EnvironmentModuleGraph {
 
     // update accepted hmr deps
     resolvePromises = []
-    resolveResults = new Array(acceptedModules.size)
+    resolveResults = Array.from({ length: acceptedModules.size })
     index = 0
     for (const accepted of acceptedModules) {
       const nextIndex = index++

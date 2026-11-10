@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
-import { port } from './serve'
 import { isServe, page } from '~utils'
+import { port } from './serve'
 
 const url = `http://localhost:${port}`
 

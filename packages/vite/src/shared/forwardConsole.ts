@@ -3,6 +3,7 @@ import {
   type NormalizedModuleRunnerTransport,
   SendBeforeConnectError,
 } from './moduleRunnerTransport'
+import { prettyFormat } from './pretty-format'
 
 export type ForwardConsoleLogLevel =
   | 'error'
@@ -56,7 +57,7 @@ export function setupForwardConsoleHandler(
           type: 'log',
           data: {
             level,
-            message: formatConsoleArgs(args),
+            message: truncateConsoleMessage(formatConsoleArgs(args)),
           },
         } satisfies ForwardConsolePayload,
       })
@@ -190,49 +191,31 @@ function stringifyConsoleArg(value: unknown): string {
   if (typeof value === 'string') {
     return value
   }
-  if (
-    typeof value === 'number' ||
-    typeof value === 'boolean' ||
-    typeof value === 'undefined'
-  ) {
-    return String(value)
-  }
-  if (typeof value === 'symbol') {
-    return value.toString()
-  }
-  if (typeof value === 'function') {
-    return value.name ? `[Function: ${value.name}]` : '[Function]'
-  }
   if (value instanceof Error) {
     return value.stack || `${value.name}: ${value.message}`
   }
-  if (typeof value === 'bigint') {
-    return `${value}n`
-  }
 
-  const seen = new WeakSet<object>()
   try {
-    const serialized = JSON.stringify(value, (_, nested) => {
-      if (typeof nested === 'bigint') {
-        return `${nested}n`
-      }
-      if (nested instanceof Error) {
-        return {
-          name: nested.name,
-          message: nested.message,
-          stack: nested.stack,
-        }
-      }
-      if (nested && typeof nested === 'object') {
-        if (seen.has(nested)) {
-          return '[Circular]'
-        }
-        seen.add(nested)
-      }
-      return nested
-    })
-    return serialized ?? String(value)
+    return prettyFormat(value)
   } catch {
     return String(value)
   }
+}
+
+// hard-truncate the generated string in addition to pretty-format-level structural truncation
+const MAX_CONSOLE_MESSAGE_LENGTH = 10_000
+
+function truncateConsoleMessage(message: string): string {
+  if (message.length <= MAX_CONSOLE_MESSAGE_LENGTH) {
+    return message
+  }
+  let end = MAX_CONSOLE_MESSAGE_LENGTH - 1
+  if (isHighSurrogate(message[end - 1])) {
+    end--
+  }
+  return `${message.slice(0, end)}…`
+}
+
+function isHighSurrogate(value: string): boolean {
+  return value >= '\uD800' && value <= '\uDBFF'
 }

@@ -1,8 +1,8 @@
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { isWindows } from '../../../../shared/utils'
 import { transformDynamicImport } from '../../../plugins/dynamicImportVars'
 import { normalizePath } from '../../../utils'
-import { isWindows } from '../../../../shared/utils'
 
 const dirname = import.meta.dirname
 
@@ -51,11 +51,13 @@ describe('parse positives', () => {
 
   // ? is not escaped on windows (? cannot be used as a filename on windows)
   it.skipIf(isWindows)('? in url', async () => {
+    // oxlint-disable-next-line vitest/prefer-snapshot-hint -- https://github.com/oxc-project/oxc/issues/29183
     expect(await run('`./mo?ds/${base ?? foo}.js?url`')).toMatchSnapshot()
   })
 
   // ? is not escaped on windows (? cannot be used as a filename on windows)
   it.skipIf(isWindows)('? in worker', async () => {
+    // oxlint-disable-next-line vitest/prefer-snapshot-hint -- https://github.com/oxc-project/oxc/issues/29183
     expect(await run('`./mo?ds/${base ?? foo}.js?worker`')).toMatchSnapshot()
   })
 

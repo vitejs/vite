@@ -1,9 +1,9 @@
 import http from 'node:http'
 import net from 'node:net'
-import { afterEach, describe, expect, test, vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
+import type { InlineConfig } from '..'
 import { wildcardHosts } from '../constants'
-import { createServer } from '..'
-import type { InlineConfig, ViteDevServer } from '..'
+import { createTestServer } from './testUtils'
 
 const BASE_PORT = 15181
 
@@ -14,25 +14,6 @@ const optimizeDeps: InlineConfig['optimizeDeps'] = {
 }
 
 describe('port detection', () => {
-  let blockingServer: http.Server | null = null
-  let viteServer: ViteDevServer | null = null
-
-  afterEach(async () => {
-    if (viteServer) {
-      await viteServer.close()
-      viteServer = null
-    }
-
-    await new Promise<void>((resolve) => {
-      if (blockingServer) {
-        blockingServer.close(() => resolve())
-        blockingServer = null
-      } else {
-        resolve()
-      }
-    })
-  })
-
   async function createSimpleServer(port: number, host: string) {
     const server = http.createServer()
     await new Promise<void>((resolve) => {
@@ -48,13 +29,44 @@ describe('port detection', () => {
   }
 
   describe('port fallback', () => {
+    test('uses the same ephemeral port on every interface', async () => {
+      using listen = vi.spyOn(net.Server.prototype, 'listen')
+
+      const viteServer = await createTestServer({
+        root: import.meta.dirname,
+        optimizeDeps,
+        logLevel: 'silent',
+        server: { port: 0, ws: false },
+      })
+      await viteServer.listen()
+
+      const address = viteServer.httpServer!.address()
+      expect(address).toStrictEqual(
+        expect.objectContaining({ port: expect.any(Number) }),
+      )
+      const assignedPort = (address as net.AddressInfo).port
+      expect(viteServer._currentServerPort).toBe(assignedPort)
+      const [firstWildcardHost, ...remainingWildcardHosts] = wildcardHosts
+      expect(
+        listen.mock.calls.map(([port, host]) => ({ port, host })),
+      ).toStrictEqual([
+        { port: 0, host: firstWildcardHost },
+        ...remainingWildcardHosts.map((host) => ({
+          port: assignedPort,
+          host,
+        })),
+        { port: assignedPort, host: 'localhost' }, // Check configured host
+        { port: assignedPort, host: 'localhost' }, // Bind HTTP server
+      ])
+    })
+
     test('detects port conflict', async () => {
       await using _blockingServer = await createSimpleServer(
         BASE_PORT,
         'localhost',
       )
 
-      viteServer = await createServer({
+      const viteServer = await createTestServer({
         root: import.meta.dirname,
         optimizeDeps,
         logLevel: 'silent',
@@ -78,7 +90,7 @@ describe('port detection', () => {
         'localhost',
       )
 
-      viteServer = await createServer({
+      const viteServer = await createTestServer({
         root: import.meta.dirname,
         optimizeDeps,
         logLevel: 'silent',
@@ -98,7 +110,7 @@ describe('port detection', () => {
         '0.0.0.0',
       )
 
-      viteServer = await createServer({
+      const viteServer = await createTestServer({
         root: import.meta.dirname,
         optimizeDeps,
         logLevel: 'silent',
@@ -123,7 +135,7 @@ describe('port detection', () => {
       }
       await using _blockingServer = blockingServer
 
-      viteServer = await createServer({
+      const viteServer = await createTestServer({
         root: import.meta.dirname,
         optimizeDeps,
         logLevel: 'silent',
@@ -151,7 +163,7 @@ describe('port detection', () => {
         '0.0.0.0',
       )
 
-      viteServer = await createServer({
+      const viteServer = await createTestServer({
         root: import.meta.dirname,
         optimizeDeps,
         logLevel: 'silent',
@@ -197,7 +209,7 @@ describe('port detection', () => {
       return server
     })
 
-    viteServer = await createServer({
+    const viteServer = await createTestServer({
       root: import.meta.dirname,
       optimizeDeps,
       logLevel: 'silent',
@@ -215,7 +227,7 @@ describe('port detection', () => {
       'localhost',
     )
 
-    viteServer = await createServer({
+    const viteServer = await createTestServer({
       root: import.meta.dirname,
       optimizeDeps,
       logLevel: 'silent',
@@ -231,7 +243,7 @@ describe('port detection', () => {
     await using _wildcardServer = await createSimpleServer(BASE_PORT, '0.0.0.0')
 
     const warnMessages: string[] = []
-    viteServer = await createServer({
+    const viteServer = await createTestServer({
       root: import.meta.dirname,
       optimizeDeps,
       customLogger: {
@@ -264,5 +276,52 @@ describe('port detection', () => {
     const address = viteServer.httpServer!.address()
     expect(address).toStrictEqual(expect.objectContaining({ port: BASE_PORT }))
     expect(warnMessages).toContainEqual(expect.stringContaining('wildcard'))
+  })
+
+  describe('port reuse on restart', () => {
+    test('reuses the OS-assigned port on restart when port is 0', async () => {
+      const viteServer = await createTestServer({
+        root: import.meta.dirname,
+        optimizeDeps,
+        logLevel: 'silent',
+        server: { port: 0, ws: false },
+      })
+      await viteServer.listen()
+
+      const address = viteServer.httpServer!.address() as net.AddressInfo
+      const assignedPort = address.port
+
+      await viteServer.restart()
+
+      expect(viteServer.httpServer!.address()).toStrictEqual(
+        expect.objectContaining({ port: assignedPort }),
+      )
+    })
+
+    test('reuses the listened port when retrying after a failed listen', async () => {
+      await using blockingServer = await createSimpleServer(
+        BASE_PORT,
+        'localhost',
+      )
+
+      const viteServer = await createTestServer({
+        root: import.meta.dirname,
+        optimizeDeps,
+        logLevel: 'silent',
+        server: { port: BASE_PORT, ws: false },
+      })
+      await viteServer.listen()
+
+      const address = viteServer.httpServer!.address() as net.AddressInfo
+      const assignedPort = address.port
+
+      await blockingServer[Symbol.asyncDispose]()
+
+      await viteServer.restart()
+
+      expect(viteServer.httpServer!.address()).toStrictEqual(
+        expect.objectContaining({ port: assignedPort }),
+      )
+    })
   })
 })

@@ -1,8 +1,8 @@
 import MagicString from 'magic-string'
-import type { Plugin } from '../plugin'
-import type { ResolvedConfig } from '../config'
-import { createFilter } from '../utils'
 import { cleanUrl } from '../../shared/utils'
+import type { ResolvedConfig } from '../config'
+import type { Plugin } from '../plugin'
+import { createFilter } from '../utils'
 
 /**
  * This plugin supports `esbuild.banner` and `esbuild.footer` options.

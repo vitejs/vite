@@ -3,6 +3,11 @@
   "singleQuote": true,
   "printWidth": 80,
   "sortPackageJson": false,
+  "sortImports": {
+    "groups": ["builtin", "external", "internal", "parent", "sibling", "index"],
+    "partitionByNewline": true,
+    "newlinesBetween": false
+  },
   "overrides": [
     {
       "files": ["**/*.json5"],
@@ -20,8 +25,9 @@
   ],
   "ignorePatterns": [
     "packages/*/CHANGELOG.md",
+    "packages/vite/src/node/__tests__/fixtures/config/shebang-crlf/vite.config.ts",
     "packages/vite/src/node/ssr/__tests__/fixtures/errors/syntax-error.*",
-    "playground-temp/",
+    "playground-temp-*/",
     "dist/",
     "LICENSE.md",
     "pnpm-lock.yaml",
@@ -31,6 +37,7 @@
     "playground/html/invalidClick.html",
     "playground/html/invalidEscape.html",
     "playground/html/valid.html",
+    "playground/html/tag-removal/*.html",
     "playground/external/public/slash@3.0.0.js",
     "playground/ssr-html/public/slash@3.0.0.js",
     "playground/worker/classic-worker.js",

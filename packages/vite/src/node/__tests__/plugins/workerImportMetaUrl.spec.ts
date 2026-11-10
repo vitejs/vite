@@ -1,8 +1,8 @@
-import { describe, expect, test } from 'vitest'
 import { parseAst } from 'rollup/parseAst'
-import { workerImportMetaUrlPlugin } from '../../plugins/workerImportMetaUrl'
-import { resolveConfig } from '../../config'
+import { describe, expect, test } from 'vitest'
 import { PartialEnvironment } from '../../baseEnvironment'
+import { resolveConfig } from '../../config'
+import { workerImportMetaUrlPlugin } from '../../plugins/workerImportMetaUrl'
 
 async function createWorkerImportMetaUrlPluginTransform() {
   const config = await resolveConfig({ configFile: false }, 'serve')
@@ -252,5 +252,15 @@ new Worker(
         { type: "module" },
       )"
     `)
+  })
+
+  test('preserves custom search params in worker URL', async () => {
+    expect(
+      await transform(
+        'new Worker(new URL("./worker.js?foo=bar&baz=qux", import.meta.url), { type: "module" })',
+      ),
+    ).toMatchInlineSnapshot(
+      '"new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module&foo=bar&baz=qux", \'\' + import.meta.url), { type: "module" })"',
+    )
   })
 })

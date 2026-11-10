@@ -1,14 +1,14 @@
+import cjsFromCJS from '@vitejs/test-dep-cjs-compiled-from-cjs'
+import * as cjsFromCJSNamespace from '@vitejs/test-dep-cjs-compiled-from-cjs'
+import cjsFromESM from '@vitejs/test-dep-cjs-compiled-from-esm'
+import m from '@vitejs/test-dep-cjs-with-es-module-flag'
+import clip from 'clipboard'
+import { Socket } from 'phoenix'
 // test importing both default and named exports from a CommonJS module
 // React is the ultimate test of this because its dynamic exports assignments
 // are not statically detectable by @rollup/plugin-commonjs.
 import React, { useState } from 'react'
 import ReactDOM from 'react-dom/client'
-import { Socket } from 'phoenix'
-import clip from 'clipboard'
-import m from '@vitejs/test-dep-cjs-with-es-module-flag'
-import cjsFromESM from '@vitejs/test-dep-cjs-compiled-from-esm'
-import cjsFromCJS from '@vitejs/test-dep-cjs-compiled-from-cjs'
-import * as cjsFromCJSNamespace from '@vitejs/test-dep-cjs-compiled-from-cjs'
 
 // Test exporting a name that was already imported
 export { useState } from 'react'

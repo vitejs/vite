@@ -1,11 +1,11 @@
 import { execFile } from 'node:child_process'
-import { promisify } from 'node:util'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
+import { fileURLToPath } from 'node:url'
+import { promisify } from 'node:util'
 import { describe, expect, test } from 'vitest'
-import { port, serverLogs } from './serve'
 import { editFile, isServe, page } from '~utils'
+import { port, serverLogs } from './serve'
 
 const url = `http://localhost:${port}`
 

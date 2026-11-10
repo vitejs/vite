@@ -1,5 +1,7 @@
-import { readFileSync } from 'node:fs'
 import { builtinModules } from 'node:module'
+import { parse as parseWithBabel } from '@babel/parser'
+import { walk } from 'estree-walker'
+import MagicString from 'magic-string'
 import { defineConfig } from 'rolldown'
 import type {
   OutputChunk,
@@ -7,21 +9,15 @@ import type {
   PluginContext,
   RenderedChunk,
 } from 'rolldown'
-import type { ESTree } from 'rolldown/utils'
-import { parseAst } from 'rolldown/parseAst'
 import { dts } from 'rolldown-plugin-dts'
-import { parse as parseWithBabel } from '@babel/parser'
-import { walk } from 'estree-walker'
-import MagicString from 'magic-string'
+import { parseAst } from 'rolldown/parseAst'
+import type { ESTree } from 'rolldown/utils'
+import pkg from './package.json' with { type: 'json' }
 
 type Directive = ESTree.Directive
 type ModuleExportName = ESTree.ModuleExportName
 type Program = ESTree.Program
 type Statement = ESTree.Statement
-
-const pkg = JSON.parse(
-  readFileSync(new URL('./package.json', import.meta.url)).toString(),
-)
 
 const external = [
   /^node:*/,
@@ -87,6 +83,7 @@ const identifierReplacements: Record<string, Record<string, string>> = {
   'rolldown/utils': {
     TransformOptions$1: 'rolldown_utils_TransformOptions',
     TransformResult$2: 'rolldown_utils_TransformResult',
+    ESTree$1: 'rolldown_utils_ESTree',
   },
   'node:http': {
     Server$1: 'http.Server',
@@ -421,7 +418,7 @@ function escapeRegex(str: string): string {
 }
 
 function unique<T>(arr: T[]): T[] {
-  return Array.from(new Set(arr))
+  return [...new Set(arr)]
 }
 
 const postcssLoadConfigDeepImport =

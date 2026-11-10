@@ -65,7 +65,7 @@ test('ssr', async () => {
   expect(await page.textContent('.ssr')).toBe('false')
 })
 
-test.skipIf(isBundledDev)('env object', async () => {
+test('env object', async () => {
   const env = JSON.parse(await page.textContent('.env-object'))
   expect(env).not.toHaveProperty([
     'DEPEND_ENV',
@@ -109,12 +109,13 @@ test('env object in template literal expression', async () => {
 })
 
 if (!isBuild) {
-  test.skipIf(isBundledDev)(
-    'relative url import script return import.meta.url',
-    async () => {
-      expect(await page.textContent('.url')).toMatch('/env/index.js')
-    },
-  )
+  test('relative url import script return import.meta.url', async () => {
+    // bundled dev: index.js is bundled into the entry chunk, so
+    // import.meta.url is the chunk URL
+    expect(await page.textContent('.url')).toMatch(
+      isBundledDev ? '/env/assets/index.js' : '/env/index.js',
+    )
+  })
 }
 
 test('ignores import' + '.meta.env in string literals', async () => {

@@ -1,6 +1,33 @@
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { transformWithOxc } from '../../plugins/oxc'
+import { PartialEnvironment } from '../../baseEnvironment'
+import { resolveConfig } from '../../config'
+import { oxcPlugin, transformWithOxc } from '../../plugins/oxc'
+
+describe('oxcPlugin', () => {
+  test('preserves the language of modules with extensions in queries', async () => {
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        oxc: { jsxRefreshInclude: /\.tsx$/ },
+      },
+      'serve',
+    )
+    const plugin = oxcPlugin(config)
+    const environment = new PartialEnvironment('client', config)
+    const transform = plugin.transform as any
+    const result = await transform.call(
+      { environment },
+      'const value: string = "hello"',
+      '/project/App.vue?vue&type=script&setup=true&lang.tsx',
+    )
+
+    expect(result.code).toMatchInlineSnapshot(`
+      "const value = "hello";
+      "
+    `)
+  })
+})
 
 describe('transformWithOxc', () => {
   test('correctly overrides TS configuration and applies automatic transform', async () => {
@@ -152,5 +179,38 @@ describe('transformWithOxc', () => {
       ),
     )
     expect(result?.code).toContain('_decorateMetadata("design:type"')
+  })
+
+  test('uses the configured tsconfig instead of automatic discovery', async () => {
+    const code = `
+      class Foo {
+        bar = 'bar'
+      }
+    `
+    const fixtures = path.resolve(
+      import.meta.dirname,
+      './fixtures/oxc-tsconfigs',
+    )
+    const explicitTsconfig = path.resolve(
+      fixtures,
+      'use-define-false/tsconfig.json',
+    )
+    const config = await resolveConfig(
+      { root: fixtures, tsconfig: explicitTsconfig, configFile: false },
+      'serve',
+    )
+    const expected = await transformWithOxc(
+      code,
+      path.resolve(fixtures, 'use-define-false/bar.ts'),
+      { target: 'esnext' },
+    )
+    const actual = await transformWithOxc(
+      code,
+      path.resolve(fixtures, 'use-define-true/bar.ts'),
+      { target: 'esnext' },
+      undefined,
+      config,
+    )
+    expect(actual.code).toBe(expected.code)
   })
 })

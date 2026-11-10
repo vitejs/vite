@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { viteReporterPlugin as nativeReporterPlugin } from 'rolldown/experimental'
-import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { LogLevels } from '../logger'
+import { type Plugin, perEnvironmentPlugin } from '../plugin'
 
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   return perEnvironmentPlugin('native:reporter', (env) => {
