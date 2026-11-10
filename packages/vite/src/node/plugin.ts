@@ -10,9 +10,11 @@ import type {
   PluginContextMeta,
   ResolveIdResult,
   Plugin as RolldownPlugin,
+  RolldownMagicString,
   TransformPluginContext,
   TransformResult,
 } from 'rolldown'
+import type { ESTree } from 'rolldown/utils'
 import type { PartialEnvironment } from './baseEnvironment'
 import type { BuildAppHook } from './build'
 import type {
@@ -163,6 +165,18 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
       options?: {
         moduleType: ModuleType
         ssr?: boolean | undefined
+        /**
+         * A lazily-created MagicString instance for the module's code.
+         * Only available during build.
+         * @experimental
+         */
+        magicString?: RolldownMagicString | undefined
+        /**
+         * The lazily-parsed AST of the module's code.
+         * Only available during build.
+         * @experimental
+         */
+        ast?: ESTree.Program | undefined
       },
     ) => Promise<TransformResult> | TransformResult,
     {
