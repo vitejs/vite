@@ -5,8 +5,8 @@
 </p>
 
 <script type="module">
-  import { d } from './index.js'
   import order from './order/a.js'
+  import { d } from './index.js'
   document.querySelector('.scoped-index').classList.add(d())
   document.querySelector('.treeshake-scoped-order').classList.add(order())
 </script>

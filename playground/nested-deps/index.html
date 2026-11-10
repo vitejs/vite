@@ -28,6 +28,7 @@
 <pre class="self-referencing"></pre>
 
 <script type="module">
+  import { isSelfReference } from '@vitejs/self-referencing/test'
   import A from '@vitejs/test-package-a'
   import B, { A as nestedA } from '@vitejs/test-package-b'
   import C from '@vitejs/test-package-c'
@@ -35,7 +36,6 @@
   import D, { nestedD } from '@vitejs/test-package-d'
   import { testExcluded } from '@vitejs/test-package-e'
   import F from '__F_ABSOLUTE_PACKAGE_PATH__'
-  import { isSelfReference } from '@vitejs/self-referencing/test'
 
   text('.a', A)
   text('.b', B)
