@@ -344,7 +344,7 @@ if (isBuild) {
       .toContain('#inline-asset-label-v1')
     const [urlBefore] = await displayedAsset()
     expect(urlBefore).toMatch(urlRe)
-    expect(await fetchAsset(urlBefore)).toEqual({
+    expect(await fetchAsset(urlBefore)).toStrictEqual({
       status: 200,
       body: 'inline-asset-v1\n',
     })
@@ -369,7 +369,7 @@ if (isBuild) {
     const [urlAfter] = await displayedAsset()
     expect(urlAfter).toMatch(urlRe)
     expect(urlAfter).not.toBe(urlBefore)
-    expect(await fetchAsset(urlAfter)).toEqual({
+    expect(await fetchAsset(urlAfter)).toStrictEqual({
       status: 200,
       body: 'inline-asset-version-2\n',
     })
