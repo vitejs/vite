@@ -3637,18 +3637,22 @@ const esRE = /es(6|\d{4})/
 const versionRE = /\d/
 
 // Minimum versions that support arbitrary module namespace identifier names
-// (e.g. `export { x as "string name" }`), matching esbuild's compat table.
-// https://github.com/evanw/esbuild/blob/main/internal/compat/js_table.go (ArbitraryModuleNamespaceNames)
+// (e.g. `export { x as "string name" }`), matching Oxc's compat table.
+// https://github.com/oxc-project/oxc/blob/crates_v0.158.0/tasks/compat_data/custom-compat-data.js#L28-L45
 const arbitraryModuleNamespaceIdentifierNameSupport: Record<
   string,
   [major: number, minor: number]
 > = {
-  chrome: [90, 0],
-  edge: [90, 0],
+  chrome: [88, 0],
+  opera: [74, 0],
+  edge: [88, 0],
   firefox: [87, 0],
-  ios: [14, 5],
-  node: [16, 0],
   safari: [14, 1],
+  node: [16, 0],
+  deno: [1, 6],
+  ios: [14, 5],
+  samsung: [15, 0],
+  electron: [12, 0],
 }
 
 // Reserved-word class names (e.g. `switch`, `default`) and other keys that are
