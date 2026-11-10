@@ -96,7 +96,7 @@ describe.for([
     expect(await runner.import(filePath)).toBe(mod)
     expect(fetchModule).toHaveBeenCalledTimes(2)
     for (const { value } of fetchModule.mock.results) {
-      expect(await value).toEqual({ cache: true })
+      expect(await value).toStrictEqual({ cache: true })
     }
   })
 
