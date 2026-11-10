@@ -132,7 +132,7 @@ describe('module runner initialization', () => {
       const mod = await runner.import('/fixtures/has-error-deep.ts')
       mod.main()
     })
-    expect(serializeStackDeep(server, methodError).slice(0, 3)).toEqual([
+    expect(serializeStackDeep(server, methodError).slice(0, 3)).toStrictEqual([
       'Error: crash',
       '    at crash (<root>/fixtures/has-error-deep.ts:2:9)',
       '    at Module.main (<root>/fixtures/has-error-deep.ts:6:3)',
@@ -161,7 +161,7 @@ describe('module runner initialization', () => {
     const error = await getError(() =>
       runner.import('/fixtures/has-error-toplevel.js'),
     )
-    expect(serializeStackDeep(server, error).slice(0, 3)).toEqual([
+    expect(serializeStackDeep(server, error).slice(0, 3)).toStrictEqual([
       'Error: crash',
       '    at crash (<root>/fixtures/has-error-toplevel-dep.js:2:9)',
       '    at <root>/fixtures/has-error-toplevel.js:3:1',
@@ -176,7 +176,7 @@ describe('module runner initialization', () => {
       const mod = await runner.import('/fixtures/with space/has-error-deep.ts')
       mod.main()
     })
-    expect(serializeStackDeep(server, methodError).slice(0, 3)).toEqual([
+    expect(serializeStackDeep(server, methodError).slice(0, 3)).toStrictEqual([
       'Error: crash',
       '    at crash (<root>/fixtures/with space/has-error-deep.ts:2:9)',
       '    at Module.main (<root>/fixtures/with space/has-error-deep.ts:6:3)',
@@ -193,7 +193,7 @@ describe('module runner initialization', () => {
     )
     const error = await getError(() => mod.throwError())
     expect(error.message).toBe('Test error for stacktrace')
-    expect(serializeStackDeep(server, error).slice(0, 2)).toEqual([
+    expect(serializeStackDeep(server, error).slice(0, 2)).toStrictEqual([
       'Error: Test error for stacktrace',
       '    at Module.throwError (<root>/fixtures/string-literal-sourcemap.ts:11:9)',
     ])

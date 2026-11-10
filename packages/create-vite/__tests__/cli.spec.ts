@@ -147,7 +147,7 @@ test('successfully scaffolds a project based on vue starter template', () => {
 
   // Assertions
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
-  expect(templateFiles).toEqual(generatedFiles)
+  expect(templateFiles).toStrictEqual(generatedFiles)
 })
 
 test('successfully scaffolds a project with subfolder based on react starter template', () => {
@@ -169,7 +169,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
 
   // Assertions
   expect(stdout).toContain(`Scaffolding project in ${genPathWithSubfolder}`)
-  expect(templateFilesReact).toEqual(generatedFiles)
+  expect(templateFilesReact).toStrictEqual(generatedFiles)
 })
 
 test('successfully scaffolds a project based on react-compiler-ts starter template', () => {
@@ -266,7 +266,7 @@ test('ignores --eslint with a warning for non-React templates', () => {
   expect(stderr).not.toContain('ENOENT')
 
   const generatedFiles = fs.readdirSync(genPath).sort()
-  expect(templateFiles).toEqual(generatedFiles)
+  expect(templateFiles).toStrictEqual(generatedFiles)
   expect(fs.existsSync(path.join(genPath, 'eslint.config.js'))).toBe(false)
 })
 
@@ -288,7 +288,7 @@ test('works with the -t alias', () => {
 
   // Assertions
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
-  expect(templateFiles).toEqual(generatedFiles)
+  expect(templateFiles).toStrictEqual(generatedFiles)
 })
 
 test('accepts command line override for --overwrite', () => {
