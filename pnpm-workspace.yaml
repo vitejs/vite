@@ -20,6 +20,7 @@ patchedDependencies:
   "sirv@3.0.2": "patches/sirv@3.0.2.patch"
   "chokidar@3.6.0": "patches/chokidar@3.6.0.patch"
   "dotenv-expand@13.0.0": "patches/dotenv-expand@13.0.0.patch"
+  rolldown@1.2.18: patches/rolldown@1.2.18.patch
 peerDependencyRules:
   allowedVersions:
     vite: "*"

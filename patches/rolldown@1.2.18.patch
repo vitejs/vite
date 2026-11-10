@@ -1,0 +1,69 @@
+diff --git a/dist/shared/bindingify-input-options-BESrSS44.mjs b/dist/shared/bindingify-input-options-BESrSS44.mjs
+index f9b845da8ee32f35fc238b5d2deb4564b900f0f8..9f500dd188031192374cce463c388076bf96fae4 100644
+--- a/dist/shared/bindingify-input-options-BESrSS44.mjs
++++ b/dist/shared/bindingify-input-options-BESrSS44.mjs
+@@ -1177,7 +1177,48 @@ import_binding.BindingMagicString.prototype.update = function(start, end, conten
+ };
+ const nativeReplace = import_binding.BindingMagicString.prototype.replace;
+ const nativeReplaceAll = import_binding.BindingMagicString.prototype.replaceAll;
++function replaceRegexWithFunction(s, searchValue, replacement) {
++	const original = s.original;
++	const offset = s.offset;
++	const replaceMatch = (match) => {
++		const index = match.index;
++		if (index === void 0) return;
++		const content = match.groups === void 0 ? replacement(match[0], ...match.slice(1), index, original) : replacement(match[0], ...match.slice(1), index, original, match.groups);
++		if (content === match[0]) return;
++		if (match[0].length === 0) nativeAppendRight.call(s, index - offset, content);
++		else nativeOverwrite.call(s, index - offset, index + match[0].length - offset, content);
++	};
++	if (searchValue.global) {
++		searchValue.lastIndex = 0;
++		for (const match of original.matchAll(searchValue)) replaceMatch(match);
++	} else {
++		const match = original.match(searchValue);
++		if (match) replaceMatch(match);
++	}
++}
++function replaceStringWithFunction(s, searchValue, replacement, replaceAll) {
++	const original = s.original;
++	const offset = s.offset;
++	if (searchValue === "") {
++		const last = replaceAll ? original.length : 0;
++		for (let index = 0; index <= last; index++) {
++			const content = replacement("", index, original);
++			if (content !== "") nativeAppendRight.call(s, index - offset, content);
++		}
++		return;
++	}
++	for (let index = original.indexOf(searchValue); index !== -1; index = original.indexOf(searchValue, index + searchValue.length)) {
++		const content = replacement(searchValue, index, original);
++		if (content !== searchValue) nativeOverwrite.call(s, index - offset, index + searchValue.length - offset, content);
++		if (!replaceAll) return;
++	}
++}
+ import_binding.BindingMagicString.prototype.replace = function(searchValue, replacement) {
++	if (typeof replacement === "function") {
++		if (typeof searchValue === "string") replaceStringWithFunction(this, searchValue, replacement, false);
++		else replaceRegexWithFunction(this, searchValue, replacement);
++		return this;
++	}
+ 	if (typeof searchValue === "string") return nativeReplace.call(this, searchValue, replacement);
+ 	if (searchValue.global) searchValue.lastIndex = 0;
+ 	const lastMatchEnd = this.replaceRegex(searchValue, replacement);
+@@ -1186,6 +1227,15 @@ import_binding.BindingMagicString.prototype.replace = function(searchValue, repl
+ 	return this;
+ };
+ import_binding.BindingMagicString.prototype.replaceAll = function(searchValue, replacement) {
++	if (typeof replacement === "function") {
++		if (typeof searchValue === "string") {
++			replaceStringWithFunction(this, searchValue, replacement, true);
++			return this;
++		}
++		if (!searchValue.global) throw new TypeError("MagicString.prototype.replaceAll called with a non-global RegExp argument");
++		replaceRegexWithFunction(this, searchValue, replacement);
++		return this;
++	}
+ 	if (typeof searchValue === "string") return nativeReplaceAll.call(this, searchValue, replacement);
+ 	if (!searchValue.global) throw new TypeError("MagicString.prototype.replaceAll called with a non-global RegExp argument");
+ 	searchValue.lastIndex = 0;

@@ -174,6 +174,7 @@ packageExtensionsChecksum: sha256-If0sPrN3HV7D+EgeoSZUm8CYcOJOyo0gWobIh2WtTMM=
 patchedDependencies:
   chokidar@3.6.0: e17269188c54412478078f7ac7877c1d5a475a2f2438328e3a7e725513ccbf1f
   dotenv-expand@13.0.0: 49330a663821151418e003e822a82a6a61d2f0f8a6e3cab00c1c94815a112889
+  rolldown@1.2.18: 64cd658265d2a38a4b34160f8f926432e22848572b7eb8edbf1415a6e5fcbe7c
   sirv@3.0.2: c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95
 
 importers:
@@ -245,7 +246,7 @@ importers:
         version: 1.65.0
       rolldown:
         specifier: ~1.2.18
-        version: 1.2.18
+        version: 1.2.18(patch_hash=64cd658265d2a38a4b34160f8f926432e22848572b7eb8edbf1415a6e5fcbe7c)
       rollup:
         specifier: ^4.59.0
         version: 4.64.9
@@ -393,7 +394,7 @@ importers:
         version: 8.5.32
       rolldown:
         specifier: ~1.2.18
-        version: 1.2.18
+        version: 1.2.18(patch_hash=64cd658265d2a38a4b34160f8f926432e22848572b7eb8edbf1415a6e5fcbe7c)
       tinyglobby:
         specifier: ^0.2.17
         version: 0.2.17
@@ -732,7 +733,7 @@ importers:
         version: 1.6.1
       rolldown:
         specifier: ~1.2.18
-        version: 1.2.18
+        version: 1.2.18(patch_hash=64cd658265d2a38a4b34160f8f926432e22848572b7eb8edbf1415a6e5fcbe7c)
 
   playground/alias:
     dependencies:
@@ -13120,7 +13121,7 @@ snapshots:
       dts-resolver: 3.0.0
       get-tsconfig: 5.0.0-beta.6
       obug: 3.0.0
-      rolldown: 1.2.18
+      rolldown: 1.2.18(patch_hash=64cd658265d2a38a4b34160f8f926432e22848572b7eb8edbf1415a6e5fcbe7c)
       yuku-ast: 0.19.0
       yuku-codegen: 0.19.0
       yuku-parser: 0.19.0
@@ -13137,7 +13138,7 @@ snapshots:
       dts-resolver: 3.0.0
       get-tsconfig: 5.0.0-beta.6
       obug: 3.0.0
-      rolldown: 1.2.18
+      rolldown: 1.2.18(patch_hash=64cd658265d2a38a4b34160f8f926432e22848572b7eb8edbf1415a6e5fcbe7c)
       yuku: 0.25.0
     optionalDependencies:
       '@volar/typescript': 2.4.28
@@ -13148,7 +13149,7 @@ snapshots:
       - '@yuku-toolchain/wasm'
       - oxc-resolver
 
-  rolldown@1.2.18:
+  rolldown@1.2.18(patch_hash=64cd658265d2a38a4b34160f8f926432e22848572b7eb8edbf1415a6e5fcbe7c):
     dependencies:
       '@oxc-project/types': 0.156.0
       '@rolldown/pluginutils': 1.0.1
@@ -13724,7 +13725,7 @@ snapshots:
       import-without-cache: 0.4.1
       obug: 3.0.0
       picomatch: 4.0.7
-      rolldown: 1.2.18
+      rolldown: 1.2.18(patch_hash=64cd658265d2a38a4b34160f8f926432e22848572b7eb8edbf1415a6e5fcbe7c)
       rolldown-plugin-dts: 0.28.8(@volar/typescript@2.4.28)(@vue/language-core@3.3.14)(rolldown@1.2.18)(typescript@7.0.2)(vue-tsc@3.3.14)
       tinyexec: 1.3.1
       tinyglobby: 0.2.17
@@ -13873,7 +13874,7 @@ snapshots:
 
   unrun@0.3.1:
     dependencies:
-      rolldown: 1.2.18
+      rolldown: 1.2.18(patch_hash=64cd658265d2a38a4b34160f8f926432e22848572b7eb8edbf1415a6e5fcbe7c)
 
   update-browserslist-db@1.3.4(browserslist@4.29.5):
     dependencies:
