@@ -176,27 +176,6 @@ test('should work a load path that contains parentheses.', async () => {
     .toMatch('dynamic-import-with-vars-contains-parenthesis')
 })
 
-test.runIf(isBuild)(
-  'should rollup warn when static and dynamic import a module in same chunk',
-  // NOTE: this is a warning related to rollup's chunking behavior
-  { skip: true },
-  async () => {
-    const log = serverLogs.join('\n')
-    expect(log).toContain(
-      'dynamic import will not move module into another chunk',
-    )
-    expect(log).toMatch(
-      /\(!\).*\/dynamic-import\/files\/mxd\.js is dynamically imported by/,
-    )
-    expect(log).toMatch(
-      /\(!\).*\/dynamic-import\/files\/mxd\.json is dynamically imported by/,
-    )
-    expect(log).not.toMatch(
-      /\(!\).*\/dynamic-import\/nested\/shared\.js is dynamically imported by/,
-    )
-  },
-)
-
 test('dynamic import treeshaken log', async () => {
   const log = browserLogs.join('\n')
   expect(log).toContain('treeshaken foo')
