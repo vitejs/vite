@@ -148,7 +148,7 @@ export class BundledDev {
     this.environment.hot.on('vite:bundled-dev:payload-delivered', (payload) => {
       this.markPayloadDelivered(payload.filename)
     })
-    this.environment.hot.on('vite:client:connect', (_payload, client) => {
+    this.environment.hot.on('vite:client:connect', async (_payload, client) => {
       // Replay the cached build error to freshly connected clients.
       if (this.lastBuildError) {
         debug?.('REPLAY: replaying last build error to newly connected client')
@@ -157,6 +157,17 @@ export class BundledDev {
           type: 'error',
           err: prepareError(this.lastBuildError),
         })
+        return
+      }
+      if (this.hasBuildOutput) {
+        try {
+          await this.devEngine.ensureLatestBuildOutput()
+        } catch {
+          return
+        }
+        if (!this._closed && !this.lastBuildError) {
+          client.send({ type: 'full-reload', path: '*', ifFallback: true })
+        }
       }
     })
     this.environment.hot.on('vite:client:disconnect', (_payload, client) => {
