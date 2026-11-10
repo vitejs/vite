@@ -1,7 +1,7 @@
 import { LitElement, css, html } from 'lit'
+import heroImg from './assets/hero.png'
 import litLogo from './assets/lit.svg'
 import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 
 /**
  * An example element.

@@ -1,22 +1,22 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { posix, resolve, win32 } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { setTimeout } from 'node:timers/promises'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it, vi } from 'vitest'
-import { isWindows } from '../../../../shared/utils'
+import type { HMRLogger } from '../../../../../dist/node/module-runner'
 import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
+import { isWindows } from '../../../../shared/utils'
 import { createServer } from '../../../server'
 import {
   createRunnableDevEnvironment,
   isRunnableDevEnvironment,
 } from '../../../server/environments/runnableEnvironment'
-import type { HMRLogger } from '../../../../../dist/node/module-runner'
 import { createModuleRunnerTester } from './utils'
 
 const _URL = URL
 
-describe('module runner initialization', async () => {
-  const it = await createModuleRunnerTester({
+describe('module runner initialization', () => {
+  const it = createModuleRunnerTester({
     resolve: {
       external: ['tinyglobby'],
       noExternal: ['@oxc-project/runtime'],
@@ -272,6 +272,17 @@ describe('module runner initialization', async () => {
     expect(action).toBeDefined()
   })
 
+  it('resolves circular imports between modules with top-level await', async ({
+    runner,
+  }) => {
+    const mod = await runner.import('/fixtures/tla-circular/index.js')
+
+    expect(mod.a).toBe('a')
+    expect(mod.b).toBe('b')
+    expect(mod.getA()).toBe('a')
+    expect(mod.getB()).toBe('b')
+  })
+
   it('this of the exported function should be undefined', async ({
     runner,
   }) => {
@@ -423,8 +434,8 @@ describe('module runner initialization', async () => {
   })
 })
 
-describe('optimize-deps', async () => {
-  const it = await createModuleRunnerTester({
+describe('optimize-deps', () => {
+  const it = createModuleRunnerTester({
     cacheDir: 'node_modules/.vite-test',
     ssr: {
       noExternal: true,
@@ -440,8 +451,8 @@ describe('optimize-deps', async () => {
   })
 })
 
-describe('resolveId absolute path entry', async () => {
-  const it = await createModuleRunnerTester({
+describe('resolveId absolute path entry', () => {
+  const it = createModuleRunnerTester({
     plugins: [
       {
         name: 'test-resolevId',
@@ -478,10 +489,10 @@ describe('resolveId absolute path entry', async () => {
   })
 })
 
-describe('virtual module hmr', async () => {
+describe('virtual module hmr', () => {
   let state = 'init'
 
-  const it = await createModuleRunnerTester({
+  const it = createModuleRunnerTester({
     plugins: [
       {
         name: 'test-resolevId',
@@ -533,8 +544,8 @@ describe('virtual module hmr', async () => {
   })
 })
 
-describe('invalid package', async () => {
-  const it = await createModuleRunnerTester({
+describe('invalid package', () => {
+  const it = createModuleRunnerTester({
     environments: {
       ssr: {
         resolve: {
@@ -626,8 +637,8 @@ describe('full-reload during close', () => {
   })
 })
 
-describe('server.fs check', async () => {
-  const it = await createModuleRunnerTester({
+describe('server.fs check', () => {
+  const it = createModuleRunnerTester({
     server: {
       fs: {
         allow: [resolve(import.meta.dirname, './fixtures/circular')],

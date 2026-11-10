@@ -1,0 +1,2 @@
+/* `@import` with a tsconfig `paths` alias must resolve from a CSS importer */
+@import '@/imported.css';

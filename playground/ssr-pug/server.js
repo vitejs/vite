@@ -1,7 +1,7 @@
 // @ts-check
 import path from 'node:path'
-import pug from 'pug'
 import express from 'express'
+import pug from 'pug'
 
 const isTest = process.env.VITEST
 

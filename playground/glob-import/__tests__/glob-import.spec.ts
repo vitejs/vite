@@ -1,8 +1,9 @@
-import path from 'node:path'
 import { readdir } from 'node:fs/promises'
+import path from 'node:path'
 import { expect, test } from 'vitest'
 import {
   addFile,
+  bundledDevTodo,
   editFile,
   findAssetFile,
   isBuild,
@@ -131,11 +132,16 @@ test('import glob in package', async () => {
   )
 })
 
+const globFileAddRemoveTodo = bundledDevTodo(
+  '`import.meta.glob` does not see a file that is created or deleted after the server starts: Rolldown supports the `hotUpdate` hook only for Rust plugins, and the hook stays off (`experimental.devMode.hotUpdate`) until its JS-side adapter lands',
+  { vite: [22956], rolldown: [10065] },
+)
+
 if (!isBuild) {
-  test('hmr for adding/removing files', async () => {
+  test('hmr for adding/removing files', globFileAddRemoveTodo, async () => {
     const resultElement = page.locator('.result')
 
-    addFile('dir/a.js', '')
+    addFile('root/dir/a.js', '')
     await expect
       .poll(async () => {
         const actualAdd = await resultElement.textContent()
@@ -154,7 +160,7 @@ if (!isBuild) {
       })
 
     // edit the added file
-    editFile('dir/a.js', () => 'export const msg ="a"')
+    editFile('root/dir/a.js', () => 'export const msg ="a"')
     await expect
       .poll(async () => {
         const actualEdit = await resultElement.textContent()
@@ -176,7 +182,7 @@ if (!isBuild) {
         },
       })
 
-    removeFile('dir/a.js')
+    removeFile('root/dir/a.js')
     await expect
       .poll(async () => {
         const actualRemove = await resultElement.textContent()
@@ -187,53 +193,61 @@ if (!isBuild) {
 
   test('no hmr for adding/removing files', async () => {
     let request = page.waitForResponse(/dir\/index\.js$/, { timeout: 200 })
-    addFile('nohmr.js', '')
+    addFile('root/nohmr.js', '')
     let response = await request.catch(() => ({ status: () => -1 }))
     expect(response.status()).toBe(-1)
 
     request = page.waitForResponse(/dir\/index\.js$/, { timeout: 200 })
-    removeFile('nohmr.js')
+    removeFile('root/nohmr.js')
     response = await request.catch(() => ({ status: () => -1 }))
     expect(response.status()).toBe(-1)
   })
 
-  test('hmr for adding/removing files in package', async () => {
-    const resultElement = page.locator('.in-package')
+  test(
+    'hmr for adding/removing files in package',
+    globFileAddRemoveTodo,
+    async () => {
+      const resultElement = page.locator('.in-package')
 
-    addFile('pkg-pages/bar.js', '// empty')
-    await expect
-      .poll(async () => JSON.parse(await resultElement.textContent()))
-      .toStrictEqual(['/pkg-pages/foo.js', '/pkg-pages/bar.js'].sort())
+      addFile('root/pkg-pages/bar.js', '// empty')
+      await expect
+        .poll(async () => JSON.parse(await resultElement.textContent()))
+        .toStrictEqual(['/pkg-pages/foo.js', '/pkg-pages/bar.js'].sort())
 
-    removeFile('pkg-pages/bar.js')
-    await expect
-      .poll(async () => JSON.parse(await resultElement.textContent()))
-      .toStrictEqual(['/pkg-pages/foo.js'])
-  })
+      removeFile('root/pkg-pages/bar.js')
+      await expect
+        .poll(async () => JSON.parse(await resultElement.textContent()))
+        .toStrictEqual(['/pkg-pages/foo.js'])
+    },
+  )
 
-  test('hmr for adding/removing files with array patterns and exclusions', async () => {
-    const resultElement = page.locator('.array-result')
-    await expect
-      .poll(async () => JSON.parse(await resultElement.textContent()))
-      .toStrictEqual({
-        './array-test-dir/included.js': 'included',
-      })
+  test(
+    'hmr for adding/removing files with array patterns and exclusions',
+    globFileAddRemoveTodo,
+    async () => {
+      const resultElement = page.locator('.array-result')
+      await expect
+        .poll(async () => JSON.parse(await resultElement.textContent()))
+        .toStrictEqual({
+          './array-test-dir/included.js': 'included',
+        })
 
-    addFile('array-test-dir/new-file.js', 'export default "new"')
-    await expect
-      .poll(async () => JSON.parse(await resultElement.textContent()))
-      .toStrictEqual({
-        './array-test-dir/included.js': 'included',
-        './array-test-dir/new-file.js': 'new',
-      })
+      addFile('root/array-test-dir/new-file.js', 'export default "new"')
+      await expect
+        .poll(async () => JSON.parse(await resultElement.textContent()))
+        .toStrictEqual({
+          './array-test-dir/included.js': 'included',
+          './array-test-dir/new-file.js': 'new',
+        })
 
-    removeFile('array-test-dir/new-file.js')
-    await expect
-      .poll(async () => JSON.parse(await resultElement.textContent()))
-      .toStrictEqual({
-        './array-test-dir/included.js': 'included',
-      })
-  })
+      removeFile('root/array-test-dir/new-file.js')
+      await expect
+        .poll(async () => JSON.parse(await resultElement.textContent()))
+        .toStrictEqual({
+          './array-test-dir/included.js': 'included',
+        })
+    },
+  )
 }
 
 test('follow symlinks', async () => {
@@ -290,7 +304,7 @@ test('tree-shake eager css', async () => {
   )
 
   if (isBuild) {
-    const content = findAssetFile(/index-[-\w]+\.js/)
+    const content = findAssetFile(/index-[-\w]+\.js/, '../root/dist')
     expect(content).not.toMatch('.tree-shake-eager-css')
   }
 })
@@ -302,9 +316,12 @@ test('escapes special chars in globs without mangling user supplied glob suffix'
   // index.html has a script that loads all these glob.js files and prints the globs that returned the expected result
   // this test finally compares the printed output of index.js with the list of directories with special chars,
   // expecting that they all work
-  const files = await readdir(path.join(import.meta.dirname, '..', 'escape'), {
-    withFileTypes: true,
-  })
+  const files = await readdir(
+    path.join(import.meta.dirname, '..', 'root', 'escape'),
+    {
+      withFileTypes: true,
+    },
+  )
   const expectedNames = files
     .filter((f) => f.isDirectory())
     .map((f) => `/escape/${f.name}/glob.js`)
@@ -363,4 +380,31 @@ test('import.meta.glob and dynamic import vars transformations should be visible
     .toBe(
       JSON.stringify({ globTransformed: true, dynamicImportTransformed: true }),
     )
+})
+
+test('caseSensitiveMatch option', async () => {
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.case-sensitive-true')),
+    )
+    .toStrictEqual(['./case-sensitive-dir/data-test.js'])
+
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.case-sensitive-false')),
+    )
+    .toStrictEqual([
+      './case-sensitive-dir/DATA-other.js',
+      './case-sensitive-dir/data-test.js',
+    ])
+})
+test('absolute base with files outside of root', async () => {
+  await expect
+    .poll(async () =>
+      JSON.parse(await page.textContent('.absolute-base-outside-root')),
+    )
+    .toStrictEqual({
+      '../external/x.js': 'hello from x',
+      '../external/y.js': 'hello from y',
+    })
 })

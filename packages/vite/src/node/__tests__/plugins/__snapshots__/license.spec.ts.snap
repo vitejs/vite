@@ -15,6 +15,12 @@ exports[`json 1`] = `
     "text": "MIT License\\n\\nCopyright (c) ..."
   },
   {
+    "name": "@vitejs/test-dep-license-type-marker",
+    "version": "1.0.0",
+    "identifier": "MIT",
+    "text": "MIT License\\n\\nCopyright (c) ..."
+  },
+  {
     "name": "@vitejs/test-dep-nested-license-isc",
     "version": "0.0.0",
     "identifier": "ISC",
@@ -35,6 +41,12 @@ CC0 1.0 Universal
 ...
 
 ## @vitejs/test-dep-license-mit - 0.0.0 (MIT)
+
+MIT License
+
+Copyright (c) ...
+
+## @vitejs/test-dep-license-type-marker - 1.0.0 (MIT)
 
 MIT License
 

@@ -1,8 +1,8 @@
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { isWindows } from '../../../../shared/utils'
 import { transformDynamicImport } from '../../../plugins/dynamicImportVars'
 import { normalizePath } from '../../../utils'
-import { isWindows } from '../../../../shared/utils'
 
 const dirname = import.meta.dirname
 

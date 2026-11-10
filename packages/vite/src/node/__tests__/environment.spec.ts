@@ -1,9 +1,9 @@
 import path from 'node:path'
-import { describe, expect, onTestFinished, test } from 'vitest'
 import type { RolldownOutput } from 'rolldown'
-import { createServer } from '../server'
-import type { InlineConfig } from '../config'
+import { describe, expect, onTestFinished, test } from 'vitest'
 import { createBuilder } from '../build'
+import type { InlineConfig } from '../config'
+import { createServer } from '../server'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
 
 describe('custom environment conditions', () => {
@@ -33,7 +33,7 @@ describe('custom environment conditions', () => {
               import.meta.dirname,
               'fixtures/test-dep-conditions/dist/ssr',
             ),
-            rollupOptions: {
+            rolldownOptions: {
               input: { index: '@vitejs/test-dep-conditions' },
             },
           },
@@ -50,7 +50,7 @@ describe('custom environment conditions', () => {
               import.meta.dirname,
               'fixtures/test-dep-conditions/dist/worker',
             ),
-            rollupOptions: {
+            rolldownOptions: {
               input: { index: '@vitejs/test-dep-conditions' },
             },
           },
@@ -67,7 +67,7 @@ describe('custom environment conditions', () => {
               import.meta.dirname,
               'fixtures/test-dep-conditions/dist/custom1',
             ),
-            rollupOptions: {
+            rolldownOptions: {
               input: { index: '@vitejs/test-dep-conditions' },
             },
           },
@@ -84,7 +84,7 @@ describe('custom environment conditions', () => {
               import.meta.dirname,
               'fixtures/test-dep-conditions/dist/custom1_2',
             ),
-            rollupOptions: {
+            rolldownOptions: {
               input: { index: '@vitejs/test-dep-conditions' },
             },
           },

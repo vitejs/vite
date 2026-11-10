@@ -13,9 +13,11 @@ Resources:
 Please share your feedback with us.
 :::
 
+This page is for runtime providers, authors who integrate a JavaScript runtime with Vite. A runtime here is the JavaScript engine where transformed code executes, such as Node.js, the browser, Cloudflare's workerd, or a Worker thread. A runtime provider packages the integration for one of these runtimes, so framework authors and end users (the developers building an app) don't have to set it up themselves.
+
 ## Environment Factories
 
-Environments factories are intended to be implemented by Environment providers like Cloudflare, and not by end users. Environment factories return a `EnvironmentOptions` for the most common case of using the target runtime for both dev and build environments. The default environment options can also be set so the user doesn't need to do it.
+Environment factories are intended to be implemented by runtime providers, not by end users. Environment factories return an `EnvironmentOptions` for the most common case of using the target runtime for both dev and build environments. The default environment options can also be set so the user doesn't need to do it.
 
 ```ts
 function createWorkerdEnvironment(
@@ -24,9 +26,7 @@ function createWorkerdEnvironment(
   return mergeConfig(
     {
       resolve: {
-        conditions: [
-          /*...*/
-        ],
+        conditions: [/*...*/],
       },
       dev: {
         createEnvironment(name, config) {
@@ -222,12 +222,12 @@ await moduleRunner.import('/src/entry-point.js')
 ## `ModuleRunnerOptions`
 
 ```ts twoslash
+import type { Debug } from '@type-challenges/utils'
 import type {
   InterceptorOptions as InterceptorOptionsRaw,
   ModuleRunnerHmr as ModuleRunnerHmrRaw,
   EvaluatedModules,
 } from 'vite/module-runner'
-import type { Debug } from '@type-challenges/utils'
 
 type InterceptorOptions = Debug<InterceptorOptionsRaw>
 type ModuleRunnerHmr = Debug<ModuleRunnerHmrRaw>
@@ -272,8 +272,8 @@ interface ModuleRunnerOptions {
 **Type Signature:**
 
 ```ts twoslash
-import type { ModuleRunnerContext as ModuleRunnerContextRaw } from 'vite/module-runner'
 import type { Debug } from '@type-challenges/utils'
+import type { ModuleRunnerContext as ModuleRunnerContextRaw } from 'vite/module-runner'
 
 type ModuleRunnerContext = Debug<ModuleRunnerContextRaw>
 
@@ -329,8 +329,8 @@ You need to couple it with the `HotChannel` instance on the server like in this 
 ::: code-group
 
 ```js [worker.js]
-import { parentPort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
+import { parentPort } from 'node:worker_threads'
 import {
   ESModulesEvaluator,
   ModuleRunner,
@@ -359,7 +359,7 @@ const runner = new ModuleRunner(
 
 ```js [server.js]
 import { BroadcastChannel } from 'node:worker_threads'
-import { createServer, RemoteEnvironmentTransport, DevEnvironment } from 'vite'
+import { createServer, DevEnvironment } from 'vite'
 
 function createWorkerEnvironment(name, config, context) {
   const worker = new Worker('./worker.js')
@@ -475,4 +475,13 @@ server.onRequest((request: Request) => {
 
 But note that for HMR support, `send` and `connect` methods are required. The `send` method is usually called when the custom event is triggered (like, `import.meta.hot.send("my-event")`).
 
-Vite exports `createServerHotChannel` from the main entry point to support HMR during Vite SSR.
+For an SSR environment running in the same Node.js process as the Vite server, Vite exports `createServerHotChannel` as a ready-made `HotChannel`:
+
+```js
+import { createServerHotChannel, DevEnvironment } from 'vite'
+
+new DevEnvironment(name, config, {
+  hot: true,
+  transport: createServerHotChannel(),
+})
+```

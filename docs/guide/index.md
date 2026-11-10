@@ -22,9 +22,9 @@ You can learn more about the rationale behind the project in the [Why Vite](./wh
 
 ## Browser Support
 
-During development, Vite assumes that a modern browser is used. This means the browser supports most of the latest JavaScript and CSS features. For that reason, Vite sets [`esnext` as the transform target](https://oxc.rs/docs/guide/usage/transformer/lowering.html#target). This prevents syntax lowering, letting Vite serve modules as close as possible to the original source code. Vite injects some runtime code to make the development server work. This code uses features included in [Baseline](https://web-platform-dx.github.io/web-features/) Newly Available at the time of each major release (2026-01-01 for this major).
+During development, Vite assumes that a modern browser is used. This means the browser supports most of the latest JavaScript and CSS features. For that reason, Vite sets [`esnext` as the transform target](https://oxc.rs/docs/guide/usage/transformer/lowering.html#target). This prevents syntax lowering, letting Vite serve modules as close as possible to the original source code. Vite injects some runtime code to make the development server work. This code uses features included in [Baseline](https://web-platform-dx.github.io/baseline/) Newly Available at the time of each major release (2026-01-01 for this major).
 
-For production builds, Vite by default targets [Baseline](https://web-platform-dx.github.io/web-features/) Widely Available browsers. These are browsers that were released at least 2.5 years ago. The target can be lowered via configuration. Additionally, legacy browsers can be supported via the official [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy). See the [Building for Production](./build) section for more details.
+For production builds, Vite by default targets [Baseline](https://web-platform-dx.github.io/baseline/) Widely Available browser versions as of a date fixed for each major release. For this major, that corresponds to [browser versions released around mid-2023](https://web-platform-dx.github.io/supported-browsers/?widelyAvailableOnDate=2026-01-01). The target can be lowered via configuration. Additionally, legacy browsers can be supported via the official [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy). See the [Building for Production](./build) section for more details.
 
 ## Trying Vite Online
 
@@ -106,7 +106,7 @@ $ deno init --npm vite my-vue-app --template vue
 
 :::
 
-See [create-vite](https://github.com/vitejs/vite/tree/main/packages/create-vite) for more details on each supported template: `vanilla`, `vanilla-ts`, `vue`, `vue-ts`, `react`, `react-ts`, `preact`, `preact-ts`, `lit`, `lit-ts`, `svelte`, `svelte-ts`, `solid`, `solid-ts`, `qwik`, `qwik-ts`.
+See [create-vite](https://github.com/vitejs/vite/tree/main/packages/create-vite) for more details on each supported template: `vanilla`, `vanilla-ts`, `vue`, `vue-ts`, `react`, `react-compiler`, `react-ts`, `react-compiler-ts`, `preact`, `preact-ts`, `lit`, `lit-ts`, `svelte`, `svelte-ts`, `solid`, `solid-ts`, `qwik`, `qwik-ts`.
 
 You can use `.` for the project name to scaffold in the current directory.
 
@@ -224,7 +224,7 @@ In a project where Vite is installed, you can use the `vite` binary in your npm 
 
 You can specify additional CLI options like `--port` or `--open`. For a full list of CLI options, run `npx vite --help` in your project.
 
-Learn more about the [Command Line Interface](./cli.md)
+Learn more about the [Command Line Interface](./cli.md).
 
 ## Using Unreleased Commits
 
@@ -268,7 +268,7 @@ Then go to your Vite based project and run `pnpm link vite` (or the package mana
 To learn more about how and when Vite does releases, check out the [Releases](../releases.md) documentation.
 
 ::: tip Dependencies using Vite
-To replace the Vite version used by dependencies transitively, you should use [npm overrides](https://docs.npmjs.com/cli/v11/configuring-npm/package-json#overrides) or [pnpm overrides](https://pnpm.io/9.x/package_json#pnpmoverrides).
+To replace the Vite version used by dependencies transitively, you should use [npm overrides](https://docs.npmjs.com/cli/v11/configuring-npm/package-json#overrides) or [pnpm overrides](https://pnpm.io/settings#overrides).
 :::
 
 ## Community

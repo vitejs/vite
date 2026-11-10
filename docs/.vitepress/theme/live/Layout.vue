@@ -1,10 +1,10 @@
 <script setup>
-import Hero from './Hero.vue'
-import Timer from './Timer.vue'
-import TimeoutSwitcher from './TimeoutSwitcher.vue'
-import VideoIframe from './VideoIframe.vue'
-import Events from './Events.vue'
 import Footer from '@components/oss/Footer.vue'
+import Events from './Events.vue'
+import Hero from './Hero.vue'
+import TimeoutSwitcher from './TimeoutSwitcher.vue'
+import Timer from './Timer.vue'
+import VideoIframe from './VideoIframe.vue'
 const startTime = '2026-03-19T15:00:00.000Z'
 </script>
 

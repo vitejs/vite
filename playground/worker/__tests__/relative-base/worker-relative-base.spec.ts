@@ -1,9 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { isBuild, page, testDir } from '~utils'
+import { isBuild, isBundledDev, page, testDir } from '~utils'
 
-test('normal', async () => {
+test.skipIf(isBundledDev)('normal', async () => {
   await expect.poll(() => page.textContent('.pong')).toMatch('pong')
   await expect
     .poll(() => page.textContent('.mode'))
@@ -79,8 +79,8 @@ describe.runIf(isBuild)('build', () => {
     expect(workerContent).not.toMatch(/import\s*["(]/)
     expect(workerContent).not.toMatch(/\bexport\b/)
     // chunk
-    expect(content).toMatch('new Worker(``+new URL(`../worker-entries/')
-    expect(content).toMatch('new SharedWorker(``+new URL(`../worker-entries/')
+    expect(content).toMatch('new Worker(new URL(`../worker-entries/')
+    expect(content).toMatch('new SharedWorker(new URL(`../worker-entries/')
     // inlined
     expect(content).toMatch(`(self.URL||self.webkitURL).createObjectURL`)
     expect(content).toMatch(`self.Blob`)
@@ -102,7 +102,7 @@ test('module worker', async () => {
     .toMatch('A string')
 })
 
-test('classic worker', async () => {
+test.skipIf(isBundledDev)('classic worker', async () => {
   await expect
     .poll(() => page.textContent('.classic-worker'))
     .toMatch('A classic')

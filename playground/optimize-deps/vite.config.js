@@ -27,8 +27,12 @@ export default defineConfig({
       '@vitejs/test-dep-optimize-with-glob/**/*.js',
       '@vitejs/test-dep-cjs-with-external-deps',
       '@vitejs/test-dep-cjs-with-es-module-flag',
+      // only referenced by the import that injectImportIntoOptimizedDep()
+      // adds at serve time, so the scanner can never discover it
+      '@vitejs/test-dep-cjs-for-injected-import',
     ],
     exclude: [
+      '@vitejs/test-excluded-optional-peer',
       '@vitejs/test-nested-exclude',
       '@vitejs/test-dep-non-optimized',
       '@vitejs/test-dep-esm-external',
@@ -57,7 +61,9 @@ export default defineConfig({
   plugins: [
     testVue(),
     notjs(),
+    svelteDeepImport(),
     virtualModulePlugin(),
+    injectImportIntoOptimizedDep(),
     {
       name: 'test-astro',
       transform(code, id) {
@@ -98,6 +104,44 @@ export default defineComponent({
   }
 }
 
+function svelteDeepImport() {
+  const transformSvelte = (code) =>
+    code.match(/<script>([\s\S]*)<\/script>/)?.[1]
+
+  return {
+    name: 'svelte-deep-import',
+    config() {
+      return {
+        optimizeDeps: {
+          extensions: ['.svelte'],
+          rolldownOptions: {
+            plugins: [
+              {
+                name: 'svelte-deep-import-optimizer',
+                transform: {
+                  filter: { id: /\.svelte$/ },
+                  handler(code) {
+                    const transformed = transformSvelte(code)
+                    if (transformed) {
+                      return { code: transformed, moduleType: 'js' }
+                    }
+                  },
+                },
+              },
+            ],
+          },
+        },
+      }
+    },
+    transform(code, id) {
+      if (id.endsWith('.svelte')) {
+        const transformed = transformSvelte(code)
+        if (transformed) return { code: transformed }
+      }
+    },
+  }
+}
+
 // Handles .notjs file, basically remove wrapping <notjs> and </notjs> tags
 function notjs() {
   return {
@@ -130,6 +174,26 @@ function notjs() {
       if (id.endsWith('.notjs')) {
         code = code.replace('<notjs>', '').replace('</notjs>', '')
         return { code }
+      }
+    },
+  }
+}
+
+// Injects a named import of a CJS dep into the served output of an optimized
+// dep, like @rollup/plugin-inject does when providing `Buffer` / `process`
+function injectImportIntoOptimizedDep() {
+  return {
+    name: 'inject-import-into-optimized-dep',
+    transform(code, id) {
+      if (
+        /\.vite[\\/]deps[\\/].*test-dep-with-injected-import/.test(id) &&
+        !code.includes('test-dep-cjs-for-injected-import')
+      ) {
+        return {
+          code:
+            `import { msg as injectedMsg } from '@vitejs/test-dep-cjs-for-injected-import';\n` +
+            code,
+        }
       }
     },
   }

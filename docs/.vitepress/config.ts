@@ -1,19 +1,16 @@
-import path from 'node:path'
-import fs from 'node:fs'
+import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
+import type { FooterLink } from '@voidzero-dev/vitepress-theme'
+import { extendConfig } from '@voidzero-dev/vitepress-theme/config'
 import type { HeadConfig } from 'vitepress'
 import { defineConfig } from 'vitepress'
-import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
+import { graphvizMarkdownPlugin } from 'vitepress-plugin-graphviz'
 import {
   groupIconMdPlugin,
   groupIconVitePlugin,
 } from 'vitepress-plugin-group-icons'
-import { graphvizMarkdownPlugin } from 'vitepress-plugin-graphviz'
 import llmstxt from 'vitepress-plugin-llms'
-import { markdownItImageSize } from 'markdown-it-image-size'
-import { extendConfig } from '@voidzero-dev/vitepress-theme/config'
-import type { FooterLink } from '@voidzero-dev/vitepress-theme'
 import packageJson from '../../packages/vite/package.json' with { type: 'json' }
-import { buildEnd } from './buildEnd.config'
+import { buildEnd } from './buildEnd.config.ts'
 
 const viteVersion = packageJson.version
 const viteMajorVersion = +viteVersion.split('.')[0]
@@ -75,17 +72,6 @@ const versionLinks = (() => {
   return links
 })()
 
-function inlineScript(file: string): HeadConfig {
-  return [
-    'script',
-    {},
-    fs.readFileSync(
-      path.resolve(import.meta.dirname, `./inlined-scripts/${file}`),
-      'utf-8',
-    ),
-  ]
-}
-
 const config = defineConfig({
   title: `Vite${additionalTitle}`,
   description: 'Next Generation Frontend Tooling',
@@ -103,7 +89,6 @@ const config = defineConfig({
       { rel: 'alternate', type: 'application/rss+xml', href: '/blog.rss' },
     ],
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
-    inlineScript('banner.js'),
     ['link', { rel: 'me', href: 'https://m.webtoo.ls/@vite' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: ogTitle }],
@@ -114,15 +99,6 @@ const config = defineConfig({
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
     ['meta', { name: 'twitter:site', content: '@vite_js' }],
     ['meta', { name: 'theme-color', content: '#646cff' }],
-    [
-      'script',
-      {
-        src: 'https://cdn.usefathom.com/script.js',
-        'data-site': 'CBDFBSLI',
-        'data-spa': 'auto',
-        defer: '',
-      },
-    ],
   ],
 
   locales: {
@@ -130,20 +106,16 @@ const config = defineConfig({
     zh: { label: '简体中文', link: 'https://cn.vite.dev' },
     ja: { label: '日本語', link: 'https://ja.vite.dev' },
     es: { label: 'Español', link: 'https://es.vite.dev' },
-    pt: { label: 'Português', link: 'https://pt.vite.dev' },
     ko: { label: '한국어', link: 'https://ko.vite.dev' },
     de: { label: 'Deutsch', link: 'https://de.vite.dev' },
-    fa: { label: 'فارسی', link: 'https://fa.vite.dev' },
   },
 
   themeConfig: {
     variant: 'vite',
-    logo: '/logo.svg',
-
     banner: {
-      id: 'viteplus-alpha',
-      text: 'Announcing Vite+ Alpha: Open source. Unified. Next-gen.',
-      url: 'https://voidzero.dev/posts/announcing-vite-plus-alpha?utm_source=vite&utm_content=top_banner',
+      id: 'viteconf-2026',
+      text: 'ViteConf 2026 - October 15, Online',
+      url: 'https://viteconf.org/',
     },
 
     editLink: {
@@ -226,6 +198,10 @@ const config = defineConfig({
           { text: 'Blog', link: '/blog' },
           { text: 'Releases', link: '/releases' },
           { text: 'Acknowledgements', link: '/acknowledgements' },
+          {
+            text: 'Code of Conduct',
+            link: 'https://github.com/vitejs/.github/blob/main/CODE_OF_CONDUCT.md',
+          },
           {
             text: 'Plugin Registry',
             link: 'https://registry.vite.dev/plugins',
@@ -562,9 +538,6 @@ const config = defineConfig({
         titleBar: {
           includeSnippet: true,
         },
-      })
-      md.use(markdownItImageSize, {
-        publicDir: path.resolve(import.meta.dirname, '../public'),
       })
       await graphvizMarkdownPlugin(md)
     },

@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
-import { tests } from './tests'
 import { page } from '~utils'
+import { tests } from './tests'
 
 test('module type should be supported', async () => {
   expect(await page.textContent('#module-type-json-pre')).toBe('json')

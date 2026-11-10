@@ -11,23 +11,23 @@ import {
 test('should load all stylesheets', async () => {
   expect(await getColor('h1')).toBe('red')
   expect(await getColor('h2')).toBe('blue')
-  expect(await getColor('.dynamic')).toBe('green')
-  expect(await getColor('.async-js')).toBe('blue')
+  await expect.poll(() => getColor('.dynamic')).toBe('green')
+  await expect.poll(() => getColor('.async-js')).toBe('blue')
   expect(await getColor('.chunk')).toBe('magenta')
 })
 
 test('should load dynamic import with inline', async () => {
-  const css = await page.textContent('.dynamic-inline')
-  expect(css).toMatch('.inline')
+  await expect
+    .poll(() => page.textContent('.dynamic-inline'))
+    .toMatch('.inline')
 
   expect(await getColor('.inline')).not.toBe('yellow')
 })
 
 test('should load dynamic import with module', async () => {
-  const css = await page.textContent('.dynamic-module')
-  expect(css).toMatch('_mod_')
+  await expect.poll(() => page.textContent('.dynamic-module')).toMatch('_mod_')
 
-  expect(await getColor('.mod')).toBe('yellow')
+  await expect.poll(() => getColor('.mod')).toBe('yellow')
 })
 
 test('style order should be consistent when style tag is inserted by JS', async () => {
@@ -61,6 +61,19 @@ describe.runIf(isBuild)('build', () => {
     const manifest = readManifest()
     expect(manifest['index.html'].css.length).toBe(2)
     expect(manifest['other.js'].css.length).toBe(1)
+  })
+
+  // Regression test for vitejs/vite#22856: when rolldown deduplicates two same-content css
+  // assets, it must not rename the survivor after Vite has recorded the earlier name, or the
+  // manifest ends up pointing at a css file that was never written.
+  test('manifest should not reference a deduplicated css file that does not exist', () => {
+    const emitted = new Set(listAssets())
+    const referenced = Object.values(readManifest())
+      .flatMap((chunk) => chunk.css ?? [])
+      .map((file) => file.replace(/^assets\//, ''))
+    for (const file of referenced) {
+      expect(emitted).toContain(file)
+    }
   })
 
   test('should not mark a css chunk with ?url and normal import as pure css chunk', () => {

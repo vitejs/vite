@@ -1,8 +1,8 @@
 import path from 'node:path'
 import picomatch from 'picomatch'
 import type { ModuleTypeFilter } from 'rolldown'
-import { arraify } from '../utils'
 import { slash } from '../../shared/utils'
+import { arraify } from '../utils'
 
 export type PluginFilter = (input: string) => boolean
 export type TransformHookFilter = (
