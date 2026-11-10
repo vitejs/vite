@@ -737,8 +737,6 @@ export let safeRealpathSync:
 // Based on https://github.com/larrybahr/windows-network-drive
 // MIT License, Copyright (c) 2017 Larry Bahr
 const windowsNetworkMap = new Map()
-const parseNetUseRE = /^\w* +(\w:) +([^ ]+)\s/
-let windowsNetUseStarted = false
 
 function windowsMappedRealpathSync(path: string): string {
   const realPath = fs.realpathSync.native(path)
@@ -753,6 +751,9 @@ function windowsMappedRealpathSync(path: string): string {
   // no mapped drive matches, e.g. the path was a UNC path from the start
   return realPath
 }
+
+let windowsNetUseStarted = false
+const parseNetUseRE = /^\w* +(\w:) +([^ ]+)\s/
 
 function windowsLazyRealpathSync(path: string): string {
   const realPath = fs.realpathSync.native(path)
@@ -785,18 +786,7 @@ function windowsLazyRealpathSync(path: string): string {
   return fs.realpathSync(path)
 }
 
-let firstSafeRealPathSyncRun = false
-
-function windowsSafeRealPathSync(path: string): string {
-  if (!firstSafeRealPathSyncRun) {
-    firstSafeRealPathSyncRun = true
-    optimizeSafeRealPathSync()
-    return safeRealpathSync(path)
-  }
-  return fs.realpathSync(path)
-}
-
-function optimizeSafeRealPathSync() {
+function windowsSafeRealPathSync(input: string): string {
   // Check the availability `fs.realpathSync.native`
   // in Windows virtual and RAM disks that bypass the Volume Mount Manager, in programs such as imDisk
   // get the error EISDIR: illegal operation on a directory
@@ -805,10 +795,11 @@ function optimizeSafeRealPathSync() {
   } catch (error) {
     if (error.message.includes('EISDIR: illegal operation on a directory')) {
       safeRealpathSync = fs.realpathSync
-      return
+      return safeRealpathSync(input)
     }
   }
   safeRealpathSync = windowsLazyRealpathSync
+  return safeRealpathSync(input)
 }
 
 export function ensureWatchedFile(
