@@ -80,12 +80,12 @@ describe.runIf(isBuild)('build', () => {
     )
 
     // sourcemap should exist and have a data URL
-    expect(indexSourcemap).toBe(null)
-    expect(workerSourcemap).toBe(null)
-    expect(sharedWorkerSourcemap).toBe(null)
-    expect(possibleTsOutputWorkerSourcemap).toBe(null)
-    expect(workerNestedWorkerSourcemap).toBe(null)
-    expect(subWorkerSourcemap).toBe(null)
+    expect(indexSourcemap).toBeNull()
+    expect(workerSourcemap).toBeNull()
+    expect(sharedWorkerSourcemap).toBeNull()
+    expect(possibleTsOutputWorkerSourcemap).toBeNull()
+    expect(workerNestedWorkerSourcemap).toBeNull()
+    expect(subWorkerSourcemap).toBeNull()
 
     // worker should have all imports resolved and no exports
     expect(workerContent).not.toMatch(/import\s*["(]/)

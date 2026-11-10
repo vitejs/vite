@@ -1,5 +1,6 @@
 import fsp from 'node:fs/promises'
-import { basename, resolve } from 'node:path'
+import { tmpdir } from 'node:os'
+import { basename, join, resolve } from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
 import colors from 'picocolors'
 import type {
@@ -11,7 +12,15 @@ import type {
   RolldownOutput,
   RollupLog,
 } from 'rolldown'
-import { afterEach, describe, expect, assert, test, vi } from 'vitest'
+import {
+  afterEach,
+  describe,
+  expect,
+  assert,
+  onTestFinished,
+  test,
+  vi,
+} from 'vitest'
 import { BuildEnvironment, normalizePath, resolveConfig } from '..'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import {
@@ -83,6 +92,52 @@ describe('build', () => {
       }
     `)
     assertOutputHashContentChange(result[0], result[1])
+  })
+
+  test('transform hook meta keeps rolldown magicString and ast', async () => {
+    const metaTypes: Array<
+      [string | undefined, string | undefined, boolean | undefined]
+    > = []
+    const result = (await build({
+      root: resolve(dirname, 'packages/build-project'),
+      logLevel: 'silent',
+      build: {
+        write: false,
+        minify: false,
+      },
+      plugins: [
+        {
+          name: 'test',
+          resolveId(id) {
+            if (id === 'entry.js') {
+              return '\0' + id
+            }
+          },
+          load(id) {
+            if (id === '\0entry.js') {
+              return `console.log('foo')`
+            }
+          },
+          transform(_code, id, options) {
+            if (id === '\0entry.js') {
+              metaTypes.push([
+                typeof options?.magicString,
+                typeof options?.ast,
+                options?.ssr,
+              ])
+              const magicString = options!.magicString!
+              magicString.replaceAll(`'foo'`, `'bar'`)
+              return { code: magicString }
+            }
+          },
+        },
+      ],
+    })) as RolldownOutput
+    expect(metaTypes).toStrictEqual([['object', 'object', false]])
+    const [chunk] = result.output.filter(
+      (chunk): chunk is OutputChunk => chunk.type === 'chunk',
+    )
+    expect(chunk?.code).toContain(`console.log("bar")`)
   })
 
   test('file hash should change when renderBuiltUrl changes', async () => {
@@ -240,10 +295,10 @@ describe('build', () => {
     ])
     expect(
       getImportMapKeyChanges(withoutPreload[0], withoutPreload[1]),
-    ).toEqual(importMapKeyChanges)
+    ).toStrictEqual(importMapKeyChanges)
     expect(
       getOutputHashChanges(withoutPreload[0], withoutPreload[1]).unchanged,
-    ).toEqual(expect.arrayContaining(['_entry', '_lazy']))
+    ).toStrictEqual(expect.arrayContaining(['_entry', '_lazy']))
     assertOutputHashContentChange(withoutPreload[0], withoutPreload[1])
   })
 
@@ -673,8 +728,8 @@ describe('build', () => {
       const foo = esBundle.output.find(
         (chunk) => chunk.type === 'chunk' && chunk.isEntry,
       ) as OutputChunk
-      expect(foo.code).not.contains('JSON_ARR')
-      expect(foo.code).not.contains('JSON_OBJ')
+      expect(foo.code).not.toContain('JSON_ARR')
+      expect(foo.code).not.toContain('JSON_OBJ')
     },
   )
 
@@ -736,7 +791,7 @@ describe('resolveBuildOutputs', () => {
     const outputs: OutputOptions[] = [{ format: 'es' }]
     const resolvedOutputs = resolveBuildOutputs(outputs, libOptions, logger)
 
-    expect(resolvedOutputs).toEqual([
+    expect(resolvedOutputs).toStrictEqual([
       {
         format: 'es',
       },
@@ -748,7 +803,7 @@ describe('resolveBuildOutputs', () => {
     const libOptions: LibraryOptions = { ...baseLibOptions, name: 'lib' }
     const resolvedOutputs = resolveBuildOutputs(void 0, libOptions, logger)
 
-    expect(resolvedOutputs).toEqual([
+    expect(resolvedOutputs).toStrictEqual([
       {
         format: 'es',
       },
@@ -763,7 +818,7 @@ describe('resolveBuildOutputs', () => {
     const outputs: OutputOptions[] = [{ format: 'es' }]
     const resolvedOutputs = resolveBuildOutputs(outputs, false, logger)
 
-    expect(resolvedOutputs).toEqual(outputs)
+    expect(resolvedOutputs).toStrictEqual(outputs)
   })
 
   test('logs a warning when outputs is an array and formats are specified', () => {
@@ -1207,19 +1262,18 @@ describe('resolveBuildOutputs', () => {
       name: 'entryA',
     }
 
-    expect(resolveBuildOutputs(undefined, libOptions, {} as Logger)).toEqual([
-      { format: 'es' },
-      { format: 'umd' },
-    ])
+    expect(
+      resolveBuildOutputs(undefined, libOptions, {} as Logger),
+    ).toStrictEqual([{ format: 'es' }, { format: 'umd' }])
     expect(
       resolveBuildOutputs({ name: 'A' }, libOptions, {} as Logger),
-    ).toEqual([
+    ).toStrictEqual([
       { format: 'es', name: 'A' },
       { format: 'umd', name: 'A' },
     ])
     expect(
       resolveBuildOutputs([{ name: 'A' }], libOptions, {} as Logger),
-    ).toEqual([{ name: 'A' }])
+    ).toStrictEqual([{ name: 'A' }])
   })
 
   test('default format: multiple entries', () => {
@@ -1227,19 +1281,18 @@ describe('resolveBuildOutputs', () => {
       entry: ['entryA.js', 'entryB.js'],
     }
 
-    expect(resolveBuildOutputs(undefined, libOptions, {} as Logger)).toEqual([
-      { format: 'es' },
-      { format: 'cjs' },
-    ])
+    expect(
+      resolveBuildOutputs(undefined, libOptions, {} as Logger),
+    ).toStrictEqual([{ format: 'es' }, { format: 'cjs' }])
     expect(
       resolveBuildOutputs({ name: 'A' }, libOptions, {} as Logger),
-    ).toEqual([
+    ).toStrictEqual([
       { format: 'es', name: 'A' },
       { format: 'cjs', name: 'A' },
     ])
     expect(
       resolveBuildOutputs([{ name: 'A' }], libOptions, {} as Logger),
-    ).toEqual([{ name: 'A' }])
+    ).toStrictEqual([{ name: 'A' }])
   })
 
   test('umd or iife: should not support multiple entries', () => {
@@ -1287,7 +1340,7 @@ describe('resolveBuildOutputs', () => {
         },
         log,
       ),
-    ).toEqual([{ name: 'A' }])
+    ).toStrictEqual([{ name: 'A' }])
     expect(log.warn).toHaveBeenLastCalledWith(
       colors.yellow(
         `"build.lib.formats" will be ignored because "build.rolldownOptions.output" is already an array format.`,
@@ -1475,7 +1528,7 @@ test.for([true, false])(
       ([client, ssr, custom1, custom2] as RolldownOutput[]).map(
         (o) => o.output[0].code.split('\n').length,
       ),
-    ).toEqual([1, 7, 1, 7])
+    ).toStrictEqual([1, 7, 1, 7])
   },
 )
 
@@ -1579,6 +1632,35 @@ test('chunkImportMap with a non-root base', async () => {
   )![0]
   // The import map maps the specifier without the base to the actual URL.
   expect(entry.code).toContain(JSON.stringify(cssSpecifier.slice(base.length)))
+})
+
+test('chunkImportMap file names do not depend on the build folder', async () => {
+  const fixture = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
+  const parent = await fsp.realpath(
+    await fsp.mkdtemp(join(tmpdir(), 'vite-chunk-import-map-')),
+  )
+  onTestFinished(() => fsp.rm(parent, { recursive: true, force: true }))
+
+  const buildFrom = async (folder: string) => {
+    const root = join(parent, folder)
+    await fsp.cp(fixture, root, { recursive: true })
+    const result = (await build({
+      root,
+      logLevel: 'silent',
+      build: {
+        chunkImportMap: true,
+        write: false,
+        // Rolldown's import map keys are relative to `cwd`, so build each
+        // copy as if it was started from its own folder.
+        rolldownOptions: { input: '/entry.js', cwd: root },
+      },
+    })) as RolldownOutput
+    return result.output.map((output) => output.fileName).sort()
+  }
+
+  const first = await buildFrom('project')
+  const second = await buildFrom('project-in-a-longer-folder')
+  expect(second).toStrictEqual(first)
 })
 
 test('chunkImportMap is emitted when emitAssets is false', async () => {
@@ -1864,7 +1946,7 @@ test('sharedConfigBuild and emitAssets', async () => {
     ['client', 'ssr', 'custom'].map(
       (name) => builder.environments[name].config.build.emitAssets,
     ),
-  ).toEqual([true, true, true])
+  ).toStrictEqual([true, true, true])
 
   await builder.buildApp()
 
@@ -1880,7 +1962,7 @@ test('sharedConfigBuild and emitAssets', async () => {
         ),
       ),
     ),
-  ).toEqual([
+  ).toStrictEqual([
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
@@ -1970,7 +2052,7 @@ describe('onRollupLog', () => {
     const logs = loggerSpy.mock.calls.map((args) =>
       stripVTControlCharacters(args[0]),
     )
-    expect(logs).contain(`[plugin ${pluginName}] ${msgInfo}`)
+    expect(logs).toContain(`[plugin ${pluginName}] ${msgInfo}`)
   })
 
   test('Rollup logs of warn should be handled by vite', async () => {
@@ -1981,7 +2063,7 @@ describe('onRollupLog', () => {
     const logs = loggerSpy.mock.calls.map((args) =>
       stripVTControlCharacters(args[0]),
     )
-    expect(logs).contain(`[plugin ${pluginName}] ${msgWarn}`)
+    expect(logs).toContain(`[plugin ${pluginName}] ${msgWarn}`)
   })
 
   test('onLog passed by user is called', async () => {
@@ -2198,7 +2280,7 @@ function assertOutputHashContentChange(
         expect(
           chunk.code,
           `the ${chunk.fileName} chunk has the same hash but different contents between builds`,
-        ).toEqual(chunk2.code)
+        ).toStrictEqual(chunk2.code)
       }
     }
   }
