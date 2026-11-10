@@ -416,8 +416,10 @@ describe('optimize-deps', clientOptimizerUnsupported, () => {
       await expect
         .poll(() => page.textContent('.svelte-deep-import'))
         .toBe('[success]')
-      expect(serverLogs.join('\n')).not.toContain(
-        "Could not resolve './relative.svelte' in virtual-module:",
+      expect(serverLogs).not.toContainEqual(
+        expect.stringContaining(
+          "Could not resolve './relative.svelte' in virtual-module:",
+        ),
       )
     },
   )

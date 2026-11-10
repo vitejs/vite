@@ -683,8 +683,8 @@ describe('build', () => {
       const foo = esBundle.output.find(
         (chunk) => chunk.type === 'chunk' && chunk.isEntry,
       ) as OutputChunk
-      expect(foo.code).not.contains('JSON_ARR')
-      expect(foo.code).not.contains('JSON_OBJ')
+      expect(foo.code).not.toContain('JSON_ARR')
+      expect(foo.code).not.toContain('JSON_OBJ')
     },
   )
 
@@ -2007,7 +2007,7 @@ describe('onRollupLog', () => {
     const logs = loggerSpy.mock.calls.map((args) =>
       stripVTControlCharacters(args[0]),
     )
-    expect(logs).contain(`[plugin ${pluginName}] ${msgInfo}`)
+    expect(logs).toContain(`[plugin ${pluginName}] ${msgInfo}`)
   })
 
   test('Rollup logs of warn should be handled by vite', async () => {
@@ -2018,7 +2018,7 @@ describe('onRollupLog', () => {
     const logs = loggerSpy.mock.calls.map((args) =>
       stripVTControlCharacters(args[0]),
     )
-    expect(logs).contain(`[plugin ${pluginName}] ${msgWarn}`)
+    expect(logs).toContain(`[plugin ${pluginName}] ${msgWarn}`)
   })
 
   test('onLog passed by user is called', async () => {
