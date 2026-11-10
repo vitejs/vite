@@ -11,8 +11,8 @@ import {
   resolvePath,
 } from './utils'
 
-describe('module runner initialization', async () => {
-  const it = await createModuleRunnerTester(
+describe('module runner initialization', () => {
+  const it = createModuleRunnerTester(
     {},
     {
       sourcemapInterceptor: 'prepareStackTrace',
@@ -139,13 +139,12 @@ describe('module runner initialization', async () => {
     ])
   })
 
-  it('prints the file name of a frame without a source map', async () => {
+  it('prints the file name of a frame without a source map', async ({
+    runner,
+  }) => {
     // when a script's sourceURL differs from its file name, the file name is what gets printed
     const error = await getError(() =>
-      runInThisContext(
-        '(function inVm() { throw new Error("vm") })()\n//# sourceURL=renamed.js',
-        { filename: 'original.js', displayErrors: false },
-      ),
+      runner.import('/fixtures/has-error-no-source-map.js'),
     )
     expect(error.stack!.split('\n')[1]).toBe('    at inVm (original.js:1:26)')
   })
@@ -243,7 +242,7 @@ describe('module runner initialization', async () => {
   })
 })
 
-describe('module runner with node:vm executor', async () => {
+describe('module runner with node:vm executor', () => {
   class Evaluator extends ESModulesEvaluator {
     async runInlinedModule(_: ModuleRunnerContext, __: string) {
       // Mimics VitestModuleEvaluator
@@ -260,7 +259,7 @@ describe('module runner with node:vm executor', async () => {
     }
   }
 
-  const it = await createModuleRunnerTester(
+  const it = createModuleRunnerTester(
     {},
     {
       sourcemapInterceptor: 'prepareStackTrace',
@@ -279,7 +278,7 @@ describe('module runner with node:vm executor', async () => {
   })
 })
 
-describe('module runner interceptor with inline data: source map', async () => {
+describe('module runner interceptor with inline data: source map', () => {
   const syntheticFile = '/virtual-bufferless/inline-map.js'
   // Minimal map pointing every generated position at line 1, column 0 of
   // "inline-map-original.ts"
@@ -308,7 +307,7 @@ describe('module runner interceptor with inline data: source map', async () => {
     }
   }
 
-  const it = await createModuleRunnerTester(
+  const it = createModuleRunnerTester(
     {},
     {
       sourcemapInterceptor: {

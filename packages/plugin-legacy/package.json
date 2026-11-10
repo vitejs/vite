@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-legacy",
-  "version": "8.2.3",
+  "version": "8.2.4",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -34,7 +34,7 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#readme",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "dependencies": {
-    "@babel/core": "^7.29.7",
+    "@babel/core": "^7.29.13",
     "@babel/plugin-transform-dynamic-import": "^7.29.7",
     "@babel/plugin-transform-modules-systemjs": "^7.29.8",
     "@babel/preset-env": "^7.29.7",
