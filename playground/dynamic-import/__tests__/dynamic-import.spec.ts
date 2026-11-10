@@ -177,24 +177,32 @@ test('should work a load path that contains parentheses.', async () => {
 })
 
 test('dynamic import treeshaken log', async () => {
-  const log = browserLogs.join('\n')
-  expect(log).toContain('treeshaken foo')
-  expect(log).toContain('treeshaken bar')
-  expect(log).toContain('treeshaken baz1')
-  expect(log).toContain('treeshaken baz2')
-  expect(log).toContain('treeshaken baz3')
-  expect(log).toContain('treeshaken baz4')
-  expect(log).toContain('treeshaken baz5')
-  expect(log).toContain('treeshaken baz6')
-  expect(log).toContain('treeshaken default')
-
-  expect(log).not.toContain('treeshaken removed')
+  const containLogs = [
+    'treeshaken foo',
+    'treeshaken bar',
+    'treeshaken baz1',
+    'treeshaken baz2',
+    'treeshaken baz3',
+    'treeshaken baz4',
+    'treeshaken baz5',
+    'treeshaken baz6',
+    'treeshaken default',
+  ]
+  for (const l of containLogs) {
+    expect(browserLogs).toContainEqual(expect.stringContaining(l))
+  }
+  expect(browserLogs).not.toContainEqual(
+    expect.stringContaining('treeshaken removed'),
+  )
 })
 
 test('dynamic import syntax parsing', async () => {
-  const log = browserLogs.join('\n')
-  expect(log).toContain('treeshaken syntax foo')
-  expect(log).toContain('treeshaken syntax default')
+  expect(browserLogs).toContainEqual(
+    expect.stringContaining('treeshaken syntax foo'),
+  )
+  expect(browserLogs).toContainEqual(
+    expect.stringContaining('treeshaken syntax default'),
+  )
 })
 
 test.runIf(isBuild)('dynamic import treeshaken file', async () => {
