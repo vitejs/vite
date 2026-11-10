@@ -83,6 +83,7 @@ const identifierReplacements: Record<string, Record<string, string>> = {
   'rolldown/utils': {
     TransformOptions$1: 'rolldown_utils_TransformOptions',
     TransformResult$2: 'rolldown_utils_TransformResult',
+    ESTree$1: 'rolldown_utils_ESTree',
   },
   'node:http': {
     Server$1: 'http.Server',
@@ -417,7 +418,7 @@ function escapeRegex(str: string): string {
 }
 
 function unique<T>(arr: T[]): T[] {
-  return Array.from(new Set(arr))
+  return [...new Set(arr)]
 }
 
 const postcssLoadConfigDeepImport =

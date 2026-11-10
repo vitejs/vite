@@ -28,15 +28,15 @@ describe('optimizer-scan:script-test', () => {
     const [, tsOpenTag, tsContent] = scriptRE.exec(
       `<script lang="ts">${scriptContent}</script>`,
     )!
-    expect(tsOpenTag).toEqual('<script lang="ts">')
-    expect(tsContent).toEqual(scriptContent)
+    expect(tsOpenTag).toBe('<script lang="ts">')
+    expect(tsContent).toBe(scriptContent)
 
     scriptRE.lastIndex = 0
     const [, openTag, content] = scriptRE.exec(
       `<script>${scriptContent}</script>`,
     )!
-    expect(openTag).toEqual('<script>')
-    expect(content).toEqual(scriptContent)
+    expect(openTag).toBe('<script>')
+    expect(content).toBe(scriptContent)
   })
 
   test('include comments test', () => {
@@ -47,25 +47,25 @@ describe('optimizer-scan:script-test', () => {
         <!--  <script >var test2 = null</script> -->
       </template>`.replace(commentRE, ''),
     )
-    expect(ret).toEqual(null)
+    expect(ret).toBeNull()
   })
 
   test('components with script keyword test', () => {
     scriptRE.lastIndex = 0
     let ret = scriptRE.exec(`<template><script-develop-pane/></template>`)
-    expect(ret).toBe(null)
+    expect(ret).toBeNull()
 
     scriptRE.lastIndex = 0
     ret = scriptRE.exec(
       `<template><script-develop-pane></script-develop-pane></template>`,
     )
-    expect(ret).toBe(null)
+    expect(ret).toBeNull()
 
     scriptRE.lastIndex = 0
     ret = scriptRE.exec(
       `<template><script-develop-pane  > content </script-develop-pane></template>`,
     )
-    expect(ret).toBe(null)
+    expect(ret).toBeNull()
   })
 
   test('ordinary script tag test', () => {
@@ -73,40 +73,52 @@ describe('optimizer-scan:script-test', () => {
     const [, tag, content] = scriptRE.exec(
       `<script  >var test = null</script>`,
     )!
-    expect(tag).toEqual('<script  >')
-    expect(content).toEqual('var test = null')
+    expect(tag).toBe('<script  >')
+    expect(content).toBe('var test = null')
 
     scriptRE.lastIndex = 0
     const [, tag1, content1] = scriptRE.exec(
       `<script>var test = null</script>`,
     )!
-    expect(tag1).toEqual('<script>')
-    expect(content1).toEqual('var test = null')
+    expect(tag1).toBe('<script>')
+    expect(content1).toBe('var test = null')
   })
 
   test('imports regex should work', () => {
-    const shouldMatchArray = [
-      `import 'vue'`,
-      `import { foo } from 'vue'`,
-      `import foo from 'vue'`,
-      `;import foo from 'vue'`,
-      `   import foo from 'vue'`,
-      `import { foo
+    const shouldMatchArray: [code: string, expected: string][] = [
+      [`import 'vue'`, `'vue'`],
+      [`import { foo } from 'vue'`, `'vue'`],
+      [`import foo from 'vue'`, `'vue'`],
+      [`;import foo from 'vue'`, `'vue'`],
+      [`   import foo from 'vue'`, `'vue'`],
+      [
+        `import { foo
       } from 'vue'`,
-      `import bar, { foo } from 'vue'`,
-      `import foo from 'vue';`,
-      `*/ import foo from 'vue';`,
-      `import foo from 'vue';//comment`,
-      `import foo from 'vue';/*comment
+        `'vue'`,
+      ],
+      [`import bar, { foo } from 'vue'`, `'vue'`],
+      [`import foo from 'vue';`, `'vue'`],
+      [`*/ import foo from 'vue';`, `'vue'`],
+      [`import foo from 'vue';//comment`, `'vue'`],
+      [
+        `import foo from 'vue';/*comment
       */`,
-      // Skipped, false negatives with current regex
-      // `import typescript from 'typescript'`,
-      // import type, {foo} from 'vue'
+        `'vue'`,
+      ],
+      // https://github.com/vitejs/vite/issues/23471
+      // bindings starting with "type" should not be treated as type-only imports
+      [`import typescript from 'typescript'`, `'typescript'`],
+      [`import typeorm from 'typeorm'`, `'typeorm'`],
+      [`import types from 'types'`, `'types'`],
+      // still a known false negative: a default binding literally named `type`
+      // (`import type, {foo} from 'vue'`, `import type from 'vue'`) is a valid
+      // value import, but the word boundary cannot tell it apart from the
+      // `import type` modifier. Missed deps are discovered again at runtime.
     ]
 
-    shouldMatchArray.forEach((str) => {
+    shouldMatchArray.forEach(([str, expected]) => {
       importsRE.lastIndex = 0
-      expect(importsRE.exec(str)![1]).toEqual("'vue'")
+      expect(importsRE.exec(str)![1]).toBe(expected)
     })
 
     const shouldFailArray = [
@@ -223,6 +235,33 @@ test('scan import.meta.glob respects rolldown transform jsx options', async (ctx
     missing: {},
   })
   expect(scanResult.deps).not.toHaveProperty('react/jsx-runtime')
+})
+
+test('scan respects oxc jsxInject', async (ctx) => {
+  const server = await createServer({
+    oxc: { jsxInject: `import 'vue'` },
+    configFile: false,
+    logLevel: 'error',
+    root: path.join(import.meta.dirname, 'fixtures', 'scan-jsx-runtime'),
+    optimizeDeps: {
+      entries: ['./entry-jsx.tsx'],
+    },
+  })
+  ctx.onTestFinished(() => server.close())
+
+  const { cancel, result } = scanImports(
+    devToScanEnvironment(server.environments.client),
+  )
+  ctx.onTestFinished(cancel)
+
+  const scanResult = await result
+
+  expect(scanResult).toMatchObject({
+    deps: {
+      vue: expect.any(String),
+    },
+    missing: {},
+  })
 })
 
 test('top-level input is used as the entry for dep scanning', async (ctx) => {
@@ -346,7 +385,7 @@ test('scan ignores the failure when the server is closed mid-scan', async (ctx) 
   )
   ctx.onTestFinished(cancel)
 
-  await expect(result).resolves.toEqual({ deps: {}, missing: {} })
+  await expect(result).resolves.toStrictEqual({ deps: {}, missing: {} })
 })
 
 test('scan import.meta.glob package imports patterns', async (ctx) => {
@@ -371,5 +410,5 @@ test('scan import.meta.glob package imports patterns', async (ctx) => {
   )
   ctx.onTestFinished(cancel)
 
-  await expect(result).resolves.toEqual({ deps: {}, missing: {} })
+  await expect(result).resolves.toStrictEqual({ deps: {}, missing: {} })
 })

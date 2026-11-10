@@ -135,6 +135,20 @@ This is because [the port forwarding feature in VS Code does not support IPv6](h
 
 See [#16522](https://github.com/vitejs/vite/issues/16522) for more details.
 
+### Illegal operation error when watching files
+
+If the file or directory is located on a file system that does not support file system events, Vite may be unable to watch it.
+
+An example error you may encounter is:
+
+```
+Error: EISDIR: illegal operation on a directory, watch 'C:/Users/me/project/vite.config.js'
+```
+
+For example, this can happen with a VirtualBox shared folder.
+
+To solve this, you can enable [`server.watch.usePolling`](/config/server-options#server-watch). Note that [`usePolling` leads to high CPU utilization](https://github.com/paulmillr/chokidar/tree/3.6.0#performance).
+
 ## HMR
 
 ### Vite detects a file change but the HMR is not working
@@ -206,7 +220,9 @@ To resolve this, you can:
 
 This error may occur in unstable network environments. For example, when the request fails due to network errors or server downtime.
 
-Note that you cannot retry the dynamic import due to browser limitations ([whatwg/html#6768](https://github.com/whatwg/html/issues/6768)).
+Browsers that support [retriable module loading](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import#browser_compatibility) do not cache network and HTTP errors in the module map. In these browsers, your application or framework can retry the original dynamic import. Older browsers cache the failure, so reloading the page remains the fallback.
+
+Retrying also does not fix [version skew](#version-skew) when a chunk has been permanently removed by a deployment.
 
 #### Browser extensions blocking requests
 

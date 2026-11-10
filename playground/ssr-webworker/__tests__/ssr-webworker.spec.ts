@@ -1,6 +1,9 @@
+import nodePath from 'node:path'
+import type { RolldownOutput, OutputChunk } from 'rolldown'
+import { build } from 'vite'
 import { expect, test } from 'vitest'
-import { findAssetFile, isBuild, page } from '~utils'
-import { port } from './serve'
+import { findAssetFile, isBuild, page, rootDir } from '~utils'
+import { port, serverLogs } from './serve'
 
 const url = `http://localhost:${port}`
 
@@ -30,11 +33,50 @@ test('supports nodejs_compat', async () => {
   )
 })
 
+test('supports requiring an external node builtin from CommonJS', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.cjs-node-builtin')).toMatch(
+    '[success] cjs node builtin require',
+  )
+})
+
+test('warns when automatically externalizing a node builtin', () => {
+  const logs = serverLogs.join('\n')
+  expect(logs).toContain(
+    'Automatically externalized node built-in module "node:util"',
+  )
+})
+
 test.runIf(isBuild)('build output does not contain createRequire', async () => {
   const workerContent = findAssetFile(/entry-worker/, 'worker', '')
   expect(workerContent).toBeDefined()
   expect(workerContent).not.toContain('createRequire')
 })
+
+test.runIf(isBuild)(
+  'converts a CommonJS require for an installed Node builtin package to an import',
+  async () => {
+    const output = (await build({
+      configFile: false,
+      root: nodePath.join(rootDir, 'cjs-node-builtin'),
+      logLevel: 'silent',
+      ssr: {
+        target: 'webworker',
+        external: ['util'],
+      },
+      build: {
+        ssr: 'installed-node-builtin.cjs',
+        write: false,
+      },
+    })) as RolldownOutput
+    const entry = output.output.find(
+      (file): file is OutputChunk => file.type === 'chunk' && file.isEntry,
+    )
+
+    expect(entry?.code).toContain('from "util"')
+    expect(entry?.code).not.toContain('__require("util")')
+  },
+)
 
 test.runIf(isBuild)('codeSplitting: false', () => {
   const dynamicJsContent = findAssetFile(/dynamic-[-\w]+\.js/, 'worker')

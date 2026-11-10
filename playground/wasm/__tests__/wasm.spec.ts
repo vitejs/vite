@@ -2,6 +2,9 @@ import { expect, test } from 'vitest'
 import { isBundled, page } from '~utils'
 
 test('should work when inlined', async () => {
+  // `.url` is populated last in the script tag, so it signals initialization is complete.
+  await expect.poll(() => page.textContent('.url')).toBeTruthy()
+
   await page.click('.inline-wasm .run')
   await expect
     .poll(() => page.textContent('.inline-wasm .result'))

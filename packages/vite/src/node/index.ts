@@ -125,6 +125,7 @@ export type {
   EnvironmentOptions,
   DevEnvironmentOptions,
   ResolvedDevEnvironmentOptions,
+  ResolvedDevToolsConfig,
 } from './config'
 export type { HtmlAssetSource } from './assetSource'
 export type {

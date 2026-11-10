@@ -1,12 +1,5 @@
 import { expect, test } from 'vitest'
-import {
-  getBg,
-  isBuild,
-  isBundled,
-  isBundledDev,
-  page,
-  readManifest,
-} from '~utils'
+import { getBg, isBuild, isBundledDev, page, readManifest } from '~utils'
 
 if (isBuild) {
   test('importing asset with special char in filename works in build', async () => {
@@ -21,8 +14,8 @@ if (isBuild) {
     )
     expect(plusCircleAsset).toMatch('/_circle')
     expect(underscoreCircleAsset).toMatch('/_circle')
-    expect(plusCircleAsset).not.toEqual(underscoreCircleAsset)
-    expect(Object.keys(manifest).length).toBe(3) // 2 svg, 1 index.js
+    expect(plusCircleAsset).not.toBe(underscoreCircleAsset)
+    expect(Object.keys(manifest)).toHaveLength(3) // 2 svg, 1 index.js
   })
 } else if (isBundledDev) {
   // bundled dev sanitizes and hashes filenames like build, but it writes no manifest file to read
@@ -32,7 +25,7 @@ if (isBuild) {
     expect(plusCircleAsset).toMatch(/\/assets\/_circle-[-\w]{8}\.svg/)
     expect(underscoreCircleAsset).toMatch(/\/assets\/_circle-[-\w]{8}\.svg/)
     // only the hash tells the two files apart after sanitization
-    expect(plusCircleAsset).not.toEqual(underscoreCircleAsset)
+    expect(plusCircleAsset).not.toBe(underscoreCircleAsset)
     expect(await getBg('.plus-circle')).toContain(plusCircleAsset)
     expect(await getBg('.underscore-circle')).toContain(underscoreCircleAsset)
   })
@@ -45,10 +38,11 @@ if (isBuild) {
   })
 }
 
-// this checks that the dev server refuses to serve /.env. Build and bundled
-// dev serve only the files in the output, so a request can never reach a
-// project file. The check does not apply to them.
-test.runIf(!isBundled)('denied .env', async () => {
-  expect(await page.textContent('.unsafe-dotenv')).toBe('403')
+// this checks that the dev server refuses to serve /.env. Bundled dev never
+// serves a project file, so the request gets the SPA fallback instead.
+test.runIf(!isBuild)('denied .env', async () => {
+  expect(await page.textContent('.unsafe-dotenv')).toBe(
+    isBundledDev ? '200' : '403',
+  )
   expect(await page.textContent('.unsafe-dotenv-double-slash')).toBe('200') // SPA fallback
 })

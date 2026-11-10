@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { ImportType, init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
-import type { Plugin } from 'rolldown'
+import type { OutputOptions, Plugin } from 'rolldown'
 import { defineConfig } from 'rolldown'
 import pkg from './package.json' with { type: 'json' }
 import licensePlugin from './rollupLicensePlugin'
@@ -44,7 +44,8 @@ const bundledDevClientConfig = defineConfig({
   transform: {
     target: 'es2020',
   },
-  external: ['@vite/env'],
+  // the runtime is served from the installed rolldown at dev time (`getRolldownDevRuntimeFiles`)
+  external: ['@vite/env', 'rolldown/experimental/runtime'],
   output: {
     dir: path.resolve(dirname, 'dist'),
     entryFileNames: 'client/bundledDevClient.mjs',
@@ -151,12 +152,11 @@ const moduleRunnerConfig = defineConfig({
     'fsevents',
     'lightningcss',
     /^rolldown\//,
-    '@vitejs/devtools/cli-commands',
     ...Object.keys(pkg.dependencies),
   ],
   plugins: [bundleSizeLimit(55), enableSourceMapsInWatchModePlugin()],
   output: {
-    ...sharedNodeOptions.output,
+    ...(sharedNodeOptions.output as OutputOptions),
     minify: {
       compress: true,
       mangle: false,
@@ -212,9 +212,10 @@ function externalizeDepsInWatchPlugin(): Plugin {
         options.external ||= []
         if (!Array.isArray(options.external))
           throw new Error('external must be an array')
-        options.external = options.external.concat(
-          Object.keys(pkg.devDependencies),
-        )
+        options.external = [
+          ...options.external,
+          ...Object.keys(pkg.devDependencies),
+        ]
       }
     },
   }
@@ -241,9 +242,9 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
         )
         if (!file) return
 
-        for (const { src, replacement, pattern } of deps[file]) {
-          const magicString = new MagicString(code)
+        const magicString = new MagicString(code)
 
+        for (const { src, replacement, pattern } of deps[file]) {
           if (src) {
             const pos = code.indexOf(src)
             if (pos < 0) {
@@ -273,13 +274,14 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
               )
             }
           }
-
-          code = magicString.toString()
         }
 
         console.log(`shimmed: ${file}`)
 
-        return code
+        return {
+          code: magicString.toString(),
+          map: magicString.generateMap({ source: id, hires: 'boundary' }),
+        }
       },
     },
     buildEnd(err) {
@@ -343,39 +345,51 @@ function buildTimeImportMetaUrlPlugin(): Plugin {
             s.overwrite(ss, se + 4, `${prefix}${index}`)
           }
         }
-        return s.hasChanged() ? s.toString() : undefined
+        return s.hasChanged()
+          ? {
+              code: s.toString(),
+              map: s.generateMap({ source: id, hires: 'boundary' }),
+            }
+          : undefined
       },
     },
     renderChunk(code, chunk, outputOptions) {
       if (!code.includes(prefix)) return
 
-      return code.replace(
-        /__vite_buildTimeImportMetaUrl_(\d+)/g,
-        (_, index) => {
-          const originalFile = Object.keys(idMap).find(
-            (key) => idMap[key] === +index,
+      const s = new MagicString(code)
+      const pattern = /__vite_buildTimeImportMetaUrl_(\d+)/g
+      let match
+      while ((match = pattern.exec(code))) {
+        const originalFile = Object.keys(idMap).find(
+          (key) => idMap[key] === +match![1],
+        )
+        if (!originalFile) {
+          throw new Error(
+            `Could not find original file for ${prefix}${match[1]} in ${chunk.fileName}`,
           )
-          if (!originalFile) {
-            throw new Error(
-              `Could not find original file for ${prefix}${index} in ${chunk.fileName}`,
-            )
-          }
-          const outputFile = path.resolve(outputOptions.dir!, chunk.fileName)
-          const relativePath = path
-            .relative(path.dirname(outputFile), originalFile)
-            .replaceAll('\\', '/')
+        }
+        const outputFile = path.resolve(outputOptions.dir!, chunk.fileName)
+        const relativePath = path
+          .relative(path.dirname(outputFile), originalFile)
+          .replaceAll('\\', '/')
 
-          if (outputOptions.format === 'es') {
-            return `new URL(${JSON.stringify(relativePath)}, import.meta.url)`
-          } else if (outputOptions.format === 'cjs') {
-            return `new URL(${JSON.stringify(
-              relativePath,
-            )}, require('node:url').pathToFileURL(__filename))`
-          } else {
-            throw new Error(`Unsupported output format ${outputOptions.format}`)
-          }
-        },
-      )
+        let replacement: string
+        if (outputOptions.format === 'es') {
+          replacement = `new URL(${JSON.stringify(relativePath)}, import.meta.url)`
+        } else if (outputOptions.format === 'cjs') {
+          replacement = `new URL(${JSON.stringify(
+            relativePath,
+          )}, require('node:url').pathToFileURL(__filename))`
+        } else {
+          throw new Error(`Unsupported output format ${outputOptions.format}`)
+        }
+        s.overwrite(match.index, match.index + match[0].length, replacement)
+      }
+
+      if (!outputOptions.sourcemap) {
+        return s.toString()
+      }
+      return { code: s.toString(), map: s.generateMap({ hires: 'boundary' }) }
     },
   }
 }
