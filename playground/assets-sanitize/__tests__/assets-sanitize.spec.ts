@@ -14,8 +14,8 @@ if (isBuild) {
     )
     expect(plusCircleAsset).toMatch('/_circle')
     expect(underscoreCircleAsset).toMatch('/_circle')
-    expect(plusCircleAsset).not.toEqual(underscoreCircleAsset)
-    expect(Object.keys(manifest).length).toBe(3) // 2 svg, 1 index.js
+    expect(plusCircleAsset).not.toBe(underscoreCircleAsset)
+    expect(Object.keys(manifest)).toHaveLength(3) // 2 svg, 1 index.js
   })
 } else if (isBundledDev) {
   // bundled dev sanitizes and hashes filenames like build, but it writes no manifest file to read
@@ -25,7 +25,7 @@ if (isBuild) {
     expect(plusCircleAsset).toMatch(/\/assets\/_circle-[-\w]{8}\.svg/)
     expect(underscoreCircleAsset).toMatch(/\/assets\/_circle-[-\w]{8}\.svg/)
     // only the hash tells the two files apart after sanitization
-    expect(plusCircleAsset).not.toEqual(underscoreCircleAsset)
+    expect(plusCircleAsset).not.toBe(underscoreCircleAsset)
     expect(await getBg('.plus-circle')).toContain(plusCircleAsset)
     expect(await getBg('.underscore-circle')).toContain(underscoreCircleAsset)
   })

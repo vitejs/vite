@@ -78,7 +78,7 @@ describe('getNodeModulesPackageRoot', () => {
 describe('injectSourcesContent', () => {
   function createMockLogger() {
     const logger = createLogger()
-    logger.warnOnce = vi.fn()
+    vi.spyOn(logger, 'warnOnce').mockImplementation(() => {})
     return logger
   }
 

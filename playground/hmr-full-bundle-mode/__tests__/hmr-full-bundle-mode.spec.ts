@@ -119,8 +119,8 @@ if (isBuild) {
     )
     await expect.poll(() => page.isVisible('vite-error-overlay')).toBe(true)
     await expect
-      .poll(() => serverLogs.slice(lastServerLogIndex).join('\n'))
-      .toContain('Build error')
+      .poll(() => serverLogs.slice(lastServerLogIndex))
+      .toContainEqual(expect.stringContaining('Build error'))
 
     editFile('hmr.js', (code) =>
       code.replace("const foo = 'hello", "const foo = 'hello'"),

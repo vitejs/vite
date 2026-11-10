@@ -150,7 +150,7 @@ describe('the dev server', () => {
     const clientEntry = normalizePath(path.join(root, 'client-index.html'))
     const resolvedEnvironments = new Set<string>()
     const logger = createLogger('silent')
-    logger.warn = vi.fn()
+    vi.spyOn(logger, 'warn').mockImplementation(() => {})
 
     const server = await createTestServer({
       configFile: false,
@@ -213,7 +213,7 @@ describe('the dev server', () => {
   test("logs watcher 'error' events during environment initialization", async () => {
     const error = new Error('watch failed')
     const logger = createLogger('error')
-    logger.error = vi.fn()
+    vi.spyOn(logger, 'error').mockImplementation(() => {})
 
     class WatcherErrorEnvironment extends DevEnvironment {
       override async init(

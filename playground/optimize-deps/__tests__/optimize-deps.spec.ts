@@ -257,18 +257,16 @@ describe('optimize-deps', clientOptimizerUnsupported, () => {
       expect(await page.textContent('.browser-false-optimized')).toBe(
         '[success]',
       )
-      expect(browserLogs).not.toEqual(
-        expect.arrayContaining([
-          expect.stringContaining(
-            'Module "browser-false-only" has been externalized for browser compatibility',
-          ),
-        ]),
+      expect(browserLogs).not.toContainEqual(
+        expect.stringContaining(
+          'Module "browser-false-only" has been externalized for browser compatibility',
+        ),
       )
     },
   )
 
   test.runIf(isServe)('error on builtin modules usage', () => {
-    expect(browserLogs).toEqual(
+    expect(browserLogs).toStrictEqual(
       expect.arrayContaining([
         // from dep-with-builtin-module-esm
         expect.stringMatching(/dep-with-builtin-module-esm.*is not a function/),
@@ -291,7 +289,7 @@ describe('optimize-deps', clientOptimizerUnsupported, () => {
       ]),
     )
 
-    expect(browserErrors.map((error) => error.message)).toEqual(
+    expect(browserErrors.map((error) => error.message)).toStrictEqual(
       expect.arrayContaining([
         // from user source code
         expect.stringContaining(
@@ -418,8 +416,10 @@ describe('optimize-deps', clientOptimizerUnsupported, () => {
       await expect
         .poll(() => page.textContent('.svelte-deep-import'))
         .toBe('[success]')
-      expect(serverLogs.join('\n')).not.toContain(
-        "Could not resolve './relative.svelte' in virtual-module:",
+      expect(serverLogs).not.toContainEqual(
+        expect.stringContaining(
+          "Could not resolve './relative.svelte' in virtual-module:",
+        ),
       )
     },
   )

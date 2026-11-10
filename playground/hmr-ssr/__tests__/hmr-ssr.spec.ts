@@ -410,7 +410,7 @@ describe('acceptExports', () => {
         },
         HOT_UPDATED,
         (logs) => {
-          expect(logs).toEqual([
+          expect(logs).toStrictEqual([
             'reloaded >>> Y',
             `[vite] hot updated: ${callbackUrl}`,
           ])
@@ -423,7 +423,7 @@ describe('acceptExports', () => {
         },
         HOT_UPDATED,
         (logs) => {
-          expect(logs).toEqual([
+          expect(logs).toStrictEqual([
             'reloaded (2) >>> Z',
             `[vite] hot updated: ${callbackUrl}`,
           ])
@@ -444,7 +444,7 @@ describe('acceptExports', () => {
         },
         HOT_UPDATED,
         (logs) => {
-          expect(logs).toEqual([
+          expect(logs).toStrictEqual([
             `<<<<<< A0 B0 D0 ; ${dep}`,
             `[vite] hot updated: ${url}`,
           ])
@@ -459,7 +459,7 @@ describe('acceptExports', () => {
         },
         HOT_UPDATED,
         (logs) => {
-          expect(logs).toEqual([
+          expect(logs).toStrictEqual([
             `<<<<<< A1 B1 D1 ; ${dep}`,
             `[vite] hot updated: ${url}`,
           ])
@@ -483,7 +483,7 @@ describe('acceptExports', () => {
         },
         HOT_UPDATED,
         (logs) => {
-          expect(logs).toEqual([
+          expect(logs).toStrictEqual([
             `<<<<<< A2 B2 D2 ; ${dep}`,
             `[vite] hot updated: ${url}`,
           ])
@@ -642,7 +642,10 @@ describe('acceptExports', () => {
       },
       HOT_UPDATED,
       (logs) => {
-        expect(logs).toEqual(['>>> side FX !!', updated(`/${testDir}/${file}`)])
+        expect(logs).toStrictEqual([
+          '>>> side FX !!',
+          updated(`/${testDir}/${file}`),
+        ])
       },
     )
   })
@@ -672,7 +675,7 @@ describe('acceptExports', () => {
         },
         HOT_UPDATED,
         (logs) => {
-          expect(logs).toEqual(['-> unused <-', updated(url)])
+          expect(logs).toStrictEqual(['-> unused <-', updated(url)])
         },
       )
     })
@@ -732,7 +735,7 @@ describe('acceptExports', () => {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual(['all >>>>>> a1, b1, c1', updated(url)])
+            expect(logs).toStrictEqual(['all >>>>>> a1, b1, c1', updated(url)])
           },
         )
 
@@ -742,7 +745,7 @@ describe('acceptExports', () => {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual(['all >>>>>> a2, b2, c2', updated(url)])
+            expect(logs).toStrictEqual(['all >>>>>> a2, b2, c2', updated(url)])
           },
         )
       })
@@ -997,7 +1000,7 @@ test('inlined assets HMR', async () => {
   // Should be updated with new data url
   const updatedLogoUrl = el()
   expect(updatedLogoUrl).toMatch(/^data:image\/svg\+xml/)
-  expect(updatedLogoUrl).not.toEqual(initialLogoUrl)
+  expect(updatedLogoUrl).not.toBe(initialLogoUrl)
 })
 
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void
