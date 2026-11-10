@@ -82,6 +82,8 @@ export class BundledDev {
   })
 
   private fullReloadPending = false
+  private outputPublished = false
+  private fallbackReloadClients = new Set<NormalizedHotChannelClient>()
 
   private reloadNeededClientIds = new Set<string>()
   private debouncedReloadNeededFlush = debounce(20, () => {
@@ -149,6 +151,8 @@ export class BundledDev {
       this.markPayloadDelivered(payload.filename)
     })
     this.environment.hot.on('vite:client:connect', async (_payload, client) => {
+      if (this._closed) return
+      this.fallbackReloadClients.add(client)
       // Replay the cached build error to freshly connected clients.
       if (this.lastBuildError) {
         debug?.('REPLAY: replaying last build error to newly connected client')
@@ -161,16 +165,17 @@ export class BundledDev {
       }
       if (this.hasBuildOutput) {
         try {
-          await this.devEngine.ensureLatestBuildOutput()
+          const state = await this.devEngine.getBundleState()
+          if (!state.hasStaleOutput && !state.lastBuildErrored) {
+            this.flushFallbackReloadClients()
+          }
         } catch {
           return
-        }
-        if (!this._closed && !this.lastBuildError) {
-          client.send({ type: 'full-reload', path: '*', ifFallback: true })
         }
       }
     })
     this.environment.hot.on('vite:client:disconnect', (_payload, client) => {
+      this.fallbackReloadClients.delete(client)
       const clientId = this.clients.delete(client)
       if (clientId) {
         this.devEngine.removeClient(clientId)
@@ -244,6 +249,7 @@ export class BundledDev {
           )
           this.lastBuildError = result
           this.fullReloadPending = false
+          this.outputPublished = false
           this.environment.hot.send({
             type: 'error',
             err: prepareError(result),
@@ -253,6 +259,8 @@ export class BundledDev {
         this.lastBuildError = null
 
         this.storeOutputFiles(result.output)
+        this.outputPublished = true
+        this.flushFallbackReloadClients()
 
         // Trigger a full reload if there's no error in the result and a reload is pending from HMR.
         if (this.fullReloadPending) {
@@ -284,13 +292,6 @@ export class BundledDev {
       if (this._closed) return
       debug?.('INITIAL: build done')
       this.initialBuildCompleted = true
-      if (!this.lastBuildError) {
-        this.environment.hot.send({
-          type: 'full-reload',
-          path: '*',
-          ifFallback: true,
-        })
-      }
     })
   }
 
@@ -314,6 +315,14 @@ export class BundledDev {
       () => this.debouncedReloadNeededFlush(),
       () => {},
     )
+  }
+
+  private flushFallbackReloadClients(): void {
+    if (this._closed || this.lastBuildError || !this.outputPublished) return
+    for (const client of this.fallbackReloadClients) {
+      client.send({ type: 'full-reload', path: '*', ifFallback: true })
+    }
+    this.fallbackReloadClients.clear()
   }
 
   async triggerBundleRegenerationIfStale(): Promise<boolean> {
@@ -391,6 +400,8 @@ export class BundledDev {
 
   async close(): Promise<void> {
     this._closed = true
+    this.outputPublished = false
+    this.fallbackReloadClients.clear()
     this.memoryFiles.clear()
     await this._devEngine?.close()
     this.initialBuildCompleted = false
@@ -439,6 +450,18 @@ export class BundledDev {
       this.environment,
       chunkMetadataMap,
     )
+    rolldownOptions.plugins = [
+      {
+        name: 'vite:bundled-dev-output-publication',
+        buildStart: {
+          order: 'pre',
+          handler: () => {
+            this.outputPublished = false
+          },
+        },
+      },
+      rolldownOptions.plugins,
+    ]
     rolldownOptions.experimental ??= {}
     rolldownOptions.experimental.devMode = {
       lazy: true,
