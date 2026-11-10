@@ -521,11 +521,11 @@ describe('build', () => {
       return (await build({
         root: resolve(dirname, 'packages/build-project'),
         configFile: false,
+        input,
         logLevel: 'silent',
         build: {
           write: false,
           cssCodeSplit,
-          rolldownOptions: { input },
         },
         plugins: [
           {
