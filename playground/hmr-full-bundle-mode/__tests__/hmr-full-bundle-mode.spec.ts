@@ -328,26 +328,17 @@ if (isBuild) {
       addFile('worker-inline-asset-src.js', originalSrc)
       await expect
         .poll(() => page.textContent('.worker-inline-asset'))
-        .toContain('#inline-asset-label-v1')
+        .toContain('#inline-asset-label-v1#inline-asset-v1\n')
     })
 
-    const fetchAsset = (url: string) =>
-      page.evaluate(async (url) => {
-        const res = await fetch(url)
-        return { status: res.status, body: await res.text() }
-      }, url)
     const displayedAsset = async () =>
       (await page.textContent('.worker-inline-asset'))!.split('#')
 
     await expect
       .poll(() => page.textContent('.worker-inline-asset'))
-      .toContain('#inline-asset-label-v1')
+      .toContain('#inline-asset-label-v1#inline-asset-v1\n')
     const [urlBefore] = await displayedAsset()
     expect(urlBefore).toMatch(urlRe)
-    expect(await fetchAsset(urlBefore)).toStrictEqual({
-      status: 200,
-      body: 'inline-asset-v1\n',
-    })
 
     // survives an HMR patch, but not a page reload
     await page.evaluate(() => {
@@ -365,14 +356,10 @@ if (isBuild) {
     )
     await expect
       .poll(() => page.textContent('.worker-inline-asset'))
-      .toContain('#inline-asset-label-version-2')
+      .toContain('#inline-asset-label-version-2#inline-asset-version-2\n')
     const [urlAfter] = await displayedAsset()
     expect(urlAfter).toMatch(urlRe)
     expect(urlAfter).not.toBe(urlBefore)
-    expect(await fetchAsset(urlAfter)).toStrictEqual({
-      status: 200,
-      body: 'inline-asset-version-2\n',
-    })
 
     expect(
       await page.evaluate(() => (window as any).__workerInlineAssetKeptAlive),
