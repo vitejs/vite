@@ -17,6 +17,7 @@ import {
   combineSourcemaps,
   generateCodeFrame,
   getFileStartIndex,
+  normalizePath,
   numberToPos,
 } from '../utils'
 import { removedPureCssFilesCache } from './css'
@@ -42,7 +43,16 @@ type ChunkImportMapKeyChunk = Pick<
  */
 export function getChunkImportMapKeySignatures(
   chunks: Record<string, ChunkImportMapKeyChunk>,
+  cwd: string,
 ): Map<string, string> {
+  const toStableId = (id: string): [boolean, string] =>
+    path.isAbsolute(id)
+      ? [true, normalizePath(path.relative(cwd, id))]
+      : [false, id]
+  const isSmaller = (
+    [aIsPath, a]: [boolean, string],
+    [bIsPath, b]: [boolean, string],
+  ) => (aIsPath !== bIsPath ? !aIsPath : a < b)
   const signatures = new Map<string, string>()
   const usedNames = new Set<string>()
   for (const [fileName, chunk] of Object.entries(chunks)) {
@@ -51,18 +61,23 @@ export function getChunkImportMapKeySignatures(
     if (!chunk.fileName.includes('!~{')) {
       signatures.set(fileName, JSON.stringify(['file', fileName]))
     } else if (chunk.facadeModuleId != null) {
-      signatures.set(fileName, JSON.stringify(['facade', chunk.facadeModuleId]))
+      signatures.set(
+        fileName,
+        JSON.stringify(['facade', ...toStableId(chunk.facadeModuleId)]),
+      )
     } else if (!usedNames.has(chunk.name)) {
       usedNames.add(chunk.name)
       signatures.set(fileName, JSON.stringify(['name', chunk.name]))
     } else {
-      const moduleId = chunk.moduleIds.reduce<string | undefined>(
-        (smallest, id) =>
-          smallest === undefined || id < smallest ? id : smallest,
-        undefined,
-      )
+      let moduleId: [boolean, string] | undefined
+      for (const id of chunk.moduleIds) {
+        const stableId = toStableId(id)
+        if (moduleId === undefined || isSmaller(stableId, moduleId)) {
+          moduleId = stableId
+        }
+      }
       if (moduleId !== undefined) {
-        signatures.set(fileName, JSON.stringify(['module', moduleId]))
+        signatures.set(fileName, JSON.stringify(['module', ...moduleId]))
       } else {
         // Rolldown leaves duplicate-named chunks without module IDs unmapped.
         signatures.set(fileName, JSON.stringify(['file', fileName]))
@@ -114,7 +129,7 @@ export const preloadMethod = `__vitePreload`
 export const preloadMarker = `__VITE_PRELOAD__`
 
 export const preloadHelperId = '\0vite/preload-helper.js'
-const preloadMarkerRE = new RegExp(preloadMarker, 'g')
+const preloadMarkerRE = /__VITE_PRELOAD__(?:[\da-f]{32})?/g
 
 export function isCssPreloadUrl(url: URL): boolean {
   return url.pathname.endsWith('.css')
@@ -125,10 +140,12 @@ function toRelativePath(filename: string, importer: string) {
   return relPath[0] === '.' ? relPath : `./${relPath}`
 }
 
-function findPreloadMarker(str: string, pos: number = 0): number {
+export function findPreloadMarker(
+  str: string,
+  pos: number = 0,
+): RegExpExecArray | null {
   preloadMarkerRE.lastIndex = pos
-  const result = preloadMarkerRE.exec(str)
-  return result?.index ?? -1
+  return preloadMarkerRE.exec(str)
 }
 
 /**
@@ -149,19 +166,19 @@ export function matchImportsToPreloadMarkers(
   code: string,
   imports: readonly ImportSpecifier[],
 ): number[] {
-  const importMarkerPos = new Array<number>(imports.length).fill(-1)
+  const importMarkerPos = Array.from<number>({ length: imports.length }).fill(
+    -1,
+  )
   if (imports.length === 0) return importMarkerPos
 
   const openImports: number[] = []
   let nextImport = 0
   for (
-    let markerStartPos = findPreloadMarker(code, imports[0].e);
-    markerStartPos !== -1;
-    markerStartPos = findPreloadMarker(
-      code,
-      markerStartPos + preloadMarker.length,
-    )
+    let marker = findPreloadMarker(code, imports[0].e);
+    marker;
+    marker = findPreloadMarker(code, marker.index + marker[0].length)
   ) {
+    const markerStartPos = marker.index
     while (
       nextImport < imports.length &&
       imports[nextImport].e <= markerStartPos
@@ -174,7 +191,7 @@ export function matchImportsToPreloadMarkers(
   }
   // #3051: a lone import whose marker isn't placed after it pairs with the only marker
   if (imports.length === 1 && importMarkerPos[0] === -1) {
-    importMarkerPos[0] = findPreloadMarker(code)
+    importMarkerPos[0] = findPreloadMarker(code)?.index ?? -1
   }
 
   return importMarkerPos
@@ -462,6 +479,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       if (graph.chunkImportMapKeySignatures.size === 0) {
         graph.chunkImportMapKeySignatures = getChunkImportMapKeySignatures(
           graph.chunks,
+          path.resolve(
+            environment.config.build.rolldownOptions.cwd ?? process.cwd(),
+          ),
         )
       }
       const getKey = (fileName: string) =>
@@ -723,6 +743,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
               const markerStartPos = importMarkerPos[index]
 
               if (markerStartPos > 0) {
+                const marker = findPreloadMarker(code, markerStartPos)!
                 // the dep list includes the main chunk, so only need to reload when there are actual other deps.
                 let depsArray =
                   deps.size > 1 ||
@@ -790,7 +811,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
                 s.update(
                   markerStartPos,
-                  markerStartPos + preloadMarker.length,
+                  markerStartPos + marker[0].length,
                   renderedDeps.length > 0
                     ? `__vite__mapDeps([${renderedDeps.join(',')}])`
                     : `[]`,
@@ -819,19 +840,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless
-          let markerStartPos = findPreloadMarker(code)
-          while (markerStartPos >= 0) {
+          let marker = findPreloadMarker(code)
+          while (marker) {
+            const markerStartPos = marker.index
             if (!rewroteMarkerStartPos.has(markerStartPos)) {
               s.update(
                 markerStartPos,
-                markerStartPos + preloadMarker.length,
+                markerStartPos + marker[0].length,
                 'void 0',
               )
             }
-            markerStartPos = findPreloadMarker(
-              code,
-              markerStartPos + preloadMarker.length,
-            )
+            marker = findPreloadMarker(code, markerStartPos + marker[0].length)
           }
 
           if (s.hasChanged()) {

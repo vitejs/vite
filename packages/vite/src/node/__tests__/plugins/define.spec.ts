@@ -84,10 +84,10 @@ describe('definePlugin (SSR dev)', () => {
     const transform = await createJsDefinePluginTransform({
       __APP_VERSION__: JSON.stringify('1.0'),
     })
-    expect(await transform('export const version = "1.0";')).toBe(undefined)
+    expect(await transform('export const version = "1.0";')).toBeUndefined()
     expect(
       await transform('export const version = import.meta.SOMETHING'),
-    ).toBe(undefined)
+    ).toBeUndefined()
   })
 
   test('replaces define keys containing `$`', async () => {

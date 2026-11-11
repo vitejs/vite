@@ -1,14 +1,13 @@
 import path from 'node:path'
-import { type Plugin, type ViteDevServer, createServer } from 'vite'
-import { afterEach, describe, expect, test } from 'vitest'
+import { type InlineConfig, type Plugin, createServer } from 'vite'
+import { describe, expect, onTestFinished, test } from 'vitest'
 import { isServe } from '~utils'
 
-let server: ViteDevServer | undefined
-
-afterEach(async () => {
-  await server?.close()
-  server = undefined
-})
+async function createTestServer(config: InlineConfig) {
+  const server = await createServer(config)
+  onTestFinished(() => server.close())
+  return server
+}
 
 // In full bundle mode the build is driven by Rolldown's dev engine, which is the
 // one that invokes plugins' `buildStart`/`buildEnd` hooks. Regression test for
@@ -28,7 +27,7 @@ describe.runIf(isServe)('full bundle mode build hooks', () => {
       },
     }
 
-    server = await createServer({
+    const server = await createTestServer({
       root: path.resolve(import.meta.dirname, '..'),
       configFile: false,
       logLevel: 'silent',
@@ -42,7 +41,6 @@ describe.runIf(isServe)('full bundle mode build hooks', () => {
     expect(buildStartCount).toBe(1)
 
     await server.close()
-    server = undefined
 
     // closing must not fire buildStart/buildEnd again
     expect(buildStartCount).toBe(1)

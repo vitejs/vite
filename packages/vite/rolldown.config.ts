@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { ImportType, init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
-import type { Plugin } from 'rolldown'
+import type { OutputOptions, Plugin } from 'rolldown'
 import { defineConfig } from 'rolldown'
 import pkg from './package.json' with { type: 'json' }
 import licensePlugin from './rollupLicensePlugin'
@@ -156,7 +156,7 @@ const moduleRunnerConfig = defineConfig({
   ],
   plugins: [bundleSizeLimit(55), enableSourceMapsInWatchModePlugin()],
   output: {
-    ...sharedNodeOptions.output,
+    ...(sharedNodeOptions.output as OutputOptions),
     minify: {
       compress: true,
       mangle: false,
@@ -242,9 +242,9 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
         )
         if (!file) return
 
-        for (const { src, replacement, pattern } of deps[file]) {
-          const magicString = new MagicString(code)
+        const magicString = new MagicString(code)
 
+        for (const { src, replacement, pattern } of deps[file]) {
           if (src) {
             const pos = code.indexOf(src)
             if (pos < 0) {
@@ -274,13 +274,14 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
               )
             }
           }
-
-          code = magicString.toString()
         }
 
         console.log(`shimmed: ${file}`)
 
-        return code
+        return {
+          code: magicString.toString(),
+          map: magicString.generateMap({ source: id, hires: 'boundary' }),
+        }
       },
     },
     buildEnd(err) {

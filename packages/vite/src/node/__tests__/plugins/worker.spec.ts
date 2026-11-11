@@ -24,7 +24,10 @@ describe('splitWorkerRequest', () => {
     ['/worker.js?foo&bar&worker', '?foo&bar'],
   ]) {
     test(`splits ${id}`, () => {
-      expect(splitWorkerRequest(id)).toEqual({ file: '/worker.js', postfix })
+      expect(splitWorkerRequest(id)).toStrictEqual({
+        file: '/worker.js',
+        postfix,
+      })
     })
   }
 })
@@ -80,6 +83,6 @@ for (const { name, environments } of [
 
     expect(clientWorkerUrls.length).toBeGreaterThan(0)
     expect(ssrWorkerUrls.length).toBeGreaterThan(0)
-    expect(ssrWorkerUrls).toEqual(clientWorkerUrls)
+    expect(ssrWorkerUrls).toStrictEqual(clientWorkerUrls)
   })
 }
