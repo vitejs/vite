@@ -302,7 +302,7 @@ test('adds devtools for dev and build with --devtools all', () => {
     fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8'),
   )
   const config = fs.readFileSync(path.join(genPath, 'vite.config.js'), 'utf-8')
-  expect(Object.keys(pkg.devDependencies)).toEqual(
+  expect(Object.keys(pkg.devDependencies)).toStrictEqual(
     expect.arrayContaining([
       '@vitejs/devtools',
       '@vitejs/devtools-vite',

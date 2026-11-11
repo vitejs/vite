@@ -1138,6 +1138,7 @@ function setupDevTools(root: string, isTs: boolean, mode: string) {
         `^${devtoolsRolldownVersion}`,
       ])
     }
+    // oxlint-disable-next-line typescript/require-array-sort-compare
     devDepsEntries.sort()
     asObject.devDependencies = Object.fromEntries(devDepsEntries)
     return JSON.stringify(asObject, null, 2) + '\n'
