@@ -1,5 +1,6 @@
 import fsp from 'node:fs/promises'
-import { basename, resolve } from 'node:path'
+import { tmpdir } from 'node:os'
+import { basename, join, resolve } from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
 import colors from 'picocolors'
 import type {
@@ -11,7 +12,15 @@ import type {
   RolldownOutput,
   RollupLog,
 } from 'rolldown'
-import { afterEach, describe, expect, assert, test, vi } from 'vitest'
+import {
+  afterEach,
+  describe,
+  expect,
+  assert,
+  onTestFinished,
+  test,
+  vi,
+} from 'vitest'
 import { BuildEnvironment, normalizePath, resolveConfig } from '..'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import {
@@ -113,6 +122,226 @@ describe('build', () => {
     assertOutputHashContentChange(result[0], result[1])
   })
 
+  test('file hash should change when chunk import map preload dependencies change', async () => {
+    const buildProject = async (
+      includeDepB: boolean,
+      modulePreload: boolean = true,
+    ) => {
+      const modules: Record<string, string> = {
+        'entry.js': `
+          window.addEventListener('click', async () => {
+            const { runLazy } = await import('lazy.js')
+            const { runOther } = await import('other.js')
+            return runLazy() + runOther()
+          })`,
+        'lazy.js': `
+          export async function runLazy() {
+            const { runDeep } = await import('deep.js')
+            return runDeep()
+          }`,
+        'deep.js': includeDepB
+          ? `
+              import { A } from 'dep-a.js'
+              import { B } from 'dep-b.js'
+              export function runDeep() { return A + B }`
+          : `
+              import { A } from 'dep-a.js'
+              export function runDeep() { return A }`,
+        'other.js': `
+          import { A } from 'dep-a.js'
+          import { B } from 'dep-b.js'
+          export function runOther() { return A + B }`,
+        'dep-a.js': `export const A = 'a'.repeat(64)`,
+        'dep-b.js': `export const B = 'b'.repeat(64)`,
+      }
+      return (await build({
+        root: resolve(dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        input: 'entry.js',
+        build: {
+          chunkImportMap: true,
+          modulePreload,
+          minify: false,
+          write: false,
+        },
+        plugins: [
+          {
+            name: 'preload-dependency-membership',
+            resolveId(id) {
+              if (id in modules) return `\0${id}`
+            },
+            load(id) {
+              return modules[id.slice(1)]
+            },
+          },
+        ],
+      })) as RolldownOutput
+    }
+
+    const getImportMapKeys = (result: RolldownOutput) => {
+      const importMap = result.output.find(
+        (output): output is OutputAsset =>
+          output.type === 'asset' && output.fileName === 'importmap.json',
+      )
+      assert(importMap)
+      const source =
+        typeof importMap.source === 'string'
+          ? importMap.source
+          : new TextDecoder().decode(importMap.source)
+      return Object.keys(JSON.parse(source).imports).sort()
+    }
+
+    const getImportMapKeyChanges = (
+      before: RolldownOutput,
+      after: RolldownOutput,
+    ) => {
+      const toKeyMap = (result: RolldownOutput) =>
+        Object.fromEntries(
+          getImportMapKeys(result).map((key) => {
+            const name = key.match(/\/([^/]+)-[-\w]{8}\.[^.]+$/)?.[1]
+            assert(name)
+            return [name, key]
+          }),
+        )
+      const beforeKeys = toKeyMap(before)
+      const afterKeys = toKeyMap(after)
+      const names = Object.keys(beforeKeys)
+      return {
+        changed: names.filter((name) => beforeKeys[name] !== afterKeys[name]),
+        unchanged: names.filter((name) => beforeKeys[name] === afterKeys[name]),
+      }
+    }
+
+    const result = await Promise.all([buildProject(false), buildProject(true)])
+    const importMapKeyChanges = getImportMapKeyChanges(result[0], result[1])
+    expect(importMapKeyChanges).toMatchInlineSnapshot(`
+      {
+        "changed": [
+          "_dep-a",
+        ],
+        "unchanged": [
+          "_deep",
+          "_entry",
+          "_lazy",
+          "_other",
+        ],
+      }
+    `)
+    expect(getOutputHashChanges(result[0], result[1])).toMatchInlineSnapshot(`
+      {
+        "changed": [
+          "_entry",
+          "_deep",
+          "_dep-a",
+          "_lazy",
+          "_other",
+        ],
+        "unchanged": [
+          "undefined",
+        ],
+      }
+    `)
+    assertOutputHashContentChange(result[0], result[1])
+
+    const withoutPreload = await Promise.all([
+      buildProject(false, false),
+      buildProject(true, false),
+    ])
+    expect(
+      getImportMapKeyChanges(withoutPreload[0], withoutPreload[1]),
+    ).toStrictEqual(importMapKeyChanges)
+    expect(
+      getOutputHashChanges(withoutPreload[0], withoutPreload[1]).unchanged,
+    ).toStrictEqual(expect.arrayContaining(['_entry', '_lazy']))
+    assertOutputHashContentChange(withoutPreload[0], withoutPreload[1])
+  })
+
+  test('file hash should change when a shared chunk becomes pure css', async () => {
+    const buildProject = async (includeJs: boolean) => {
+      const modules: Record<string, string> = {
+        'entry.js': `
+          window.loadLazy = () => import('lazy.js')
+          window.loadOther = () => import('other.js')
+          window.loadThird = () => import('third.js')`,
+        'lazy.js': `
+          import { A } from 'dep-a.js'
+          import 'shared-style.js'
+          export const lazy = A`,
+        'other.js': `
+          import { A } from 'dep-a.js'
+          import { B } from 'dep-b.js'
+          export const other = A + B`,
+        'third.js': `
+          import { B } from 'dep-b.js'
+          import 'shared-style.js'
+          export const third = B`,
+        'dep-a.js': `export const A = 'a'.repeat(64)`,
+        'dep-b.js': `export const B = 'b'.repeat(64)`,
+        'shared-style.js': `
+          import 'shared.css'
+          ${includeJs ? `console.log('shared style')` : ''}`,
+        'shared.css': `.shared { color: red }`,
+      }
+      return (await build({
+        root: resolve(dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        input: 'entry.js',
+        build: {
+          chunkImportMap: true,
+          minify: false,
+          write: false,
+        },
+        plugins: [
+          {
+            name: 'pure-css-transition',
+            resolveId(id) {
+              if (id in modules) return `\0${id}`
+            },
+            load(id) {
+              return modules[id.slice(1)]
+            },
+          },
+        ],
+      })) as RolldownOutput
+    }
+
+    const result = await Promise.all([buildProject(true), buildProject(false)])
+    expect(getOutputHashChanges(result[0], result[1])).toMatchInlineSnapshot(`
+      {
+        "changed": [
+          "_entry",
+          "_lazy",
+          "_shared-style",
+          "_third",
+        ],
+        "unchanged": [
+          "_dep-a",
+          "_dep-b",
+          "_other",
+          "_shared-style.css",
+          "undefined",
+        ],
+      }
+    `)
+    assertOutputHashContentChange(result[0], result[1])
+
+    const importMap = result[1].output.find(
+      (output): output is OutputAsset =>
+        output.type === 'asset' && output.fileName === 'importmap.json',
+    )
+    assert(importMap)
+    const imports = JSON.parse(importMap.source.toString()).imports as Record<
+      string,
+      string
+    >
+    const outputFiles = new Set(
+      result[1].output.map((output) => `/${output.fileName}`),
+    )
+    expect(Object.values(imports).every((file) => outputFiles.has(file))).toBe(
+      true,
+    )
+  })
+
   test('renderBuiltUrl receives asset postfixes in JS and CSS', async () => {
     const result = await buildProjectWithRenderBuiltUrl(
       (filename) => injectQuery(filename, 'dpl=id'),
@@ -190,6 +419,51 @@ describe('build', () => {
     })) as RolldownOutput
     const chunk = result.output.find((o) => o.type === 'chunk')
     expect(chunk?.code).toContain('from-virtual-top-level-input')
+  })
+
+  test('throws early for a CSS input when cssCodeSplit is false', async () => {
+    await expect(
+      build({
+        root: resolve(dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        build: {
+          write: false,
+          cssCodeSplit: false,
+          rolldownOptions: { input: 'entry.scss' },
+        },
+      }),
+    ).rejects.toThrow('should not include CSS files')
+  })
+
+  test('throws for an input resolved to CSS when cssCodeSplit is false', async () => {
+    const input = 'virtual:entry'
+    const resolvedInput = '\0virtual-entry.css'
+    await expect(
+      build({
+        root: resolve(dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        build: {
+          write: false,
+          cssCodeSplit: false,
+          rolldownOptions: { input },
+        },
+        plugins: [
+          {
+            name: 'virtual-css-entry',
+            resolveId(id) {
+              if (id === input) {
+                return resolvedInput
+              }
+            },
+            load(id) {
+              if (id === resolvedInput) {
+                return `.entry { color: red }`
+              }
+            },
+          },
+        ],
+      }),
+    ).rejects.toThrow('CSS files cannot be used as entry points')
   })
 
   test('file hash should change when pure css chunk changes', async () => {
@@ -282,6 +556,74 @@ describe('build', () => {
     })
   })
 
+  for (const suffix of ['?dpl=test', '#fragment']) {
+    describe(`dynamic imports with ${suffix}`, () => {
+      async function buildProject(library = false) {
+        const root = resolve(dirname, 'fixtures/dynamic-import-query-fragment')
+        const entry = resolve(root, library ? 'css-entry.js' : 'entry.js')
+        const result = await build({
+          root,
+          configFile: false,
+          logLevel: 'silent',
+          input: entry,
+          build: {
+            write: false,
+            minify: false,
+            cssCodeSplit: true,
+            lib: library ? { entry, formats: ['es'] } : false,
+          },
+          plugins: [
+            {
+              name: 'append-query-or-fragment',
+              // Append a query string or fragment before Vite looks up output chunks.
+              // experimental.renderBuiltUrl rewrites preload URLs after that lookup
+              // and leaves the import specifiers unchanged.
+              renderChunk(code) {
+                return code.replace(
+                  /(import\(["'`])([^"'`]+\.m?js)(["'`]\))/g,
+                  `$1$2${suffix}$3`,
+                )
+              },
+            },
+          ],
+        })
+        if ('on' in result) throw new Error('Unexpected watcher result')
+        return Array.isArray(result) ? result[0] : result
+      }
+
+      test('preserves CSS dependencies of lazy JavaScript chunks', async () => {
+        const { output } = await buildProject()
+        const entry = output.find(
+          (chunk): chunk is OutputChunk =>
+            chunk.type === 'chunk' && chunk.isEntry,
+        )
+        assert(entry)
+        const css = output.find(
+          (asset) => asset.type === 'asset' && asset.fileName.endsWith('.css'),
+        )
+        assert(css)
+        expect(entry.code).toContain(suffix)
+        expect(entry.code).toContain(css.fileName)
+      })
+
+      test('removes imports of deleted CSS-only chunks in library builds', async () => {
+        const { output } = await buildProject(true)
+        const entry = output.find(
+          (chunk): chunk is OutputChunk =>
+            chunk.type === 'chunk' && chunk.isEntry,
+        )
+        assert(entry)
+        expect(
+          output.some(
+            (asset) =>
+              asset.type === 'asset' && asset.fileName.endsWith('.css'),
+          ),
+        ).toBe(true)
+        expect(entry.code).not.toMatch(/\bimport\s*\(/)
+      })
+    })
+  }
+
   test.for([
     [true, true],
     [true, false],
@@ -340,8 +682,8 @@ describe('build', () => {
       const foo = esBundle.output.find(
         (chunk) => chunk.type === 'chunk' && chunk.isEntry,
       ) as OutputChunk
-      expect(foo.code).not.contains('JSON_ARR')
-      expect(foo.code).not.contains('JSON_OBJ')
+      expect(foo.code).not.toContain('JSON_ARR')
+      expect(foo.code).not.toContain('JSON_OBJ')
     },
   )
 
@@ -403,7 +745,7 @@ describe('resolveBuildOutputs', () => {
     const outputs: OutputOptions[] = [{ format: 'es' }]
     const resolvedOutputs = resolveBuildOutputs(outputs, libOptions, logger)
 
-    expect(resolvedOutputs).toEqual([
+    expect(resolvedOutputs).toStrictEqual([
       {
         format: 'es',
       },
@@ -415,7 +757,7 @@ describe('resolveBuildOutputs', () => {
     const libOptions: LibraryOptions = { ...baseLibOptions, name: 'lib' }
     const resolvedOutputs = resolveBuildOutputs(void 0, libOptions, logger)
 
-    expect(resolvedOutputs).toEqual([
+    expect(resolvedOutputs).toStrictEqual([
       {
         format: 'es',
       },
@@ -430,7 +772,7 @@ describe('resolveBuildOutputs', () => {
     const outputs: OutputOptions[] = [{ format: 'es' }]
     const resolvedOutputs = resolveBuildOutputs(outputs, false, logger)
 
-    expect(resolvedOutputs).toEqual(outputs)
+    expect(resolvedOutputs).toStrictEqual(outputs)
   })
 
   test('logs a warning when outputs is an array and formats are specified', () => {
@@ -874,19 +1216,18 @@ describe('resolveBuildOutputs', () => {
       name: 'entryA',
     }
 
-    expect(resolveBuildOutputs(undefined, libOptions, {} as Logger)).toEqual([
-      { format: 'es' },
-      { format: 'umd' },
-    ])
+    expect(
+      resolveBuildOutputs(undefined, libOptions, {} as Logger),
+    ).toStrictEqual([{ format: 'es' }, { format: 'umd' }])
     expect(
       resolveBuildOutputs({ name: 'A' }, libOptions, {} as Logger),
-    ).toEqual([
+    ).toStrictEqual([
       { format: 'es', name: 'A' },
       { format: 'umd', name: 'A' },
     ])
     expect(
       resolveBuildOutputs([{ name: 'A' }], libOptions, {} as Logger),
-    ).toEqual([{ name: 'A' }])
+    ).toStrictEqual([{ name: 'A' }])
   })
 
   test('default format: multiple entries', () => {
@@ -894,19 +1235,18 @@ describe('resolveBuildOutputs', () => {
       entry: ['entryA.js', 'entryB.js'],
     }
 
-    expect(resolveBuildOutputs(undefined, libOptions, {} as Logger)).toEqual([
-      { format: 'es' },
-      { format: 'cjs' },
-    ])
+    expect(
+      resolveBuildOutputs(undefined, libOptions, {} as Logger),
+    ).toStrictEqual([{ format: 'es' }, { format: 'cjs' }])
     expect(
       resolveBuildOutputs({ name: 'A' }, libOptions, {} as Logger),
-    ).toEqual([
+    ).toStrictEqual([
       { format: 'es', name: 'A' },
       { format: 'cjs', name: 'A' },
     ])
     expect(
       resolveBuildOutputs([{ name: 'A' }], libOptions, {} as Logger),
-    ).toEqual([{ name: 'A' }])
+    ).toStrictEqual([{ name: 'A' }])
   })
 
   test('umd or iife: should not support multiple entries', () => {
@@ -954,7 +1294,7 @@ describe('resolveBuildOutputs', () => {
         },
         log,
       ),
-    ).toEqual([{ name: 'A' }])
+    ).toStrictEqual([{ name: 'A' }])
     expect(log.warn).toHaveBeenLastCalledWith(
       colors.yellow(
         `"build.lib.formats" will be ignored because "build.rolldownOptions.output" is already an array format.`,
@@ -1142,7 +1482,7 @@ test.for([true, false])(
       ([client, ssr, custom1, custom2] as RolldownOutput[]).map(
         (o) => o.output[0].code.split('\n').length,
       ),
-    ).toEqual([1, 8, 1, 8])
+    ).toStrictEqual([1, 7, 1, 7])
   },
 )
 
@@ -1246,6 +1586,35 @@ test('chunkImportMap with a non-root base', async () => {
   )![0]
   // The import map maps the specifier without the base to the actual URL.
   expect(entry.code).toContain(JSON.stringify(cssSpecifier.slice(base.length)))
+})
+
+test('chunkImportMap file names do not depend on the build folder', async () => {
+  const fixture = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
+  const parent = await fsp.realpath(
+    await fsp.mkdtemp(join(tmpdir(), 'vite-chunk-import-map-')),
+  )
+  onTestFinished(() => fsp.rm(parent, { recursive: true, force: true }))
+
+  const buildFrom = async (folder: string) => {
+    const root = join(parent, folder)
+    await fsp.cp(fixture, root, { recursive: true })
+    const result = (await build({
+      root,
+      logLevel: 'silent',
+      build: {
+        chunkImportMap: true,
+        write: false,
+        // Rolldown's import map keys are relative to `cwd`, so build each
+        // copy as if it was started from its own folder.
+        rolldownOptions: { input: '/entry.js', cwd: root },
+      },
+    })) as RolldownOutput
+    return result.output.map((output) => output.fileName).sort()
+  }
+
+  const first = await buildFrom('project')
+  const second = await buildFrom('project-in-a-longer-folder')
+  expect(second).toStrictEqual(first)
 })
 
 test('chunkImportMap is emitted when emitAssets is false', async () => {
@@ -1389,6 +1758,61 @@ test('chunkImportMap handles pure CSS with unhashed output', async () => {
   expect(entry.code).toContain('Promise.resolve')
 })
 
+test('chunkImportMap removes pure CSS dynamic chunks for SSR', async () => {
+  const modules: Record<string, string> = {
+    'entry.js': `export const loadStyle = () => import('style.css')`,
+    'style.css': `.style { color: red }`,
+  }
+  const result = (await build({
+    root: resolve(dirname, 'packages/build-project'),
+    logLevel: 'silent',
+    build: {
+      ssr: true,
+      emitAssets: true,
+      chunkImportMap: true,
+      write: false,
+      rolldownOptions: {
+        input: 'entry.js',
+      },
+    },
+    plugins: [
+      {
+        name: 'pure-css-ssr',
+        resolveId(id) {
+          if (id in modules) return `\0${id}`
+        },
+        load(id) {
+          return modules[id.slice(1)]
+        },
+      },
+    ],
+  })) as RolldownOutput
+
+  const outputFiles = new Set(
+    result.output.map((output) => `/${output.fileName}`),
+  )
+  const importMap = result.output.find(
+    (output): output is OutputAsset =>
+      output.type === 'asset' && output.fileName === 'importmap.json',
+  )
+  assert(importMap)
+  const imports = JSON.parse(importMap.source.toString()).imports as Record<
+    string,
+    string
+  >
+  expect(Object.values(imports).every((file) => outputFiles.has(file))).toBe(
+    true,
+  )
+
+  const entry = result.output.find(
+    (output): output is OutputChunk =>
+      output.type === 'chunk' && output.isEntry,
+  )
+  assert(entry)
+  expect(entry.code).not.toContain('import(')
+  expect(entry.code).toContain('Promise.resolve')
+})
+
 test('importmap named asset is not emitted when chunkImportMap is false', async () => {
   const root = resolve(dirname, 'fixtures/shared-plugins/chunk-import-map')
   const builder = await createBuilder({
@@ -1476,7 +1900,7 @@ test('sharedConfigBuild and emitAssets', async () => {
     ['client', 'ssr', 'custom'].map(
       (name) => builder.environments[name].config.build.emitAssets,
     ),
-  ).toEqual([true, true, true])
+  ).toStrictEqual([true, true, true])
 
   await builder.buildApp()
 
@@ -1492,7 +1916,7 @@ test('sharedConfigBuild and emitAssets', async () => {
         ),
       ),
     ),
-  ).toEqual([
+  ).toStrictEqual([
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
     expect.arrayContaining([expect.stringMatching(/\.css$/)]),
@@ -1582,7 +2006,7 @@ describe('onRollupLog', () => {
     const logs = loggerSpy.mock.calls.map((args) =>
       stripVTControlCharacters(args[0]),
     )
-    expect(logs).contain(`[plugin ${pluginName}] ${msgInfo}`)
+    expect(logs).toContain(`[plugin ${pluginName}] ${msgInfo}`)
   })
 
   test('Rollup logs of warn should be handled by vite', async () => {
@@ -1593,7 +2017,7 @@ describe('onRollupLog', () => {
     const logs = loggerSpy.mock.calls.map((args) =>
       stripVTControlCharacters(args[0]),
     )
-    expect(logs).contain(`[plugin ${pluginName}] ${msgWarn}`)
+    expect(logs).toContain(`[plugin ${pluginName}] ${msgWarn}`)
   })
 
   test('onLog passed by user is called', async () => {
@@ -1810,7 +2234,7 @@ function assertOutputHashContentChange(
         expect(
           chunk.code,
           `the ${chunk.fileName} chunk has the same hash but different contents between builds`,
-        ).toEqual(chunk2.code)
+        ).toStrictEqual(chunk2.code)
       }
     }
   }

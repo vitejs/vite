@@ -64,7 +64,10 @@ describe.runIf(!isBuild)('acceptExports with hmrPartialAccept off', () => {
         },
         /hot updated/,
         (logs) => {
-          expect(logs).toEqual(['all >>>>>> a1, b1, c1', hotUpdatedLog(file)])
+          expect(logs).toStrictEqual([
+            'all >>>>>> a1, b1, c1',
+            hotUpdatedLog(file),
+          ])
         },
       )
     })

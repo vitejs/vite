@@ -4,8 +4,8 @@ import { createModuleRunnerTester } from './utils'
 
 describe(
   'module runner hmr works as expected',
-  async () => {
-    const it = await createModuleRunnerTester({
+  () => {
+    const it = createModuleRunnerTester({
       server: {
         // override watch options because it's disabled by default
         watch: {},
@@ -103,7 +103,7 @@ describe(
       releaseWait()
       const results = await Promise.allSettled([importA, importB] as const)
 
-      expect(results).toEqual([
+      expect(results).toStrictEqual([
         {
           status: 'fulfilled',
           value: expect.objectContaining({ result: 'a' }),

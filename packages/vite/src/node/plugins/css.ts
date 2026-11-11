@@ -38,7 +38,7 @@ import type { LightningCSSOptions } from '#types/internal/lightningcssOptions'
 import type { CustomPluginOptionsVite } from '#types/metadata'
 import { type DevEnvironment } from '..'
 import { NULL_BYTE_PLACEHOLDER } from '../../shared/constants'
-import { cleanUrl, isWindows, slash } from '../../shared/utils'
+import { cleanUrl, isWindows, joinUrlSegments, slash } from '../../shared/utils'
 import { PartialEnvironment } from '../baseEnvironment'
 import {
   createToImportMetaURLBasedRelativeRuntime,
@@ -87,7 +87,6 @@ import {
   isDataUrl,
   isExternalUrl,
   isObject,
-  joinUrlSegments,
   lineTerminatorRE,
   mergeWithDefaults,
   normalizePath,
@@ -289,6 +288,41 @@ const cssModulesCache = new WeakMap<
   ResolvedConfig,
   Map<string, Record<string, string>>
 >()
+
+const renderedModulesCache = new WeakMap<
+  Record<string, RenderedChunk>,
+  {
+    modules: Map<string, RenderedModule>
+    chunks: ArrayIterator<string>
+  }
+>()
+
+function getRenderedModule(
+  chunks: Record<string, RenderedChunk>,
+  importerId: string,
+): RenderedModule | undefined {
+  let cache = renderedModulesCache.get(chunks)
+  if (!cache) {
+    cache = {
+      modules: new Map(),
+      chunks: Object.keys(chunks).values(),
+    }
+    renderedModulesCache.set(chunks, cache)
+  }
+
+  const cached = cache.modules.get(importerId)
+  if (cached) return cached
+
+  // Resume indexing at the next chunk, stopping once the importer is found.
+  for (const name of cache.chunks) {
+    const modules = chunks[name].modules
+    for (const id in modules) {
+      if (!cache.modules.has(id)) cache.modules.set(id, modules[id])
+    }
+    const importer = cache.modules.get(importerId)
+    if (importer) return importer
+  }
+}
 
 export const removedPureCssFilesCache: WeakMap<
   ResolvedConfig,
@@ -676,20 +710,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       ? {
           async renderChunk(code, chunk, opts, meta) {
             let chunkCSS: string | undefined
-            const renderedModules = new Proxy(
-              {} as Record<string, RenderedModule | undefined>,
-              {
-                get(_target, p) {
-                  for (const name in meta.chunks) {
-                    const modules = meta.chunks[name].modules
-                    const module = modules[p as string]
-                    if (module) {
-                      return module
-                    }
-                  }
-                },
-              },
-            )
             // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
             const isJsChunkEmpty = code === '' && !chunk.isEntry
             let isPureCssChunk = chunk.exports.length === 0
@@ -707,7 +727,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   this.getModuleInfo(id)?.meta?.vite?.cssScopeTo
                 if (
                   cssScopeTo &&
-                  !isCssScopeToRendered(cssScopeTo, renderedModules)
+                  !isCssScopeToRendered(cssScopeTo, meta.chunks)
                 ) {
                   continue
                 }
@@ -895,6 +915,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                 isPureCssChunk &&
                 (opts.format === 'es' || opts.format === 'cjs')
               ) {
+                if (
+                  chunk.isEntry &&
+                  !this.environment.config.build.cssCodeSplit
+                ) {
+                  this.error(
+                    `When "build.cssCodeSplit: false" is set, CSS files cannot be used as entry points (found "${chunk.facadeModuleId ?? chunk.name}").`,
+                  )
+                }
                 // this is a shared CSS-only chunk that is empty.
                 pureCssChunks.add(chunk)
               }
@@ -991,7 +1019,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             }
 
             if (s) {
-              if (config.build.sourcemap) {
+              if (this.environment.config.build.sourcemap) {
                 return {
                   code: s.toString(),
                   map: s.generateMap({ hires: 'boundary' }),
@@ -1309,10 +1337,10 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
 
 function isCssScopeToRendered(
   cssScopeTo: Exclude<CustomPluginOptionsVite['cssScopeTo'], undefined>,
-  renderedModules: Record<string, RenderedModule | undefined>,
+  chunks: Record<string, RenderedChunk>,
 ) {
   const [importerId, exp] = cssScopeTo
-  const importer = renderedModules[importerId]
+  const importer = getRenderedModule(chunks, importerId)
   return (
     importer && (exp === undefined || importer.renderedExports.includes(exp))
   )
@@ -2583,8 +2611,10 @@ function cleanScssBugUrl(url: string) {
 const makeScssWorker = (
   environment: PartialEnvironment,
   resolvers: CSSAtImportResolvers,
+  sassPath: string,
   _maxWorkers: number | undefined,
 ) => {
+  const importSass = createCachedImport<typeof Sass>(() => import(sassPath))
   let compilerPromise: Promise<Sass.AsyncCompiler> | undefined
 
   // we use the compiler api provided by sass
@@ -2592,7 +2622,6 @@ const makeScssWorker = (
   type WorkerType = InstanceType<
     typeof WorkerWithFallback<
       [
-        sassPath: string,
         data: string,
         // additionalData can a function that is not cloneable but it won't be used
         options: SassStylePreprocessorInternalOptions & {
@@ -2604,8 +2633,8 @@ const makeScssWorker = (
   >
 
   const worker: WorkerType = {
-    async run(sassPath, data, options) {
-      const sass: typeof Sass = await import(sassPath)
+    async run(data, options) {
+      const sass = await importSass()
       compilerPromise ??= sass.initAsyncCompiler()
       const compiler = await compilerPromise
 
@@ -2721,7 +2750,12 @@ const scssProcessor = (
         }
       }
 
-      worker ??= makeScssWorker(environment, resolvers, maxWorkers)
+      worker ??= makeScssWorker(
+        environment,
+        resolvers,
+        pathToFileURL(sassPackage.path).href,
+        maxWorkers,
+      )
 
       const { content: data, map: additionalMap } = await getSource(
         source,
@@ -2735,11 +2769,7 @@ const scssProcessor = (
         additionalData: undefined,
       }
       try {
-        const result = await worker.run(
-          pathToFileURL(sassPackage.path).href,
-          data,
-          optionsWithoutAdditionalData,
-        )
+        const result = await worker.run(data, optionsWithoutAdditionalData)
         const deps = result.stats.includedFiles.map((f) => cleanScssBugUrl(f))
         const map: ExistingRawSourceMap | undefined = result.map
           ? JSON.parse(result.map.toString())

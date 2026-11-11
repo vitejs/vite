@@ -1,16 +1,9 @@
 import path from 'node:path'
 import { setTimeout } from 'node:timers/promises'
-import { afterEach, expect, test } from 'vitest'
-import type { ViteDevServer } from '../..'
-import { createLogger, createServer } from '../..'
+import { expect, test } from 'vitest'
+import { createLogger } from '../..'
 import { promiseWithResolvers } from '../../../shared/utils'
-
-let server: ViteDevServer | undefined
-
-afterEach(async () => {
-  await server?.close()
-  server = undefined
-})
+import { createTestServer } from '../testUtils'
 
 // regression test for https://github.com/vitejs/vite/issues/22847
 // When a module importing a bare specifier is transformed between `createServer()`
@@ -28,7 +21,7 @@ test('does not crash when a dep is discovered before the server starts listening
 
   const bundleStarted = promiseWithResolvers<void>()
 
-  server = await createServer({
+  const server = await createTestServer({
     configFile: false,
     customLogger: logger,
     root: path.join(
@@ -106,7 +99,7 @@ test('resolves discovered dep processing promise on close before init', async ()
     errors.push(typeof msg === 'string' ? msg : String(msg))
   }
 
-  server = await createServer({
+  const server = await createTestServer({
     configFile: false,
     customLogger: logger,
     root: path.join(

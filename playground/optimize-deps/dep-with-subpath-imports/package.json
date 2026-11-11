@@ -1,0 +1,13 @@
+{
+  "name": "@vitejs/test-dep-with-subpath-imports",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "exports": "./index.js",
+  "imports": {
+    "#mode": {
+      "development": "./dev.js",
+      "default": "./prod.js"
+    }
+  }
+}

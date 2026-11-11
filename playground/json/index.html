@@ -32,8 +32,8 @@
 <pre class="hmr"></pre>
 
 <script type="module">
-  import json, { hello } from './test.json'
   import deepJson, { name } from 'vue/package.json'
+  import json, { hello } from './test.json'
 
   text('.full', JSON.stringify(json))
   text('.named', hello)
