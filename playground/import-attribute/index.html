@@ -6,12 +6,47 @@
 <h2>From dependency</h2>
 <p class="dep"></p>
 
+<h2>Dynamic import</h2>
+<p class="dynamic"></p>
+
+<h2>Dynamic import with assert</h2>
+<p class="dynamic-assert"></p>
+
+<h2>Dynamic import with template literal and trailing comma</h2>
+<p class="dynamic-template"></p>
+
+<h2>External dynamic import</h2>
+<button class="load-external">Load external JSON</button>
+<p class="dynamic-external"></p>
+
 <script type="module">
   import * as data from './data.json' with { type: 'json' }
   text('.src', data.foo)
 
   import * as depData from '@vitejs/test-import-attribute-dep'
   text('.dep', depData.hello)
+
+  import('./data.json', { with: { type: 'json' } }).then((data) => {
+    text('.dynamic', data.foo)
+  })
+
+  import('./data.json', { assert: { type: 'json' } }).then((data) => {
+    text('.dynamic-assert', data.foo)
+  })
+
+  // prettier-ignore
+  import(`./data.json`, { with: { type: 'json' } },).then((data) => {
+    text('.dynamic-template', data.foo)
+  })
+
+  document
+    .querySelector('.load-external')
+    .addEventListener('click', async () => {
+      const data = await import('data:application/json,{"foo":"bar"}', {
+        with: { type: 'json' },
+      })
+      text('.dynamic-external', data.default.foo)
+    })
 
   function text(el, text) {
     document.querySelector(el).textContent = text
