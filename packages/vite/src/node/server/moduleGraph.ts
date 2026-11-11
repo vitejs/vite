@@ -264,7 +264,9 @@ export class EnvironmentModuleGraph {
     let noLongerImported: Set<EnvironmentModuleNode> | undefined
 
     let resolvePromises = []
-    let resolveResults = new Array(importedModules.size)
+    let resolveResults: Array<EnvironmentModuleNode> = Array.from({
+      length: importedModules.size,
+    })
     let index = 0
     // update import graph
     for (const imported of importedModules) {
@@ -302,7 +304,7 @@ export class EnvironmentModuleGraph {
 
     // update accepted hmr deps
     resolvePromises = []
-    resolveResults = new Array(acceptedModules.size)
+    resolveResults = Array.from({ length: acceptedModules.size })
     index = 0
     for (const accepted of acceptedModules) {
       const nextIndex = index++

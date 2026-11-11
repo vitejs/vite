@@ -118,6 +118,7 @@ export async function resolvePlugins(
     // @oxc-project/runtime resolution is handled by rolldown in build
     config.oxc !== false
       ? ({
+          // oxlint-disable-next-line typescript/no-misused-spread - BuiltinPlugin is fine
           ...oxcRuntimePlugin(),
           applyToEnvironment(environment) {
             return !environment.config.isBundled

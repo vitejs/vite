@@ -79,19 +79,19 @@
 </div>
 
 <script type="module">
-  import light from './light.wasm?init'
-  import heavy from './heavy.wasm?init'
-  import myWorker from './worker?worker'
   import { add } from './add.wasm'
-  import { exported_func } from './light-with-imports.wasm'
-  import { getResult } from './imports.js'
-  import { answer } from './global.wasm'
-  import { getAnswerPlusOne, readCounter } from './global-consumer.wasm'
-  import { bumpCounter } from './global.wasm'
-  import { helloLength } from './string-constants.wasm'
   import source addModule from './add.wasm'
-  import source lightWithImportsModule from './light-with-imports.wasm'
+  import { getAnswerPlusOne, readCounter } from './global-consumer.wasm'
+  import { answer } from './global.wasm'
+  import { bumpCounter } from './global.wasm'
+  import heavy from './heavy.wasm?init'
+  import { getResult } from './imports.js'
   import { imported_func } from './imports.js'
+  import { exported_func } from './light-with-imports.wasm'
+  import source lightWithImportsModule from './light-with-imports.wasm'
+  import light from './light.wasm?init'
+  import { helloLength } from './string-constants.wasm'
+  import myWorker from './worker?worker'
 
   const w = new myWorker()
   w.addEventListener('message', (ev) => {

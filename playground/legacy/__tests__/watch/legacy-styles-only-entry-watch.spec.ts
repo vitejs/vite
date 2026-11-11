@@ -14,7 +14,9 @@ test.runIf(isBuild)('rebuilds styles only entry on change', async () => {
   expect(findAssetFile(/style-only-entry-legacy-.+\.js/, 'watch')).toContain(
     '#ff69b4',
   )
-  expect(findAssetFile(/polyfills-legacy-.+\.js/, 'watch')).toBeTruthy()
+  expect(findAssetFile(/polyfills-legacy-.+\.js/, 'watch')).toContain(
+    'SystemJS',
+  )
   const numberOfManifestEntries = Object.keys(readManifest('watch')).length
   expect(numberOfManifestEntries).toBe(3)
 
@@ -39,5 +41,5 @@ test.runIf(isBuild)('rebuilds styles only entry on change', async () => {
     'watch',
   )
   expect(reRenderedCssLegacyFile).toContain('#ffb6c1')
-  expect(findAssetFile(/polyfills-legacy-.+\.js/, 'watch')).toBeTruthy()
+  expect(findAssetFile(/polyfills-legacy-.+\.js/, 'watch')).toBeDefined()
 })

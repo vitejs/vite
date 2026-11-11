@@ -320,7 +320,8 @@ That said, Vite does provide built-in support for `.scss`, `.sass`, `.less`, `.s
 
 ```bash
 # .scss and .sass
-npm add -D sass-embedded # or sass
+npm add -D sass-embedded # recommended for performance
+npm add -D sass # if the platform is not supported
 
 # .less
 npm add -D less
