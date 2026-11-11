@@ -13,7 +13,7 @@ const createNonce = () => crypto.randomBytes(16).toString('base64')
 const setNonceHeader = (res, nonce) => {
   res.setHeader(
     'Content-Security-Policy',
-    `default-src 'nonce-${nonce}'; connect-src 'self'`,
+    `default-src 'nonce-${nonce}'; connect-src 'self'; require-trusted-types-for 'script'; trusted-types 'none'; worker-src 'none'`,
   )
 }
 

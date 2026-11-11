@@ -1,5 +1,13 @@
 import { expect, test } from 'vitest'
-import { bundledDevTodo, getColor, page } from '~utils'
+import {
+  browserErrors,
+  bundledDevTodo,
+  getColor,
+  isServe,
+  page,
+  untilBrowserLogAfter,
+  viteServer,
+} from '~utils'
 
 const transformIndexHtmlTodo = bundledDevTodo(
   '`server.transformIndexHtml` currently returns HTML that points at the source files, not at the files bundled dev produces; how it should work in bundled dev is not decided yet, e.g. return the HTML that the build HTML plugin emits as `index.html` in `bundledDev.memoryFiles`',
@@ -47,4 +55,18 @@ test('nonce attributes are not repeated', async () => {
 test('meta[property=csp-nonce] is injected', async () => {
   const meta = await page.$('meta[property=csp-nonce]')
   expect(await (await meta.getProperty('nonce')).jsonValue()).not.toBe('')
+})
+
+test.runIf(isServe)('reconnects after a server restart', async () => {
+  browserErrors.length = 0
+
+  await untilBrowserLogAfter(
+    () => viteServer.restart(),
+    [
+      '[vite] server connection lost. Polling for restart...',
+      '[vite] connected.',
+    ],
+  )
+
+  expect(browserErrors).toStrictEqual([])
 })
