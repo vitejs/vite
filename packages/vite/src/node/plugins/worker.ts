@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { type ImportSpecifier, init, parse } from 'es-module-lexer'
+import { type Import, init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
 import type {
@@ -176,9 +176,12 @@ class WorkerOutputCache {
     childBundleIds.add(childBundleId)
   }
 
-  getLiveAssetFileNames(mainLiveModuleIds: Set<string>): Set<string> {
+  getLiveAssetFileNames(
+    rootBundleId: BundleId,
+    rootLiveModuleIds: Set<string>,
+  ): Set<string> {
     const liveBundles = new Set<string>()
-    const queue: [BundleId, Set<string>][] = [[undefined, mainLiveModuleIds]]
+    const queue: [BundleId, Set<string>][] = [[rootBundleId, rootLiveModuleIds]]
     while (queue.length > 0) {
       const [bundleId, moduleIds] = queue.shift()!
       const referencesByModule = this.bundleReferences.get(bundleId)
@@ -537,9 +540,9 @@ export function webWorkerPostPlugin(_config: ResolvedConfig): Plugin {
       async handler(code, id) {
         // import.meta is unavailable in the IIFE worker, so we need to replace it
         if (this.environment.config.worker.format === 'iife') {
-          await init
+          await init()
 
-          let imports: readonly ImportSpecifier[]
+          let imports: readonly Import[]
           try {
             imports = parse(code)[0]
           } catch {
@@ -549,9 +552,9 @@ export function webWorkerPostPlugin(_config: ResolvedConfig): Plugin {
 
           let injectedImportMeta = false
           let s: MagicString | undefined
-          for (const { s: start, e: end, d: dynamicIndex } of imports) {
+          for (const { type, start, end } of imports) {
             // is import.meta
-            if (dynamicIndex === -2) {
+            if (type === 'import-meta') {
               const prop = code.slice(end, end + 4)
               if (prop === '.url') {
                 s ||= new MagicString(code)
@@ -630,6 +633,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             const result = await bundleWorkerEntry(config, id)
             for (const file of result.watchedFiles) {
               this.addWatchFile(file)
+            }
+            // The entry is inlined, but assets referenced by the worker
+            // still need to be emitted during `load` since an HMR patch
+            // skips the generate phase.
+            if (this.environment.config.command === 'serve') {
+              emitWorkerAssetsForBundledDev(this, config)
             }
 
             const jsContent = `const jsContent = ${JSON.stringify(result.entryCode)};`
@@ -792,12 +801,18 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       // Rolldown later tree-shakes the module that referenced them. This also
       // needs to run for worker sub-builds so dead nested workers don't become
       // referenced assets of their parent worker bundle.
-      if (shouldFilter) {
-        const rootBundleId = isWorker ? config.bundleChain.at(-1) : undefined
+      const rootBundleId = isWorker ? config.bundleChain.at(-1) : undefined
+      const liveFileNames = shouldFilter
+        ? cache.getLiveAssetFileNames(rootBundleId, liveModuleIds)
+        : undefined
+      if (liveFileNames) {
         for (const workerBundle of cache.getDeadDirectlyReferencedBundles(
           rootBundleId,
           liveModuleIds,
         )) {
+          // Still used through another live worker (e.g. its importer is
+          // tree-shaken here but kept in a worker).
+          if (liveFileNames.has(workerBundle.entryFilename)) continue
           const emittedAsset = bundle[workerBundle.entryFilename]
           if (emittedAsset?.type === 'asset') {
             delete bundle[workerBundle.entryFilename]
@@ -807,9 +822,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       if (isWorker) return
 
-      const liveFileNames = shouldFilter
-        ? cache.getLiveAssetFileNames(liveModuleIds)
-        : undefined
       for (const asset of cache.getAssets()) {
         if (liveFileNames && !liveFileNames.has(asset.fileName)) continue
         if (emittedAssets.has(asset.fileName)) continue

@@ -9,6 +9,7 @@ const testIds = [
   'safe-subdir-special-characters2',
   'safe-imported',
   'safe-imported-query',
+  'unsafe-wasm-import',
   'unsafe',
   'unsafe-json',
   'unsafe-html',

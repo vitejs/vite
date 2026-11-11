@@ -101,7 +101,7 @@ describe('running module runner inside a worker', () => {
     return new Promise<void>((resolve, reject) => {
       channel.onmessage = (event) => {
         try {
-          expect(event.data).toEqual({
+          expect(event.data).toStrictEqual({
             result: 'hello world',
           })
         } catch (e) {

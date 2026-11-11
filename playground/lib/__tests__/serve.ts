@@ -68,7 +68,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
     await build({
       root: rootDir,
       logLevel: 'warn', // output esbuild warns
-      configFile: path.resolve(dirname, '../vite.multiple-output.config.js'),
+      configFile: path.resolve(rootDir, 'vite.multiple-output.config.js'),
     })
 
     await build({

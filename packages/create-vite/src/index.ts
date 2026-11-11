@@ -2,7 +2,7 @@ import type { SpawnOptions } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import util from 'node:util'
+import util, { type InspectColor } from 'node:util'
 import * as prompts from '@clack/prompts'
 import mri from 'mri'
 import { detectAgent } from 'std-env'
@@ -180,7 +180,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/start',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --build-tool vite --interactive',
       },
       {
         name: 'custom-tanstack-router-react',
@@ -188,7 +188,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --router-only --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework react --build-tool vite --router-only --interactive',
       },
       {
         name: 'redwoodsdk-standard',
@@ -290,7 +290,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/start',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --build-tool vite --interactive',
       },
       {
         name: 'custom-tanstack-router-solid',
@@ -298,7 +298,7 @@ const FRAMEWORKS: Framework[] = [
         link: 'https://tanstack.com/router',
         color: cyan,
         customCommand:
-          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --router-only --interactive',
+          'npm exec -- @tanstack/cli@latest create TARGET_DIR --framework solid --build-tool vite --router-only --interactive',
       },
       {
         name: 'custom-vike-solid',
@@ -866,11 +866,11 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
 
 function setupReactCompiler(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@rolldown/plugin-babel
-  const babelPluginVersion = '0.2.4'
+  const babelPluginVersion = '0.3.0'
   // renovate: datasource=npm depName=babel-plugin-react-compiler
   const reactCompilerPluginVersion = '1.0.0'
   // renovate: datasource=npm depName=@babel/core
-  const babelCoreVersion = '7.29.7'
+  const babelCoreVersion = '7.29.13'
   // renovate: datasource=npm depName=@types/babel__core
   const typesBabelCoreVersion = '7.20.5'
 
@@ -886,6 +886,7 @@ function setupReactCompiler(root: string, isTs: boolean) {
     if (isTs) {
       devDepsEntries.push(['@types/babel__core', `^${typesBabelCoreVersion}`])
     }
+    // oxlint-disable-next-line typescript/require-array-sort-compare
     devDepsEntries.sort()
     asObject.devDependencies = Object.fromEntries(devDepsEntries)
     return JSON.stringify(asObject, null, 2) + '\n'
@@ -920,15 +921,15 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@eslint/js
   const eslintJsVersion = '10.0.1'
   // renovate: datasource=npm depName=eslint
-  const eslintVersion = '10.13.0'
+  const eslintVersion = '10.14.0'
   // renovate: datasource=npm depName=eslint-plugin-react-hooks
   const eslintPluginReactHooksVersion = '7.1.1'
   // renovate: datasource=npm depName=eslint-plugin-react-refresh
   const eslintPluginReactRefreshVersion = '0.5.7'
   // renovate: datasource=npm depName=globals
-  const globalsVersion = '17.13.0'
+  const globalsVersion = '17.14.0'
   // renovate: datasource=npm depName=typescript-eslint
-  const typescriptEslintVersion = '8.71.2'
+  const typescriptEslintVersion = '8.72.1'
 
   const eslintConfigForTS = /* js */ `import js from '@eslint/js'
 import globals from 'globals'
@@ -983,6 +984,11 @@ export default defineConfig([
 
   editFile(path.resolve(root, 'package.json'), (content) => {
     const asObject = JSON.parse(content)
+    if (isTs) {
+      // Keep TypeScript 6 until typescript-eslint supports TypeScript 7.
+      // https://github.com/typescript-eslint/typescript-eslint/issues/10940
+      asObject.devDependencies.typescript = '~6.0.3'
+    }
     const devDepsEntries = Object.entries(asObject.devDependencies).filter(
       ([name]) => name !== 'oxlint',
     )
@@ -995,10 +1001,8 @@ export default defineConfig([
     )
     if (isTs) {
       devDepsEntries.push(['typescript-eslint', `^${typescriptEslintVersion}`])
-      // Keep TypeScript 6 until typescript-eslint supports TypeScript 7.
-      // https://github.com/typescript-eslint/typescript-eslint/issues/10940
-      asObject.devDependencies.typescript = '~6.0.3'
     }
+    // oxlint-disable-next-line typescript/require-array-sort-compare
     devDepsEntries.sort()
     asObject.devDependencies = Object.fromEntries(devDepsEntries)
     asObject.scripts.lint = 'eslint .'
@@ -1261,11 +1265,9 @@ function getRunCommand(agent: string, script: string) {
   }
 }
 
-type ColorName = Exclude<Parameters<typeof util.styleText>[0], any[]>
-
 function createColors() {
-  return new Proxy({} as Record<ColorName, ColorFunc>, {
-    get(_, prop: ColorName) {
+  return new Proxy({} as Record<InspectColor, ColorFunc>, {
+    get(_, prop: InspectColor) {
       // eslint-disable-next-line n/no-unsupported-features/node-builtins -- our supported nodejs range supports `styleText` but in experimental state, which is fine
       return (str: string) => util.styleText(prop, str)
     },
