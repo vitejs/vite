@@ -24,11 +24,11 @@ import type {
   WatcherOptions,
 } from 'rolldown'
 import { viteLoadFallbackPlugin as nativeLoadFallbackPlugin } from 'rolldown/experimental'
-import { esmExternalRequirePlugin } from 'rolldown/plugins'
 import type { RollupCommonJSOptions } from '#dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from '#dep-types/dynamicImportVars'
 import type { EsbuildTarget } from '#types/internal/esbuildOptions'
 import type { AssetMetadata, ChunkMetadata } from '#types/metadata'
+import { joinUrlSegments } from '../shared/utils'
 import type { PartialEnvironment } from './baseEnvironment'
 import { BaseEnvironment } from './baseEnvironment'
 import type {
@@ -43,6 +43,7 @@ import {
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
   ROLLUP_HOOKS,
   VERSION,
+  CSS_LANGS_RE,
 } from './constants'
 import {
   isFutureDeprecationEnabled,
@@ -75,7 +76,6 @@ import {
   createDebugger,
   displayTime,
   getPkgName,
-  joinUrlSegments,
   mergeConfig,
   mergeWithDefaults,
   partialEncodeURIPath,
@@ -466,6 +466,9 @@ export function resolveBuildEnvironmentOptions(
     raw,
   )
   setupRollupOptionCompat(merged, 'build')
+  if (isBundledDev) {
+    merged.chunkImportMap = false
+  }
   merged.rolldownOptions = {
     platform:
       consumer === 'client' || isSsrTargetWebworkerEnvironment
@@ -640,7 +643,7 @@ export function resolveRolldownOptions(
         : Array.isArray(input)
           ? input
           : Object.values(input)
-    if (inputs.some((input) => input.endsWith('.css'))) {
+    if (inputs.some((input) => CSS_LANGS_RE.test(input))) {
       throw new Error(
         `When "build.cssCodeSplit: false" is set, "rolldownOptions.input" should not include CSS files.`,
       )
@@ -707,12 +710,6 @@ export function resolveRolldownOptions(
     environment.name === 'ssr' &&
     environment.getTopLevelConfig().ssr?.target === 'webworker'
 
-  // For webworker SSR with platform: 'browser', external CJS require() calls
-  // need to be converted to ESM imports since createRequire is not available.
-  if (isSsrTargetWebworkerEnvironment) {
-    plugins.push(esmExternalRequirePlugin())
-  }
-
   const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
     // @ts-expect-error See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
     if (output.output) {
@@ -745,6 +742,20 @@ export function resolveRolldownOptions(
             findNearestPackageData(root, packageCache)?.data.type,
           )
         : 'js'
+    const resolvedMinify =
+      options.minify === 'oxc'
+        ? libOptions && (format === 'es' || format === 'esm')
+          ? {
+              compress: true,
+              mangle: true,
+              // Do not minify whitespace for ES lib output since that would remove
+              // pure annotations and break tree-shaking
+              codegen: false,
+            }
+          : true
+        : options.minify === false
+          ? 'dce-only'
+          : false
     return {
       dir: outDir,
       // Default format is 'es' for regular and for SSR builds
@@ -786,22 +797,15 @@ export function resolveRolldownOptions(
           (typeof input === 'string' || Object.keys(input).length === 1))
           ? false
           : undefined),
-      minify:
-        options.minify === 'oxc'
-          ? libOptions && (format === 'es' || format === 'esm')
-            ? {
-                compress: true,
-                mangle: true,
-                // Do not minify whitespace for ES lib output since that would remove
-                // pure annotations and break tree-shaking
-                codegen: false,
-              }
-            : true
-          : options.minify === false
-            ? 'dce-only'
-            : false,
       topLevelVar: true,
       ...output,
+      minify:
+        output.minify === undefined
+          ? resolvedMinify
+          : typeof output.minify === 'object' &&
+              typeof resolvedMinify === 'object'
+            ? { ...resolvedMinify, ...output.minify }
+            : output.minify,
       comments:
         typeof output.comments === 'boolean'
           ? output.comments
@@ -1541,7 +1545,7 @@ function injectSsrFlag<T extends Record<string, any>>(
   pluginName: string,
 ): T & { ssr?: boolean } {
   let ssr = environment.config.consumer === 'server'
-  const newOptions = { ...(options ?? {}), ssr } as T & {
+  const newOptions = { ...options, ssr } as T & {
     ssr?: boolean
   }
 

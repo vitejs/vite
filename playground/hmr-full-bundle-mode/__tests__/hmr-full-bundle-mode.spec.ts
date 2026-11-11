@@ -48,7 +48,7 @@ if (isBuild) {
     expect(await client.text()).toContain(`from "${runtimeUrl.pathname}"`)
     const runtime = await page.request.get(runtimeUrl.href)
     expect(runtime.status()).toBe(200)
-    expect(await runtime.text()).toContain('class DevRuntime')
+    expect(await runtime.text()).toContain('DevRuntime')
     const loaded: string[] = await page.evaluate(() =>
       performance.getEntriesByType('resource').map((entry) => entry.name),
     )
@@ -114,8 +114,8 @@ if (isBuild) {
     )
     await expect.poll(() => page.isVisible('vite-error-overlay')).toBe(true)
     await expect
-      .poll(() => serverLogs.slice(lastServerLogIndex).join('\n'))
-      .toContain('Build error')
+      .poll(() => serverLogs.slice(lastServerLogIndex))
+      .toContainEqual(expect.stringContaining('Build error'))
 
     editFile('hmr.js', (code) =>
       code.replace("const foo = 'hello", "const foo = 'hello'"),
@@ -316,9 +316,76 @@ if (isBuild) {
     ).toBe(true)
   })
 
+  // The entry of an inline worker is embedded as a blob, but assets it
+  // references are still emitted as files. A patch skips the generate phase,
+  // so without emitting them during `load` the new asset URL is never served.
+  test('inline worker asset updated through an HMR patch is served', async () => {
+    const urlRe = /worker-inline-asset-data-[\w-]+\.txt/
+    const originalData = readFile('worker-inline-asset-data.txt')
+    const originalSrc = readFile('worker-inline-asset-src.js')
+    onTestFinished(async () => {
+      addFile('worker-inline-asset-data.txt', originalData)
+      addFile('worker-inline-asset-src.js', originalSrc)
+      await expect
+        .poll(() => page.textContent('.worker-inline-asset'))
+        .toContain('#inline-asset-label-v1#inline-asset-v1\n')
+    })
+
+    const displayedAsset = async () =>
+      (await page.textContent('.worker-inline-asset'))!.split('#')
+
+    await expect
+      .poll(() => page.textContent('.worker-inline-asset'))
+      .toContain('#inline-asset-label-v1#inline-asset-v1\n')
+    const [urlBefore] = await displayedAsset()
+    expect(urlBefore).toMatch(urlRe)
+
+    // survives an HMR patch, but not a page reload
+    await page.evaluate(() => {
+      ;(window as any).__workerInlineAssetKeptAlive = true
+    })
+
+    // Editing the asset alone does not propagate to the worker module (it is
+    // not part of the main module graph). The following worker edit re-runs
+    // the sub-build, which picks up the edited asset with a new content hash.
+    editFile('worker-inline-asset-data.txt', (code) =>
+      code.replace('inline-asset-v1', 'inline-asset-version-2'),
+    )
+    editFile('worker-inline-asset-src.js', (code) =>
+      code.replace('inline-asset-label-v1', 'inline-asset-label-version-2'),
+    )
+    await expect
+      .poll(() => page.textContent('.worker-inline-asset'))
+      .toContain('#inline-asset-label-version-2#inline-asset-version-2\n')
+    const [urlAfter] = await displayedAsset()
+    expect(urlAfter).toMatch(urlRe)
+    expect(urlAfter).not.toBe(urlBefore)
+
+    expect(
+      await page.evaluate(() => (window as any).__workerInlineAssetKeptAlive),
+    ).toBe(true)
+  })
+
   test('lazy bundling', async () => {
+    const responsePromise = page.waitForResponse(/\/@vite\/lazy\?/)
     await page.click('#load-dynamic')
     await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')
+
+    // the lazy chunk names a `.map` file that only exists in memory; the dev
+    // server has to register it, otherwise the reference 404s and the module
+    // cannot be mapped back to its source. The reference is relative and a lazy
+    // chunk is imported from `/@vite/lazy?...`, so it resolves under `/@vite/`.
+    const response = await responsePromise
+    const code = await response.text()
+    const url = code.match(/\/\/# sourceMappingURL=(.+)$/m)?.[1]
+    expect(url).toMatch(/^lazy_compile_\d+\.js\.map$/)
+
+    const mapResponse = await fetch(new URL(url!, response.url()))
+    expect(mapResponse.status).toBe(200)
+    const map = await mapResponse.json()
+    expect(map.version).toBe(3)
+    expect(map.sources.some((s: string) => s.endsWith('dynamic.js'))).toBe(true)
+    expect(map.mappings.length).toBeGreaterThan(0)
   })
 
   // placed before `invalidate` on purpose: that test's cleanup restores

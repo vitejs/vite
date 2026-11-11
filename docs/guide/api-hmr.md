@@ -9,11 +9,11 @@ The manual HMR API is primarily intended for framework and tooling authors. As a
 Vite exposes its manual HMR API via the special `import.meta.hot` object:
 
 ```ts twoslash
-import type { ModuleNamespace } from 'vite/types/hot.d.ts'
 import type {
   CustomEventName,
   InferCustomEventPayload,
 } from 'vite/types/customEvent.d.ts'
+import type { ModuleNamespace } from 'vite/types/hot.d.ts'
 
 // ---cut---
 interface ImportMeta {

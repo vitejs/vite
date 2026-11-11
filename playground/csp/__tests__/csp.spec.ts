@@ -1,7 +1,12 @@
 import { expect, test } from 'vitest'
-import { getColor, isBundledDev, page } from '~utils'
+import { bundledDevTodo, getColor, page } from '~utils'
 
-test.skipIf(isBundledDev)('linked css', async () => {
+const transformIndexHtmlTodo = bundledDevTodo(
+  '`server.transformIndexHtml` currently returns HTML that points at the source files, not at the files bundled dev produces; how it should work in bundled dev is not decided yet, e.g. return the HTML that the build HTML plugin emits as `index.html` in `bundledDev.memoryFiles`',
+  { vite: [20374] },
+)
+
+test('linked css', transformIndexHtmlTodo, async () => {
   expect(await getColor('.linked')).toBe('blue')
 })
 
@@ -9,19 +14,19 @@ test('inline style tag', async () => {
   expect(await getColor('.inline')).toBe('green')
 })
 
-test.skipIf(isBundledDev)('imported css', async () => {
+test('imported css', transformIndexHtmlTodo, async () => {
   expect(await getColor('.from-js')).toBe('blue')
 })
 
-test.skipIf(isBundledDev)('dynamic css', async () => {
+test('dynamic css', transformIndexHtmlTodo, async () => {
   expect(await getColor('.dynamic')).toBe('red')
 })
 
-test.skipIf(isBundledDev)('script tag', async () => {
+test('script tag', transformIndexHtmlTodo, async () => {
   await expect.poll(() => page.textContent('.js')).toBe('js: ok')
 })
 
-test.skipIf(isBundledDev)('dynamic js', async () => {
+test('dynamic js', transformIndexHtmlTodo, async () => {
   await expect
     .poll(() => page.textContent('.dynamic-js'))
     .toBe('dynamic-js: ok')

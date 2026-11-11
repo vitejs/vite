@@ -248,7 +248,7 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 ## server.forwardConsole
 
 - **Type:** `boolean | { unhandledErrors?: boolean, logLevels?: ('error' | 'warn' | 'info' | 'log' | 'debug')[] }`
-- **Default:** auto (`true` when an AI coding agent is detected based on [`@vercel/detect-agent`](https://www.npmjs.com/package/@vercel/detect-agent), otherwise `false`)
+- **Default:** auto (`true` when an AI coding agent is detected based on [`std-env`](https://www.npmjs.com/package/std-env), otherwise `false`)
 
 Forward browser runtime events to the Vite server console during development.
 
@@ -437,6 +437,8 @@ export default defineConfig({
 - **Default:** `['.env', '.env.*', '*.{crt,pem,key,p12,pfx,cer,der}', '.npmrc', '.yarnrc.yml', '**/.git/**']`
 
 Blocklist for sensitive files being restricted to be served by Vite dev server. This will have higher priority than [`server.fs.allow`](#server-fs-allow). [picomatch patterns](https://github.com/micromatch/picomatch#globbing-features) are supported.
+
+Setting this option replaces the default list entirely. Include any default patterns you want to keep in your custom list.
 
 ::: tip NOTE
 

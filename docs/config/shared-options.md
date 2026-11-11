@@ -298,7 +298,8 @@ export default defineConfig({
     globalModulePaths?: RegExp[]
     exportGlobals?: boolean
     generateScopedName?:
-      string | ((name: string, filename: string, css: string) => string)
+      | string
+      | ((name: string, filename: string, css: string) => string)
     hashPrefix?: string
     /**
      * default: undefined
