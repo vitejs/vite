@@ -3,6 +3,7 @@ import path from 'node:path'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { FS_PREFIX } from '../../../constants'
 import { createServer } from '../../../server'
+import { browserUrlToModuleUrl } from '../../moduleUrl'
 
 const FIXTURE_DIR = path.resolve(import.meta.dirname, 'fixtures')
 const HTML_PATH = path.resolve(FIXTURE_DIR, 'root/index.html')
@@ -46,10 +47,12 @@ describe('indexHtml middleware — inline script proxy cache', () => {
     expect(
       proxyUrlMatch,
       'devHtmlHook should have rewritten the inline <script> to a ?html-proxy src',
-    ).toBeTruthy()
+    ).not.toBeNull()
 
-    const proxyModuleUrl = proxyUrlMatch![1]
-
+    const proxyModuleUrl = browserUrlToModuleUrl(
+      proxyUrlMatch![1].replaceAll('&amp;', '&'),
+      server.config.decodedBase,
+    )
     const result =
       await server.environments.client.transformRequest(proxyModuleUrl)
 
@@ -79,9 +82,12 @@ describe('indexHtml middleware — inline script proxy cache', () => {
     expect(
       proxyUrlMatch,
       'devHtmlHook should rewrite the inline <script> to a ?html-proxy src',
-    ).toBeTruthy()
+    ).not.toBeNull()
 
-    const proxyModuleUrl = proxyUrlMatch![1]
+    const proxyModuleUrl = browserUrlToModuleUrl(
+      proxyUrlMatch![1].replaceAll('&amp;', '&'),
+      server.config.decodedBase,
+    )
     const result =
       await server.environments.client.transformRequest(proxyModuleUrl)
 
@@ -100,9 +106,9 @@ describe('indexHtml middleware — inline script proxy cache', () => {
       expect(
         proxyUrlMatch,
         'devHtmlHook should have rewritten the inline <script> to a ?html-proxy src',
-      ).toBeTruthy()
+      ).not.toBeNull()
       expect(proxyUrlMatch![1]).toMatchInlineSnapshot(
-        `"/@id/__x00__/evil.example.com/payload.js?/../../package.json?html-proxy&index=0.js"`,
+        `"/@id/__x00__/evil.example.com/payload.js?/../../package.json?html-proxy&amp;index=0.js"`,
       )
       expect(proxyUrlMatch![1]).not.toMatch(/^\/\//)
     })
@@ -162,7 +168,7 @@ describe('indexHtml middleware — HMR timestamp injection with non-root base', 
     expect(
       mod,
       'entry module should be registered under the base-stripped URL',
-    ).toBeTruthy()
+    ).toBeDefined()
     const timestamp = 1234567890
     mod!.lastHMRTimestamp = timestamp
 

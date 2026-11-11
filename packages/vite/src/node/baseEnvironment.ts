@@ -60,6 +60,7 @@ export class PartialEnvironment {
     )
     const environment = colors.dim(`(${this.name})`)
     const colorIndex =
+      // oxlint-disable-next-line typescript/no-misused-spread - special chars doesn't matter when calculating color index
       [...this.name].reduce((acc, c) => acc + c.charCodeAt(0), 0) %
       environmentColors.length
     const infoColor = environmentColors[colorIndex || 0]

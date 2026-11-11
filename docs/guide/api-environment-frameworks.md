@@ -298,8 +298,6 @@ import.meta.hot.on('request', (data) => {
   import.meta.hot.send('response', serialize({ res: res, uniqueId }))
 })
 
-const response = handler(new Request('http://example.com/'))
-
 // -------------------------------------
 // ./entrypoint.js
 export function createHandler(input) {

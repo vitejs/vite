@@ -1,8 +1,8 @@
 import { describe, expect } from 'vitest'
 import { createModuleRunnerTester } from './utils'
 
-describe('module runner hmr works as expected', async () => {
-  const it = await createModuleRunnerTester({
+describe('module runner hmr works as expected', () => {
+  const it = createModuleRunnerTester({
     server: {
       // override watch options because it's disabled by default
       watch: {},

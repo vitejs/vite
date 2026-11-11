@@ -1459,9 +1459,9 @@ export async function resolveConfig(
   defaultNodeEnv = 'development',
   isPreview = false,
   /** @internal */
-  patchConfig: ((config: ResolvedConfig) => void) | undefined = undefined,
+  patchConfig?: (config: ResolvedConfig) => void,
   /** @internal */
-  patchPlugins: ((resolvedPlugins: Plugin[]) => void) | undefined = undefined,
+  patchPlugins?: (resolvedPlugins: Plugin[]) => void,
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   config.build ??= {}
@@ -1712,6 +1712,10 @@ export async function resolveConfig(
       ...defaultEnvironmentOptions.build,
       createEnvironment: undefined,
     },
+  }
+
+  if (isBuild && config.build?.ssr === true) {
+    config.environments.ssr.input ??= config.input
   }
 
   for (const name of Object.keys(config.environments)) {

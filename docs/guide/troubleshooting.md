@@ -220,7 +220,9 @@ To resolve this, you can:
 
 This error may occur in unstable network environments. For example, when the request fails due to network errors or server downtime.
 
-Note that you cannot retry the dynamic import due to browser limitations ([whatwg/html#6768](https://github.com/whatwg/html/issues/6768)).
+Browsers that support [retriable module loading](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import#browser_compatibility) do not cache network and HTTP errors in the module map. In these browsers, your application or framework can retry the original dynamic import. Older browsers cache the failure, so reloading the page remains the fallback.
+
+Retrying also does not fix [version skew](#version-skew) when a chunk has been permanently removed by a deployment.
 
 #### Browser extensions blocking requests
 
