@@ -516,6 +516,13 @@ export class ModuleRunner {
 
   private createRolldownDevRuntime(): DevRuntime {
     const runtime = new DevRuntime(nanoid())
+    // Rolldown's runtime is loaded outside the SSR transform, so its native
+    // import() bypasses the module runner. Load virtual lazy chunks through
+    // the runner to compile and evaluate them with this runtime.
+    runtime.loadLazyChunk = (proxyModuleId) =>
+      this.import(
+        `/@vite/lazy?id=${encodeURIComponent(proxyModuleId)}&clientId=${runtime.clientId}`,
+      )
     runtime.hooks = {
       createModuleHotContext: (id) => this.ensureModuleHotContext(id),
       onModuleCacheRemoval: (id) =>
