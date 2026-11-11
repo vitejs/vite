@@ -151,6 +151,10 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
       id: string,
       options?: {
         ssr?: boolean | undefined
+        /** The module id without import attributes. Passed by Rolldown. */
+        rawId?: string
+        /** The import attributes the module was imported with. Passed by Rolldown. */
+        attributes?: Record<string, string>
       },
     ) => Promise<LoadResult> | LoadResult,
     { filter?: { id?: StringFilter } }

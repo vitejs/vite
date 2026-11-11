@@ -68,9 +68,9 @@ jobs:
         include:
           # Active LTS + other OS
           - os: macos-latest
-            node_version: 24
+            node_version: 26
           - os: windows-latest
-            node_version: 24
+            node_version: 26
       fail-fast: false
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
@@ -82,15 +82,15 @@ jobs:
 
       - if: matrix.node_version != '20'
         name: Install pnpm and node ${{ matrix.node_version }}
-        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+        uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
         with:
           runtime: node@${{ matrix.node_version }}
           cache: true
-      - if: matrix.node_version == '20' # use node 24 for builds
-        name: Install pnpm and node 24 for builds
-        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+      - if: matrix.node_version == '20' # use node 26 for builds
+        name: Install pnpm and node 26 for builds
+        uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
         with:
-          runtime: node@24
+          runtime: node@26
           cache: true
 
       # Install playwright's binary under custom directory to cache
@@ -157,16 +157,16 @@ jobs:
   lint:
     timeout-minutes: 10
     runs-on: ubuntu-latest
-    name: "Lint: node-24, ubuntu-latest"
+    name: "Lint: node-26, ubuntu-latest"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - name: Install pnpm and node 24
-        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+      - name: Install pnpm and node 26
+        uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
         with:
-          runtime: node@24
+          runtime: node@26
           cache: true
 
       - name: Build

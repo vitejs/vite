@@ -1,5 +1,6 @@
 // Modified and inlined to avoid extra dependency
 // Source: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/ws/index.d.ts
+/* oxlint-disable no-redeclare */
 
 // Type definitions for ws 8.5
 // Project: https://github.com/websockets/ws
@@ -15,7 +16,7 @@
 
 /// <reference types="node" />
 
-import { EventEmitter } from 'node:events'
+import type { EventEmitter } from 'node:events'
 import type {
   Agent,
   ClientRequest,
