@@ -125,14 +125,15 @@ describe.runIf(isBuild)('build', () => {
 
   test('includes worker entries in the manifest', async () => {
     const manifest = readManifest('iife')
-    // Rolldown reports inlined IIFE dynamic imports as self-references.
-    // https://github.com/rolldown/rolldown/issues/11153
     expect(manifest['index.html']).toBeDefined()
     const workerEntry = manifest['_worker_assets/worker_entry-simple-worker.js']
-    expect(workerEntry).toMatchObject({
+    expect(workerEntry).toStrictEqual({
       file: 'assets/worker_entry-simple-worker.js',
+      name: 'simple-worker',
+      src: 'simple-worker.js',
       isWorker: true,
       isWorkerEntry: true,
+      isDynamicEntry: false,
     })
     expect(workerEntry.isEntry).toBeUndefined()
   })
