@@ -200,9 +200,12 @@ class WorkerOutputCache {
     childBundleIds.add(childBundleId)
   }
 
-  getLiveAssetFileNames(mainLiveModuleIds: Set<string>): Set<string> {
+  getLiveAssetFileNames(
+    rootBundleId: BundleId,
+    rootLiveModuleIds: Set<string>,
+  ): Set<string> {
     const liveBundles = new Set<string>()
-    const queue: [BundleId, Set<string>][] = [[undefined, mainLiveModuleIds]]
+    const queue: [BundleId, Set<string>][] = [[rootBundleId, rootLiveModuleIds]]
     while (queue.length > 0) {
       const [bundleId, moduleIds] = queue.shift()!
       const referencesByModule = this.bundleReferences.get(bundleId)
@@ -724,6 +727,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             for (const file of result.watchedFiles) {
               this.addWatchFile(file)
             }
+            // The entry is inlined, but assets referenced by the worker
+            // still need to be emitted during `load` since an HMR patch
+            // skips the generate phase.
+            if (this.environment.config.command === 'serve') {
+              emitWorkerAssetsForBundledDev(this, config)
+            }
 
             const jsContent = `const jsContent = ${JSON.stringify(result.entryCode)};`
 
@@ -885,12 +894,18 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       // Rolldown later tree-shakes the module that referenced them. This also
       // needs to run for worker sub-builds so dead nested workers don't become
       // referenced assets of their parent worker bundle.
-      if (shouldFilter) {
-        const rootBundleId = isWorker ? config.bundleChain.at(-1) : undefined
+      const rootBundleId = isWorker ? config.bundleChain.at(-1) : undefined
+      const liveFileNames = shouldFilter
+        ? cache.getLiveAssetFileNames(rootBundleId, liveModuleIds)
+        : undefined
+      if (liveFileNames) {
         for (const workerBundle of cache.getDeadDirectlyReferencedBundles(
           rootBundleId,
           liveModuleIds,
         )) {
+          // Still used through another live worker (e.g. its importer is
+          // tree-shaken here but kept in a worker).
+          if (liveFileNames.has(workerBundle.entryFilename)) continue
           const emittedAsset = bundle[workerBundle.entryFilename]
           if (emittedAsset?.type === 'asset') {
             delete bundle[workerBundle.entryFilename]
@@ -900,13 +915,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       if (isWorker) return
 
-      const liveFileNames = shouldFilter
-        ? cache.getLiveAssetFileNames(liveModuleIds)
-        : undefined
       workerManifests.set(
         this.environment,
         cache.getChunkManifest(liveFileNames),
       )
+
       for (const asset of cache.getAssets()) {
         if (liveFileNames && !liveFileNames.has(asset.fileName)) continue
         if (emittedAssets.has(asset.fileName)) continue

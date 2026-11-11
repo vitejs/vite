@@ -1,12 +1,15 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { describe, expect, onTestFinished, test } from 'vitest'
+import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { FS_PREFIX } from '../../../constants'
 import { createServer } from '../../../server'
+import { browserUrlToModuleUrl } from '../../moduleUrl'
 
 const FIXTURE_DIR = path.resolve(import.meta.dirname, 'fixtures')
 const HTML_PATH = path.resolve(FIXTURE_DIR, 'root/index.html')
 const HTML_CONTENT = fs.readFileSync(HTML_PATH, 'utf-8')
+const OUTSIDE_HTML_PATH = path.resolve(FIXTURE_DIR, 'outside.html')
+const OUTSIDE_HTML_CONTENT = fs.readFileSync(OUTSIDE_HTML_PATH, 'utf-8')
 const VITE_PACKAGE_DIR = path.resolve(import.meta.dirname, '../../../../..')
 
 async function createTestServer(rootDir?: string) {
@@ -44,10 +47,12 @@ describe('indexHtml middleware — inline script proxy cache', () => {
     expect(
       proxyUrlMatch,
       'devHtmlHook should have rewritten the inline <script> to a ?html-proxy src',
-    ).toBeTruthy()
+    ).not.toBeNull()
 
-    const proxyModuleUrl = proxyUrlMatch![1]
-
+    const proxyModuleUrl = browserUrlToModuleUrl(
+      proxyUrlMatch![1].replaceAll('&amp;', '&'),
+      server.config.decodedBase,
+    )
     const result =
       await server.environments.client.transformRequest(proxyModuleUrl)
 
@@ -77,9 +82,12 @@ describe('indexHtml middleware — inline script proxy cache', () => {
     expect(
       proxyUrlMatch,
       'devHtmlHook should rewrite the inline <script> to a ?html-proxy src',
-    ).toBeTruthy()
+    ).not.toBeNull()
 
-    const proxyModuleUrl = proxyUrlMatch![1]
+    const proxyModuleUrl = browserUrlToModuleUrl(
+      proxyUrlMatch![1].replaceAll('&amp;', '&'),
+      server.config.decodedBase,
+    )
     const result =
       await server.environments.client.transformRequest(proxyModuleUrl)
 
@@ -98,13 +106,39 @@ describe('indexHtml middleware — inline script proxy cache', () => {
       expect(
         proxyUrlMatch,
         'devHtmlHook should have rewritten the inline <script> to a ?html-proxy src',
-      ).toBeTruthy()
+      ).not.toBeNull()
       expect(proxyUrlMatch![1]).toMatchInlineSnapshot(
-        `"/@id/__x00__/evil.example.com/payload.js?/../../package.json?html-proxy&index=0.js"`,
+        `"/@id/__x00__/evil.example.com/payload.js?/../../package.json?html-proxy&amp;index=0.js"`,
       )
       expect(proxyUrlMatch![1]).not.toMatch(/^\/\//)
     })
   }
+})
+
+describe('indexHtml middleware — file watching', () => {
+  test('watches an /@fs/ HTML file outside root', async () => {
+    const server = await createTestServer()
+    const addSpy = vi
+      .spyOn(server.watcher, 'add')
+      .mockImplementation(() => server.watcher)
+    const fsUrl = path.posix.join(FS_PREFIX, OUTSIDE_HTML_PATH)
+
+    await server.transformIndexHtml(fsUrl, OUTSIDE_HTML_CONTENT)
+
+    expect(addSpy).toHaveBeenCalledWith(OUTSIDE_HTML_PATH)
+  })
+
+  test('does not watch a directory for a root URL with a query', async () => {
+    const server = await createTestServer()
+    const addSpy = vi
+      .spyOn(server.watcher, 'add')
+      .mockImplementation(() => server.watcher)
+    const html = '<style>body { color: red; }</style>'
+
+    await server.transformIndexHtml('/?foo=bar', html)
+
+    expect(addSpy).not.toHaveBeenCalledWith('/')
+  })
 })
 
 describe('indexHtml middleware — HMR timestamp injection with non-root base', () => {
@@ -134,7 +168,7 @@ describe('indexHtml middleware — HMR timestamp injection with non-root base', 
     expect(
       mod,
       'entry module should be registered under the base-stripped URL',
-    ).toBeTruthy()
+    ).toBeDefined()
     const timestamp = 1234567890
     mod!.lastHMRTimestamp = timestamp
 

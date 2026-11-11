@@ -2,8 +2,27 @@ import { join } from 'node:path'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { build } from '../build'
 import type { EnvironmentOptions, InlineConfig } from '../config'
+import { resolveSubpathImports } from '../plugins/resolve'
 import { createServer } from '../server'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
+import { normalizePath } from '../utils'
+
+for (const id of ['#hash#blocked', '#hash?blocked']) {
+  test(`does not fall back from explicitly blocked imports key ${id}`, () => {
+    expect(() =>
+      resolveSubpathImports(
+        id,
+        join(import.meta.dirname, 'fixtures/resolve-subpath-imports/index.js'),
+        {
+          conditions: [],
+          externalConditions: [],
+          isProduction: false,
+          isRequire: false,
+        },
+      ),
+    ).toThrow(`Missing "${id}" specifier`)
+  })
+}
 
 describe('import and resolveId', () => {
   async function createTestServer() {
@@ -39,7 +58,7 @@ describe('import and resolveId', () => {
     const resolved = await server.environments.ssr.pluginContainer.resolveId(
       '@vitejs/test-dep-conditions/with-module',
     )
-    expect([mod.default, resolved?.id]).toEqual([
+    expect([mod.default, resolved?.id]).toStrictEqual([
       'dir/index.default.js',
       expect.stringContaining('dir/index.module.js'),
     ])
@@ -53,7 +72,7 @@ describe('import and resolveId', () => {
     const mod = await runner.import(
       '/fixtures/test-dep-conditions-app/entry-with-module',
     )
-    expect([mod.default, resolved?.id]).toEqual([
+    expect([mod.default, resolved?.id]).toStrictEqual([
       'dir/index.default.js',
       expect.stringContaining('dir/index.module.js'),
     ])
@@ -122,7 +141,7 @@ describe('file url', () => {
     })
 
     const mod = await runner.import('/entry.js')
-    expect(mod.default).toEqual('ok')
+    expect(mod.default).toBe('ok')
 
     const mod2 = await runner.import(fileUrl.href)
     expect(mod2).toBe(mod)
@@ -134,16 +153,16 @@ describe('file url', () => {
     expect(mod4.default).toBe(mod)
 
     const mod5 = await runner.import(fileUrl.href + '?query=test')
-    expect(mod5).toEqual(mod)
+    expect(mod5).toStrictEqual(mod)
     expect(mod5).not.toBe(mod)
 
     const mod6 = await runner.import('virtual:test-dep/static-postfix')
-    expect(mod6.default).toEqual(mod)
+    expect(mod6.default).toStrictEqual(mod)
     expect(mod6.default).not.toBe(mod)
     expect(mod6.default).toBe(mod5)
 
     const mod7 = await runner.import('virtual:test-dep/non-static-postfix')
-    expect(mod7.default).toEqual(mod)
+    expect(mod7.default).toStrictEqual(mod)
     expect(mod7.default).not.toBe(mod)
     expect(mod7.default).toBe(mod5)
   })
@@ -249,7 +268,7 @@ describe('file url', () => {
         idToResolve: 'node:fs',
         testEnv: 'client',
       })
-      expect(resolved?.id).toEqual('__vite-browser-external:node:fs')
+      expect(resolved?.id).toBe('__vite-browser-external:node:fs')
     })
 
     test('no builtins overriding for client environment', async () => {
@@ -258,7 +277,7 @@ describe('file url', () => {
         testEnv: 'client',
         targetEnv: 'client',
       })
-      expect(resolved?.id).toEqual('__vite-browser-external:node:fs')
+      expect(resolved?.id).toBe('__vite-browser-external:node:fs')
     })
 
     test('declared node builtin', async () => {
@@ -276,7 +295,7 @@ describe('file url', () => {
         targetEnv: 'custom',
         testEnv: 'ssr',
       })
-      expect(resolved).toBe(null)
+      expect(resolved).toBeNull()
     })
   })
 
@@ -310,5 +329,65 @@ describe('file url', () => {
       join(import.meta.dirname, 'fixtures/file-url/dist/virtual/index.js')
     )
     expect(mod2.default.default).toBe('ok')
+  })
+})
+
+describe('alias replacement with $ patterns', () => {
+  const fixtureDir = join(import.meta.dirname, 'fixtures/alias-special-pattern')
+
+  async function resolveWithAlias(
+    alias: NonNullable<InlineConfig['resolve']>['alias'],
+    id: string,
+  ) {
+    const server = await createServer({
+      configFile: false,
+      root: import.meta.dirname,
+      logLevel: 'error',
+      resolve: { alias },
+      // the scanner would otherwise crawl every HTML fixture under `__tests__`
+      optimizeDeps: {
+        noDiscovery: true,
+        include: [],
+      },
+      server: {
+        middlewareMode: true,
+        ws: false,
+      },
+    })
+    onTestFinished(() => server.close())
+    // The SSR dev plugin container exercises @rollup/plugin-alias, which we want to test here.
+    // Builds use Rolldown's native alias plugin for aliases.
+    return server.environments.ssr.pluginContainer.resolveId(id)
+  }
+
+  test('$$ in string replacement is inserted literally', async () => {
+    const resolved = await resolveWithAlias(
+      { '@dollar-double': join(fixtureDir, '$$') },
+      '@dollar-double',
+    )
+    expect(resolved?.id).toBe(normalizePath(join(fixtureDir, '$$/index.js')))
+  })
+
+  test('$& in string replacement is inserted literally', async () => {
+    const resolved = await resolveWithAlias(
+      { '@dollar-ampersand': join(fixtureDir, '$&') },
+      '@dollar-ampersand',
+    )
+    expect(resolved?.id).toBe(normalizePath(join(fixtureDir, '$&/index.js')))
+  })
+
+  test('capture groups in regex replacement still work', async () => {
+    const resolved = await resolveWithAlias(
+      [
+        {
+          find: /^@regex-capture\/(.*)$/,
+          replacement: join(fixtureDir, 'regex-target') + '/$1',
+        },
+      ],
+      '@regex-capture/file',
+    )
+    expect(resolved?.id).toBe(
+      normalizePath(join(fixtureDir, 'regex-target/file.js')),
+    )
   })
 })

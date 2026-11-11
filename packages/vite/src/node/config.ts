@@ -23,7 +23,6 @@ import {
   type RolldownOutput,
   rolldown,
 } from 'rolldown'
-import { isDynamicPattern } from 'tinyglobby'
 import type { Alias, AliasOptions } from '#dep-types/alias'
 import type {
   DevToolsConfig,
@@ -679,7 +678,13 @@ export interface ResolvedWorkerOptions {
 
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
-  /** @experimental */
+  /**
+   * The loader to use when loading the config file.
+   *
+   * `runner` is deprecated and will be removed in the next major version.
+   *
+   * @default 'bundle'
+   */
   configLoader?: 'bundle' | 'runner' | 'native'
   /** @deprecated */
   envFile?: false
@@ -959,39 +964,6 @@ const configDefaults = Object.freeze({
   appType: 'spa',
 } satisfies UserConfig)
 
-function normalizeInput(
-  input: InputOption | undefined,
-): InputOption | undefined {
-  if (input === undefined) {
-    return undefined
-  }
-  if (typeof input === 'string') {
-    return unescapeGlobCharacters(input)
-  }
-  if (Array.isArray(input)) {
-    return input.map(unescapeGlobCharacters)
-  }
-  const resolved: Record<string, string> = {}
-  for (const key in input) {
-    resolved[key] = unescapeGlobCharacters(input[key])
-  }
-  return resolved
-}
-
-const escapedGlobCharactersRE = /\\([*?[\]{}()!+@|])/g
-
-function unescapeGlobCharacters(value: string): string {
-  if (isDynamicPattern(value)) {
-    // so that it could later be changed to accept globs without a breaking change
-    throw new Error(
-      `\`input\` cannot contain glob characters. They are reserved, ` +
-        `so the ${JSON.stringify(value)} is not allowed. Please escape them with a backslash (\\)`,
-    )
-  }
-  // unescape glob characters
-  return value.replace(escapedGlobCharactersRE, '$1')
-}
-
 export function resolveDevEnvironmentOptions(
   dev: DevEnvironmentOptions | undefined,
   environmentName: string | undefined,
@@ -1073,7 +1045,7 @@ function resolveEnvironmentOptions(
     isSsrTargetWebworkerEnvironment,
   )
   return {
-    input: normalizeInput(options.input),
+    input: options.input,
     define: options.define,
     resolve,
     keepProcessEnv:
@@ -1493,9 +1465,9 @@ export async function resolveConfig(
   defaultNodeEnv = 'development',
   isPreview = false,
   /** @internal */
-  patchConfig: ((config: ResolvedConfig) => void) | undefined = undefined,
+  patchConfig?: (config: ResolvedConfig) => void,
   /** @internal */
-  patchPlugins: ((resolvedPlugins: Plugin[]) => void) | undefined = undefined,
+  patchPlugins?: (resolvedPlugins: Plugin[]) => void,
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   config.build ??= {}
@@ -1748,6 +1720,10 @@ export async function resolveConfig(
     },
   }
 
+  if (isBuild && config.build?.ssr === true) {
+    config.environments.ssr.input ??= config.input
+  }
+
   for (const name of Object.keys(config.environments)) {
     config.environments[name] = mergeConfig(
       name === 'client'
@@ -1919,7 +1895,6 @@ export async function resolveConfig(
         )
       : ''
 
-  const input = normalizeInput(config.input)
   const server = await resolveServerOptions(resolvedRoot, config.server, logger)
 
   const builder = resolveBuilderOptions(config.builder)
@@ -2163,7 +2138,7 @@ export async function resolveConfig(
 
     ssr,
 
-    input,
+    input: config.input,
     optimizeDeps: backwardCompatibleOptimizeDeps,
     resolve: resolvedDefaultResolve,
     dev: resolvedDevEnvironmentOptions,
@@ -2439,6 +2414,13 @@ export async function loadConfigFromFile(
   ) {
     throw new Error(
       `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle', 'runner', and 'native'.`,
+    )
+  }
+  if (configLoader === 'runner') {
+    createLogger(logLevel, { customLogger }).warn(
+      colors.yellow(
+        `The \`runner\` config loader is deprecated and will be removed in Vite 9. Use \`bundle\` or \`native\` instead.`,
+      ),
     )
   }
 

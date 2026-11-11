@@ -24,10 +24,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install pnpm and node 24
-        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+      - name: Install pnpm and node 26
+        uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
         with:
-          runtime: node@24
+          runtime: node@26
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
@@ -63,10 +63,10 @@ jobs:
       - name: Disallow installation scripts
         run: yq '.allowBuilds[]=false' -i pnpm-workspace.yaml
 
-      - name: Install pnpm and node 24
-        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+      - name: Install pnpm and node 26
+        uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
         with:
-          runtime: node@24
+          runtime: node@26
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 

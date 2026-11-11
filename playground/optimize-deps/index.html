@@ -19,29 +19,6 @@
 <div class="injected-import-in-optimized-dep"></div>
 <script type="module" src="./injected-import.js"></script>
 
-<h2>CommonJS dynamic import default + named (react)</h2>
-<div class="cjs-dynamic"></div>
-<h2>CommonJS dynamic import named (phoenix)</h2>
-<div class="cjs-dynamic-phoenix"></div>
-<h2>CommonJS dynamic import default (clipboard)</h2>
-<div class="cjs-dynamic-clipboard"></div>
-<h2>CommonJS dynamic import default (dep-cjs-compiled-from-esm)</h2>
-<div class="cjs-dynamic-dep-cjs-compiled-from-esm"></div>
-<h2>CommonJS dynamic import default (dep-cjs-compiled-from-cjs)</h2>
-<div class="cjs-dynamic-dep-cjs-compiled-from-cjs"></div>
-<h2>CommonJS dynamic import default (dep-cjs-with-es-module-flag)</h2>
-<div class="cjs-dynamic-dep-cjs-with-es-module-flag"></div>
-
-<script type="module" src="./cjs-dynamic.js"></script>
-
-<h2>CommonJS dynamic import from format-ambiguous importer</h2>
-<div class="cjs-dynamic-importer-ambiguous"></div>
-<h2>CommonJS dynamic import from explicit CJS importer (package.json type)</h2>
-<div class="cjs-dynamic-importer-cjs"></div>
-
-<script type="module" src="./cjs-dynamic-importer-ambiguous/index.js"></script>
-<script type="module" src="./cjs-dynamic-importer-cjs/index.js"></script>
-
 <h2>Dedupe (dep in linked & optimized package)</h2>
 <div class="dedupe"></div>
 <script type="module" src="./dedupe.js"></script>
@@ -73,8 +50,15 @@
 <h2>Import from dependency with process.env.NODE_ENV</h2>
 <div class="node-env"></div>
 
+<h2>Import from dependency with subpath imports (#) conditions</h2>
+<div class="subpath-imports"></div>
+
 <h2>Import from dependency with .notjs files</h2>
 <div class="not-js"></div>
+
+<h2>Deep import from dependency with .svelte files</h2>
+<div class="svelte-deep-import"></div>
+<script type="module" src="./svelte-deep-import.js"></script>
 
 <h2>
   Import from dependency which uses relative path which needs to be resolved by
@@ -199,6 +183,9 @@
   import { env } from '@vitejs/test-dep-node-env'
   text('.node-env', env)
 
+  import { mode } from '@vitejs/test-dep-with-subpath-imports'
+  text('.subpath-imports', mode)
+
   import { notjsValue } from '@vitejs/test-dep-not-js'
   text('.not-js', notjsValue)
 
@@ -237,8 +224,8 @@
 
   // All these imports should end up resolved to the same URL (same ?v= injected on them)
   import { add as addFromDirectAbsolutePath } from '/node_modules/@vitejs/test-dep-non-optimized/index.js'
-  import { add as addFromDirectRelativePath } from './node_modules/@vitejs/test-dep-non-optimized/index.js'
   import { get as getFromBareImport } from '@vitejs/test-dep-non-optimized'
+  import { add as addFromDirectRelativePath } from './node_modules/@vitejs/test-dep-non-optimized/index.js'
 
   addFromDirectAbsolutePath('from-absolute-path')
   addFromDirectRelativePath('from-relative-path')
@@ -363,8 +350,8 @@
 </script>
 
 <script type="module">
-  import cloneDeepSlash from '@vitejs/test-dep-lodash/cloneDeep'
   import cloneDeepDot from '@vitejs/test-dep-lodash.clonedeep'
+  import cloneDeepSlash from '@vitejs/test-dep-lodash/cloneDeep'
   import { msg as plusSubpath } from '@vitejs/test-dep-with-plus-subpath/core+feature'
 
   text('.clonedeep-slash', cloneDeepSlash({ name: 'clonedeep-slash' }).name)
@@ -390,9 +377,9 @@
 </script>
 
 <script type="module">
+  import * as all from '@vitejs/test-dep-source-map-no-sources/all.js'
   // manually check Firefox doesn't show warning in devtool debugger
   import * as sub from '@vitejs/test-dep-source-map-no-sources/sub.js'
-  import * as all from '@vitejs/test-dep-source-map-no-sources/all.js'
 </script>
 
 <h2>Pre-bundle dependency with external sub-dependencies</h2>

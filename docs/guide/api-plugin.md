@@ -56,8 +56,7 @@ Falsy plugins will be ignored, which can be used to easily activate or deactivat
 `plugins` also accepts presets including several plugins as a single element. This is useful for complex features (like framework integration) that are implemented using several plugins. The array will be flattened internally.
 
 ```js
-import frameworkDevtools from 'vite-plugin-framework-devtools'
-// framework-plugin
+import frameworkDevTools from 'vite-plugin-framework-devtools'
 import frameworkRefresh from 'vite-plugin-framework-refresh'
 
 export default function framework(config) {

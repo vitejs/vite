@@ -80,6 +80,8 @@ window.addEventListener('vite:preloadError', (event) => {
 })
 ```
 
+Browsers that support [retriable module loading](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import#browser_compatibility) allow an application or framework to retry the original dynamic import after a transient network or HTTP error. Older browsers require a page reload because they cache the failure in the module map.
+
 When a new deployment occurs, the hosting service may delete the assets from previous deployments. As a result, a user who visited your site before the new deployment might encounter an import error. This error happens because the assets running on that user's device are outdated and the code tries to import the corresponding old chunk, which is deleted. This event is useful for addressing this situation. In this case, make sure to set `Cache-Control: no-cache` on the HTML file, otherwise the old assets will be still referenced.
 
 ## Rebuild on Files Changes

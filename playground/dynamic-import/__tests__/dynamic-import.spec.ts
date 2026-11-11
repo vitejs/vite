@@ -1,11 +1,11 @@
-import { expect, test } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import {
   browserLogs,
+  bundledDevTodo,
   findAssetFile,
   getColor,
   isBuild,
   isBundled,
-  isBundledDev,
   page,
   serverLogs,
 } from '~utils'
@@ -120,16 +120,11 @@ test('should load dynamic import with vars url', async () => {
     .toMatch(isBundled ? 'data:text/javascript' : '/alias/url.js')
 })
 
-// bundled dev: workers created through the dynamic-import-vars glob aren't
-// bundled as worker entries yet
-test.skipIf(isBundledDev)(
-  'should load dynamic import with vars worker',
-  async () => {
-    await expect
-      .poll(() => page.textContent('.dynamic-import-with-vars-worker'))
-      .toMatch('load worker')
-  },
-)
+test('should load dynamic import with vars worker', async () => {
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-vars-worker'))
+    .toMatch('load worker')
+})
 
 test('should load dynamic import with css in package', async () => {
   await page.click('.pkg-css')
@@ -146,6 +141,12 @@ test('should work with load ../ and contain itself directory', async () => {
   await expect
     .poll(() => page.textContent('.dynamic-import-nested-self'))
     .toMatch('dynamic-import-nested-self-content')
+})
+
+test('dynamic import with await in the argument', async () => {
+  await expect
+    .poll(() => page.textContent('.dynamic-import-with-await-in-the-argument'))
+    .toMatch('hello')
 })
 
 // #22700: nested `import('a').then(() => import('b'))` where `a` has a CSS
@@ -175,46 +176,33 @@ test('should work a load path that contains parentheses.', async () => {
     .toMatch('dynamic-import-with-vars-contains-parenthesis')
 })
 
-test.runIf(isBuild)(
-  'should rollup warn when static and dynamic import a module in same chunk',
-  // NOTE: this is a warning related to rollup's chunking behavior
-  { skip: true },
-  async () => {
-    const log = serverLogs.join('\n')
-    expect(log).toContain(
-      'dynamic import will not move module into another chunk',
-    )
-    expect(log).toMatch(
-      /\(!\).*\/dynamic-import\/files\/mxd\.js is dynamically imported by/,
-    )
-    expect(log).toMatch(
-      /\(!\).*\/dynamic-import\/files\/mxd\.json is dynamically imported by/,
-    )
-    expect(log).not.toMatch(
-      /\(!\).*\/dynamic-import\/nested\/shared\.js is dynamically imported by/,
-    )
-  },
-)
-
 test('dynamic import treeshaken log', async () => {
-  const log = browserLogs.join('\n')
-  expect(log).toContain('treeshaken foo')
-  expect(log).toContain('treeshaken bar')
-  expect(log).toContain('treeshaken baz1')
-  expect(log).toContain('treeshaken baz2')
-  expect(log).toContain('treeshaken baz3')
-  expect(log).toContain('treeshaken baz4')
-  expect(log).toContain('treeshaken baz5')
-  expect(log).toContain('treeshaken baz6')
-  expect(log).toContain('treeshaken default')
-
-  expect(log).not.toContain('treeshaken removed')
+  const containLogs = [
+    'treeshaken foo',
+    'treeshaken bar',
+    'treeshaken baz1',
+    'treeshaken baz2',
+    'treeshaken baz3',
+    'treeshaken baz4',
+    'treeshaken baz5',
+    'treeshaken baz6',
+    'treeshaken default',
+  ]
+  for (const l of containLogs) {
+    expect(browserLogs).toContainEqual(expect.stringContaining(l))
+  }
+  expect(browserLogs).not.toContainEqual(
+    expect.stringContaining('treeshaken removed'),
+  )
 })
 
 test('dynamic import syntax parsing', async () => {
-  const log = browserLogs.join('\n')
-  expect(log).toContain('treeshaken syntax foo')
-  expect(log).toContain('treeshaken syntax default')
+  expect(browserLogs).toContainEqual(
+    expect.stringContaining('treeshaken syntax foo'),
+  )
+  expect(browserLogs).toContainEqual(
+    expect.stringContaining('treeshaken syntax default'),
+  )
 })
 
 test.runIf(isBuild)('dynamic import treeshaken file', async () => {
@@ -224,5 +212,60 @@ test.runIf(isBuild)('dynamic import treeshaken file', async () => {
 test.runIf(isBuild)('should not preload for non-analyzable urls', () => {
   const js = findAssetFile(/index-[-\w]{8}\.js$/)
   // should match e.g. await import(e.jss);o(".view",p===i)
-  expect(js).to.match(/\.jss\);/)
+  expect(js).toMatch(/\.jss\);/)
+})
+
+describe(
+  'dynamic import of a CommonJS dep',
+  bundledDevTodo(
+    'lazy compilation loses the `default` export of a dynamically imported CommonJS module',
+    { vite: [23558] },
+  ),
+  () => {
+    test('plain module.exports object', async () => {
+      await expect
+        .poll(() => page.textContent('.cjs-dynamic-plain-object'))
+        .toBe('ok')
+    })
+
+    test('webpack UMD', async () => {
+      await expect.poll(() => page.textContent('.cjs-dynamic-umd')).toBe('ok')
+    })
+
+    test('compiled from ESM, with the __esModule flag', async () => {
+      await expect
+        .poll(() => page.textContent('.cjs-dynamic-dep-cjs-compiled-from-esm'))
+        .toBe('ok')
+    })
+
+    test('compiled from CJS', async () => {
+      await expect
+        .poll(() => page.textContent('.cjs-dynamic-dep-cjs-compiled-from-cjs'))
+        .toBe('ok')
+    })
+
+    test('module.exports object with the __esModule flag', async () => {
+      await expect
+        .poll(() =>
+          page.textContent('.cjs-dynamic-dep-cjs-with-es-module-flag'),
+        )
+        .toBe('ok')
+    })
+
+    test('from an explicit CJS importer uses node interop', async () => {
+      await expect
+        .poll(() => page.textContent('.cjs-dynamic-importer-cjs'))
+        .toBe('ok')
+    })
+  },
+)
+
+test('dynamic import of a CommonJS dep from an ambiguous importer respects the __esModule flag', async () => {
+  await expect
+    .poll(() => page.textContent('.cjs-dynamic-importer-ambiguous'))
+    .toBe('ok')
+})
+
+test('dynamic named import from an ESM dep', async () => {
+  await expect.poll(() => page.textContent('.esm-dynamic-named')).toBe('ok')
 })

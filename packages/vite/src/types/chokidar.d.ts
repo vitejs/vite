@@ -5,7 +5,7 @@
 
 /// <reference types="node" />
 
-import { EventEmitter } from 'node:events'
+import type { EventEmitter } from 'node:events'
 import type * as fs from 'node:fs'
 import type { Matcher } from './anymatch'
 
