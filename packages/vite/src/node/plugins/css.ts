@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import type { RawSourceMap } from '@jridgewell/remapping'
@@ -72,6 +73,7 @@ import {
   arraify,
   asyncReplace,
   combineSourcemaps,
+  createConcurrencyLimiter,
   createSerialPromiseQueue,
   decodeURIIfPossible,
   emptyCssComments,
@@ -2651,10 +2653,16 @@ const makeScssWorker = (
   environment: PartialEnvironment,
   resolvers: CSSAtImportResolvers,
   sassPath: string,
-  _maxWorkers: number | undefined,
+  maxWorkers: number | undefined,
 ) => {
   const importSass = createCachedImport<typeof Sass>(() => import(sassPath))
   let compilerPromise: Promise<Sass.AsyncCompiler> | undefined
+
+  // the Sass compiler runs at most 15 compilations at a time, so starting
+  // more only buffers them in memory
+  const compilationLimiter = createConcurrencyLimiter(
+    maxWorkers || Math.max(1, os.availableParallelism() - 1),
+  )
 
   // we use the compiler api provided by sass
   // instead of creating a worker pool on our own
@@ -2737,7 +2745,9 @@ const makeScssWorker = (
       ]
       sassOptions.importer ??= internalImporter
 
-      const result = await compiler.compileStringAsync(data, sassOptions)
+      const result = await compilationLimiter.run(() =>
+        compiler.compileStringAsync(data, sassOptions),
+      )
       return {
         css: result.css,
         map: result.sourceMap ? JSON.stringify(result.sourceMap) : undefined,

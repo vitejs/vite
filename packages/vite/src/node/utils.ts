@@ -1825,6 +1825,28 @@ export function createSerialPromiseQueue<T>(): {
   }
 }
 
+export function createConcurrencyLimiter(maxConcurrency: number): {
+  run<T>(f: () => Promise<T>): Promise<T>
+} {
+  let active = 0
+  const queue: (() => void)[] = []
+
+  return {
+    async run(f) {
+      if (active < maxConcurrency) active++
+      else await new Promise<void>((resolve) => queue.push(resolve))
+      try {
+        return await f()
+      } finally {
+        // hand the slot to the next queued task so a new caller can't take it
+        const next = queue.shift()
+        if (next) next()
+        else active--
+      }
+    },
+  }
+}
+
 export function sortObjectKeys<T extends Record<string, any>>(obj: T): T {
   const sorted: Record<string, any> = {}
   for (const key of Object.keys(obj).sort()) {

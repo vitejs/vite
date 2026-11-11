@@ -637,6 +637,62 @@ describe('sass package resolution', () => {
   })
 })
 
+describe('sass', () => {
+  test('runs at most css.preprocessorMaxWorkers compilations at once', async () => {
+    let activeLoads = 0
+    let maxActiveLoads = 0
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        logLevel: 'silent',
+        css: {
+          preprocessorMaxWorkers: 2,
+          preprocessorOptions: {
+            scss: {
+              importers: [
+                {
+                  canonicalize: (url) => new URL(`slow:${url}`),
+                  async load() {
+                    maxActiveLoads = Math.max(maxActiveLoads, ++activeLoads)
+                    await new Promise((resolve) => setTimeout(resolve, 20))
+                    activeLoads--
+                    return { contents: '', syntax: 'scss' }
+                  },
+                },
+              ],
+            },
+          },
+        },
+      },
+      'serve',
+    )
+    const environment = new PartialEnvironment('client', config)
+    const { transform, buildStart, buildEnd } = cssPlugin(config)
+    // @ts-expect-error buildStart is function
+    await buildStart.call({})
+    // @ts-expect-error buildEnd is function
+    onTestFinished(() => buildEnd.call({}))
+
+    await Promise.all(
+      Array.from({ length: 6 }, (_, i) =>
+        // @ts-expect-error transform.handler is function
+        transform.handler.call(
+          {
+            addWatchFile() {
+              return
+            },
+            environment,
+          },
+          `@use 'dep${i}';`,
+          path.resolve(dirname, `entry${i}.scss`),
+        ),
+      ),
+    )
+
+    expect(maxActiveLoads).toBe(2)
+  })
+})
+
 describe('resolveLibCssFilename', () => {
   test('use name from package.json', () => {
     const filename = resolveLibCssFilename(

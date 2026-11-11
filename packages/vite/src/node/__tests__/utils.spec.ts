@@ -12,6 +12,7 @@ import {
   asyncFlatten,
   bareImportRE,
   combineSourcemaps,
+  createConcurrencyLimiter,
   extractHostnamesFromCerts,
   extractHostnamesFromSubjectAltName,
   flattenId,
@@ -66,6 +67,40 @@ WEIBLwjKCAscrtyayXWp6zUTmgvb8PQf//3Mh2DiEngAi3WI/nL+8Y0RkqbvxBar
 X2JN
 -----END CERTIFICATE-----
 `.trim()
+
+describe('createConcurrencyLimiter', () => {
+  test('runs at most maxConcurrency tasks at once, in call order', async () => {
+    const limiter = createConcurrencyLimiter(2)
+    const started: number[] = []
+    const finish: (() => void)[] = []
+    const results = Array.from({ length: 4 }, (_, i) =>
+      limiter.run(async () => {
+        started.push(i)
+        await new Promise<void>((resolve) => finish.push(resolve))
+        return i
+      }),
+    )
+
+    await vi.waitFor(() => expect(started).toStrictEqual([0, 1]))
+    finish[1]()
+    await vi.waitFor(() => expect(started).toStrictEqual([0, 1, 2]))
+    finish[0]()
+    await vi.waitFor(() => expect(started).toStrictEqual([0, 1, 2, 3]))
+    finish[2]()
+    finish[3]()
+
+    expect(await Promise.all(results)).toStrictEqual([0, 1, 2, 3])
+  })
+
+  test('frees the slot when a task rejects', async () => {
+    const limiter = createConcurrencyLimiter(1)
+
+    await expect(
+      limiter.run(() => Promise.reject(new Error('failed'))),
+    ).rejects.toThrow('failed')
+    expect(await limiter.run(async () => 'next')).toBe('next')
+  })
+})
 
 describe('bareImportRE', () => {
   test('should work with normal package name', () => {
