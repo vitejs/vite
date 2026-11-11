@@ -667,7 +667,7 @@ export function payloadDeliveredAck(filename: string): string {
 
 function isEmptyInput(input: RolldownOptions['input']): boolean {
   if (Array.isArray(input)) return input.length === 0
-  if (typeof input === 'object' && input !== null) {
+  if (typeof input === 'object' && input != null) {
     return Object.keys(input).length === 0
   }
   return false
