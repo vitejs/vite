@@ -486,9 +486,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           if (startOffset === 0) return 0
 
           // Gets the offset for the start of the line including the
-          // newline trailing the previous node
-          const lineStartOffset =
-            startOffset - node.sourceCodeLocation!.startCol
+          // newline trailing the previous node.
+          // Columns are one-based and offsets are zero-based, so their difference
+          // is -1 on the first line. Clamp to 0 because there is no preceding newline.
+          const lineStartOffset = Math.max(
+            0,
+            startOffset - node.sourceCodeLocation!.startCol,
+          )
 
           // <previous-line-node></previous-line-node>
           // <target-node></target-node>
@@ -503,7 +507,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // previous newline, we cannot strip it out without risking content deletion.
           let isLineEmpty = false
           try {
-            const line = s.slice(Math.max(0, lineStartOffset), startOffset)
+            const line = s.slice(lineStartOffset, startOffset)
             isLineEmpty = !line.trim()
           } catch {
             // magic-string may throw if there's some content removed in the sliced string,
@@ -1743,6 +1747,8 @@ export function getImportMap(
       mapping: Record<string, string>
     }
   | undefined {
+  if (!options.build.chunkImportMap) return undefined
+
   const asset = bundle[getImportMapFilename(options)] as OutputAsset | undefined
   if (!asset) return undefined
 

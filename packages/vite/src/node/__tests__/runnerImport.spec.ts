@@ -15,7 +15,7 @@ describe('importing files using inlined environment', () => {
     const { module } = await runnerImport<
       typeof import('./fixtures/runner-import/basic')
     >(fixture('basic'))
-    expect(module.test).toEqual({
+    expect(module.test).toStrictEqual({
       field: true,
     })
   })
@@ -32,7 +32,7 @@ describe('importing files using inlined environment', () => {
     const { module, dependencies } = await runnerImport<
       typeof import('./fixtures/runner-import/vite.config')
     >(fixture('vite.config'))
-    expect(module.default).toEqual({
+    expect(module.default).toStrictEqual({
       root: './test',
       plugins: [
         {
@@ -40,7 +40,7 @@ describe('importing files using inlined environment', () => {
         },
       ],
     })
-    expect(dependencies).toEqual([slash(fixture('plugin.ts'))])
+    expect(dependencies).toStrictEqual([slash(fixture('plugin.ts'))])
   })
 
   test('can import vite config that imports a TS external module', async () => {
@@ -49,7 +49,7 @@ describe('importing files using inlined environment', () => {
     >(fixture('vite.config.outside-pkg-import.mts'))
 
     expect(module.default.__injected).toBe(true)
-    expect(dependencies).toEqual([
+    expect(dependencies).toStrictEqual([
       slash(resolve(import.meta.dirname, './packages/parent/index.ts')),
     ])
 
