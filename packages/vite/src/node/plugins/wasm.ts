@@ -1,6 +1,5 @@
 import fsp from 'node:fs/promises'
 import {
-  ImportType,
   init as esModuleLexerInit,
   parse as parseImports,
 } from 'es-module-lexer'
@@ -125,7 +124,7 @@ export const wasmHelperPlugin = (): Plugin => {
       transform: {
         filter: { code: wasmSourcePhaseRE },
         async handler(code) {
-          await esModuleLexerInit
+          await esModuleLexerInit()
           let imports: ReturnType<typeof parseImports>[0]
           try {
             ;[imports] = parseImports(code)
@@ -136,31 +135,31 @@ export const wasmHelperPlugin = (): Plugin => {
           let s: MagicString | undefined
           for (const imp of imports) {
             if (
-              imp.t !== ImportType.StaticSourcePhase &&
-              imp.t !== ImportType.DynamicSourcePhase
+              (imp.type !== 'static' && imp.type !== 'dynamic') ||
+              imp.phase !== 'source'
             )
               continue
-            const specifier = imp.n
+            const specifier = imp.specifier
             if (specifier === undefined) continue
             // Source phase imports are only meaningful for `.wasm` in Vite.
             if (!wasmDirectRE.test(cleanUrl(specifier))) continue
 
             s ??= new MagicString(code)
             const sourced = injectQuery(specifier, 'source')
-            if (imp.t === ImportType.DynamicSourcePhase) {
+            if (imp.type === 'dynamic') {
               // `import.source(spec)` resolves to the module source object (the
               // `WebAssembly.Module`), whereas `import(spec)` resolves to the
               // namespace, so rewrite to `import(spec?source).then(m => m.default)`.
-              s.remove(imp.ss + 'import'.length, imp.d)
+              s.remove(imp.importStart + 'import'.length, imp.dynamicStart)
               // For dynamic imports the specifier span includes the quotes.
-              s.update(imp.s, imp.e, JSON.stringify(sourced))
-              s.appendLeft(imp.se, '.then((m) => m.default)')
+              s.update(imp.start, imp.end, JSON.stringify(sourced))
+              s.appendLeft(imp.importEnd, '.then((m) => m.default)')
             } else {
               // Drop the `source` phase keyword, keeping `import x from ...`.
-              const keyword = imp.ss + 'import'.length
-              const offset = code.slice(keyword, imp.s).indexOf('source')
+              const keyword = imp.importStart + 'import'.length
+              const offset = code.slice(keyword, imp.start).indexOf('source')
               s.remove(keyword + offset, keyword + offset + 'source'.length + 1)
-              s.update(imp.s, imp.e, sourced)
+              s.update(imp.start, imp.end, sourced)
             }
           }
 
