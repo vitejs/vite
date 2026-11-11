@@ -35,6 +35,8 @@ const input = {
   write: resolve(dirname, 'write.html'),
   'transform-inline-js': resolve(dirname, 'transform-inline-js.html'),
   malformedUrl: resolve(dirname, 'malformed-url.html'),
+  tagRemovalModuleScript: resolve(dirname, 'tag-removal/module-script.html'),
+  tagRemovalStylesheet: resolve(dirname, 'tag-removal/stylesheet.html'),
   // resolved from `process.cwd()` by Rolldown (resolved from `root` by vite's resolver first)
   relativeInput: relative(
     process.cwd(),
@@ -74,6 +76,9 @@ export default defineConfig({
           if (html.includes('/@vite/client')) {
             throw new Error('pre transform applied at wrong time!')
           }
+
+          // Keep adjacent tags on the first line for the tag removal regression.
+          if (filename.includes('/tag-removal/')) return
 
           const doctypeRE = /<!doctype html>/i
           if (doctypeRE.test(html)) return

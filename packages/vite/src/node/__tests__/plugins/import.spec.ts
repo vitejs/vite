@@ -23,7 +23,7 @@ describe('runTransform', () => {
     const joined = result.hoistedAssignments
       ? `${result.hoistedAssignments}; ${result.importLine}`
       : result.importLine
-    expect(joined.split('\n').length, 'result line count').toBe(
+    expect(joined.split('\n'), 'result line count').toHaveLength(
       importExp.split('\n').length,
     )
     return joined.replaceAll(';', ';\n')

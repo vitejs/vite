@@ -188,12 +188,13 @@ export async function transformWithOxc(
       configurable: true,
       enumerable: true,
       get: () => result.errors,
-      set: (value) =>
+      set: (value) => {
         Object.defineProperty(wrapper, 'errors', {
           configurable: true,
           enumerable: true,
           value,
-        }),
+        })
+      },
     })
     throw wrapper
   }
@@ -265,7 +266,11 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
     ) {
       result.jsx = { ...jsxOptions, refresh: false }
     }
-    if (jsxRefreshFilter?.(id) && !JS_TYPES_RE.test(cleanUrl(id))) {
+    if (
+      jsxRefreshFilter?.(id) &&
+      !JS_TYPES_RE.test(id) &&
+      !JS_TYPES_RE.test(cleanUrl(id))
+    ) {
       result.lang = 'js'
     }
 

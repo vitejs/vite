@@ -2,6 +2,8 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import os, { type NetworkInterfaceInfoIPv4 } from 'node:os'
 import path from 'node:path'
+import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
+import MagicString from 'magic-string'
 import { fileURLToPath } from 'mlly'
 import { describe, expect, test, vi, onTestFinished } from 'vitest'
 import type { CommonServerOptions, ResolvedServerUrls } from '..'
@@ -138,13 +140,13 @@ describe('injectQuery', () => {
   if (isWindows) {
     // this test will work incorrectly on unix systems
     test('normalize windows path', () => {
-      expect(injectQuery('C:\\User\\Vite\\Project', 'direct')).toEqual(
+      expect(injectQuery('C:\\User\\Vite\\Project', 'direct')).toBe(
         'C:/User/Vite/Project?direct',
       )
     })
 
     test('absolute file path', () => {
-      expect(injectQuery('C:\\test-file.vue', 'direct')).toEqual(
+      expect(injectQuery('C:\\test-file.vue', 'direct')).toBe(
         'C:/test-file.vue?direct',
       )
     })
@@ -152,24 +154,24 @@ describe('injectQuery', () => {
     test('absolute file path with parameters', () => {
       expect(
         injectQuery('C:\\test-file.vue?vue&type=template&lang.js', 'direct'),
-      ).toEqual('C:/test-file.vue?direct&vue&type=template&lang.js')
+      ).toBe('C:/test-file.vue?direct&vue&type=template&lang.js')
     })
   }
 
   test('relative path', () => {
-    expect(injectQuery('usr/vite/%20a%20', 'direct')).toEqual(
+    expect(injectQuery('usr/vite/%20a%20', 'direct')).toBe(
       'usr/vite/%20a%20?direct',
     )
-    expect(injectQuery('./usr/vite/%20a%20', 'direct')).toEqual(
+    expect(injectQuery('./usr/vite/%20a%20', 'direct')).toBe(
       './usr/vite/%20a%20?direct',
     )
-    expect(injectQuery('../usr/vite/%20a%20', 'direct')).toEqual(
+    expect(injectQuery('../usr/vite/%20a%20', 'direct')).toBe(
       '../usr/vite/%20a%20?direct',
     )
   })
 
   test('path with hash', () => {
-    expect(injectQuery('/usr/vite/path with space/#1?2/', 'direct')).toEqual(
+    expect(injectQuery('/usr/vite/path with space/#1?2/', 'direct')).toBe(
       '/usr/vite/path with space/?direct#1?2/',
     )
   })
@@ -184,31 +186,31 @@ describe('injectQuery', () => {
   })
 
   test('path with multiple spaces', () => {
-    expect(injectQuery('/usr/vite/path with space', 'direct')).toEqual(
+    expect(injectQuery('/usr/vite/path with space', 'direct')).toBe(
       '/usr/vite/path with space?direct',
     )
   })
 
   test('path with multiple % characters', () => {
-    expect(injectQuery('/usr/vite/not%20a%20space', 'direct')).toEqual(
+    expect(injectQuery('/usr/vite/not%20a%20space', 'direct')).toBe(
       '/usr/vite/not%20a%20space?direct',
     )
   })
 
   test('path with %25', () => {
-    expect(injectQuery('/usr/vite/%25hello%25', 'direct')).toEqual(
+    expect(injectQuery('/usr/vite/%25hello%25', 'direct')).toBe(
       '/usr/vite/%25hello%25?direct',
     )
   })
 
   test('path with Unicode', () => {
-    expect(injectQuery('/usr/vite/東京', 'direct')).toEqual(
+    expect(injectQuery('/usr/vite/東京', 'direct')).toBe(
       '/usr/vite/東京?direct',
     )
   })
 
   test('path with Unicode, space, and %', () => {
-    expect(injectQuery('/usr/vite/東京 %20 hello', 'direct')).toEqual(
+    expect(injectQuery('/usr/vite/東京 %20 hello', 'direct')).toBe(
       '/usr/vite/東京 %20 hello?direct',
     )
   })
@@ -216,7 +218,7 @@ describe('injectQuery', () => {
   test('path with url-encoded path as query parameter', () => {
     const src = '/src/module.ts?url=https%3A%2F%2Fusr.vite%2F'
     const expected = '/src/module.ts?t=1234&url=https%3A%2F%2Fusr.vite%2F'
-    expect(injectQuery(src, 't=1234')).toEqual(expected)
+    expect(injectQuery(src, 't=1234')).toBe(expected)
   })
 })
 
@@ -251,7 +253,7 @@ describe('resolveHostname', () => {
   test('defaults to localhost', async () => {
     const resolved = await getLocalhostAddressIfDiffersFromDNS()
 
-    expect(await resolveHostname(undefined)).toEqual({
+    expect(await resolveHostname(undefined)).toStrictEqual({
       host: 'localhost',
       name: resolved ?? 'localhost',
     })
@@ -260,21 +262,21 @@ describe('resolveHostname', () => {
   test('accepts localhost', async () => {
     const resolved = await getLocalhostAddressIfDiffersFromDNS()
 
-    expect(await resolveHostname('localhost')).toEqual({
+    expect(await resolveHostname('localhost')).toStrictEqual({
       host: 'localhost',
       name: resolved ?? 'localhost',
     })
   })
 
   test('accepts 0.0.0.0', async () => {
-    expect(await resolveHostname('0.0.0.0')).toEqual({
+    expect(await resolveHostname('0.0.0.0')).toStrictEqual({
       host: '0.0.0.0',
       name: 'localhost',
     })
   })
 
   test('accepts ::', async () => {
-    expect(await resolveHostname('::')).toEqual({
+    expect(await resolveHostname('::')).toStrictEqual({
       host: '::',
       name: 'localhost',
     })
@@ -283,7 +285,7 @@ describe('resolveHostname', () => {
   test('accepts 0000:0000:0000:0000:0000:0000:0000:0000', async () => {
     expect(
       await resolveHostname('0000:0000:0000:0000:0000:0000:0000:0000'),
-    ).toEqual({
+    ).toStrictEqual({
       host: '0000:0000:0000:0000:0000:0000:0000:0000',
       name: 'localhost',
     })
@@ -344,23 +346,23 @@ describe('posToNumber', () => {
 describe('numberToPos', () => {
   test('simple', () => {
     const actual = numberToPos('a\nb', 2)
-    expect(actual).toEqual({ line: 2, column: 0 })
+    expect(actual).toStrictEqual({ line: 2, column: 0 })
   })
   test('pass though pos', () => {
     const actual = numberToPos('a\nb', { line: 2, column: 0 })
-    expect(actual).toEqual({ line: 2, column: 0 })
+    expect(actual).toStrictEqual({ line: 2, column: 0 })
   })
   test('empty line', () => {
     const actual = numberToPos('a\n\nb', 3)
-    expect(actual).toEqual({ line: 3, column: 0 })
+    expect(actual).toStrictEqual({ line: 3, column: 0 })
   })
   test('middle of line', () => {
     const actual = numberToPos('abc\ndef', 5)
-    expect(actual).toEqual({ line: 2, column: 1 })
+    expect(actual).toStrictEqual({ line: 2, column: 1 })
   })
   test('end of line', () => {
     const actual = numberToPos('abc\ndef', 3)
-    expect(actual).toEqual({ line: 1, column: 3 })
+    expect(actual).toStrictEqual({ line: 1, column: 3 })
   })
   test('out of range', () => {
     expect(() => numberToPos('a\nb', 5)).toThrowError(
@@ -568,22 +570,22 @@ describe('getHash', () => {
 describe('asyncFlatten', () => {
   test('plain array', async () => {
     const arr = await asyncFlatten([1, 2, 3])
-    expect(arr).toEqual([1, 2, 3])
+    expect(arr).toStrictEqual([1, 2, 3])
   })
 
   test('nested array', async () => {
     const arr = await asyncFlatten([1, 2, 3, [4, 5, 6]])
-    expect(arr).toEqual([1, 2, 3, 4, 5, 6])
+    expect(arr).toStrictEqual([1, 2, 3, 4, 5, 6])
   })
 
   test('nested falsy array', async () => {
     const arr = await asyncFlatten([1, 2, false, [4, null, undefined]])
-    expect(arr).toEqual([1, 2, false, 4, null, undefined])
+    expect(arr).toStrictEqual([1, 2, false, 4, null, undefined])
   })
 
   test('plain promise array', async () => {
     const arr = await asyncFlatten([1, 2, Promise.resolve(3)])
-    expect(arr).toEqual([1, 2, 3])
+    expect(arr).toStrictEqual([1, 2, 3])
   })
 
   test('nested promise array', async () => {
@@ -593,7 +595,7 @@ describe('asyncFlatten', () => {
       Promise.resolve(3),
       Promise.resolve([4, 5, 6]),
     ])
-    expect(arr).toEqual([1, 2, 3, 4, 5, 6])
+    expect(arr).toStrictEqual([1, 2, 3, 4, 5, 6])
   })
 
   test('2x nested promise array', async () => {
@@ -603,7 +605,7 @@ describe('asyncFlatten', () => {
       Promise.resolve(3),
       Promise.resolve([4, 5, Promise.resolve(6), Promise.resolve([7, 8, 9])]),
     ])
-    expect(arr).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    expect(arr).toStrictEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
   })
 })
 
@@ -787,7 +789,7 @@ describe('processSrcSetSync', () => {
       result.push(url)
       return url
     })
-    expect(result).toEqual(expected)
+    expect(result).toStrictEqual(expected)
   })
 })
 
@@ -901,6 +903,28 @@ describe('combineSourcemaps', () => {
   const resolveFile = (file: string) => {
     return normalizePath(path.resolve(_dirname, file))
   }
+
+  test('composes decoded intermediate mappings identically', () => {
+    const filename = 'assets/index.js'
+    const s = new MagicString('export const value = 1')
+    const originalMap = s.generateMap({
+      source: filename,
+      hires: true,
+      includeContent: true,
+    })
+    const options = { source: filename, hires: 'boundary' as const }
+    const encoded = combineSourcemaps(filename, [
+      s.generateMap(options) as RawSourceMap,
+      originalMap as RawSourceMap,
+    ])
+    const decoded = combineSourcemaps(filename, [
+      s.generateDecodedMap(options) as DecodedSourceMap,
+      originalMap as RawSourceMap,
+    ])
+
+    expect(decoded).toStrictEqual(encoded)
+    expect(decoded.sourcesContent).toStrictEqual(originalMap.sourcesContent)
+  })
 
   test('should combine sourcemaps with single sources', () => {
     const sourcemaps = [
@@ -1265,7 +1289,7 @@ describe('resolveServerUrls', () => {
       { rawBase: '/' } as any,
     )
 
-    expect(result.network).toEqual([
+    expect(result.network).toStrictEqual([
       'http://192.168.1.10:3000/',
       'http://10.0.0.5:3000/',
     ])

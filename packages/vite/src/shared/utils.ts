@@ -5,8 +5,8 @@ export const isWindows: boolean =
 
 /**
  * Prepend `/@id/` and replace null byte so the id is URL-safe.
- * This is prepended to resolved ids that are not valid browser
- * import specifiers by the importAnalysis plugin.
+ * BrowserURL rendering wraps ModuleURLs that are not valid browser import
+ * specifiers before adding base.
  */
 export function wrapId(id: string): string {
   return id.startsWith(VALID_ID_PREFIX)
@@ -21,6 +21,26 @@ export function unwrapId(id: string): string {
   return id.startsWith(VALID_ID_PREFIX)
     ? id.slice(VALID_ID_PREFIX.length).replace(NULL_BYTE_PLACEHOLDER, '\0')
     : id
+}
+
+/** Render a decoded ModuleURL as a BrowserURL, wrapping virtual IDs and adding base. */
+export function moduleUrlToBrowserUrl(moduleUrl: string, base: string): string {
+  const browserUrl =
+    moduleUrl[0] !== '.' && moduleUrl[0] !== '/' ? wrapId(moduleUrl) : moduleUrl
+  return base ? joinUrlSegments(base, browserUrl) : browserUrl
+}
+
+export function joinUrlSegments(a: string, b: string): string {
+  if (!a || !b) {
+    return a || b || ''
+  }
+  if (a.endsWith('/')) {
+    a = a.substring(0, a.length - 1)
+  }
+  if (b[0] !== '/') {
+    b = '/' + b
+  }
+  return a + b
 }
 
 const windowsSlashRE = /\\/g
@@ -81,4 +101,26 @@ export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
     reject = _reject
   })
   return { promise, resolve, reject }
+}
+
+const whitespaceRE = /\s/g
+const percentEncodedRE = /(?:%[0-9a-f]{2})+/gi
+const whitespaceOnlyRE = /^\s+$/
+
+/** Percent-encodes whitespace, which terminates a `//# sourceURL=` value in V8. */
+export function encodeSourceURL(id: string): string {
+  return id.replace(whitespaceRE, encodeURIComponent)
+}
+
+/** Reverses {@link encodeSourceURL}. */
+export function decodeSourceURL(url: string): string {
+  return url.replace(percentEncodedRE, (match) => {
+    let decoded: string
+    try {
+      decoded = decodeURIComponent(match)
+    } catch {
+      return match
+    }
+    return whitespaceOnlyRE.test(decoded) ? decoded : match
+  })
 }

@@ -145,6 +145,17 @@ composes: bar from '@/css/bar.module.css';
   })
 })
 
+describe('url()', () => {
+  test('keeps a % that is not an escape sequence', async () => {
+    const { transform } = await createCssPluginTransform({ configFile: false })
+    const result = await transform(
+      `.foo { background: url(./100%.png) }`,
+      '/foo.css',
+    )
+    expect(result.code).toContain('100%.png')
+  })
+})
+
 describe('hoist @ rules', () => {
   test('hoist @import', async () => {
     const css = `.foo{color:red;}@import "bla";`
@@ -300,7 +311,7 @@ import "other-module";`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'es')
     const replaced = replacer(code)
-    expect(replaced.length).toBe(code.length)
+    expect(replaced).toHaveLength(code.length)
     expect(replaced).toMatchInlineSnapshot(`
       "import "some-module";
       /* empty css             */
@@ -313,7 +324,7 @@ import "other-module";`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'es')
     const replaced = replacer(code)
-    expect(replaced.length).toBe(code.length)
+    expect(replaced).toHaveLength(code.length)
     expect(replaced).toMatchInlineSnapshot(
       `"import "some-module";/* empty css             */import "other-module";"`,
     )
@@ -327,7 +338,7 @@ require("other-module");`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
     const replaced = replacer(code)
-    expect(replaced.length).toBe(code.length)
+    expect(replaced).toHaveLength(code.length)
     expect(replaced).toMatchInlineSnapshot(`
       "require("some-module");
       ;/* empty css              */
@@ -340,7 +351,7 @@ require("other-module");`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
     const replaced = replacer(code)
-    expect(replaced.length).toBe(code.length)
+    expect(replaced).toHaveLength(code.length)
     expect(replaced).toMatchInlineSnapshot(
       `"require("some-module");;/* empty css              */require("other-module");"`,
     )
@@ -352,7 +363,7 @@ require("other-module");`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
     const newCode = replacer(code)
-    expect(newCode.length).toBe(code.length)
+    expect(newCode).toHaveLength(code.length)
     expect(newCode).toMatchInlineSnapshot(
       `"require("some-module"),/* empty css               */require("other-module");"`,
     )
@@ -364,7 +375,7 @@ require("other-module");`
     const code = 'require("pure_css_chunk.js"),console.log();'
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
     const newCode = replacer(code)
-    expect(newCode.length).toBe(code.length)
+    expect(newCode).toHaveLength(code.length)
     expect(newCode).toMatchInlineSnapshot(
       `"/* empty css               */console.log();"`,
     )
@@ -377,7 +388,7 @@ require("other-module");`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
     const newCode = replacer(code)
-    expect(newCode.length).toBe(code.length)
+    expect(newCode).toHaveLength(code.length)
     expect(newCode).toMatchInlineSnapshot(
       `"require("some-module");/* empty css               */const v=require("other-module");"`,
     )

@@ -57,7 +57,7 @@ export default defineConfig({
           'vite/module-runner': ['./src/module-runner'],
         },
       },
-      emitDtsOnly: true,
+      dtsOnly: true,
     }),
   ],
 })
@@ -78,11 +78,11 @@ const identifierReplacements: Record<string, Record<string, string>> = {
   },
   rolldown: {
     Plugin$1: 'Rolldown.Plugin',
-    TransformResult$1: 'Rolldown.TransformResult',
+    TransformResult$2: 'Rolldown.TransformResult',
   },
   'rolldown/utils': {
     TransformOptions$1: 'rolldown_utils_TransformOptions',
-    TransformResult$2: 'rolldown_utils_TransformResult',
+    TransformResult$3: 'rolldown_utils_TransformResult',
   },
   'node:http': {
     Server$1: 'http.Server',
@@ -90,7 +90,7 @@ const identifierReplacements: Record<string, Record<string, string>> = {
   },
   'node:https': {
     Server$2: 'HttpsServer',
-    ServerOptions$2: 'HttpsServerOptions',
+    ServerOptions$3: 'HttpsServerOptions',
   },
   'node:url': {
     URL$1: 'url_URL',
@@ -117,7 +117,7 @@ const ignoreConfusingTypeNames = [
   // type names that are declared
   'MinimalPluginContext$1',
   'ServerOptions$1',
-  'ServerOptions$3',
+  'ServerOptions$2',
   // temporary variables for types
   'parseAst$1',
   'parseAstAsync$1',

@@ -7,7 +7,7 @@ import {
   createWebSocketModuleRunnerTransport,
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
-import { wrapId } from '../shared/utils'
+import { moduleUrlToBrowserUrl } from '../shared/utils'
 import type { BundledDevHMRClient } from './bundledDevHmrClient'
 import { ErrorOverlay, cspNonce, overlayId } from './overlay'
 // @ts-expect-error internal virtual module
@@ -140,10 +140,6 @@ const debounceReload = (time: number) => {
 }
 export const pageReload = debounceReload(20)
 
-function wrapIdIfNeeded(id: string): string {
-  return id[0] === '.' || id[0] === '/' ? id : wrapId(id)
-}
-
 const hmrClient = new HMRClient(
   {
     error: (err) => console.error('[vite]', err),
@@ -157,15 +153,11 @@ const hmrClient = new HMRClient(
     isWithinCircularImport,
   }) {
     const [acceptedPathWithoutQuery, query] = acceptedPath.split(`?`)
-    const browserPath = wrapIdIfNeeded(acceptedPathWithoutQuery)
-    const importPromise = import(
-      /* @vite-ignore */
-      base +
-        browserPath.slice(1) +
-        `?${explicitImportRequired ? 'import&' : ''}t=${timestamp}${
-          query ? `&${query}` : ''
-        }`
-    )
+    const moduleUrl = `${acceptedPathWithoutQuery}?${explicitImportRequired ? 'import&' : ''}t=${timestamp}${
+      query ? `&${query}` : ''
+    }`
+    const browserUrl = moduleUrlToBrowserUrl(moduleUrl, base)
+    const importPromise = import(/* @vite-ignore */ browserUrl)
     if (isWithinCircularImport) {
       importPromise.catch(() => {
         console.info(
@@ -244,9 +236,8 @@ async function handleMessage(payload: HotPayload) {
             return
           }
 
-          const newPath = `${base}${searchUrl.slice(1)}${
-            searchUrl.includes('?') ? '&' : '?'
-          }t=${timestamp}`
+          const moduleUrl = `${searchUrl}${searchUrl.includes('?') ? '&' : '?'}t=${timestamp}`
+          const browserUrl = moduleUrlToBrowserUrl(moduleUrl, base)
 
           // rather than swapping the href on the existing tag, we will
           // create a new link tag. Once the new stylesheet has loaded we
@@ -255,7 +246,7 @@ async function handleMessage(payload: HotPayload) {
           // directly, as the new stylesheet has not yet been loaded.
           return new Promise((resolve) => {
             const newLinkTag = el.cloneNode() as HTMLLinkElement
-            newLinkTag.href = new URL(newPath, el.href).href
+            newLinkTag.href = new URL(browserUrl, el.href).href
             const removeOldEl = () => {
               el.remove()
               console.debug(`[vite] css hot updated: ${searchUrl}`)
@@ -580,7 +571,9 @@ export function updateStyle(id: string, content: string): void {
       lastInsertedStyle.insertAdjacentElement('afterend', style)
     }
     lastInsertedStyle = style
-  } else {
+  } else if (style.textContent !== content) {
+    // skip identical css, e.g. in a server rendered style: rewriting it still
+    // replaces the stylesheet, which can re-create the font faces it declares
     style.textContent = content
   }
   sheetsMap.set(id, style)
@@ -603,8 +596,8 @@ export function removeStyle(id: string): void {
   }
 }
 
-export function createHotContext(ownerPath: string): ViteHotContext {
-  return new HMRContext(hmrClient, ownerPath)
+export function createHotContext(moduleUrl: string): ViteHotContext {
+  return new HMRContext(hmrClient, moduleUrl)
 }
 
 /**

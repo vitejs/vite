@@ -77,7 +77,7 @@ describe('DevTools plugin resolution', () => {
         options: true,
       },
     })
-    expect(configHooks).toEqual([
+    expect(configHooks).toStrictEqual([
       'user-pre',
       'devtools-pre',
       'user-normal',
@@ -258,7 +258,7 @@ describe('mergeConfig', () => {
       },
     }
 
-    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+    expect(mergeConfig(baseConfig, newConfig)).toStrictEqual(mergedConfig)
   })
 
   test('keep object alias schema', () => {
@@ -290,7 +290,7 @@ describe('mergeConfig', () => {
       },
     }
 
-    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+    expect(mergeConfig(baseConfig, newConfig)).toStrictEqual(mergedConfig)
   })
 
   test('handles arrays', () => {
@@ -306,7 +306,7 @@ describe('mergeConfig', () => {
       envPrefix: ['string1', 'string2', 'string3'],
     }
 
-    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+    expect(mergeConfig(baseConfig, newConfig)).toStrictEqual(mergedConfig)
   })
 
   test('handles assetsInclude', () => {
@@ -322,7 +322,7 @@ describe('mergeConfig', () => {
       assetsInclude: ['some-string', 'some-other-string', /regexp?/],
     }
 
-    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+    expect(mergeConfig(baseConfig, newConfig)).toStrictEqual(mergedConfig)
   })
 
   test('handles input', () => {
@@ -418,10 +418,12 @@ describe('mergeConfig', () => {
     const mergedConfig = {
       build: {
         input: 'src/b.ts',
+        rolldownOptions: undefined,
+        rollupOptions: undefined,
       },
     }
 
-    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+    expect(mergeConfig(baseConfig, newConfig)).toStrictEqual(mergedConfig)
   })
 
   test('not handles alias not under `resolve`', () => {
@@ -453,7 +455,7 @@ describe('mergeConfig', () => {
       },
     }
 
-    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+    expect(mergeConfig(baseConfig, newConfig)).toStrictEqual(mergedConfig)
   })
 
   test('merge array correctly', () => {
@@ -469,7 +471,7 @@ describe('mergeConfig', () => {
       foo: ['bar'],
     }
 
-    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+    expect(mergeConfig(baseConfig, newConfig)).toStrictEqual(mergedConfig)
   })
 
   test('handles ssr.noExternal', () => {
@@ -495,8 +497,8 @@ describe('mergeConfig', () => {
     }
 
     // merging either ways, `ssr.noExternal: true` should take highest priority
-    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
-    expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
+    expect(mergeConfig(baseConfig, newConfig)).toStrictEqual(mergedConfig)
+    expect(mergeConfig(newConfig, baseConfig)).toStrictEqual(mergedConfig)
   })
 
   test('handles environments.*.resolve.noExternal', () => {
@@ -531,8 +533,8 @@ describe('mergeConfig', () => {
     }
 
     // merging either ways, `resolve.noExternal: true` should take highest priority
-    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
-    expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
+    expect(mergeConfig(baseConfig, newConfig)).toStrictEqual(mergedConfig)
+    expect(mergeConfig(newConfig, baseConfig)).toStrictEqual(mergedConfig)
   })
 
   test('merge ssr.noExternal and environments.ssr.resolve.noExternal', async () => {
@@ -551,7 +553,7 @@ describe('mergeConfig', () => {
       },
       'serve',
     )
-    expect(oldTrue.environments.ssr.resolve.noExternal).toEqual(true)
+    expect(oldTrue.environments.ssr.resolve.noExternal).toBe(true)
 
     const newTrue = await resolveConfig(
       {
@@ -568,7 +570,7 @@ describe('mergeConfig', () => {
       },
       'serve',
     )
-    expect(newTrue.environments.ssr.resolve.noExternal).toEqual(true)
+    expect(newTrue.environments.ssr.resolve.noExternal).toBe(true)
   })
 
   test('handles server.ws.server', () => {
@@ -600,7 +602,7 @@ describe('mergeConfig', () => {
       },
     }
 
-    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+    expect(mergeConfig(baseConfig, newConfig)).toStrictEqual(mergedConfig)
   })
 
   test('throws error with functions', () => {
@@ -1056,6 +1058,40 @@ describe('mergeConfig', () => {
     expect(mergedConfig.server.hmr.port).toBe(3002)
   })
 
+  test('mergeConfig does not mutate `server.hmr` defaults', () => {
+    const defaults = {
+      server: {
+        hmr: {
+          host: 'localhost',
+        },
+      },
+    }
+
+    mergeConfig(defaults, {
+      server: {
+        hmr: {
+          port: 3000,
+        },
+      },
+    })
+
+    expect(defaults.server.hmr).toStrictEqual({ host: 'localhost' })
+    expect(Object.hasOwn(defaults.server.hmr, 'port')).toBe(false)
+
+    const secondMerge = mergeConfig(defaults, {
+      server: {
+        hmr: {
+          protocol: 'wss',
+        },
+      },
+    })
+
+    expect(secondMerge.server.ws).toStrictEqual({
+      host: 'localhost',
+      protocol: 'wss',
+    })
+  })
+
   test('`server.hmr.overlay` is not mapped to `server.ws.overlay`', () => {
     const config = mergeConfig(
       {},
@@ -1071,6 +1107,31 @@ describe('mergeConfig', () => {
     expect(config.server.hmr.overlay).toBe(false)
     // overlay should not be synced to ws
     expect(config.server.ws?.overlay).toBeUndefined()
+  })
+
+  test('`mergeConfig` does not crash when `server.ws` is false and `server.hmr` is merged', () => {
+    const baseConfig = defineConfig({
+      server: {
+        ws: false,
+        hmr: {
+          host: 'localhost',
+        },
+      },
+    })
+
+    const newConfig = defineConfig({
+      server: {
+        hmr: {
+          port: 5173,
+        },
+      },
+    })
+
+    const mergedConfig = mergeConfig(baseConfig, newConfig)
+
+    expect(mergedConfig.server.ws).toBe(false)
+    expect(mergedConfig.server.hmr).toBeTypeOf('object')
+    expect(mergedConfig.server.hmr).not.toBeNull()
   })
 
   test('resolveConfig properly syncs hmr and ws', async () => {
@@ -1217,9 +1278,13 @@ describe('resolveEnvPrefix', () => {
 
   test(`throw error if envPrefix contains ''`, () => {
     let config: UserConfig = { envPrefix: '' }
-    expect(() => resolveEnvPrefix(config)).toThrow()
+    expect(() => resolveEnvPrefix(config)).toThrow(
+      'could lead unexpected exposure of sensitive information',
+    )
     config = { envPrefix: ['', 'CUSTOM_'] }
-    expect(() => resolveEnvPrefix(config)).toThrow()
+    expect(() => resolveEnvPrefix(config)).toThrow(
+      'could lead unexpected exposure of sensitive information',
+    )
   })
 
   test(`show a warning message if envPrefix contains a whitespace`, () => {
@@ -1373,12 +1438,12 @@ describe('resolveConfig', () => {
     ).toBeUndefined()
   })
 
-  test('resolveConfig with root path including "#" and "?" and "*" should warn ', async () => {
+  test('resolveConfig with root path including "#" and "?" and "*" should warn', async () => {
     expect.assertions(1)
 
     const logger = createLogger('info')
     logger.warn = (str) => {
-      expect(str).to.include(
+      expect(str).toContain(
         'Consider renaming the directory without the characters',
       )
     }
@@ -1448,6 +1513,30 @@ describe('resolveConfig', () => {
     expect(config.environments.ssr.build.rolldownOptions.input).toBeUndefined()
   })
 
+  test('top-level input applies to the SSR environment when build.ssr is true in build', async () => {
+    const config = await resolveConfig(
+      {
+        input: 'src/entry-server.ts',
+        build: { ssr: true },
+      },
+      'build',
+    )
+
+    expect(config.environments.ssr.input).toBe('src/entry-server.ts')
+  })
+
+  test('top-level input does not apply to the SSR environment when build.ssr is true in dev', async () => {
+    const config = await resolveConfig(
+      {
+        input: 'src/entry-server.ts',
+        build: { ssr: true },
+      },
+      'serve',
+    )
+
+    expect(config.environments.ssr.input).toBeUndefined()
+  })
+
   test('per-environment input overrides the top-level value', async () => {
     const config = await resolveConfig(
       {
@@ -1469,7 +1558,10 @@ describe('resolveConfig', () => {
       'serve',
     )
 
-    expect(config.environments.client.input).toEqual(['src/a.ts', 'src/b.ts'])
+    expect(config.environments.client.input).toStrictEqual([
+      'src/a.ts',
+      'src/b.ts',
+    ])
   })
 
   test('keeps record input relative to the root', async () => {
@@ -1478,62 +1570,26 @@ describe('resolveConfig', () => {
       'serve',
     )
 
-    expect(config.environments.client.input).toEqual({
+    expect(config.environments.client.input).toStrictEqual({
       main: 'src/a.ts',
       admin: 'src/b.ts',
     })
   })
 
-  test('reserves glob characters in input', async () => {
-    const cases: { name: string; input: UserConfig['input'] }[] = [
-      { name: 'wildcard', input: 'src/*.ts' },
-      { name: 'single char', input: 'src/page?.ts' },
-      { name: 'character class', input: 'src/[id].ts' },
-      { name: 'brace expansion', input: 'src/{a,b}.ts' },
-      { name: 'extglob group', input: 'src/?(group).ts' },
-      { name: 'negation', input: 'src/!(main).ts' },
-      { name: 'extglob prefix +', input: 'src/+(page).ts' },
-      { name: 'extglob prefix @', input: 'src/@(page).ts' },
-      { name: 'array element', input: ['src/main.ts', 'src/*.ts'] },
-      { name: 'record', input: { main: 'src/*.ts' } },
-    ]
+  test('allows glob characters in input', async () => {
+    const input = 'src/*.ts'
 
-    for (const { name, input } of cases) {
-      await expect(resolveConfig({ input }, 'serve'), name).rejects.toThrow(
-        /`input` cannot contain glob characters/,
-      )
-    }
+    await expect(resolveConfig({ input }, 'serve')).resolves.toMatchObject({
+      input,
+    })
   })
 
-  test('support escaped input', async () => {
-    const cases: {
-      name: string
-      input: UserConfig['input']
-      expected: UserConfig['input']
-    }[] = [
-      {
-        name: 'glob',
-        input: 'src/\\*.ts',
-        expected: 'src/*.ts',
-      },
-      {
-        name: 'array element',
-        input: ['src/\\*.ts'],
-        expected: ['src/*.ts'],
-      },
-      {
-        name: 'record',
-        input: { main: 'src/\\*.ts' },
-        expected: { main: 'src/*.ts' },
-      },
-    ]
+  test('preserves input escaping', async () => {
+    const inputs = ['src/\\*.ts', 'C:\\root\\@src\\index.html']
 
-    for (const { name, input, expected } of cases) {
-      await expect(
-        resolveConfig({ input }, 'serve'),
-        name,
-      ).resolves.toMatchObject({
-        input: expected,
+    for (const input of inputs) {
+      await expect(resolveConfig({ input }, 'serve')).resolves.toMatchObject({
+        input,
       })
     }
   })
@@ -1984,6 +2040,34 @@ describe('loadConfigFromFile', () => {
       expect(await loadWithWarnings('json-ok')).toHaveLength(0)
     })
 
+    // uses a `.ts` config with TypeScript-only syntax; skipped on Node
+    // versions without type stripping support
+    test.skipIf(!supportsTypeStripping)(
+      'does not warn on type-only JSON imports',
+      async () => {
+        expect(
+          await loadWithWarnings('json-type-only', 'vite.config.ts'),
+        ).toHaveLength(0)
+      },
+    )
+
+    test.skipIf(!supportsTypeStripping)(
+      'warns on an inline type-only specifier from JSON without attributes',
+      async () => {
+        const messages = await loadWithWarnings(
+          'json-inline-type',
+          'vite.config.ts',
+        )
+        expect(messages).toMatchInlineSnapshot(`
+          [
+            "(!) Your Vite config uses features that are unsupported by \`configLoader: 'native'\`, which is planned to become the default in a future major version of Vite:
+            - JSON import "./data.json" without import attributes (vite.config.ts:1:38). Add \`with { type: 'json' }\`
+          Set \`VITE_CONFIG_NATIVE_IGNORE_WARNING=true\` to suppress this warning.",
+          ]
+        `)
+      },
+    )
+
     test('warns on named import from JSON module', async () => {
       const messages = await loadWithWarnings('json-named-import')
       expect(messages).toMatchInlineSnapshot(`
@@ -2087,7 +2171,7 @@ describe('loadConfigFromFile', () => {
         root,
         'silent',
       )
-      expect(result).toBeTruthy()
+      expect(result).not.toBeNull()
       expect(result?.config).toStrictEqual({ define: { foo: 1 } })
       expect(path.normalize(result!.path)).toBe(
         path.resolve(root, writtenConfig!),
@@ -2278,7 +2362,7 @@ describe('loadConfigFromFile', () => {
           "value": "works",
         }
       `)
-      expect(result.dependencies.length).toBe(0)
+      expect(result.dependencies).toHaveLength(0)
     })
   })
 
@@ -2356,7 +2440,7 @@ describe('resolveServerOptions', () => {
       { allowedHosts: [] },
       logger,
     )
-    expect(resolved.allowedHosts).toEqual(['example.com'])
+    expect(resolved.allowedHosts).toStrictEqual(['example.com'])
   })
 
   test('adds multiple hosts from __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS', async () => {
@@ -2367,7 +2451,7 @@ describe('resolveServerOptions', () => {
       { allowedHosts: [] },
       logger,
     )
-    expect(resolved.allowedHosts).toEqual([
+    expect(resolved.allowedHosts).toStrictEqual([
       'example.com',
       'test.com',
       'dev.example.org',
@@ -2382,7 +2466,7 @@ describe('resolveServerOptions', () => {
       { allowedHosts: [] },
       logger,
     )
-    expect(resolved.allowedHosts).toEqual([
+    expect(resolved.allowedHosts).toStrictEqual([
       'example.com',
       'test.com',
       'dev.example.org',
@@ -2397,7 +2481,7 @@ describe('resolveServerOptions', () => {
       { allowedHosts: [] },
       logger,
     )
-    expect(resolved.allowedHosts).toEqual(['example.com', 'test.com'])
+    expect(resolved.allowedHosts).toStrictEqual(['example.com', 'test.com'])
   })
 
   test('appends to existing allowedHosts', async () => {
@@ -2407,7 +2491,7 @@ describe('resolveServerOptions', () => {
       { allowedHosts: ['existing.com'] },
       logger,
     )
-    expect(resolved.allowedHosts).toEqual([
+    expect(resolved.allowedHosts).toStrictEqual([
       'existing.com',
       'new.com',
       'another.com',
@@ -2433,7 +2517,7 @@ describe('resolveServerOptions', () => {
         { allowedHosts: [] },
         logger,
       )
-      expect(resolved.allowedHosts).toEqual([])
+      expect(resolved.allowedHosts).toStrictEqual([])
       expect(warnFn).toHaveBeenCalledWith(
         expect.stringContaining(
           'Skipping additional allowed hosts from environment variable due to reserved characters',

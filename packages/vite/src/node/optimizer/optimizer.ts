@@ -58,6 +58,7 @@ export function createDepsOptimizer(
 
   const depsOptimizer: DepsOptimizer = {
     init,
+    initState: 'idle',
     metadata,
     registerMissingImport,
     run: () => debouncedProcessing(0),
@@ -147,17 +148,24 @@ export function createDepsOptimizer(
 
   async function close() {
     closed = true
+
+    // Ensure that a rerun will not be issued
+    if (debounceProcessingHandle) clearTimeout(debounceProcessingHandle)
+    debounceProcessingHandle = undefined
+
     await Promise.allSettled([
       discover?.cancel(),
       depsOptimizer.scanProcessing,
       optimizationResult?.cancel(),
     ])
+
+    depOptimizationProcessing.resolve()
+    resolveEnqueuedProcessingPromises()
   }
 
-  let initState: 'idle' | 'initializing' | 'initialized' = 'idle'
   async function init() {
-    if (initState !== 'idle') return
-    initState = 'initializing'
+    if (depsOptimizer.initState !== 'idle') return
+    depsOptimizer.initState = 'initializing'
 
     const cachedMetadata = await loadCachedDepOptimizationMetadata(environment)
 
@@ -283,7 +291,7 @@ export function createDepsOptimizer(
         })
       }
     }
-    initState = 'initialized'
+    depsOptimizer.initState = 'initialized'
   }
 
   function startNextDiscoveredBatch() {
@@ -337,11 +345,8 @@ export function createDepsOptimizer(
 
     if (closed) {
       currentlyProcessing = false
-      depOptimizationProcessing.resolve()
-      resolveEnqueuedProcessingPromises()
       return
     }
-
     currentlyProcessing = true
 
     try {
@@ -360,7 +365,6 @@ export function createDepsOptimizer(
       if (closed) {
         currentlyProcessing = false
         processingResult.cancel()
-        resolveEnqueuedProcessingPromises()
         return
       }
 
@@ -583,7 +587,7 @@ export function createDepsOptimizer(
     // A module can be transformed between `createServer()` and `server.listen()`,
     // which discovers a dep before `init()` runs. Starting a run here would race
     // with `init()` resetting the metadata and crash in `commitProcessing`.
-    if (initState === 'initialized' && !waitingForCrawlEnd) {
+    if (depsOptimizer.initState === 'initialized' && !waitingForCrawlEnd) {
       // Debounced rerun, let other missing dependencies be discovered before
       // the running next optimizeDeps
       debouncedProcessing()
@@ -753,8 +757,9 @@ export function createDepsOptimizer(
 export function createExplicitDepsOptimizer(
   environment: DevEnvironment,
 ): DepsOptimizer {
-  const depsOptimizer = {
+  const depsOptimizer: DepsOptimizer = {
     metadata: initDepsOptimizerMetadata(environment),
+    initState: 'idle',
     isOptimizedDepFile: createIsOptimizedDepFile(environment),
     isOptimizedDepUrl: createIsOptimizedDepUrl(environment),
     getOptimizedDepId: (depInfo: OptimizedDepInfo) =>
@@ -774,12 +779,12 @@ export function createExplicitDepsOptimizer(
     options: environment.config.optimizeDeps,
   }
 
-  let inited = false
   async function init() {
-    if (inited) return
-    inited = true
+    if (depsOptimizer.initState !== 'idle') return
+    depsOptimizer.initState = 'initializing'
 
     depsOptimizer.metadata = await optimizeExplicitEnvironmentDeps(environment)
+    depsOptimizer.initState = 'initialized'
   }
 
   return depsOptimizer

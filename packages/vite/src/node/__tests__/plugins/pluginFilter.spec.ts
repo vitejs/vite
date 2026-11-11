@@ -123,7 +123,7 @@ describe('createIdFilter', () => {
         expect(idFilter).toBeUndefined()
         return
       }
-      expect(idFilter).not.toBeUndefined()
+      expect(idFilter).toBeDefined()
 
       for (const testCase of filter.cases) {
         const { id, expected } = testCase
@@ -217,7 +217,7 @@ describe('createCodeFilter', () => {
         expect(codeFilter).toBeUndefined()
         return
       }
-      expect(codeFilter).not.toBeUndefined()
+      expect(codeFilter).toBeDefined()
 
       for (const testCase of filter.cases) {
         const { code, expected } = testCase
@@ -329,7 +329,7 @@ describe('createFilterForTransform', () => {
         expect(filterForTransform).toBeUndefined()
         return
       }
-      expect(filterForTransform).not.toBeUndefined()
+      expect(filterForTransform).toBeDefined()
 
       for (const testCase of filter.cases) {
         const { id, code, moduleType, expected } = testCase
