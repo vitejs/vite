@@ -142,7 +142,15 @@ const processNodeUrl = (
   // prefix with base (dev only, base is never relative)
   const replacer = (url: string) => {
     if (
-      (url[0] === '/' && url[1] !== '/') ||
+      // Only prefix `base` to root-absolute URLs that Vite actually serves:
+      // public files or JS/CSS requests. Unknown paths such as
+      // `/manifest.json` are left untouched so the dev output matches the
+      // build output (#10217).
+      (url[0] === '/' &&
+        url[1] !== '/' &&
+        (checkPublicFile(url, config) ||
+          isJSRequest(url) ||
+          isCSSRequest(url))) ||
       // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
       // path will add `/a/` prefix, it will caused 404.
       //
