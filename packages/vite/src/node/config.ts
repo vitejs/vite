@@ -679,7 +679,13 @@ export interface ResolvedWorkerOptions {
 
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
-  /** @experimental */
+  /**
+   * The loader to use when loading the config file.
+   *
+   * `runner` is deprecated and will be removed in the next major version.
+   *
+   * @default 'bundle'
+   */
   configLoader?: 'bundle' | 'runner' | 'native'
   /** @deprecated */
   envFile?: false
@@ -1479,9 +1485,9 @@ export async function resolveConfig(
   defaultNodeEnv = 'development',
   isPreview = false,
   /** @internal */
-  patchConfig: ((config: ResolvedConfig) => void) | undefined = undefined,
+  patchConfig?: (config: ResolvedConfig) => void,
   /** @internal */
-  patchPlugins: ((resolvedPlugins: Plugin[]) => void) | undefined = undefined,
+  patchPlugins?: (resolvedPlugins: Plugin[]) => void,
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   config.build ??= {}
@@ -1740,6 +1746,10 @@ export async function resolveConfig(
       ...defaultEnvironmentOptions.build,
       createEnvironment: undefined,
     },
+  }
+
+  if (isBuild && config.build?.ssr === true) {
+    config.environments.ssr.input ??= config.input
   }
 
   for (const name of Object.keys(config.environments)) {
@@ -2435,6 +2445,13 @@ export async function loadConfigFromFile(
   ) {
     throw new Error(
       `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle', 'runner', and 'native'.`,
+    )
+  }
+  if (configLoader === 'runner') {
+    createLogger(logLevel, { customLogger }).warn(
+      colors.yellow(
+        `The \`runner\` config loader is deprecated and will be removed in Vite 9. Use \`bundle\` or \`native\` instead.`,
+      ),
     )
   }
 

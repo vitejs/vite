@@ -1,13 +1,13 @@
 import path from 'node:path'
 import type { ResolvedServerUrls } from 'vite'
-import { afterEach, describe, expect, test, vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { createServer, resolveConfig } from '..'
-import type { ViteDevServer } from '..'
 import { promiseWithResolvers } from '../../shared/utils'
 import { createLogger } from '../logger'
 import { _createServer } from '../server'
 import { DevEnvironment } from '../server/environment'
 import { normalizePath } from '../utils'
+import { createTestServer } from './testUtils'
 
 describe('resolveBuildEnvironmentOptions in dev', () => {
   test('build.rolldownOptions should not have input in lib', async () => {
@@ -27,12 +27,6 @@ describe('resolveBuildEnvironmentOptions in dev', () => {
 })
 
 describe('the dev server', () => {
-  let server: ViteDevServer
-
-  afterEach(async () => {
-    await server?.close()
-  })
-
   test('releases previous environments after initialization', async () => {
     const previousServer = await createServer({
       configFile: false,
@@ -69,7 +63,7 @@ describe('the dev server', () => {
     const clientEntry = normalizePath(path.join(root, 'client-entry.js'))
     const ssrEntry = normalizePath(path.join(root, 'ssr-entry.js'))
 
-    server = await createServer({
+    const server = await createTestServer({
       configFile: false,
       root,
       input: 'virtual:client-entry',
@@ -101,7 +95,7 @@ describe('the dev server', () => {
     const root = path.join(import.meta.dirname, 'fixtures', 'input-option')
     const externalEntry = normalizePath(path.join(root, 'external-entry.js'))
 
-    server = await createServer({
+    const server = await createTestServer({
       configFile: false,
       root,
       input: 'virtual:external-entry',
@@ -127,7 +121,7 @@ describe('the dev server', () => {
     const entry = normalizePath(path.join(root, 'unresolved-entry.js'))
     const unresolvedImport = '/safe-module-path-unresolved'
 
-    server = await createServer({
+    const server = await createTestServer({
       configFile: false,
       root,
       optimizeDeps: { noDiscovery: true },
@@ -156,9 +150,9 @@ describe('the dev server', () => {
     const clientEntry = normalizePath(path.join(root, 'client-index.html'))
     const resolvedEnvironments = new Set<string>()
     const logger = createLogger('silent')
-    logger.warn = vi.fn()
+    vi.spyOn(logger, 'warn').mockImplementation(() => {})
 
-    server = await createServer({
+    const server = await createTestServer({
       configFile: false,
       root,
       customLogger: logger,
@@ -187,7 +181,7 @@ describe('the dev server', () => {
   })
 
   test('does not ignore buildStart errors while resolving fallback inputs', async () => {
-    server = await createServer({
+    const server = await createTestServer({
       configFile: false,
       root: path.join(import.meta.dirname, 'fixtures', 'input-option'),
       logLevel: 'silent',
@@ -219,7 +213,7 @@ describe('the dev server', () => {
   test("logs watcher 'error' events during environment initialization", async () => {
     const error = new Error('watch failed')
     const logger = createLogger('error')
-    logger.error = vi.fn()
+    vi.spyOn(logger, 'error').mockImplementation(() => {})
 
     class WatcherErrorEnvironment extends DevEnvironment {
       override async init(
@@ -230,7 +224,7 @@ describe('the dev server', () => {
       }
     }
 
-    server = await createServer({
+    await createTestServer({
       configFile: false,
       root: import.meta.dirname,
       customLogger: logger,
@@ -260,7 +254,7 @@ describe('the dev server', () => {
 
     const { promise, resolve } =
       promiseWithResolvers<ResolvedServerUrls | null>()
-    server = await createServer({
+    const server = await createTestServer({
       root: import.meta.dirname,
       logLevel: 'error',
       // `server.listen()` would otherwise start a dep scan that crawls every
@@ -309,7 +303,7 @@ describe('the dev server', () => {
     const enteredC = promiseWithResolvers<void>()
     const releaseC = promiseWithResolvers<void>()
 
-    server = await createServer({
+    const server = await createTestServer({
       configFile: false,
       root: import.meta.dirname,
       logLevel: 'error',
@@ -386,7 +380,7 @@ describe('the dev server', () => {
     const enteredFollowUp = promiseWithResolvers<void>()
     const releaseFollowUp = promiseWithResolvers<void>()
 
-    server = await createServer({
+    const server = await createTestServer({
       configFile: false,
       root: import.meta.dirname,
       logLevel: 'error',
@@ -431,7 +425,7 @@ describe('the dev server', () => {
     let configureCalls = 0
     const forced: boolean[] = []
 
-    server = await createServer({
+    const server = await createTestServer({
       configFile: false,
       root: import.meta.dirname,
       logLevel: 'error',
@@ -468,7 +462,7 @@ describe('the dev server', () => {
     const enteredRestart = promiseWithResolvers<void>()
     const releaseRestart = promiseWithResolvers<void>()
 
-    server = await createServer({
+    const server = await createTestServer({
       configFile: false,
       root: import.meta.dirname,
       logLevel: 'error',
