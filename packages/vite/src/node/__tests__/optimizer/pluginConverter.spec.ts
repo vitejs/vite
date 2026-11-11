@@ -25,7 +25,7 @@ describe('convertEsbuildPluginToRolldownPlugin', () => {
     await plugin.options.call({} as any, { plugins: [], platform: 'browser' })
     await plugin.generateBundle.call({} as any, {} as any, {} as any, true)
 
-    expect(buildResult).toEqual({
+    expect(buildResult).toStrictEqual({
       outputFiles: undefined,
       metafile: undefined,
       mangleCache: undefined,

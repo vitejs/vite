@@ -35,7 +35,7 @@ if (!isBuild) {
       // if the first bundle is not ready and a fallback page is shown when the client connects.
       expect(browserLogs.length).toBeOneOf([5, 7])
     } else {
-      expect(browserLogs.length).toBe(5)
+      expect(browserLogs).toHaveLength(5)
     }
     expect(browserLogs.some((msg) => msg.includes('connected'))).toBe(true)
     browserLogs.length = 0
@@ -559,7 +559,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               'reloaded >>> Y',
               hotUpdatedLog(callbackFile),
             ])
@@ -574,7 +574,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               'reloaded (2) >>> Z',
               hotUpdatedLog(callbackFile),
             ])
@@ -595,7 +595,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               `<<<<<< A0 B0 D0 ; ${dep}`,
               hotUpdatedLog(file),
             ])
@@ -610,7 +610,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               `<<<<<< A1 B1 D1 ; ${dep}`,
               hotUpdatedLog(file),
             ])
@@ -634,7 +634,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               `<<<<<< A2 B2 D2 ; ${dep}`,
               hotUpdatedLog(file),
             ])
@@ -750,7 +750,7 @@ if (!isBuild) {
         },
         HOT_UPDATED,
         (logs) => {
-          expect(logs).toEqual([
+          expect(logs).toStrictEqual([
             '>>> side FX !!',
             hotUpdatedLog(`${testDir}/${file}`),
           ])
@@ -782,7 +782,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual(['-> unused <-', hotUpdatedLog(file)])
+            expect(logs).toStrictEqual(['-> unused <-', hotUpdatedLog(file)])
           },
         )
       })
@@ -843,7 +843,7 @@ if (!isBuild) {
             },
             HOT_UPDATED,
             (logs) => {
-              expect(logs).toEqual([
+              expect(logs).toStrictEqual([
                 'all >>>>>> a1, b1, c1',
                 hotUpdatedLog(file),
               ])
@@ -856,7 +856,7 @@ if (!isBuild) {
             },
             HOT_UPDATED,
             (logs) => {
-              expect(logs).toEqual([
+              expect(logs).toStrictEqual([
                 'all >>>>>> a2, b2, c2',
                 hotUpdatedLog(file),
               ])
@@ -892,9 +892,13 @@ if (!isBuild) {
         })
       }
 
-      describe('import * from ...', () => testStarExports('star-imports'))
+      describe('import * from ...', () => {
+        testStarExports('star-imports')
+      })
 
-      describe('dynamic import(...)', () => testStarExports('dynamic-imports'))
+      describe('dynamic import(...)', () => {
+        testStarExports('dynamic-imports')
+      })
     })
   })
 
@@ -1035,6 +1039,7 @@ if (!isBuild) {
           () => removeFile(childFile),
           `${childFile} is disposed`,
         ),
+        // oxlint-disable-next-line vitest/require-awaited-expect-poll -- https://github.com/oxc-project/oxc/issues/29173
         expect
           .poll(() => page.textContent('.file-delete-restore'))
           .toMatch('parent:not-child'),

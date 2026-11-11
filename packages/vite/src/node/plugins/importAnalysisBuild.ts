@@ -1,7 +1,7 @@
 import path from 'node:path'
 import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
-import type { ImportSpecifier } from 'es-module-lexer'
+import type { DynamicImport } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import type { RenderedChunk, SourceMap } from 'rolldown'
@@ -129,7 +129,7 @@ export const preloadMethod = `__vitePreload`
 export const preloadMarker = `__VITE_PRELOAD__`
 
 export const preloadHelperId = '\0vite/preload-helper.js'
-const preloadMarkerRE = new RegExp(preloadMarker, 'g')
+const preloadMarkerRE = /__VITE_PRELOAD__(?:[\da-f]{32})?/g
 
 export function isCssPreloadUrl(url: URL): boolean {
   return url.pathname.endsWith('.css')
@@ -140,10 +140,12 @@ function toRelativePath(filename: string, importer: string) {
   return relPath[0] === '.' ? relPath : `./${relPath}`
 }
 
-function findPreloadMarker(str: string, pos: number = 0): number {
+export function findPreloadMarker(
+  str: string,
+  pos: number = 0,
+): RegExpExecArray | null {
   preloadMarkerRE.lastIndex = pos
-  const result = preloadMarkerRE.exec(str)
-  return result?.index ?? -1
+  return preloadMarkerRE.exec(str)
 }
 
 /**
@@ -162,7 +164,7 @@ function findPreloadMarker(str: string, pos: number = 0): number {
  */
 export function matchImportsToPreloadMarkers(
   code: string,
-  imports: readonly ImportSpecifier[],
+  imports: readonly DynamicImport[],
 ): number[] {
   const importMarkerPos = Array.from<number>({ length: imports.length }).fill(
     -1,
@@ -172,16 +174,14 @@ export function matchImportsToPreloadMarkers(
   const openImports: number[] = []
   let nextImport = 0
   for (
-    let markerStartPos = findPreloadMarker(code, imports[0].e);
-    markerStartPos !== -1;
-    markerStartPos = findPreloadMarker(
-      code,
-      markerStartPos + preloadMarker.length,
-    )
+    let marker = findPreloadMarker(code, imports[0].end);
+    marker;
+    marker = findPreloadMarker(code, marker.index + marker[0].length)
   ) {
+    const markerStartPos = marker.index
     while (
       nextImport < imports.length &&
-      imports[nextImport].e <= markerStartPos
+      imports[nextImport].end <= markerStartPos
     ) {
       openImports.push(nextImport++)
     }
@@ -191,7 +191,7 @@ export function matchImportsToPreloadMarkers(
   }
   // #3051: a lone import whose marker isn't placed after it pairs with the only marker
   if (imports.length === 1 && importMarkerPos[0] === -1) {
-    importMarkerPos[0] = findPreloadMarker(code)
+    importMarkerPos[0] = findPreloadMarker(code)?.index ?? -1
   }
 
   return importMarkerPos
@@ -529,7 +529,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         return
       }
 
-      await init
+      await init()
 
       const importMap = getImportMap(bundle, this.environment.config)
       if (importMap) {
@@ -556,9 +556,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             const chunk = bundle[file]
             if (chunk.type === 'chunk' && chunk.code.includes('import')) {
               const code = chunk.code
-              let imports!: ImportSpecifier[]
+              let imports!: DynamicImport[]
               try {
-                imports = parseImports(code)[0].filter((i) => i.d > -1)
+                imports = parseImports(code)[0].filter(
+                  (i): i is DynamicImport => i.type === 'dynamic',
+                )
               } catch (e: any) {
                 const loc = numberToPos(code, e.idx)
                 this.error({
@@ -574,13 +576,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
               for (const imp of imports) {
                 const {
-                  n: name,
-                  s: start,
-                  e: end,
-                  ss: expStart,
-                  se: expEnd,
+                  specifier: name,
+                  start,
+                  end,
+                  importStart: expStart,
+                  importEnd: expEnd,
+                  glob,
                 } = imp
-                let url = name
+                let url = glob ? undefined : name
                 if (!url) {
                   const rawUrl = code.slice(start, end)
                   if (
@@ -637,9 +640,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         // dynamic import to constant json may get inlined.
         if (chunk.type === 'chunk' && chunk.code.includes(preloadMarker)) {
           const code = chunk.code
-          let imports!: ImportSpecifier[]
+          let imports!: DynamicImport[]
           try {
-            imports = parseImports(code)[0].filter((i) => i.d > -1)
+            imports = parseImports(code)[0].filter(
+              (i): i is DynamicImport => i.type === 'dynamic',
+            )
           } catch (e: any) {
             const loc = numberToPos(code, e.idx)
             this.error({
@@ -673,16 +678,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             const importMarkerPos = matchImportsToPreloadMarkers(code, imports)
 
             for (let index = 0; index < imports.length; index++) {
-              // To handle escape sequences in specifier strings, the .n field will be provided where possible.
+              // Use the decoded specifier to handle escape sequences.
               const {
-                n: name,
-                s: start,
-                e: end,
-                ss: expStart,
-                se: expEnd,
+                specifier: name,
+                start,
+                end,
+                importStart: expStart,
+                importEnd: expEnd,
+                glob,
               } = imports[index]
               // check the chunk being imported
-              let url = name
+              let url = glob ? undefined : name
               if (!url) {
                 const rawUrl = code.slice(start, end)
                 if (
@@ -743,6 +749,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
               const markerStartPos = importMarkerPos[index]
 
               if (markerStartPos > 0) {
+                const marker = findPreloadMarker(code, markerStartPos)!
                 // the dep list includes the main chunk, so only need to reload when there are actual other deps.
                 let depsArray =
                   deps.size > 1 ||
@@ -810,7 +817,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
                 s.update(
                   markerStartPos,
-                  markerStartPos + preloadMarker.length,
+                  markerStartPos + marker[0].length,
                   renderedDeps.length > 0
                     ? `__vite__mapDeps([${renderedDeps.join(',')}])`
                     : `[]`,
@@ -839,19 +846,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless
-          let markerStartPos = findPreloadMarker(code)
-          while (markerStartPos >= 0) {
+          let marker = findPreloadMarker(code)
+          while (marker) {
+            const markerStartPos = marker.index
             if (!rewroteMarkerStartPos.has(markerStartPos)) {
               s.update(
                 markerStartPos,
-                markerStartPos + preloadMarker.length,
+                markerStartPos + marker[0].length,
                 'void 0',
               )
             }
-            markerStartPos = findPreloadMarker(
-              code,
-              markerStartPos + preloadMarker.length,
-            )
+            marker = findPreloadMarker(code, markerStartPos + marker[0].length)
           }
 
           if (s.hasChanged()) {

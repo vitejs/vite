@@ -22,7 +22,7 @@ function fetchHtml(p: string) {
 
 function testPage(isNested: boolean) {
   test('pre transform', async () => {
-    expect(await page.$('head meta[name=viewport]')).toBeTruthy()
+    expect(await page.$('head meta[name=viewport]')).not.toBeNull()
   })
 
   test('string transform', async () => {
@@ -105,21 +105,17 @@ describe('main', () => {
 
   test('external paths works with vite-ignore attribute', async () => {
     expect(await page.textContent('.external-path')).toBe('works')
-    expect(await page.getAttribute('.external-path', 'vite-ignore')).toBe(null)
+    expect(await page.getAttribute('.external-path', 'vite-ignore')).toBeNull()
     expect(await getColor('.external-path')).toBe('red')
     if (isServe) {
-      expect(serverLogs).not.toEqual(
-        expect.arrayContaining([
-          expect.stringMatching('Failed to load url /external-path.js'),
-        ]),
+      expect(serverLogs).not.toContainEqual(
+        expect.stringMatching('Failed to load url /external-path.js'),
       )
     } else {
-      expect(serverLogs).not.toEqual(
-        expect.arrayContaining([
-          expect.stringMatching(
-            /"\/external-path\.js".*can't be bundled without type="module" attribute/,
-          ),
-        ]),
+      expect(serverLogs).not.toContainEqual(
+        expect.stringMatching(
+          /"\/external-path\.js".*can't be bundled without type="module" attribute/,
+        ),
       )
     }
   })
@@ -130,8 +126,8 @@ describe('main', () => {
       expect(await page.textContent('.external-path-by-rollup-options')).toBe(
         'works',
       )
-      expect(serverLogs).not.toEqual(
-        expect.arrayContaining([expect.stringContaining('Could not load')]),
+      expect(serverLogs).not.toContainEqual(
+        expect.stringContaining('Could not load'),
       )
     },
   )
@@ -160,7 +156,7 @@ describe.runIf(isBuild)('build', () => {
     })
 
     test('script is async', async () => {
-      expect(await page.$('head script[type=module][async]')).toBeTruthy()
+      expect(await page.$('head script[type=module][async]')).not.toBeNull()
       expect(await page.$('head script[type=module]:not([async])')).toBeNull()
     })
   })
@@ -172,7 +168,9 @@ describe.runIf(isBuild)('build', () => {
 
     test('script is mixed', async () => {
       expect(await page.$('head script[type=module][async]')).toBeNull()
-      expect(await page.$('head script[type=module]:not([async])')).toBeTruthy()
+      expect(
+        await page.$('head script[type=module]:not([async])'),
+      ).not.toBeNull()
     })
   })
 
@@ -291,7 +289,7 @@ describe.runIf(!isBundled)('invalid', () => {
     expect(response.status()).toBe(500)
 
     const errorOverlay = await page.waitForSelector('vite-error-overlay')
-    expect(errorOverlay).toBeTruthy()
+    expect(errorOverlay).toBeDefined()
 
     const message = await errorOverlay.$$eval('.message-body', (m) => {
       return m[0].innerHTML
@@ -302,21 +300,21 @@ describe.runIf(!isBundled)('invalid', () => {
   test('should close overlay when clicked away', async () => {
     await page.goto(viteTestUrl + '/invalidClick.html')
     const errorOverlay = await page.waitForSelector('vite-error-overlay')
-    expect(errorOverlay).toBeTruthy()
+    expect(errorOverlay).not.toBeNull()
 
     await page.click('html')
     const isVisibleOverlay = await errorOverlay.isVisible()
-    expect(isVisibleOverlay).toBeFalsy()
+    expect(isVisibleOverlay).toBe(false)
   })
 
   test('should close overlay when escape key is pressed', async () => {
     await page.goto(viteTestUrl + '/invalidEscape.html')
     const errorOverlay = await page.waitForSelector('vite-error-overlay')
-    expect(errorOverlay).toBeTruthy()
+    expect(errorOverlay).not.toBeNull()
 
     await page.keyboard.press('Escape')
     const isVisibleOverlay = await errorOverlay.isVisible()
-    expect(isVisibleOverlay).toBeFalsy()
+    expect(isVisibleOverlay).toBe(false)
   })
 
   test('stack is updated', async () => {
@@ -351,7 +349,7 @@ describe.runIf(!isBundled)('invalid', () => {
       return content.replace('<div Bad', '<div> Good')
     })
     const content = await page.waitForSelector('text=Good HTML')
-    expect(content).toBeTruthy()
+    expect(content).toBeDefined()
   })
 })
 
@@ -379,7 +377,7 @@ describe('env', () => {
       '{ "foo": "bar" }',
     )
     expect(await page.textContent('.env-define-null-string')).toBe('null')
-    expect(await page.textContent('.env-bar')).toBeTruthy()
+    expect(await page.textContent('.env-bar')).not.toBe('')
     expect(await page.textContent('.env-prod')).toBe(isBuild + '')
     expect(await page.textContent('.env-dev')).toBe(isServe + '')
 
@@ -564,10 +562,8 @@ test.runIf(isServe)(
     expect(await page.textContent('.status')).toContain(
       'Page loaded successfully',
     )
-    expect(serverLogs).not.toEqual(
-      expect.arrayContaining([
-        expect.stringMatching('Internal server error: URI malformed'),
-      ]),
+    expect(serverLogs).not.toContainEqual(
+      expect.stringMatching('Internal server error: URI malformed'),
     )
   },
 )

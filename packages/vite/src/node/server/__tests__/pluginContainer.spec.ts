@@ -20,7 +20,7 @@ describe('plugin container', () => {
           if (id === entryUrl) {
             // The module hasn't been resolved yet, so its info is null.
             const moduleInfo = this.getModuleInfo(entryUrl)
-            expect(moduleInfo).toEqual(null)
+            expect(moduleInfo).toBeNull()
 
             return { id, meta: { x: 1 } }
           }
@@ -55,15 +55,15 @@ describe('plugin container', () => {
         entryUrl,
         false,
       )
-      expect(entryModule.meta).toEqual({ x: 1 })
+      expect(entryModule.meta).toStrictEqual({ x: 1 })
 
       const loadResult: any = await environment.pluginContainer.load(entryUrl)
-      expect(loadResult?.meta).toEqual({ x: 2 })
+      expect(loadResult?.meta).toStrictEqual({ x: 2 })
 
       await environment.pluginContainer.transform(loadResult.code, entryUrl)
       await environment.pluginContainer.close()
 
-      expect(metaArray).toEqual([{ x: 1 }, { x: 2 }, { x: 3 }])
+      expect(metaArray).toStrictEqual([{ x: 1 }, { x: 2 }, { x: 3 }])
     })
 
     it('can pass metadata between plugins', async () => {
@@ -83,7 +83,7 @@ describe('plugin container', () => {
         load(id) {
           if (id === entryUrl) {
             const { meta } = this.getModuleInfo(entryUrl) ?? {}
-            expect(meta).toEqual({ x: 1 })
+            expect(meta).toStrictEqual({ x: 1 })
             return null
           }
         },
@@ -119,7 +119,7 @@ describe('plugin container', () => {
         resolveId(id, importer, opts) {
           if (id === 'foobar') {
             expect(importer).toBe('notreal')
-            expect(opts).toEqual(
+            expect(opts).toStrictEqual(
               expect.objectContaining({
                 custom: { p1: 'success' },
                 isEntry: true,

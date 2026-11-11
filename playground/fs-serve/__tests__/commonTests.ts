@@ -651,13 +651,13 @@ export function tests() {
     test('should not read files inside allowed directories as fetchModule is disabled', async () => {
       const result = await fetchModuleViaWebSocket('root/src/safe.txt?raw')
       expect(result.result).toBeUndefined()
-      expect(result.error).toBeTruthy()
+      expect(result.error).toBeDefined()
     })
 
     test('should not read files outside allowed directories', async () => {
       const result = await fetchModuleViaWebSocket('root/unsafe.txt?raw')
       expect(result.result).toBeUndefined()
-      expect(result.error).toBeTruthy()
+      expect(result.error).toBeDefined()
     })
   })
 
