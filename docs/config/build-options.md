@@ -119,7 +119,7 @@ If you specify `build.lib`, `build.cssCodeSplit` will be `false` as default.
 ## build.cssTarget
 
 - **Type:** `string | string[]`
-- **Default:** the same as [`build.target`](#build-target)
+- **Default:** the same as [`build.target`](#build-target). Server environments use the client environment's `cssTarget` instead, because browsers still load their CSS. To choose a different target, set `build.cssTarget` or `environments.<name>.build.cssTarget`.
 
 This option allows users to set a different browser target for CSS minification from the one used for JavaScript transpilation.
 

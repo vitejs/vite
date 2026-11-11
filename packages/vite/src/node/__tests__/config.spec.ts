@@ -1850,6 +1850,82 @@ test('build and environments.client.build has the same reference', async () => {
   )
 })
 
+test('server environments inherit the client cssTarget unless they set their own', async () => {
+  const resolved = await resolveConfig(
+    {
+      environments: {
+        client: {
+          build: { cssTarget: 'safari14' },
+        },
+        ssr: {
+          build: { target: 'es2022' },
+        },
+        worker: {
+          consumer: 'server',
+          build: { target: 'es2022', cssTarget: 'chrome100' },
+        },
+        hooked: {
+          consumer: 'server',
+          build: { target: 'es2022' },
+        },
+        browserLike: {
+          consumer: 'client',
+          build: { target: 'es2020' },
+        },
+      },
+      plugins: [
+        {
+          name: 'set-css-target',
+          configEnvironment(name) {
+            if (name === 'hooked') return { build: { cssTarget: 'firefox100' } }
+          },
+        },
+      ],
+    },
+    'build',
+  )
+
+  expect(resolved.environments.ssr.build.target).toBe('es2022')
+  expect(resolved.environments.ssr.build.cssTarget).toBe('safari14')
+  expect(resolved.environments.worker.build.cssTarget).toBe('chrome100')
+  expect(resolved.environments.hooked.build.cssTarget).toBe('firefox100')
+  expect(resolved.environments.browserLike.build.cssTarget).toBe('es2020')
+})
+
+test('server environments inherit a client cssTarget derived from the client target', async () => {
+  const resolved = await resolveConfig(
+    {
+      environments: {
+        client: {
+          build: { target: 'es2015' },
+        },
+        ssr: {
+          build: { target: 'node20' },
+        },
+      },
+    },
+    'build',
+  )
+
+  expect(resolved.environments.ssr.build.cssTarget).toBe('es2015')
+})
+
+test('a top-level build.cssTarget applies to server environments', async () => {
+  const resolved = await resolveConfig(
+    {
+      build: { cssTarget: 'chrome90' },
+      environments: {
+        ssr: {
+          build: { target: 'node20' },
+        },
+      },
+    },
+    'build',
+  )
+
+  expect(resolved.environments.ssr.build.cssTarget).toBe('chrome90')
+})
+
 test('preTransformRequests', async () => {
   async function testConfig(inlineConfig: InlineConfig) {
     return Object.fromEntries(
