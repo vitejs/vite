@@ -154,7 +154,7 @@ export function rolldownDepPlugin(
   }
 
   const allExternalTypesReg = new RegExp(
-    `\\.(` + allExternalTypes.join('|') + `)(\\?.*)?$`,
+    `\\.(?:` + allExternalTypes.join('|') + `)(\\?.*)?$`,
   )
 
   function resolveEntry(id: string) {
@@ -227,7 +227,7 @@ export function rolldownDepPlugin(
         cjsPackageCache.clear()
       },
       resolveId: {
-        filter: { id: /^[\w@][^:]/ },
+        filter: { id: /^[#\w@][^:]/ },
         async handler(id, importer, options) {
           const kind = options.kind
 

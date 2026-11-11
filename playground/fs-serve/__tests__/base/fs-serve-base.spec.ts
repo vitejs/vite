@@ -1,1 +1,3 @@
-import '../commonTests'
+import { tests } from '../commonTests'
+
+tests()

@@ -721,11 +721,15 @@ export async function recursiveReaddir(dir: string): Promise<string[]> {
   return files.flat(1)
 }
 
-// `fs.realpathSync.native` resolves differently in Windows network drive,
-// causing file read errors. skip for now.
+// `fs.realpathSync.native` resolves mapped Windows network drives into UNC
+// paths, causing file read errors. so the UNC paths are mapped back into
+// drive letters. `net use` is run lazily when a network path is first
+// resolved to avoid spawning processes for local-drive-only projects.
 // https://github.com/nodejs/node/issues/37737
 export let safeRealpathSync:
   | typeof windowsSafeRealPathSync
+  | typeof windowsLazyRealpathSync
+  | typeof windowsMappedRealpathSync
   | typeof fs.realpathSync.native = isWindows
   ? windowsSafeRealPathSync
   : fs.realpathSync.native
@@ -733,27 +737,56 @@ export let safeRealpathSync:
 // Based on https://github.com/larrybahr/windows-network-drive
 // MIT License, Copyright (c) 2017 Larry Bahr
 const windowsNetworkMap = new Map()
-function windowsMappedRealpathSync(path: string) {
+
+function windowsMappedRealpathSync(path: string): string {
   const realPath = fs.realpathSync.native(path)
-  if (realPath.startsWith('\\\\')) {
-    for (const [network, volume] of windowsNetworkMap) {
-      if (realPath.startsWith(network)) return realPath.replace(network, volume)
-    }
+  if (!realPath.startsWith('\\\\')) {
+    // local path, `fs.realpathSync.native` resolves it the same way as
+    // `fs.realpathSync`
+    return realPath
   }
+  for (const [network, volume] of windowsNetworkMap) {
+    if (realPath.startsWith(network)) return realPath.replace(network, volume)
+  }
+  // no mapped drive matches, e.g. the path was a UNC path from the start
   return realPath
 }
-const parseNetUseRE = /^\w* +(\w:) +([^ ]+)\s/
-let firstSafeRealPathSyncRun = false
 
-function windowsSafeRealPathSync(path: string): string {
-  if (!firstSafeRealPathSyncRun) {
-    optimizeSafeRealPathSync()
-    firstSafeRealPathSyncRun = true
+let windowsNetUseStarted = false
+const parseNetUseRE = /^\w* +(\w:) +([^ ]+)\s/
+
+function windowsLazyRealpathSync(path: string): string {
+  const realPath = fs.realpathSync.native(path)
+  if (!realPath.startsWith('\\\\')) {
+    // local path, `fs.realpathSync.native` resolves it the same way as
+    // `fs.realpathSync`
+    return realPath
   }
+  if (!windowsNetUseStarted) {
+    windowsNetUseStarted = true
+    exec('net use', { windowsHide: true }, (error, stdout) => {
+      if (error) {
+        safeRealpathSync = fs.realpathSync
+        return
+      }
+      const lines = stdout.split('\n')
+      // OK           Y:        \\NETWORKA\Foo         Microsoft Windows Network
+      // OK           Z:        \\NETWORKA\Bar         Microsoft Windows Network
+      for (const line of lines) {
+        const m = parseNetUseRE.exec(line)
+        if (m) windowsNetworkMap.set(m[2], m[1])
+      }
+      safeRealpathSync =
+        windowsNetworkMap.size > 0
+          ? windowsMappedRealpathSync
+          : fs.realpathSync.native
+    })
+  }
+  // `fs.realpathSync` does not resolve mapped drive letters into UNC paths
   return fs.realpathSync(path)
 }
 
-function optimizeSafeRealPathSync() {
+function windowsSafeRealPathSync(input: string): string {
   // Check the availability `fs.realpathSync.native`
   // in Windows virtual and RAM disks that bypass the Volume Mount Manager, in programs such as imDisk
   // get the error EISDIR: illegal operation on a directory
@@ -762,24 +795,11 @@ function optimizeSafeRealPathSync() {
   } catch (error) {
     if (error.message.includes('EISDIR: illegal operation on a directory')) {
       safeRealpathSync = fs.realpathSync
-      return
+      return safeRealpathSync(input)
     }
   }
-  exec('net use', { windowsHide: true }, (error, stdout) => {
-    if (error) return
-    const lines = stdout.split('\n')
-    // OK           Y:        \\NETWORKA\Foo         Microsoft Windows Network
-    // OK           Z:        \\NETWORKA\Bar         Microsoft Windows Network
-    for (const line of lines) {
-      const m = parseNetUseRE.exec(line)
-      if (m) windowsNetworkMap.set(m[2], m[1])
-    }
-    if (windowsNetworkMap.size === 0) {
-      safeRealpathSync = fs.realpathSync.native
-    } else {
-      safeRealpathSync = windowsMappedRealpathSync
-    }
-  })
+  safeRealpathSync = windowsLazyRealpathSync
+  return safeRealpathSync(input)
 }
 
 export function ensureWatchedFile(
@@ -904,10 +924,7 @@ export function combineSourcemaps(
   filename: string,
   sourcemapList: Array<DecodedSourceMap | RawSourceMap>,
 ): RawSourceMap {
-  if (
-    sourcemapList.length === 0 ||
-    sourcemapList.every((m) => m.sources.length === 0)
-  ) {
+  if (sourcemapList.every((m) => m.sources.length === 0)) {
     return { ...nullSourceMap }
   }
 
@@ -1595,6 +1612,7 @@ export function mergeAlias(
   if (!a) return b
   if (!b) return a
   if (isObject(a) && isObject(b)) {
+    // oxlint-disable-next-line typescript/no-misused-spread - merging objects are fine
     return { ...a, ...b }
   }
   // the order is flipped because the alias is resolved from top-down,
@@ -1704,19 +1722,6 @@ function hasCorrectCase(file: string, assets: string): boolean {
   }
 
   return false
-}
-
-export function joinUrlSegments(a: string, b: string): string {
-  if (!a || !b) {
-    return a || b || ''
-  }
-  if (a.endsWith('/')) {
-    a = a.substring(0, a.length - 1)
-  }
-  if (b[0] !== '/') {
-    b = '/' + b
-  }
-  return a + b
 }
 
 export function removeLeadingSlash(str: string): string {

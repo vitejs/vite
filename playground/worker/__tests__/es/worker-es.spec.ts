@@ -164,6 +164,16 @@ describe.runIf(isBuild)('build', () => {
       false,
     )
 
+    // The importer of this nested worker is tree-shaken from the main bundle,
+    // but a live worker still uses it, so the nested worker must be emitted.
+    const sharedWorker = files.find((f) => f.includes('dce-test-shared-worker'))
+    expect(sharedWorker).toBeDefined()
+    const nestedWorker = fs
+      .readFileSync(path.resolve(assetsDir, sharedWorker!), 'utf-8')
+      .match(/[\w-]*dce-test-shared-nested-worker[\w-]*\.js/)?.[0]
+    expect(nestedWorker).toBeDefined()
+    expect(files).toContain(nestedWorker)
+
     // sanity: the worker we DO use is still emitted (`my-worker`).
     expect(files.some((f) => f.includes('my-worker'))).toBe(true)
   })

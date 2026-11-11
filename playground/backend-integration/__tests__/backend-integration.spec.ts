@@ -2,6 +2,7 @@ import { describe, expect, test, vi } from 'vitest'
 import {
   browserErrors,
   browserLogs,
+  bundledDevUnsupported,
   editFile,
   getColor,
   getCssRuleBg,
@@ -65,35 +66,35 @@ describe.runIf(isBuild)('build', () => {
     const customNameAssetEntry = manifest['../../dir/custom.css']
     const iconEntrypointEntry = manifest['icon.png']
     const waterContainerEntry = manifest['water-container.svg']
-    expect(htmlEntry.css.length).toEqual(1)
-    expect(htmlEntry.assets.length).toEqual(1)
+    expect(htmlEntry.css).toHaveLength(1)
+    expect(htmlEntry.assets).toHaveLength(1)
     expect(mainTsEntry.assets?.length ?? 0).toBeGreaterThanOrEqual(1)
     expect(mainTsEntry.assets).toContainEqual(
       expect.stringMatching(/assets\/url-[-\w]{8}\.css/),
     )
-    expect(cssAssetEntry?.file).not.toBeUndefined()
-    expect(cssAssetEntry?.isEntry).toEqual(true)
-    expect(pcssAssetEntry?.file).not.toBeUndefined()
-    expect(pcssAssetEntry?.isEntry).toEqual(true)
-    expect(scssAssetEntry?.file).not.toBeUndefined()
-    expect(scssAssetEntry?.src).toEqual('nested/blue.scss')
-    expect(scssAssetEntry?.isEntry).toEqual(true)
-    expect(imgAssetEntry?.file).not.toBeUndefined()
+    expect(cssAssetEntry?.file).toBeDefined()
+    expect(cssAssetEntry?.isEntry).toBe(true)
+    expect(pcssAssetEntry?.file).toBeDefined()
+    expect(pcssAssetEntry?.isEntry).toBe(true)
+    expect(scssAssetEntry?.file).toBeDefined()
+    expect(scssAssetEntry?.src).toBe('nested/blue.scss')
+    expect(scssAssetEntry?.isEntry).toBe(true)
+    expect(imgAssetEntry?.file).toBeDefined()
     expect(imgAssetEntry?.isEntry).toBeUndefined()
-    expect(dirFooAssetEntry).not.toBeUndefined() // '\\' should not be used even on windows
+    expect(dirFooAssetEntry).toBeDefined() // '\\' should not be used even on windows
     // use the entry name
     expect(dirFooAssetEntry.file).toMatch('assets/bar-')
-    expect(dirFooAssetEntry.name).toStrictEqual('bar.css')
-    expect(dirFooAssetEntry.assets.length).toEqual(1)
-    expect(customNameAssetEntry.name).toStrictEqual('bar.custom')
-    expect(iconEntrypointEntry?.file).not.toBeUndefined()
-    expect(waterContainerEntry?.file).not.toBeUndefined()
+    expect(dirFooAssetEntry.name).toBe('bar.css')
+    expect(dirFooAssetEntry.assets).toHaveLength(1)
+    expect(customNameAssetEntry.name).toBe('bar.custom')
+    expect(iconEntrypointEntry?.file).toBeDefined()
+    expect(waterContainerEntry?.file).toBeDefined()
   })
 
   test('CSS imported from JS entry should have a non-nested chunk name', () => {
     const manifest = readManifest('dev')
     const mainTsEntryCss = manifest['nested/sub.ts'].css
-    expect(mainTsEntryCss.length).toBe(1)
+    expect(mainTsEntryCss).toHaveLength(1)
     expect(mainTsEntryCss[0].replace('assets/', '')).not.toContain('/')
   })
 
@@ -110,6 +111,10 @@ describe.runIf(isBuild)('build', () => {
 })
 
 describe.runIf(isServe)('serve', () => {
+  const cssLinkUnsupported = bundledDevUnsupported(
+    'bundled dev turns a `<link rel="stylesheet">` to a project CSS file (without `media` or `disabled`) into a CSS import, served as a `<style>` injected by a JS module, so there is no `<link>` tag to swap on a CSS edit; the edit still hot updates in place',
+  )
+
   test('No ReferenceError', async () => {
     browserErrors.forEach((error) => {
       expect(error.name).not.toBe('ReferenceError')
@@ -122,13 +127,17 @@ describe.runIf(isServe)('serve', () => {
       code.replace('black', 'red'),
     )
     await expect.poll(() => getColor('body')).toBe('red') // successful HMR
-
-    // bundled dev injects CSS with `<style>`, so there is no `<link>` to re-request
-    if (isBundledDev) return
-    // Verify that the base (/dev/) was added during the css-update
-    const link = await page.$('link[rel="stylesheet"]:last-of-type')
-    expect(await link.getAttribute('href')).toContain('/dev/global.css?t=')
   })
+
+  test(
+    'preserve the base in CSS HMR link href',
+    cssLinkUnsupported,
+    async () => {
+      // Verify that the base (/dev/) was added during the css-update
+      const link = await page.$('link[rel="stylesheet"]:last-of-type')
+      expect(await link.getAttribute('href')).toContain('/dev/global.css?t=')
+    },
+  )
 
   test('server.origin is applied to non-public CSS url()', async () => {
     const bg = await getCssRuleBg('.outside-root--aliased')
@@ -152,7 +161,7 @@ describe.runIf(isServe)('serve', () => {
           code.replace('text-black', 'text-[rgb(204,0,0)]'),
         ),
       isBundledDev
-        ? '[vite] hot updated: playground-temp/backend-integration/frontend/entrypoints/global.css'
+        ? '[vite] hot updated: playground-temp-serve-bundled/backend-integration/frontend/entrypoints/global.css'
         : '[vite] css hot updated: /global.css',
     )
     await expect.poll(() => getColor(el)).toBe('rgb(204, 0, 0)')
