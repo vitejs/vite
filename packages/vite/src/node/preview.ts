@@ -252,7 +252,10 @@ export async function preview(
     app.use(proxyMiddleware(httpServer, proxy, config))
   }
 
-  const compressionMiddleware = compression()
+  const compressionMiddleware = compression({
+    // Compress text and structured data, plus mime-db types such as WebAssembly.
+    mimes: /text|javascript|\/json|xml|application\/wasm/i,
+  })
   app.use((req, res, next) => {
     if (req.httpVersionMajor < 2) {
       return compressionMiddleware(req, res, next)

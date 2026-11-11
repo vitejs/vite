@@ -1,3 +1,15 @@
 .imports-field {
   color: red;
 }
+
+.imports-field-url {
+  background-image: url('#logo?no-inline');
+}
+
+.imports-field-pattern-url {
+  background-image: url(#assets/ok.png?no-inline);
+}
+
+.imports-field-fragment {
+  filter: url('#filter');
+}
