@@ -9,7 +9,7 @@ test('should load and execute the JS file', async () => {
 describe.runIf(isBuild)('build', () => {
   test('modern polyfill chunk respects modernTargets', () => {
     const polyfill = findAssetFile(/polyfills-[-\w]+\.js$/, 'modern-target')
-    expect(polyfill).toBeTruthy()
+    expect(polyfill).toContain('CoreJS')
     // `modernTargets` includes Chrome 64, which does not support optional catch binding.
     // `try {} catch (e) {}` must not be collapsed to `try {} catch {}`.
     expect(polyfill).toMatch(/catch\s*\(/)

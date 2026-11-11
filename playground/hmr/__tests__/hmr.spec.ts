@@ -35,7 +35,7 @@ if (!isBuild) {
       // if the first bundle is not ready and a fallback page is shown when the client connects.
       expect(browserLogs.length).toBeOneOf([5, 7])
     } else {
-      expect(browserLogs.length).toBe(5)
+      expect(browserLogs).toHaveLength(5)
     }
     expect(browserLogs.some((msg) => msg.includes('connected'))).toBe(true)
     browserLogs.length = 0
@@ -88,9 +88,9 @@ if (!isBuild) {
         '(self-accepting 1) foo is now: 2',
         '(self-accepting 2) foo is now: 2',
         // bundled dev: the client logs rolldown module ids (cwd-relative, like
-        // `playground-temp/hmr/hmr.ts`). The same `cwd` issue as in hot update log in #23028.
+        // `playground-temp-serve-bundled/hmr/hmr.ts`). The same `cwd` issue as in hot update log in #23028.
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hmr.ts'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hmr.ts'
           : '[vite] hot updated: /hmr.ts',
         '>>> vite:afterUpdate -- update',
       ],
@@ -109,7 +109,7 @@ if (!isBuild) {
         '(self-accepting 1) foo is now: 3',
         '(self-accepting 2) foo is now: 3',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hmr.ts'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hmr.ts'
           : '[vite] hot updated: /hmr.ts',
         '>>> vite:afterUpdate -- update',
       ],
@@ -129,7 +129,7 @@ if (!isBuild) {
         '(hot data) value from execution: 1',
         '(hot data) value from dispose: 1',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hotData.js'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hotData.js'
           : '[vite] hot updated: /hotData.js',
         '>>> vite:afterUpdate -- update',
       ],
@@ -146,7 +146,7 @@ if (!isBuild) {
         '(hot data) value from execution: 2',
         '(hot data) value from dispose: 2',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hotData.js'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hotData.js'
           : '[vite] hot updated: /hotData.js',
         '>>> vite:afterUpdate -- update',
       ],
@@ -170,7 +170,7 @@ if (!isBuild) {
         '(multi deps) foo is now: 2',
         '(multi deps) nested foo is now: 1',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hmrDep.js via playground-temp/hmr/hmr.ts'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hmrDep.js via playground-temp-serve-bundled/hmr/hmr.ts'
           : '[vite] hot updated: /hmrDep.js via /hmr.ts',
         '>>> vite:afterUpdate -- update',
       ],
@@ -192,7 +192,7 @@ if (!isBuild) {
         '(multi deps) foo is now: 3',
         '(multi deps) nested foo is now: 1',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hmrDep.js via playground-temp/hmr/hmr.ts'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hmrDep.js via playground-temp-serve-bundled/hmr/hmr.ts'
           : '[vite] hot updated: /hmrDep.js via /hmr.ts',
         '>>> vite:afterUpdate -- update',
       ],
@@ -217,7 +217,7 @@ if (!isBuild) {
         '(multi deps) foo is now: 3',
         '(multi deps) nested foo is now: 2',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hmrDep.js via playground-temp/hmr/hmr.ts'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hmrDep.js via playground-temp-serve-bundled/hmr/hmr.ts'
           : '[vite] hot updated: /hmrDep.js via /hmr.ts',
         '>>> vite:afterUpdate -- update',
       ],
@@ -239,7 +239,7 @@ if (!isBuild) {
         '(multi deps) foo is now: 3',
         '(multi deps) nested foo is now: 3',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hmrDep.js via playground-temp/hmr/hmr.ts'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hmrDep.js via playground-temp-serve-bundled/hmr/hmr.ts'
           : '[vite] hot updated: /hmrDep.js via /hmr.ts',
         '>>> vite:afterUpdate -- update',
       ],
@@ -559,7 +559,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               'reloaded >>> Y',
               hotUpdatedLog(callbackFile),
             ])
@@ -574,7 +574,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               'reloaded (2) >>> Z',
               hotUpdatedLog(callbackFile),
             ])
@@ -595,7 +595,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               `<<<<<< A0 B0 D0 ; ${dep}`,
               hotUpdatedLog(file),
             ])
@@ -610,7 +610,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               `<<<<<< A1 B1 D1 ; ${dep}`,
               hotUpdatedLog(file),
             ])
@@ -634,7 +634,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               `<<<<<< A2 B2 D2 ; ${dep}`,
               hotUpdatedLog(file),
             ])
@@ -750,7 +750,7 @@ if (!isBuild) {
         },
         HOT_UPDATED,
         (logs) => {
-          expect(logs).toEqual([
+          expect(logs).toStrictEqual([
             '>>> side FX !!',
             hotUpdatedLog(`${testDir}/${file}`),
           ])
@@ -782,7 +782,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual(['-> unused <-', hotUpdatedLog(file)])
+            expect(logs).toStrictEqual(['-> unused <-', hotUpdatedLog(file)])
           },
         )
       })
@@ -843,7 +843,7 @@ if (!isBuild) {
             },
             HOT_UPDATED,
             (logs) => {
-              expect(logs).toEqual([
+              expect(logs).toStrictEqual([
                 'all >>>>>> a1, b1, c1',
                 hotUpdatedLog(file),
               ])
@@ -856,7 +856,7 @@ if (!isBuild) {
             },
             HOT_UPDATED,
             (logs) => {
-              expect(logs).toEqual([
+              expect(logs).toStrictEqual([
                 'all >>>>>> a2, b2, c2',
                 hotUpdatedLog(file),
               ])
@@ -892,9 +892,13 @@ if (!isBuild) {
         })
       }
 
-      describe('import * from ...', () => testStarExports('star-imports'))
+      describe('import * from ...', () => {
+        testStarExports('star-imports')
+      })
 
-      describe('dynamic import(...)', () => testStarExports('dynamic-imports'))
+      describe('dynamic import(...)', () => {
+        testStarExports('dynamic-imports')
+      })
     })
   })
 
@@ -1035,6 +1039,7 @@ if (!isBuild) {
           () => removeFile(childFile),
           `${childFile} is disposed`,
         ),
+        // oxlint-disable-next-line vitest/require-awaited-expect-poll -- https://github.com/oxc-project/oxc/issues/29173
         expect
           .poll(() => page.textContent('.file-delete-restore'))
           .toMatch('parent:not-child'),
@@ -1306,6 +1311,51 @@ if (!isBuild) {
       .toBe(isBundledDev ? 'count is 2!' : 'count is 1!')
   })
 
+  // Plain dev serves no built chunk that a page could load as an entry.
+  test.runIf(isBundledDev)(
+    'updating a module in an import cycle with an entry reloads the page',
+    async () => {
+      await page.goto(viteTestUrl + '/entry-cycle/index.html')
+      const display = () => page.textContent('.entry-cycle-display')
+      await expect.poll(display).toBe('entry imports dep')
+
+      // Nothing accepts the update, and the walk from dep.js comes back to it
+      // through entry-cycle.js. Only a page load runs the entry again.
+      const loadPromise = page.waitForEvent('load')
+      editFile('entry-cycle/dep.js', (code) =>
+        code.replace('imports dep', 'imports dep!'),
+      )
+      await loadPromise
+      await expect.poll(display).toBe('entry imports dep!')
+    },
+  )
+
+  test.runIf(isBundledDev)(
+    'updating an entry that another entry no longer imports reloads the page',
+    async () => {
+      await page.goto(viteTestUrl + '/entry-import-removed/index.html')
+      const imported = () => page.textContent('.entry-import-removed-imported')
+      await expect.poll(imported).toBe('imported entry')
+
+      // imported-entry.js has no importer left, but the page still runs it
+      await untilBrowserLogAfter(
+        () =>
+          editFile('entry-import-removed/importing-entry.js', (code) =>
+            code.replace("import './imported-entry.js'\n", ''),
+          ),
+        hotUpdatedLog('entry-import-removed/importing-entry.js'),
+      )
+
+      // Only a page load runs the entry again.
+      const loadPromise = page.waitForEvent('load')
+      editFile('entry-import-removed/imported-entry.js', (code) =>
+        code.replace("'imported entry'", "'imported entry!'"),
+      )
+      await loadPromise
+      await expect.poll(imported).toBe('imported entry!')
+    },
+  )
+
   test('import.meta.hot?.accept', async () => {
     await gotoLatestBuild(viteTestUrl)
 
@@ -1335,7 +1385,7 @@ if (!isBuild) {
       serverLogs.slice(lastServerLogIndex).map(stripVTControlCharacters),
     ).toContain(
       isBundledDev
-        ? 'hmr update playground-temp/hmr/self-accept-within-circular/c.js'
+        ? 'hmr update playground-temp-serve-bundled/hmr/self-accept-within-circular/c.js'
         : 'hmr update /self-accept-within-circular/c.js',
     )
   })

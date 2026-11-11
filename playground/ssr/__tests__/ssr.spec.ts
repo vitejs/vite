@@ -71,12 +71,10 @@ test.runIf(isServe)('should restart ssr', async () => {
   editFile('./vite.config.ts', (content) => content + '\n')
   await expect
     .poll(() => {
-      expect(serverLogs).toEqual(
-        expect.arrayContaining([expect.stringMatching('server restarted')]),
+      expect(serverLogs).toContainEqual(
+        expect.stringMatching('server restarted'),
       )
-      expect(serverLogs).not.toEqual(
-        expect.arrayContaining([expect.stringMatching('error')]),
-      )
+      expect(serverLogs).not.toContainEqual(expect.stringMatching('error'))
     })
     .toSatisfy(() => true)
 })

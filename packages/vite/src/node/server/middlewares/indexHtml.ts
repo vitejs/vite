@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
+import escapeHTML from 'escape-html'
 import MagicString from 'magic-string'
 import type { DefaultTreeAdapterMap, Token } from 'parse5'
 import type { SourceMapInput } from 'rolldown'
@@ -280,7 +281,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     s.update(
       node.sourceCodeLocation!.startOffset,
       node.sourceCodeLocation!.endOffset,
-      `<script type="module" src="${browserUrl}"></script>`,
+      `<script type="module" src="${escapeHTML(browserUrl)}"></script>`,
     )
     preTransformRequest(server!, moduleUrl)
   }
@@ -572,7 +573,7 @@ async function generateFallbackHtml(server: ViteDevServer) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
   <script>globalThis.__vite_is_fallback_page__ = true</script>
   <script type="module">
     ${hmrRuntime.replaceAll('</script>', '<\\/script>')}

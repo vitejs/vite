@@ -678,7 +678,13 @@ export interface ResolvedWorkerOptions {
 
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
-  /** @experimental */
+  /**
+   * The loader to use when loading the config file.
+   *
+   * `runner` is deprecated and will be removed in the next major version.
+   *
+   * @default 'bundle'
+   */
   configLoader?: 'bundle' | 'runner' | 'native'
   /** @deprecated */
   envFile?: false
@@ -1257,12 +1263,6 @@ function resolveDepOptimizationOptions(
   consumer: 'client' | 'server' | undefined,
   logger: Logger,
 ): DepOptimizationOptions {
-  if (
-    optimizeDeps?.rolldownOptions &&
-    optimizeDeps?.rolldownOptions === optimizeDeps?.rollupOptions
-  ) {
-    delete optimizeDeps?.rollupOptions
-  }
   const merged = mergeWithDefaults(
     {
       ...configDefaults.optimizeDeps,
@@ -1272,8 +1272,6 @@ function resolveDepOptimizationOptions(
     },
     optimizeDeps ?? {},
   )
-  setupRollupOptionCompat(merged, 'optimizeDeps')
-
   const rolldownOptions = merged.rolldownOptions as Exclude<
     DepOptimizationOptions['rolldownOptions'],
     undefined
@@ -1465,14 +1463,12 @@ export async function resolveConfig(
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   config.build ??= {}
-  setupRollupOptionCompat(config.build, 'build')
+  setupRollupOptionCompat(config.build)
   config.worker ??= {}
-  setupRollupOptionCompat(config.worker, 'worker')
+  setupRollupOptionCompat(config.worker)
   config.optimizeDeps ??= {}
-  setupRollupOptionCompat(config.optimizeDeps, 'optimizeDeps')
   if (config.ssr) {
     config.ssr.optimizeDeps ??= {}
-    setupRollupOptionCompat(config.ssr.optimizeDeps, 'ssr.optimizeDeps')
   }
 
   let configFileDependencies: string[] = []
@@ -1712,6 +1708,10 @@ export async function resolveConfig(
       ...defaultEnvironmentOptions.build,
       createEnvironment: undefined,
     },
+  }
+
+  if (isBuild && config.build?.ssr === true) {
+    config.environments.ssr.input ??= config.input
   }
 
   for (const name of Object.keys(config.environments)) {
@@ -1996,7 +1996,7 @@ export async function resolveConfig(
     rollupOptions: config.worker?.rollupOptions || {},
     rolldownOptions: config.worker?.rolldownOptions, // will be set by setupRollupOptionCompat if undefined
   }
-  setupRollupOptionCompat(resolvedWorkerOptions, 'worker')
+  setupRollupOptionCompat(resolvedWorkerOptions)
 
   const base = withTrailingSlash(resolvedBase)
 
@@ -2404,6 +2404,13 @@ export async function loadConfigFromFile(
   ) {
     throw new Error(
       `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle', 'runner', and 'native'.`,
+    )
+  }
+  if (configLoader === 'runner') {
+    createLogger(logLevel, { customLogger }).warn(
+      colors.yellow(
+        `The \`runner\` config loader is deprecated and will be removed in Vite 9. Use \`bundle\` or \`native\` instead.`,
+      ),
     )
   }
 
