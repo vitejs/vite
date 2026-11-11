@@ -459,8 +459,8 @@ importers:
         specifier: ^13.0.0
         version: 13.0.0(patch_hash=49330a663821151418e003e822a82a6a61d2f0f8a6e3cab00c1c94815a112889)
       es-module-lexer:
-        specifier: ^2.3.2
-        version: 2.3.2
+        specifier: ^3.0.2
+        version: 3.0.2
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
@@ -1359,6 +1359,9 @@ importers:
       '@vitejs/test-dep-source-map-no-sources':
         specifier: file:./dep-source-map-no-sources
         version: file:playground/optimize-deps/dep-source-map-no-sources
+      '@vitejs/test-dep-ts-enum':
+        specifier: file:./dep-ts-enum
+        version: dep-ts-enum@file:playground/optimize-deps/dep-ts-enum
       '@vitejs/test-dep-with-asset-ext1.pdf':
         specifier: file:./dep-with-asset-ext/dep1
         version: file:playground/optimize-deps/dep-with-asset-ext/dep1
@@ -1526,6 +1529,8 @@ importers:
   playground/optimize-deps/dep-relative-to-main: {}
 
   playground/optimize-deps/dep-source-map-no-sources: {}
+
+  playground/optimize-deps/dep-ts-enum: {}
 
   playground/optimize-deps/dep-with-asset-ext/dep1: {}
 
@@ -5673,6 +5678,9 @@ packages:
   delegate@3.2.0:
     resolution: {integrity: sha512-IofjkYBZaZivn0V8nnsMJGBr4jVLxHDheKSW88PyxS5QC4Vo9ZbZVvhzlSxY87fVq3STR6r+4cGepyHkcWOQSw==}
 
+  dep-ts-enum@file:playground/optimize-deps/dep-ts-enum:
+    resolution: {directory: playground/optimize-deps/dep-ts-enum, type: directory}
+
   depd@2.0.0:
     resolution: {integrity: sha512-g7nH6P6dyDioJogAAGprGpCtVImJhpPk/roCzdb3fIh61/s/nPsfR6onyMwkCAR/OlC3yBC0lESvUoQEAssIrw==}
     engines: {node: '>= 0.8'}
@@ -5807,8 +5815,11 @@ packages:
   es-module-lexer@2.3.2:
     resolution: {integrity: sha512-poHGpORABojJJucnV9KbOavETW8lBVnphkW77ER5/BQ5Fz7oXSoCNek7IH3vR5nRjdsEz926ibFYX8KtLQmdyw==}
 
-  es-object-atoms@1.1.2:
-    resolution: {integrity: sha512-HWcBoN6NileqtSydK2FqHbS/LoDd2pqrnQHLyJzBj4kOp/ky2MWMN694xOfkK8/SnUsW2DH7EfyVlydKCsm1Zw==}
+  es-module-lexer@3.0.2:
+    resolution: {integrity: sha512-BuIB67FngDSyQ/dpQNOZybwdEBDUGJQvOqwWr4ha/ufYiqzuEwPkKO2zLhRAgay28tStRIHUeWmszZAJo3GCOg==}
+
+  es-object-atoms@1.1.1:
+    resolution: {integrity: sha512-FGgH2h8zKNim9ljj7dankFPcICIK9Cp5bm+c2gQSYePhpaG5+esrLODihIorn+Pe6FGJzWhXQotPv73jTaldXA==}
     engines: {node: '>= 0.4'}
 
   esbuild@0.28.2:
@@ -11296,6 +11307,8 @@ snapshots:
 
   delegate@3.2.0: {}
 
+  dep-ts-enum@file:playground/optimize-deps/dep-ts-enum: {}
+
   depd@2.0.0: {}
 
   dequal@2.0.3: {}
@@ -11387,7 +11400,9 @@ snapshots:
 
   es-module-lexer@2.3.2: {}
 
-  es-object-atoms@1.1.2:
+  es-module-lexer@3.0.2: {}
+
+  es-object-atoms@1.1.1:
     dependencies:
       es-errors: 1.3.0
 
@@ -11657,7 +11672,7 @@ snapshots:
       call-bind-apply-helpers: 1.0.2
       es-define-property: 1.0.1
       es-errors: 1.3.0
-      es-object-atoms: 1.1.2
+      es-object-atoms: 1.1.1
       function-bind: 1.1.2
       get-proto: 1.0.1
       gopd: 1.2.0
@@ -11668,7 +11683,7 @@ snapshots:
   get-proto@1.0.1:
     dependencies:
       dunder-proto: 1.0.1
-      es-object-atoms: 1.1.2
+      es-object-atoms: 1.1.1
 
   get-stream@9.0.1:
     dependencies:

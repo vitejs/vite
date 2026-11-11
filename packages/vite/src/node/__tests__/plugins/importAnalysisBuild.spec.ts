@@ -10,7 +10,7 @@ import {
 } from '../../plugins/importAnalysisBuild'
 
 beforeAll(async () => {
-  await init
+  await init()
 })
 
 test('chunk import map key signatures follow rendered chunk order', () => {
@@ -173,7 +173,7 @@ function markerPositions(code: string): number[] {
 
 // pair dynamic imports with markers the way the plugin does (see `generateBundle`)
 function match(code: string) {
-  const imports = parseImports(code)[0].filter((i) => i.d > -1)
+  const imports = parseImports(code)[0].filter((i) => i.type === 'dynamic')
   return matchImportsToPreloadMarkers(code, imports)
 }
 
