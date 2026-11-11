@@ -1376,3 +1376,31 @@ describe('resolveServerUrls', () => {
     expect(result.networkInterfaceNames).toStrictEqual([undefined])
   })
 })
+
+describe('normalizePath', () => {
+  test('normalizes relative and absolute posix paths', () => {
+    expect(normalizePath('/foo/bar/../baz')).toBe('/foo/baz')
+    expect(normalizePath('foo/bar/../baz')).toBe('foo/baz')
+  })
+
+  test('preserves Windows device namespace prefix', () => {
+    expect(normalizePath('//./nul/vfs/1/entry.js')).toBe(
+      '//./nul/vfs/1/entry.js',
+    )
+    expect(normalizePath('\\\\.\\nul\\vfs\\1\\entry.js')).toBe(
+      '//./nul/vfs/1/entry.js',
+    )
+    expect(normalizePath('//./nul/vfs/1/../2/entry.js')).toBe(
+      '//./nul/vfs/2/entry.js',
+    )
+    expect(normalizePath('//./')).toBe('//./')
+  })
+
+  test('preserves Windows extended-length device namespace prefix', () => {
+    expect(normalizePath('//?/C:/foo/bar/../baz.js')).toBe('//?/C:/foo/baz.js')
+    expect(normalizePath('\\\\?\\C:\\foo\\bar\\..\\baz.js')).toBe(
+      '//?/C:/foo/baz.js',
+    )
+    expect(normalizePath('//?/')).toBe('//?/')
+  })
+})

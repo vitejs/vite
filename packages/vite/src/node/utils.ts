@@ -230,8 +230,23 @@ function testCaseInsensitiveFS() {
 export const isCaseInsensitiveFS: boolean = testCaseInsensitiveFS()
 
 const VOLUME_RE = /^[A-Z]:/i
+const WINDOWS_DEVICE_PREFIX_RE = /^[/\\]{2}[.?][/\\]/
 
 export function normalizePath(id: string): string {
+  if (WINDOWS_DEVICE_PREFIX_RE.test(id)) {
+    const prefix = slash(id.slice(0, 4))
+    const remainder = id.slice(4)
+    const normalizedRemainder = path.posix.normalize(slash(remainder))
+    if (normalizedRemainder === '' || normalizedRemainder === '.') {
+      return prefix
+    }
+    return (
+      prefix +
+      (normalizedRemainder.startsWith('/')
+        ? normalizedRemainder.slice(1)
+        : normalizedRemainder)
+    )
+  }
   return path.posix.normalize(isWindows ? slash(id) : id)
 }
 
