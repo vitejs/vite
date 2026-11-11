@@ -30,6 +30,8 @@
     "tinyglobby": "^0.2.17"
   },
   "imports": {
-    "#imports": "./imports-field.css"
+    "#imports": "./imports-field.css",
+    "#logo": "./ok.png",
+    "#assets/*": "./*"
   }
 }
