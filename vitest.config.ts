@@ -12,7 +12,7 @@ export default defineConfig({
       '**/node_modules/**',
       '**/dist/**',
       './playground/**/*.*',
-      './playground-temp/**/*.*',
+      './playground-temp-*/**/*.*',
     ],
     deps: {
       // we specify 'packages' so Vitest doesn't inline the files

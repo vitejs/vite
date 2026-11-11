@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 import { runnerTest as it } from './utils'
 
-describe('module runner hmr works as expected', async () => {
+describe('module runner hmr works as expected', () => {
   it.override('config', {
     server: {
       // override watch options because it's disabled by default

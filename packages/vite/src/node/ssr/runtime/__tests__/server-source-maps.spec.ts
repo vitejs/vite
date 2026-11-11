@@ -7,8 +7,8 @@ import { ESModulesEvaluator } from '../../../../module-runner'
 import { SOURCEMAPPING_URL } from '../../../../shared/constants'
 import { createFixtureEditor, runnerTest as it, resolvePath } from './utils'
 
-describe('module runner initialization', async () => {
-  it.scoped({
+describe('module runner initialization', () => {
+  it.override({
     runnerOptions: {
       sourcemapInterceptor: 'prepareStackTrace',
     },
@@ -127,20 +127,19 @@ describe('module runner initialization', async () => {
       const mod = await runner.import('/fixtures/has-error-deep.ts')
       mod.main()
     })
-    expect(serializeStackDeep(server, methodError).slice(0, 3)).toEqual([
+    expect(serializeStackDeep(server, methodError).slice(0, 3)).toStrictEqual([
       'Error: crash',
       '    at crash (<root>/fixtures/has-error-deep.ts:2:9)',
       '    at Module.main (<root>/fixtures/has-error-deep.ts:6:3)',
     ])
   })
 
-  it('prints the file name of a frame without a source map', async () => {
+  it('prints the file name of a frame without a source map', async ({
+    runner,
+  }) => {
     // when a script's sourceURL differs from its file name, the file name is what gets printed
     const error = await getError(() =>
-      runInThisContext(
-        '(function inVm() { throw new Error("vm") })()\n//# sourceURL=renamed.js',
-        { filename: 'original.js', displayErrors: false },
-      ),
+      runner.import('/fixtures/has-error-no-source-map.js'),
     )
     expect(error.stack!.split('\n')[1]).toBe('    at inVm (original.js:1:26)')
   })
@@ -157,7 +156,7 @@ describe('module runner initialization', async () => {
     const error = await getError(() =>
       runner.import('/fixtures/has-error-toplevel.js'),
     )
-    expect(serializeStackDeep(server, error).slice(0, 3)).toEqual([
+    expect(serializeStackDeep(server, error).slice(0, 3)).toStrictEqual([
       'Error: crash',
       '    at crash (<root>/fixtures/has-error-toplevel-dep.js:2:9)',
       '    at <root>/fixtures/has-error-toplevel.js:3:1',
@@ -172,7 +171,7 @@ describe('module runner initialization', async () => {
       const mod = await runner.import('/fixtures/with space/has-error-deep.ts')
       mod.main()
     })
-    expect(serializeStackDeep(server, methodError).slice(0, 3)).toEqual([
+    expect(serializeStackDeep(server, methodError).slice(0, 3)).toStrictEqual([
       'Error: crash',
       '    at crash (<root>/fixtures/with space/has-error-deep.ts:2:9)',
       '    at Module.main (<root>/fixtures/with space/has-error-deep.ts:6:3)',
@@ -189,7 +188,7 @@ describe('module runner initialization', async () => {
     )
     const error = await getError(() => mod.throwError())
     expect(error.message).toBe('Test error for stacktrace')
-    expect(serializeStackDeep(server, error).slice(0, 2)).toEqual([
+    expect(serializeStackDeep(server, error).slice(0, 2)).toStrictEqual([
       'Error: Test error for stacktrace',
       '    at Module.throwError (<root>/fixtures/string-literal-sourcemap.ts:11:9)',
     ])
@@ -238,7 +237,7 @@ describe('module runner initialization', async () => {
   })
 })
 
-describe('module runner with node:vm executor', async () => {
+describe('module runner with node:vm executor', () => {
   class Evaluator extends ESModulesEvaluator {
     async runInlinedModule(_: ModuleRunnerContext, __: string) {
       // Mimics VitestModuleEvaluator
@@ -273,7 +272,7 @@ describe('module runner with node:vm executor', async () => {
   })
 })
 
-describe('module runner interceptor with inline data: source map', async () => {
+describe('module runner interceptor with inline data: source map', () => {
   const syntheticFile = '/virtual-bufferless/inline-map.js'
   // Minimal map pointing every generated position at line 1, column 0 of
   // "inline-map-original.ts"

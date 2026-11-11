@@ -57,7 +57,7 @@ describe.for([
     title: 'full bundle mode',
   },
   { fullBundle: [], title: 'dev mode' },
-])('module runner initialization ($title)', async ({ fullBundle }) => {
+])('module runner initialization ($title)', ({ fullBundle }) => {
   it.override('fullBundle', fullBundle)
   it.override('config', {
     resolve: {
@@ -68,7 +68,7 @@ describe.for([
 
   it('correctly runs ssr code', async ({ runner }) => {
     const mod = await runner.import('./fixtures/simple.js')
-    expect(mod.test).toEqual('I am initialized')
+    expect(mod.test).toBe('I am initialized')
 
     // loads the same module if id is a file url
     const fileUrl = new _URL('./fixtures/simple.js', import.meta.url)
@@ -83,7 +83,7 @@ describe.for([
 
   it('css is loaded correctly', async ({ runner }) => {
     const css = await runner.import('/fixtures/test.css')
-    expect(css.default).toBe(undefined)
+    expect(css.default).toBeUndefined()
     const module = await runner.import('/fixtures/test.module.css')
     expect(module).toMatchObject({
       default: {
@@ -232,7 +232,7 @@ describe.for([
     runner,
   }) => {
     const mod = await runner.import('/fixtures/no-this/importer.js')
-    expect(mod.result).toBe(undefined)
+    expect(mod.result).toBeUndefined()
   })
 
   it.for([
@@ -242,7 +242,7 @@ describe.for([
     '/fixtures/cyclic2/test4/index.js',
   ] as const)(`cyclic %s`, async (entry, { runner }) => {
     const mod = await runner.import(entry)
-    expect({ ...mod }).toEqual({
+    expect({ ...mod }).toStrictEqual({
       dep1: {
         ok: true,
       },
@@ -514,7 +514,7 @@ describe('not supported by bundle mode', () => {
   })
 })
 
-describe('optimize-deps', async () => {
+describe('optimize-deps', () => {
   it.override('config', {
     cacheDir: 'node_modules/.vite-test',
     ssr: {
@@ -531,7 +531,7 @@ describe('optimize-deps', async () => {
   })
 })
 
-describe('resolveId absolute path entry', async () => {
+describe('resolveId absolute path entry', () => {
   it.override('config', {
     plugins: [
       {
@@ -569,7 +569,7 @@ describe('resolveId absolute path entry', async () => {
     expect(mod.name).toMatchInlineSnapshot(`"virtual:basic"`)
   })
 
-  describe('in full bundle mode', async () => {
+  describe('in full bundle mode', () => {
     const entry = posix.join(slash(import.meta.dirname), 'fixtures/basic.js')
     it.override('fullBundle', [entry])
 
@@ -582,7 +582,7 @@ describe('resolveId absolute path entry', async () => {
   })
 })
 
-describe('virtual module hmr', async () => {
+describe('virtual module hmr', () => {
   let state = 'init'
 
   it.override('config', {
@@ -699,7 +699,7 @@ describe('full reload in full bundle mode', () => {
   })
 })
 
-describe('invalid package', async () => {
+describe('invalid package', () => {
   it.override('config', {
     environments: {
       ssr: {
@@ -792,7 +792,7 @@ describe('full-reload during close', () => {
   })
 })
 
-describe('server.fs check', async () => {
+describe('server.fs check', () => {
   it.override('config', {
     server: {
       fs: {

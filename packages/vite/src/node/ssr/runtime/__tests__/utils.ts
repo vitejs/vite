@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { ModuleRunner } from 'vite/module-runner'
 import { test as base, onTestFinished } from 'vitest'
 import type { InlineConfig } from '../../../config'
 import type { ViteDevServer } from '../../../server'
@@ -12,23 +11,11 @@ import {
   createServerModuleRunner,
 } from '../serverModuleRunner'
 
-interface TestClient {
-  fullBundle: string[]
-  config: InlineConfig
-  server: ViteDevServer
-  runner: ModuleRunner
-  runnerOptions: ServerModuleRunnerOptions | undefined
-  environment: RunnableDevEnvironment
-}
-
-export const runnerTest = base.extend<TestClient>({
-  // eslint-disable-next-line no-empty-pattern
-  fullBundle: ({}, use) => use([]),
-  // eslint-disable-next-line no-empty-pattern
-  runnerOptions: ({}, use) => use(undefined),
-  // eslint-disable-next-line no-empty-pattern
-  config: ({}, use) => use({}),
-  server: async ({ config, fullBundle }, use) => {
+export const runnerTest = base
+  .extend('fullBundle', [] as string[])
+  .extend('runnerOptions', undefined as ServerModuleRunnerOptions | undefined)
+  .extend('config', {} as InlineConfig)
+  .extend('server', async ({ config, fullBundle }, { onCleanup }) => {
     const server = await createServer({
       configFile: false,
       root: import.meta.dirname,
@@ -90,25 +77,24 @@ export const runnerTest = base.extend<TestClient>({
         ...config.server,
       },
     })
+    onCleanup(() => server.close())
     if (config.server?.watch) {
       await waitForWatcher(server)
     }
-    await use(server)
-    await server.close()
-  },
-  environment: async ({ server }, use) => {
-    await use(server.environments.ssr as RunnableDevEnvironment)
-  },
-  runner: async ({ environment, runnerOptions }, use) => {
+    return server
+  })
+  .extend(
+    'environment',
+    ({ server }) => server.environments.ssr as RunnableDevEnvironment,
+  )
+  .extend('runner', ({ environment, runnerOptions }, { onCleanup }) => {
     if (runnerOptions) {
       const runner = createServerModuleRunner(environment, runnerOptions)
-      await use(runner)
-      await runner.close()
-    } else {
-      await use(environment.runner)
+      onCleanup(() => runner.close())
+      return runner
     }
-  },
-})
+    return environment.runner
+  })
 
 function waitForWatcher(server: ViteDevServer) {
   return new Promise<void>((resolve) => {

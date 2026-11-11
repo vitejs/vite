@@ -6,7 +6,7 @@ import { runnerTest as it } from './utils'
 
 describe(
   'module runner hmr works as expected',
-  async () => {
+  () => {
     it.override('config', {
       server: {
         // override watch options because it's disabled by default
@@ -106,7 +106,7 @@ describe(
       releaseWait()
       const results = await Promise.allSettled([importA, importB] as const)
 
-      expect(results).toEqual([
+      expect(results).toStrictEqual([
         {
           status: 'fulfilled',
           value: expect.objectContaining({ result: 'a' }),
@@ -294,7 +294,19 @@ describe.each([false, true])(
       const update = runner._bundledDevHmrClient!.computeHmrUpdate([
         'virtual:partial-accept-dep',
       ])
-      expect(update.type).toBe(partialAccept ? 'boundaries' : 'full-reload')
+      expect(update).toStrictEqual({
+        type: 'update',
+        boundaries: [
+          {
+            boundary: 'virtual:partial-accept-dep',
+            acceptedVia: 'virtual:partial-accept-dep',
+            isWithinCircularImport: false,
+          },
+        ],
+        updateSet: partialAccept
+          ? ['virtual:partial-accept-dep']
+          : ['virtual:partial-accept-dep', 'virtual:partial-accept-entry'],
+      })
     })
   },
 )
