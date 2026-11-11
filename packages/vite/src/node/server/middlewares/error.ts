@@ -6,9 +6,17 @@ import type { Connect } from '#dep-types/connect'
 import type { ErrorPayload } from '#types/hmrPayload'
 import type { ViteDevServer } from '../..'
 import { CLIENT_PUBLIC_PATH } from '../../constants'
-import { pad } from '../../utils'
+import { isPluginNameHidden, pad } from '../../utils'
 
-export function prepareError(err: Error | RollupError): ErrorPayload['err'] {
+/**
+ * @param hiddenPluginNames the resolved `hiddenPluginNames`, whose plugins
+ * the error overlay does not name
+ */
+export function prepareError(
+  err: Error | RollupError,
+  hiddenPluginNames: readonly (string | RegExp)[] = [],
+): ErrorPayload['err'] {
+  const plugin = (err as RollupError).plugin
   // only copy the information we need and avoid serializing unnecessary
   // properties, since some errors may attach full objects (e.g. PostCSS)
   return {
@@ -16,18 +24,25 @@ export function prepareError(err: Error | RollupError): ErrorPayload['err'] {
     stack: strip(cleanStack(err.stack || '')),
     id: (err as RollupError).id,
     frame: strip((err as RollupError).frame || ''),
-    plugin: (err as RollupError).plugin,
+    plugin: isPluginNameHidden(plugin, hiddenPluginNames) ? undefined : plugin,
     pluginCode: (err as RollupError).pluginCode?.toString(),
     loc: (err as RollupError).loc,
   }
 }
 
+/**
+ * @param hiddenPluginNames the resolved `hiddenPluginNames`, whose plugins
+ * the message does not name
+ */
 export function buildErrorMessage(
   err: RollupError,
   args: string[] = [],
   includeStack = true,
+  hiddenPluginNames: readonly (string | RegExp)[] = [],
 ): string {
-  if (err.plugin) args.push(`  Plugin: ${colors.magenta(err.plugin)}`)
+  if (err.plugin && !isPluginNameHidden(err.plugin, hiddenPluginNames)) {
+    args.push(`  Plugin: ${colors.magenta(err.plugin)}`)
+  }
   const loc = err.loc ? `:${err.loc.line}:${err.loc.column}` : ''
   if (err.id) args.push(`  File: ${colors.cyan(err.id)}${loc}`)
   if (err.frame) args.push(colors.yellow(pad(err.frame)))
@@ -43,9 +58,13 @@ function cleanStack(stack: string) {
 }
 
 export function logError(server: ViteDevServer, err: RollupError): void {
-  const msg = buildErrorMessage(err, [
-    colors.red(`Internal server error: ${err.message}`),
-  ])
+  const { hiddenPluginNames } = server.config
+  const msg = buildErrorMessage(
+    err,
+    [colors.red(`Internal server error: ${err.message}`)],
+    true,
+    hiddenPluginNames,
+  )
 
   server.config.logger.error(msg, {
     clear: true,
@@ -55,7 +74,7 @@ export function logError(server: ViteDevServer, err: RollupError): void {
 
   server.environments.client.hot.send({
     type: 'error',
-    err: prepareError(err),
+    err: prepareError(err, hiddenPluginNames),
   })
 }
 
@@ -79,10 +98,9 @@ export function errorMiddleware(
             <meta charset="UTF-8" />
             <title>Error</title>
             <script type="module">
-              const error = ${JSON.stringify(prepareError(err)).replace(
-                /</g,
-                '\\u003c',
-              )}
+              const error = ${JSON.stringify(
+                prepareError(err, server.config.hiddenPluginNames),
+              ).replace(/</g, '\\u003c')}
               try {
                 const { ErrorOverlay } = await import(${JSON.stringify(path.posix.join(server.config.base, CLIENT_PUBLIC_PATH))})
                 document.body.appendChild(new ErrorOverlay(error))

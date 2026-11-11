@@ -155,7 +155,10 @@ export class BundledDev {
 
         client.send({
           type: 'error',
-          err: prepareError(this.lastBuildError),
+          err: prepareError(
+            this.lastBuildError,
+            this.environment.config.hiddenPluginNames,
+          ),
         })
       }
     })
@@ -197,7 +200,10 @@ export class BundledDev {
           for (const client of this.clients.getAll()) {
             client.send({
               type: 'error',
-              err: prepareError(result),
+              err: prepareError(
+                result,
+                this.environment.config.hiddenPluginNames,
+              ),
             })
           }
           return
@@ -235,7 +241,10 @@ export class BundledDev {
           this.fullReloadPending = false
           this.environment.hot.send({
             type: 'error',
-            err: prepareError(result),
+            err: prepareError(
+              result,
+              this.environment.config.hiddenPluginNames,
+            ),
           })
           return
         }
