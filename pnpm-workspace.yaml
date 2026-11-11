@@ -71,7 +71,4 @@ minimumReleaseAgeExclude:
   - '@vitejs/devtools-*'
 trustPolicy: no-downgrade
 trustPolicyExcludePrune: true
-trustPolicyExclude:
-  - semver@6.3.1
-
 dedupePeers: true

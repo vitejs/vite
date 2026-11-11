@@ -631,7 +631,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const modulesCode =
           modules &&
           !inlined &&
-          dataToEsm(modules, { namedExports: true, preferConst: true })
+          dataToEsm(modules, {
+            namedExports: true,
+            preferConst: true,
+            includeArbitraryNames:
+              isArbitraryModuleNamespaceIdentifierNameSupported(
+                config.build.target,
+              ),
+          })
 
         if (config.command === 'serve') {
           const getContentWithSourcemap = async (content: string) => {
@@ -3645,6 +3652,67 @@ const esMap: Record<number, string[]> = {
 
 const esRE = /es(6|\d{4})/
 const versionRE = /\d/
+
+// Minimum versions that support arbitrary module namespace identifier names
+// (e.g. `export { x as "string name" }`), matching Oxc's compat table.
+// https://github.com/oxc-project/oxc/blob/crates_v0.158.0/tasks/compat_data/custom-compat-data.js#L28-L45
+const arbitraryModuleNamespaceIdentifierNameSupport: Record<
+  string,
+  [major: number, minor: number]
+> = {
+  chrome: [88, 0],
+  opera: [74, 0],
+  edge: [88, 0],
+  firefox: [87, 0],
+  safari: [14, 1],
+  node: [16, 0],
+  deno: [1, 6],
+  ios: [14, 5],
+  samsung: [15, 0],
+  electron: [12, 0],
+}
+
+export const isArbitraryModuleNamespaceIdentifierNameSupported = (
+  oxcTarget: string | string[] | false,
+): boolean => {
+  if (
+    !oxcTarget ||
+    oxcTarget === 'esnext' ||
+    oxcTarget === 'baseline-widely-available'
+  ) {
+    return true
+  }
+
+  return arraify(oxcTarget).every((entry) => {
+    if (entry === 'esnext') {
+      return true
+    }
+
+    const esMatch = esRE.exec(entry)
+    if (esMatch) {
+      const year = esMatch[1] === '6' ? 2015 : Number(esMatch[1])
+      return year >= 2022
+    }
+
+    const index = entry.search(versionRE)
+    if (index >= 0) {
+      const browser = entry.slice(0, index)
+      const minVersion = arbitraryModuleNamespaceIdentifierNameSupport[browser]
+      if (!minVersion) {
+        return false
+      }
+
+      const [major, minor = 0] = entry
+        .slice(index)
+        .split('.')
+        .map((v) => parseInt(v, 10))
+      const [minMajor, minMinor] = minVersion
+      return major > minMajor || (major === minMajor && minor >= minMinor)
+    }
+
+    return false
+  })
+}
 
 const convertTargetsCache = new Map<
   string | string[],
