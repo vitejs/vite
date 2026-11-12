@@ -212,7 +212,7 @@ describe('addHtmlRequestToSafeModulePaths', () => {
 
       await addHtmlRequestToSafeModulePaths(requestUrl, server)
 
-      expect(new Set(server.config.safeModulePaths)).toEqual(
+      expect(new Set(server.config.safeModulePaths)).toStrictEqual(
         new Set([expected, expected.split('?', 1)[0]]),
       )
     })
@@ -230,7 +230,7 @@ describe('addHtmlRequestToSafeModulePaths', () => {
     await addHtmlRequestToSafeModulePaths('/images/icon.svg', server)
 
     expect(resolveId).not.toHaveBeenCalled()
-    expect(new Set(server.config.safeModulePaths)).toEqual(
+    expect(new Set(server.config.safeModulePaths)).toStrictEqual(
       new Set([`${root}/image.svg`, `${root}/static/icon.svg`]),
     )
   })
