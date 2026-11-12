@@ -387,7 +387,10 @@ export class BundledDev {
         source: result.sourcemap,
       })
     }
-    return { filename: result.filename, code: result.code }
+    return {
+      filename: result.filename,
+      code: result.code + payloadDeliveredAck(result.filename),
+    }
   }
 
   async resetClient(oldClientId: string, newClientId: string): Promise<void> {
@@ -573,9 +576,7 @@ export class BundledDev {
       // but we cannot use `Sec-Fetch-*` headers as they are only sent to potentially-trustworthy origins
       source:
         hmrOutput.code +
-        (this.environment.config.consumer === 'server'
-          ? ''
-          : payloadDeliveredAck(hmrOutput.filename)) +
+        payloadDeliveredAck(hmrOutput.filename) +
         '\n; export {}',
     })
     if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
@@ -664,7 +665,7 @@ function debounce(time: number, cb: () => void) {
  * chunk's tail: if the tail throws, no report is sent and the next payload
  * simply re-ships those factories, which is safe (registration overwrites).
  */
-export function payloadDeliveredAck(filename: string): string {
+function payloadDeliveredAck(filename: string): string {
   return `\n;__rolldown_runtime__.payloadDelivered(${JSON.stringify(filename)});`
 }
 

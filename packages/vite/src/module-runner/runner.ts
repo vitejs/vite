@@ -520,6 +520,14 @@ export class ModuleRunner {
         super(nanoid())
       }
 
+      payloadDelivered(filename: string): void {
+        this.runner.transport.send({
+          type: 'custom',
+          event: 'vite:bundled-dev:payload-delivered',
+          data: { filename },
+        })
+      }
+
       // Rolldown's runtime uses `import` that will not be rewritten by the module runner transform
       override loadLazyChunk(proxyModuleId: string): Promise<unknown> {
         return this.runner.import(

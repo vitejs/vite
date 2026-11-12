@@ -154,10 +154,6 @@ async function fetchBundledModule(
     if (lazyResult == null) {
       throw new Error(`unknown request: ${url}`)
     }
-    // unlike the browser, the payload is handed to the module runner inline,
-    // so it is delivered as soon as it is generated
-    bundledDev.markPayloadDelivered(lazyResult.filename)
-
     // This module is invalidated immediately, so url/id do not matter
     const result: ViteFetchResult = {
       code: lazyResult.code,
@@ -220,10 +216,6 @@ async function fetchBundledModule(
       } was not bundled. Is server established?`,
     )
   }
-  // handing the chunk to the runner is the equivalent of the browser finishing
-  // the response for it. No-op unless this chunk is a pending HMR payload.
-  bundledDev.markPayloadDelivered(fileName)
-
   const result: ViteFetchResult = {
     code: code.toString(),
     // To make sure dynamic imports resolve assets correctly.
