@@ -1143,7 +1143,9 @@ export function transformCjsImport(
           )
         }
       } else {
-        lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"]`)
+        lines.push(
+          `const ${localName} = ${cjsModuleName}[${JSON.stringify(importedName)}]`,
+        )
       }
     })
     if (defaultExports) {
