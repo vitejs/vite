@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import type { SyncOptions } from 'execa'
-import { execaCommandSync } from 'execa'
+import { xSync } from 'tinyexec'
 import { afterEach, beforeAll, expect, test } from 'vitest'
 
 const CLI_PATH = path.join(import.meta.dirname, '..')
@@ -14,10 +13,13 @@ const genPathWithSubfolder = path.join(
   projectName,
 )
 
-const run = (args: string[], options?: SyncOptions) => {
-  return execaCommandSync(`node ${CLI_PATH} ${args.join(' ')}`, {
-    env: { ...process.env, _VITE_TEST_CLI: 'true' },
-    ...options,
+const run = (args: string[], options?: { cwd?: string }) => {
+  return xSync('node', [CLI_PATH, ...args], {
+    throwOnError: true,
+    nodeOptions: {
+      env: { ...process.env, _VITE_TEST_CLI: 'true' },
+      cwd: options?.cwd,
+    },
   })
 }
 
@@ -147,7 +149,7 @@ test('successfully scaffolds a project based on vue starter template', () => {
 
   // Assertions
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
-  expect(templateFiles).toEqual(generatedFiles)
+  expect(templateFiles).toStrictEqual(generatedFiles)
 })
 
 test('successfully scaffolds a project with subfolder based on react starter template', () => {
@@ -169,7 +171,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
 
   // Assertions
   expect(stdout).toContain(`Scaffolding project in ${genPathWithSubfolder}`)
-  expect(templateFilesReact).toEqual(generatedFiles)
+  expect(templateFilesReact).toStrictEqual(generatedFiles)
 })
 
 test('successfully scaffolds a project based on react-compiler-ts starter template', () => {
@@ -266,7 +268,7 @@ test('ignores --eslint with a warning for non-React templates', () => {
   expect(stderr).not.toContain('ENOENT')
 
   const generatedFiles = fs.readdirSync(genPath).sort()
-  expect(templateFiles).toEqual(generatedFiles)
+  expect(templateFiles).toStrictEqual(generatedFiles)
   expect(fs.existsSync(path.join(genPath, 'eslint.config.js'))).toBe(false)
 })
 
@@ -288,7 +290,7 @@ test('works with the -t alias', () => {
 
   // Assertions
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
-  expect(templateFiles).toEqual(generatedFiles)
+  expect(templateFiles).toStrictEqual(generatedFiles)
 })
 
 test('accepts command line override for --overwrite', () => {

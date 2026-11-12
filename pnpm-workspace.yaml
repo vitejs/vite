@@ -3,6 +3,8 @@ packages:
   - 'playground/**'
   - 'packages/**/__tests__/**'
   - '!packages/**/__tests__/**/fixtures/lockfile-hash/**'
+  # test fixture that needs to be detected as its own workspace root
+  - '!packages/vite/src/node/server/__tests__/fixtures/pnpm'
   - docs
 
 hoistPattern:

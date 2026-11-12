@@ -26,16 +26,10 @@ test.runIf(isServe)('should restart', async () => {
   await expect
     .poll(() => {
       const logs = streams.server.out.slice(logsLengthBeforeEdit)
-      expect(logs).toEqual(
-        expect.arrayContaining([expect.stringMatching('server restarted')]),
-      )
+      expect(logs).toContainEqual(expect.stringMatching('server restarted'))
       // Don't reprint the server URLs as they are the same
-      expect(logs).not.toEqual(
-        expect.arrayContaining([expect.stringMatching('http://localhost')]),
-      )
-      expect(logs).not.toEqual(
-        expect.arrayContaining([expect.stringMatching('error')]),
-      )
+      expect(logs).not.toContainEqual(expect.stringMatching('http://localhost'))
+      expect(logs).not.toContainEqual(expect.stringMatching('error'))
     })
     .toSatisfy(() => true)
 })

@@ -252,7 +252,12 @@ export async function preview(
     app.use(proxyMiddleware(httpServer, proxy, config))
   }
 
-  app.use(compression())
+  app.use(
+    compression({
+      // Compress text and structured data, plus mime-db types such as WebAssembly.
+      mimes: /text|javascript|\/json|xml|application\/wasm/i,
+    }),
+  )
 
   // base
   if (config.base !== '/') {

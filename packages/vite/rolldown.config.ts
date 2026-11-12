@@ -1,8 +1,8 @@
 import { writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { ImportType, init, parse } from 'es-module-lexer'
+import { init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
-import type { Plugin } from 'rolldown'
+import type { OutputOptions, Plugin } from 'rolldown'
 import { defineConfig } from 'rolldown'
 import pkg from './package.json' with { type: 'json' }
 import licensePlugin from './rollupLicensePlugin'
@@ -44,7 +44,7 @@ const bundledDevClientConfig = defineConfig({
   transform: {
     target: 'es2020',
   },
-  // the runtime is served from the installed rolldown at dev time (`getRolldownDevRuntimeFiles`)
+  // the runtime is served from the installed rolldown at dev time (`getRolldownDevRuntime`)
   external: ['@vite/env', 'rolldown/experimental/runtime'],
   output: {
     dir: path.resolve(dirname, 'dist'),
@@ -154,9 +154,9 @@ const moduleRunnerConfig = defineConfig({
     /^rolldown\//,
     ...Object.keys(pkg.dependencies),
   ],
-  plugins: [bundleSizeLimit(55), enableSourceMapsInWatchModePlugin()],
+  plugins: [bundleSizeLimit(56), enableSourceMapsInWatchModePlugin()],
   output: {
-    ...sharedNodeOptions.output,
+    ...(sharedNodeOptions.output as OutputOptions),
     minify: {
       compress: true,
       mangle: false,
@@ -242,9 +242,9 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
         )
         if (!file) return
 
-        for (const { src, replacement, pattern } of deps[file]) {
-          const magicString = new MagicString(code)
+        const magicString = new MagicString(code)
 
+        for (const { src, replacement, pattern } of deps[file]) {
           if (src) {
             const pos = code.indexOf(src)
             if (pos < 0) {
@@ -274,13 +274,14 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
               )
             }
           }
-
-          code = magicString.toString()
         }
 
         console.log(`shimmed: ${file}`)
 
-        return code
+        return {
+          code: magicString.toString(),
+          map: magicString.generateMap({ source: id, hires: 'boundary' }),
+        }
       },
     },
     buildEnd(err) {
@@ -325,23 +326,23 @@ function buildTimeImportMetaUrlPlugin(): Plugin {
           lastIndex++
         }
 
-        await init
+        await init()
 
         const s = new MagicString(code)
         const [imports] = parse(code)
-        for (const { t, ss, se } of imports) {
+        for (const { type, importStart, importEnd } of imports) {
           if (
-            t === ImportType.ImportMeta &&
-            code.slice(se, se + 4) === '.url'
+            type === 'import-meta' &&
+            code.slice(importEnd, importEnd + 4) === '.url'
           ) {
             // ignore import.meta.url with /** #__KEEP__ */ comment
-            if (keepCommentRE.test(code.slice(0, ss))) {
+            if (keepCommentRE.test(code.slice(0, importStart))) {
               keepCommentRE.lastIndex = 0
               continue
             }
 
             // import.meta.url
-            s.overwrite(ss, se + 4, `${prefix}${index}`)
+            s.overwrite(importStart, importEnd + 4, `${prefix}${index}`)
           }
         }
         return s.hasChanged()
