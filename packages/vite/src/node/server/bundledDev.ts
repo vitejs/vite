@@ -13,11 +13,14 @@ import {
   dev,
 } from 'rolldown/experimental'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
-import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
+import {
+  BUNDLED_DEV_CLIENT_FILENAME,
+  BUNDLED_DEV_ROLLDOWN_RUNTIME_FILENAME,
+} from '../constants'
 import {
   getBundledDevClientAliases,
   getHmrImplementation,
-  getRolldownDevRuntimeFiles,
+  getRolldownDevRuntime,
 } from '../plugins/clientInjections'
 import {
   createDebugger,
@@ -429,7 +432,7 @@ export class BundledDev {
         BUNDLED_DEV_CLIENT_FILENAME,
         await getHmrImplementation(this.environment.getTopLevelConfig()),
       ],
-      ...getRolldownDevRuntimeFiles(),
+      [BUNDLED_DEV_ROLLDOWN_RUNTIME_FILENAME, getRolldownDevRuntime()],
     ])
     const aliases = getBundledDevClientAliases(
       this.environment.getTopLevelConfig(),

@@ -601,7 +601,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               ? moduleUrlToBrowserUrl(moduleUrl, ssr ? '' : base)
               : specifier
             if (id != null) {
-              config.safeModulePaths.add(cleanUrl(id))
+              environment.safeModulePaths.addId(id)
             }
 
             if (browserUrl !== specifier) {
@@ -990,7 +990,7 @@ export function interopNamedImports(
     str.overwrite(
       expStart,
       expEnd,
-      `import('${rewrittenUrl}').then(m => (${interopHelperStr})(m.default, ${+isNodeMode}))` +
+      `import(${JSON.stringify(rewrittenUrl)}).then(m => (${interopHelperStr})(m.default, ${+isNodeMode}))` +
         getLineBreaks(exp),
       { contentOnly: true },
     )
@@ -1021,9 +1021,9 @@ export function interopNamedImports(
     } else {
       // #1439 export * from '...'
       str.overwrite(
-        start,
-        end,
-        rewrittenUrl + getLineBreaks(source.slice(start, end)),
+        start - 1,
+        end + 1,
+        JSON.stringify(rewrittenUrl) + getLineBreaks(source.slice(start, end)),
         {
           contentOnly: true,
         },
@@ -1079,7 +1079,7 @@ export function transformCjsImport(
     node.type === 'ExportNamedDeclaration'
   ) {
     if (!node.specifiers.length) {
-      return { importLine: `import "${url}"` }
+      return { importLine: `import ${JSON.stringify(url)}` }
     }
 
     const importNames: ImportNameSpecifier[] = []
@@ -1127,7 +1127,7 @@ export function transformCjsImport(
     const cjsModuleName = makeLegalIdentifier(
       `__vite__cjsImport${importIndex}_${rawUrl}`,
     )
-    const importLine = `import ${cjsModuleName} from "${url}"`
+    const importLine = `import ${cjsModuleName} from ${JSON.stringify(url)}`
     const lines: string[] = []
     importNames.forEach(({ importedName, localName }) => {
       if (importedName === '*') {
@@ -1143,7 +1143,9 @@ export function transformCjsImport(
           )
         }
       } else {
-        lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"]`)
+        lines.push(
+          `const ${localName} = ${cjsModuleName}[${JSON.stringify(importedName)}]`,
+        )
       }
     })
     if (defaultExports) {

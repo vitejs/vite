@@ -117,6 +117,7 @@ import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from './server/pluginContainer'
+import { SafeModulePaths } from './server/safeModulePaths'
 import type { WebSocketServer } from './server/ws'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions, ssrConfigDefaults } from './ssr'
@@ -275,8 +276,9 @@ function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
 
 export type ResolvedDevEnvironmentOptions = Omit<
   Required<DevEnvironmentOptions>,
-  'sourcemapIgnoreList'
+  'sourcemap' | 'sourcemapIgnoreList'
 > & {
+  sourcemap: { js: boolean; css: boolean }
   sourcemapIgnoreList: Exclude<
     DevEnvironmentOptions['sourcemapIgnoreList'],
     false | undefined
@@ -358,6 +360,8 @@ export type ResolvedEnvironmentOptions = {
   plugins: readonly Plugin[]
   /** @internal */
   optimizeDepsPluginNames: string[]
+  /** @internal */
+  safeModulePaths: SafeModulePaths
 }
 
 export type DefaultEnvironmentOptions = Omit<
@@ -787,8 +791,11 @@ export interface ResolvedConfig extends Readonly<
     webSocketToken: string
     /** @internal */
     fsDenyGlob: AnymatchFn
-    /** @internal */
-    safeModulePaths: Set<string>
+    /**
+     * @internal
+     * @deprecated Use `config.environments.client.safeModulePaths` instead.
+     */
+    safeModulePaths: SafeModulePaths
     /** @internal */
     [SYMBOL_RESOLVED_CONFIG]: true
   } & PluginHookUtils
@@ -970,6 +977,7 @@ export function resolveDevEnvironmentOptions(
   consumer: 'client' | 'server' | undefined,
   // Backward compatibility
   preTransformRequest?: boolean,
+  cssDevSourcemap?: boolean,
 ): ResolvedDevEnvironmentOptions {
   const resolved = mergeWithDefaults(
     {
@@ -987,11 +995,21 @@ export function resolveDevEnvironmentOptions(
   )
   return {
     ...resolved,
+    sourcemap: normalizeDevSourcemap(resolved.sourcemap, cssDevSourcemap),
     sourcemapIgnoreList:
       resolved.sourcemapIgnoreList === false
         ? () => false
         : resolved.sourcemapIgnoreList,
   }
+}
+
+function normalizeDevSourcemap(
+  sourcemap: DevEnvironmentOptions['sourcemap'],
+  cssDefault = false,
+): ResolvedDevEnvironmentOptions['sourcemap'] {
+  return typeof sourcemap === 'boolean'
+    ? { js: sourcemap, css: sourcemap }
+    : { js: sourcemap?.js ?? true, css: sourcemap?.css ?? cssDefault }
 }
 
 function resolveEnvironmentOptions(
@@ -1003,6 +1021,7 @@ function resolveEnvironmentOptions(
   environmentName: string,
   isBuild: boolean,
   isBundledDev: boolean,
+  cssDevSourcemap: boolean | undefined,
   // Backward compatibility
   isSsrTargetWebworkerSet?: boolean,
   preTransformRequests?: boolean,
@@ -1064,6 +1083,7 @@ function resolveEnvironmentOptions(
       environmentName,
       consumer,
       preTransformRequests,
+      cssDevSourcemap,
     ),
     build: resolveBuildEnvironmentOptions(
       options.build ?? {},
@@ -1077,6 +1097,7 @@ function resolveEnvironmentOptions(
     plugins: undefined!, // to be resolved later
     // will be set by `setOptimizeDepsPluginNames` later
     optimizeDepsPluginNames: undefined!,
+    safeModulePaths: new SafeModulePaths(),
   }
 }
 
@@ -1091,7 +1112,13 @@ export function getDefaultEnvironmentOptions(
       mainFields: undefined,
       conditions: undefined,
     },
-    dev: config.dev,
+    dev:
+      typeof config.dev?.sourcemap === 'boolean'
+        ? {
+            ...config.dev,
+            sourcemap: normalizeDevSourcemap(config.dev.sourcemap),
+          }
+        : config.dev,
     build: config.build,
   }
 }
@@ -1592,6 +1619,14 @@ export async function resolveConfig(
     )
   }
 
+  if (config.css?.devSourcemap !== undefined) {
+    logger.warn(
+      colors.yellow(
+        `The \`css.devSourcemap\` option is deprecated. Please use \`dev.sourcemap.css\` instead.`,
+      ),
+    )
+  }
+
   const tsconfigPathsPlugin = userPlugins.find(
     (p) =>
       p.name === 'vite-tsconfig-paths' ||
@@ -1753,6 +1788,7 @@ export async function resolveConfig(
       environmentName,
       isBuild,
       isBundledDev,
+      config.css?.devSourcemap,
       config.ssr?.target === 'webworker',
       config.server?.preTransformRequests,
     )
@@ -1770,6 +1806,8 @@ export async function resolveConfig(
     // default environment options
     undefined,
     undefined,
+    undefined,
+    config.css?.devSourcemap,
   )
 
   const resolvedBuildOptions = resolveBuildEnvironmentOptions(
@@ -2176,7 +2214,7 @@ export async function resolveConfig(
         dot: true,
       },
     ),
-    safeModulePaths: new Set<string>(),
+    safeModulePaths: resolvedEnvironments.client.safeModulePaths,
     [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {

@@ -35,6 +35,12 @@ if (typeof DevRuntime !== 'undefined') {
     override createModuleHotContext(moduleId: string) {
       return new BundledDevHMRContext(bundledDevHmrClient, moduleId)
     }
+
+    override loadLazyChunk(proxyModuleId: string): Promise<unknown> {
+      return import(
+        /* @vite-ignore */ `${base}@vite/lazy?id=${encodeURIComponent(proxyModuleId)}&clientId=${this.clientId}`
+      )
+    }
   }
 
   const clientId = nanoid()
