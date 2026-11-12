@@ -34,6 +34,7 @@ import {
   ERR_CLOSED_SERVER,
   createEnvironmentPluginContainer,
 } from './pluginContainer'
+import type { SafeModulePaths } from './safeModulePaths'
 import type { TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { warmupFiles } from './warmup'
@@ -56,6 +57,8 @@ export interface DevEnvironmentContext {
 export class DevEnvironment extends BaseEnvironment {
   mode = 'dev' as const
   moduleGraph: EnvironmentModuleGraph
+  /** @internal */
+  safeModulePaths: SafeModulePaths
 
   depsOptimizer?: DepsOptimizer
   /**
@@ -126,6 +129,7 @@ export class DevEnvironment extends BaseEnvironment {
       ) as ResolvedEnvironmentOptions
     }
     super(name, config, options)
+    this.safeModulePaths = options.safeModulePaths
     if (
       options.isBundled ||
       (name === 'client' && config.experimental.bundledDev)
@@ -247,9 +251,9 @@ export class DevEnvironment extends BaseEnvironment {
       )
       for (const resolved of resolvedEntries) {
         if (resolved && !resolved.external) {
-          const resolvedId = cleanUrl(resolved.id)
-          if (path.isAbsolute(resolvedId)) {
-            this.getTopLevelConfig().safeModulePaths.add(resolvedId)
+          const file = cleanUrl(resolved.id)
+          if (path.isAbsolute(file)) {
+            this.safeModulePaths.addId(resolved.id)
           }
         }
       }
@@ -272,6 +276,16 @@ export class DevEnvironment extends BaseEnvironment {
     this.hot.listen()
     await Promise.all([this.bundledDev?.listen(), this.depsOptimizer?.init()])
     warmupFiles(server, this)
+  }
+
+  /**
+   * Register a resolved module ID as safe to load in this environment, even
+   * outside `server.fs.allow`. Filesystem IDs must be normalized absolute paths
+   * and may include a query. `server.fs.deny` still applies.
+   * Call from the plugin's `transform` hook when it adds a reference to the module.
+   */
+  addSafeModule(id: string): void {
+    this.safeModulePaths.addId(id)
   }
 
   /**

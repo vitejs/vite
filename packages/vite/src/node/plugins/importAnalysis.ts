@@ -601,7 +601,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               ? moduleUrlToBrowserUrl(moduleUrl, ssr ? '' : base)
               : specifier
             if (id != null) {
-              config.safeModulePaths.add(cleanUrl(id))
+              environment.safeModulePaths.addId(id)
             }
 
             if (browserUrl !== specifier) {
@@ -1143,7 +1143,9 @@ export function transformCjsImport(
           )
         }
       } else {
-        lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"]`)
+        lines.push(
+          `const ${localName} = ${cjsModuleName}[${JSON.stringify(importedName)}]`,
+        )
       }
     })
     if (defaultExports) {
