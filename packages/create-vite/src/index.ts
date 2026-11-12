@@ -30,11 +30,18 @@ const argv = mri<{
   immediate?: boolean
   interactive?: boolean
   eslint?: boolean
-  devtools?: string | boolean
+  devtools?: boolean
 }>(process.argv.slice(2), {
-  boolean: ['help', 'overwrite', 'immediate', 'interactive', 'eslint'],
+  boolean: [
+    'help',
+    'overwrite',
+    'immediate',
+    'interactive',
+    'eslint',
+    'devtools',
+  ],
   alias: { h: 'help', t: 'template', i: 'immediate' },
-  string: ['template', 'devtools'],
+  string: ['template'],
 })
 const cwd = process.cwd()
 
@@ -49,7 +56,7 @@ Options:
   -t, --template NAME                   use a specific template
   -i, --immediate / --no-immediate      install dependencies and start dev
   --eslint / --no-eslint                use ESLint instead of Oxlint (only for React templates)
-  --devtools [MODE] / --no-devtools     add Vite DevTools: dev (default), build or all
+  --devtools / --no-devtools            add Vite DevTools
   --overwrite                           remove existing files if target directory is not empty
   --interactive / --no-interactive      force interactive / non-interactive mode
   -h, --help                            display this help message
@@ -676,29 +683,14 @@ async function init() {
   }
 
   // 6. Ask whether to add Vite DevTools
-  let devtools: string | false
-  if (argDevtools === false) {
-    devtools = false
-  } else if (argDevtools !== undefined) {
-    // a bare `--devtools` defaults to the dev server
-    const mode =
-      argDevtools === true || argDevtools === '' ? 'dev' : argDevtools
-    if (!['dev', 'build', 'all'].includes(mode)) {
-      prompts.log.error(
-        `Invalid \`--devtools\` value: ${mode}. Expected one of: dev, build, all`,
-      )
-      process.exit(1)
-    }
-    devtools = mode
-  } else {
+  let devtools = argDevtools
+  if (devtools === undefined) {
     if (interactive) {
-      const devtoolsResult = await prompts.select<string | false>({
+      const devtoolsResult = await prompts.select<boolean>({
         message: 'Add Vite DevTools?',
         options: [
           { label: 'No', value: false },
-          { label: 'Dev server only (recommended)', value: 'dev' },
-          { label: 'Build analysis only', value: 'build' },
-          { label: 'Dev server + build analysis', value: 'all' },
+          { label: 'Yes', value: true },
         ],
       })
       if (prompts.isCancel(devtoolsResult)) return cancel()
@@ -771,7 +763,7 @@ async function init() {
   }
 
   if (devtools) {
-    setupDevTools(root, template.endsWith('-ts'), devtools)
+    setupDevTools(root, template.endsWith('-ts'))
   }
 
   if (immediate) {
@@ -1112,7 +1104,7 @@ function updateReactCompilerReadme(root: string, newBody: string) {
   })
 }
 
-function setupDevTools(root: string, isTs: boolean, mode: string) {
+function setupDevTools(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@vitejs/devtools
   const devtoolsVersion = '0.8.0'
   // renovate: datasource=npm depName=@vitejs/devtools-vite
@@ -1120,24 +1112,20 @@ function setupDevTools(root: string, isTs: boolean, mode: string) {
   // renovate: datasource=npm depName=@vitejs/devtools-rolldown
   const devtoolsRolldownVersion = '0.8.0'
 
-  const option =
-    mode === 'all'
-      ? 'true'
-      : `{ apply: '${mode === 'dev' ? 'serve' : 'build'}' }`
+  const option = `{
+    // Remove this \`apply\` property to enable devtools for build as well
+    apply: 'serve',
+  }`
 
   editFile(path.resolve(root, 'package.json'), (content) => {
     const asObject = JSON.parse(content)
     const devDepsEntries = Object.entries(asObject.devDependencies ?? {})
     devDepsEntries.push(['@vitejs/devtools', `^${devtoolsVersion}`])
-    if (mode !== 'build') {
-      devDepsEntries.push(['@vitejs/devtools-vite', `^${devtoolsViteVersion}`])
-    }
-    if (mode !== 'dev') {
-      devDepsEntries.push([
-        '@vitejs/devtools-rolldown',
-        `^${devtoolsRolldownVersion}`,
-      ])
-    }
+    devDepsEntries.push(['@vitejs/devtools-vite', `^${devtoolsViteVersion}`])
+    devDepsEntries.push([
+      '@vitejs/devtools-rolldown',
+      `^${devtoolsRolldownVersion}`,
+    ])
     // oxlint-disable-next-line typescript/require-array-sort-compare
     devDepsEntries.sort()
     asObject.devDependencies = Object.fromEntries(devDepsEntries)

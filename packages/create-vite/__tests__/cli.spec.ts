@@ -280,65 +280,32 @@ test('does not add devtools by default', () => {
   expect(config).not.toContain('devtools')
 })
 
-test('adds devtools for dev server only when --devtools is passed without a value', () => {
-  run([projectName, '--template', 'vue', '--devtools'], {
-    cwd: import.meta.dirname,
-  })
-  const pkg = JSON.parse(
-    fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8'),
-  )
-  const config = fs.readFileSync(path.join(genPath, 'vite.config.js'), 'utf-8')
-  expect(pkg.devDependencies['@vitejs/devtools']).toBeDefined()
-  expect(pkg.devDependencies['@vitejs/devtools-vite']).toBeDefined()
-  expect(pkg.devDependencies['@vitejs/devtools-rolldown']).toBeUndefined()
-  expect(config).toContain(`apply: 'serve'`)
-})
-
-test('adds devtools for dev and build with --devtools all', () => {
-  run([projectName, '--template', 'vue', '--devtools', 'all'], {
-    cwd: import.meta.dirname,
-  })
-  const pkg = JSON.parse(
-    fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8'),
-  )
-  const config = fs.readFileSync(path.join(genPath, 'vite.config.js'), 'utf-8')
-  expect(Object.keys(pkg.devDependencies)).toStrictEqual(
-    expect.arrayContaining([
-      '@vitejs/devtools',
-      '@vitejs/devtools-vite',
-      '@vitejs/devtools-rolldown',
-    ]),
-  )
-  expect(config).toContain('devtools: true,')
-})
-
-test('adds devtools for dev server only with --devtools dev', () => {
-  run([projectName, '--template', 'react-ts', '--devtools', 'dev'], {
-    cwd: import.meta.dirname,
-  })
-  const pkg = JSON.parse(
-    fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8'),
-  )
-  const config = fs.readFileSync(path.join(genPath, 'vite.config.ts'), 'utf-8')
-  expect(pkg.devDependencies['@vitejs/devtools']).toBeDefined()
-  expect(pkg.devDependencies['@vitejs/devtools-vite']).toBeDefined()
-  expect(pkg.devDependencies['@vitejs/devtools-rolldown']).toBeUndefined()
-  expect(config).toContain(`apply: 'serve'`)
-})
-
-test('creates a vite config with devtools for build only on vanilla templates', () => {
-  run([projectName, '--template', 'vanilla-ts', '--devtools', 'build'], {
-    cwd: import.meta.dirname,
-  })
-  const pkg = JSON.parse(
-    fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8'),
-  )
-  const config = fs.readFileSync(path.join(genPath, 'vite.config.ts'), 'utf-8')
-  expect(pkg.devDependencies['@vitejs/devtools-vite']).toBeUndefined()
-  expect(pkg.devDependencies['@vitejs/devtools-rolldown']).toBeDefined()
-  expect(config).toContain(`import { defineConfig } from 'vite'`)
-  expect(config).toContain(`apply: 'build'`)
-})
+test.each(['vue', 'react-ts', 'vanilla', 'vanilla-ts'])(
+  'installs all devtools dependencies and enables dev only for %s',
+  (template) => {
+    run([projectName, '--template', template, '--devtools'], {
+      cwd: import.meta.dirname,
+    })
+    const pkg = JSON.parse(
+      fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8'),
+    )
+    const config = fs.readFileSync(
+      path.join(
+        genPath,
+        `vite.config.${template.endsWith('-ts') ? 'ts' : 'js'}`,
+      ),
+      'utf-8',
+    )
+    expect(pkg.devDependencies['@vitejs/devtools']).toBeDefined()
+    expect(pkg.devDependencies['@vitejs/devtools-vite']).toBeDefined()
+    expect(pkg.devDependencies['@vitejs/devtools-rolldown']).toBeDefined()
+    expect(config).toContain(`apply: 'serve'`)
+    expect(config).toContain(
+      '// Remove this `apply` property to enable devtools for build as well',
+    )
+    expect(config).toContain('defineConfig({')
+  },
+)
 
 test('does not add devtools with --no-devtools', () => {
   run([projectName, '--template', 'vue', '--no-devtools'], {
@@ -346,14 +313,6 @@ test('does not add devtools with --no-devtools', () => {
   })
   const pkg = fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8')
   expect(pkg).not.toContain('@vitejs/devtools')
-})
-
-test('errors on an invalid --devtools value', () => {
-  expect(() =>
-    run([projectName, '--template', 'vue', '--devtools', 'foo'], {
-      cwd: import.meta.dirname,
-    }),
-  ).toThrow('Invalid `--devtools` value: foo')
 })
 
 test('works with the -t alias', () => {
