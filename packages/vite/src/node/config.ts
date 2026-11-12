@@ -117,6 +117,7 @@ import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from './server/pluginContainer'
+import { SafeModulePaths } from './server/safeModulePaths'
 import type { WebSocketServer } from './server/ws'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions, ssrConfigDefaults } from './ssr'
@@ -359,6 +360,8 @@ export type ResolvedEnvironmentOptions = {
   plugins: readonly Plugin[]
   /** @internal */
   optimizeDepsPluginNames: string[]
+  /** @internal */
+  safeModulePaths: SafeModulePaths
 }
 
 export type DefaultEnvironmentOptions = Omit<
@@ -796,8 +799,11 @@ export interface ResolvedConfig extends Readonly<
     webSocketToken: string
     /** @internal */
     fsDenyGlob: AnymatchFn
-    /** @internal */
-    safeModulePaths: Set<string>
+    /**
+     * @internal
+     * @deprecated Use `config.environments.client.safeModulePaths` instead.
+     */
+    safeModulePaths: SafeModulePaths
     /** @internal */
     [SYMBOL_RESOLVED_CONFIG]: true
   } & PluginHookUtils
@@ -1100,6 +1106,7 @@ function resolveEnvironmentOptions(
     plugins: undefined!, // to be resolved later
     // will be set by `setOptimizeDepsPluginNames` later
     optimizeDepsPluginNames: undefined!,
+    safeModulePaths: new SafeModulePaths(),
   }
 }
 
@@ -2216,7 +2223,7 @@ export async function resolveConfig(
         dot: true,
       },
     ),
-    safeModulePaths: new Set<string>(),
+    safeModulePaths: resolvedEnvironments.client.safeModulePaths,
     [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {

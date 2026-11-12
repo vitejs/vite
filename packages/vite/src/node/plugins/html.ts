@@ -621,7 +621,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
                     code: contents,
                   })
-                  js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.js"`
+                  js += `\nimport ${JSON.stringify(`${id}?html-proxy&index=${inlineModuleIndex}.js`)}`
                   shouldRemove = true
                 }
 
@@ -736,7 +736,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const filePath = id.replace(normalizePath(config.root), '')
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
             // will transform with css plugin and cache result with css-post plugin
-            js += `\nimport "${id}?html-proxy&inline-css&style-attr&index=${inlineModuleIndex}.css"`
+            js += `\nimport ${JSON.stringify(`${id}?html-proxy&inline-css&style-attr&index=${inlineModuleIndex}.css`)}`
             const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             overwriteAttrValue(
@@ -755,7 +755,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
               code: styleNode.value,
             })
-            js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
+            js += `\nimport ${JSON.stringify(`${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css`)}`
             const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             s.update(
