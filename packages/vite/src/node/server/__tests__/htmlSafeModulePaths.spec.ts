@@ -20,10 +20,10 @@ function createServerStub() {
       base: '/',
       publicDir: false,
       resolve: { alias: [], preserveSymlinks: true },
-      safeModulePaths: new SafeModulePaths(),
     },
     environments: {
       client: {
+        safeModulePaths: new SafeModulePaths(),
         pluginContainer: { resolveId: vi.fn().mockResolvedValue(null) },
       },
     },
@@ -212,7 +212,7 @@ describe('addHtmlRequestToSafeModulePaths', () => {
 
       await addHtmlRequestToSafeModulePaths(requestUrl, server)
 
-      expect(new Set(server.config.safeModulePaths)).toStrictEqual(
+      expect(new Set(server.environments.client.safeModulePaths)).toStrictEqual(
         new Set([expected, expected.split('?', 1)[0]]),
       )
     })
@@ -230,7 +230,7 @@ describe('addHtmlRequestToSafeModulePaths', () => {
     await addHtmlRequestToSafeModulePaths('/images/icon.svg', server)
 
     expect(resolveId).not.toHaveBeenCalled()
-    expect(new Set(server.config.safeModulePaths)).toStrictEqual(
+    expect(new Set(server.environments.client.safeModulePaths)).toStrictEqual(
       new Set([`${root}/image.svg`, `${root}/static/icon.svg`]),
     )
   })

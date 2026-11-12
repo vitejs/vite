@@ -267,7 +267,7 @@ describe('indexHtml middleware — browser request resolution', () => {
           moduleUrl,
         )
       mod.lastHMRTimestamp = 1234567890123
-      server.config.safeModulePaths.clear()
+      server.environments.client.safeModulePaths.clear()
       const warmupRequest = vi
         .spyOn(server, 'warmupRequest')
         .mockResolvedValue(undefined)
@@ -280,7 +280,7 @@ describe('indexHtml middleware — browser request resolution', () => {
 
       expect(transformed).toContain(`src="${expectedSrc}"`)
       expect(warmupRequest).toHaveBeenCalledExactlyOnceWith(moduleUrl)
-      expect(server.config.safeModulePaths).toContain(mod.id)
+      expect(server.environments.client.safeModulePaths).toContain(mod.id)
     })
   }
 
@@ -294,7 +294,7 @@ describe('indexHtml middleware — browser request resolution', () => {
         '/src/main.ts',
       )
     mod.lastHMRTimestamp = 1234567890123
-    server.config.safeModulePaths.clear()
+    server.environments.client.safeModulePaths.clear()
     const warmupRequest = vi
       .spyOn(server, 'warmupRequest')
       .mockResolvedValue(undefined)
@@ -306,7 +306,7 @@ describe('indexHtml middleware — browser request resolution', () => {
 
     expect(transformed).toContain('src="./src/main.ts?t=1234567890123"')
     expect(warmupRequest).not.toHaveBeenCalled()
-    expect(server.config.safeModulePaths).not.toContain(mod.id)
+    expect(server.environments.client.safeModulePaths).not.toContain(mod.id)
   })
 
   test('does not warm an HTML document referenced by a query-only URL', async () => {
@@ -394,8 +394,12 @@ describe('indexHtml middleware — safe module paths', () => {
     for (const base of [path.join(root, 'linked'), target]) {
       const image = normalizePath(path.join(base, 'image.svg'))
       const other = normalizePath(path.join(base, 'other.svg'))
-      expect(isFileLoadingAllowed(server.config, image)).toBe(true)
-      expect(isFileLoadingAllowed(server.config, other)).toBe(false)
+      expect(
+        isFileLoadingAllowed(server.environments.client.config, image),
+      ).toBe(true)
+      expect(
+        isFileLoadingAllowed(server.environments.client.config, other),
+      ).toBe(false)
     }
   })
 
@@ -467,13 +471,13 @@ describe('indexHtml middleware — safe module paths', () => {
       )
 
       for (const [url, file] of Object.entries(modules)) {
-        expect(server.config.safeModulePaths, url).toContain(
+        expect(server.environments.client.safeModulePaths, url).toContain(
           normalizePath(path.join(root, file)),
         )
         const result = await server.environments.client.transformRequest(url)
         expect(result).not.toBeNull()
         if (url.startsWith('/nested/')) {
-          expect(server.config.safeModulePaths).not.toContain(
+          expect(server.environments.client.safeModulePaths).not.toContain(
             normalizePath(path.join(root, url)),
           )
         }
@@ -506,10 +510,10 @@ describe('indexHtml middleware — safe module paths', () => {
     await server.transformIndexHtml('/index.html', '')
 
     const root = path.join(FIXTURE_DIR, 'root')
-    expect(server.config.safeModulePaths).toContain(
+    expect(server.environments.client.safeModulePaths).toContain(
       normalizePath(path.join(root, 'classic.js?raw')),
     )
-    expect(server.config.safeModulePaths).not.toContain(
+    expect(server.environments.client.safeModulePaths).not.toContain(
       normalizePath(path.join(root, 'ui/classic.js')),
     )
     expect(
@@ -539,7 +543,7 @@ describe('indexHtml middleware — safe module paths', () => {
     )
 
     expect(warmupRequest).toHaveBeenCalledWith('/entry.js?raw')
-    expect(server.config.safeModulePaths).toContain(resolvedId)
+    expect(server.environments.client.safeModulePaths).toContain(resolvedId)
     await Promise.all(warmupRequest.mock.results.map(({ value }) => value))
     expect(
       server.environments.client.moduleGraph.getModuleById(resolvedId)
@@ -577,12 +581,14 @@ describe('indexHtml middleware — safe module paths', () => {
 
     expect(
       isFileLoadingAllowed(
-        server.config,
+        server.environments.client.config,
         normalizePath(path.join(FIXTURE_DIR, 'root/classic.js')),
       ),
     ).toBe(true)
     expect(resolveId.mock.calls.map(([id]) => id)).not.toContain('/classic.js')
-    expect(server.config.safeModulePaths).not.toContain(OUTSIDE_HTML_PATH)
+    expect(server.environments.client.safeModulePaths).not.toContain(
+      OUTSIDE_HTML_PATH,
+    )
   })
 
   test('registers aliased stylesheets at the path used for transformation', async () => {
@@ -601,8 +607,10 @@ describe('indexHtml middleware — safe module paths', () => {
     )
 
     const filePath = normalizePath(path.join(FIXTURE_DIR, 'root/style.css'))
-    expect(server.config.safeModulePaths).toContain(filePath)
-    expect(server.config.safeModulePaths).toContain(filePath + '?direct')
+    expect(server.environments.client.safeModulePaths).toContain(filePath)
+    expect(server.environments.client.safeModulePaths).toContain(
+      filePath + '?direct',
+    )
     const result = await server.environments.client.transformRequest(
       '/@/style.css?direct',
     )
@@ -631,8 +639,10 @@ describe('indexHtml middleware — safe module paths', () => {
 
       expect(transformed).toContain('data-src="/ui/style.css?filtered"')
       const filePath = normalizePath(path.join(FIXTURE_DIR, 'root/style.css'))
-      expect(server.config.safeModulePaths).toContain(filePath)
-      expect(server.config.safeModulePaths).toContain(filePath + '?filtered')
+      expect(server.environments.client.safeModulePaths).toContain(filePath)
+      expect(server.environments.client.safeModulePaths).toContain(
+        filePath + '?filtered',
+      )
     })
 
     test('registers nested injected asset tags, srcsets, and additional asset sources', async () => {
@@ -689,8 +699,10 @@ describe('indexHtml middleware — safe module paths', () => {
         const filePath = normalizePath(
           path.resolve(FIXTURE_DIR, 'root', filename),
         )
-        expect(server.config.safeModulePaths).toContain(filePath)
-        expect(server.config.safeModulePaths).toContain(filePath + postfix)
+        expect(server.environments.client.safeModulePaths).toContain(filePath)
+        expect(server.environments.client.safeModulePaths).toContain(
+          filePath + postfix,
+        )
       }
     })
   })
