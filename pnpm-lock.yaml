@@ -647,6 +647,10 @@ importers:
         specifier: link:../child
         version: link:../child
 
+  packages/vite/src/node/__tests__/plugins/fixtures/css-url-imports: {}
+
+  packages/vite/src/node/__tests__/plugins/fixtures/css-url-imports/nested: {}
+
   packages/vite/src/node/__tests__/plugins/fixtures/license:
     dependencies:
       '@vitejs/test-dep-licence-cc0':
@@ -680,8 +684,6 @@ importers:
   packages/vite/src/node/server/__tests__/fixtures/lerna/nested: {}
 
   packages/vite/src/node/server/__tests__/fixtures/none/nested: {}
-
-  packages/vite/src/node/server/__tests__/fixtures/pnpm: {}
 
   packages/vite/src/node/server/__tests__/fixtures/pnpm/nested: {}
 
