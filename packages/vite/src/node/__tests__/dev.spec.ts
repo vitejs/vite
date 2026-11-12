@@ -133,7 +133,7 @@ describe('the dev server', () => {
     const runtimeUrl = path.posix.join('/@custom/', runtimeId)
     const callInLoad = vi.fn()
 
-    server = await createServer({
+    const server = await createTestServer({
       configFile: false,
       root,
       logLevel: 'silent',
