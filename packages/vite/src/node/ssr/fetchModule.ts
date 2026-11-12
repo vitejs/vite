@@ -238,7 +238,7 @@ async function fetchBundledModule(
     // TODO: seems like rolldown uses `process.cwd()` instead of `config.root`
     // We need this because __rolldown_runtime__ keeps modules internally
     // And after HMR there is no other way to receive the updated exports
-    regionId: facadeId
+    rolldownModuleId: facadeId
       ? normalizePath(path.relative(process.cwd(), facadeId))
       : undefined,
   }

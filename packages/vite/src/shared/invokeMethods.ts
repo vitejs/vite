@@ -55,11 +55,11 @@ export interface ViteFetchResult {
    */
   invalidate: boolean
   /**
-   * Id that rolldown uses to track original modules.
-   * This is primarily needed to update the exports map of HMR'd modules.
+   * Original entry module ID in Rolldown's runtime.
+   * Used to retrieve updated exports after HMR.
    * @experimental
    */
-  regionId?: string
+  rolldownModuleId?: string
 }
 
 export type InvokeSendData<

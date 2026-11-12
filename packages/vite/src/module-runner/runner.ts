@@ -152,12 +152,12 @@ export class ModuleRunner {
     if (
       this.rolldownDevRuntime &&
       fetchedModule.meta &&
-      'regionId' in fetchedModule.meta &&
-      fetchedModule.meta.regionId &&
-      this.rolldownDevRuntime.isExecuted(fetchedModule.meta.regionId)
+      'rolldownModuleId' in fetchedModule.meta &&
+      fetchedModule.meta.rolldownModuleId &&
+      this.rolldownDevRuntime.isExecuted(fetchedModule.meta.rolldownModuleId)
     ) {
       const loadedExports = this.rolldownDevRuntime.loadExports(
-        fetchedModule.meta.regionId,
+        fetchedModule.meta.rolldownModuleId,
       )
       fetchedModule.exports = loadedExports
       return loadedExports
