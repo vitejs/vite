@@ -71,6 +71,7 @@ export function isServerAccessDeniedForTransform(
   id: string,
 ): boolean {
   if (
+    config.server.fs.strict === 'extended' ||
     rawRE.test(id) ||
     urlRE.test(id) ||
     inlineRE.test(id) ||
