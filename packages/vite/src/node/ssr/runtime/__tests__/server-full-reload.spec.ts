@@ -277,6 +277,65 @@ test.each([false, true])(
   },
 )
 
+test.each([
+  { captured: false, oldFirst: true },
+  { captured: true, oldFirst: true },
+  { captured: false, oldFirst: false },
+  { captured: true, oldFirst: false },
+])(
+  'preserves hot.data across reloads (captured: $captured, old first: $oldFirst)',
+  async ({ captured, oldFirst }) => {
+    const code = `
+      import { registry } from './registry.js'
+      export { registry }
+      const hot = import.meta.hot
+      export const data = hot.data
+      data.initialized ??= registry.id
+      export function readData() { return hot.data }
+      ${captured ? 'await __HOOK__.wait()' : ''}
+      hot.dispose(data => {
+        data.disposed = registry.id
+        __HOOK__.dispose(registry.id)
+      })
+      import.meta.hot.accept(() => __HOOK__.accept(registry.id))
+    `
+    const fixture = await createFixture({
+      'b.js': code,
+      ...(captured ? { 'slow.js': '' } : {}),
+    })
+    const first = fixture.import()
+    await fixture.started[0].promise
+    await fixture.reload()
+    const second = fixture.import()
+    const firstCompleted = oldFirst ? first : second
+    fixture.gates[oldFirst ? 0 : 1].resolve()
+    const completed = await firstCompleted
+    expect(completed.b.data).toStrictEqual({
+      initialized: captured || oldFirst ? 1 : 2,
+    })
+    expect(completed.b.readData()).toBe(completed.b.data)
+    fixture.gates[oldFirst ? 1 : 0].resolve()
+    const [old, fresh] = await Promise.all([first, second])
+    expect(old.registry).toBe(old.bRegistry)
+    expect(fresh.registry).toBe(fresh.bRegistry)
+    expect(old.registry).not.toBe(fresh.registry)
+    expect(old.b.readData()).toBe(old.b.data)
+    expect(fresh.b.readData()).toBe(old.b.data)
+    expect(fresh.b.data).toBe(old.b.data)
+
+    fixture.gates[2].resolve()
+    await fixture.edit('b.js', `${code}\n// update the current graph\n`)
+    await fixture.updated
+    expect(fixture.accepted).toStrictEqual([2])
+    expect(fixture.disposed).toStrictEqual([2])
+    expect(old.b.readData()).toBe(old.b.data)
+    expect(old.b.data.disposed).toBe(2)
+    const updated = await fixture.import()
+    expect(updated.b.data).toBe(old.b.data)
+    expect(updated.b.readData()).toBe(old.b.data)
+  },
+)
+
 test('resolves alternate URLs in the retained graph', async () => {
   const fixture = await createFixture({
     'b.js': `export const { registry } = await import(new URL('./registry.js', import.meta.url).href)`,

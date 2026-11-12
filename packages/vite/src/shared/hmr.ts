@@ -30,11 +30,12 @@ export class HMRContext implements ViteHotContext {
     private ownerPath: string,
     private isCurrent: () => boolean = () => true,
   ) {
-    // Retired import graphs can finish evaluating after the current graph.
-    if (!this.isCurrent()) return
     if (!hmrClient.dataMap.has(ownerPath)) {
       hmrClient.dataMap.set(ownerPath, {})
     }
+
+    // Share persistent data across graph reloads before checking callback ownership.
+    if (!this.isCurrent()) return
 
     // when a file is hot updated, a new context is created
     // clear its stale callbacks
