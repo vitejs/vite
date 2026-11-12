@@ -196,7 +196,7 @@ export function manifestPlugin(): Plugin {
             }
             const workerManifest = getWorkerManifest(this.environment)
             if (workerManifest) {
-              manifest ??= JSON.parse(asset.source.toString()) as Manifest
+              manifest ??= JSON.parse(asset.source.toString()) as ManifestChunks
               Object.assign(manifest, workerManifest)
             }
             const output = this.environment.config.build.rolldownOptions.output
