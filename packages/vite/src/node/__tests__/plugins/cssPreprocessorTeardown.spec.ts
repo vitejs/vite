@@ -46,6 +46,6 @@ describe('css preprocessor worker teardown', () => {
 
     await server.close()
 
-    expect(runningSassWorkers().length).toBe(0)
+    expect(runningSassWorkers()).toHaveLength(0)
   }, 30_000)
 })

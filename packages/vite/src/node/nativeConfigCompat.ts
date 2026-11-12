@@ -172,6 +172,7 @@ export function analyzeConfigModuleReferences(
       const node = _node as ESTree.Node
       switch (node.type) {
         case 'ImportDeclaration':
+          if (node.importKind === 'type') break
           addImportRef(
             node.source,
             hasTypeJson(node.attributes),
@@ -180,6 +181,7 @@ export function analyzeConfigModuleReferences(
           break
         case 'ExportNamedDeclaration':
         case 'ExportAllDeclaration':
+          if (node.exportKind === 'type') break
           if (node.source)
             addImportRef(
               node.source,

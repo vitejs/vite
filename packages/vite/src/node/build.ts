@@ -43,6 +43,7 @@ import {
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
   ROLLUP_HOOKS,
   VERSION,
+  CSS_LANGS_RE,
 } from './constants'
 import {
   isFutureDeprecationEnabled,
@@ -464,7 +465,7 @@ export function resolveBuildEnvironmentOptions(
     } satisfies BuildEnvironmentOptions,
     raw,
   )
-  setupRollupOptionCompat(merged, 'build')
+  setupRollupOptionCompat(merged)
   if (isBundledDev) {
     merged.chunkImportMap = false
   }
@@ -520,7 +521,7 @@ export function resolveBuildEnvironmentOptions(
   }
   // The object spread above evaluates the `rollupOptions` getter set up on
   // `merged` and copies it as a plain data property.
-  setupRollupOptionCompat(resolved, 'build')
+  setupRollupOptionCompat(resolved)
 
   return resolved
 }
@@ -642,7 +643,7 @@ export function resolveRolldownOptions(
         : Array.isArray(input)
           ? input
           : Object.values(input)
-    if (inputs.some((input) => input.endsWith('.css'))) {
+    if (inputs.some((input) => CSS_LANGS_RE.test(input))) {
       throw new Error(
         `When "build.cssCodeSplit: false" is set, "rolldownOptions.input" should not include CSS files.`,
       )

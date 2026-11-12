@@ -1,5 +1,10 @@
+import { init, parse as parseImports } from 'es-module-lexer'
+import MagicString from 'magic-string'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { transformCjsImport } from '../../plugins/importAnalysis'
+import {
+  interopNamedImports,
+  transformCjsImport,
+} from '../../plugins/importAnalysis'
 
 describe('runTransform', () => {
   const config: any = {
@@ -23,7 +28,7 @@ describe('runTransform', () => {
     const joined = result.hoistedAssignments
       ? `${result.hoistedAssignments}; ${result.importLine}`
       : result.importLine
-    expect(joined.split('\n').length, 'result line count').toBe(
+    expect(joined.split('\n'), 'result line count').toHaveLength(
       importExp.split('\n').length,
     )
     return joined.replaceAll(';', ';\n')
@@ -31,6 +36,33 @@ describe('runTransform', () => {
 
   beforeEach(() => {
     config.logger.warn.mockClear()
+  })
+
+  describe('escaped URLs', async () => {
+    await init()
+    const url = '/node_modules/.vite/deps/dep\'"\\\n\r\t.js'
+
+    for (const source of [
+      'import "dep"',
+      'import value from "dep"',
+      'import(\n  "dep"\n)',
+      "export * from 'dep'",
+      'export * from "dep"',
+      "export * from 'de\\\np'",
+    ]) {
+      test(`preserves the URL and line count in ${source}`, () => {
+        const str = new MagicString(source)
+        const [imports] = parseImports(source)
+        interopNamedImports(str, imports[0], url, 0, 'modA', false, config)
+        const code = str.toString()
+        const [rewrittenImports] = parseImports(code)
+        expect(
+          rewrittenImports.map((specifier) => specifier.specifier),
+        ).toStrictEqual([url])
+        // keep the number of lines for sourcemap
+        expect(code.split('\n')).toHaveLength(source.split('\n').length)
+      })
+    }
   })
 
   test('import specifier', () => {
