@@ -1,6 +1,5 @@
 import { URL } from 'node:url'
 import { describe, expect, test } from 'vitest'
-import { removeSourceMappingURL } from './utils'
 import {
   extractSourcemap,
   findAssetFile,
@@ -12,6 +11,7 @@ import {
   page,
   serverLogs,
 } from '~utils'
+import { removeSourceMappingURL } from './utils'
 
 test.runIf(isBuild)('should not output sourcemap warning (#4939)', () => {
   serverLogs.forEach((log) => {
