@@ -36,7 +36,8 @@ export default defineConfig({
     },
   },
   build: {
-    sourcemap: true,
+    outDir: 'dist/default',
+    sourcemap: { js: true, css: true },
   },
   plugins: [
     {
