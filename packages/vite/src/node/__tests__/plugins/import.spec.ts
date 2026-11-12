@@ -90,6 +90,19 @@ describe('runTransform', () => {
     `)
   })
 
+  test('import specifier with escaped characters', () => {
+    expect(
+      runTransformCjsImport(
+        `import { "quo\\"te" as quoted, 'new\\nline' as newline } from "react"`,
+        false,
+      ),
+    ).toMatchInlineSnapshot(`
+      "const quoted = __vite__cjsImport0_react["quo\\"te"];
+       const newline = __vite__cjsImport0_react["new\\nline"];
+       import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js""
+    `)
+  })
+
   test('import default specifier', () => {
     expect(runTransformCjsImport('import React from "react"', false))
       .toMatchInlineSnapshot(`
