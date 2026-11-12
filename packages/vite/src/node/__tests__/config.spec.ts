@@ -697,9 +697,7 @@ describe('mergeConfig', () => {
     expect(mergedConfig.build.rolldownOptions).toStrictEqual(expected)
     expect(mergedConfig.worker.rollupOptions).toStrictEqual(expected)
     expect(mergedConfig.worker.rolldownOptions).toStrictEqual(expected)
-    expect(mergedConfig.optimizeDeps.rollupOptions).toStrictEqual(expected)
     expect(mergedConfig.optimizeDeps.rolldownOptions).toStrictEqual(expected)
-    expect(mergedConfig.ssr.optimizeDeps.rollupOptions).toStrictEqual(expected)
     expect(mergedConfig.ssr.optimizeDeps.rolldownOptions).toStrictEqual(
       expected,
     )
@@ -776,9 +774,7 @@ describe('mergeConfig', () => {
     expect(mergedConfig.build.rolldownOptions).toStrictEqual(expected)
     expect(mergedConfig.worker.rollupOptions).toStrictEqual(expected)
     expect(mergedConfig.worker.rolldownOptions).toStrictEqual(expected)
-    expect(mergedConfig.optimizeDeps.rollupOptions).toStrictEqual(expected)
     expect(mergedConfig.optimizeDeps.rolldownOptions).toStrictEqual(expected)
-    expect(mergedConfig.ssr.optimizeDeps.rollupOptions).toStrictEqual(expected)
     expect(mergedConfig.ssr.optimizeDeps.rolldownOptions).toStrictEqual(
       expected,
     )
@@ -794,18 +790,6 @@ describe('mergeConfig', () => {
       worker: {
         rollupOptions: {
           treeshake: false,
-        },
-      },
-      optimizeDeps: {
-        rollupOptions: {
-          treeshake: false,
-        },
-      },
-      ssr: {
-        optimizeDeps: {
-          rollupOptions: {
-            treeshake: false,
-          },
         },
       },
     })
@@ -825,22 +809,6 @@ describe('mergeConfig', () => {
           },
         },
       },
-      optimizeDeps: {
-        rolldownOptions: {
-          output: {
-            minifyInternalExports: true,
-          },
-        },
-      },
-      ssr: {
-        optimizeDeps: {
-          rollupOptions: {
-            output: {
-              minifyInternalExports: true,
-            },
-          },
-        },
-      },
     })
 
     const mergedConfig = mergeConfig(baseConfig, newConfig) as UserConfig
@@ -855,15 +823,6 @@ describe('mergeConfig', () => {
     expect(mergedConfig.build!.rolldownOptions).toStrictEqual(expected)
     expect(mergedConfig.worker!.rollupOptions).toStrictEqual(expected)
     expect(mergedConfig.worker!.rolldownOptions).toStrictEqual(expected)
-    expect(mergedConfig.optimizeDeps!.rollupOptions).toStrictEqual(expected)
-    expect(mergedConfig.optimizeDeps!.rolldownOptions).toStrictEqual(expected)
-    expect(mergedConfig.ssr!.optimizeDeps!.rollupOptions).toStrictEqual(
-      expected,
-    )
-    expect(mergedConfig.ssr!.optimizeDeps!.rolldownOptions).toStrictEqual(
-      expected,
-    )
-
     const upOutput = mergedConfig.build!.rollupOptions!.output!
     if (Array.isArray(upOutput)) throw new Error()
     const downOutput = mergedConfig.build!.rolldownOptions!.output!
@@ -1496,9 +1455,6 @@ describe('resolveConfig', () => {
     expect(resolved.worker!.rollupOptions).toStrictEqual(
       resolved.worker!.rolldownOptions,
     )
-    expect(resolved.optimizeDeps!.rollupOptions).toStrictEqual(
-      resolved.optimizeDeps!.rolldownOptions,
-    )
   })
 
   test('top-level input applies to the client environment only (non-inherit)', async () => {
@@ -1848,6 +1804,68 @@ test('build and environments.client.build has the same reference', async () => {
   expect(resolved.environments.client.build.terserOptions.nameCache).toBe(
     resolved.build.terserOptions.nameCache,
   )
+})
+
+test('css.devSourcemap is deprecated in favor of dev.sourcemap.css', async () => {
+  const logger = createLogger('silent')
+  const warn = vi.spyOn(logger, 'warn')
+  const resolved = await resolveConfig(
+    {
+      configFile: false,
+      customLogger: logger,
+      css: { devSourcemap: true },
+      dev: { sourcemap: { js: false } },
+      environments: {
+        inherited: {},
+        inheritedWithJsOverride: { dev: { sourcemap: { js: true } } },
+        custom: { dev: { sourcemap: { css: false } } },
+      },
+    },
+    'serve',
+  )
+
+  expect(resolved.dev.sourcemap).toStrictEqual({ js: false, css: true })
+  expect(resolved.environments.client.dev.sourcemap).toStrictEqual({
+    js: false,
+    css: true,
+  })
+  expect(resolved.environments.inherited.dev.sourcemap).toStrictEqual({
+    js: false,
+    css: true,
+  })
+  expect(
+    resolved.environments.inheritedWithJsOverride.dev.sourcemap,
+  ).toStrictEqual({
+    js: true,
+    css: true,
+  })
+  expect(resolved.environments.custom.dev.sourcemap).toStrictEqual({
+    js: false,
+    css: false,
+  })
+  expect(warn).toHaveBeenCalledWith(
+    expect.stringContaining(
+      'The `css.devSourcemap` option is deprecated. Please use `dev.sourcemap.css` instead.',
+    ),
+  )
+})
+
+test('dev.sourcemap.css takes precedence over css.devSourcemap', async () => {
+  const resolved = await resolveConfig(
+    {
+      configFile: false,
+      logLevel: 'silent',
+      css: { devSourcemap: true },
+      dev: { sourcemap: { css: false } },
+    },
+    'serve',
+  )
+
+  expect(resolved.dev.sourcemap).toStrictEqual({ js: true, css: false })
+  expect(resolved.environments.client.dev.sourcemap).toStrictEqual({
+    js: true,
+    css: false,
+  })
 })
 
 test('preTransformRequests', async () => {

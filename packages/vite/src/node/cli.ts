@@ -75,13 +75,9 @@ export const stopProfiler = (
     profileSession!.post('Profiler.stop', (err, { profile }) => {
       // Write profile to disk, upload, etc.
       if (!err) {
-        const name = global.__vite_profile_name
+        const name = global.__vite_profile_name ?? 'vite-profile'
         const count = profileCount++
-        const fileName = name
-          ? count === 0
-            ? name
-            : `${name}-${count}`
-          : `vite-profile-${count}`
+        const fileName = count === 0 ? name : `${name}-${count}`
         const outPath = path.resolve(`./${fileName}.cpuprofile`)
         fs.writeFileSync(outPath, JSON.stringify(profile))
         log(
@@ -188,7 +184,7 @@ cli
   .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
   .option(
     '--configLoader <loader>',
-    `[string] use 'bundle' to bundle the config with Rolldown, or 'runner' (experimental) to process it on the fly, or 'native' (experimental) to load using the native runtime (default: bundle)`,
+    `[string] use 'bundle' to bundle the config with Rolldown, or 'native' to load using the native runtime (default: bundle)`,
   )
   .option(
     '--profile [name]',
