@@ -486,7 +486,7 @@ async function init() {
   // Vite+ (`vp`) exposes its own `VP_USER_AGENT` because the underlying package
   // manager overwrites `npm_config_user_agent` when running `vp dlx create-vite`.
   const pkgInfo = pkgFromUserAgent(
-    process.env.VP_USER_AGENT ?? process.env.npm_config_user_agent,
+    process.env.VP_USER_AGENT || process.env.npm_config_user_agent,
   )
   const cancel = () => prompts.cancel('Operation cancelled')
 
@@ -1169,10 +1169,12 @@ function getRunCommand(agent: string, script: string) {
     case 'yarn':
     case 'pnpm':
     case 'bun':
-    case 'vp':
       return [agent, script]
     case 'deno':
       return [agent, 'task', script]
+    // `vp dev` runs the Vite+ built-in dev server and ignores the `dev` script,
+    // so Vite+ needs `vp run dev` to run the script like other package managers
+    case 'vp':
     default:
       return [agent, 'run', script]
   }
