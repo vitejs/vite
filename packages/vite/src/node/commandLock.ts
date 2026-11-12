@@ -91,10 +91,10 @@ function removeFile(file: string): void {
   }
 }
 
-function scanCommandLocks(
+async function scanCommandLocks(
   lockDir: string,
   currentRecord: CommandLockRecord,
-): void {
+): Promise<void> {
   let files: string[]
   try {
     files = fs.readdirSync(lockDir)
@@ -120,16 +120,19 @@ function scanCommandLocks(
     }
     if (!isSameCommand(record, currentRecord)) continue
 
-    if (record.pid === process.pid) {
-      if (
-        record.startTime &&
-        currentRecord.startTime &&
-        record.startTime !== currentRecord.startTime
-      ) {
+    // A live PID may belong to another process after a crash or reboot.
+    // Only discard the lock when both start times confirm that the PID was reused.
+    if (record.startTime) {
+      const actualStartTime =
+        record.pid === process.pid
+          ? currentRecord.startTime
+          : await getProcessStartTime(record.pid)
+      if (actualStartTime && actualStartTime !== record.startTime) {
         removeFile(lockPath)
+        continue
       }
-      continue
     }
+    if (record.pid === process.pid) continue
 
     const primaryUrl = record.urls?.local[0] ?? record.urls?.network[0]
     const location = primaryUrl ? ` at ${primaryUrl}` : ''
@@ -235,7 +238,7 @@ function createCommandLockController(
     if (lockPath === currentPath) return
 
     if (checkDuplicates) {
-      scanCommandLocks(lockDir, record)
+      await scanCommandLocks(lockDir, record)
       checkDuplicates = false
     }
 

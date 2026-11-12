@@ -122,18 +122,6 @@ describe('command lock', () => {
   })
 
   for (const startTime of ['current-start', 'previous-start', undefined]) {
-    test(`rejects another live PID with recorded start time ${startTime}`, async ({
-      config,
-    }) => {
-      writeExistingLock(config, startTime)
-      await expect(createCommandLock(config, 'build', null)).rejects.toThrow(
-        'Found another Vite build process',
-      )
-      expect(
-        processStartTime.getProcessStartTime,
-      ).toHaveBeenCalledExactlyOnceWith(process.pid)
-    })
-
     test(`handles the current PID with recorded start time ${startTime}`, async ({
       config,
     }) => {
@@ -141,8 +129,47 @@ describe('command lock', () => {
       const lock = await createCommandLock(config, 'build', null)
       onTestFinished(() => lock.release())
       expect(fs.existsSync(lockPath)).toBe(startTime !== 'previous-start')
+      expect(
+        processStartTime.getProcessStartTime,
+      ).toHaveBeenCalledExactlyOnceWith(process.pid)
     })
   }
+
+  for (const actualStartTime of ['recorded-start', 'reused-start', undefined]) {
+    test(`validates another live PID with actual start time ${actualStartTime}`, async ({
+      config,
+    }) => {
+      vi.mocked(processStartTime.getProcessStartTime).mockImplementation(
+        async (pid) =>
+          pid === process.pid ? 'current-start' : actualStartTime,
+      )
+      const lockPath = writeExistingLock(config, 'recorded-start')
+      const result = createCommandLock(config, 'build', null)
+      if (actualStartTime === 'reused-start') {
+        const lock = await result
+        onTestFinished(() => lock.release())
+        expect(fs.existsSync(lockPath)).toBe(false)
+      } else {
+        await expect(result).rejects.toThrow('Found another Vite build process')
+        expect(fs.existsSync(lockPath)).toBe(true)
+      }
+      expect(processStartTime.getProcessStartTime).toHaveBeenCalledWith(
+        process.ppid,
+      )
+    })
+  }
+
+  test('checks a live PID without a recorded start time using liveness alone', async ({
+    config,
+  }) => {
+    writeExistingLock(config)
+    await expect(createCommandLock(config, 'build', null)).rejects.toThrow(
+      'Found another Vite build process',
+    )
+    expect(
+      processStartTime.getProcessStartTime,
+    ).toHaveBeenCalledExactlyOnceWith(process.pid)
+  })
 
   test('publishes a lock when the current start time cannot be read', async ({
     config,
