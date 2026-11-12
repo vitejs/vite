@@ -1416,6 +1416,9 @@ export function createCSSResolvers(
         conditions: ['style', DEV_PROD_CONDITION],
         tryIndex: false,
         preferRelative: true,
+        // Avoid automatic externalization when resolving CSS imports.
+        // A regexp preserves the default handling of Node.js built-ins.
+        noExternal: [/./],
       }))
     },
 
@@ -1429,6 +1432,7 @@ export function createCSSResolvers(
           tryPrefix: '_',
           preferRelative: true,
           skipMainField: true,
+          noExternal: [/./],
         })
         sassResolve = async (...args) => {
           // the modern API calls `canonicalize` with resolved file URLs
@@ -1455,6 +1459,7 @@ export function createCSSResolvers(
         conditions: ['less', 'style', DEV_PROD_CONDITION],
         tryIndex: false,
         preferRelative: true,
+        noExternal: [/./],
       }))
     },
   }
