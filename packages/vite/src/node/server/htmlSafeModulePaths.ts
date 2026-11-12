@@ -32,7 +32,7 @@ import { browserUrlToModuleUrl, moduleUrlToFilePath } from './moduleUrl'
 export function htmlUrlToRequestUrl(
   url: string,
   base: string,
-  ctx: Pick<IndexHtmlTransformContext, 'path' | 'originalUrl'>,
+  ctx: Required<Pick<IndexHtmlTransformContext, 'path' | 'originalUrl'>>,
 ): string | undefined {
   url = url.split('#', 1)[0]
   if (!url || isExternalUrl(url) || isDataUrl(url)) return
