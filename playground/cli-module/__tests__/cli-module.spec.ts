@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
-import { execaCommand } from 'execa'
+import { x } from 'tinyexec'
 import { expect, onTestFinished, test } from 'vitest'
 import {
   isServe,
@@ -24,17 +24,15 @@ function readCommandLockRecords() {
     )
 }
 
-function startViteProcess(args = '') {
-  return execaCommand(`${viteBinPath} ${args}`, {
-    cwd: rootDir,
-    stdio: 'pipe',
-    forceKillAfterDelay: 3000,
+function startViteProcess(args: string[] = []) {
+  return x(viteBinPath, args, {
+    nodeOptions: { cwd: rootDir, stdio: 'pipe' },
   })
 }
 
 function captureStdout(subprocess: ReturnType<typeof startViteProcess>) {
   let output = ''
-  subprocess.stdout.on('data', (data) => {
+  subprocess.process.stdout.on('data', (data) => {
     output += stripVTControlCharacters(data.toString())
   })
   return () => output
@@ -64,9 +62,10 @@ test('cli should work in "type":"module" package', async () => {
 })
 
 test.runIf(isServe)('removes the command record on process exit', async () => {
-  const buildProcess = execaCommand(
-    `${viteBinPath} build --outDir dist-command-lock`,
-    { cwd: rootDir },
+  const buildProcess = x(
+    viteBinPath,
+    ['build', '--outDir', 'dist-command-lock'],
+    { nodeOptions: { cwd: rootDir }, throwOnError: true },
   )
 
   await expect
@@ -84,9 +83,10 @@ test.runIf(isServe)('removes the command record on process exit', async () => {
 })
 
 test('preview reports a missing build directory', async () => {
-  const result = await execaCommand(
-    `${viteBinPath} preview --outDir missing-command-lock --mode missing-build`,
-    { cwd: rootDir, reject: false },
+  const result = await x(
+    viteBinPath,
+    ['preview', '--outDir', 'missing-command-lock', '--mode', 'missing-build'],
+    { nodeOptions: { cwd: rootDir } },
   )
   expect(result.exitCode).toBe(1)
   expect(result.stderr).toContain(
@@ -98,12 +98,13 @@ test.runIf(!isWindows)(
   'exits when another Vite process owns the port',
   async () => {
     const command = isServe ? 'dev' : 'preview'
-    const serverProcess = execaCommand(
-      `${viteBinPath} ${command} --port ${port} --strict-port`,
-      { cwd: rootDir },
+    const serverProcess = x(
+      viteBinPath,
+      [command, '--port', `${port}`, '--strict-port'],
+      { nodeOptions: { cwd: rootDir } },
     )
     try {
-      const result = await serverProcess.catch((error) => error)
+      const result = await serverProcess
       expect(result.exitCode).toBe(1)
       const output = stripVTControlCharacters(result.stderr)
       expect(output).toMatch(
@@ -111,7 +112,7 @@ test.runIf(!isWindows)(
       )
     } finally {
       await killProcess(serverProcess)
-      await serverProcess.catch(() => {})
+      await serverProcess
     }
   },
 )
@@ -119,19 +120,23 @@ test.runIf(!isWindows)(
 test.runIf(isServe && !isWindows)(
   'exits when another build is running',
   async () => {
-    const buildProcess = startViteProcess(
-      'build --watch --outDir dist-command-lock',
-    )
+    const buildProcess = startViteProcess([
+      'build',
+      '--watch',
+      '--outDir',
+      'dist-command-lock',
+    ])
     onTestFinished(async () => {
       await killProcess(buildProcess)
-      await buildProcess.catch(() => {})
+      await buildProcess
     })
     const getOutput = captureStdout(buildProcess)
     await expect.poll(getOutput).toMatch(/built in \d+ms/)
 
-    const result = await execaCommand(
-      `${viteBinPath} build --outDir dist-command-lock`,
-      { cwd: rootDir, reject: false },
+    const result = await x(
+      viteBinPath,
+      ['build', '--outDir', 'dist-command-lock'],
+      { nodeOptions: { cwd: rootDir } },
     )
     expect(result.exitCode).toBe(1)
     expect(result.stderr).toContain(
@@ -146,17 +151,17 @@ for (const command of isServe ? ['dev', 'build'] : ['preview']) {
     async () => {
       const args =
         command === 'build'
-          ? 'build --watch --outDir dist-bypass-lock'
-          : `${command} --host 127.0.0.1 --port 0 --strict-port`
+          ? ['build', '--watch', '--outDir', 'dist-bypass-lock']
+          : [command, '--host', '127.0.0.1', '--port', '0', '--strict-port']
       const ready =
         command === 'build' ? /built in \d+ms/ : /http:\/\/127\.0\.0\.1:\d+\//
       const originalFiles = new Set(fs.readdirSync(lockDir()))
-      const ownerProcess = startViteProcess(`${args} --mode bypass-lock`)
+      const ownerProcess = startViteProcess([...args, '--mode', 'bypass-lock'])
       onTestFinished(async () => {
         if (ownerProcess.exitCode == null && ownerProcess.signalCode == null) {
           ownerProcess.kill('SIGKILL')
         }
-        await ownerProcess.catch(() => {})
+        await ownerProcess
         for (const file of fs.readdirSync(lockDir())) {
           if (!originalFiles.has(file)) {
             fs.rmSync(path.join(lockDir(), file), { force: true })
@@ -179,11 +184,14 @@ for (const command of isServe ? ['dev', 'build'] : ['preview']) {
       for (const ownerState of ['running', 'terminated']) {
         if (ownerState === 'terminated') {
           ownerProcess.kill('SIGKILL')
-          await ownerProcess.catch(() => {})
+          await ownerProcess
         }
-        const serverProcess = startViteProcess(
-          `${args} --mode bypass-lock --bypass-lock`,
-        )
+        const serverProcess = startViteProcess([
+          ...args,
+          '--mode',
+          'bypass-lock',
+          '--bypass-lock',
+        ])
         const getOutput = captureStdout(serverProcess)
 
         try {
@@ -191,7 +199,7 @@ for (const command of isServe ? ['dev', 'build'] : ['preview']) {
           expect(readCommandLockRecords()).toStrictEqual(existingRecords)
         } finally {
           await killProcess(serverProcess)
-          await serverProcess.catch(() => {})
+          await serverProcess
         }
       }
     },
@@ -201,7 +209,15 @@ for (const command of isServe ? ['dev', 'build'] : ['preview']) {
 test.runIf(isServe && !isWindows)(
   'removes a command record left by a terminated Vite process',
   async () => {
-    const args = '--host 127.0.0.1 --port 0 --strict-port --mode stale-lock'
+    const args = [
+      '--host',
+      '127.0.0.1',
+      '--port',
+      '0',
+      '--strict-port',
+      '--mode',
+      'stale-lock',
+    ]
     const staleProcess = startViteProcess(args)
     let replacementProcess: ReturnType<typeof startViteProcess> | undefined
     try {
@@ -213,7 +229,7 @@ test.runIf(isServe && !isWindows)(
         .toBe(true)
 
       staleProcess.kill('SIGKILL')
-      await staleProcess.catch(() => {})
+      await staleProcess
       expect(
         readCommandLockRecords().some(
           (record) => record.pid === staleProcess.pid,
@@ -235,11 +251,11 @@ test.runIf(isServe && !isWindows)(
     } finally {
       if (staleProcess.exitCode == null && staleProcess.signalCode == null) {
         staleProcess.kill('SIGKILL')
-        await staleProcess.catch(() => {})
+        await staleProcess
       }
       if (replacementProcess) {
         await killProcess(replacementProcess)
-        await replacementProcess.catch(() => {})
+        await replacementProcess
       }
     }
   },
