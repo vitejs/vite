@@ -35,15 +35,22 @@ interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
 }
 
+interface ModuleGraph {
+  modules: EvaluatedModules
+  requests: Map<string, Promise<EvaluatedModuleNode>>
+  detached: boolean
+}
+
 export class ModuleRunner {
   public evaluatedModules: EvaluatedModules
   public hmrClient?: HMRClient
 
   private readonly transport: NormalizedModuleRunnerTransport
   private readonly resetSourceMapSupport?: () => void
-  private readonly concurrentModuleNodePromises = new Map<
-    string,
-    Promise<EvaluatedModuleNode>
+  private moduleGraph: ModuleGraph
+  private readonly moduleGraphs = new WeakMap<
+    EvaluatedModuleNode,
+    ModuleGraph
   >()
   private isBuiltin?: (id: string) => boolean
   private builtinsPromise?: Promise<void>
@@ -56,6 +63,11 @@ export class ModuleRunner {
     private debug?: ModuleRunnerDebugger | undefined,
   ) {
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
+    this.moduleGraph = {
+      modules: this.evaluatedModules,
+      requests: new Map(),
+      detached: false,
+    }
     this.transport = normalizeModuleRunnerTransport(options.transport)
     if (options.hmr !== false) {
       const optionsHmr = options.hmr ?? true
@@ -96,8 +108,23 @@ export class ModuleRunner {
    * Clear all caches including HMR listeners.
    */
   public clearCache(): void {
-    this.evaluatedModules.clear()
+    this.clearModuleCache()
     this.hmrClient?.clear()
+  }
+
+  /** @internal */
+  public clearModuleCache(): void {
+    // Pending evaluations retain their module nodes, including dependencies
+    // that finished before the reload. Keep resolving their later imports in
+    // that graph while new public imports use the cleared, public cache.
+    this.moduleGraph.modules = new EvaluatedModules(this.evaluatedModules)
+    this.moduleGraph.detached = true
+    this.evaluatedModules.clear()
+    this.moduleGraph = {
+      modules: this.evaluatedModules,
+      requests: new Map(),
+      detached: false,
+    }
   }
 
   /**
@@ -136,6 +163,7 @@ export class ModuleRunner {
   private isCircularRequest(
     mod: EvaluatedModuleNode,
     callstack: string[],
+    graph: ModuleGraph,
     visited = new Set<string>(),
   ): boolean {
     if (visited.has(mod.id)) {
@@ -144,8 +172,7 @@ export class ModuleRunner {
     visited.add(mod.id)
 
     for (const importedModuleId of mod.imports) {
-      const importedModule =
-        this.evaluatedModules.getModuleById(importedModuleId)
+      const importedModule = graph.modules.getModuleById(importedModuleId)
       if (!importedModule?.promise || importedModule.evaluated) {
         continue
       }
@@ -154,7 +181,7 @@ export class ModuleRunner {
         return true
       }
 
-      if (this.isCircularRequest(importedModule, callstack, visited)) {
+      if (this.isCircularRequest(importedModule, callstack, graph, visited)) {
         return true
       }
     }
@@ -183,7 +210,12 @@ export class ModuleRunner {
     if (mod.promise) {
       if (
         mod.exports &&
-        (callstack.includes(moduleId) || this.isCircularRequest(mod, callstack))
+        (callstack.includes(moduleId) ||
+          this.isCircularRequest(
+            mod,
+            callstack,
+            this.moduleGraphs.get(mod) ?? this.moduleGraph,
+          ))
       ) {
         return this.processImport(mod.exports, meta, metadata)
       }
@@ -219,21 +251,27 @@ export class ModuleRunner {
   private async cachedModule(
     url: string,
     importer?: string,
+    graph = this.moduleGraph,
   ): Promise<EvaluatedModuleNode> {
-    let cached = this.concurrentModuleNodePromises.get(url)
+    let cached = graph.requests.get(url)
     if (!cached) {
-      const cachedModule = this.evaluatedModules.getModuleByUrl(url)
-      cached = this.getModuleInformation(url, importer, cachedModule).finally(
-        () => {
-          this.concurrentModuleNodePromises.delete(url)
-        },
-      )
-      this.concurrentModuleNodePromises.set(url, cached)
+      const cachedModule = graph.modules.getModuleByUrl(url)
+      cached = this.getModuleInformation(
+        url,
+        importer,
+        cachedModule,
+        graph,
+      ).finally(() => {
+        graph.requests.delete(url)
+      })
+      graph.requests.set(url, cached)
     } else {
       this.debug?.('[module runner] using cached module info for', url)
     }
 
-    return cached
+    const mod = await cached
+    this.moduleGraphs.set(mod, graph)
+    return mod
   }
 
   private ensureBuiltins(): Promise<void> | undefined {
@@ -268,9 +306,14 @@ export class ModuleRunner {
     url: string,
     importer: string | undefined,
     cachedModule: EvaluatedModuleNode | undefined,
+    graph: ModuleGraph,
   ): Promise<EvaluatedModuleNode> {
     if (this.closed) {
       throw new Error(`Vite module runner has been closed.`)
+    }
+
+    if (graph.detached && cachedModule?.meta) {
+      return cachedModule
     }
 
     await this.ensureBuiltins()
@@ -307,10 +350,16 @@ export class ModuleRunner {
         ? fetchedModule.externalize
         : fetchedModule.id
     const moduleUrl = 'url' in fetchedModule ? fetchedModule.url : url
-    const module = this.evaluatedModules.ensureModule(moduleId, moduleUrl)
+    const module = graph.modules.ensureModule(moduleId, moduleUrl)
+
+    // Another URL may resolve to an already evaluated module in a retired
+    // graph. Its exports must remain the same even if the server changed it.
+    if (graph.detached && module.meta) {
+      return module
+    }
 
     if ('invalidate' in fetchedModule && fetchedModule.invalidate) {
-      this.evaluatedModules.invalidateModule(module)
+      graph.modules.invalidateModule(module)
     }
 
     fetchedModule.url = moduleUrl
@@ -329,11 +378,11 @@ export class ModuleRunner {
     const fetchResult = mod.meta!
     const moduleId = fetchResult.id
     const callstack = [..._callstack, moduleId]
+    const graph = this.moduleGraphs.get(mod) ?? this.moduleGraph
 
     const request = async (dep: string, metadata?: SSRImportMetadata) => {
       const importer = ('file' in fetchResult && fetchResult.file) || moduleId
-      const depMod = await this.cachedModule(dep, importer)
-      depMod.importers.add(moduleId)
+      const depMod = await this.cachedModule(dep, importer, graph)
       mod.imports.add(depMod.id)
 
       return this.cachedRequest(dep, depMod, callstack, metadata)
@@ -392,7 +441,11 @@ export class ModuleRunner {
             throw new Error(`[module runner] HMR client was closed.`)
           }
           this.debug?.('[module runner] creating hmr context for', mod.url)
-          hotContext ||= new HMRContext(this.hmrClient, mod.url)
+          hotContext ||= new HMRContext(
+            this.hmrClient,
+            mod.url,
+            () => !graph.detached,
+          )
           return hotContext
         },
         set: (value) => {

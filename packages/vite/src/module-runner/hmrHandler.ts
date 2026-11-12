@@ -44,7 +44,7 @@ export function createHMRHandlerForRunner(
 
         hmrClient.logger.debug(`program reload`)
         await hmrClient.notifyListeners('vite:beforeFullReload', payload)
-        runner.evaluatedModules.clear()
+        runner.clearModuleCache()
 
         for (const url of clearEntrypointUrls) {
           if (runner.isClosed()) break

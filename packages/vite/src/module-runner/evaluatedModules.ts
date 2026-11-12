@@ -25,10 +25,16 @@ export class EvaluatedModuleNode {
 }
 
 export class EvaluatedModules {
-  public readonly idToModuleMap: Map<string, EvaluatedModuleNode> = new Map()
-  public readonly fileToModulesMap: Map<string, Set<EvaluatedModuleNode>> =
-    new Map()
-  public readonly urlToIdModuleMap: Map<string, EvaluatedModuleNode> = new Map()
+  public readonly idToModuleMap: Map<string, EvaluatedModuleNode>
+  public readonly fileToModulesMap: Map<string, Set<EvaluatedModuleNode>>
+  public readonly urlToIdModuleMap: Map<string, EvaluatedModuleNode>
+
+  constructor(source?: EvaluatedModules) {
+    // Retain module nodes when snapshotting the indexes before a full reload.
+    this.idToModuleMap = new Map(source?.idToModuleMap)
+    this.fileToModulesMap = new Map(source?.fileToModulesMap)
+    this.urlToIdModuleMap = new Map(source?.urlToIdModuleMap)
+  }
 
   /**
    * Returns the module node by the resolved module ID. Usually, module ID is

@@ -23,12 +23,15 @@ export interface HMRLogger {
 }
 
 export class HMRContext implements ViteHotContext {
-  private newListeners: CustomListenersMap
+  private newListeners: CustomListenersMap = new Map()
 
   constructor(
     private hmrClient: HMRClient,
     private ownerPath: string,
+    private isCurrent: () => boolean = () => true,
   ) {
+    // Retired import graphs can finish evaluating after the current graph.
+    if (!this.isCurrent()) return
     if (!hmrClient.dataMap.has(ownerPath)) {
       hmrClient.dataMap.set(ownerPath, {})
     }
@@ -54,7 +57,6 @@ export class HMRContext implements ViteHotContext {
       }
     }
 
-    this.newListeners = new Map()
     hmrClient.ctxToListenersMap.set(ownerPath, this.newListeners)
   }
 
@@ -88,10 +90,12 @@ export class HMRContext implements ViteHotContext {
   }
 
   dispose(cb: (data: any) => void): void {
+    if (!this.isCurrent()) return
     this.hmrClient.disposeMap.set(this.ownerPath, cb)
   }
 
   prune(cb: (data: any) => void): void {
+    if (!this.isCurrent()) return
     this.hmrClient.pruneMap.set(this.ownerPath, cb)
   }
 
@@ -100,6 +104,7 @@ export class HMRContext implements ViteHotContext {
   decline(): void {}
 
   invalidate(message: string): void {
+    if (!this.isCurrent()) return
     const firstInvalidatedBy =
       this.hmrClient.currentFirstInvalidatedBy ?? this.ownerPath
     this.hmrClient.notifyListeners('vite:invalidate', {
@@ -121,6 +126,7 @@ export class HMRContext implements ViteHotContext {
     event: T,
     cb: (payload: InferCustomEventPayload<T>) => void,
   ): void {
+    if (!this.isCurrent()) return
     const addToMap = (map: Map<string, any[]>) => {
       const existing = map.get(event) || []
       existing.push(cb)
@@ -134,6 +140,7 @@ export class HMRContext implements ViteHotContext {
     event: T,
     cb: (payload: InferCustomEventPayload<T>) => void,
   ): void {
+    if (!this.isCurrent()) return
     const removeFromMap = (map: Map<string, any[]>) => {
       const existing = map.get(event)
       if (existing === undefined) {
@@ -159,6 +166,7 @@ export class HMRContext implements ViteHotContext {
     callback: HotCallback['fn'] = () => {},
     exports?: readonly string[],
   ): void {
+    if (!this.isCurrent()) return
     const mod: HotModule = this.hmrClient.hotModulesMap.get(this.ownerPath) || {
       id: this.ownerPath,
       callbacks: [],
