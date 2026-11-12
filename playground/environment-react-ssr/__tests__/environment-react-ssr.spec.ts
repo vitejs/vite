@@ -37,21 +37,21 @@ describe.runIf(!isBuild)('pre-bundling', () => {
   test('client', clientOptimizerUnsupported, async () => {
     const metaJson = readDepOptimizationMetadata()
 
-    expect(metaJson.optimized['react']).toBeTruthy()
-    expect(metaJson.optimized['react-dom/client']).toBeTruthy()
-    expect(metaJson.optimized['react/jsx-dev-runtime']).toBeTruthy()
+    expect(metaJson.optimized['react']).toBeDefined()
+    expect(metaJson.optimized['react-dom/client']).toBeDefined()
+    expect(metaJson.optimized['react/jsx-dev-runtime']).toBeDefined()
 
-    expect(metaJson.optimized['react-dom/server']).toBeFalsy()
+    expect(metaJson.optimized['react-dom/server']).toBeUndefined()
   })
 
   test('ssr', async () => {
     const metaJson = readDepOptimizationMetadata('ssr')
 
-    expect(metaJson.optimized['react']).toBeTruthy()
-    expect(metaJson.optimized['react-dom/server']).toBeTruthy()
-    expect(metaJson.optimized['react/jsx-dev-runtime']).toBeTruthy()
+    expect(metaJson.optimized['react']).toBeDefined()
+    expect(metaJson.optimized['react-dom/server']).toBeDefined()
+    expect(metaJson.optimized['react/jsx-dev-runtime']).toBeDefined()
 
-    expect(metaJson.optimized['react-dom/client']).toBeFalsy()
+    expect(metaJson.optimized['react-dom/client']).toBeUndefined()
 
     // process.env.NODE_ENV should be kept as keepProcessEnv is true
     const depsFiles = fs
@@ -93,16 +93,16 @@ describe.runIf(!isBuild)('pre-bundling', () => {
 
   test('deps reload (client)', clientOptimizerUnsupported, async () => {
     const clientMeta = readDepOptimizationMetadata('client')
-    expect(clientMeta.optimized['react-fake-client']).toBeFalsy()
-    expect(clientMeta.optimized['react-fake-server']).toBeFalsy()
+    expect(clientMeta.optimized['react-fake-client']).toBeUndefined()
+    expect(clientMeta.optimized['react-fake-server']).toBeUndefined()
 
     addImport('client')
 
     await expect.poll(optimizedFakeDeps).toContain('react-fake-client')
 
     const clientMetaNew = readDepOptimizationMetadata('client')
-    expect(clientMetaNew.optimized['react-fake-client']).toBeTruthy()
-    expect(clientMetaNew.optimized['react-fake-server']).toBeFalsy()
+    expect(clientMetaNew.optimized['react-fake-client']).toBeDefined()
+    expect(clientMetaNew.optimized['react-fake-server']).toBeUndefined()
   })
 
   test(
@@ -112,16 +112,16 @@ describe.runIf(!isBuild)('pre-bundling', () => {
     ),
     async () => {
       const ssrMeta = readDepOptimizationMetadata('ssr')
-      expect(ssrMeta.optimized['react-fake-server']).toBeFalsy()
-      expect(ssrMeta.optimized['react-fake-client']).toBeFalsy()
+      expect(ssrMeta.optimized['react-fake-server']).toBeUndefined()
+      expect(ssrMeta.optimized['react-fake-client']).toBeUndefined()
 
       addImport('server')
 
       await expect.poll(optimizedFakeDeps).toContain('react-fake-server')
 
       const ssrMetaNew = readDepOptimizationMetadata('ssr')
-      expect(ssrMetaNew.optimized['react-fake-server']).toBeTruthy()
-      expect(ssrMetaNew.optimized['react-fake-client']).toBeFalsy()
+      expect(ssrMetaNew.optimized['react-fake-server']).toBeDefined()
+      expect(ssrMetaNew.optimized['react-fake-client']).toBeUndefined()
     },
   )
 })

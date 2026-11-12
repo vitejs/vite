@@ -19,6 +19,7 @@ import {
   isBundledDev,
   isServe,
   page,
+  playgroundTempDir,
   viteServer,
   viteTestUrl,
 } from '~utils'
@@ -598,10 +599,7 @@ export function tests() {
   })
 
   describe.runIf(isServe)('fetchModule via WebSocket', () => {
-    const root = path.resolve(
-      import.meta.dirname.replace('playground', 'playground-temp'),
-      '..',
-    )
+    const root = path.resolve(playgroundTempDir, 'fs-serve')
 
     const fetchModuleViaWebSocket = async (filePath: string) => {
       const resolvedPath = path.resolve(root, filePath)
@@ -653,13 +651,13 @@ export function tests() {
     test('should not read files inside allowed directories as fetchModule is disabled', async () => {
       const result = await fetchModuleViaWebSocket('root/src/safe.txt?raw')
       expect(result.result).toBeUndefined()
-      expect(result.error).toBeTruthy()
+      expect(result.error).toBeDefined()
     })
 
     test('should not read files outside allowed directories', async () => {
       const result = await fetchModuleViaWebSocket('root/unsafe.txt?raw')
       expect(result.result).toBeUndefined()
-      expect(result.error).toBeTruthy()
+      expect(result.error).toBeDefined()
     })
   })
 

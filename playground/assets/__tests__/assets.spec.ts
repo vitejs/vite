@@ -103,9 +103,9 @@ describe('injected scripts', () => {
       'script[type="module"][src="/foo/bar/@vite/client"]',
     )
     if (isBundled) {
-      expect(hasClient).toBeFalsy()
+      expect(hasClient).toBeNull()
     } else {
-      expect(hasClient).toBeTruthy()
+      expect(hasClient).toBeDefined()
     }
   })
 
@@ -114,9 +114,9 @@ describe('injected scripts', () => {
       'script[type="module"][src^="/foo/bar/index.html?html-proxy"]',
     )
     if (isBundled) {
-      expect(hasHtmlProxy).toBeFalsy()
+      expect(hasHtmlProxy).toBeNull()
     } else {
-      expect(hasHtmlProxy).toBeTruthy()
+      expect(hasHtmlProxy).toBeDefined()
     }
   })
 })
@@ -599,7 +599,7 @@ test('?raw import', async () => {
     .poll(() => page.textContent('.raw-html'))
     .toBe('<div>partial updated</div>\n')
 
-  // bundled dev logs `playground-temp/assets/nested/...` where dev logs the URL
+  // bundled dev logs `playground-temp-serve-bundled/assets/nested/...` where dev logs the URL
   // path `/nested/...`. This is a gap on the vite side, not in rolldown
   // (vitejs/vite#23028). Two causes:
   // - the server never passes `cwd` to rolldown (bundledDev.ts), so module ids
@@ -866,7 +866,7 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
     const oldMainJsFiles = listAssets('foo').filter((f) =>
       /index-[-\w]+\.js$/.test(f),
     )
-    expect(oldMainJsFiles.length).toBe(1)
+    expect(oldMainJsFiles).toHaveLength(1)
     const oldMainJsFile = oldMainJsFiles[0]
 
     editFile('asset/update.js', (code) => code.replace('hello', 'world2'))
@@ -878,7 +878,7 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
       /index-[-\w]+\.js$/.test(f),
     )
     expect(newMainJsFiles).not.toContain(oldMainJsFile)
-    expect(newMainJsFiles.length).toBe(1)
+    expect(newMainJsFiles).toHaveLength(1)
   })
 
   test('import module.css', async () => {

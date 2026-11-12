@@ -1,0 +1,1 @@
+export { mode } from '#mode'

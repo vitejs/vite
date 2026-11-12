@@ -15,8 +15,8 @@ import { createModuleRunnerTester } from './utils'
 
 const _URL = URL
 
-describe('module runner initialization', async () => {
-  const it = await createModuleRunnerTester({
+describe('module runner initialization', () => {
+  const it = createModuleRunnerTester({
     resolve: {
       external: ['tinyglobby'],
       noExternal: ['@oxc-project/runtime'],
@@ -25,7 +25,7 @@ describe('module runner initialization', async () => {
 
   it('correctly runs ssr code', async ({ runner }) => {
     const mod = await runner.import('/fixtures/simple.js')
-    expect(mod.test).toEqual('I am initialized')
+    expect(mod.test).toBe('I am initialized')
 
     // loads the same module if id is a file url
     const fileUrl = new _URL('./fixtures/simple.js', import.meta.url)
@@ -77,7 +77,7 @@ describe('module runner initialization', async () => {
 
   it('css is loaded correctly', async ({ runner }) => {
     const css = await runner.import('/fixtures/test.css')
-    expect(css.default).toBe(undefined)
+    expect(css.default).toBeUndefined()
     const module = await runner.import('/fixtures/test.module.css')
     expect(module).toMatchObject({
       default: {
@@ -287,7 +287,7 @@ describe('module runner initialization', async () => {
     runner,
   }) => {
     const mod = await runner.import('/fixtures/no-this/importer.js')
-    expect(mod.result).toBe(undefined)
+    expect(mod.result).toBeUndefined()
   })
 
   it.for([
@@ -297,7 +297,7 @@ describe('module runner initialization', async () => {
     '/fixtures/cyclic2/test4/index.js',
   ] as const)(`cyclic %s`, async (entry, { runner }) => {
     const mod = await runner.import(entry)
-    expect({ ...mod }).toEqual({
+    expect({ ...mod }).toStrictEqual({
       dep1: {
         ok: true,
       },
@@ -434,8 +434,8 @@ describe('module runner initialization', async () => {
   })
 })
 
-describe('optimize-deps', async () => {
-  const it = await createModuleRunnerTester({
+describe('optimize-deps', () => {
+  const it = createModuleRunnerTester({
     cacheDir: 'node_modules/.vite-test',
     ssr: {
       noExternal: true,
@@ -451,8 +451,8 @@ describe('optimize-deps', async () => {
   })
 })
 
-describe('resolveId absolute path entry', async () => {
-  const it = await createModuleRunnerTester({
+describe('resolveId absolute path entry', () => {
+  const it = createModuleRunnerTester({
     plugins: [
       {
         name: 'test-resolevId',
@@ -489,10 +489,10 @@ describe('resolveId absolute path entry', async () => {
   })
 })
 
-describe('virtual module hmr', async () => {
+describe('virtual module hmr', () => {
   let state = 'init'
 
-  const it = await createModuleRunnerTester({
+  const it = createModuleRunnerTester({
     plugins: [
       {
         name: 'test-resolevId',
@@ -544,8 +544,8 @@ describe('virtual module hmr', async () => {
   })
 })
 
-describe('invalid package', async () => {
-  const it = await createModuleRunnerTester({
+describe('invalid package', () => {
+  const it = createModuleRunnerTester({
     environments: {
       ssr: {
         resolve: {
@@ -637,8 +637,8 @@ describe('full-reload during close', () => {
   })
 })
 
-describe('server.fs check', async () => {
-  const it = await createModuleRunnerTester({
+describe('server.fs check', () => {
+  const it = createModuleRunnerTester({
     server: {
       fs: {
         allow: [resolve(import.meta.dirname, './fixtures/circular')],
