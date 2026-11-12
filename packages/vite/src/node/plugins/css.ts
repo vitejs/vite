@@ -85,6 +85,7 @@ import {
   getBuildSourcemap,
   getPackageManagerCommand,
   getPkgName,
+  getSourcemap,
   injectQuery,
   isCSSRequest,
   isDataUrl,
@@ -1595,10 +1596,7 @@ async function compileCSSPreprocessors(
 }> {
   const { config } = environment
   const { preprocessorOptions } = config.css
-  const enableSourcemap =
-    config.dev.sourcemap.css ||
-    (config.command === 'build' &&
-      !!getBuildSourcemap(config.build.sourcemap, 'css'))
+  const enableSourcemap = !!getSourcemap(config, 'css')
   const atImportResolvers = getAtImportResolvers(
     environment.getTopLevelConfig(),
   )
@@ -1671,10 +1669,7 @@ async function compileCSS(
   const { config } = environment
   const lang = CSS_LANGS_RE.exec(id)?.[1] as CssLang | undefined
   const deps = new Set<string>()
-  const enableSourcemap =
-    config.dev.sourcemap.css ||
-    (config.command === 'build' &&
-      !!getBuildSourcemap(config.build.sourcemap, 'css'))
+  const enableSourcemap = !!getSourcemap(config, 'css')
 
   // pre-processors: sass etc.
   let preprocessorMap: ExistingRawSourceMap | { mappings: '' } | undefined
@@ -1766,10 +1761,7 @@ async function compilePostCSS(
 > {
   const { config } = environment
   const { modules: modulesOptions } = config.css
-  const enableSourcemap =
-    config.dev.sourcemap.css ||
-    (config.command === 'build' &&
-      !!getBuildSourcemap(config.build.sourcemap, 'css'))
+  const enableSourcemap = !!getSourcemap(config, 'css')
   const isModule = modulesOptions !== false && cssModuleRE.test(id)
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
@@ -1936,10 +1928,7 @@ async function transformSugarSS(
   code: string,
 ) {
   const { config } = environment
-  const enableSourcemap =
-    config.dev.sourcemap.css ||
-    (config.command === 'build' &&
-      !!getBuildSourcemap(config.build.sourcemap, 'css'))
+  const enableSourcemap = !!getSourcemap(config, 'css')
 
   const sssParser = await loadSss(config.root)
   const result = await runPostCSS(
@@ -3724,10 +3713,7 @@ async function compileLightningCSS(
             },
           },
           minify: false,
-          sourceMap:
-            config.command === 'build'
-              ? !!getBuildSourcemap(config.build.sourcemap, 'css')
-              : config.dev.sourcemap.css,
+          sourceMap: !!getSourcemap(config, 'css'),
           analyzeDependencies: { preserveImports: true },
           cssModules: cssModuleRE.test(id)
             ? (config.css.lightningcss?.cssModules ?? true)

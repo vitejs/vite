@@ -1657,6 +1657,15 @@ function normalizeSingleAlias({
   return alias
 }
 
+export function getSourcemap(
+  config: ResolvedConfig,
+  type: 'js' | 'css',
+): boolean | 'inline' | 'hidden' {
+  return config.command === 'build'
+    ? getBuildSourcemap(config.build.sourcemap, type)
+    : config.dev.sourcemap[type]
+}
+
 export function getBuildSourcemap(
   sourcemap: ResolvedConfig['build']['sourcemap'],
   type: 'js' | 'css',
