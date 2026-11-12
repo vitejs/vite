@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises'
+import type { Socket } from 'node:net'
 import { x } from 'tinyexec'
 
 export async function getProcessStartTime(
@@ -23,7 +24,7 @@ export async function getProcessStartTime(
     }
 
     const isWindows = process.platform === 'win32'
-    const { stdout } = await x(
+    const result = x(
       isWindows ? 'powershell.exe' : 'ps',
       isWindows
         ? [
@@ -43,6 +44,14 @@ export async function getProcessStartTime(
         },
       },
     )
+    // The lookup is not awaited on the startup path. Do not keep the process
+    // alive for it when every other work is done (e.g. a finished build).
+    result.process?.unref()
+    // The stdio pipes are sockets that also keep the event loop alive.
+    for (const stream of [result.process?.stdout, result.process?.stderr]) {
+      ;(stream as Socket | undefined)?.unref()
+    }
+    const { stdout } = await result
     const startTime = stdout.trim()
     if (!startTime || (isWindows && !/^\d+$/.test(startTime))) return
     return `${process.platform}:${startTime}`

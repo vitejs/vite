@@ -64,6 +64,15 @@ function writeExistingLock(
   return lockPath
 }
 
+function readOwnLockRecord(lockDir: string) {
+  for (const file of fs.readdirSync(lockDir)) {
+    if (!file.endsWith('.json')) continue
+    const record = JSON.parse(fs.readFileSync(path.join(lockDir, file), 'utf8'))
+    if (record.pid === process.pid) return record
+  }
+  return undefined
+}
+
 describe('command lock', () => {
   test('writes a content-addressed record and releases it', async ({
     config,
@@ -76,9 +85,12 @@ describe('command lock', () => {
     const lock = await createCommandLock(config, 'preview', urls)
     onTestFinished(() => lock.release())
 
-    const files = fs.readdirSync(lockDir)
-    expect(files).toHaveLength(1)
+    await vi.waitFor(() => {
+      expect(fs.readdirSync(lockDir)).toHaveLength(1)
+      expect(readOwnLockRecord(lockDir)?.startTime).toBe('current-start')
+    })
 
+    const files = fs.readdirSync(lockDir)
     const content = fs.readFileSync(path.join(lockDir, files[0]), 'utf8')
     expect(files[0]).toBe(`${getHash(content, 16)}.json`)
     expect(JSON.parse(content)).toStrictEqual({
@@ -95,6 +107,30 @@ describe('command lock', () => {
     expect(fs.readdirSync(lockDir)).toStrictEqual([])
   })
 
+  test('publishes without waiting for the start time and republishes once known', async ({
+    config,
+    lockDir,
+  }) => {
+    let resolveStartTime!: (startTime: string | undefined) => void
+    vi.mocked(processStartTime.getProcessStartTime).mockImplementation(
+      () =>
+        new Promise<string | undefined>((resolve) => {
+          resolveStartTime = resolve
+        }),
+    )
+    const lock = await createCommandLock(config, 'build', null)
+    onTestFinished(() => lock.release())
+
+    expect(fs.readdirSync(lockDir)).toHaveLength(1)
+    expect(readOwnLockRecord(lockDir)?.startTime).toBeUndefined()
+
+    resolveStartTime('late-start')
+    await vi.waitFor(() => {
+      expect(fs.readdirSync(lockDir)).toHaveLength(1)
+      expect(readOwnLockRecord(lockDir)?.startTime).toBe('late-start')
+    })
+  })
+
   test('ignores malformed records', async ({ config, lockDir }) => {
     fs.mkdirSync(lockDir, { recursive: true })
     fs.writeFileSync(path.join(lockDir, 'malformed.json'), '{')
@@ -102,6 +138,9 @@ describe('command lock', () => {
     const lock = await createCommandLock(config, 'build', null)
     onTestFinished(() => lock.release())
 
+    await vi.waitFor(() => {
+      expect(readOwnLockRecord(lockDir)?.startTime).toBe('current-start')
+    })
     const files = fs.readdirSync(lockDir)
     expect(files).toHaveLength(2)
     expect(files).toContain('malformed.json')
@@ -166,9 +205,8 @@ describe('command lock', () => {
     await expect(createCommandLock(config, 'build', null)).rejects.toThrow(
       'Found another Vite build process',
     )
-    expect(
-      processStartTime.getProcessStartTime,
-    ).toHaveBeenCalledExactlyOnceWith(process.pid)
+    // The duplicate check exits before any start time is read.
+    expect(processStartTime.getProcessStartTime).not.toHaveBeenCalled()
   })
 
   test('publishes a lock when the current start time cannot be read', async ({
