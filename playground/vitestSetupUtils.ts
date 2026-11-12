@@ -36,15 +36,17 @@ export const sourcemapSnapshot = Symbol()
 
 export const workspaceRoot = path.resolve(import.meta.dirname, '../')
 
-export const isBuild = !!process.env.VITE_TEST_BUILD
+const playgroundMode = inject('playgroundMode')
+export const playgroundTempDir = inject('playgroundTempDir')
+export const isBuild = playgroundMode === 'build'
 export const isServe = !isBuild
 /**
  * Serve mode with `experimental.bundledDev` force-enabled for every playground
- * (`VITE_TEST_BUNDLED_DEV=1`). `isServe` stays `true` in this mode; mark cases
+ * (the `serve-bundled` project). `isServe` stays `true` in this mode; mark cases
  * that don't pass under bundled dev with `bundledDevTodo()` or
  * `bundledDevUnsupported()` from `test-utils.ts`.
  */
-export const isBundledDev = isServe && !!process.env.VITE_TEST_BUNDLED_DEV
+export const isBundledDev = playgroundMode === 'serve-bundled'
 export const isBundled = isBuild || isBundledDev
 export const isWindows = process.platform === 'win32'
 export const viteBinPath = path.posix.join(
@@ -145,7 +147,7 @@ export async function setupTest(suite: RunnerTestSuite) {
   testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
   testDir = path.dirname(testPath)
   if (testName) {
-    testDir = path.resolve(workspaceRoot, 'playground-temp', testName)
+    testDir = path.resolve(playgroundTempDir, testName)
   }
 
   // skip browser setup for hmr-ssr playground
@@ -550,6 +552,8 @@ declare module 'vite' {
 declare module 'vitest' {
   export interface ProvidedContext {
     wsEndpoint: string
+    playgroundMode: 'serve' | 'serve-bundled' | 'build'
+    playgroundTempDir: string
   }
   export interface TaskMeta {
     /** Why a `bundled-dev/*` tagged test does not pass under bundled dev. */

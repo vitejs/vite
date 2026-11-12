@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "imports": {
+    "#logo": "./nested-logo.svg"
+  }
+}

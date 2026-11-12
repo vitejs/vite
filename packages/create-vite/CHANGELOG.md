@@ -1,3 +1,10 @@
+## <small>[9.3.4](https://github.com/vitejs/vite/compare/create-vite%409.3.3...create-vite%409.3.4) (2026-11-05)</small>
+### Bug Fixes
+
+* **create-vite:** keep TypeScript 6 when using ESLint ([#23931](https://github.com/vitejs/vite/issues/23931)) ([28e1710](https://github.com/vitejs/vite/commit/28e1710790ac5ef65ed5e84cbb20438bc3218f01))
+* **deps:** update all non-major dependencies ([#23966](https://github.com/vitejs/vite/issues/23966)) ([b3cb057](https://github.com/vitejs/vite/commit/b3cb0575aff63004a71301a1ec798aeea2aa05d7))
+* **deps:** update rolldown-related dependencies ([#23967](https://github.com/vitejs/vite/issues/23967)) ([0105733](https://github.com/vitejs/vite/commit/0105733e610dd5b770bb5397e8d9fbc54a9f6312))
+
 ## <small>[9.3.3](https://github.com/vitejs/vite/compare/create-vite%409.3.2...create-vite%409.3.3) (2026-10-27)</small>
 ### Bug Fixes
 
