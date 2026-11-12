@@ -7,7 +7,6 @@ import {
 } from '../../shared/utils'
 import { FS_PREFIX } from '../constants'
 import { isDirectRequest } from '../plugins/css'
-import type { IndexHtmlTransformContext } from '../plugins/html'
 import { checkPublicFile } from '../publicDir'
 import type { ViteDevServer } from '../server'
 import {
@@ -32,7 +31,7 @@ import { browserUrlToModuleUrl, moduleUrlToFilePath } from './moduleUrl'
 export function htmlUrlToRequestUrl(
   url: string,
   base: string,
-  ctx: Required<Pick<IndexHtmlTransformContext, 'path' | 'originalUrl'>>,
+  ctx: { path: string; originalUrl: string },
 ): string | undefined {
   url = url.split('#', 1)[0]
   if (!url || isExternalUrl(url) || isDataUrl(url)) return
