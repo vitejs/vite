@@ -1657,6 +1657,13 @@ function normalizeSingleAlias({
   return alias
 }
 
+export function getBuildSourcemap(
+  sourcemap: ResolvedConfig['build']['sourcemap'],
+  type: 'js' | 'css',
+): boolean | 'inline' | 'hidden' {
+  return typeof sourcemap === 'object' ? sourcemap[type] : sourcemap
+}
+
 /**
  * Transforms transpiled code result where line numbers aren't altered,
  * so we can skip sourcemap generation during dev
@@ -1669,7 +1676,8 @@ export function transformStableResult(
   return {
     code: s.toString(),
     map:
-      config.command === 'build' && config.build.sourcemap
+      config.command === 'build' &&
+      getBuildSourcemap(config.build.sourcemap, 'js')
         ? s.generateMap({ hires: 'boundary', source: id })
         : null,
   }

@@ -2,7 +2,7 @@ import MagicString from 'magic-string'
 import { cleanUrl } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { createFilter } from '../utils'
+import { createFilter, getBuildSourcemap } from '../utils'
 
 /**
  * This plugin supports `esbuild.banner` and `esbuild.footer` options.
@@ -28,7 +28,7 @@ export function esbuildBannerFooterCompatPlugin(
         const needsSourcemap =
           this.environment.mode === 'dev' ||
           (this.environment.mode === 'build' &&
-            this.environment.config.build.sourcemap)
+            getBuildSourcemap(this.environment.config.build.sourcemap, 'js'))
         if (!needsSourcemap) {
           if (banner) {
             code = `${banner}\n${code}`

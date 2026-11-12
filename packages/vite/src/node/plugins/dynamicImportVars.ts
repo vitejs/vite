@@ -14,6 +14,7 @@ import { createBackCompatIdResolver } from '../idResolver'
 import type { Plugin } from '../plugin'
 import {
   createFilter,
+  getBuildSourcemap,
   normalizePath,
   rawRE,
   requestQueryMaybeEscapedSplitRE,
@@ -210,7 +211,10 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
           resolver(id, importer) {
             return resolveDynamicImport(environment, id, importer)
           },
-          sourcemap: !!environment.config.build.sourcemap,
+          sourcemap: !!getBuildSourcemap(
+            environment.config.build.sourcemap,
+            'js',
+          ),
         })
       }
       return true

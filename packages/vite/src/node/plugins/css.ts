@@ -80,6 +80,7 @@ import {
   generateCodeFrame,
   getFileStartIndex,
   getHash,
+  getBuildSourcemap,
   getPackageManagerCommand,
   getPkgName,
   injectQuery,
@@ -1026,7 +1027,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             }
 
             if (s) {
-              if (this.environment.config.build.sourcemap) {
+              if (
+                getBuildSourcemap(this.environment.config.build.sourcemap, 'js')
+              ) {
                 return {
                   code: s.toString(),
                   map: s.generateMap({ hires: 'boundary' }),
@@ -3479,7 +3482,7 @@ async function compileLightningCSS(
           minify: false,
           sourceMap:
             config.command === 'build'
-              ? !!config.build.sourcemap
+              ? !!getBuildSourcemap(config.build.sourcemap, 'css')
               : config.dev.sourcemap.css,
           analyzeDependencies: { preserveImports: true },
           cssModules: cssModuleRE.test(id)
