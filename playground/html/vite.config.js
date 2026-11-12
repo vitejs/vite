@@ -1,5 +1,9 @@
 import { relative, resolve } from 'node:path'
 import { defineConfig } from 'vite'
+import { inject } from 'vitest'
+
+const isBundledDev =
+  !!process.env.VITEST && inject('playgroundMode') === 'serve-bundled'
 
 const dirname = import.meta.dirname
 
@@ -46,7 +50,7 @@ const input = {
 
 const serveInput = {
   ...input,
-  ...(process.env.VITE_TEST_BUNDLED_DEV
+  ...(isBundledDev
     ? {}
     : {
         invalid: resolve(dirname, 'invalid.html'),
