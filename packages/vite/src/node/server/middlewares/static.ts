@@ -23,7 +23,6 @@ import {
   isParentDirectory,
   isSameFilePath,
   normalizePath,
-  removeLeadingSlash,
   urlRE,
 } from '../../utils'
 
@@ -159,22 +158,7 @@ export function serveStaticMiddleware(
     }
 
     // apply aliases to static requests as well
-    let redirectedPathname = applyStaticAlias(
-      pathname,
-      server.config.resolve.alias,
-    )
-    if (redirectedPathname) {
-      // dir is pre-normalized to posix style
-      if (redirectedPathname.startsWith(withTrailingSlash(dir))) {
-        redirectedPathname = redirectedPathname.slice(dir.length)
-      }
-    }
-
-    const resolvedPathname = redirectedPathname || pathname
-    let fileUrl = path.resolve(dir, removeLeadingSlash(resolvedPathname))
-    if (resolvedPathname.endsWith('/') && fileUrl.at(-1) !== '/') {
-      fileUrl = withTrailingSlash(fileUrl)
-    }
+    const redirectedPathname = resolveStaticPathname(pathname, server.config)
     if (redirectedPathname) {
       url.pathname = encodeURI(redirectedPathname)
       req.url = url.href.slice(url.origin.length)
@@ -190,6 +174,16 @@ export function serveStaticMiddleware(
       throw e
     }
   }
+}
+
+export function resolveStaticPathname(
+  pathname: string,
+  config: ResolvedConfig,
+): string | undefined {
+  const aliased = applyStaticAlias(pathname, config.resolve.alias)
+  return aliased?.startsWith(withTrailingSlash(config.root))
+    ? aliased.slice(config.root.length)
+    : aliased
 }
 
 export function applyStaticAlias(
