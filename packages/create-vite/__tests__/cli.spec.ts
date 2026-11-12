@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import type { SyncOptions } from 'execa'
-import { execaCommandSync } from 'execa'
+import { xSync } from 'tinyexec'
 import { afterEach, beforeAll, expect, test } from 'vitest'
 
 const CLI_PATH = path.join(import.meta.dirname, '..')
@@ -14,10 +13,13 @@ const genPathWithSubfolder = path.join(
   projectName,
 )
 
-const run = (args: string[], options?: SyncOptions) => {
-  return execaCommandSync(`node ${CLI_PATH} ${args.join(' ')}`, {
-    env: { ...process.env, _VITE_TEST_CLI: 'true' },
-    ...options,
+const run = (args: string[], options?: { cwd?: string }) => {
+  return xSync('node', [CLI_PATH, ...args], {
+    throwOnError: true,
+    nodeOptions: {
+      env: { ...process.env, _VITE_TEST_CLI: 'true' },
+      cwd: options?.cwd,
+    },
   })
 }
 
