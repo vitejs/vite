@@ -515,20 +515,25 @@ export class ModuleRunner {
   private moduleHotContexts = new Map<string, HMRContext>()
 
   private createRolldownDevRuntime(): DevRuntime {
-    const runtime = new DevRuntime(nanoid())
-    // Rolldown's runtime is loaded outside the SSR transform, so its native
-    // import() bypasses the module runner. Load virtual lazy chunks through
-    // the runner to compile and evaluate them with this runtime.
-    runtime.loadLazyChunk = (proxyModuleId) =>
-      this.import(
-        `/@vite/lazy?id=${encodeURIComponent(proxyModuleId)}&clientId=${runtime.clientId}`,
-      )
-    runtime.hooks = {
-      createModuleHotContext: (id) => this.ensureModuleHotContext(id),
-      onModuleCacheRemoval: (id) =>
-        this._bundledDevHmrClient?.handleModuleCacheRemoval(id),
+    class ViteDevRuntime extends DevRuntime {
+      constructor(private readonly runner: ModuleRunner) {
+        super(nanoid())
+      }
+
+      // Rolldown's runtime uses `import` that will not be rewritten by the module runner transform
+      override loadLazyChunk(proxyModuleId: string): Promise<unknown> {
+        return this.runner.import(
+          `/@vite/lazy?id=${encodeURIComponent(proxyModuleId)}&clientId=${this.clientId}`,
+        )
+      }
+
+      override hooks: DevRuntime['hooks'] = {
+        createModuleHotContext: (id) => this.runner.ensureModuleHotContext(id),
+        onModuleCacheRemoval: (id) =>
+          this.runner._bundledDevHmrClient?.handleModuleCacheRemoval(id),
+      }
     }
-    return runtime
+    return new ViteDevRuntime(this)
   }
 
   private ensureModuleHotContext(url: string) {
