@@ -63,7 +63,7 @@ describe('the dev server', () => {
   })
 
   test('aliases config.safeModulePaths to the client safe module paths across restarts', async () => {
-    server = await createServer({
+    const server = await createTestServer({
       configFile: false,
       root: import.meta.dirname,
       logLevel: 'silent',
@@ -97,7 +97,7 @@ describe('the dev server', () => {
     const deniedFile = path.posix.join(root, 'private.txt')
     const outsideFile = path.posix.join(root, '../outside.js')
 
-    server = await createServer({
+    const server = await createTestServer({
       configFile: false,
       root,
       environments: { custom: {} },
@@ -181,7 +181,7 @@ describe('the dev server', () => {
     const importedId = importedFile + '?raw'
     const importedUrl = path.posix.join('/@fs/', importedId)
 
-    server = await createServer({
+    const server = await createTestServer({
       configFile: false,
       root,
       logLevel: 'silent',
@@ -255,7 +255,7 @@ describe('the dev server', () => {
     const assetId = assetFile + '?no-inline'
     const assetUrl = path.posix.join('/@fs/', assetId)
 
-    server = await createServer({
+    const server = await createTestServer({
       configFile: false,
       root,
       logLevel: 'silent',
