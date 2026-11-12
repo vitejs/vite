@@ -642,6 +642,41 @@ export interface ExperimentalOptions {
    * @default false
    */
   bundledDev?: boolean
+  /**
+   * Save the results of plugin hooks on disk, so that the next build can
+   * reuse them. The dev server uses the cache only with `bundledDev`.
+   * A module reuses its saved result only when every hook that ran for it
+   * sets `cache: true`. `true` uses the defaults of all fields.
+   *
+   * @experimental
+   * @default false
+   */
+  cache?: boolean | CacheOptions
+}
+
+export interface CacheOptions {
+  /**
+   * The directory of the cache. A relative path is resolved against `root`.
+   *
+   * @default path.join(cacheDir, 'rolldown-cache')
+   */
+  dir?: string
+  /**
+   * Remove cache data that no build used for this many milliseconds.
+   * Without a value, nothing is removed.
+   */
+  maxAge?: number
+  /**
+   * A string for values that Vite cannot see, such as `process.env.X` read by
+   * a plugin. When it changes, no saved result is reused.
+   */
+  cacheKey?: string
+  /**
+   * Files that the config reads without importing them, for example with
+   * `fs.readFileSync`. When one of them changes, no saved result is reused.
+   * Relative paths are resolved against `root`.
+   */
+  buildDependencies?: string[]
 }
 
 export interface LegacyOptions {
@@ -715,6 +750,11 @@ export interface ResolvedConfig extends Readonly<
   > & {
     configFile: string | undefined
     configFileDependencies: string[]
+    /**
+     * @internal `configFileDependencies` may miss files: the config loader
+     * could not track the imports of the config file.
+     */
+    configFileDependenciesUnknown: boolean
     inlineConfig: InlineConfig
     root: string
     base: string
@@ -924,6 +964,7 @@ const configDefaults = Object.freeze({
     renderBuiltUrl: undefined,
     hmrPartialAccept: false,
     bundledDev: false,
+    cache: false,
   },
   future: {
     removePluginHookHandleHotUpdate: undefined,
@@ -1499,6 +1540,7 @@ export async function resolveConfig(
   }
 
   let configFileDependencies: string[] = []
+  let configFileDependenciesUnknown = false
   let mode = inlineConfig.mode || defaultMode
   // When `NODE_ENV` isn't set locally, ask Vite Task for it; the runner
   // also records the env in the build's cache key.
@@ -1538,6 +1580,7 @@ export async function resolveConfig(
       config = mergeConfig(loadResult.config, config)
       configFile = loadResult.path
       configFileDependencies = loadResult.dependencies
+      configFileDependenciesUnknown = !!loadResult.dependenciesUnknown
     }
   }
 
@@ -2086,6 +2129,7 @@ export async function resolveConfig(
     configFileDependencies: configFileDependencies.map((name) =>
       normalizePath(path.resolve(name)),
     ),
+    configFileDependenciesUnknown,
     inlineConfig,
     root: resolvedRoot,
     tsconfig: config.tsconfig
@@ -2434,6 +2478,8 @@ export async function loadConfigFromFile(
   path: string
   config: UserConfig
   dependencies: string[]
+  /** @internal */
+  dependenciesUnknown?: boolean
 } | null> {
   if (
     configLoader !== 'bundle' &&
@@ -2478,7 +2524,15 @@ export async function loadConfigFromFile(
   }
 
   try {
-    const { configExport, dependencies } = await (configLoader === 'bundle'
+    const {
+      configExport,
+      dependencies,
+      dependenciesUnknown,
+    }: {
+      configExport: any
+      dependencies: string[]
+      dependenciesUnknown?: boolean
+    } = await (configLoader === 'bundle'
       ? bundleAndLoadConfigFile(
           resolvedPath,
           configRoot,
@@ -2501,6 +2555,7 @@ export async function loadConfigFromFile(
       path: normalizePath(resolvedPath),
       config,
       dependencies,
+      dependenciesUnknown,
     }
   } catch (e) {
     const logger = createLogger(logLevel, { customLogger })
@@ -2512,9 +2567,11 @@ export async function loadConfigFromFile(
   }
 }
 
-async function nativeImportConfigFile(
-  resolvedPath: string,
-): Promise<{ configExport: any; dependencies: string[] }> {
+async function nativeImportConfigFile(resolvedPath: string): Promise<{
+  configExport: any
+  dependencies: string[]
+  dependenciesUnknown?: boolean
+}> {
   const freshImported = freshImport(pathToFileURL(resolvedPath).href)
   if (freshImported) {
     const { result, dependencies } = await freshImported
@@ -2528,7 +2585,11 @@ async function nativeImportConfigFile(
   const module = await import(
     pathToFileURL(resolvedPath).href + '?t=' + Date.now()
   )
-  return { configExport: module.default, dependencies: [] }
+  return {
+    configExport: module.default,
+    dependencies: [],
+    dependenciesUnknown: true,
+  }
 }
 
 async function runnerImportConfigFile(resolvedPath: string) {

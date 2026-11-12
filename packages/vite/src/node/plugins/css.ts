@@ -391,6 +391,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     },
 
     load: {
+      cache: true,
       filter: {
         id: CSS_LANGS_RE,
       },

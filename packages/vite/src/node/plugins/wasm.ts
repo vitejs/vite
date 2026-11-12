@@ -111,6 +111,7 @@ export const wasmHelperPlugin = (): Plugin => {
       name: 'vite:wasm-helper',
 
       resolveId: {
+        cache: true,
         filter: { id: exactRegex(wasmHelperId) },
         handler(id) {
           return id
@@ -122,6 +123,7 @@ export const wasmHelperPlugin = (): Plugin => {
       // `?source` module, which resolves to a compiled `WebAssembly.Module`.
       // This polyfills the proposal on top of Vite's existing module pipeline.
       transform: {
+        cache: true,
         filter: { code: wasmSourcePhaseRE },
         async handler(code) {
           await esModuleLexerInit()

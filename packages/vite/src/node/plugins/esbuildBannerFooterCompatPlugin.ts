@@ -23,39 +23,42 @@ export function esbuildBannerFooterCompatPlugin(
 
   return {
     name: 'vite:esbuild-banner-footer-compat',
-    transform(code, id) {
-      if (filter(id) || filter(cleanUrl(id))) {
-        const needsSourcemap =
-          this.environment.mode === 'dev' ||
-          (this.environment.mode === 'build' &&
-            this.environment.config.build.sourcemap)
-        if (!needsSourcemap) {
+    transform: {
+      cache: true,
+      handler(code, id) {
+        if (filter(id) || filter(cleanUrl(id))) {
+          const needsSourcemap =
+            this.environment.mode === 'dev' ||
+            (this.environment.mode === 'build' &&
+              this.environment.config.build.sourcemap)
+          if (!needsSourcemap) {
+            if (banner) {
+              code = `${banner}\n${code}`
+            }
+            if (footer) {
+              code = `${code}\n${footer}`
+            }
+            return code
+          }
+
+          let s: MagicString | undefined
+          const str = () => s || (s = new MagicString(code))
+
           if (banner) {
-            code = `${banner}\n${code}`
+            str().prepend(`${banner}\n`)
           }
           if (footer) {
-            code = `${code}\n${footer}`
+            str().append(`${footer}\n`)
           }
-          return code
-        }
 
-        let s: MagicString | undefined
-        const str = () => s || (s = new MagicString(code))
-
-        if (banner) {
-          str().prepend(`${banner}\n`)
-        }
-        if (footer) {
-          str().append(`${footer}\n`)
-        }
-
-        if (s) {
-          return {
-            code: s.toString(),
-            map: s.generateMap({ hires: 'boundary' }),
+          if (s) {
+            return {
+              code: s.toString(),
+              map: s.generateMap({ hires: 'boundary' }),
+            }
           }
         }
-      }
+      },
     },
   }
 }
