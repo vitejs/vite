@@ -20,7 +20,7 @@ test.runIf(isBuild)(
       css: [expect.stringMatching(/\.css$/)],
       assets: [expect.stringMatching(/\.svg$/)],
     })
-    expect(manifest.htmlTags).toEqual([
+    expect(manifest.htmlTags).toStrictEqual([
       [
         {
           tag: 'meta',

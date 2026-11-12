@@ -107,6 +107,7 @@ describe.runIf(isBuild)('build', () => {
       ([, chunk]) => chunk.isWorker,
     )
     expect(workerChunks.every(([key]) => key.startsWith('_worker_'))).toBe(true)
+    // oxlint-disable-next-line typescript/require-array-sort-compare
     expect(workerChunks.map(([, chunk]) => chunk.file).sort()).toStrictEqual(
       emittedWorkerFiles.sort(),
     )
