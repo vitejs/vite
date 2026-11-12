@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import type { InlineConfig } from '..'
-import { normalizePath } from '..'
+import { createLogger, normalizePath } from '..'
 import {
   ChunkMetadataMap,
   createBuilder,
@@ -321,26 +321,67 @@ describe('experimental.cache in resolveRolldownOptions', () => {
     expect((options.experimental as { cache?: unknown }).cache).toBeUndefined()
   })
 
-  test('sets no assumeUnchanged with only a lockfile', async () => {
+  test('is off with only a lockfile in the project root', async () => {
     const root = createProject({ 'yarn.lock': '# yarn lockfile v1' })
-    const cache = await getCacheOption({
-      root,
-      configFile: false,
-      experimental: { cache: true },
-    })
-    expect(cache.buildDependencies).toStrictEqual([`${root}/yarn.lock`])
-    expect(cache.assumeUnchanged).toBeUndefined()
+    const warnings: string[] = []
+    expect(
+      await getCacheOption({
+        root,
+        configFile: false,
+        experimental: { cache: true },
+        customLogger: {
+          ...createLogger('silent'),
+          warnOnce: (msg) => warnings.push(msg),
+        },
+      }),
+    ).toBeUndefined()
+    expect(warnings).toStrictEqual([
+      expect.stringContaining('`experimental.cache` is off'),
+    ])
   })
 
-  test('sets no assumeUnchanged without an installed-packages file', async () => {
+  test('is off without an installed-packages file', async () => {
     const root = createProject({})
+    expect(
+      await getCacheOption({
+        root,
+        configFile: false,
+        experimental: { cache: true },
+      }),
+    ).toBeUndefined()
+  })
+
+  test('is off when the installed-packages file is above the workspace root', async () => {
+    // For example, a stray `npm i` in the home directory.
+    const dir = createProject({
+      'node_modules/.package-lock.json': '{}',
+      'app/package.json': '{}',
+    })
+    expect(
+      await getCacheOption({
+        root: `${dir}/app`,
+        configFile: false,
+        experimental: { cache: true },
+      }),
+    ).toBeUndefined()
+  })
+
+  test('uses an installed-packages file at the workspace root', async () => {
+    const dir = createProject({
+      'pnpm-workspace.yaml': 'packages: [packages/*]',
+      'package.json': '{}',
+      'node_modules/.pnpm/lock.yaml': 'lockfileVersion: 9',
+      'packages/web/package.json': '{}',
+    })
     const cache = await getCacheOption({
-      root,
+      root: `${dir}/packages/web`,
       configFile: false,
       experimental: { cache: true },
     })
-    expect(cache.buildDependencies).toStrictEqual([])
-    expect(cache.assumeUnchanged).toBeUndefined()
+    expect(cache.buildDependencies).toStrictEqual([
+      `${dir}/node_modules/.pnpm/lock.yaml`,
+    ])
+    expect(cache.assumeUnchanged).toStrictEqual(['**/node_modules/**'])
   })
 
   test('sets no assumeUnchanged with resolve.preserveSymlinks', async () => {

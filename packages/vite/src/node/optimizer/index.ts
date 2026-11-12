@@ -1359,24 +1359,25 @@ function getConfigHash(environment: Environment): string {
   return getHash(content)
 }
 
-/**
- * Whether the package manager writes `lockfilePath` when it installs
- * packages, so that it changes exactly when the installed packages change. A
- * lockfile in the project root such as `yarn.lock` can change without an
- * install, for example after `git pull`.
- */
-export function recordsInstalledState(lockfilePath: string): boolean {
-  const normalizedLockfilePath = lockfilePath.replaceAll('\\', '/')
-  return [...lockfileFormats, ...fallbackLockfileFormats].some(
-    (f) => f.recordsInstalledState && normalizedLockfilePath.endsWith(f.path),
-  )
-}
+const installedStateFilePaths = lockfileFormats
+  .filter((f) => f.recordsInstalledState)
+  .map((f) => f.path)
 
 /**
- * The lockfile or the package manager's file that records the installed
- * packages, the same file that `getLockfileHash` hashes.
+ * The file that the package manager writes when it installs packages, so
+ * that it changes exactly when the installed packages change. A lockfile in
+ * the project root such as `yarn.lock` is not one: it can change without an
+ * install, for example after `git pull`. The lookup does not go above
+ * `stopDir`.
  */
-export function findLockfilePath(root: string): string | undefined {
+export function findInstalledStateFile(
+  root: string,
+  stopDir: string,
+): string | undefined {
+  return lookupFile(root, installedStateFilePaths, stopDir)
+}
+
+function findLockfilePath(root: string): string | undefined {
   return (
     lookupFile(root, lockfilePaths) ?? lookupFile(root, fallbackLockfilePaths)
   )
