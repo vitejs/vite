@@ -94,6 +94,7 @@ function removeFile(file: string): void {
 async function scanCommandLocks(
   lockDir: string,
   currentRecord: CommandLockRecord,
+  getOwnStartTime: () => Promise<string | undefined>,
 ): Promise<void> {
   let files: string[]
   try {
@@ -125,7 +126,7 @@ async function scanCommandLocks(
     if (record.startTime) {
       const actualStartTime =
         record.pid === process.pid
-          ? currentRecord.startTime
+          ? await getOwnStartTime()
           : await getProcessStartTime(record.pid)
       if (actualStartTime && actualStartTime !== record.startTime) {
         removeFile(lockPath)
@@ -160,7 +161,12 @@ function createCommandLockController(
   let checkDuplicates = true
   let released = false
   let generation = 0
-  let processStartTime: Promise<string | undefined> | undefined
+  let startTime: string | undefined
+  let startTimePromise: Promise<string | undefined> | undefined
+  let lastPublish:
+    | { config: ResolvedConfig; urls: ResolvedServerUrls | null }
+    | undefined
+  let publishChain: Promise<void> = Promise.resolve()
 
   function onExit(): void {
     release()
@@ -213,15 +219,39 @@ function createCommandLockController(
     currentPath = undefined
   }
 
-  async function publish(
+  function publish(
     config: ResolvedConfig,
     urls: ResolvedServerUrls | null,
   ): Promise<void> {
-    if (released) return
     const publishGeneration = generation
-    const startTime = await (processStartTime ??= getProcessStartTime(
-      process.pid,
+    const result = publishChain.then(() =>
+      generation === publishGeneration
+        ? publishInternal(config, urls, publishGeneration)
+        : undefined,
+    )
+    publishChain = result.then(
+      () => {},
+      () => {},
+    )
+    return result
+  }
+
+  function ensureStartTime(): Promise<string | undefined> {
+    return (startTimePromise ??= getProcessStartTime(process.pid).then(
+      (value) => {
+        startTime = value
+        return value
+      },
     ))
+  }
+
+  async function publishInternal(
+    config: ResolvedConfig,
+    urls: ResolvedServerUrls | null,
+    publishGeneration: number,
+  ): Promise<void> {
+    if (released) return
+    lastPublish = { config, urls }
 
     const record: CommandLockRecord = {
       command,
@@ -238,8 +268,21 @@ function createCommandLockController(
     if (lockPath === currentPath) return
 
     if (checkDuplicates) {
-      await scanCommandLocks(lockDir, record)
+      await scanCommandLocks(lockDir, record, ensureStartTime)
       checkDuplicates = false
+    }
+
+    if (record.startTime === undefined) {
+      void ensureStartTime().then(() => {
+        if (
+          !released &&
+          generation === publishGeneration &&
+          lastPublish &&
+          startTime !== undefined
+        ) {
+          void publish(lastPublish.config, lastPublish.urls)
+        }
+      })
     }
 
     const tempPath = `${lockPath}.${process.pid}.${Math.random()
