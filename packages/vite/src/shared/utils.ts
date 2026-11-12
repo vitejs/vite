@@ -5,8 +5,7 @@ export const isWindows: boolean =
 
 /**
  * Prepend `/@id/` and replace null byte so the id is URL-safe.
- * BrowserURL rendering wraps ModuleURLs that are not valid browser import
- * specifiers before adding base.
+ * BrowserURL and ModuleRunnerURL rendering wrap virtual ModuleURLs.
  */
 export function wrapId(id: string): string {
   return id.startsWith(VALID_ID_PREFIX)
@@ -28,6 +27,11 @@ export function moduleUrlToBrowserUrl(moduleUrl: string, base: string): string {
   const browserUrl =
     moduleUrl[0] !== '.' && moduleUrl[0] !== '/' ? wrapId(moduleUrl) : moduleUrl
   return base ? joinUrlSegments(base, browserUrl) : browserUrl
+}
+
+/** Render a decoded ModuleURL as a ModuleRunnerURL, wrapping virtual IDs without adding base. */
+export function moduleUrlToModuleRunnerUrl(moduleUrl: string): string {
+  return moduleUrlToBrowserUrl(moduleUrl, '')
 }
 
 export function joinUrlSegments(a: string, b: string): string {

@@ -32,38 +32,38 @@ export interface FetchModuleOptions {
  */
 export async function fetchModule(
   environment: DevEnvironment,
-  url: string,
-  importer?: string,
+  moduleRunnerUrl: string,
+  importerId?: string,
   options: FetchModuleOptions = {},
 ): Promise<FetchResult> {
   if (
-    url.startsWith('data:') ||
-    isBuiltin(environment.config.resolve.builtins, url)
+    moduleRunnerUrl.startsWith('data:') ||
+    isBuiltin(environment.config.resolve.builtins, moduleRunnerUrl)
   ) {
-    return { externalize: url, type: 'builtin' }
+    return { externalize: moduleRunnerUrl, type: 'builtin' }
   }
 
   // handle file urls from not statically analyzable dynamic import
-  const isFileUrl = url.startsWith('file://')
+  const isFileUrl = moduleRunnerUrl.startsWith('file://')
 
-  if (isExternalUrl(url) && !isFileUrl) {
-    return { externalize: url, type: 'network' }
+  if (isExternalUrl(moduleRunnerUrl) && !isFileUrl) {
+    return { externalize: moduleRunnerUrl, type: 'network' }
   }
 
   // if there is no importer, the file is an entry point
   // entry points are always internalized
   if (
     !isFileUrl &&
-    importer &&
-    url[0] !== '.' &&
-    url[0] !== '/' &&
-    !isBundledChunkUrl(environment, url)
+    importerId &&
+    moduleRunnerUrl[0] !== '.' &&
+    moduleRunnerUrl[0] !== '/' &&
+    !isBundledChunkUrl(environment, moduleRunnerUrl)
   ) {
     const { isProduction, root } = environment.config
     const { externalConditions, dedupe, preserveSymlinks } =
       environment.config.resolve
 
-    const resolved = tryNodeResolve(url, importer, {
+    const resolved = tryNodeResolve(moduleRunnerUrl, importerId, {
       mainFields: ['main'],
       conditions: externalConditions,
       externalConditions,
@@ -81,40 +81,47 @@ export async function fetchModule(
     })
     if (!resolved) {
       const err: any = new Error(
-        `Cannot find module '${url}' imported from '${importer}'`,
+        `Cannot find module '${moduleRunnerUrl}' imported from '${importerId}'`,
       )
       err.code = 'ERR_MODULE_NOT_FOUND'
       throw err
     }
-    const file = pathToFileURL(resolved.id).toString()
+    const externalFileUrl = pathToFileURL(resolved.id).toString()
     const type = isFilePathESM(resolved.id, environment.config.packageCache)
       ? 'module'
       : 'commonjs'
-    return { externalize: file, type }
+    return { externalize: externalFileUrl, type }
   }
 
-  url = unwrapId(url)
+  // The module graph and transform pipeline use unwrapped ModuleURLs.
+  const moduleUrl = unwrapId(moduleRunnerUrl)
 
   const bundledDev = environment.bundledDev
 
   if (bundledDev) {
-    return fetchBundledModule(environment, bundledDev, url, importer, options)
+    return fetchBundledModule(
+      environment,
+      bundledDev,
+      moduleUrl,
+      importerId,
+      options,
+    )
   }
 
-  const mod = await environment.moduleGraph.ensureEntryFromUrl(url)
+  const mod = await environment.moduleGraph.ensureEntryFromUrl(moduleUrl)
   const cached = !!mod.transformResult
 
-  // if url is already cached, we can just confirm it's also cached on the server
+  // if moduleUrl is already cached, we can just confirm it's also cached on the server
   if (options.cached && cached) {
     return { cache: true }
   }
 
-  let result = await environment.transformRequest(url)
+  let result = await environment.transformRequest(moduleUrl)
 
   if (!result) {
     throw new Error(
-      `[vite] transform failed for module '${url}'${
-        importer ? ` imported from '${importer}'` : ''
+      `[vite] transform failed for module '${moduleUrl}'${
+        importerId ? ` imported from '${importerId}'` : ''
       }.`,
     )
   }
@@ -139,26 +146,29 @@ export async function fetchModule(
 async function fetchBundledModule(
   environment: DevEnvironment,
   bundledDev: BundledDev,
-  url: string,
-  importer: string | undefined,
+  moduleUrl: string,
+  importerId: string | undefined,
   options: FetchModuleOptions,
 ) {
   await bundledDev._waitForInitialBuildSuccess()
 
-  if (url.startsWith('/@vite/lazy?')) {
-    const { searchParams } = new URL(url, 'http://localhost')
-    const moduleId = searchParams.get('id')!
+  if (moduleUrl.startsWith('/@vite/lazy?')) {
+    const { searchParams } = new URL(moduleUrl, 'http://localhost')
+    const rolldownModuleId = searchParams.get('id')!
     const clientId = searchParams.get('clientId')!
-    const lazyResult = await bundledDev.triggerLazyBundling(moduleId, clientId)
+    const lazyResult = await bundledDev.triggerLazyBundling(
+      rolldownModuleId,
+      clientId,
+    )
     if (lazyResult == null) {
-      throw new Error(`unknown request: ${url}`)
+      throw new Error(`unknown request: ${moduleUrl}`)
     }
     // This module is invalidated immediately, so url/id do not matter
     const result: ViteFetchResult = {
       code: lazyResult.code,
-      url,
-      id: moduleId!,
-      file: cleanUrl(moduleId!),
+      url: moduleUrl,
+      id: rolldownModuleId!,
+      file: cleanUrl(rolldownModuleId!),
       invalidate: false,
     }
 
@@ -166,11 +176,11 @@ async function fetchBundledModule(
     const ssrResult = await ssrTransform(
       result.code,
       lazyResult.sourcemap ? JSON.parse(lazyResult.sourcemap) : null,
-      url,
+      moduleUrl,
       result.code,
     )
     if (!ssrResult) {
-      throw new Error(`[vite] cannot apply ssr transform to '${url}'.`)
+      throw new Error(`[vite] cannot apply ssr transform to '${moduleUrl}'.`)
     }
     result.code = ssrResult.code
     if (options.inlineSourceMap !== false) {
@@ -187,43 +197,43 @@ async function fetchBundledModule(
     path.resolve(environment.config.root, environment.config.build.outDir),
   )
 
-  let fileName: string
-  let facadeId: string | undefined
+  let chunkFileName: string
+  let facadeModuleId: string | undefined
 
   // Assume this is an entry point that was specified in rolldownOptions.input
-  if (!importer) {
+  if (!importerId) {
     const resolvedEntry = await resolveBundledEntryFilename(
       bundledDev,
       environment.config.root,
-      url,
+      moduleUrl,
     )
     if (!resolvedEntry) {
       const entrypoints = [...bundledDev.facadeToChunk.keys()]
       throw new Error(
-        `[vite] Entrypoint '${url}' was not defined in the config. ` +
+        `[vite] Entrypoint '${moduleUrl}' was not defined in the config. ` +
           (entrypoints.length
             ? `Available entry points: \n- ${[...bundledDev.facadeToChunk.keys()].join('\n- ')}`
             : `The build did not produce any chunks. Did it finish successfully? See the logs for more information.`),
       )
     }
-    ;[facadeId, fileName] = resolvedEntry
-  } else if (url[0] === '.') {
+    ;[facadeModuleId, chunkFileName] = resolvedEntry
+  } else if (moduleUrl[0] === '.') {
     // Importer is reported as a full path on the file system.
     // This happens because we provide the `file` attribute.
-    if (importer.startsWith(outDir)) {
-      importer = importer.slice(outDir.length + 1)
+    if (importerId.startsWith(outDir)) {
+      importerId = importerId.slice(outDir.length + 1)
     }
-    fileName = path.posix.join(path.posix.dirname(importer), url)
+    chunkFileName = path.posix.join(path.posix.dirname(importerId), moduleUrl)
   } else {
-    fileName = url
+    chunkFileName = moduleUrl
   }
 
-  const memoryFile = bundledDev.memoryFiles.get(fileName)
+  const memoryFile = bundledDev.memoryFiles.get(chunkFileName)
   const code = memoryFile?.source
   if (code == null) {
     throw new Error(
-      `[vite] the module '${url}' (chunk '${fileName}') ${
-        importer ? ` imported from '${importer}'` : ''
+      `[vite] the module '${moduleUrl}' (chunk '${chunkFileName}') ${
+        importerId ? ` imported from '${importerId}'` : ''
       } was not bundled. Is server established?`,
     )
   }
@@ -234,18 +244,18 @@ async function fetchBundledModule(
     code: code.toString(),
     // To make sure dynamic imports resolve assets correctly.
     // (Dynamic import resolves relative urls with importer url)
-    url: fileName,
-    id: fileName,
+    url: chunkFileName,
+    id: chunkFileName,
     // The potential position on the file system.
     // We don't actually keep it there, it's virtual.
-    file: normalizePath(path.resolve(outDir, fileName)),
+    file: normalizePath(path.resolve(outDir, chunkFileName)),
     // chunks cannot be invalidated manually
     invalidate: false,
     // TODO: seems like rolldown uses `process.cwd()` instead of `config.root`
     // We need this because __rolldown_runtime__ keeps modules internally
     // And after HMR there is no other way to receive the updated exports
-    rolldownModuleId: facadeId
-      ? normalizePath(path.relative(process.cwd(), facadeId))
+    rolldownModuleId: facadeModuleId
+      ? normalizePath(path.relative(process.cwd(), facadeModuleId))
       : undefined,
   }
   // TODO: this should be done in rolldown, there is already a function for it
@@ -258,7 +268,7 @@ async function fetchBundledModule(
     result.code,
   )
   if (!ssrResult) {
-    throw new Error(`[vite] cannot apply ssr transform to '${url}'.`)
+    throw new Error(`[vite] cannot apply ssr transform to '${moduleUrl}'.`)
   }
   result.code = ssrResult.code
   if (options.inlineSourceMap !== false) {
@@ -314,43 +324,48 @@ function inlineSourceMap(
   return result
 }
 
-function isBundledChunkUrl(environment: DevEnvironment, url: string) {
-  return environment.bundledDev?.memoryFiles.has(url)
+function isBundledChunkUrl(
+  environment: DevEnvironment,
+  moduleRunnerUrl: string,
+) {
+  return environment.bundledDev?.memoryFiles.has(moduleRunnerUrl)
 }
 
 async function resolveBundledEntryFilename(
   environment: BundledDev,
   root: string,
-  url: string,
-): Promise<[facadeId: string | undefined, chunkName: string] | undefined> {
-  if (environment.memoryFiles.has(url)) {
-    return [undefined, url]
+  moduleUrl: string,
+): Promise<
+  [facadeModuleId: string | undefined, chunkName: string] | undefined
+> {
+  if (environment.memoryFiles.has(moduleUrl)) {
+    return [undefined, moduleUrl]
   }
-  // Already resolved by the user to be a url
-  if (environment.facadeToChunk.has(url)) {
-    return [url, environment.facadeToChunk.get(url)!]
+  // Already resolved to a facade ModuleID
+  if (environment.facadeToChunk.has(moduleUrl)) {
+    return [moduleUrl, environment.facadeToChunk.get(moduleUrl)!]
   }
-  const facadeId = await environment.resolveEntryFacade(url)
-  if (facadeId && environment.facadeToChunk.has(facadeId)) {
-    return [facadeId, environment.facadeToChunk.get(facadeId)!]
+  const facadeModuleId = await environment.resolveEntryFacade(moduleUrl)
+  if (facadeModuleId && environment.facadeToChunk.has(facadeModuleId)) {
+    return [facadeModuleId, environment.facadeToChunk.get(facadeModuleId)!]
   }
   const moduleId = normalizePath(
-    url.startsWith('file://')
+    moduleUrl.startsWith('file://')
       ? // new URL(path)
-        fileURLToPath(url)
+        fileURLToPath(moduleUrl)
       : // ./index.js
         // NOTE: we don't try to find it if extension is not passed
         // It will throw an error instead
-        path.resolve(root, url),
+        path.resolve(root, moduleUrl),
   )
   if (environment.facadeToChunk.get(moduleId)) {
     return [moduleId, environment.facadeToChunk.get(moduleId)!]
   }
-  if (url[0] === '/') {
-    const tryAbsoluteUrl = path.posix.join(root, url)
-    const absoluteChunk = environment.facadeToChunk.get(tryAbsoluteUrl)
+  if (moduleUrl[0] === '/') {
+    const absoluteModuleId = path.posix.join(root, moduleUrl)
+    const absoluteChunk = environment.facadeToChunk.get(absoluteModuleId)
     if (absoluteChunk) {
-      return [tryAbsoluteUrl, absoluteChunk]
+      return [absoluteModuleId, absoluteChunk]
     }
   }
 }

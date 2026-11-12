@@ -160,11 +160,11 @@ export class DevEnvironment extends BaseEnvironment {
       : normalizeHotChannel({}, context.hot)
 
     this.hot.setInvokeHandler({
-      fetchModule: (id, importer, options) => {
+      fetchModule: (moduleRunnerUrl, importerId, options) => {
         if (context.disableFetchModule) {
           throw new Error('fetchModule is disabled in this environment')
         }
-        return this.fetchModule(id, importer, options)
+        return this.fetchModule(moduleRunnerUrl, importerId, options)
       },
       getBuiltins: async () => {
         return this.config.resolve.builtins.map((builtin) =>
@@ -301,11 +301,11 @@ export class DevEnvironment extends BaseEnvironment {
    * This method is not meant to be called manually.
    */
   fetchModule(
-    id: string,
-    importer?: string,
+    moduleRunnerUrl: string,
+    importerId?: string,
     options?: FetchFunctionOptions,
   ): Promise<FetchResult> {
-    return fetchModule(this, id, importer, {
+    return fetchModule(this, moduleRunnerUrl, importerId, {
       ...this._remoteRunnerOptions,
       ...options,
     })

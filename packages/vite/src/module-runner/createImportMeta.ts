@@ -14,15 +14,15 @@ const envProxy = new Proxy({} as any, {
 export function createDefaultImportMeta(
   modulePath: string,
 ): ModuleRunnerImportMeta {
-  const href = posixPathToFileHref(modulePath)
+  const fileUrl = posixPathToFileHref(modulePath)
   const filename = modulePath
   const dirname = posixDirname(modulePath)
   return {
     filename: isWindows ? toWindowsPath(filename) : filename,
     dirname: isWindows ? toWindowsPath(dirname) : dirname,
-    url: href,
+    url: fileUrl,
     env: envProxy,
-    resolve(_id: string, _parent?: string) {
+    resolve(_specifier: string, _parentUrl?: string) {
       throw new Error('[module runner] "import.meta.resolve" is not supported.')
     },
     // should be replaced during transformation
@@ -42,16 +42,16 @@ export function createNodeImportMeta(
   modulePath: string,
 ): ModuleRunnerImportMeta {
   const defaultMeta = createDefaultImportMeta(modulePath)
-  const href = defaultMeta.url
+  const fileUrl = defaultMeta.url
 
   const importMetaResolver = createImportMetaResolver()
 
   return {
     ...defaultMeta,
     main: false,
-    resolve(id: string, parent?: string) {
+    resolve(specifier: string, parentUrl?: string) {
       const resolver = importMetaResolver ?? defaultMeta.resolve
-      return resolver(id, parent ?? href)
+      return resolver(specifier, parentUrl ?? fileUrl)
     },
   }
 }

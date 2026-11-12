@@ -54,6 +54,7 @@ export class ModuleRunner {
 
   private readonly transport: NormalizedModuleRunnerTransport
   private readonly resetSourceMapSupport?: () => void
+  // Keyed by the requested ModuleRunnerURL or entry-point input.
   private readonly concurrentModuleNodePromises = new Map<
     string,
     Promise<EvaluatedModuleNode>
@@ -89,6 +90,7 @@ export class ModuleRunner {
           : optionsHmr.logger === false
             ? silentConsole
             : optionsHmr.logger
+      // HMR paths are ModuleURLs.
       const importUpdatedModule = ({ acceptedPath }: Update) =>
         this.import<ModuleNamespace>(acceptedPath)
       if (runtime) {
@@ -141,10 +143,11 @@ export class ModuleRunner {
   }
 
   /**
-   * URL to execute. Accepts file path, server path or id relative to the root.
+   * Execute a ModuleRunnerURL: a base-free URL with virtual IDs wrapped in `/@id/`.
+   * Entry points also accept file paths, file URLs, ModuleURLs, and unresolved IDs.
    */
-  public async import<T = any>(url: string): Promise<T> {
-    const fetchedModule = await this.cachedModule(url)
+  public async import<T = any>(moduleRunnerUrl: string): Promise<T> {
+    const fetchedModule = await this.cachedModule(moduleRunnerUrl)
     const exportsObject = await this.cachedRequest(
       fetchedModule.url,
       fetchedModule,
@@ -216,9 +219,9 @@ export class ModuleRunner {
     if (!('externalize' in fetchResult)) {
       return exports
     }
-    const { url, type } = fetchResult
+    const { url: externalSpecifier, type } = fetchResult
     if (type !== 'module' && type !== 'commonjs') return exports
-    analyzeImportedModDifference(exports, url, type, metadata)
+    analyzeImportedModDifference(exports, externalSpecifier, type, metadata)
     return exports
   }
 
@@ -252,7 +255,7 @@ export class ModuleRunner {
   }
 
   private async cachedRequest(
-    url: string,
+    moduleRunnerUrl: string,
     mod: EvaluatedModuleNode,
     callstack: string[] = [],
     metadata?: SSRImportMetadata,
@@ -260,9 +263,9 @@ export class ModuleRunner {
     const meta = mod.meta!
     const moduleId = meta.id
 
-    const importee = callstack.at(-1)
+    const importerId = callstack.at(-1)
 
-    if (importee) mod.importers.add(importee)
+    if (importerId) mod.importers.add(importerId)
 
     // fast path: already evaluated modules can't deadlock
     if (mod.evaluated && mod.promise) {
@@ -295,7 +298,7 @@ export class ModuleRunner {
     }
 
     try {
-      const promise = this.directRequest(url, mod, callstack)
+      const promise = this.directRequest(moduleRunnerUrl, mod, callstack)
       mod.promise = promise
       mod.evaluated = false
       return this.processImport(await promise, meta, metadata)
@@ -306,20 +309,25 @@ export class ModuleRunner {
   }
 
   private async cachedModule(
-    url: string,
-    importer?: string,
+    moduleRunnerUrl: string,
+    importerId?: string,
   ): Promise<EvaluatedModuleNode> {
-    let cached = this.concurrentModuleNodePromises.get(url)
+    let cached = this.concurrentModuleNodePromises.get(moduleRunnerUrl)
     if (!cached) {
-      const cachedModule = this.evaluatedModules.getModuleByUrl(url)
-      cached = this.getModuleInformation(url, importer, cachedModule).finally(
-        () => {
-          this.concurrentModuleNodePromises.delete(url)
-        },
-      )
-      this.concurrentModuleNodePromises.set(url, cached)
+      const cachedModule = this.evaluatedModules.getModuleByUrl(moduleRunnerUrl)
+      cached = this.getModuleInformation(
+        moduleRunnerUrl,
+        importerId,
+        cachedModule,
+      ).finally(() => {
+        this.concurrentModuleNodePromises.delete(moduleRunnerUrl)
+      })
+      this.concurrentModuleNodePromises.set(moduleRunnerUrl, cached)
     } else {
-      this.debug?.('[module runner] using cached module info for', url)
+      this.debug?.(
+        '[module runner] using cached module info for',
+        moduleRunnerUrl,
+      )
     }
 
     return cached
@@ -354,8 +362,8 @@ export class ModuleRunner {
   }
 
   private async getModuleInformation(
-    url: string,
-    importer: string | undefined,
+    moduleRunnerUrl: string,
+    importerId: string | undefined,
     cachedModule: EvaluatedModuleNode | undefined,
   ): Promise<EvaluatedModuleNode> {
     if (this.closed) {
@@ -364,17 +372,17 @@ export class ModuleRunner {
 
     await this.ensureBuiltins()
 
-    this.debug?.('[module runner] fetching', url)
+    this.debug?.('[module runner] fetching', moduleRunnerUrl)
 
     const isCached = !!(typeof cachedModule === 'object' && cachedModule.meta)
 
     const fetchedModule = // fast return for established externalized pattern
       (
-        url.startsWith('data:') || this.isBuiltin?.(url)
-          ? { externalize: url, type: 'builtin' }
+        moduleRunnerUrl.startsWith('data:') || this.isBuiltin?.(moduleRunnerUrl)
+          ? { externalize: moduleRunnerUrl, type: 'builtin' }
           : await this.transport.invoke('fetchModule', [
-              url,
-              importer,
+              moduleRunnerUrl,
+              importerId,
               {
                 cached: isCached,
                 startOffset: this.evaluator.startOffset,
@@ -385,17 +393,20 @@ export class ModuleRunner {
     if ('cache' in fetchedModule) {
       if (!cachedModule || !cachedModule.meta) {
         throw new Error(
-          `Module "${url}" was mistakenly invalidated during fetch phase.`,
+          `Module "${moduleRunnerUrl}" was mistakenly invalidated during fetch phase.`,
         )
       }
       return cachedModule
     }
 
+    // External import targets serve as their ModuleIDs.
     const moduleId =
       'externalize' in fetchedModule
         ? fetchedModule.externalize
         : fetchedModule.id
-    const moduleUrl = 'url' in fetchedModule ? fetchedModule.url : url
+    // Internal fetches return the server ModuleURL; external fetches keep the requested specifier.
+    const moduleUrl =
+      'url' in fetchedModule ? fetchedModule.url : moduleRunnerUrl
     const module = this.evaluatedModules.ensureModule(moduleId, moduleUrl)
 
     if ('invalidate' in fetchedModule && fetchedModule.invalidate) {
@@ -417,7 +428,7 @@ export class ModuleRunner {
 
   // override is allowed, consider this a public API
   protected async directRequest(
-    url: string,
+    moduleRunnerUrl: string,
     mod: EvaluatedModuleNode,
     _callstack: string[],
   ): Promise<any> {
@@ -425,40 +436,46 @@ export class ModuleRunner {
     const moduleId = fetchResult.id
     const callstack = [..._callstack, moduleId]
 
-    const request = async (dep: string, metadata?: SSRImportMetadata) => {
-      const importer = ('file' in fetchResult && fetchResult.file) || moduleId
-      const depMod = await this.cachedModule(dep, importer)
+    const request = async (
+      depModuleRunnerUrl: string,
+      metadata?: SSRImportMetadata,
+    ) => {
+      const importerId = ('file' in fetchResult && fetchResult.file) || moduleId
+      const depMod = await this.cachedModule(depModuleRunnerUrl, importerId)
       depMod.importers.add(moduleId)
       mod.imports.add(depMod.id)
 
-      return this.cachedRequest(dep, depMod, callstack, metadata)
+      return this.cachedRequest(depModuleRunnerUrl, depMod, callstack, metadata)
     }
 
-    const dynamicRequest = async (dep: string) => {
+    const dynamicRequest = async (specifier: string) => {
       // it's possible to provide an object with toString() method inside import()
-      dep = String(dep)
-      if (dep[0] === '.') {
-        dep = posixJoin(posixDirname(url), dep)
+      let depModuleRunnerUrl = String(specifier)
+      if (depModuleRunnerUrl[0] === '.') {
+        depModuleRunnerUrl = posixJoin(
+          posixDirname(moduleRunnerUrl),
+          depModuleRunnerUrl,
+        )
       }
-      return request(dep, { isDynamicImport: true })
+      return request(depModuleRunnerUrl, { isDynamicImport: true })
     }
 
     if ('externalize' in fetchResult) {
-      const { externalize } = fetchResult
-      this.debug?.('[module runner] externalizing', externalize)
-      const exports = await this.evaluator.runExternalModule(externalize)
+      const { externalize: externalSpecifier } = fetchResult
+      this.debug?.('[module runner] externalizing', externalSpecifier)
+      const exports = await this.evaluator.runExternalModule(externalSpecifier)
       mod.exports = exports
-      this.rolldownDevRuntime?.registerModule(externalize, { exports })
+      this.rolldownDevRuntime?.registerModule(externalSpecifier, { exports })
       return exports
     }
 
     const { code, file } = fetchResult
 
     if (code == null) {
-      const importer = callstack[callstack.length - 2]
+      const importerId = callstack[callstack.length - 2]
       throw new Error(
-        `[module runner] Failed to load "${url}"${
-          importer ? ` imported from ${importer}` : ''
+        `[module runner] Failed to load "${moduleRunnerUrl}"${
+          importerId ? ` imported from ${importerId}` : ''
         }`,
       )
     }
@@ -512,6 +529,7 @@ export class ModuleRunner {
     return exports
   }
 
+  // Keyed by ModuleURL for unbundled modules and chunks, or by Rolldown module ID.
   private moduleHotContexts = new Map<string, HMRContext>()
 
   private createRolldownDevRuntime(): DevRuntime {
@@ -529,36 +547,42 @@ export class ModuleRunner {
       }
 
       // Rolldown's runtime uses `import` that will not be rewritten by the module runner transform
-      override loadLazyChunk(proxyModuleId: string): Promise<unknown> {
+      override loadLazyChunk(proxyRolldownModuleId: string): Promise<unknown> {
         return this.runner.import(
-          `/@vite/lazy?id=${encodeURIComponent(proxyModuleId)}&clientId=${this.clientId}`,
+          `/@vite/lazy?id=${encodeURIComponent(proxyRolldownModuleId)}&clientId=${this.clientId}`,
         )
       }
 
       override hooks: DevRuntime['hooks'] = {
-        createModuleHotContext: (id) => this.runner.ensureModuleHotContext(id),
-        onModuleCacheRemoval: (id) =>
-          this.runner._bundledDevHmrClient?.handleModuleCacheRemoval(id),
+        createModuleHotContext: (rolldownModuleId) =>
+          this.runner.ensureModuleHotContext(rolldownModuleId),
+        onModuleCacheRemoval: (rolldownModuleId) =>
+          this.runner._bundledDevHmrClient?.handleModuleCacheRemoval(
+            rolldownModuleId,
+          ),
       }
     }
     return new ViteDevRuntime(this)
   }
 
-  private ensureModuleHotContext(url: string) {
+  private ensureModuleHotContext(
+    /** ModuleURL for unbundled modules and chunks, or a Rolldown module ID. */
+    hotContextId: string,
+  ) {
     if (!this.hmrClient) {
       return
     }
 
-    if (!this.moduleHotContexts.has(url)) {
-      this.debug?.('[module runner] creating hmr context for', url)
+    if (!this.moduleHotContexts.has(hotContextId)) {
+      this.debug?.('[module runner] creating hmr context for', hotContextId)
       // in full-bundle mode `invalidate()` is resolved locally against the
       // rolldown runtime graph instead of being sent to the server
       const hotContext = this._bundledDevHmrClient
-        ? new BundledDevHMRContext(this._bundledDevHmrClient, url)
-        : new HMRContext(this.hmrClient, url)
-      this.moduleHotContexts.set(url, hotContext)
+        ? new BundledDevHMRContext(this._bundledDevHmrClient, hotContextId)
+        : new HMRContext(this.hmrClient, hotContextId)
+      this.moduleHotContexts.set(hotContextId, hotContext)
     }
-    return this.moduleHotContexts.get(url)
+    return this.moduleHotContexts.get(hotContextId)
   }
 }
 

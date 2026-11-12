@@ -33,15 +33,19 @@ export interface ModuleRunnerImportMeta {
   dirname: string
   filename: string
   glob: (...args: any[]) => any
-  resolve(specifier: string, parent?: string): string
+  resolve(specifier: string, parentUrl?: string): string
   [key: string]: any
 }
 
 export interface ModuleRunnerContext {
   [ssrModuleExportsKey]: Record<string, any>
-  [ssrImportKey]: (id: string, metadata?: DefineImportMetadata) => Promise<any>
+  [ssrImportKey]: (
+    /** Internal imports use ModuleRunnerURLs; external imports keep their specifiers. */
+    moduleRunnerUrl: string,
+    metadata?: DefineImportMetadata,
+  ) => Promise<any>
   [ssrDynamicImportKey]: (
-    id: string,
+    specifier: string,
     options?: ImportCallOptions,
   ) => Promise<any>
   [ssrExportAllKey]: (obj: any) => void
@@ -71,19 +75,21 @@ export interface ModuleEvaluator {
   ): Promise<any>
   /**
    * Run externalized module.
-   * @param file File URL to the external module
+   * @param externalSpecifier File URL, network/data URL, or builtin specifier
    */
-  runExternalModule(file: string): Promise<any>
+  runExternalModule(externalSpecifier: string): Promise<any>
 }
 
 export type ResolvedResult = (ExternalFetchResult | ViteFetchResult) & {
+  /** Server ModuleURL for internal modules; requested specifier for external modules. */
   url: string
+  /** Resolved ModuleID for internal modules; external import target otherwise. */
   id: string
 }
 
 export type FetchFunction = (
-  id: string,
-  importer?: string,
+  moduleRunnerUrl: string,
+  importerId?: string,
   options?: FetchFunctionOptions,
 ) => Promise<FetchResult>
 

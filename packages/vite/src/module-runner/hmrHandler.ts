@@ -33,18 +33,18 @@ export function createHMRHandlerForRunner(
       }
       case 'full-reload': {
         const { triggeredBy } = payload
-        const clearEntrypointUrls = triggeredBy
+        const entrypointModuleUrls = triggeredBy
           ? getModulesEntrypoints(
               runner,
               getModulesByFile(runner, slash(triggeredBy)),
             )
           : findAllEntrypoints(runner)
 
-        if (!clearEntrypointUrls.size) break
+        if (!entrypointModuleUrls.size) break
 
         hmrClient.logger.debug(`program reload`)
         await hmrClient.notifyListeners('vite:beforeFullReload', payload)
-        await reimportEntrypoints(runner, clearEntrypointUrls)
+        await reimportEntrypoints(runner, entrypointModuleUrls)
         break
       }
       case 'prune':
@@ -115,11 +115,11 @@ function getModulesByFile(runner: ModuleRunner, file: string): string[] {
 
 function getModulesEntrypoints(
   runner: ModuleRunner,
-  modules: string[],
+  moduleIds: string[],
   visited = new Set<string>(),
-  entrypoints = new Set<string>(),
+  entrypointModuleUrls = new Set<string>(),
 ) {
-  for (const moduleId of modules) {
+  for (const moduleId of moduleIds) {
     if (visited.has(moduleId)) continue
     visited.add(moduleId)
     const module = runner.evaluatedModules.getModuleById(moduleId)
@@ -127,24 +127,24 @@ function getModulesEntrypoints(
       continue
     }
     if (!module.importers.size) {
-      entrypoints.add(module.url)
+      entrypointModuleUrls.add(module.url)
       continue
     }
-    for (const importer of module.importers) {
-      getModulesEntrypoints(runner, [importer], visited, entrypoints)
+    for (const importerId of module.importers) {
+      getModulesEntrypoints(runner, [importerId], visited, entrypointModuleUrls)
     }
   }
-  return entrypoints
+  return entrypointModuleUrls
 }
 
 function findAllEntrypoints(
   runner: ModuleRunner,
-  entrypoints = new Set<string>(),
+  entrypointModuleUrls = new Set<string>(),
 ): Set<string> {
   for (const mod of runner.evaluatedModules.idToModuleMap.values()) {
     if (!mod.importers.size) {
-      entrypoints.add(mod.url)
+      entrypointModuleUrls.add(mod.url)
     }
   }
-  return entrypoints
+  return entrypointModuleUrls
 }
