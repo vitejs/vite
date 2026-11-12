@@ -4,6 +4,7 @@ import path from 'node:path'
 import type { ResolvedConfig } from './config'
 import type { Plugin } from './plugin'
 import type { PreviewServer } from './preview'
+import { getProcessStartTime } from './processStartTime'
 import type { ResolvedServerUrls, ViteDevServer } from './server'
 import { getHash } from './utils'
 
@@ -20,6 +21,7 @@ interface CommandLockRecord {
   configFile: string | null | undefined
   mode: string
   pid: number
+  startTime?: string
   urls: CommandLockUrls | null | undefined
 }
 
@@ -48,6 +50,8 @@ function isCommandLockRecord(value: unknown): value is CommandLockRecord {
     typeof record.pid === 'number' &&
     Number.isInteger(record.pid) &&
     record.pid > 0 &&
+    (record.startTime === undefined ||
+      (typeof record.startTime === 'string' && record.startTime.length > 0)) &&
     (record.urls == null ||
       (typeof record.urls === 'object' &&
         Array.isArray(record.urls?.local) &&
@@ -110,12 +114,22 @@ function scanCommandLocks(
       continue
     }
 
-    if (record.pid === process.pid) continue
     if (!isProcessAlive(record.pid)) {
       removeFile(lockPath)
       continue
     }
     if (!isSameCommand(record, currentRecord)) continue
+
+    if (record.pid === process.pid) {
+      if (
+        record.startTime &&
+        currentRecord.startTime &&
+        record.startTime !== currentRecord.startTime
+      ) {
+        removeFile(lockPath)
+      }
+      continue
+    }
 
     const primaryUrl = record.urls?.local[0] ?? record.urls?.network[0]
     const location = primaryUrl ? ` at ${primaryUrl}` : ''
@@ -143,6 +157,7 @@ function createCommandLockController(
   let checkDuplicates = true
   let released = false
   let generation = 0
+  let processStartTime: Promise<string | undefined> | undefined
 
   function onExit(): void {
     release()
@@ -201,6 +216,9 @@ function createCommandLockController(
   ): Promise<void> {
     if (released) return
     const publishGeneration = generation
+    const startTime = await (processStartTime ??= getProcessStartTime(
+      process.pid,
+    ))
 
     const record: CommandLockRecord = {
       command,
@@ -208,6 +226,7 @@ function createCommandLockController(
       configFile: config.configFile ?? null,
       mode: config.mode,
       pid: process.pid,
+      startTime,
       urls: getCommandLockUrls(urls),
     }
     const serialized = `${JSON.stringify(record, null, 2)}\n`
