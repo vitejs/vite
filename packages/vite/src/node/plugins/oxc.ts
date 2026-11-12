@@ -15,7 +15,12 @@ import { JS_TYPES_RE } from '../constants'
 import type { Logger } from '../logger'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
-import { createFilter, ensureWatchedFile, normalizePath } from '../utils'
+import {
+  createFilter,
+  ensureWatchedFile,
+  getBuildSourcemap,
+  normalizePath,
+} from '../utils'
 import { type ESBuildOptions, getTSConfigResolutionCache } from './esbuild'
 
 // IIFE content looks like `var MyLib = (function() {` or `this.nested.myLib = (function() {`.
@@ -243,7 +248,8 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
     const result: OxcTransformOptions = {
       ...oxcTransformOptions,
       sourcemap:
-        environment.mode !== 'build' || !!environment.config.build.sourcemap,
+        environment.mode !== 'build' ||
+        !!getBuildSourcemap(environment.config.build.sourcemap, 'js'),
     }
 
     const jsxOptions = result.jsx
@@ -295,7 +301,7 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
         const transformOptions: OxcTransformOptions = _transformOptions
         transformOptions.sourcemap =
           environment.config.mode !== 'build' ||
-          !!environment.config.build.sourcemap
+          !!getBuildSourcemap(environment.config.build.sourcemap, 'js')
 
         return nativeTransformPlugin({
           root: environment.config.root,

@@ -76,6 +76,7 @@ import {
   createDebugger,
   displayTime,
   getPkgName,
+  getBuildSourcemap,
   mergeConfig,
   mergeWithDefaults,
   partialEncodeURIPath,
@@ -174,9 +175,17 @@ export interface BuildEnvironmentOptions {
    * sourcemap will be appended to the resulting output file as data URI.
    * 'hidden' works like `true` except that the corresponding sourcemap
    * comments in the bundled files are suppressed.
+   * Pass an object to configure JavaScript and CSS sourcemaps independently.
    * @default false
    */
-  sourcemap?: boolean | 'inline' | 'hidden'
+  sourcemap?:
+    | boolean
+    | 'inline'
+    | 'hidden'
+    | {
+        js: boolean | 'inline' | 'hidden'
+        css: boolean | 'inline' | 'hidden'
+      }
   /**
    * Set to `false` to disable minification, or specify the minifier to use.
    * Available options are 'oxc' or 'terser' or 'esbuild'.
@@ -761,7 +770,7 @@ export function resolveRolldownOptions(
       // Default format is 'es' for regular and for SSR builds
       format,
       exports: 'auto',
-      sourcemap: options.sourcemap,
+      sourcemap: getBuildSourcemap(options.sourcemap, 'js'),
       name: libOptions ? libOptions.name : undefined,
       // hoistTransitiveImports: libOptions ? false : undefined,
       // es2015 enables `generatedCode.symbols`
