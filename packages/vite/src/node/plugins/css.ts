@@ -453,6 +453,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             importer,
           )
           if (resolved) {
+            if (environment.mode === 'dev') {
+              environment.safeModulePaths.addId(resolved)
+            }
             if (fragment) resolved += '#' + fragment
             let url = await fileToUrl(this, resolved, 'string')
             // Inherit HMR timestamp if this asset was invalidated
@@ -969,22 +972,24 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                     return finalizeCss(chunkCSS!, config)
                   })
 
-                  // emit corresponding css file
-                  const referenceId = this.emitFile({
-                    type: 'asset',
-                    name: cssAssetName,
-                    originalFileName,
-                    source: chunkCSS,
-                  })
-                  chunkCssReferences.set(chunk.fileName, referenceId)
-                  if (isEntry) {
-                    cssEntriesMap
-                      .get(this.environment)!
-                      .set(chunk.fileName, { referenceId, name: chunk.name })
+                  if (chunkCSS || isEntry) {
+                    // emit corresponding css file
+                    const referenceId = this.emitFile({
+                      type: 'asset',
+                      name: cssAssetName,
+                      originalFileName,
+                      source: chunkCSS,
+                    })
+                    chunkCssReferences.set(chunk.fileName, referenceId)
+                    if (isEntry) {
+                      cssEntriesMap
+                        .get(this.environment)!
+                        .set(chunk.fileName, { referenceId, name: chunk.name })
+                    }
+                    chunk.viteMetadata!.importedCss.add(
+                      this.getFileName(referenceId),
+                    )
                   }
-                  chunk.viteMetadata!.importedCss.add(
-                    this.getFileName(referenceId),
-                  )
                 } else if (this.environment.config.consumer === 'client') {
                   // legacy build and inline css
 
@@ -1099,10 +1104,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           collect(bundle[chunkName])
         }
 
-        // Finally, if there's any extracted CSS, we emit the asset
+        if (extractedCss) {
+          extractedCss = await finalizeCss(extractedCss, config)
+        }
+
+        // Emit the asset if CSS remains after finalization.
         if (extractedCss) {
           hasEmitted = true
-          extractedCss = await finalizeCss(extractedCss, config)
           this.emitFile({
             name: getCssBundleName(),
             type: 'asset',
@@ -2043,6 +2051,7 @@ async function finalizeCss(css: string, config: ResolvedConfig) {
   if (config.build.cssMinify) {
     css = await minifyCSS(css, config, false)
   }
+  if (!css.trim()) return ''
   // inject an additional string to generate a different hash for https://github.com/vitejs/vite/issues/18038
   //
   // pre-5.4.3, we generated CSS link tags without crossorigin attribute and generated an hash without

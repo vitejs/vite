@@ -558,6 +558,11 @@ export async function fileToDevUrl(
     return pathToFileURL(cleanedId).href
   }
 
+  if (!publicFile && environment.mode === 'dev') {
+    // Asset URLs are fetched by the browser even when emitted by SSR.
+    config.environments.client.safeModulePaths.addId(id)
+  }
+
   const moduleUrl = publicFile ? id : fileToModuleUrl(id, config.root)
   const base = joinUrlSegments(config.server.origin ?? '', config.decodedBase)
   return moduleUrlToBrowserUrl(moduleUrl, base)
