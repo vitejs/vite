@@ -4,11 +4,8 @@ import path from 'node:path'
 import colors from 'picocolors'
 import { VERSION } from './constants'
 import type { Environment } from './environment'
-import {
-  findLockfilePath,
-  findPatchesDir,
-  recordsInstalledState,
-} from './optimizer'
+import { findInstalledStateFile, findPatchesDir } from './optimizer'
+import { searchForWorkspaceRoot } from './server/searchRoot'
 import { normalizePath } from './utils'
 
 /** The `experimental.cache` option of Rolldown. */
@@ -43,16 +40,31 @@ export function resolveRolldownCacheOptions(
     buildDependencies = [],
   } = userOptions === true ? {} : userOptions
   const { root } = config
-  const lockfilePath = findLockfilePath(root)
-  // A patch changes files under node_modules without changing the lockfile.
-  const patchesDir = lockfilePath && findPatchesDir(lockfilePath)
+  // A file above the workspace root can belong to another project, and an
+  // install in this project does not change it.
+  const installedStateFile = findInstalledStateFile(
+    root,
+    searchForWorkspaceRoot(root),
+  )
+  if (!installedStateFile) {
+    // Without it, no build dependency covers the packages that the config
+    // file imports by name: `configFileDependencies` leaves them out.
+    config.logger.warnOnce(
+      colors.yellow(
+        '`experimental.cache` is off: Vite cannot find a file in which the package manager records the installed packages, such as `node_modules/.package-lock.json` or `node_modules/.pnpm/lock.yaml`.',
+      ),
+    )
+    return
+  }
+  // A patch changes files under node_modules without changing that file.
+  const patchesDir = findPatchesDir(installedStateFile)
   const patchFiles = patchesDir ? listFiles(patchesDir) : []
 
   const dependencies = new Set<string>()
   for (const file of [
     config.configFile,
     ...config.configFileDependencies,
-    lockfilePath,
+    installedStateFile,
     ...patchFiles,
     ...buildDependencies,
   ]) {
@@ -69,15 +81,8 @@ export function resolveRolldownCacheOptions(
     buildDependencies: [...dependencies],
   }
   if (maxAge !== undefined) options.maxAge = maxAge
-  // Safe only when a file that records the installed packages is a build
-  // dependency, and module paths are real paths. A lockfile such as
-  // `yarn.lock` is still a build dependency: it covers the packages that the
-  // config file imports by name, which `configFileDependencies` leaves out.
-  if (
-    lockfilePath &&
-    recordsInstalledState(lockfilePath) &&
-    !environment.config.resolve.preserveSymlinks
-  ) {
+  // Safe only when module paths are real paths.
+  if (!environment.config.resolve.preserveSymlinks) {
     options.assumeUnchanged = ['**/node_modules/**']
   }
   return options
