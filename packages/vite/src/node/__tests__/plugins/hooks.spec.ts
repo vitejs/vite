@@ -1,7 +1,8 @@
 import path from 'node:path'
+import { stripVTControlCharacters } from 'node:util'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { promiseWithResolvers } from '../../../shared/utils'
-import { build } from '../../build'
+import { build, createBuilder } from '../../build'
 import { resolveConfig } from '../../config'
 import { type Logger, createLogger } from '../../logger'
 import type { Plugin } from '../../plugin'
@@ -610,5 +611,215 @@ describe('closePreviewServer hook', () => {
 
     // `server.close()` does not resolve until the async hook has completed.
     expect(hookDone).toBe(true)
+  })
+})
+
+describe('hook errors include plugin and hook info', () => {
+  const expectPluginHookError = async (
+    promise: Promise<unknown>,
+    pluginName: string,
+    hookName: string,
+    rawMessage: string,
+  ) => {
+    await expect(promise).rejects.toSatisfy((err: any) => {
+      expect(err.plugin).toBe(pluginName)
+      expect(err.hook).toBe(hookName)
+      expect(stripVTControlCharacters(err.message)).toBe(
+        `[${pluginName}] ${rawMessage}`,
+      )
+      return true
+    })
+  }
+
+  test('config, configEnvironment, and configResolved hooks', async () => {
+    await expectPluginHookError(
+      resolveConfigWithPlugin({
+        name: 'bad-config',
+        config() {
+          throw new Error('config error')
+        },
+      }),
+      'bad-config',
+      'config',
+      'config error',
+    )
+
+    await expectPluginHookError(
+      resolveConfigWithPlugin({
+        name: 'bad-config-env',
+        async configEnvironment() {
+          throw new Error('configEnvironment error')
+        },
+      }),
+      'bad-config-env',
+      'configEnvironment',
+      'configEnvironment error',
+    )
+
+    await expectPluginHookError(
+      resolveConfigWithPlugin({
+        name: 'bad-config-resolved',
+        async configResolved() {
+          throw new Error('configResolved error')
+        },
+      }),
+      'bad-config-resolved',
+      'configResolved',
+      'configResolved error',
+    )
+  })
+
+  test('configureServer, dev buildStart, and closeServer hooks', async () => {
+    await expectPluginHookError(
+      createServerWithPlugin({
+        name: 'bad-configure-server',
+        configureServer() {
+          throw new Error('configureServer error')
+        },
+      }),
+      'bad-configure-server',
+      'configureServer',
+      'configureServer error',
+    )
+
+    await expectPluginHookError(
+      createServerWithPlugin({
+        name: 'bad-configure-server-post',
+        configureServer() {
+          return () => {
+            throw new Error('configureServer post error')
+          }
+        },
+      }),
+      'bad-configure-server-post',
+      'configureServer',
+      'configureServer post error',
+    )
+
+    await expectPluginHookError(
+      createServer({
+        configFile: false,
+        root: import.meta.dirname,
+        plugins: [
+          {
+            name: 'bad-dev-build-start',
+            buildStart() {
+              throw new Error('dev buildStart error')
+            },
+          },
+        ],
+        logLevel: 'error',
+        server: {
+          middlewareMode: true,
+          ws: false,
+          watch: null,
+        },
+      }),
+      'bad-dev-build-start',
+      'buildStart',
+      'dev buildStart error',
+    )
+
+    const server = await createServer({
+      configFile: false,
+      root: import.meta.dirname,
+      plugins: [
+        {
+          name: 'bad-close-server',
+          closeServer() {
+            throw new Error('closeServer error')
+          },
+        },
+      ],
+      logLevel: 'error',
+      server: {
+        middlewareMode: true,
+        ws: false,
+      },
+    })
+    await expectPluginHookError(
+      server.close(),
+      'bad-close-server',
+      'closeServer',
+      'closeServer error',
+    )
+  })
+
+  test('configurePreviewServer, closePreviewServer, and buildApp hooks', async () => {
+    await expectPluginHookError(
+      createPreviewServerWithPlugin({
+        name: 'bad-preview',
+        configurePreviewServer() {
+          throw new Error('configurePreviewServer error')
+        },
+      }),
+      'bad-preview',
+      'configurePreviewServer',
+      'configurePreviewServer error',
+    )
+
+    await expectPluginHookError(
+      createPreviewServerWithPlugin({
+        name: 'bad-preview-post',
+        configurePreviewServer() {
+          return () => {
+            throw new Error('configurePreviewServer post error')
+          }
+        },
+      }),
+      'bad-preview-post',
+      'configurePreviewServer',
+      'configurePreviewServer post error',
+    )
+
+    const previewServer = await preview({
+      configFile: false,
+      root: import.meta.dirname,
+      plugins: [
+        {
+          name: 'mock-preview',
+          configurePreviewServer({ httpServer }) {
+            httpServer.listen = () => {
+              const lastListener = httpServer.listeners('listening').at(-1)!
+              lastListener.call(httpServer)
+              return httpServer as any
+            }
+          },
+        },
+        {
+          name: 'bad-close-preview',
+          closePreviewServer() {
+            throw new Error('closePreviewServer error')
+          },
+        },
+      ],
+      logLevel: 'error',
+    })
+    await expectPluginHookError(
+      previewServer.close(),
+      'bad-close-preview',
+      'closePreviewServer',
+      'closePreviewServer error',
+    )
+
+    const builder = await createBuilder({
+      configFile: false,
+      root: import.meta.dirname,
+      logLevel: 'error',
+      plugins: [
+        {
+          name: 'bad-build-app',
+          buildApp() {
+            throw new Error('buildApp error')
+          },
+        },
+      ],
+    })
+    await expectPluginHookError(
+      builder.buildApp(),
+      'bad-build-app',
+      'buildApp',
+      'buildApp error',
+    )
   })
 })

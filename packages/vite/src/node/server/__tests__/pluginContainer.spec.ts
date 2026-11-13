@@ -318,6 +318,7 @@ describe('plugin container', () => {
       await expect(() => environment.pluginContainer.load('foo')).rejects
         .toThrowErrorMatchingInlineSnapshot(`
         {
+          "hook": "load",
           "message": "test",
           "plugin": "p1",
           "pos": 12,
@@ -571,6 +572,129 @@ describe('plugin container', () => {
       expect(buildEndCalled).toBe(true)
       expect(closeBundleCalled).toBe(true)
       expect(closeBundleError).toBeUndefined()
+    })
+  })
+
+  describe('hook error metadata', () => {
+    it('attaches plugin and hook on lifecycle hook errors', async () => {
+      await expect(
+        getDevEnvironment({
+          plugins: [
+            {
+              name: 'failing-options',
+              options() {
+                throw new Error('options failed')
+              },
+            },
+          ],
+        }),
+      ).rejects.toSatisfy((err: any) => {
+        expect(err.plugin).toBe('failing-options')
+        expect(err.hook).toBe('options')
+        expect(stripVTControlCharacters(err.message)).toBe(
+          '[failing-options] options failed',
+        )
+        return true
+      })
+
+      const buildStartEnv = await getDevEnvironment({
+        plugins: [
+          {
+            name: 'failing-build-start',
+            buildStart() {
+              throw new Error('buildStart failed')
+            },
+          },
+        ],
+      })
+      await expect(
+        buildStartEnv.pluginContainer.buildStart({}),
+      ).rejects.toSatisfy((err: any) => {
+        expect(err.plugin).toBe('failing-build-start')
+        expect(err.hook).toBe('buildStart')
+        expect(stripVTControlCharacters(err.message)).toBe(
+          '[failing-build-start] buildStart failed',
+        )
+        return true
+      })
+
+      const closeEnv = await getDevEnvironment({
+        plugins: [
+          {
+            name: 'failing-close-bundle',
+            closeBundle() {
+              throw new Error('closeBundle failed')
+            },
+          },
+        ],
+      })
+      await expect(closeEnv.pluginContainer.close()).rejects.toSatisfy(
+        (err: any) => {
+          expect(err.plugin).toBe('failing-close-bundle')
+          expect(err.hook).toBe('closeBundle')
+          expect(stripVTControlCharacters(err.message)).toBe(
+            '[failing-close-bundle] closeBundle failed',
+          )
+          return true
+        },
+      )
+    })
+
+    it('attaches plugin and hook on resolveId, load, and transform errors and preserves nested plugin attribution', async () => {
+      const resolveEnv = await getDevEnvironment({
+        plugins: [
+          {
+            name: 'failing-resolve',
+            resolveId(id) {
+              if (id === 'virtual:fail') {
+                throw new Error('resolve failed')
+              }
+            },
+          },
+          {
+            name: 'outer-transform',
+            async transform(_code, id) {
+              if (id === '/entry.js') {
+                await this.resolve('virtual:fail')
+              }
+            },
+          },
+        ],
+      })
+      await expect(
+        resolveEnv.pluginContainer.resolveId('virtual:fail'),
+      ).rejects.toMatchObject({
+        message: 'resolve failed',
+        plugin: 'failing-resolve',
+        hook: 'resolveId',
+      })
+      await expect(
+        resolveEnv.pluginContainer.transform('export {}', '/entry.js'),
+      ).rejects.toMatchObject({
+        message: 'resolve failed',
+        plugin: 'failing-resolve',
+        hook: 'resolveId',
+      })
+
+      const loadEnv = await getDevEnvironment({
+        plugins: [
+          {
+            name: 'failing-load',
+            load(id) {
+              if (id === 'virtual:fail') {
+                throw new Error('load failed')
+              }
+            },
+          },
+        ],
+      })
+      await expect(
+        loadEnv.pluginContainer.load('virtual:fail'),
+      ).rejects.toMatchObject({
+        message: 'load failed',
+        plugin: 'failing-load',
+        hook: 'load',
+      })
     })
   })
 })

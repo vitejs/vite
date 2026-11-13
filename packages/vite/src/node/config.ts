@@ -90,6 +90,7 @@ import {
   createPluginHookUtils,
   getHookHandler,
   getSortedPluginsByHook,
+  handleHookError,
   resolvePlugins,
 } from './plugins'
 import {
@@ -1998,8 +1999,17 @@ export async function resolveConfig(
     // run configResolved hooks
     await Promise.all(
       createPluginHookUtils(workerResolved.plugins)
-        .getSortedPluginHooks('configResolved')
-        .map((hook) => hook.call(resolvedConfigContext, workerResolved)),
+        .getSortedPlugins('configResolved')
+        .map(async (p) => {
+          try {
+            await getHookHandler(p.configResolved).call(
+              resolvedConfigContext,
+              workerResolved,
+            )
+          } catch (e) {
+            handleHookError(e, p.name, 'configResolved')
+          }
+        }),
     )
 
     // Resolve environment plugins after configResolved because there are
@@ -2245,9 +2255,16 @@ export async function resolveConfig(
 
   // call configResolved hooks
   await Promise.all(
-    resolved
-      .getSortedPluginHooks('configResolved')
-      .map((hook) => hook.call(resolvedConfigContext, resolved)),
+    resolved.getSortedPlugins('configResolved').map(async (p) => {
+      try {
+        await getHookHandler(p.configResolved).call(
+          resolvedConfigContext,
+          resolved,
+        )
+      } catch (e) {
+        handleHookError(e, p.name, 'configResolved')
+      }
+    }),
   )
 
   // Resolve environment plugins after configResolved because there are
@@ -2874,7 +2891,12 @@ async function runConfigHook(
   for (const p of getSortedPluginsByHook('config', plugins)) {
     const hook = p.config
     const handler = getHookHandler(hook)
-    const res = await handler.call(context, conf, configEnv)
+    let res: Awaited<ReturnType<typeof handler>>
+    try {
+      res = await handler.call(context, conf, configEnv)
+    } catch (e) {
+      handleHookError(e, p.name, 'config')
+    }
     if (res && res !== conf) {
       if (hasBothRollupOptionsAndRolldownOptions(res)) {
         context.warn(
@@ -2917,10 +2939,15 @@ async function runConfigEnvironmentHook(
     const hook = p.configEnvironment
     const handler = getHookHandler(hook)
     for (const name of environmentNames) {
-      const res = await handler.call(context, name, environments[name], {
-        ...configEnv,
-        isSsrTargetWebworker: isSsrTargetWebworkerSet && name === 'ssr',
-      })
+      let res: Awaited<ReturnType<typeof handler>>
+      try {
+        res = await handler.call(context, name, environments[name], {
+          ...configEnv,
+          isSsrTargetWebworker: isSsrTargetWebworkerSet && name === 'ssr',
+        })
+      } catch (e) {
+        handleHookError(e, p.name, 'configEnvironment')
+      }
       if (res) {
         environments[name] = mergeConfig(environments[name], res)
       }
