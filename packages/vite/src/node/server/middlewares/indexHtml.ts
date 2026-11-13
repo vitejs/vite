@@ -136,6 +136,15 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   html,
   { path: htmlPath, filename, server, originalUrl },
 ) => {
+  if (
+    html === undefined ||
+    htmlPath === undefined ||
+    filename === undefined ||
+    server === undefined
+  ) {
+    return
+  }
+
   // There's no way to express a relative URL that starts with `//`. URLs starting with `//` is relative to the scheme.
   // The relative URL is needed to generate the URL in script tags and link tags.
   // We replace `//` with `/` here for workaround, which is the best we can do.
@@ -143,7 +152,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     htmlPath = htmlPath.replace(multipleLeadingSlashesRE, '/')
   }
 
-  const { config, watcher } = server!
+  const { config, watcher } = server
   const base = config.base || '/'
   const decodedBase = config.decodedBase || '/'
 
@@ -266,7 +275,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       node.sourceCodeLocation!.endOffset,
       `<script type="module" src="${escapeHTML(browserUrl)}"></script>`,
     )
-    preTransformRequest(server!, moduleUrl)
+    preTransformRequest(server, moduleUrl)
   }
 
   await traverseHtml(html, filename, config.logger.warn, (node) => {
@@ -371,16 +380,15 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
       // ensure module in graph after successful load
       const mod =
-        await server!.environments.client.moduleGraph.ensureEntryFromUrl(
+        await server.environments.client.moduleGraph.ensureEntryFromUrl(
           url,
           false,
         )
 
-      const result =
-        await server!.environments.client.pluginContainer.transform(
-          code,
-          mod.id!,
-        )
+      const result = await server.environments.client.pluginContainer.transform(
+        code,
+        mod.id!,
+      )
       let content = ''
       if (result.map && 'version' in result.map) {
         if (result.map.mappings) {
@@ -397,7 +405,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       const url = `${proxyModulePath}?html-proxy&inline-css&style-attr&index=${index}.css`
 
       const mod =
-        await server!.environments.client.moduleGraph.ensureEntryFromUrl(
+        await server.environments.client.moduleGraph.ensureEntryFromUrl(
           url,
           false,
         )
@@ -410,10 +418,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }),
   ])
 
-  html = s.toString()
-
   return {
-    html,
+    html: s.toString(),
     tags: [
       {
         tag: 'script',

@@ -6,11 +6,45 @@ import { perEnvironmentState } from '../environment'
 import type { Plugin } from '../plugin'
 import { normalizePath } from '../utils'
 import { cssEntriesMap } from './asset'
+import { collectHtmlTags } from './html'
 import { getWorkerManifest } from './worker'
 
 const endsWithJSRE = /\.[cm]?js$/
 
-export type Manifest = Record<string, ManifestChunk>
+export type Manifest = ManifestV0 | ManifestV1
+
+export type ManifestV0 = ManifestChunks
+
+export interface ManifestV1 {
+  version: 1
+  chunks: ManifestChunks
+  /**
+   * Tag groups in hook execution order. Each group uses the same injection
+   * semantics as the tags returned by a single transformIndexHtml hook.
+   */
+  htmlTags: ManifestHtmlTagDescriptor[][]
+}
+
+export interface ManifestHtmlTagDescriptor extends ManifestHtmlTag {
+  /**
+   * Defaults to 'head-prepend' when the hook omits an injection target.
+   */
+  injectTo: 'head' | 'body' | 'head-prepend' | 'body-prepend'
+}
+
+export interface ManifestHtmlTag {
+  tag: string
+  /**
+   * String attribute values must be escaped when injecting the tag into HTML.
+   */
+  attrs?: Record<string, string | boolean | undefined>
+  /**
+   * Raw HTML or nested tags.
+   */
+  children?: string | ManifestHtmlTag[]
+}
+
+export type ManifestChunks = Record<string, ManifestChunk>
 
 export interface ManifestChunk {
   /**
@@ -69,7 +103,7 @@ export interface ManifestChunk {
 export function manifestPlugin(): Plugin {
   const getState = perEnvironmentState(() => {
     return {
-      manifest: {} as Manifest,
+      manifest: {} as ManifestChunks,
       outputCount: 0,
       reset() {
         this.manifest = {}
@@ -119,15 +153,17 @@ export function manifestPlugin(): Plugin {
       }),
       {
         name: 'native:manifest-compatible',
-        generateBundle(_, bundle) {
+        async generateBundle(_, bundle) {
+          const newManifestFormat =
+            this.environment.config.experimental.newManifestFormat
           const asset = bundle[outPath]
           if (asset.type === 'asset') {
-            let manifest: Manifest | undefined
+            let manifest: ManifestChunks | undefined
             for (const output of Object.values(bundle)) {
               const importedCss = output.viteMetadata?.importedCss
               const importedAssets = output.viteMetadata?.importedAssets
               if (!importedCss?.size && !importedAssets?.size) continue
-              manifest ??= JSON.parse(asset.source.toString()) as Manifest
+              manifest ??= JSON.parse(asset.source.toString()) as ManifestChunks
               if (output.type === 'chunk') {
                 const item = manifest[getChunkName(output)]
                 if (!item) continue
@@ -160,12 +196,12 @@ export function manifestPlugin(): Plugin {
             }
             const workerManifest = getWorkerManifest(this.environment)
             if (workerManifest) {
-              manifest ??= JSON.parse(asset.source.toString()) as Manifest
+              manifest ??= JSON.parse(asset.source.toString()) as ManifestChunks
               Object.assign(manifest, workerManifest)
             }
             const output = this.environment.config.build.rolldownOptions.output
             const outputLength = Array.isArray(output) ? output.length : 1
-            if (manifest && outputLength === 1) {
+            if (manifest && outputLength === 1 && !newManifestFormat) {
               asset.source = JSON.stringify(manifest, undefined, 2)
               return
             }
@@ -177,8 +213,20 @@ export function manifestPlugin(): Plugin {
               manifest ?? JSON.parse(asset.source.toString()),
             )
             if (state.outputCount >= outputLength) {
-              asset.source = JSON.stringify(state.manifest, undefined, 2)
+              const chunks = state.manifest
               state.reset()
+              const manifest: Manifest = newManifestFormat
+                ? {
+                    version: 1,
+                    chunks,
+                    htmlTags: await collectHtmlTags(
+                      this.environment.plugins,
+                      this,
+                      bundle,
+                    ),
+                  }
+                : chunks
+              asset.source = JSON.stringify(manifest, undefined, 2)
             } else {
               delete bundle[outPath]
             }
