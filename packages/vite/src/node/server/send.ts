@@ -5,10 +5,10 @@ import type {
 } from 'node:http'
 import path from 'node:path'
 import convertSourceMap from 'convert-source-map'
-import getEtag from 'etag'
 import MagicString from 'magic-string'
 import type { SourceMap } from 'rolldown'
 import { createDebugger, removeTimestampQuery } from '../utils'
+import { getEtag } from './etag'
 import { getCodeWithSourcemap } from './sourcemap'
 
 const debug = createDebugger('vite:send', {

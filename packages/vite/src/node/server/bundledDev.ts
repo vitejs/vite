@@ -1,5 +1,4 @@
 import { setTimeout } from 'node:timers/promises'
-import getEtag from 'etag'
 import colors from 'picocolors'
 import type {
   OutputOptions,
@@ -29,6 +28,7 @@ import {
 } from '../utils'
 import { convertToDevWatchOptions } from '../watch'
 import type { DevEnvironment } from './environment'
+import { getEtag } from './etag'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
 import { prepareError } from './middlewares/error'
 

@@ -195,9 +195,6 @@ importers:
       '@types/convert-source-map':
         specifier: ^2.0.3
         version: 2.0.3
-      '@types/etag':
-        specifier: ^1.8.4
-        version: 1.8.4
       '@types/less':
         specifier: ^3.0.8
         version: 3.0.8
@@ -467,9 +464,6 @@ importers:
       estree-walker:
         specifier: ^3.0.3
         version: 3.0.3
-      etag:
-        specifier: ^1.8.1
-        version: 1.8.1
       fresh-import:
         specifier: ^0.2.1
         version: 0.2.1
@@ -4410,9 +4404,6 @@ packages:
 
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
-
-  '@types/etag@1.8.4':
-    resolution: {integrity: sha512-f1z/UMth8gQ6636NBqhFmJ3zES7EuDcUnV6K1gl1osHp+85KPKX+VixYWUpqLkw1fftCagyHJjJOZjZkEi2rHw==}
 
   '@types/express-serve-static-core@5.1.3':
     resolution: {integrity: sha512-dPfW8NFiOF4wOHc7+N/QSxlY9cfSsenewGbAz8C8U/MULPd/YZ27LvJUIlzaXie7e6Ove9YunJGgC9tbHD2cKw==}
@@ -10069,10 +10060,6 @@ snapshots:
   '@types/escape-html@1.0.4': {}
 
   '@types/estree@1.0.9': {}
-
-  '@types/etag@1.8.4':
-    dependencies:
-      '@types/node': 26.6.6
 
   '@types/express-serve-static-core@5.1.3':
     dependencies:

@@ -2,7 +2,6 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { init, parse as parseImports } from 'es-module-lexer'
-import getEtag from 'etag'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
 import type {
@@ -28,6 +27,7 @@ import {
   timeFrom,
 } from '../utils'
 import type { DevEnvironment } from './environment'
+import { getEtag } from './etag'
 import { isFileLoadingAllowed } from './middlewares/static'
 import { isServerAccessDeniedForTransform } from './middlewares/transform'
 import { throwClosedServerError } from './pluginContainer'

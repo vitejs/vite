@@ -100,7 +100,6 @@
     "esbuild": "^0.28.2",
     "escape-html": "^1.0.3",
     "estree-walker": "^3.0.3",
-    "etag": "^1.8.1",
     "fresh-import": "^0.2.1",
     "host-validation-middleware": "^0.1.4",
     "http-proxy-3": "^1.23.3",
