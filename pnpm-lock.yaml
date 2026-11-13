@@ -568,8 +568,8 @@ importers:
         specifier: ~2.3.3
         version: 2.3.3
       napi-windows-process-start-time:
-        specifier: https://pkg.pr.new/sapphi-red/napi-windows-process-start-time@afb1cb8
-        version: https://pkg.pr.new/sapphi-red/napi-windows-process-start-time@afb1cb8
+        specifier: ^0.1.0
+        version: 0.1.0
 
   packages/vite/src/node/__tests__:
     dependencies:
@@ -6695,9 +6695,8 @@ packages:
     engines: {node: ^18 || >=20}
     hasBin: true
 
-  napi-windows-process-start-time@https://pkg.pr.new/sapphi-red/napi-windows-process-start-time@afb1cb8:
-    resolution: {integrity: sha512-3ot8/ZEqDv4DTExe7xQB8g4soj1JmDHIgPs8njLeYr0dR/7jmiHUDQSXca1tUp8XLLYHlEr7w+Wgjkp9eix+5w==, tarball: https://pkg.pr.new/sapphi-red/napi-windows-process-start-time@afb1cb8}
-    version: 0.1.0
+  napi-windows-process-start-time@0.1.0:
+    resolution: {integrity: sha512-zHxhzKsIFu3elch3eFw69WEUGc79DFhbc3nD/WEOzWL/pFFLZRW13EHnuO0c+0YjncE5uCaS9ICHxOBXkb6vPw==}
     engines: {node: '>=20'}
     cpu: [x64, arm64]
     os: [win32]
@@ -12384,7 +12383,7 @@ snapshots:
 
   nanoid@5.1.16: {}
 
-  napi-windows-process-start-time@https://pkg.pr.new/sapphi-red/napi-windows-process-start-time@afb1cb8:
+  napi-windows-process-start-time@0.1.0:
     optional: true
 
   needle@2.9.1(ms@2.1.3):
