@@ -22,6 +22,8 @@ import {
   isNodeBuiltin,
   moduleListContains,
   normalizePath,
+  rawRE,
+  urlRE,
 } from '../utils'
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
@@ -173,7 +175,7 @@ export function rolldownDepPlugin(
       // externalize assets and commonly known non-js file types
       // See #8459 for more details about this require-import conversion
       resolveId: {
-        filter: { id: allExternalTypesReg },
+        filter: { id: [allExternalTypesReg, rawRE, urlRE] },
         async handler(id, importer, options) {
           const kind = options.kind
           // if the prefix exist, it is already converted to `import`, so set `external: true`
@@ -189,7 +191,11 @@ export function rolldownDepPlugin(
             // `resolved` can be javascript even when `id` matches `allExternalTypes`
             // due to cjs resolution (e.g. require("./test.pdf") for "./test.pdf.js")
             // or package name (e.g. import "some-package.pdf")
-            if (JS_TYPES_RE.test(resolved)) {
+            if (
+              JS_TYPES_RE.test(resolved) &&
+              !rawRE.test(id) &&
+              !urlRE.test(id)
+            ) {
               return {
                 // normalize to \\ on windows for esbuild/rolldown behavior difference: https://github.com/sapphi-red-repros/rolldown-esbuild-path-normalization
                 id: isWindows ? resolved.replaceAll('/', '\\') : resolved,
