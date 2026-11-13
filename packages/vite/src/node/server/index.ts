@@ -14,6 +14,7 @@ import corsMiddleware from 'cors'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import colors from 'picocolors'
 import type { SourceMap } from 'rolldown'
+import { chokidar as rolldownChokidar } from 'rolldown/utils'
 import { detectAgent } from 'std-env'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { FSWatcher } from '#dep-types/chokidar'
@@ -67,6 +68,7 @@ import {
   teardownSIGTERMListener,
 } from '../utils'
 import {
+  convertToChokidarOptions,
   createNoopWatcher,
   getResolvedOutDirs,
   makeWatcherCloseFinal,
@@ -586,21 +588,23 @@ export async function _createServer(
 
   // eslint-disable-next-line eqeqeq
   const watchEnabled = serverConfig.watch !== null
+  // config file dependencies and env files might be outside of root
+  const watchPaths = [
+    ...(config.experimental.bundledDev ? [] : [root]),
+    ...config.configFileDependencies,
+    ...getEnvFilesForMode(config.mode, config.envDir),
+    // Watch the public directory explicitly because it might be outside
+    // of the root directory.
+    ...(publicDir && publicFiles ? [publicDir] : []),
+  ]
   const watcher = watchEnabled
     ? makeWatcherCloseFinal(
-        chokidar.watch(
-          // config file dependencies and env file might be outside of root
-          [
-            ...(config.experimental.bundledDev ? [] : [root]),
-            ...config.configFileDependencies,
-            ...getEnvFilesForMode(config.mode, config.envDir),
-            // Watch the public directory explicitly because it might be outside
-            // of the root directory.
-            ...(publicDir && publicFiles ? [publicDir] : []),
-          ],
-
-          resolvedWatchOptions,
-        ) as FSWatcher,
+        (config.experimental.rolldownWatcher
+          ? rolldownChokidar.watch(
+              watchPaths,
+              convertToChokidarOptions(resolvedWatchOptions),
+            )
+          : chokidar.watch(watchPaths, resolvedWatchOptions)) as FSWatcher,
       )
     : createNoopWatcher(resolvedWatchOptions)
 
