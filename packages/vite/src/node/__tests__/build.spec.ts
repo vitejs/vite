@@ -2269,8 +2269,9 @@ test('environment.manifest matches the emitted manifest file when build.manifest
     (o) => o.fileName === '.vite/manifest.json',
   )
   expect(manifestFile).toBeDefined()
+  assert(manifestFile?.type === 'asset')
   expect(environment.manifest).toStrictEqual(
-    JSON.parse((manifestFile as any).source),
+    JSON.parse(manifestFile.source.toString()),
   )
 })
 
