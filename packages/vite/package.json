@@ -186,7 +186,8 @@
     }
   },
   "optionalDependencies": {
-    "fsevents": "~2.3.3"
+    "fsevents": "~2.3.3",
+    "napi-windows-process-start-time": "https://pkg.pr.new/sapphi-red/napi-windows-process-start-time@afb1cb8"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
