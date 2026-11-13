@@ -159,6 +159,21 @@ export class EnvironmentModuleGraph {
         mod.importedModules.forEach((importedMod) => {
           importedMod.importers.delete(mod)
         })
+        // Clear the transform result and module info so that if the module
+        // node is reused (it stays in the maps for HMR propagation), it does
+        // not serve stale source code or metadata. The module itself is kept
+        // in all maps (including fileToModulesMap) because handleHMRUpdate
+        // (called right after onFileDelete by the file watcher) needs to find
+        // it by file and propagate the deletion to importers.
+        // Use updateModuleTransformResult (not direct assignment) so the
+        // previous ETag is removed from etagToModuleMap.
+        this.updateModuleTransformResult(mod, null)
+        mod.info = undefined
+        mod.meta = undefined
+        // Break outgoing references so the deleted module does not keep
+        // its imports alive. Note: mod.importers is intentionally NOT
+        // cleared — propagateUpdate traverses it after onFileDelete returns.
+        mod.importedModules.clear()
       })
     }
   }
