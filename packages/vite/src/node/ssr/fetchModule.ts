@@ -165,7 +165,7 @@ async function fetchBundledModule(
     // See https://github.com/rolldown/rolldown/issues/8376
     const ssrResult = await ssrTransform(
       result.code,
-      JSON.parse(lazyResult.sourcemap),
+      lazyResult.sourcemap ? JSON.parse(lazyResult.sourcemap) : null,
       url,
       result.code,
     )

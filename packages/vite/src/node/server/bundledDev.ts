@@ -371,7 +371,8 @@ export class BundledDev {
     moduleId: string | null,
     clientId: string | null,
   ): Promise<
-    { code: string; filename: string; sourcemap: string } | undefined
+    | { code: string; filename: string; sourcemap: string | undefined }
+    | undefined
   > {
     if (!moduleId || !clientId) {
       return
@@ -393,7 +394,7 @@ export class BundledDev {
     return {
       filename: result.filename,
       code: result.code + payloadDeliveredAck(result.filename),
-      sourcemap: result.sourcemap ?? '',
+      sourcemap: result.sourcemap,
     }
   }
 
