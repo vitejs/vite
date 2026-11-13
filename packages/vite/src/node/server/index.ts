@@ -41,6 +41,7 @@ import {
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import type { MinimalPluginContextWithoutEnvironment } from '../plugin'
+import { getHookHandler, handleHookError } from '../plugins'
 import { reloadOnTsconfigChange } from '../plugins/esbuild'
 import { initPublicFiles } from '../publicDir'
 import { bindCLIShortcuts } from '../shortcuts'
@@ -672,9 +673,15 @@ export async function _createServer(
       config.logger,
     )
     await Promise.all(
-      config
-        .getSortedPluginHooks('closeServer')
-        .map((hook) => hook.call(closeServerContext, { reason })),
+      config.getSortedPlugins('closeServer').map(async (plugin) => {
+        try {
+          await getHookHandler(plugin.closeServer).call(closeServerContext, {
+            reason,
+          })
+        } catch (e) {
+          handleHookError(e, plugin.name, 'closeServer')
+        }
+      }),
     )
   }
 
@@ -1027,8 +1034,22 @@ export async function _createServer(
     config.logger,
   )
   const postHooks: ((() => void) | void)[] = []
-  for (const hook of config.getSortedPluginHooks('configureServer')) {
-    postHooks.push(await hook.call(configureServerContext, reflexServer))
+  for (const plugin of config.getSortedPlugins('configureServer')) {
+    const hook = getHookHandler(plugin.configureServer)
+    try {
+      const postHook = await hook.call(configureServerContext, reflexServer)
+      if (postHook) {
+        postHooks.push(() => {
+          try {
+            postHook()
+          } catch (e) {
+            handleHookError(e, plugin.name, 'configureServer')
+          }
+        })
+      }
+    } catch (e) {
+      handleHookError(e, plugin.name, 'configureServer')
+    }
   }
 
   // Internal middlewares ------------------------------------------------------

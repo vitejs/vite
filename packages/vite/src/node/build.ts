@@ -55,7 +55,7 @@ import { findNearestMainPackageData, findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import { perEnvironmentPlugin } from './plugin'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
-import { getHookHandler } from './plugins'
+import { getHookHandler, handleHookError } from './plugins'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { type LicenseOptions, licensePlugin } from './plugins/license'
@@ -952,7 +952,25 @@ async function buildEnvironment(
   }
 }
 
+const originalErrorMessages = new WeakMap<object, string>()
+
+export function isRollupErrorEnhanced(e: object): boolean {
+  return originalErrorMessages.has(e)
+}
+
+export function getOriginalRollupErrorMessage(e: unknown): string | undefined {
+  return typeof e === 'object' && e !== null
+    ? originalErrorMessages.get(e)
+    : undefined
+}
+
 export function enhanceRollupError(e: RollupError): void {
+  if (typeof e !== 'object' || e === null || originalErrorMessages.has(e)) {
+    return
+  }
+  if (typeof e.message !== 'string') return
+
+  originalErrorMessages.set(e, e.message)
   const stackOnly = extractStack(e)
 
   let msg = colors.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
@@ -1891,7 +1909,11 @@ export async function createBuilder(
           await configBuilder.buildApp(builder)
         }
         const handler = getHookHandler(hook)
-        await handler.call(pluginContext, builder)
+        try {
+          await handler.call(pluginContext, builder)
+        } catch (e) {
+          handleHookError(e, p.name, 'buildApp')
+        }
       }
       if (!configBuilderBuildAppCalled) {
         await configBuilder.buildApp(builder)

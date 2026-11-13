@@ -18,6 +18,7 @@ import {
 } from './http'
 import { printServerUrls } from './logger'
 import type { MinimalPluginContextWithoutEnvironment } from './plugin'
+import { getHookHandler, handleHookError } from './plugins'
 import type {
   HttpServer,
   ResolvedServerOptions,
@@ -186,9 +187,15 @@ export async function preview(
       config.logger,
     )
     await Promise.all(
-      config
-        .getSortedPluginHooks('closePreviewServer')
-        .map((hook) => hook.call(closePreviewServerContext)),
+      config.getSortedPlugins('closePreviewServer').map(async (plugin) => {
+        try {
+          await getHookHandler(plugin.closePreviewServer).call(
+            closePreviewServerContext,
+          )
+        } catch (e) {
+          handleHookError(e, plugin.name, 'closePreviewServer')
+        }
+      }),
     )
   }
 
@@ -245,8 +252,22 @@ export async function preview(
     config.logger,
   )
   const postHooks: ((() => void) | void)[] = []
-  for (const hook of config.getSortedPluginHooks('configurePreviewServer')) {
-    postHooks.push(await hook.call(configurePreviewServerContext, server))
+  for (const plugin of config.getSortedPlugins('configurePreviewServer')) {
+    const hook = getHookHandler(plugin.configurePreviewServer)
+    try {
+      const postHook = await hook.call(configurePreviewServerContext, server)
+      if (postHook) {
+        postHooks.push(() => {
+          try {
+            postHook()
+          } catch (e) {
+            handleHookError(e, plugin.name, 'configurePreviewServer')
+          }
+        })
+      }
+    } catch (e) {
+      handleHookError(e, plugin.name, 'configurePreviewServer')
+    }
   }
 
   // proxy
