@@ -6,6 +6,7 @@ import {
   type BindingClientHmrUpdate,
   type DevEngine,
   dev,
+  freeExternalMemory,
 } from 'rolldown/experimental'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
 import {
@@ -30,6 +31,7 @@ import { prepareError } from './middlewares/error'
 const debug = createDebugger('vite:full-bundle-mode')
 
 type HmrOutput = BindingClientHmrUpdate['update']
+type OutputFile = RolldownOutput['output'][number]
 
 type MemoryFile = {
   source: string | Uint8Array
@@ -63,6 +65,10 @@ export class MemoryFiles {
 
   has(file: string): boolean {
     return this.files.has(file)
+  }
+
+  delete(file: string): void {
+    this.files.delete(file)
   }
 
   clear(): void {
@@ -145,6 +151,7 @@ export class BundledDev {
       'vite:client-connected',
       async (payload, client) => {
         this.clients.setupIfNeeded(client, payload.clientId)
+        this.clientFullBuilds.set(payload.clientId, this.fullBuilds)
         this.devEngine.registerClient(payload.clientId)
       },
     )
@@ -167,6 +174,8 @@ export class BundledDev {
       if (clientId) {
         this.devEngine.removeClient(clientId)
         this.reloadNeededClientIds.delete(clientId)
+        this.clientFullBuilds.delete(clientId)
+        this.dropUnreachableOutput()
       }
     })
     this.environment.hot.on(
@@ -245,6 +254,8 @@ export class BundledDev {
         this.lastBuildError = null
 
         this.storeOutputFiles(result.output)
+        this.releaseSupersededOutput(result.output)
+        this.releaseExpiredHmrPatches()
 
         // Trigger a full reload if there's no error in the result and a reload is pending from HMR.
         if (this.fullReloadPending) {
@@ -378,12 +389,23 @@ export class BundledDev {
   markPayloadDelivered(filename: string): void {
     if (this.pendingPayloadFilenames.delete(filename)) {
       this.devEngine.notifyPayloadDelivered(filename)
+      // The client has evaluated the HMR patch and never requests it again.
+      this.memoryFiles.delete(filename)
     }
   }
 
   async close(): Promise<void> {
     this._closed = true
     this.memoryFiles.clear()
+    this.outputFileOwners.clear()
+    this.previousChunkFiles = []
+    this.assetFileBySource.clear()
+    this.renamedAssets = []
+    this.retiredOutput = []
+    this.fullBuilds = 0
+    this.clientFullBuilds.clear()
+    this.pushedHmrPatches = []
+    this.previousHmrPatches = []
     await this._devEngine?.close()
     this.initialBuildCompleted = false
   }
@@ -411,10 +433,47 @@ export class BundledDev {
     }
   }
 
-  private storeOutputFiles(output: RolldownOutput['output'][number][]): void {
-    // NOTE: don't clear memoryFiles here as incremental build reuses the files
+  /**
+   * Rolldown output objects keep their code and source map in native memory
+   * that V8 does not account for, so they are freed explicitly as soon as
+   * nothing serves them. `outputFileOwners` maps each served name to the object
+   * that serves it, so one replaced by a later build or lazy compile is freed
+   * when it is replaced.
+   */
+  private outputFileOwners = new Map<string, OutputFile>()
+  /** The chunks and chunk source maps of the latest full build, by served name. */
+  private previousChunkFiles: [string, OutputFile][] = []
+  /** The served name of each asset, by the source file it was emitted from. */
+  private assetFileBySource = new Map<string, string>()
+  /** Assets emitted again under a new name since the latest full build. */
+  private renamedAssets: [string, OutputFile][] = []
+  /**
+   * Files the latest output no longer serves under that name, with the full
+   * build that left them out. They are dropped once no connected page can
+   * still request them.
+   */
+  private retiredOutput: [string, OutputFile, number][] = []
+  /** Full builds so far. */
+  private fullBuilds = 0
+  /** The full build that was current when each connected client connected. */
+  private clientFullBuilds = new Map<string, number>()
+  /** HMR patches (and their source maps) pushed since the latest full build. */
+  private pushedHmrPatches: [string, string | undefined][] = []
+  /** HMR patches (and their source maps) to drop at the next full build. */
+  private previousHmrPatches: [string, string | undefined][] = []
+
+  private storeOutputFiles(output: OutputFile[]): void {
     for (const outputFile of output) {
-      this.memoryFiles.set(normalizePath(outputFile.fileName), () => {
+      const fileName = normalizePath(outputFile.fileName)
+      const previousOwner = this.outputFileOwners.get(fileName)
+      if (previousOwner && previousOwner !== outputFile) {
+        freeExternalMemory(previousOwner)
+      }
+      this.outputFileOwners.set(fileName, outputFile)
+      if (outputFile.type === 'asset') {
+        this.recordAssetSources(fileName, outputFile.originalFileNames)
+      }
+      this.memoryFiles.set(fileName, () => {
         const source =
           outputFile.type === 'chunk' ? outputFile.code : outputFile.source
         return {
@@ -423,6 +482,97 @@ export class BundledDev {
         }
       })
     }
+  }
+
+  private recordAssetSources(fileName: string, sources: string[]): void {
+    for (const source of sources) {
+      const previousFileName = this.assetFileBySource.get(source)
+      const previousOwner =
+        previousFileName && this.outputFileOwners.get(previousFileName)
+      if (previousFileName !== fileName && previousOwner) {
+        this.renamedAssets.push([previousFileName!, previousOwner])
+      }
+      this.assetFileBySource.set(source, fileName)
+    }
+  }
+
+  /**
+   * Every full build emits all chunks, so a chunk (or chunk source map) missing
+   * from the new output is gone, for example renamed by a new content hash. An
+   * asset is only emitted when it changes, so one is retired only once it is
+   * emitted under a new name. A page keeps requesting the files of the build it
+   * loaded (lazy chunks, for example), so a retired file stays served while a
+   * page loaded before its retirement is still connected.
+   */
+  private releaseSupersededOutput(output: OutputFile[]): void {
+    this.fullBuilds++
+    for (const [fileName, file] of [
+      ...this.previousChunkFiles,
+      ...this.renamedAssets,
+    ]) {
+      if (this.outputFileOwners.get(fileName) === file) {
+        this.retiredOutput.push([fileName, file, this.fullBuilds])
+      }
+    }
+    this.renamedAssets = []
+    const chunkSourcemaps = new Set(
+      output.flatMap((file) =>
+        file.type === 'chunk' && file.sourcemapFileName
+          ? [normalizePath(file.sourcemapFileName)]
+          : [],
+      ),
+    )
+    this.previousChunkFiles = output.flatMap((file): [string, OutputFile][] => {
+      const fileName = normalizePath(file.fileName)
+      return file.type === 'chunk' || chunkSourcemaps.has(fileName)
+        ? [[fileName, file]]
+        : []
+    })
+    this.dropUnreachableOutput()
+  }
+
+  /**
+   * A client is recorded with the full build that was current when it
+   * connected, but the page may have loaded the build before it, so a file
+   * retired at build N is dropped only once every connected client connected
+   * after build N. With no client connected, that is the next full build.
+   */
+  private dropUnreachableOutput(): void {
+    const oldestClientBuild = this.clientFullBuilds.size
+      ? Math.min(...this.clientFullBuilds.values())
+      : this.fullBuilds
+    this.retiredOutput = this.retiredOutput.filter(
+      ([fileName, file, retiredAt]) => {
+        if (this.outputFileOwners.get(fileName) !== file) return false
+        if (retiredAt >= oldestClientBuild) return true
+        this.outputFileOwners.delete(fileName)
+        const staticFile = this.staticFiles.get(fileName)
+        if (staticFile) {
+          this.memoryFiles.set(fileName, staticFile)
+        } else {
+          this.memoryFiles.delete(fileName)
+        }
+        freeExternalMemory(file)
+        return false
+      },
+    )
+  }
+
+  /**
+   * A client fetches a patch as soon as it is pushed, so a full build later
+   * nothing fetches it any more. That covers a patch a client skipped by
+   * reloading instead (for example, no HMR boundary), which is never reported
+   * delivered; it stays in `pendingPayloadFilenames` so a late delivery report
+   * still reaches the dev engine. A delivered patch's source map is kept until
+   * then too, so DevTools can still fetch it after the patch has run.
+   */
+  private releaseExpiredHmrPatches(): void {
+    for (const [fileName, sourcemapFileName] of this.previousHmrPatches) {
+      this.memoryFiles.delete(fileName)
+      if (sourcemapFileName) this.memoryFiles.delete(sourcemapFileName)
+    }
+    this.previousHmrPatches = this.pushedHmrPatches
+    this.pushedHmrPatches = []
   }
 
   private async getRolldownOptions() {
@@ -498,6 +648,10 @@ export class BundledDev {
     })
 
     this.pendingPayloadFilenames.add(hmrOutput.filename)
+    this.pushedHmrPatches.push([
+      hmrOutput.filename,
+      hmrOutput.sourcemapFilename ?? undefined,
+    ])
     this.memoryFiles.set(hmrOutput.filename, {
       // ensure that the generated hmr patch contains ESM syntax
       // this is to avoid attacks like GHSA-4v9v-hfq4-rm2v
