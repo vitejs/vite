@@ -372,6 +372,21 @@ describe('plugin container', () => {
         }
       `)
     })
+
+    it('keeps the empty sourcemap of a JSON module', async () => {
+      const entryUrl = '/data.json'
+
+      const environment = await getDevEnvironment()
+      await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      const result = await environment.pluginContainer.transform(
+        '{ "foo": "bar" }',
+        entryUrl,
+        { moduleType: 'json' },
+      )
+
+      expect(result.code).toContain('export default')
+      expect(result.map).toEqual({ mappings: '' })
+    })
   })
 
   describe('resolveId', () => {
