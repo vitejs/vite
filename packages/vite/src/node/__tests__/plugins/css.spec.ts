@@ -1,7 +1,8 @@
 import path from 'node:path'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
 import type { InternalModuleFormat } from 'rolldown'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, onTestFinished, test } from 'vitest'
 import { PartialEnvironment } from '../../baseEnvironment'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
@@ -226,6 +227,149 @@ composes: bar from '@/css/bar.module.css';
 })
 
 describe('url()', () => {
+  for (const transformer of ['postcss', 'lightningcss'] as const) {
+    describe(transformer, () => {
+      const root = path.join(dirname, 'fixtures/css-url-imports')
+
+      for (const [value, expected] of [
+        [`url('#logo')`, '/logo.svg'],
+        ['url(#assets/logo.svg)', '/logo.svg'],
+        [`url('#logo?no-inline#icon')`, '/logo.svg?no-inline#icon'],
+        ['image-set("#logo" 1x)', '/logo.svg'],
+      ]) {
+        test(`resolves package imports in ${value}`, async () => {
+          const { transform } = await createCssPluginTransform({
+            configFile: false,
+            root,
+            build: { assetsInlineLimit: 0 },
+            css: { transformer },
+          })
+          const result = await transform(
+            `.logo { background-image: ${value} }`,
+            path.join(root, 'style.css'),
+          )
+
+          expect(result.code.replace(/['"]/g, '')).toContain(`(${expected}`)
+        })
+      }
+
+      test('preserves local fragments', async () => {
+        const { transform } = await createCssPluginTransform({
+          configFile: false,
+          root,
+          build: { assetsInlineLimit: 0 },
+          css: { transformer },
+        })
+        const result = await transform(
+          `.filter { filter: url('#filter') }
+         .mask { mask: url('#missing/path') }
+         .external-fragment { mask: url('./logo.svg#icon') }`,
+          path.join(root, 'style.css'),
+        )
+
+        const css = result.code.replace(/['"]/g, '')
+        expect(css).toContain('url(#filter)')
+        expect(css).toContain('url(#missing/path)')
+        expect(result.code).toContain('/logo.svg#icon')
+      })
+
+      test('resolves imports in nested Sass files using their package scope', async () => {
+        const { transform } = await createCssPluginTransform({
+          configFile: false,
+          root,
+          build: { assetsInlineLimit: 0 },
+          css: { transformer, preprocessorMaxWorkers: 0 },
+        })
+        const result = await transform(
+          `@use './nested/style';`,
+          path.join(root, 'style.scss'),
+        )
+
+        expect(result.code).toContain('/nested/nested-logo.svg')
+        expect(result.code).toContain('#filter')
+      })
+
+      test('preserves nested fragments that match an entry package import', async () => {
+        const { transform } = await createCssPluginTransform({
+          configFile: false,
+          root,
+          build: { assetsInlineLimit: 0 },
+          css: { transformer, preprocessorMaxWorkers: 0 },
+        })
+        const result = await transform(
+          `@use './nested/collision';
+           .entry { background: url('#collision') }`,
+          path.join(root, 'style.scss'),
+        )
+
+        const css = result.code.replace(/['"]/g, '')
+        expect(css).toMatch(/filter: url\(#collision\s*\)/)
+        expect(css).toContain('/logo.svg')
+        expect(result.code).toMatch(/url\('#quote"filter'\s*\)/)
+        expect(result.code).toMatch(/url\(#escaped\\\)filter\s*\)/)
+        expect(result.code).toMatch(/url\('#filter'\s*\)/)
+      })
+
+      for (const nested of [false, true]) {
+        test(`propagates resolver errors in ${nested ? 'nested Sass' : 'CSS'} URLs`, async () => {
+          const { transform } = await createCssPluginTransform({
+            configFile: false,
+            root,
+            css: { transformer, preprocessorMaxWorkers: 0 },
+            resolve: {
+              alias: [
+                {
+                  find: '#logo',
+                  replacement: '/broken.svg',
+                  customResolver() {
+                    throw new Error('CSS asset resolver failed')
+                  },
+                },
+              ],
+            },
+          })
+
+          await expect(
+            transform(
+              nested
+                ? `@use './nested/style';`
+                : `.logo { background: url('#logo') }`,
+              path.join(root, nested ? 'style.scss' : 'style.css'),
+            ),
+          ).rejects.toThrow('CSS asset resolver failed')
+        })
+      }
+    })
+  }
+
+  test('preserves sourcemap positions after restoring nested fragments', async () => {
+    const root = path.join(dirname, 'fixtures/css-url-imports')
+    const { transform } = await createCssPluginTransform({
+      configFile: false,
+      root,
+      css: {
+        devSourcemap: true,
+        preprocessorMaxWorkers: 0,
+        preprocessorOptions: { scss: { style: 'compressed' } },
+      },
+    })
+    const result = await transform(
+      `@use './nested/collision';`,
+      path.join(root, 'style.scss'),
+    )
+
+    const colorIndex = result.code.indexOf('color:red')
+    expect(colorIndex).toBeGreaterThan(-1)
+    const beforeColor = result.code.slice(0, colorIndex).split('\n')
+    const original = originalPositionFor(new TraceMap(result.map), {
+      line: beforeColor.length,
+      column: beforeColor.at(-1)!.length,
+    })
+    expect(original.source).toMatch(/nested\/_collision\.scss$/)
+    expect(original.line).toBe(3)
+    expect(original.column).toBe(2)
+  })
+
   test('keeps a % that is not an escape sequence', async () => {
     const { transform } = await createCssPluginTransform({ configFile: false })
     const result = await transform(
@@ -330,10 +474,14 @@ async function createCssPluginTransform(inlineConfig: InlineConfig = {}) {
   const config = await resolveConfig(inlineConfig, 'serve')
   const environment = new PartialEnvironment('client', config)
 
-  const { transform, buildStart } = cssPlugin(config)
+  const { transform, buildStart, buildEnd } = cssPlugin(config)
 
   // @ts-expect-error buildStart is function
   await buildStart.call({})
+  onTestFinished(async () => {
+    // @ts-expect-error buildEnd is function
+    await buildEnd.call({})
+  })
 
   return {
     async transform(code: string, id: string) {
@@ -391,7 +539,7 @@ import "other-module";`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'es')
     const replaced = replacer(code)
-    expect(replaced.length).toBe(code.length)
+    expect(replaced).toHaveLength(code.length)
     expect(replaced).toMatchInlineSnapshot(`
       "import "some-module";
       /* empty css             */
@@ -404,7 +552,7 @@ import "other-module";`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'es')
     const replaced = replacer(code)
-    expect(replaced.length).toBe(code.length)
+    expect(replaced).toHaveLength(code.length)
     expect(replaced).toMatchInlineSnapshot(
       `"import "some-module";/* empty css             */import "other-module";"`,
     )
@@ -418,7 +566,7 @@ require("other-module");`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
     const replaced = replacer(code)
-    expect(replaced.length).toBe(code.length)
+    expect(replaced).toHaveLength(code.length)
     expect(replaced).toMatchInlineSnapshot(`
       "require("some-module");
       ;/* empty css              */
@@ -431,7 +579,7 @@ require("other-module");`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
     const replaced = replacer(code)
-    expect(replaced.length).toBe(code.length)
+    expect(replaced).toHaveLength(code.length)
     expect(replaced).toMatchInlineSnapshot(
       `"require("some-module");;/* empty css              */require("other-module");"`,
     )
@@ -443,7 +591,7 @@ require("other-module");`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
     const newCode = replacer(code)
-    expect(newCode.length).toBe(code.length)
+    expect(newCode).toHaveLength(code.length)
     expect(newCode).toMatchInlineSnapshot(
       `"require("some-module"),/* empty css               */require("other-module");"`,
     )
@@ -455,7 +603,7 @@ require("other-module");`
     const code = 'require("pure_css_chunk.js"),console.log();'
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
     const newCode = replacer(code)
-    expect(newCode.length).toBe(code.length)
+    expect(newCode).toHaveLength(code.length)
     expect(newCode).toMatchInlineSnapshot(
       `"/* empty css               */console.log();"`,
     )
@@ -468,7 +616,7 @@ require("other-module");`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
     const newCode = replacer(code)
-    expect(newCode.length).toBe(code.length)
+    expect(newCode).toHaveLength(code.length)
     expect(newCode).toMatchInlineSnapshot(
       `"require("some-module");/* empty css               */const v=require("other-module");"`,
     )

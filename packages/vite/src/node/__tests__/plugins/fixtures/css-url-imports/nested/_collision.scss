@@ -1,0 +1,17 @@
+.collision {
+  filter: url('#collision');
+  color: red;
+}
+
+.quoted-fragment {
+  filter: url('#quote"filter');
+}
+
+.escaped-fragment {
+  filter: url(#escaped\)filter);
+}
+
+.continued-fragment {
+  filter: url('#fil\
+ter');
+}

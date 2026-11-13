@@ -402,13 +402,15 @@ Specifies the maximum number of threads CSS preprocessors can use. `true` means 
 
 Depending on the preprocessor options, Vite may run the preprocessors on the main thread even if this option is not set to `0`.
 
-## css.devSourcemap
+## dev.sourcemap
 
-- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13845)
-- **Type:** `boolean`
-- **Default:** `false`
+- **Experimental:** [Give Feedback for `dev.sourcemap.css`](https://github.com/vitejs/vite/discussions/13845)
+- **Type:** `boolean | { js?: boolean; css?: boolean }`
+- **Default:** `{ js: true, css: false }`
 
 Whether to enable sourcemaps during dev.
+
+Setting `dev.sourcemap` to `boolean` sets to both JS and CSS.
 
 ## css.transformer
 

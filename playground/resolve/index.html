@@ -215,6 +215,8 @@
 <h2>utf8-bom-package</h2>
 <p class="utf8-bom-package">fail</p>
 
+<link rel="stylesheet" href="/style.css" />
+
 <script type="module">
   import '@generated-content-virtual-file'
   function text(selector, text) {
@@ -380,16 +382,16 @@
   // browser field
   import main from '@vitejs/test-resolve-browser-field'
 
-  import a from '@vitejs/test-resolve-browser-field/no-ext'
-  import b from '@vitejs/test-resolve-browser-field/no-ext.js' // no substitution
+  import i from '@vitejs/test-resolve-browser-field/bare-import'
   import c from '@vitejs/test-resolve-browser-field/ext'
-  import d from '@vitejs/test-resolve-browser-field/ext.js'
   import e from '@vitejs/test-resolve-browser-field/ext-index/index.js'
+  import d from '@vitejs/test-resolve-browser-field/ext.js'
+  import a from '@vitejs/test-resolve-browser-field/no-ext'
+  import h from '@vitejs/test-resolve-browser-field/no-ext?query'
+  import g from '@vitejs/test-resolve-browser-field/no-ext-index/index.js' // no substitution
+  import b from '@vitejs/test-resolve-browser-field/no-ext.js' // no substitution
   // webpack does not support this case, so should be fine
   // import f from '@vitejs/test-resolve-browser-field/ext-index'
-  import g from '@vitejs/test-resolve-browser-field/no-ext-index/index.js' // no substitution
-  import h from '@vitejs/test-resolve-browser-field/no-ext?query'
-  import i from '@vitejs/test-resolve-browser-field/bare-import'
 
   import {
     ra,

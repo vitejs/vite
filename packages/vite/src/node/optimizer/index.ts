@@ -14,7 +14,7 @@ import {
 } from 'rolldown'
 import { isDynamicPattern } from 'tinyglobby'
 import type { DepsOptimizerEsbuildOptions } from '#types/internal/esbuildOptions'
-import { isWindows } from '../../shared/utils'
+import { isWindows, withTrailingSlash } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
 import {
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
@@ -104,15 +104,6 @@ export interface DepOptimizationConfig {
    * @deprecated Use `rolldownOptions` instead.
    */
   esbuildOptions?: DepsOptimizerEsbuildOptions
-  /**
-   * @deprecated Use `rolldownOptions` instead.
-   */
-  rollupOptions?: Omit<RolldownOptions, 'input' | 'logLevel' | 'output'> & {
-    output?: Omit<
-      RolldownOutputOptions,
-      'format' | 'sourcemap' | 'dir' | 'banner'
-    >
-  }
   /**
    * Options to pass to rolldown during the dep scanning and optimization
    *
@@ -988,7 +979,7 @@ function getDepsCacheDirPrefix(environment: Environment): string {
 export function createIsOptimizedDepFile(
   environment: Environment,
 ): (id: string) => boolean {
-  const depsCacheDirPrefix = getDepsCacheDirPrefix(environment)
+  const depsCacheDirPrefix = withTrailingSlash(getDepsCacheDir(environment))
   return (id) => id.startsWith(depsCacheDirPrefix)
 }
 
@@ -996,8 +987,10 @@ export function createIsOptimizedDepUrl(
   environment: Environment,
 ): (url: string) => boolean {
   const { root } = environment.config
-  const depsCacheDir = getDepsCacheDirPrefix(environment)
-  const depsCacheDirPrefix = fileToModuleUrl(depsCacheDir, root)
+  const depsCacheDir = getDepsCacheDir(environment)
+  const depsCacheDirPrefix = withTrailingSlash(
+    fileToModuleUrl(depsCacheDir, root),
+  )
   return function isOptimizedDepUrl(url: string): boolean {
     return url.startsWith(depsCacheDirPrefix)
   }
@@ -1106,7 +1099,7 @@ export async function extractExportsData(
   environment: Environment,
   filePath: string,
 ): Promise<ExportsData> {
-  await init
+  await init()
 
   const { optimizeDeps } = environment.config
 
@@ -1145,7 +1138,9 @@ export async function extractExportsData(
       const [, exports, , hasModuleSyntax] = parse(result.output[0].code)
       return {
         hasModuleSyntax,
-        exports: exports.map((e) => e.n),
+        exports: exports.flatMap((e) =>
+          e.type === 'reexport-all' || e.typeOnly ? [] : [e.name],
+        ),
       }
     } finally {
       await build.close()
@@ -1180,7 +1175,9 @@ export async function extractExportsData(
   const [, exports, , hasModuleSyntax] = parseResult
   const exportsData: ExportsData = {
     hasModuleSyntax,
-    exports: exports.map((e) => e.n),
+    exports: exports.flatMap((e) =>
+      e.type === 'reexport-all' || e.typeOnly ? [] : [e.name],
+    ),
     jsxLoader: usedJsxLoader,
   }
   return exportsData

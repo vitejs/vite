@@ -8,7 +8,6 @@ import {
   NULL_BYTE_PLACEHOLDER,
 } from '../../../shared/constants'
 import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
-import type { ResolvedConfig } from '../../config'
 import {
   DEP_VERSION_RE,
   ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
@@ -26,6 +25,7 @@ import {
   removeImportQuery,
   removeTimestampQuery,
 } from '../../utils'
+import type { DevEnvironment } from '../environment'
 import { moduleUrlToFilePath } from '../moduleUrl'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { send } from '../send'
@@ -43,9 +43,19 @@ const documentFetchDests = new Set([
   'frame',
   'fencedframe',
 ])
-function isDocumentFetchDest(req: Connect.IncomingMessage) {
-  const fetchDest = req.headers['sec-fetch-dest']
+function isDocumentFetchDest(fetchDest: string | undefined) {
   return fetchDest !== undefined && documentFetchDests.has(fetchDest)
+}
+
+export function isTransformRequest(url: string, fetchDest?: string): boolean {
+  return (
+    !isDocumentFetchDest(fetchDest) &&
+    (fetchDest === 'script' ||
+      isJSRequest(url) ||
+      isImportRequest(url) ||
+      isCSSRequest(url) ||
+      isHTMLProxy(url))
+  )
 }
 
 // TODO: consolidate this regex pattern with the url, raw, and inline checks in plugins
@@ -53,22 +63,26 @@ const urlRE = /[?&]url\b/
 const rawRE = /[?&]raw\b/
 const inlineRE = /[?&]inline\b/
 const svgRE = /\.svg\b/
+const wasmRE = /(?<![?#].*)\.wasm$/
 const wasmInstanceRE = /[?&]vite-wasm-instance(?:&|$)/
 
 export function isServerAccessDeniedForTransform(
-  config: ResolvedConfig,
+  environment: DevEnvironment,
   id: string,
 ): boolean {
+  const { config } = environment
   if (
+    config.server.fs.strict === 'extended' ||
     rawRE.test(id) ||
     urlRE.test(id) ||
     inlineRE.test(id) ||
     svgRE.test(id) ||
+    wasmRE.test(id) ||
     wasmInstanceRE.test(id)
   ) {
     return (
-      checkLoadingAccess(config, cleanUrl(id)) !== 'allowed' ||
-      checkLoadingAccess(config, id) !== 'allowed'
+      checkLoadingAccess(environment, cleanUrl(id)) !== 'allowed' ||
+      checkLoadingAccess(environment, id) !== 'allowed'
     )
   }
   return false
@@ -84,7 +98,7 @@ export function cachedTransformMiddleware(
   return function viteCachedTransformMiddleware(req, res, next) {
     const environment = server.environments.client
 
-    if (isDocumentFetchDest(req)) {
+    if (isDocumentFetchDest(req.headers['sec-fetch-dest'])) {
       res.appendHeader('Vary', 'Sec-Fetch-Dest')
       return next()
     }
@@ -129,7 +143,7 @@ export function transformMiddleware(
     if (
       (req.method !== 'GET' && req.method !== 'HEAD') ||
       knownIgnoreList.has(req.url!) ||
-      isDocumentFetchDest(req)
+      isDocumentFetchDest(req.headers['sec-fetch-dest'])
     ) {
       return next()
     }
@@ -221,13 +235,7 @@ export function transformMiddleware(
         warnAboutExplicitPublicPathInUrl(url)
       }
 
-      if (
-        req.headers['sec-fetch-dest'] === 'script' ||
-        isJSRequest(url) ||
-        isImportRequest(url) ||
-        isCSSRequest(url) ||
-        isHTMLProxy(url)
-      ) {
+      if (isTransformRequest(url, req.headers['sec-fetch-dest'])) {
         // strip ?import
         url = removeImportQuery(url)
         // Strip valid id prefix. This is prepended to resolved Ids that are
@@ -331,12 +339,9 @@ export function transformMiddleware(
       }
       if (e?.code === ERR_DENIED_ID) {
         const id: string = e.id
-        let servingAccessResult = checkLoadingAccess(
-          server.config,
-          cleanUrl(id),
-        )
+        let servingAccessResult = checkLoadingAccess(environment, cleanUrl(id))
         if (servingAccessResult === 'allowed') {
-          servingAccessResult = checkLoadingAccess(server.config, id)
+          servingAccessResult = checkLoadingAccess(environment, id)
         }
         if (servingAccessResult === 'denied') {
           respondWithAccessDenied(id, server, res)
