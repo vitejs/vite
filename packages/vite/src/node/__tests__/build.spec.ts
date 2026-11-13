@@ -2227,6 +2227,84 @@ test('copies public directory after building same environment with write false f
   ).resolves.toBe('<svg></svg>')
 })
 
+test('watch mode re-copies public directory on change', async () => {
+  // https://github.com/vitejs/vite/issues/18655
+  const root = await fsp.mkdtemp(join(tmpdir(), 'vite-public-watch-'))
+  try {
+    await fsp.cp(resolve(dirname, 'fixtures/public-dir-write-false'), root, {
+      recursive: true,
+    })
+
+    const result = await build({
+      root,
+      configFile: false,
+      logLevel: 'silent',
+      // emptyOutDir: false exercises the watchChange deletion path: a
+      // deleted public file must not survive in dist even without a full
+      // output-directory clear on rebuild.
+      build: { watch: {}, emptyOutDir: false },
+    })
+    if (!('on' in result)) throw new Error('Expected watcher result')
+    const watcher = result
+
+    let bundleEnds = 0
+    const waiters: Array<() => void> = []
+    watcher.on('event', (event) => {
+      if (event.code === 'BUNDLE_END') {
+        bundleEnds++
+        waiters.splice(0).forEach((resolve) => resolve())
+      }
+    })
+    const waitForBundleEnd = (count: number) =>
+      new Promise<void>((resolve, reject) => {
+        if (bundleEnds >= count) return resolve()
+        const timer = setTimeout(
+          () => reject(new Error(`Timed out waiting for build ${count}`)),
+          30000,
+        )
+        waiters.push(() => {
+          if (bundleEnds >= count) {
+            clearTimeout(timer)
+            resolve()
+          }
+        })
+      })
+
+    try {
+      await waitForBundleEnd(1)
+      await expect(
+        fsp.readFile(resolve(root, 'dist/favicon.svg'), 'utf-8'),
+      ).resolves.toBe('<svg></svg>')
+
+      // Edit an existing public file: it must be re-copied on rebuild.
+      await fsp.writeFile(
+        resolve(root, 'public/favicon.svg'),
+        '<svg>updated</svg>',
+      )
+      await waitForBundleEnd(2)
+      await expect(
+        fsp.readFile(resolve(root, 'dist/favicon.svg'), 'utf-8'),
+      ).resolves.toBe('<svg>updated</svg>')
+
+      // Add a new public file: it must be copied on rebuild too.
+      await fsp.writeFile(resolve(root, 'public/added.txt'), 'added')
+      await waitForBundleEnd(3)
+      await expect(
+        fsp.readFile(resolve(root, 'dist/added.txt'), 'utf-8'),
+      ).resolves.toBe('added')
+
+      // Delete a public file: the stale copy must not survive the rebuild.
+      await fsp.rm(resolve(root, 'public/added.txt'))
+      await waitForBundleEnd(4)
+      await expect(fsp.stat(resolve(root, 'dist/added.txt'))).rejects.toThrow()
+    } finally {
+      await watcher.close()
+    }
+  } finally {
+    await fsp.rm(root, { recursive: true, force: true })
+  }
+})
+
 async function buildProjectWithRenderBuiltUrl(
   renderBuiltUrl: (filename: string) => string,
   includePostfixes = false,

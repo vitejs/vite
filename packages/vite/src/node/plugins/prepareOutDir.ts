@@ -12,8 +12,44 @@ export function prepareOutDirPlugin(): Plugin {
   const rendered = new Set<Environment>()
   return {
     name: 'vite:prepare-out-dir',
-    watchChange() {
+    buildStart() {
+      // In watch mode, a change in the public directory must trigger a
+      // rebuild so renderStart below re-copies it. Rolldown only watches the
+      // module graph, so register the public directory itself: watching the
+      // directory (rather than each file in it) also covers files added after
+      // the first build, and deletions.
+      const { publicDir, build } = this.environment.config
+      if (build.copyPublicDir && publicDir && fs.existsSync(publicDir)) {
+        this.addWatchFile(publicDir)
+      }
+    },
+    watchChange(id) {
       rendered.delete(this.environment)
+      // If a watched public file was deleted, remove its stale copy from the
+      // output directory. When emptyOutDir is enabled renderStart below
+      // already clears the output directory, so this only matters when it is
+      // disabled — but it is cheap and correct in both cases.
+      const { publicDir, build, root } = this.environment.config
+      if (!build.copyPublicDir || !publicDir || !id) {
+        return
+      }
+      const normalizedId = normalizePath(id)
+      const normalizedPublicDir = normalizePath(publicDir)
+      if (
+        normalizedId === normalizedPublicDir ||
+        !normalizedId.startsWith(withTrailingSlash(normalizedPublicDir)) ||
+        fs.existsSync(normalizedId)
+      ) {
+        return
+      }
+      const relative = path.relative(normalizedPublicDir, normalizedId)
+      for (const outDir of getResolvedOutDirs(
+        root,
+        build.outDir,
+        build.rolldownOptions.output,
+      )) {
+        fs.rmSync(path.join(outDir, relative), { force: true })
+      }
     },
     renderStart: {
       order: 'pre',
