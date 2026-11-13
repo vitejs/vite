@@ -18,7 +18,10 @@ text(
 )
 
 import inlineMod from './inline.module.css?inline'
+import inlineModClasses from './inline.module.css'
 text('.modules-inline', inlineMod)
+document.querySelector('.modules-inline').dataset.className =
+  inlineModClasses['apply-color-inline']
 
 function text(el, text) {
   document.querySelector(el).textContent = text
