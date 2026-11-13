@@ -1,7 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import {
   editFile,
-  gotoLatestBuild,
   hotUpdatedLog,
   isBuild,
   page,
@@ -11,8 +10,10 @@ import {
 
 describe.runIf(!isBuild)('acceptExports with hmrPartialAccept off', () => {
   const CONNECTED = /connected/
-  const openPage = (testDir: string) =>
-    gotoLatestBuild(`${viteTestUrl}/${testDir}/`)
+  const openPage = async (testDir: string) => {
+    await page.goto(`${viteTestUrl}/${testDir}/`, { waitUntil: 'commit' })
+    await page.waitForSelector('html[data-hmr-ready="true"]')
+  }
 
   describe('importer that uses only accepted exports', () => {
     const testDir = 'accept-exports/main-accepted'
