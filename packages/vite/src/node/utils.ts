@@ -232,7 +232,11 @@ export const isCaseInsensitiveFS: boolean = testCaseInsensitiveFS()
 const VOLUME_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
-  return path.posix.normalize(isWindows ? slash(id) : id)
+  const normalized = isWindows ? slash(id) : id
+  // Preserve Windows UNC and device roots, including node:vfs mount points.
+  return normalized.startsWith('//')
+    ? slash(path.win32.normalize(normalized))
+    : path.posix.normalize(normalized)
 }
 
 export function fsPathFromId(id: string): string {
