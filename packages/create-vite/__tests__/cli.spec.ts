@@ -13,11 +13,14 @@ const genPathWithSubfolder = path.join(
   projectName,
 )
 
-const run = (args: string[], options?: { cwd?: string }) => {
+const run = (
+  args: string[],
+  options?: { cwd?: string; env?: NodeJS.ProcessEnv },
+) => {
   return xSync('node', [CLI_PATH, ...args], {
     throwOnError: true,
     nodeOptions: {
-      env: { ...process.env, _VITE_TEST_CLI: 'true' },
+      env: { ...process.env, _VITE_TEST_CLI: 'true', ...options?.env },
       cwd: options?.cwd,
     },
   })
@@ -385,6 +388,39 @@ test('accepts immediate flag', () => {
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
   expect(stdout).toContain('Installing dependencies')
 })
+
+test('uses vp commands in the done message when run via vp dlx', () => {
+  const { stdout } = run([projectName, '--template', 'vue', '--no-immediate'], {
+    cwd: import.meta.dirname,
+    env: {
+      // `vp dlx` sets VP_USER_AGENT; the underlying package manager overwrites
+      // npm_config_user_agent, so VP_USER_AGENT must take precedence.
+      VP_USER_AGENT: 'vp/1.6.0',
+      npm_config_user_agent: 'pnpm/10.0.0 npm/? node/v24.18.0 darwin arm64',
+    },
+  })
+  expect(stdout).toContain('Done. Now run:')
+  expect(stdout).toContain('vp install')
+  expect(stdout).toContain('vp run dev')
+})
+
+for (const vpUserAgent of [undefined, '']) {
+  test(`uses npm_config_user_agent when VP_USER_AGENT is ${vpUserAgent}`, () => {
+    const { stdout } = run(
+      [projectName, '--template', 'vue', '--no-immediate'],
+      {
+        cwd: import.meta.dirname,
+        env: {
+          VP_USER_AGENT: vpUserAgent,
+          npm_config_user_agent: 'pnpm/10.0.0 npm/? node/v24.18.0 darwin arm64',
+        },
+      },
+    )
+    expect(stdout).toContain('pnpm install')
+    expect(stdout).toContain('pnpm dev')
+    expect(stdout).not.toContain('vp install')
+  })
+}
 
 test('accepts immediate flag and skips install prompt', () => {
   const { stdout } = run([projectName, '--template', 'vue', '--no-immediate'], {
