@@ -16,7 +16,12 @@ import type { Environment } from '../environment'
 import type { Logger } from '../logger'
 import type { Plugin } from '../plugin'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
-import { evalValue, normalizePath, transformStableResult } from '../utils'
+import {
+  evalValue,
+  getBuildSourcemap,
+  normalizePath,
+  transformStableResult,
+} from '../utils'
 
 export interface ParsedImportGlob {
   index: number
@@ -46,7 +51,10 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       if (environment.config.isBundled) {
         return nativeImportGlobPlugin({
           root: environment.config.root,
-          sourcemap: !!environment.config.build.sourcemap,
+          sourcemap: !!getBuildSourcemap(
+            environment.config.build.sourcemap,
+            'js',
+          ),
           restoreQueryExtension:
             environment.config.experimental.importGlobRestoreExtension,
         })

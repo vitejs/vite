@@ -24,6 +24,7 @@ import type { Logger } from '../logger'
 import type { Plugin } from '../plugin'
 import {
   injectQuery,
+  getBuildSourcemap,
   normalizePath,
   prettifyUrl,
   trailingSeparatorRE,
@@ -488,7 +489,10 @@ async function bundleWorkerEntry(
             : undefined,
       ...workerConfig,
       format,
-      sourcemap: workerEnvironment.config.build.sourcemap,
+      sourcemap: getBuildSourcemap(
+        workerEnvironment.config.build.sourcemap,
+        'js',
+      ),
     })
     watchedFiles = (await bundle.watchFiles).map((f) => normalizePath(f))
   } catch (e) {
@@ -544,10 +548,8 @@ async function bundleWorkerEntry(
           source: outputChunk.code,
         },
   )
-  if (
-    (config.build.sourcemap === 'hidden' || config.build.sourcemap === true) &&
-    outputChunk.map
-  ) {
+  const sourcemap = getBuildSourcemap(config.build.sourcemap, 'js')
+  if ((sourcemap === 'hidden' || sourcemap === true) && outputChunk.map) {
     assets.push({
       fileName: outputChunk.fileName + '.map',
       originalFileName: null,

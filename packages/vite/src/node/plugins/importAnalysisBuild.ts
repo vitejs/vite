@@ -15,6 +15,7 @@ import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import { genSourceMapUrl } from '../server/sourcemap'
 import {
   combineSourcemaps,
+  getBuildSourcemap,
   generateCodeFrame,
   getFileStartIndex,
   normalizePath,
@@ -623,7 +624,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         }
         return
       }
-      const buildSourcemap = this.environment.config.build.sourcemap
+      const buildSourcemap = getBuildSourcemap(
+        this.environment.config.build.sourcemap,
+        'js',
+      )
       const { modulePreload } = this.environment.config.build
 
       let importMapMapping: Record<string, string> | undefined
