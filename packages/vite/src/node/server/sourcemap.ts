@@ -1,10 +1,12 @@
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import convertSourceMap from 'convert-source-map'
 import colors from 'picocolors'
 import type { ExistingRawSourceMap, SourceMap } from 'rolldown'
-import { cleanUrl } from '../../shared/utils'
+import { cleanUrl, joinUrlSegments, slash } from '../../shared/utils'
+import type { ResolvedConfig } from '../config'
 import type { Logger } from '../logger'
 import {
   blankReplacer,
@@ -54,6 +56,51 @@ export interface SourceMapLike {
   sources: string[]
   sourcesContent?: (string | null)[]
   sourceRoot?: string
+}
+
+export function getDevCssSourcemapSources(
+  map: SourceMapLike,
+  config: Pick<ResolvedConfig, 'root' | 'base' | 'server'>,
+  cssFile?: string,
+): string[] {
+  if (map.sourceRoot) return map.sources
+
+  const windows = /^[a-z]:\//i.test(config.root)
+  const filePath = windows ? path.win32 : path
+  const cssDir =
+    cssFile && isParentDirectory(config.root, cssFile)
+      ? filePath.dirname(cssFile)
+      : undefined
+  const base = joinUrlSegments(
+    cssFile ? '' : (config.server.origin ?? ''),
+    config.base,
+  )
+
+  return map.sources.map((source) => {
+    // Keep plugin-provided URLs and virtual IDs intact.
+    if (
+      !source ||
+      virtualSourceRE.test(source) ||
+      isExternalUrl(source) ||
+      !filePath.isAbsolute(source)
+    ) {
+      return source
+    }
+    // Outside the project, identify the file without giving it a Vite URL.
+    // The source text is already embedded in the map.
+    const file = windows ? slash(source) : source
+    if (!isParentDirectory(config.root, file)) {
+      return pathToFileURL(file, { windows: windows || undefined }).href
+    }
+
+    const relative = slash(filePath.relative(cssDir ?? config.root, file))
+    const encoded = encodeURI(relative)
+      .replaceAll('#', '%23')
+      .replaceAll('?', '%3F')
+    // Style tags inherit the page URL, so their sources need a fixed base.
+    if (!cssDir) return joinUrlSegments(base, encoded)
+    return /^[^/]+:/.test(encoded) ? './' + encoded : encoded
+  })
 }
 
 async function computeSourceRoute(map: SourceMapLike, file: string) {

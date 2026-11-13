@@ -34,6 +34,7 @@ import { throwClosedServerError } from './pluginContainer'
 import {
   applySourcemapIgnoreList,
   extractSourcemapFromFile,
+  getDevCssSourcemapSources,
   injectSourcesContent,
 } from './sourcemap'
 
@@ -390,7 +391,16 @@ async function loadAndTransform(
       logger,
     )
 
-    if (path.isAbsolute(mod.file)) {
+    if (mod.type === 'css' && path.isAbsolute(mod.file)) {
+      normalizedMap = {
+        ...normalizedMap,
+        sources: getDevCssSourcemapSources(
+          normalizedMap,
+          environment.getTopLevelConfig(),
+          mod.file,
+        ),
+      }
+    } else if (path.isAbsolute(mod.file)) {
       let modDirname
       for (
         let sourcesIndex = 0;

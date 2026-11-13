@@ -66,7 +66,11 @@ import { checkPublicFile } from '../publicDir'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import type { TransformPluginContext } from '../server/pluginContainer'
 import { searchForWorkspaceRoot } from '../server/searchRoot'
-import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
+import {
+  getCodeWithSourcemap,
+  getDevCssSourcemapSources,
+  injectSourcesContent,
+} from '../server/sourcemap'
 import {
   _dirname,
   arraify,
@@ -654,7 +658,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   config.logger,
                 )
               }
-              return getCodeWithSourcemap('css', content, sourcemap)
+              return getCodeWithSourcemap('css', content, {
+                ...sourcemap,
+                sources: getDevCssSourcemapSources(sourcemap, config),
+              })
             }
             return content
           }
@@ -3381,7 +3388,7 @@ async function compileLightningCSS(
   urlResolver?: CssUrlResolver,
 ): Promise<{
   code: string
-  map?: string | undefined
+  map?: ExistingRawSourceMap | string
   modules?: Record<string, string>
 }> {
   const { config } = environment
@@ -3602,11 +3609,24 @@ async function compileLightningCSS(
     }
   }
 
-  return {
-    code: css,
-    map: 'map' in res ? res.map?.toString() : undefined,
-    modules,
+  const rawMap = 'map' in res ? res.map?.toString() : undefined
+  let map: ExistingRawSourceMap | string | undefined = rawMap
+  if (
+    rawMap &&
+    config.command === 'serve' &&
+    path.isAbsolute(filename) &&
+    !filename.includes('\0')
+  ) {
+    const parsedMap: ExistingRawSourceMap = JSON.parse(rawMap)
+    // Lightning CSS uses project-root-relative sources. Normalize them before
+    // composing maps or rebasing them for a browser, just like PostCSS.
+    parsedMap.sources = parsedMap.sources?.map((source) =>
+      source ? normalizePath(path.resolve(config.root, source)) : source,
+    )
+    map = parsedMap
   }
+
+  return { code: css, map, modules }
 }
 
 // friendly error for https://github.com/parcel-bundler/lightningcss/issues/39
