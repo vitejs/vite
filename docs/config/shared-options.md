@@ -298,7 +298,8 @@ export default defineConfig({
     globalModulePaths?: RegExp[]
     exportGlobals?: boolean
     generateScopedName?:
-      string | ((name: string, filename: string, css: string) => string)
+      | string
+      | ((name: string, filename: string, css: string) => string)
     hashPrefix?: string
     /**
      * default: undefined
@@ -401,13 +402,15 @@ Specifies the maximum number of threads CSS preprocessors can use. `true` means 
 
 Depending on the preprocessor options, Vite may run the preprocessors on the main thread even if this option is not set to `0`.
 
-## css.devSourcemap
+## dev.sourcemap
 
-- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13845)
-- **Type:** `boolean`
-- **Default:** `false`
+- **Experimental:** [Give Feedback for `dev.sourcemap.css`](https://github.com/vitejs/vite/discussions/13845)
+- **Type:** `boolean | { js?: boolean; css?: boolean }`
+- **Default:** `{ js: true, css: false }`
 
 Whether to enable sourcemaps during dev.
+
+Setting `dev.sourcemap` to `boolean` sets to both JS and CSS.
 
 ## css.transformer
 
@@ -624,10 +627,38 @@ Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlew
 - **Type:** `boolean` | `DevToolsConfig`
 - **Default:** `false`
 
-Enable devtools integration for visualizing the internal state and build analysis.
-Ensure that `@vitejs/devtools` is installed as a dependency. This feature is currently supported only in build mode.
+Enable devtools integration for inspecting the dev server and analyzing builds.
+Ensure that `@vitejs/devtools` is installed as a dependency. Install `@vitejs/devtools-vite` to inspect the Vite dev server and `@vitejs/devtools-rolldown` to enable build analysis. DevTools runs for both `serve` and `build` by default; use `apply` to limit it to either command.
+
+Plugin `config` hooks cannot change the `devtools` option. Set it in the user config instead.
+
+When installed, `@vitejs/devtools` provides the type definitions for this option:
+
+```ts
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  devtools: {
+    apply: 'serve',
+  },
+})
+```
 
 See [Vite DevTools](https://github.com/vitejs/devtools) for more details.
+
+## tsconfig
+
+- **Type:** `string`
+
+Path to the TypeScript configuration file used by Vite. Relative paths are resolved from the project [`root`](#root).
+
+When this option is not set, Vite discovers the closest matching `tsconfig.json` for each file. See [TypeScript Compiler Options](/guide/features#typescript-compiler-options) for more details.
+
+::: warning Prefer automatic discovery
+Setting this option is discouraged because it overrides Vite's per-file tsconfig discovery which is aligned with TypeScript language server. Prefer placing a `tsconfig.json` near the files it configures and using TypeScript [`references`](https://www.typescriptlang.org/tsconfig/#references) for multi-project setups.
+
+If the goal is to remap imports, prefer [`resolve.alias`](#resolve-alias) or the `imports` and `exports` fields in `package.json` instead of selecting a tsconfig solely for [`compilerOptions.paths`](https://www.typescriptlang.org/tsconfig/#paths). Use this option only when automatic discovery cannot identify the intended configuration.
+:::
 
 ## future
 

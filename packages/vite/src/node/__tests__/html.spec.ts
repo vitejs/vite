@@ -1,6 +1,36 @@
+import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputBundle, OutputChunk } from 'rolldown'
 import { describe, expect, test } from 'vitest'
-import { getCssFilesForChunk } from '../plugins/html'
+import { PartialEnvironment } from '../baseEnvironment'
+import { resolveConfig } from '../config'
+import { buildHtmlPlugin, getCssFilesForChunk } from '../plugins/html'
+import { normalizePath } from '../utils'
+
+test('buildHtmlPlugin escapes HTML proxy imports', async () => {
+  await init()
+
+  const config = await resolveConfig(
+    { configFile: false, build: { modulePreload: false } },
+    'build',
+  )
+  const plugin = buildHtmlPlugin(config)
+  const environment = new PartialEnvironment('client', config)
+  const id = normalizePath(`${config.root}/index'"\n.html`)
+
+  const html = `
+    <script type="module">console.log("hello")</script>
+    <div style="background: url(./image.png)"></div>
+    <style>body { color: red }</style>
+  `
+  // @ts-expect-error transform.handler should exist
+  const result = await plugin.transform.handler.call({ environment }, html, id)
+  const [imports] = parseImports(result.code)
+  expect(imports.map((specifier) => specifier.specifier)).toStrictEqual([
+    `${id}?html-proxy&index=0.js`,
+    `${id}?html-proxy&inline-css&style-attr&index=1.css`,
+    `${id}?html-proxy&inline-css&index=2.css`,
+  ])
+})
 
 function createChunk(
   fileName: string,
@@ -226,6 +256,32 @@ describe('getCssFilesForChunk', () => {
       'leaf.css',
       'mid.css',
       'entry2.css',
+    ])
+  })
+
+  test('chunk reached through an import cycle is not cached with a partial list (#23628)', () => {
+    //   index        dashboard
+    //     |              |
+    //   shared  <-->  feature
+    const shared = createChunk('shared.js', ['feature.js'], ['shared.css'])
+    const feature = createChunk('feature.js', ['shared.js'], ['feature.css'])
+    const index = createChunk('index.js', ['shared.js'], ['index.css'])
+    const dashboard = createChunk(
+      'dashboard.js',
+      ['feature.js'],
+      ['dashboard.css'],
+    )
+    const bundle = createBundle(index, dashboard, shared, feature)
+    const cache = new Map<OutputChunk, string[]>()
+    expect(getCssFilesForChunk(index, bundle, cache)).toStrictEqual([
+      'feature.css',
+      'shared.css',
+      'index.css',
+    ])
+    expect(getCssFilesForChunk(dashboard, bundle, cache)).toStrictEqual([
+      'shared.css',
+      'feature.css',
+      'dashboard.css',
     ])
   })
 

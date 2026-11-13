@@ -248,7 +248,7 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 ## server.forwardConsole
 
 - **Type:** `boolean | { unhandledErrors?: boolean, logLevels?: ('error' | 'warn' | 'info' | 'log' | 'debug')[] }`
-- **Default:** auto (`true` when an AI coding agent is detected based on [`@vercel/detect-agent`](https://www.npmjs.com/package/@vercel/detect-agent), otherwise `false`)
+- **Default:** auto (`true` when an AI coding agent is detected based on [`std-env`](https://www.npmjs.com/package/std-env), otherwise `false`)
 
 Forward browser runtime events to the Vite server console during development.
 
@@ -311,7 +311,7 @@ export default defineConfig({
 
 File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar/tree/3.6.0#api).
 
-When bundled-dev mode is enabled, [Rolldown watch options](https://rolldown.rs/reference/InputOptions.watch) (for example, `usePolling`, `pollInterval`, `useDebounce`, `debounceDuration`, `include`, `exclude`) are also accepted. The chokidar-only options are still used by the chokidar watcher, which keeps watching files outside the module graph, such as config file dependencies and env files.
+When bundled-dev mode is enabled, [Rolldown watch options](https://rolldown.rs/reference/InputOptions.watch) (for example, `watcher.usePolling`, `watcher.pollInterval`, `watcher.useDebounce`, `watcher.debounceDuration`, `include`, `exclude`) are also accepted. The chokidar-only options are still used by the chokidar watcher, which keeps watching files outside the module graph, such as config file dependencies and env files.
 
 The Vite server watcher watches the `root` and skips the `.git/`, `node_modules/`, `test-results/`, and Vite's `cacheDir` and `build.outDir` directories by default. When updating a watched file, Vite will apply HMR and update the page only if needed.
 
@@ -378,16 +378,18 @@ createServer()
 
 ## server.fs.strict
 
-- **Type:** `boolean`
+- **Type:** `boolean | 'extended'`
 - **Default:** `true` (enabled by default since Vite 2.7)
 
 Restrict serving files outside of workspace root.
+
+Set to `'extended'` to also apply the access checks to modules `load`ed by plugins except with the IDs starting with `\0`.
 
 ## server.fs.allow
 
 - **Type:** `string[]`
 
-Restrict files that could be served via `/@fs/`. When `server.fs.strict` is set to `true`, accessing files outside this directory list that aren't imported from an allowed file will result in a 403.
+Restrict files that could be served via `/@fs/`. When `server.fs.strict` is set to `true` or `'extended'`, accessing files outside this directory list that aren't imported from an allowed file will result in a 403.
 
 Both directories and files can be provided.
 
@@ -438,6 +440,8 @@ export default defineConfig({
 
 Blocklist for sensitive files being restricted to be served by Vite dev server. This will have higher priority than [`server.fs.allow`](#server-fs-allow). [picomatch patterns](https://github.com/micromatch/picomatch#globbing-features) are supported.
 
+Setting this option replaces the default list entirely. Include any default patterns you want to keep in your custom list.
+
 ::: tip NOTE
 
 This blocklist does not apply to [the public directory](/guide/assets.md#the-public-directory). All files in the public directory are served without any filtering, since they are copied directly to the output directory during build.
@@ -467,21 +471,21 @@ export default defineConfig({
 ## server.sourcemapIgnoreList
 
 - **Type:** `false | (sourcePath: string, sourcemapPath: string) => boolean`
-- **Default:** `(sourcePath) => sourcePath.includes('node_modules')`
+- **Default:** `(sourcePath) => /(?:^|[\\/])node_modules(?:[\\/]|$)/.test(sourcePath)`
 
 Whether or not to ignore source files in the server sourcemap, used to populate the [`x_google_ignoreList` source map extension](https://developer.chrome.com/articles/x-google-ignore-list/).
 
 `server.sourcemapIgnoreList` is the equivalent of [`build.rolldownOptions.output.sourcemapIgnoreList`](https://rolldown.rs/reference/OutputOptions.sourcemapIgnoreList) for the dev server. A difference between the two config options is that the Rolldown function is called with a relative path for `sourcePath` while `server.sourcemapIgnoreList` is called with an absolute path. During dev, most modules have the map and the source in the same folder, so the relative path for `sourcePath` is the file name itself. In these cases, absolute paths make it convenient to be used instead.
 
-By default, it excludes all paths containing `node_modules`. You can pass `false` to disable this behavior, or, for full control, a function that takes the source path and sourcemap path and returns whether to ignore the source path.
+By default, it excludes all paths that contain `node_modules` as a path segment. You can pass `false` to disable this behavior, or, for full control, a function that takes the source path and sourcemap path and returns whether to ignore the source path.
 
 ```js
 export default defineConfig({
   server: {
-    // This is the default value, and will add all files with node_modules
-    // in their paths to the ignore list.
+    // This is the default value, and will add all files that have
+    // node_modules as a path segment to the ignore list.
     sourcemapIgnoreList(sourcePath, sourcemapPath) {
-      return sourcePath.includes('node_modules')
+      return /(?:^|[\\/])node_modules(?:[\\/]|$)/.test(sourcePath)
     },
   },
 })

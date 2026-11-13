@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import type { SyncOptions } from 'execa'
-import { execaCommandSync } from 'execa'
+import { xSync } from 'tinyexec'
 import { afterEach, beforeAll, expect, test } from 'vitest'
 
 const CLI_PATH = path.join(import.meta.dirname, '..')
@@ -14,10 +13,16 @@ const genPathWithSubfolder = path.join(
   projectName,
 )
 
-const run = (args: string[], options?: SyncOptions) => {
-  return execaCommandSync(`node ${CLI_PATH} ${args.join(' ')}`, {
-    env: { ...process.env, _VITE_TEST_CLI: 'true' },
-    ...options,
+const run = (
+  args: string[],
+  options?: { cwd?: string; env?: NodeJS.ProcessEnv },
+) => {
+  return xSync('node', [CLI_PATH, ...args], {
+    throwOnError: true,
+    nodeOptions: {
+      env: { ...process.env, _VITE_TEST_CLI: 'true', ...options?.env },
+      cwd: options?.cwd,
+    },
   })
 }
 
@@ -134,6 +139,7 @@ test('successfully scaffolds a project based on vue starter template', () => {
     [
       projectName,
       '--interactive',
+      '--no-devtools',
       '--no-immediate',
       '--template',
       'vue',
@@ -147,7 +153,7 @@ test('successfully scaffolds a project based on vue starter template', () => {
 
   // Assertions
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
-  expect(templateFiles).toEqual(generatedFiles)
+  expect(templateFiles).toStrictEqual(generatedFiles)
 })
 
 test('successfully scaffolds a project with subfolder based on react starter template', () => {
@@ -155,6 +161,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
     [
       `subfolder/${projectName}`,
       '--interactive',
+      '--no-devtools',
       '--no-immediate',
       '--template',
       'react',
@@ -169,7 +176,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
 
   // Assertions
   expect(stdout).toContain(`Scaffolding project in ${genPathWithSubfolder}`)
-  expect(templateFilesReact).toEqual(generatedFiles)
+  expect(templateFilesReact).toStrictEqual(generatedFiles)
 })
 
 test('successfully scaffolds a project based on react-compiler-ts starter template', () => {
@@ -206,6 +213,15 @@ test('scaffolds react-ts with Oxlint by default', () => {
   expect(pkg).toContain('"oxlint"')
   expect(pkg).not.toContain('eslint')
   expect(pkg).toContain('"lint": "oxlint"')
+  const templatePkg = JSON.parse(
+    fs.readFileSync(
+      path.join(CLI_PATH, 'template-react-ts', 'package.json'),
+      'utf-8',
+    ),
+  )
+  expect(JSON.parse(pkg).devDependencies.typescript).toBe(
+    templatePkg.devDependencies.typescript,
+  )
 
   const readme = fs.readFileSync(path.join(genPath, 'README.md'), 'utf-8')
   expect(readme).toContain('Expanding the Oxlint configuration')
@@ -225,7 +241,24 @@ test('scaffolds React template with ESLint when --eslint is passed', () => {
   expect(pkg).toContain('"eslint"')
   expect(pkg).not.toContain('oxlint')
   expect(pkg).toContain('"lint": "eslint ."')
+  expect(pkg).not.toContain('"typescript"')
+  expect(pkg).not.toContain('"typescript-eslint"')
 })
+
+for (const template of ['react-ts', 'react-compiler-ts']) {
+  test(`keeps TypeScript 6 for ${template} when --eslint is passed`, () => {
+    run([projectName, '--template', template, '--eslint'], {
+      cwd: import.meta.dirname,
+    })
+
+    const pkg = JSON.parse(
+      fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8'),
+    )
+    expect(pkg.devDependencies.typescript).toBe('~6.0.3')
+    expect(pkg.devDependencies['typescript-eslint']).toBeDefined()
+    expect(pkg.devDependencies.oxlint).toBeUndefined()
+  })
+}
 
 test('ignores --eslint with a warning for non-React templates', () => {
   const { stdout, stderr } = run(
@@ -240,8 +273,46 @@ test('ignores --eslint with a warning for non-React templates', () => {
   expect(stderr).not.toContain('ENOENT')
 
   const generatedFiles = fs.readdirSync(genPath).sort()
-  expect(templateFiles).toEqual(generatedFiles)
+  expect(templateFiles).toStrictEqual(generatedFiles)
   expect(fs.existsSync(path.join(genPath, 'eslint.config.js'))).toBe(false)
+})
+
+test('does not add devtools by default', () => {
+  run([projectName, '--template', 'vue'], { cwd: import.meta.dirname })
+  const pkg = fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8')
+  const config = fs.readFileSync(path.join(genPath, 'vite.config.js'), 'utf-8')
+  expect(pkg).not.toContain('@vitejs/devtools')
+  expect(config).not.toContain('devtools')
+})
+
+for (const template of ['vue', 'react-ts', 'vanilla', 'vanilla-ts']) {
+  test(`installs all devtools dependencies and enables dev only for ${template}`, () => {
+    run([projectName, '--template', template, '--devtools'], {
+      cwd: import.meta.dirname,
+    })
+    const pkg = JSON.parse(
+      fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8'),
+    )
+    const config = fs.readFileSync(
+      path.join(
+        genPath,
+        `vite.config.${template.endsWith('-ts') ? 'ts' : 'js'}`,
+      ),
+      'utf-8',
+    )
+    expect(pkg.devDependencies['@vitejs/devtools']).toBeDefined()
+    expect(pkg.devDependencies['@vitejs/devtools-vite']).toBeDefined()
+    expect(pkg.devDependencies['@vitejs/devtools-rolldown']).toBeDefined()
+    expect(config).toContain(`apply: 'serve'`)
+  })
+}
+
+test('does not add devtools with --no-devtools', () => {
+  run([projectName, '--template', 'vue', '--no-devtools'], {
+    cwd: import.meta.dirname,
+  })
+  const pkg = fs.readFileSync(path.join(genPath, 'package.json'), 'utf-8')
+  expect(pkg).not.toContain('@vitejs/devtools')
 })
 
 test('works with the -t alias', () => {
@@ -249,6 +320,7 @@ test('works with the -t alias', () => {
     [
       projectName,
       '--interactive',
+      '--no-devtools',
       '--no-immediate',
       '-t',
       'vue',
@@ -262,7 +334,7 @@ test('works with the -t alias', () => {
 
   // Assertions
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
-  expect(templateFiles).toEqual(generatedFiles)
+  expect(templateFiles).toStrictEqual(generatedFiles)
 })
 
 test('accepts command line override for --overwrite', () => {
@@ -316,6 +388,39 @@ test('accepts immediate flag', () => {
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
   expect(stdout).toContain('Installing dependencies')
 })
+
+test('uses vp commands in the done message when run via vp dlx', () => {
+  const { stdout } = run([projectName, '--template', 'vue', '--no-immediate'], {
+    cwd: import.meta.dirname,
+    env: {
+      // `vp dlx` sets VP_USER_AGENT; the underlying package manager overwrites
+      // npm_config_user_agent, so VP_USER_AGENT must take precedence.
+      VP_USER_AGENT: 'vp/1.6.0',
+      npm_config_user_agent: 'pnpm/10.0.0 npm/? node/v24.18.0 darwin arm64',
+    },
+  })
+  expect(stdout).toContain('Done. Now run:')
+  expect(stdout).toContain('vp install')
+  expect(stdout).toContain('vp run dev')
+})
+
+for (const vpUserAgent of [undefined, '']) {
+  test(`uses npm_config_user_agent when VP_USER_AGENT is ${vpUserAgent}`, () => {
+    const { stdout } = run(
+      [projectName, '--template', 'vue', '--no-immediate'],
+      {
+        cwd: import.meta.dirname,
+        env: {
+          VP_USER_AGENT: vpUserAgent,
+          npm_config_user_agent: 'pnpm/10.0.0 npm/? node/v24.18.0 darwin arm64',
+        },
+      },
+    )
+    expect(stdout).toContain('pnpm install')
+    expect(stdout).toContain('pnpm dev')
+    expect(stdout).not.toContain('vp install')
+  })
+}
 
 test('accepts immediate flag and skips install prompt', () => {
   const { stdout } = run([projectName, '--template', 'vue', '--no-immediate'], {

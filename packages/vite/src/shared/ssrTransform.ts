@@ -35,7 +35,7 @@ export function analyzeImportedModDifference(
   if (metadata?.importedNames?.length) {
     const missingBindings = metadata.importedNames.filter((s) => !(s in mod))
     if (missingBindings.length) {
-      const lastBinding = missingBindings[missingBindings.length - 1]
+      const lastBinding = missingBindings.at(-1)
 
       // For invalid named exports only, similar to how Node.js errors for top-level imports.
       // But since we transform as dynamic imports, we need to emulate the error manually.

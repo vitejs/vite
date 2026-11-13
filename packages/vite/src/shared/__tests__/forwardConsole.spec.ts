@@ -26,7 +26,7 @@ describe('formatConsoleArgs', () => {
         'done',
       ]),
     ).toMatchInlineSnapshot(
-      `"format: string=hello number=12.9 int=42 float=3.5 json={"id":1} object={"enabled":true} object2={"nested":{"deep":1}} sym=NaN style= literal=% trailing done"`,
+      `"format: string=hello number=12.9 int=42 float=3.5 json={"id":1} object={ enabled: true } object2={ nested: { deep: 1 } } sym=NaN style= literal=% trailing done"`,
     )
 
     expect(
@@ -63,8 +63,22 @@ describe('formatConsoleArgs', () => {
         circular,
       ]),
     ).toMatchInlineSnapshot(
-      `"1n undefined true Symbol(s) [Function: sampleFn] Error: boom {"ok":true,"big":"2n","err":{"name":"Error","message":"nested"},"self":"[Circular]"}"`,
+      `"1n undefined true Symbol(s) [Function: sampleFn] Error: boom { ok: true, big: 2n, err: [Error: nested], self: [Circular] }"`,
     )
+  })
+
+  test('limits object depth and width', () => {
+    const deep = { a: { b: { c: { d: true } } } }
+    expect(formatConsoleArgs([deep])).toMatchInlineSnapshot(
+      `"{ a: { b: { c: [Object] } } }"`,
+    )
+
+    const wide = Object.fromEntries(
+      Array.from({ length: 101 }, (_, i) => [`k${i}`, i]),
+    )
+    const output = formatConsoleArgs([wide])
+    expect(output).toMatch(/^\{ k0: 0, k1: 1, k2: 2, /)
+    expect(output).toMatch(/, k98: 98, k99: 99, …\(1\) \}$/)
   })
 })
 
@@ -135,5 +149,26 @@ describe('setupForwardConsoleHandler', () => {
       'Failed to send error to Vite server:',
       new Error('other error'),
     )
+  })
+
+  test('caps the forwarded console message', () => {
+    const send = vi.fn(() => Promise.resolve())
+    const transport = createMockTransport(send)
+    const console = createMockConsole()
+
+    setupForwardConsoleHandler(
+      transport,
+      {
+        enabled: true,
+        unhandledErrors: false,
+        logLevels: ['log'],
+      },
+      console,
+    )
+
+    console.log('x'.repeat(20_000))
+
+    const message = send.mock.calls[0][0].data.data.message
+    expect(message).toBe(`${'x'.repeat(9_999)}…`)
   })
 })

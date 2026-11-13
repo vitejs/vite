@@ -153,7 +153,9 @@ export async function transformWithOxc(
     filename,
     code,
     resolvedOptions,
-    getTSConfigResolutionCache(config),
+    options?.tsconfig === undefined || options.tsconfig === config?.tsconfig
+      ? getTSConfigResolutionCache(config)
+      : undefined,
   )
   if (
     watcher &&
@@ -186,12 +188,13 @@ export async function transformWithOxc(
       configurable: true,
       enumerable: true,
       get: () => result.errors,
-      set: (value) =>
+      set: (value) => {
         Object.defineProperty(wrapper, 'errors', {
           configurable: true,
           enumerable: true,
           value,
-        }),
+        })
+      },
     })
     throw wrapper
   }
@@ -263,7 +266,11 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
     ) {
       result.jsx = { ...jsxOptions, refresh: false }
     }
-    if (jsxRefreshFilter?.(id) && !JS_TYPES_RE.test(cleanUrl(id))) {
+    if (
+      jsxRefreshFilter?.(id) &&
+      !JS_TYPES_RE.test(id) &&
+      !JS_TYPES_RE.test(cleanUrl(id))
+    ) {
       result.lang = 'js'
     }
 
@@ -292,6 +299,7 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
 
         return nativeTransformPlugin({
           root: environment.config.root,
+          tsconfig: environment.config.tsconfig,
           include,
           exclude,
           jsxRefreshInclude,

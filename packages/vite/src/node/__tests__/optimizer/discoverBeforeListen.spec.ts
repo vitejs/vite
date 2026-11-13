@@ -1,16 +1,9 @@
 import path from 'node:path'
 import { setTimeout } from 'node:timers/promises'
-import { afterEach, expect, test } from 'vitest'
-import type { ViteDevServer } from '../..'
-import { createLogger, createServer } from '../..'
+import { expect, test } from 'vitest'
+import { createLogger } from '../..'
 import { promiseWithResolvers } from '../../../shared/utils'
-
-let server: ViteDevServer | undefined
-
-afterEach(async () => {
-  await server?.close()
-  server = undefined
-})
+import { createTestServer } from '../testUtils'
 
 // regression test for https://github.com/vitejs/vite/issues/22847
 // When a module importing a bare specifier is transformed between `createServer()`
@@ -28,7 +21,7 @@ test('does not crash when a dep is discovered before the server starts listening
 
   const bundleStarted = promiseWithResolvers<void>()
 
-  server = await createServer({
+  const server = await createTestServer({
     configFile: false,
     customLogger: logger,
     root: path.join(
@@ -88,5 +81,74 @@ test('does not crash when a dep is discovered before the server starts listening
   await server.listen()
   await ssr.waitForRequestsIdle()
   await ssr.depsOptimizer?.scanProcessing
+  expect(errors).toStrictEqual([])
+})
+
+// regression test for https://github.com/vitejs/vite/issues/23143
+// When a module importing a bare specifier is transformed through the JS API
+// before server.listen() is called, the dep is discovered and a pending warmup
+// request is issued for the optimized dep. That warmup waits on the dep's
+// processing promise, which is never resolved because depsOptimizer.init() has
+// not run. server.close() then waits forever for the pending warmup request.
+// The fix is for depsOptimizer.close() to resolve the processing promise so
+// in-flight requests can unblock during shutdown.
+test('resolves discovered dep processing promise on close before init', async () => {
+  const errors: string[] = []
+  const logger = createLogger('error')
+  logger.error = (msg) => {
+    errors.push(typeof msg === 'string' ? msg : String(msg))
+  }
+
+  const server = await createTestServer({
+    configFile: false,
+    customLogger: logger,
+    root: path.join(
+      import.meta.dirname,
+      '../fixtures/optimizer-discover-before-listen',
+    ),
+    cacheDir: 'node_modules/.vite-client-close',
+    environments: {
+      client: {
+        dev: {
+          preTransformRequests: false,
+        },
+        optimizeDeps: {
+          // ensure no cached metadata/file is reused so the dep is discovered
+          // and its processing promise stays unresolved until close()
+          force: true,
+          noDiscovery: false,
+        },
+      },
+    },
+  })
+
+  const client = server.environments.client
+
+  // Transform a module importing a bare specifier before the server is listening.
+  // This discovers the dep and leaves its processing promise pending because
+  // depsOptimizer.init() is deferred to listen().
+  await client.transformRequest('/entry.js')
+
+  const info = client.depsOptimizer?.metadata.discovered?.vue
+  expect(info).toBeDefined()
+
+  const processingPromise = info!.processing?.then(() => true)
+
+  // The dep's processing promise should still be pending at this point.
+  const resolvedBeforeClose = await Promise.race([
+    processingPromise,
+    setTimeout(500, false),
+  ])
+  expect(resolvedBeforeClose).toBe(false)
+
+  // close() should resolve the processing promise so any in-flight or future
+  // requests waiting on it (including server.close()) can unblock.
+  await client.depsOptimizer?.close()
+
+  const resolvedAfterClose = await Promise.race([
+    processingPromise,
+    setTimeout(500, false),
+  ])
+  expect(resolvedAfterClose).toBe(true)
   expect(errors).toStrictEqual([])
 })

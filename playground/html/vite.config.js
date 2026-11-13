@@ -1,5 +1,9 @@
 import { relative, resolve } from 'node:path'
 import { defineConfig } from 'vite'
+import { inject } from 'vitest'
+
+const isBundledDev =
+  !!process.env.VITEST && inject('playgroundMode') === 'serve-bundled'
 
 const dirname = import.meta.dirname
 
@@ -35,6 +39,8 @@ const input = {
   write: resolve(dirname, 'write.html'),
   'transform-inline-js': resolve(dirname, 'transform-inline-js.html'),
   malformedUrl: resolve(dirname, 'malformed-url.html'),
+  tagRemovalModuleScript: resolve(dirname, 'tag-removal/module-script.html'),
+  tagRemovalStylesheet: resolve(dirname, 'tag-removal/stylesheet.html'),
   // resolved from `process.cwd()` by Rolldown (resolved from `root` by vite's resolver first)
   relativeInput: relative(
     process.cwd(),
@@ -42,8 +48,21 @@ const input = {
   ),
 }
 
-export default defineConfig({
-  input,
+const serveInput = {
+  ...input,
+  ...(isBundledDev
+    ? {}
+    : {
+        invalid: resolve(dirname, 'invalid.html'),
+        invalidClick: resolve(dirname, 'invalidClick.html'),
+        invalidEscape: resolve(dirname, 'invalidEscape.html'),
+      }),
+  protocolRelative: resolve(dirname, 'protocol-relative.html'),
+  relativeInput: resolve(dirname, 'relative-input.html'),
+}
+
+export default defineConfig(({ command }) => ({
+  input: command === 'serve' ? serveInput : input,
 
   base: './',
   build: {
@@ -74,6 +93,9 @@ export default defineConfig({
           if (html.includes('/@vite/client')) {
             throw new Error('pre transform applied at wrong time!')
           }
+
+          // Keep adjacent tags on the first line for the tag removal regression.
+          if (filename.includes('/tag-removal/')) return
 
           const doctypeRE = /<!doctype html>/i
           if (doctypeRE.test(html)) return
@@ -272,7 +294,7 @@ ${
     },
     serveExternalPathPlugin(),
   ],
-})
+}))
 
 /** @returns {import('vite').Plugin} */
 function serveExternalPathPlugin() {

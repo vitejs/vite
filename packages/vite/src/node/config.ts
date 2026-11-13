@@ -5,11 +5,7 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { pathToFileURL } from 'node:url'
-import { inspect, promisify } from 'node:util'
-import type {
-  DevToolsConfig,
-  ResolvedDevToolsConfig,
-} from '@vitejs/devtools/config'
+import { inspect, isDeepStrictEqual, promisify } from 'node:util'
 import {
   getEnv,
   ignoreInput,
@@ -27,8 +23,11 @@ import {
   type RolldownOutput,
   rolldown,
 } from 'rolldown'
-import { isDynamicPattern } from 'tinyglobby'
 import type { Alias, AliasOptions } from '#dep-types/alias'
+import type {
+  DevToolsConfig,
+  ResolvedDevToolsConfig,
+} from '#types/internal/devtoolsOptions'
 import {
   createImportMetaResolver,
   importMetaResolveWithCustomHookString,
@@ -118,6 +117,7 @@ import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from './server/pluginContainer'
+import { SafeModulePaths } from './server/safeModulePaths'
 import type { WebSocketServer } from './server/ws'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions, ssrConfigDefaults } from './ssr'
@@ -145,10 +145,11 @@ import {
   nodeLikeBuiltins,
   normalizeAlias,
   normalizePath,
-  resolveHostname,
   safeRealpathSync,
   setupRollupOptionCompat,
 } from './utils'
+
+export type { ResolvedDevToolsConfig }
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -275,8 +276,9 @@ function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
 
 export type ResolvedDevEnvironmentOptions = Omit<
   Required<DevEnvironmentOptions>,
-  'sourcemapIgnoreList'
+  'sourcemap' | 'sourcemapIgnoreList'
 > & {
+  sourcemap: { js: boolean; css: boolean }
   sourcemapIgnoreList: Exclude<
     DevEnvironmentOptions['sourcemapIgnoreList'],
     false | undefined
@@ -358,6 +360,8 @@ export type ResolvedEnvironmentOptions = {
   plugins: readonly Plugin[]
   /** @internal */
   optimizeDepsPluginNames: string[]
+  /** @internal */
+  safeModulePaths: SafeModulePaths
 }
 
 export type DefaultEnvironmentOptions = Omit<
@@ -374,6 +378,11 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    * @default process.cwd()
    */
   root?: string
+  /**
+   * Path to the TypeScript configuration file. Relative paths are resolved
+   * from the project root.
+   */
+  tsconfig?: string
   /**
    * Base public path when served in development or production.
    * @default '/'
@@ -545,7 +554,6 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   appType?: AppType
   /**
    * Enable devtools integration. Ensure that `@vitejs/devtools` is installed as a dependency.
-   * This feature is currently supported only in build mode.
    * @experimental
    * @default false
    */
@@ -674,7 +682,13 @@ export interface ResolvedWorkerOptions {
 
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
-  /** @experimental */
+  /**
+   * The loader to use when loading the config file.
+   *
+   * `runner` is deprecated and will be removed in the next major version.
+   *
+   * @default 'bundle'
+   */
   configLoader?: 'bundle' | 'runner' | 'native'
   /** @deprecated */
   envFile?: false
@@ -735,7 +749,7 @@ export interface ResolvedConfig extends Readonly<
     /** @experimental */
     builder: ResolvedBuilderOptions | undefined
     build: ResolvedBuildOptions
-    devtools: ResolvedDevToolsConfig
+    devtools: ResolvedDevToolsConfig | false
     preview: ResolvedPreviewOptions
     ssr: ResolvedSSROptions
     assetsInclude: (file: string) => boolean
@@ -777,42 +791,73 @@ export interface ResolvedConfig extends Readonly<
     webSocketToken: string
     /** @internal */
     fsDenyGlob: AnymatchFn
-    /** @internal */
-    safeModulePaths: Set<string>
+    /**
+     * @internal
+     * @deprecated Use `config.environments.client.safeModulePaths` instead.
+     */
+    safeModulePaths: SafeModulePaths
     /** @internal */
     [SYMBOL_RESOLVED_CONFIG]: true
   } & PluginHookUtils
 > {}
 
+function isDevToolsOptionEnabled(
+  config: DevToolsConfig | boolean | undefined,
+): boolean {
+  return (
+    config === true ||
+    (typeof config === 'object' && config != null && config.enabled !== false)
+  )
+}
+
 export async function resolveDevToolsConfig(
   config: DevToolsConfig | boolean | undefined,
-  host: string | boolean | undefined,
-  logger: Logger,
-): Promise<ResolvedDevToolsConfig> {
-  const isEnabled = config === true || !!(config && config.enabled)
-  const resolvedHostname = await resolveHostname(host)
-  const fallbackHostname = resolvedHostname.host ?? 'localhost'
-  const fallbackConfig = {
-    config: {
-      host: fallbackHostname,
-    },
-    enabled: false,
-  }
-  if (!isEnabled) {
-    return fallbackConfig
+  command: 'serve' | 'build',
+): Promise<ResolvedDevToolsConfig | false> {
+  if (!isDevToolsOptionEnabled(config)) {
+    return false
   }
 
+  const { isDevToolsEnabled, normalizeDevToolsConfig } =
+    await import('@vitejs/devtools/config')
+  const resolved = normalizeDevToolsConfig(config, undefined)
+  return isDevToolsEnabled(resolved, command) ? resolved : false
+}
+
+interface DevToolsIntegrationState {
+  plugins: Plugin[]
+  resolvedConfig: ResolvedDevToolsConfig
+}
+
+async function loadDevToolsIntegrationPlugins(
+  config: UserConfig,
+  command: 'serve' | 'build',
+  options: boolean | DevToolsConfig | undefined,
+): Promise<DevToolsIntegrationState | undefined> {
   try {
-    const { normalizeDevToolsConfig } = await import('@vitejs/devtools/config')
-    return normalizeDevToolsConfig(config, fallbackHostname)
-  } catch (e) {
+    const resolved = await resolveDevToolsConfig(options, command)
+    if (!resolved) return
+
+    const { DevToolsIntegration } = await import('@vitejs/devtools/integration')
+    const plugins = await DevToolsIntegration({
+      command,
+      devtools: { options },
+    })
+    return {
+      plugins,
+      resolvedConfig: resolved,
+    }
+  } catch (error: any) {
+    const logger = createLogger(config.logLevel, {
+      allowClearScreen: config.clearScreen,
+      customLogger: config.customLogger,
+    })
     logger.error(
       colors.red(
-        `Failed to load Vite DevTools config: ${e.message || e.stack}`,
+        `Failed to load Vite DevTools integration: ${error?.message || error?.stack}`,
       ),
-      { error: e },
+      { error },
     )
-    return fallbackConfig
   }
 }
 
@@ -926,45 +971,13 @@ const configDefaults = Object.freeze({
   appType: 'spa',
 } satisfies UserConfig)
 
-function normalizeInput(
-  input: InputOption | undefined,
-): InputOption | undefined {
-  if (input === undefined) {
-    return undefined
-  }
-  if (typeof input === 'string') {
-    return unescapeGlobCharacters(input)
-  }
-  if (Array.isArray(input)) {
-    return input.map(unescapeGlobCharacters)
-  }
-  const resolved: Record<string, string> = {}
-  for (const key in input) {
-    resolved[key] = unescapeGlobCharacters(input[key])
-  }
-  return resolved
-}
-
-const escapedGlobCharactersRE = /\\([*?[\]{}()!+@|])/g
-
-function unescapeGlobCharacters(value: string): string {
-  if (isDynamicPattern(value)) {
-    // so that it could later be changed to accept globs without a breaking change
-    throw new Error(
-      `\`input\` cannot contain glob characters. They are reserved, ` +
-        `so the ${JSON.stringify(value)} is not allowed. Please escape them with a backslash (\\)`,
-    )
-  }
-  // unescape glob characters
-  return value.replace(escapedGlobCharactersRE, '$1')
-}
-
 export function resolveDevEnvironmentOptions(
   dev: DevEnvironmentOptions | undefined,
   environmentName: string | undefined,
   consumer: 'client' | 'server' | undefined,
   // Backward compatibility
   preTransformRequest?: boolean,
+  cssDevSourcemap?: boolean,
 ): ResolvedDevEnvironmentOptions {
   const resolved = mergeWithDefaults(
     {
@@ -982,11 +995,21 @@ export function resolveDevEnvironmentOptions(
   )
   return {
     ...resolved,
+    sourcemap: normalizeDevSourcemap(resolved.sourcemap, cssDevSourcemap),
     sourcemapIgnoreList:
       resolved.sourcemapIgnoreList === false
         ? () => false
         : resolved.sourcemapIgnoreList,
   }
+}
+
+function normalizeDevSourcemap(
+  sourcemap: DevEnvironmentOptions['sourcemap'],
+  cssDefault = false,
+): ResolvedDevEnvironmentOptions['sourcemap'] {
+  return typeof sourcemap === 'boolean'
+    ? { js: sourcemap, css: sourcemap }
+    : { js: sourcemap?.js ?? true, css: sourcemap?.css ?? cssDefault }
 }
 
 function resolveEnvironmentOptions(
@@ -998,6 +1021,7 @@ function resolveEnvironmentOptions(
   environmentName: string,
   isBuild: boolean,
   isBundledDev: boolean,
+  cssDevSourcemap: boolean | undefined,
   // Backward compatibility
   isSsrTargetWebworkerSet?: boolean,
   preTransformRequests?: boolean,
@@ -1040,7 +1064,7 @@ function resolveEnvironmentOptions(
     isSsrTargetWebworkerEnvironment,
   )
   return {
-    input: normalizeInput(options.input),
+    input: options.input,
     define: options.define,
     resolve,
     keepProcessEnv:
@@ -1059,6 +1083,7 @@ function resolveEnvironmentOptions(
       environmentName,
       consumer,
       preTransformRequests,
+      cssDevSourcemap,
     ),
     build: resolveBuildEnvironmentOptions(
       options.build ?? {},
@@ -1072,6 +1097,7 @@ function resolveEnvironmentOptions(
     plugins: undefined!, // to be resolved later
     // will be set by `setOptimizeDepsPluginNames` later
     optimizeDepsPluginNames: undefined!,
+    safeModulePaths: new SafeModulePaths(),
   }
 }
 
@@ -1086,7 +1112,13 @@ export function getDefaultEnvironmentOptions(
       mainFields: undefined,
       conditions: undefined,
     },
-    dev: config.dev,
+    dev:
+      typeof config.dev?.sourcemap === 'boolean'
+        ? {
+            ...config.dev,
+            sourcemap: normalizeDevSourcemap(config.dev.sourcemap),
+          }
+        : config.dev,
     build: config.build,
   }
 }
@@ -1258,12 +1290,6 @@ function resolveDepOptimizationOptions(
   consumer: 'client' | 'server' | undefined,
   logger: Logger,
 ): DepOptimizationOptions {
-  if (
-    optimizeDeps?.rolldownOptions &&
-    optimizeDeps?.rolldownOptions === optimizeDeps?.rollupOptions
-  ) {
-    delete optimizeDeps?.rollupOptions
-  }
   const merged = mergeWithDefaults(
     {
       ...configDefaults.optimizeDeps,
@@ -1273,8 +1299,6 @@ function resolveDepOptimizationOptions(
     },
     optimizeDeps ?? {},
   )
-  setupRollupOptionCompat(merged, 'optimizeDeps')
-
   const rolldownOptions = merged.rolldownOptions as Exclude<
     DepOptimizationOptions['rolldownOptions'],
     undefined
@@ -1460,20 +1484,18 @@ export async function resolveConfig(
   defaultNodeEnv = 'development',
   isPreview = false,
   /** @internal */
-  patchConfig: ((config: ResolvedConfig) => void) | undefined = undefined,
+  patchConfig?: (config: ResolvedConfig) => void,
   /** @internal */
-  patchPlugins: ((resolvedPlugins: Plugin[]) => void) | undefined = undefined,
+  patchPlugins?: (resolvedPlugins: Plugin[]) => void,
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   config.build ??= {}
-  setupRollupOptionCompat(config.build, 'build')
+  setupRollupOptionCompat(config.build)
   config.worker ??= {}
-  setupRollupOptionCompat(config.worker, 'worker')
+  setupRollupOptionCompat(config.worker)
   config.optimizeDeps ??= {}
-  setupRollupOptionCompat(config.optimizeDeps, 'optimizeDeps')
   if (config.ssr) {
     config.ssr.optimizeDeps ??= {}
-    setupRollupOptionCompat(config.ssr.optimizeDeps, 'ssr.optimizeDeps')
   }
 
   let configFileDependencies: string[] = []
@@ -1536,10 +1558,22 @@ export async function resolveConfig(
   }
 
   // resolve plugins
-  const rawPlugins = (await asyncFlatten(config.plugins || [])).filter(
-    filterPlugin,
+  // Only the top-level user config controls the automatic DevTools integration.
+  const devtoolsOptions =
+    typeof config.devtools === 'object' && config.devtools != null
+      ? deepClone(config.devtools)
+      : config.devtools
+  const devtoolsIntegration = await loadDevToolsIntegrationPlugins(
+    config,
+    command,
+    devtoolsOptions,
   )
-
+  const rawPlugins = (
+    await asyncFlatten([
+      ...(config.plugins || []),
+      ...(devtoolsIntegration?.plugins || []),
+    ])
+  ).filter(filterPlugin)
   const [prePlugins, normalPlugins, postPlugins] = sortUserPlugins(rawPlugins)
 
   const isBuild = command === 'build'
@@ -1547,6 +1581,10 @@ export async function resolveConfig(
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   config = await runConfigHook(config, userPlugins, configEnv)
+  const devtoolsConfigChanged = !isDeepStrictEqual(
+    config.devtools,
+    devtoolsOptions,
+  )
 
   // Ensure default client and ssr environments
   // If there are present, ensure order { client, ssr, ...custom }
@@ -1572,6 +1610,22 @@ export async function resolveConfig(
     allowClearScreen: config.clearScreen,
     customLogger: config.customLogger,
   })
+
+  if (devtoolsConfigChanged) {
+    logger.warn(
+      colors.yellow(
+        `The \`devtools\` option cannot be changed from a plugin's \`config\` hook. Set it in the user config instead.`,
+      ),
+    )
+  }
+
+  if (config.css?.devSourcemap !== undefined) {
+    logger.warn(
+      colors.yellow(
+        `The \`css.devSourcemap\` option is deprecated. Please use \`dev.sourcemap.css\` instead.`,
+      ),
+    )
+  }
 
   const tsconfigPathsPlugin = userPlugins.find(
     (p) =>
@@ -1691,6 +1745,10 @@ export async function resolveConfig(
     },
   }
 
+  if (isBuild && config.build?.ssr === true) {
+    config.environments.ssr.input ??= config.input
+  }
+
   for (const name of Object.keys(config.environments)) {
     config.environments[name] = mergeConfig(
       name === 'client'
@@ -1730,6 +1788,7 @@ export async function resolveConfig(
       environmentName,
       isBuild,
       isBundledDev,
+      config.css?.devSourcemap,
       config.ssr?.target === 'webworker',
       config.server?.preTransformRequests,
     )
@@ -1747,6 +1806,8 @@ export async function resolveConfig(
     // default environment options
     undefined,
     undefined,
+    undefined,
+    config.css?.devSourcemap,
   )
 
   const resolvedBuildOptions = resolveBuildEnvironmentOptions(
@@ -1862,7 +1923,6 @@ export async function resolveConfig(
         )
       : ''
 
-  const input = normalizeInput(config.input)
   const server = await resolveServerOptions(resolvedRoot, config.server, logger)
 
   const builder = resolveBuilderOptions(config.builder)
@@ -1974,7 +2034,7 @@ export async function resolveConfig(
     rollupOptions: config.worker?.rollupOptions || {},
     rolldownOptions: config.worker?.rolldownOptions, // will be set by setupRollupOptionCompat if undefined
   }
-  setupRollupOptionCompat(resolvedWorkerOptions, 'worker')
+  setupRollupOptionCompat(resolvedWorkerOptions)
 
   const base = withTrailingSlash(resolvedBase)
 
@@ -2019,11 +2079,7 @@ export async function resolveConfig(
     experimental.renderBuiltUrl = undefined
   }
 
-  const resolvedDevToolsConfig = await resolveDevToolsConfig(
-    config.devtools,
-    server.host,
-    logger,
-  )
+  const resolvedDevToolsConfig = devtoolsIntegration?.resolvedConfig ?? false
 
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
@@ -2032,6 +2088,9 @@ export async function resolveConfig(
     ),
     inlineConfig,
     root: resolvedRoot,
+    tsconfig: config.tsconfig
+      ? normalizePath(path.resolve(resolvedRoot, config.tsconfig))
+      : undefined,
     base,
     decodedBase: decodeBase(base),
     rawBase: resolvedBase,
@@ -2107,7 +2166,7 @@ export async function resolveConfig(
 
     ssr,
 
-    input,
+    input: config.input,
     optimizeDeps: backwardCompatibleOptimizeDeps,
     resolve: resolvedDefaultResolve,
     dev: resolvedDevEnvironmentOptions,
@@ -2155,7 +2214,7 @@ export async function resolveConfig(
         dot: true,
       },
     ),
-    safeModulePaths: new Set<string>(),
+    safeModulePaths: resolvedEnvironments.client.safeModulePaths,
     [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {
@@ -2383,6 +2442,13 @@ export async function loadConfigFromFile(
   ) {
     throw new Error(
       `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle', 'runner', and 'native'.`,
+    )
+  }
+  if (configLoader === 'runner') {
+    createLogger(logLevel, { customLogger }).warn(
+      colors.yellow(
+        `The \`runner\` config loader is deprecated and will be removed in Vite 9. Use \`bundle\` or \`native\` instead.`,
+      ),
     )
   }
 

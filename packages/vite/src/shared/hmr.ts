@@ -14,6 +14,7 @@ interface HotCallback {
   // the dependencies must be fetchable paths
   deps: string[]
   fn: (modules: Array<ModuleNamespace | undefined>) => void
+  exports?: readonly string[]
 }
 
 export interface HMRLogger {
@@ -75,13 +76,15 @@ export class HMRContext implements ViteHotContext {
     }
   }
 
-  // export names (first arg) are irrelevant on the client side, they're
-  // extracted in the server for propagation
   acceptExports(
-    _: string | readonly string[],
+    exportNames: string | readonly string[],
     callback?: (data: any) => void,
   ): void {
-    this.acceptDeps([this.ownerPath], ([mod]) => callback?.(mod))
+    this.acceptDeps(
+      [this.ownerPath],
+      ([mod]) => callback?.(mod),
+      typeof exportNames === 'string' ? [exportNames] : exportNames,
+    )
   }
 
   dispose(cb: (data: any) => void): void {
@@ -154,6 +157,7 @@ export class HMRContext implements ViteHotContext {
   private acceptDeps(
     deps: string[],
     callback: HotCallback['fn'] = () => {},
+    exports?: readonly string[],
   ): void {
     const mod: HotModule = this.hmrClient.hotModulesMap.get(this.ownerPath) || {
       id: this.ownerPath,
@@ -162,6 +166,7 @@ export class HMRContext implements ViteHotContext {
     mod.callbacks.push({
       deps,
       fn: callback,
+      exports,
     })
     this.hmrClient.hotModulesMap.set(this.ownerPath, mod)
   }

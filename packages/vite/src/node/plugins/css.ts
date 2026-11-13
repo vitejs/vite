@@ -38,7 +38,7 @@ import type { LightningCSSOptions } from '#types/internal/lightningcssOptions'
 import type { CustomPluginOptionsVite } from '#types/metadata'
 import { type DevEnvironment } from '..'
 import { NULL_BYTE_PLACEHOLDER } from '../../shared/constants'
-import { cleanUrl, isWindows, slash } from '../../shared/utils'
+import { cleanUrl, isWindows, joinUrlSegments, slash } from '../../shared/utils'
 import { PartialEnvironment } from '../baseEnvironment'
 import {
   createToImportMetaURLBasedRelativeRuntime,
@@ -73,6 +73,7 @@ import {
   asyncReplace,
   combineSourcemaps,
   createSerialPromiseQueue,
+  decodeURIIfPossible,
   emptyCssComments,
   encodeURIPath,
   escapeRegex,
@@ -86,7 +87,6 @@ import {
   isDataUrl,
   isExternalUrl,
   isObject,
-  joinUrlSegments,
   lineTerminatorRE,
   mergeWithDefaults,
   normalizePath,
@@ -100,6 +100,7 @@ import {
   assetUrlRE,
   cssEntriesMap,
   fileToUrl,
+  getAssetUrlPostfix,
   publicAssetUrlCache,
   publicAssetUrlRE,
   publicFileToBuiltUrl,
@@ -171,6 +172,7 @@ export interface CSSOptions {
    * Enables css sourcemaps during dev
    * @default false
    * @experimental
+   * @deprecated Use `dev.sourcemap.css` instead.
    */
   devSourcemap?: boolean
 
@@ -215,7 +217,7 @@ const _cssConfigDefaults = Object.freeze({
   // preprocessorOptions
   preprocessorMaxWorkers: true,
   // postcss
-  /** @experimental */
+  /** @deprecated @experimental */
   devSourcemap: false,
   // lightningcss
 } satisfies CSSOptions)
@@ -288,6 +290,41 @@ const cssModulesCache = new WeakMap<
   Map<string, Record<string, string>>
 >()
 
+const renderedModulesCache = new WeakMap<
+  Record<string, RenderedChunk>,
+  {
+    modules: Map<string, RenderedModule>
+    chunks: ArrayIterator<string>
+  }
+>()
+
+function getRenderedModule(
+  chunks: Record<string, RenderedChunk>,
+  importerId: string,
+): RenderedModule | undefined {
+  let cache = renderedModulesCache.get(chunks)
+  if (!cache) {
+    cache = {
+      modules: new Map(),
+      chunks: Object.keys(chunks).values(),
+    }
+    renderedModulesCache.set(chunks, cache)
+  }
+
+  const cached = cache.modules.get(importerId)
+  if (cached) return cached
+
+  // Resume indexing at the next chunk, stopping once the importer is found.
+  for (const name of cache.chunks) {
+    const modules = chunks[name].modules
+    for (const id in modules) {
+      if (!cache.modules.has(id)) cache.modules.set(id, modules[id])
+    }
+    const importer = cache.modules.get(importerId)
+    if (importer) return importer
+  }
+}
+
 export const removedPureCssFilesCache: WeakMap<
   ResolvedConfig,
   Map<string, RenderedChunk>
@@ -306,6 +343,7 @@ function encodePublicUrlsInCSS(config: ResolvedConfig) {
 }
 
 const cssUrlAssetRE = /__VITE_CSS_URL__([\da-f]+)__/g
+const cssLocalFragmentRE = /(['"]?)__VITE_CSS_LOCAL_FRAGMENT__([\da-f]+)__\1/g
 
 /**
  * Plugin applied before user plugins
@@ -389,11 +427,11 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       },
       async handler(raw, id) {
         const { environment } = this
-        const resolveUrl = (url: string, importer?: string) =>
-          idResolver(environment, url, importer)
 
         const urlResolver: CssUrlResolver = async (url, importer) => {
-          const decodedUrl = decodeURI(url)
+          // a `%` that doesn't start an escape sequence (e.g. `url(100%.png)`)
+          // is kept as is, like browsers do
+          const decodedUrl = decodeURIIfPossible(url) ?? url
           if (checkPublicFile(decodedUrl, config)) {
             if (encodePublicUrlsInCSS(config)) {
               return [publicFileToBuiltUrl(decodedUrl, config), undefined]
@@ -405,9 +443,19 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
               return [joinUrlSegments(base, decodedUrl), undefined]
             }
           }
-          const [id, fragment] = decodedUrl.split('#')
-          let resolved = await resolveUrl(id, importer)
+          // Preserve the leading # when resolving package imports.
+          const [id, fragment] =
+            decodedUrl[0] === '#' ? [decodedUrl] : decodedUrl.split('#')
+          let resolved = await resolveCssUrl(
+            idResolver,
+            environment,
+            id,
+            importer,
+          )
           if (resolved) {
+            if (environment.mode === 'dev') {
+              environment.safeModulePaths.addId(resolved)
+            }
             if (fragment) resolved += '#' + fragment
             let url = await fileToUrl(this, resolved, 'string')
             // Inherit HMR timestamp if this asset was invalidated
@@ -422,7 +470,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             }
             return [url, cleanUrl(resolved)]
           }
-          if (config.command === 'build') {
+          if (config.command === 'build' && decodedUrl[0] !== '#') {
             const isExternal = config.build.rolldownOptions.external
               ? resolveUserExternal(
                   config.build.rolldownOptions.external,
@@ -597,7 +645,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         if (config.command === 'serve') {
           const getContentWithSourcemap = async (content: string) => {
-            if (config.css.devSourcemap) {
+            if (this.environment.config.dev.sourcemap.css) {
               const sourcemap = this.getCombinedSourcemap()
               if (sourcemap.mappings) {
                 await injectSourcesContent(
@@ -623,11 +671,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           const cssContent = await getContentWithSourcemap(css)
           const code = [
-            this.environment.config.isBundled
-              ? `const { updateStyle: __vite__updateStyle, removeStyle: __vite__removeStyle } = import.meta.hot._internal`
-              : `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
-                  path.posix.join(config.base, CLIENT_PUBLIC_PATH),
-                )}`,
+            `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
+              path.posix.join(config.base, CLIENT_PUBLIC_PATH),
+            )}`,
             `const __vite__id = ${JSON.stringify(id)}`,
             `const __vite__css = ${JSON.stringify(cssContent)}`,
             `__vite__updateStyle(__vite__id, __vite__css)`,
@@ -674,20 +720,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       ? {
           async renderChunk(code, chunk, opts, meta) {
             let chunkCSS: string | undefined
-            const renderedModules = new Proxy(
-              {} as Record<string, RenderedModule | undefined>,
-              {
-                get(_target, p) {
-                  for (const name in meta.chunks) {
-                    const modules = meta.chunks[name].modules
-                    const module = modules[p as string]
-                    if (module) {
-                      return module
-                    }
-                  }
-                },
-              },
-            )
             // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
             const isJsChunkEmpty = code === '' && !chunk.isEntry
             let isPureCssChunk = chunk.exports.length === 0
@@ -705,7 +737,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   this.getModuleInfo(id)?.meta?.vite?.cssScopeTo
                 if (
                   cssScopeTo &&
-                  !isCssScopeToRendered(cssScopeTo, renderedModules)
+                  !isCssScopeToRendered(cssScopeTo, meta.chunks)
                 ) {
                   continue
                 }
@@ -751,8 +783,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               }
 
               // replace asset url references with resolved url.
-              chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash) => {
-                const filename = this.getFileName(fileHash)
+              chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, urlId) => {
+                const filename =
+                  this.getFileName(fileHash) +
+                  getAssetUrlPostfix(this.environment, urlId)
                 chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
                 return encodeURIPath(
                   toOutputFilePathInCss(
@@ -891,6 +925,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                 isPureCssChunk &&
                 (opts.format === 'es' || opts.format === 'cjs')
               ) {
+                if (
+                  chunk.isEntry &&
+                  !this.environment.config.build.cssCodeSplit
+                ) {
+                  this.error(
+                    `When "build.cssCodeSplit: false" is set, CSS files cannot be used as entry points (found "${chunk.facadeModuleId ?? chunk.name}").`,
+                  )
+                }
                 // this is a shared CSS-only chunk that is empty.
                 pureCssChunks.add(chunk)
               }
@@ -930,22 +972,24 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                     return finalizeCss(chunkCSS!, config)
                   })
 
-                  // emit corresponding css file
-                  const referenceId = this.emitFile({
-                    type: 'asset',
-                    name: cssAssetName,
-                    originalFileName,
-                    source: chunkCSS,
-                  })
-                  chunkCssReferences.set(chunk.fileName, referenceId)
-                  if (isEntry) {
-                    cssEntriesMap
-                      .get(this.environment)!
-                      .set(chunk.fileName, { referenceId, name: chunk.name })
+                  if (chunkCSS || isEntry) {
+                    // emit corresponding css file
+                    const referenceId = this.emitFile({
+                      type: 'asset',
+                      name: cssAssetName,
+                      originalFileName,
+                      source: chunkCSS,
+                    })
+                    chunkCssReferences.set(chunk.fileName, referenceId)
+                    if (isEntry) {
+                      cssEntriesMap
+                        .get(this.environment)!
+                        .set(chunk.fileName, { referenceId, name: chunk.name })
+                    }
+                    chunk.viteMetadata!.importedCss.add(
+                      this.getFileName(referenceId),
+                    )
                   }
-                  chunk.viteMetadata!.importedCss.add(
-                    this.getFileName(referenceId),
-                  )
                 } else if (this.environment.config.consumer === 'client') {
                   // legacy build and inline css
 
@@ -987,7 +1031,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             }
 
             if (s) {
-              if (config.build.sourcemap) {
+              if (this.environment.config.build.sourcemap) {
                 return {
                   code: s.toString(),
                   map: s.generateMap({ hires: 'boundary' }),
@@ -1060,10 +1104,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           collect(bundle[chunkName])
         }
 
-        // Finally, if there's any extracted CSS, we emit the asset
+        if (extractedCss) {
+          extractedCss = await finalizeCss(extractedCss, config)
+        }
+
+        // Emit the asset if CSS remains after finalization.
         if (extractedCss) {
           hasEmitted = true
-          extractedCss = await finalizeCss(extractedCss, config)
           this.emitFile({
             name: getCssBundleName(),
             type: 'asset',
@@ -1077,14 +1124,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       // With `cssCodeSplit: false`, CSS is emitted as a single stylesheet in the HTML,
       // so this per-chunk import map handling is irrelevant.
-      if (
-        this.environment.config.build.chunkImportMap &&
-        chunkCssReferences.size
-      ) {
+      const importMap = getImportMap(bundle, this.environment.config)
+      if (importMap && chunkCssReferences.size) {
         // The import map hash identifies the JS chunk independently of its content.
         // Since each chunk has at most one extracted CSS sidecar, we can reuse that
         // stable identity with a `.css` extension while mapping it to the CSS content hash.
-        const importMap = getImportMap(bundle, this.environment.config)!
         const importMapReverseMapping = Object.fromEntries(
           Object.entries(importMap.mapping).map(([k, v]) => [v, k]),
         )
@@ -1132,8 +1176,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const pureCssChunkNameSet = new Set(pureCssChunkNames)
 
         let importMapReverseMapping: Record<string, string> | undefined
-        if (this.environment.config.build.chunkImportMap) {
-          const importMap = getImportMap(bundle, this.environment.config)!
+        if (importMap) {
           importMapReverseMapping = Object.fromEntries(
             Object.entries(importMap.mapping).map(([k, v]) => [v, k]),
           )
@@ -1309,10 +1352,10 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
 
 function isCssScopeToRendered(
   cssScopeTo: Exclude<CustomPluginOptionsVite['cssScopeTo'], undefined>,
-  renderedModules: Record<string, RenderedModule | undefined>,
+  chunks: Record<string, RenderedChunk>,
 ) {
   const [importerId, exp] = cssScopeTo
-  const importer = renderedModules[importerId]
+  const importer = getRenderedModule(chunks, importerId)
   return (
     importer && (exp === undefined || importer.renderedExports.includes(exp))
   )
@@ -1443,15 +1486,15 @@ async function compileCSSPreprocessors(
   deps?: Set<string>
 }> {
   const { config } = environment
-  const { preprocessorOptions, devSourcemap } = config.css
+  const { preprocessorOptions } = config.css
   const atImportResolvers = getAtImportResolvers(
     environment.getTopLevelConfig(),
   )
   const opts = {
-    ...((preprocessorOptions && preprocessorOptions[lang]) || {}),
+    ...(preprocessorOptions && preprocessorOptions[lang]),
     // important: set this for relative import resolving
     filename: cleanUrl(id),
-    enableSourcemap: devSourcemap ?? false,
+    enableSourcemap: config.dev.sourcemap.css,
   }
 
   const preProcessor = workerController[lang]
@@ -1555,17 +1598,28 @@ async function compileCSS(
         urlResolver,
       ))
 
+  const resolvedCode = (transformResult?.code ?? code).replace(
+    cssLocalFragmentRE,
+    (matched, _quote: string, fragment: string) =>
+      // Preserve generated positions in the existing sourcemap.
+      Buffer.from(fragment, 'hex')
+        .toString('utf-8')
+        .replace(/\\(?:\r\n|[\n\r\f])/g, '')
+        .padEnd(matched.length),
+  )
+
   if (!transformResult) {
     return {
-      code,
-      map: config.css.devSourcemap ? preprocessorMap : { mappings: '' },
+      code: resolvedCode,
+      map: config.dev.sourcemap.css ? preprocessorMap : { mappings: '' },
       deps,
     }
   }
 
   return {
     ...transformResult,
-    map: config.css.devSourcemap
+    code: resolvedCode,
+    map: config.dev.sourcemap.css
       ? combineSourcemapsIfExists(
           cleanUrl(id),
           typeof transformResult.map === 'string'
@@ -1595,7 +1649,7 @@ async function compilePostCSS(
   | undefined
 > {
   const { config } = environment
-  const { modules: modulesOptions, devSourcemap } = config.css
+  const { modules: modulesOptions } = config.css
   const isModule = modulesOptions !== false && cssModuleRE.test(id)
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
@@ -1751,7 +1805,7 @@ async function compilePostCSS(
     { ...postcssOptions, parser: postcssParser },
     deps,
     environment.logger,
-    devSourcemap,
+    config.dev.sourcemap.css,
   )
   return { ...result, modules }
 }
@@ -1762,7 +1816,6 @@ async function transformSugarSS(
   code: string,
 ) {
   const { config } = environment
-  const { devSourcemap } = config.css
 
   const sssParser = await loadSss(config.root)
   const result = await runPostCSS(
@@ -1772,7 +1825,7 @@ async function transformSugarSS(
     { parser: sssParser },
     undefined,
     environment.logger,
-    devSourcemap,
+    config.dev.sourcemap.css,
   )
   return result
 }
@@ -1998,6 +2051,7 @@ async function finalizeCss(css: string, config: ResolvedConfig) {
   if (config.build.cssMinify) {
     css = await minifyCSS(css, config, false)
   }
+  if (!css.trim()) return ''
   // inject an additional string to generate a different hash for https://github.com/vitejs/vite/issues/18038
   //
   // pre-5.4.3, we generated CSS link tags without crossorigin attribute and generated an hash without
@@ -2214,13 +2268,35 @@ function skipUrlReplacer(unquotedUrl: string) {
   return (
     isExternalUrl(unquotedUrl) ||
     isDataUrl(unquotedUrl) ||
-    unquotedUrl[0] === '#' ||
     functionCallRE.test(unquotedUrl) ||
     // skip if it is already a placeholder
+    unquotedUrl.startsWith('__VITE_CSS_LOCAL_FRAGMENT__') ||
     unquotedUrl.startsWith('__VITE_ASSET__') ||
     unquotedUrl.startsWith('__VITE_PUBLIC_ASSET__')
   )
 }
+
+async function resolveCssUrl(
+  resolver: ResolveIdFn,
+  environment: PartialEnvironment,
+  url: string,
+  importer?: string,
+): Promise<string | undefined> {
+  try {
+    return await resolver(environment, url, importer)
+  } catch (e) {
+    // resolve.exports has no error code for an unmatched imports specifier.
+    if (
+      url[0] !== '#' ||
+      !(e instanceof Error) ||
+      !e.message.startsWith(`Missing "${url}" specifier in "`) ||
+      !e.message.endsWith('" package')
+    ) {
+      throw e
+    }
+  }
+}
+
 async function doUrlReplace(
   rawUrl: string,
   matched: string,
@@ -2583,8 +2659,10 @@ function cleanScssBugUrl(url: string) {
 const makeScssWorker = (
   environment: PartialEnvironment,
   resolvers: CSSAtImportResolvers,
+  sassPath: string,
   _maxWorkers: number | undefined,
 ) => {
+  const importSass = createCachedImport<typeof Sass>(() => import(sassPath))
   let compilerPromise: Promise<Sass.AsyncCompiler> | undefined
 
   // we use the compiler api provided by sass
@@ -2592,7 +2670,6 @@ const makeScssWorker = (
   type WorkerType = InstanceType<
     typeof WorkerWithFallback<
       [
-        sassPath: string,
         data: string,
         // additionalData can a function that is not cloneable but it won't be used
         options: SassStylePreprocessorInternalOptions & {
@@ -2604,8 +2681,8 @@ const makeScssWorker = (
   >
 
   const worker: WorkerType = {
-    async run(sassPath, data, options) {
-      const sass: typeof Sass = await import(sassPath)
+    async run(data, options) {
+      const sass = await importSass()
       compilerPromise ??= sass.initAsyncCompiler()
       const compiler = await compilerPromise
 
@@ -2721,7 +2798,12 @@ const scssProcessor = (
         }
       }
 
-      worker ??= makeScssWorker(environment, resolvers, maxWorkers)
+      worker ??= makeScssWorker(
+        environment,
+        resolvers,
+        pathToFileURL(sassPackage.path).href,
+        maxWorkers,
+      )
 
       const { content: data, map: additionalMap } = await getSource(
         source,
@@ -2735,11 +2817,7 @@ const scssProcessor = (
         additionalData: undefined,
       }
       try {
-        const result = await worker.run(
-          pathToFileURL(sassPackage.path).href,
-          data,
-          optionsWithoutAdditionalData,
-        )
+        const result = await worker.run(data, optionsWithoutAdditionalData)
         const deps = result.stats.includedFiles.map((f) => cleanScssBugUrl(f))
         const map: ExistingRawSourceMap | undefined = result.map
           ? JSON.parse(result.map.toString())
@@ -2822,9 +2900,17 @@ async function rebaseUrls(
   const rebaseFn = async (unquotedUrl: string, rawUrl: string) => {
     if (ignoreUrl?.(unquotedUrl, rawUrl)) return false
     if (unquotedUrl[0] === '/') return unquotedUrl
-    const absolute =
-      (await resolver(environment, unquotedUrl, file)) ||
-      path.resolve(fileDir, unquotedUrl)
+    const resolved = await resolveCssUrl(
+      resolver,
+      environment,
+      unquotedUrl,
+      file,
+    )
+    if (!resolved && unquotedUrl[0] === '#') {
+      // Keep the fragment's package scope through the final URL rewrite pass.
+      return `__VITE_CSS_LOCAL_FRAGMENT__${Buffer.from(rawUrl).toString('hex')}__`
+    }
+    const absolute = resolved || path.resolve(fileDir, unquotedUrl)
     const relative = path.relative(rootDir, absolute)
     return normalizePath(relative)
   }
@@ -3331,7 +3417,7 @@ async function compileLightningCSS(
               if (isPreProcessor(lang)) {
                 const result = await compileCSSPreprocessors(
                   environment,
-                  id,
+                  filePath,
                   lang,
                   code,
                   workerController,
@@ -3340,7 +3426,11 @@ async function compileLightningCSS(
                 // TODO: support source map
                 return result.code
               } else if (lang === 'sss') {
-                const sssResult = await transformSugarSS(environment, id, code)
+                const sssResult = await transformSugarSS(
+                  environment,
+                  filePath,
+                  code,
+                )
                 // TODO: support source map
                 return sssResult.code
               }
@@ -3399,7 +3489,7 @@ async function compileLightningCSS(
           sourceMap:
             config.command === 'build'
               ? !!config.build.sourcemap
-              : config.css.devSourcemap,
+              : config.dev.sourcemap.css,
           analyzeDependencies: { preserveImports: true },
           cssModules: cssModuleRE.test(id)
             ? (config.css.lightningcss?.cssModules ?? true)

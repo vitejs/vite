@@ -2,8 +2,8 @@
 // the default e2e test serve behavior
 
 import { stripVTControlCharacters } from 'node:util'
-import { execaCommand } from 'execa'
 import kill from 'kill-port'
+import { x } from 'tinyexec'
 import {
   isBuild,
   isWindows,
@@ -30,8 +30,8 @@ export async function serve() {
     process.stderr.on('data', (d) => streams[name].err.push(d.toString()))
   }
   const collectErrorStreams = (name, e) => {
-    e.stdout && streams[name].out.push(e.stdout)
-    e.stderr && streams[name].err.push(e.stderr)
+    e.output?.stdout && streams[name].out.push(e.output.stdout)
+    e.output?.stderr && streams[name].err.push(e.output.stderr)
   }
 
   // helper to output stream content on error
@@ -49,11 +49,11 @@ export async function serve() {
   if (isBuild) {
     const buildCommand = `${viteBinPath} build`
     try {
-      const buildProcess = execaCommand(buildCommand, {
-        cwd: rootDir,
-        stdio: 'pipe',
+      const buildProcess = x(viteBinPath, ['build'], {
+        nodeOptions: { cwd: rootDir },
+        throwOnError: true,
       })
-      collectStreams('build', buildProcess)
+      collectStreams('build', buildProcess.process)
       await buildProcess
     } catch (e) {
       console.error(`error while executing cli command "${buildCommand}":`, e)
@@ -71,12 +71,10 @@ export async function serve() {
     viteServerArgs.unshift('preview')
   }
   const serverCommand = `${viteBinPath} ${viteServerArgs.join(' ')}`
-  const serverProcess = execaCommand(serverCommand, {
-    cwd: rootDir,
-    stdio: 'pipe',
-    forceKillAfterDelay: 3000,
+  const serverProcess = x(viteBinPath, viteServerArgs, {
+    nodeOptions: { cwd: rootDir },
   })
-  collectStreams('server', serverProcess)
+  collectStreams('server', serverProcess.process)
 
   // close server helper, send SIGTERM followed by SIGKILL if needed, give up after 3sec
   const close = async () => {
@@ -99,7 +97,7 @@ export async function serve() {
   }
 
   try {
-    await startedOnPort(serverProcess, port, 5173)
+    await startedOnPort(serverProcess.process, port, 5173)
     return { close }
   } catch (e) {
     collectErrorStreams('server', e)

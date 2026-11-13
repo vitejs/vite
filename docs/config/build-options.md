@@ -86,7 +86,7 @@ Specify the output directory (relative to [project root](/guide/#index-html-and-
 - **Type:** `string`
 - **Default:** `assets`
 
-Specify the directory to nest generated assets under (relative to `build.outDir`. This is not used in [Library Mode](/guide/build#library-mode)).
+Specify the directory to nest generated assets under (relative to `build.outDir`). This is not used in [Library Mode](/guide/build#library-mode).
 
 ## build.assetsInlineLimit
 
@@ -127,7 +127,7 @@ When `build.cssMinify` is `'lightningcss'` (the default), this option takes prec
 
 It should only be used when you are targeting a non-mainstream browser.
 One example is Android WeChat WebView, which supports most modern JavaScript features but not the [`#RGBA` hexadecimal color notation in CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#rgb_colors).
-In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite from transforming `rgba()` colors into `#RGBA` hexadecimal notations.
+In this case, you need to set `build.cssTarget` to `chrome61` to prevent Vite from transforming `rgba()` colors into `#RGBA` hexadecimal notations.
 
 ## build.cssMinify
 
@@ -165,6 +165,8 @@ Note that this option requires [`import.meta.resolve` support](https://caniuse.c
 - **Type:** [`RolldownOptions`](https://rolldown.rs/reference/)
 
 Directly customize the underlying Rolldown bundle. This is the same as options that can be exported from a Rolldown config file and will be merged with Vite's internal Rolldown options. See [Rolldown options docs](https://rolldown.rs/reference/) for more details.
+
+Vite overrides Rolldown's default for `preserveEntrySignatures`. When this option is not set, Vite uses `false` for regular client builds, `'strict'` for library builds, and `'allow-extension'` for SSR builds.
 
 Instead of `build.rolldownOptions.input`, it is recommended to set the top-level [`input`](/config/shared-options#input) option, because it will be used in dev as well. If `build.rolldownOptions.input` is set, it overrides the top-level `input` option for build only.
 

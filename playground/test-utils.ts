@@ -9,18 +9,27 @@ import {
   removeComments,
 } from 'convert-source-map'
 import colors from 'css-color-names'
-import type { ResultPromise as ExecaResultPromise } from 'execa'
 import type {
   ConsoleMessage,
   ElementHandle,
   Locator,
 } from 'playwright-chromium'
+import { xSync, type Result as TinyExecResult } from 'tinyexec'
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { expect } from 'vitest'
-import { isWindows, page, sourcemapSnapshot, testDir } from './vitestSetup'
+import type { TaskMeta, TestOptions } from 'vitest'
+import {
+  isBundledDev,
+  isWindows,
+  page,
+  sourcemapSnapshot,
+  testDir,
+  viteServer,
+  watchBuilds,
+} from './vitestSetupUtils'
 
-export * from './vitestSetup'
+export * from './vitestSetupUtils'
 
 // make sure these ports are unique
 export const ports = {
@@ -46,6 +55,7 @@ export const ports = {
   'proxy-hmr': 9616, // not imported but used in `proxy-hmr/vite.config.js`
   'proxy-hmr/other-app': 9617, // not imported but used in `proxy-hmr/other-app/vite.config.js`
   'ssr-conditions': 9620,
+  'ssr-bundled-dev': 9621,
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006,
   'css/dynamic-import': 5007,
@@ -68,6 +78,7 @@ export const hmrPorts = {
   'ssr-conditions': 24688,
   'client-reload/hmr-port': 24689,
   'client-reload/cross-origin': 24690,
+  'ssr-bundled-dev': 24692,
 }
 
 const hexToNameMap: Record<string, string> = {}
@@ -273,6 +284,48 @@ export function readDepOptimizationMetadata(
   )
 }
 
+export async function gotoLatestBuild(url: string): Promise<void> {
+  if (isBundledDev) {
+    // Earlier HMR edits leave the bundled-dev output stale. Opening a page then
+    // serves the fallback page first, which reloads into the real page later.
+    const bundledDev = viteServer.environments.client.bundledDev as any
+    await bundledDev.devEngine.ensureLatestBuildOutput()
+  }
+  await page.goto(url)
+}
+
+/**
+ * Wait for every output containing the edited module to finish rebuilding.
+ * Workaround for Rolldown emitting END per output before all outputs finish:
+ * https://github.com/rolldown/rolldown/issues/10613
+ * Call immediately after a synchronous edit, before yielding to watcher callbacks.
+ */
+export async function waitForRebuild(filename: string): Promise<void> {
+  const id = path.resolve(testDir, filename)
+  const builds = watchBuilds
+    .filter((build) => build.files.has(id))
+    .map((build) => ({
+      build,
+      version: build.invalidated.get(id) ?? 0,
+    }))
+  if (!builds.length) {
+    throw new Error(`No build output contains "${filename}"`)
+  }
+  await expect
+    .poll(() =>
+      builds.every(
+        ({ build, version }) => (build.completed.get(id) ?? 0) > version,
+      ),
+    )
+    .toBe(true)
+}
+
+export function hotUpdatedLog(file: string): string {
+  return isBundledDev
+    ? `[vite] hot updated: ${normalizePath(path.relative(process.cwd(), testDir))}/${file}`
+    : `[vite] hot updated: /${file}`
+}
+
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void
 
 export async function untilBrowserLogAfter(
@@ -393,7 +446,7 @@ export function extractSourcemap(
   read?: (filename: string) => Promise<string>,
 ): any {
   const lines = content.trim().split('\n')
-  const lastLine = lines[lines.length - 1]
+  const lastLine = lines.at(-1)
   if (read) {
     const result = fromMapFileComment(lastLine, async (url) => {
       if (url.startsWith('data:')) {
@@ -440,17 +493,23 @@ export const formatSourcemapForSnapshot = (
 
 // helper function to kill process, uses taskkill on windows to ensure child process is killed too
 export async function killProcess(
-  serverProcess: ExecaResultPromise,
+  serverProcess: TinyExecResult,
 ): Promise<void> {
   if (isWindows) {
     try {
-      const { execaCommandSync } = await import('execa')
-      execaCommandSync(`taskkill /pid ${serverProcess.pid} /T /F`)
+      xSync('taskkill', ['/pid', `${serverProcess.pid}`, '/T', '/F'])
     } catch (e) {
       console.error('failed to taskkill:', e)
     }
   } else {
     serverProcess.kill('SIGTERM')
+    // follow up with SIGKILL if the process has not exited after 3 seconds
+    const forceKillTimer = setTimeout(() => {
+      if (serverProcess.exitCode === undefined) {
+        serverProcess.kill('SIGKILL')
+      }
+    }, 3000)
+    serverProcess.process?.once('close', () => clearTimeout(forceKillTimer))
   }
 }
 
@@ -467,4 +526,25 @@ export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
     reject = _reject
   })
   return { promise, resolve, reject }
+}
+
+type BundledDevIssues = NonNullable<TaskMeta['issues']>
+
+/**
+ * Test options for a case that does not pass under bundled dev yet.
+ * See the `bundled-dev/*` tags in `vitest.config.e2e.ts`.
+ */
+export function bundledDevTodo(
+  reason: string,
+  issues?: BundledDevIssues,
+): TestOptions {
+  return { tags: ['bundled-dev/todo'], meta: { reason, issues } }
+}
+
+/** Test options for a case that does not apply to bundled dev, by design. */
+export function bundledDevUnsupported(
+  reason: string,
+  issues?: BundledDevIssues,
+): TestOptions {
+  return { tags: ['bundled-dev/unsupported'], meta: { reason, issues } }
 }

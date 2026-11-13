@@ -62,6 +62,11 @@ export function optimizedDepsPlugin(): Plugin {
           }
           try {
             // This is an entry point, it may still not be bundled
+            if (info.processing && depsOptimizer.initState === 'idle') {
+              debug?.(
+                `transforming ${colors.cyan(file)} is waiting for the dependency optimizer to initialize`,
+              )
+            }
             await info.processing
           } catch {
             // If the refresh has not happened after timeout, Vite considers

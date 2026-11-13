@@ -4,9 +4,7 @@ import { DecodedMap } from './sourcemap/decoder'
 import type { ResolvedResult } from './types'
 import { decodeBase64 } from './utils'
 
-const MODULE_RUNNER_SOURCEMAPPING_REGEXP = new RegExp(
-  `//# ${SOURCEMAPPING_URL}=data:application/json;base64,(.+)`,
-)
+const MODULE_RUNNER_SOURCEMAPPING_PREFIX = `//# ${SOURCEMAPPING_URL}=data:application/json;base64,`
 
 export class EvaluatedModuleNode {
   public importers: Set<string> = new Set()
@@ -31,6 +29,7 @@ export class EvaluatedModules {
   public readonly fileToModulesMap: Map<string, Set<EvaluatedModuleNode>> =
     new Map()
   public readonly urlToIdModuleMap: Map<string, EvaluatedModuleNode> = new Map()
+  private readonly retainedSourceMaps = new Map<string, DecodedMap>()
 
   /**
    * Returns the module node by the resolved module ID. Usually, module ID is
@@ -76,6 +75,7 @@ export class EvaluatedModules {
       this.urlToIdModuleMap.set(url, moduleNode)
       return moduleNode
     }
+    this.retainedSourceMaps.delete(id)
     const moduleNode = new EvaluatedModuleNode(id, url)
     this.idToModuleMap.set(id, moduleNode)
     this.urlToIdModuleMap.set(url, moduleNode)
@@ -87,6 +87,7 @@ export class EvaluatedModules {
   }
 
   public invalidateModule(node: EvaluatedModuleNode): void {
+    this.retainedSourceMaps.delete(node.id)
     node.evaluated = false
     node.meta = undefined
     node.map = undefined
@@ -99,6 +100,21 @@ export class EvaluatedModules {
     node.imports.clear()
   }
 
+  public removeModule(
+    node: EvaluatedModuleNode,
+    options?: { retainSourceMap?: boolean },
+  ): void {
+    if (options?.retainSourceMap) {
+      const map = this.getModuleSourceMapById(node.id)
+      if (map) this.retainedSourceMaps.set(node.id, map)
+    } else {
+      this.retainedSourceMaps.delete(node.id)
+    }
+    this.fileToModulesMap.delete(node.file)
+    this.idToModuleMap.delete(node.id)
+    this.urlToIdModuleMap.delete(node.url)
+  }
+
   /**
    * Extracts the inlined source map from the module code and returns the decoded
    * source map. If the source map is not inlined, it will return null.
@@ -106,17 +122,11 @@ export class EvaluatedModules {
    */
   getModuleSourceMapById(id: string): DecodedMap | null {
     const mod = this.getModuleById(id)
-    if (!mod) return null
+    if (!mod) return this.retainedSourceMaps.get(id) ?? null
     if (mod.map) return mod.map
     if (!mod.meta || !('code' in mod.meta)) return null
 
-    const pattern = `//# ${SOURCEMAPPING_URL}=data:application/json;base64,`
-    const lastIndex = mod.meta.code.lastIndexOf(pattern)
-    if (lastIndex === -1) return null
-
-    const mapString = MODULE_RUNNER_SOURCEMAPPING_REGEXP.exec(
-      mod.meta.code.slice(lastIndex),
-    )?.[1]
+    const mapString = extractInlineSourceMap(mod.meta.code)
     if (!mapString) return null
     mod.map = new DecodedMap(JSON.parse(decodeBase64(mapString)), mod.file)
     return mod.map
@@ -126,7 +136,20 @@ export class EvaluatedModules {
     this.idToModuleMap.clear()
     this.fileToModulesMap.clear()
     this.urlToIdModuleMap.clear()
+    this.retainedSourceMaps.clear()
   }
+}
+
+// Plain string search rather than a regexp: it's about twice as fast, which
+// adds up on modules with large inline maps
+function extractInlineSourceMap(code: string): string | undefined {
+  const start = code.lastIndexOf(MODULE_RUNNER_SOURCEMAPPING_PREFIX)
+  if (start === -1) return
+  const dataStart = start + MODULE_RUNNER_SOURCEMAPPING_PREFIX.length
+  let dataEnd = code.indexOf('\n', dataStart)
+  if (dataEnd === -1) dataEnd = code.length
+  if (code.charCodeAt(dataEnd - 1) === 13 /* \r */) dataEnd--
+  return code.slice(dataStart, dataEnd)
 }
 
 // unique id that is not available as "$bare_import" like "test"

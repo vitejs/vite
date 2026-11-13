@@ -145,6 +145,13 @@ function isValidViteVersion(version: string) {
   transition: border-color 0.1s;
 }
 
+@supports (field-sizing: content) {
+  .checked-input {
+    width: auto;
+    field-sizing: content;
+  }
+}
+
 .checked-input:focus,
 .checked-input:hover {
   border-color: var(--vp-c-brand);

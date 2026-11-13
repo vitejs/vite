@@ -69,7 +69,7 @@ Vite aims to be fully usable as a dependency in a TypeScript project (e.g. it sh
 
 To get around this, we inline some of these dependencies' types in `packages/vite/src/types`. This way, we can still expose the typing but bundle the dependency's source code.
 
-Use `pnpm run build-types-check` to check that the bundled types do not rely on types in `devDependencies`.
+Use `pnpm --filter vite run build-types` from the repository root to generate and check the bundled types do not rely on types in `devDependencies`.
 
 For types shared between client and node, they should be added into `packages/vite/types`. These types are not bundled and are published as is (though they are still considered internal).
 
@@ -100,7 +100,7 @@ To use breakpoints and explore code execution, you can use the ["Run and Debug"]
 
 Some errors are masked and hidden away because of the layers of abstraction and sandboxed nature added by Vitest, Playwright, and Chromium. In order to see what's actually going wrong and the contents of the devtools console in those instances, follow this setup:
 
-1. Add a `debugger` statement to the `playground/vitestSetup.ts` -> `afterAll` hook. This will pause execution before the tests quit and the Playwright browser instance exits.
+1. Add an `afterAll` hook with a `debugger` statement to `playground/vitestSetup.ts`. This will pause execution before the tests quit and the Playwright browser instance exits.
 
 2. Run the tests with the `debug-serve` script command, which will enable remote debugging: `pnpm run debug-serve resolve`.
 
@@ -148,13 +148,15 @@ Each integration test can be run under either dev server mode or build mode.
 
 - `pnpm test` by default runs every integration test in both serve and build mode, and also unit tests.
 
+- `pnpm run test-e2e` runs integration tests in the `serve`, `serve-bundled`, and `build` Vitest projects. Fixtures are copied to `playground-temp-<project>`. Projects run sequentially because playgrounds use fixed ports; test files within a project can run in parallel.
+
 - `pnpm run test-serve` runs tests only under serve mode.
 
 - `pnpm run test-build` runs tests only under build mode.
 
 - `pnpm run test-serve-bundled` runs tests under serve mode with `experimental.bundledDev` force-enabled (no separate configs needed). Spec files that do not pass in this mode yet are listed in `bundledDevExclude` in `vitest.config.e2e.ts` — remove a file from that list once it passes. When only a few cases in a file fail, keep the file out of that list and mark those cases with `test.skipIf(isBundledDev)` (or `describe.skipIf(isBundledDev)`) using the `isBundledDev` flag from `~utils` — they still run in the normal serve and build modes.
 
-`pnpm run test-serve [match]` or `pnpm run test-build [match]` runs tests in specific packages that match the given filter. e.g. `pnpm run test-serve assets` runs tests for both `playground/assets` and `playground/assets-sanitize` under serve mode. Note package matching is not available for the `pnpm test` script, which always runs all tests.
+`pnpm run test-e2e [match]` or `pnpm run test-serve [match]` or `pnpm run test-build [match]` runs tests in specific packages that match the given filter. e.g. `pnpm run test-serve assets` runs tests for both `playground/assets` and `playground/assets-sanitize` under serve mode. Note package matching is not available for the `pnpm test` script, which always runs all tests.
 
 ### Unit Tests
 
@@ -352,14 +354,15 @@ All publishable packages in this repository use a pull-request-driven release fl
 #### Prepare a Release
 
 1. Run the [Prepare Release](.github/workflows/prepare-release.yml) workflow from the `main` branch.
-2. Select `vite`, `create-vite`, or `plugin-legacy`.
-3. Select a `release` type. The default `next` creates the next patch for a stable version or advances an existing prerelease. Alternatively, select another supported release type or enter an exact `version`, which takes precedence over `release`.
-4. Wait for the action to open the release PR. The PR contains the selected package's version bump and changelog entry. A `create-vite` release also updates template Vite dependency versions when appropriate.
+2. Enter the target branch. Use `main` for the current release line or a `v*` release branch (for example, `v8` or `v8.0`) for a patch release.
+3. Select `vite`, `create-vite`, or `plugin-legacy`.
+4. Select a `release` type. The default `next` creates the next patch for a stable version or advances an existing prerelease. Alternatively, select another supported release type or enter an exact `version`, which takes precedence over `release`.
+5. Wait for the action to open a release PR against the target branch. The PR contains the selected package's version bump and changelog entry. A `create-vite` release also updates template Vite dependency versions when appropriate.
 
 #### Review and Publish
 
 1. Review the generated version and changelog, and wait for the release PR checks to pass.
-2. Merge the PR while retaining its `release: <tag>` commit subject. Vite uses `release: v<version>`; other packages use `release: <package>@<version>`. A matching commit at the tip of `main` triggers the publish job.
+2. Merge the PR while retaining its `release: <tag>` commit subject. Vite uses `release: v<version>`; other packages use `release: <package>@<version>`. A matching commit at the tip of `main` or a `v*` release branch triggers the publish job.
 3. Open the [Publish Package](.github/workflows/publish.yml) run and approve its `Release` environment deployment.
 4. Wait for the workflow to publish the package, create its tag, and create the corresponding GitHub release.
 5. Verify the new version on npm.
@@ -368,7 +371,7 @@ All publishable packages in this repository use a pull-request-driven release fl
 
 The release flow depends on configuration outside this repository:
 
-- The `Release` environment must require maintainer approval before publishing.
+- The `Release` environment must require maintainer approval before publishing and allow deployments from `main` and supported `v*` release branches.
 - The npm trusted publishers for `vite`, `create-vite`, and `@vitejs/plugin-legacy` must be restricted to `vitejs/vite`, `.github/workflows/publish.yml`, and the `Release` environment.
 
 #### Recovery

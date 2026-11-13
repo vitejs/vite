@@ -1,9 +1,9 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
 import type { ImportKind, Plugin, RolldownPlugin } from 'rolldown'
-import { prefixRegex } from 'rolldown/filter'
+import { exactRegex, prefixRegex } from 'rolldown/filter'
 import { stripLiteral } from 'strip-literal'
-import { isWindows } from '../../shared/utils'
+import { cleanUrl, isWindows } from '../../shared/utils'
 import { JS_TYPES_RE, KNOWN_ASSET_TYPES } from '../constants'
 import type { Environment } from '../environment'
 import { createBackCompatIdResolver } from '../idResolver'
@@ -23,7 +23,6 @@ import {
   moduleListContains,
   normalizePath,
 } from '../utils'
-
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
 const convertedExternalPrefix = 'vite-dep-pre-bundle-external:'
@@ -121,6 +120,11 @@ export function rolldownDepPlugin(
   }
 
   const resolveResult = (id: string, resolved: string, kind: ImportKind) => {
+    // An exact browser-external id is an explicit browser:false mapping.
+    // Suffixed ids are unsupported Node builtins and still need the warning.
+    if (resolved === browserExternalId) {
+      return { id: browserExternalId }
+    }
     if (resolved.startsWith(browserExternalId)) {
       return {
         id: browserExternalNamespace + id,
@@ -149,7 +153,7 @@ export function rolldownDepPlugin(
   }
 
   const allExternalTypesReg = new RegExp(
-    `\\.(` + allExternalTypes.join('|') + `)(\\?.*)?$`,
+    `\\.(?:` + allExternalTypes.join('|') + `)(\\?.*)?$`,
   )
 
   function resolveEntry(id: string) {
@@ -203,7 +207,7 @@ export function rolldownDepPlugin(
         handler(id) {
           const path = id.slice(externalWithConversionNamespace.length)
           // import itself with prefix (this is the actual part of require-import conversion)
-          const modulePath = `"${convertedExternalPrefix}${path}"`
+          const modulePath = JSON.stringify(`${convertedExternalPrefix}${path}`)
           return {
             code:
               isCSSRequest(path) && !isModuleCSSRequest(path)
@@ -222,7 +226,7 @@ export function rolldownDepPlugin(
         cjsPackageCache.clear()
       },
       resolveId: {
-        filter: { id: /^[\w@][^:]/ },
+        filter: { id: /^[#\w@][^:]/ },
         async handler(id, importer, options) {
           const kind = options.kind
 
@@ -255,11 +259,15 @@ export function rolldownDepPlugin(
       load: {
         filter: {
           id: [
+            exactRegex(browserExternalId),
             prefixRegex(browserExternalNamespace),
             prefixRegex(optionalPeerDepNamespace),
           ],
         },
         handler(id) {
+          if (id === browserExternalId) {
+            return { code: 'module.exports = {}' }
+          }
           if (id.startsWith(browserExternalNamespace)) {
             const path = id.slice(browserExternalNamespace.length)
             if (isProduction) {
@@ -293,7 +301,8 @@ export function rolldownDepPlugin(
             key !== 'constructor' &&
             key !== 'splice'
         ) {
-            console.warn(\`Module "${path}" has been externalized for browser compatibility. Cannot access "${path}.\${key}" in client code. See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\`)
+            const path = ${JSON.stringify(path)}
+            console.warn(\`Module "\${path}" has been externalized for browser compatibility. Cannot access "\${path}.\${key}" in client code. See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\`)
         }
         }
     }))`,
@@ -307,7 +316,9 @@ export function rolldownDepPlugin(
             return {
               code:
                 'module.exports = {};' +
-                `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`,
+                `const peerDep = ${JSON.stringify(peerDep)};` +
+                `const parentDep = ${JSON.stringify(parentDep)};` +
+                `throw new Error(\`Could not resolve "\${peerDep}" imported by "\${parentDep}". Is it installed?\`)`,
             }
           }
         },
@@ -345,6 +356,11 @@ export function rolldownDepPlugin(
             // we resolve the relative path from the original library file (id) and
             // then rewrite it relative to the bundle (deps) directory.
             const absolutePath = path.resolve(path.dirname(id), url)
+            if (environment.mode === 'dev') {
+              environment.safeModulePaths.add(
+                normalizePath(cleanUrl(absolutePath)),
+              )
+            }
             const relativePath = path.relative(bundleOutputDir, absolutePath)
             const normalizedRelativePath = normalizePath(relativePath)
             s.update(
@@ -376,6 +392,7 @@ const matchesEntireLine = (text: string) => `^${escapeRegex(text)}$`
 export function rolldownCjsExternalPlugin(
   externals: string[],
   platform: 'node' | 'browser' | 'neutral',
+  environment: Environment,
 ): Plugin | undefined {
   // Skip this plugin for `platform: 'node'` as `require` is available in Node
   // and that is more accurate than converting to `import`
@@ -393,11 +410,17 @@ export function rolldownCjsExternalPlugin(
 
   const filter = new RegExp(externals.map(matchesEntireLine).join('|'))
 
+  const packageCache: PackageCache = new Map()
+  const resolveRequire = createBackCompatIdResolver(
+    environment.getTopLevelConfig(),
+    { asSrc: false, isRequire: true, scan: true, packageCache },
+  )
+
   return {
     name: 'cjs-external',
     resolveId: {
       filter: { id: [prefixRegex(nonFacadePrefix), filter] },
-      handler(id, _importer, options) {
+      async handler(id, importer, options) {
         if (id.startsWith(nonFacadePrefix)) {
           return {
             id: id.slice(nonFacadePrefix.length),
@@ -405,6 +428,18 @@ export function rolldownCjsExternalPlugin(
           }
         }
         if (options.kind === 'require-call') {
+          // A missing optional peer must throw when require() runs, not when
+          // an eager ESM facade is evaluated. Reuse the pre-bundler's CJS stub
+          // so the dependency's try/catch can still select its fallback.
+          // Other excluded deps may intentionally be unresolvable until served.
+          const resolved = await resolveRequire(
+            environment,
+            id,
+            importer,
+          ).catch(() => undefined)
+          if (resolved?.startsWith(optionalPeerDepId)) {
+            return { id: optionalPeerDepNamespace + resolved }
+          }
           return {
             id: cjsExternalFacadeNamespace + id,
           }

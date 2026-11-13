@@ -57,7 +57,7 @@ export default defineConfig({
           'vite/module-runner': ['./src/module-runner'],
         },
       },
-      emitDtsOnly: true,
+      dtsOnly: true,
     }),
   ],
 })
@@ -74,53 +74,52 @@ const identifierWithTrailingDollarRE = /\b(\w+)\$\d+\b/g
  */
 const identifierReplacements: Record<string, Record<string, string>> = {
   'vite/module-runner': {
-    FetchResult$1: 'moduleRunner_FetchResult',
+    FetchResult: 'moduleRunner_FetchResult',
   },
   rolldown: {
-    Plugin$1: 'Rolldown.Plugin',
-    TransformResult$1: 'Rolldown.TransformResult',
+    Plugin: 'Rolldown.Plugin',
+    TransformResult: 'Rolldown.TransformResult',
   },
   'rolldown/utils': {
-    TransformOptions$1: 'rolldown_utils_TransformOptions',
-    TransformResult$2: 'rolldown_utils_TransformResult',
+    TransformOptions: 'rolldown_utils_TransformOptions',
+    TransformResult: 'rolldown_utils_TransformResult',
   },
   'node:http': {
-    Server$1: 'http.Server',
-    IncomingMessage$1: 'http.IncomingMessage',
+    Server: 'http.Server',
+    IncomingMessage: 'http.IncomingMessage',
   },
   'node:https': {
-    Server$2: 'HttpsServer',
-    ServerOptions$2: 'HttpsServerOptions',
+    Server: 'HttpsServer',
+    ServerOptions: 'HttpsServerOptions',
   },
   'node:url': {
-    URL$1: 'url_URL',
+    URL: 'url_URL',
   },
   '#types/hmrPayload': {
-    CustomPayload$1: 'hmrPayload_CustomPayload',
-    HotPayload$1: 'hmrPayload_HotPayload',
+    CustomPayload: 'hmrPayload_CustomPayload',
+    HotPayload: 'hmrPayload_HotPayload',
   },
   '#types/customEvent': {
-    InferCustomEventPayload$1: 'hmrPayload_InferCustomEventPayload',
+    InferCustomEventPayload: 'hmrPayload_InferCustomEventPayload',
   },
   '#types/internal/esbuildOptions': {
-    EsbuildTransformOptions$1: 'esbuildOptions_EsbuildTransformOptions',
+    EsbuildTransformOptions: 'esbuildOptions_EsbuildTransformOptions',
   },
   '#types/internal/lightningcssOptions': {
-    LightningCSSOptions$1: 'lightningcssOptions_LightningCSSOptions',
+    LightningCSSOptions: 'lightningcssOptions_LightningCSSOptions',
   },
   postcss: {
-    Plugin$2: 'PostCSS.Plugin',
+    Plugin: 'PostCSS.Plugin',
   },
 }
 
 const ignoreConfusingTypeNames = [
   // type names that are declared
-  'MinimalPluginContext$1',
-  'ServerOptions$1',
-  'ServerOptions$3',
+  'MinimalPluginContext',
+  'ServerOptions',
   // temporary variables for types
-  'parseAst$1',
-  'parseAstAsync$1',
+  'parseAst',
+  'parseAstAsync',
 ]
 
 /**
@@ -283,17 +282,20 @@ function replaceConfusingTypeNames(
       }
 
       const replacements = identifierReplacements[modName]
-      for (const id in replacements) {
+      for (const name in replacements) {
+        const id = imp
+          .flatMap((i) => i.locals.filter((_, j) => i.bindings[j] === name))
+          .find((local) => local !== name)
         // Validate that `identifierReplacements` is not outdated if there's no match
-        if (!imp.some((i) => i.locals.includes(id))) {
+        if (!id) {
           this.warn(
-            `${chunk.fileName} does not import "${id}" from "${modName}" for replacement`,
+            `${chunk.fileName} does not import "${name}" from "${modName}" for replacement`,
           )
           process.exitCode = 1
           continue
         }
 
-        const betterId = replacements[id]
+        const betterId = replacements[name]
         const regexEscapedId = escapeRegex(id)
         // If the better id accesses a namespace, the existing `Foo as Foo$1`
         // named import cannot be replaced with `Foo as Namespace.Foo`, so we
@@ -312,14 +314,13 @@ function replaceConfusingTypeNames(
     }
   }
 
-  const identifiers = unique(
-    Array.from(
-      chunk.code.matchAll(identifierWithTrailingDollarRE),
-      (m) => m[0],
-    ),
+  const matches = Array.from(
+    chunk.code.matchAll(identifierWithTrailingDollarRE),
   )
-  const unreplacedIds = identifiers.filter(
-    (id) => !ignoreConfusingTypeNames.includes(id),
+  const unreplacedIds = unique(
+    matches
+      .filter((m) => !ignoreConfusingTypeNames.includes(m[1]))
+      .map((m) => m[0]),
   )
   if (unreplacedIds.length) {
     const unreplacedStr = unreplacedIds.map((id) => `\n- ${id}`).join('')
@@ -331,7 +332,7 @@ function replaceConfusingTypeNames(
 
   if (!isInternalEntry) {
     const notUsedConfusingTypeNames = ignoreConfusingTypeNames.filter(
-      (id) => !identifiers.includes(id),
+      (name) => !matches.some((m) => m[1] === name),
     )
     // Validate that `identifierReplacements` is not outdated if there's no match
     if (notUsedConfusingTypeNames.length) {
@@ -417,7 +418,7 @@ function escapeRegex(str: string): string {
 }
 
 function unique<T>(arr: T[]): T[] {
-  return Array.from(new Set(arr))
+  return [...new Set(arr)]
 }
 
 const postcssLoadConfigDeepImport =

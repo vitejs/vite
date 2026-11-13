@@ -1,15 +1,52 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { globSync } from 'tinyglobby'
 import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
+import { inject } from 'vitest'
 import { TestCssLinkPlugin } from './css-link/plugin.ts'
+import { TestCssStylePlugin } from './css-style/plugin.ts'
+
+const isBundledDev =
+  !!process.env.VITEST && inject('playgroundMode') === 'serve-bundled'
+
+const acceptExportsPages = globSync('./accept-exports/*/index.html', {
+  absolute: true,
+  expandDirectories: false,
+  onlyFiles: true,
+  // not used by any test cases
+  ignore: ['**/export-from/**', '**/reexports.bak/**'],
+  cwd: import.meta.dirname,
+})
 
 export default defineConfig(({ command }) => ({
   input: [
     path.resolve(import.meta.dirname, './index.html'),
     ...(command === 'build'
       ? []
-      : [path.resolve(import.meta.dirname, './missing-import/index.html')]),
+      : [
+          ...[
+            'css-link',
+            'css-style',
+            ...(isBundledDev ? [] : ['missing-file']),
+            'missing-import',
+          ].map((dir) => path.resolve(import.meta.dirname, dir, 'index.html')),
+          path.resolve(import.meta.dirname, './entry-cycle/index.html'),
+          path.resolve(import.meta.dirname, './entry-cycle/entry-cycle.js'),
+          path.resolve(
+            import.meta.dirname,
+            './entry-import-removed/index.html',
+          ),
+          path.resolve(
+            import.meta.dirname,
+            './entry-import-removed/imported-entry.js',
+          ),
+          path.resolve(
+            import.meta.dirname,
+            './entry-import-removed/importing-entry.js',
+          ),
+          ...acceptExportsPages,
+        ]),
     path.resolve(
       import.meta.dirname,
       './unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
@@ -56,6 +93,7 @@ export default defineConfig(({ command }) => ({
     transformCountPlugin(),
     watchCssDepsPlugin(),
     TestCssLinkPlugin(),
+    TestCssStylePlugin(),
     hotEventsPlugin(),
   ],
 }))

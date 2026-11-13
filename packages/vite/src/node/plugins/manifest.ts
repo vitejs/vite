@@ -7,6 +7,7 @@ import { perEnvironmentState } from '../environment'
 import type { Plugin } from '../plugin'
 import { normalizePath } from '../utils'
 import { cssEntriesMap } from './asset'
+import { getWorkerManifest } from './worker'
 
 const endsWithJSRE = /\.[cm]?js$/
 
@@ -44,6 +45,14 @@ export interface ManifestChunk {
    * This field is only present in JS chunks.
    */
   isDynamicEntry?: boolean
+  /**
+   * Whether this chunk belongs to a web worker bundle.
+   */
+  isWorker?: boolean
+  /**
+   * Whether this chunk is the entry point of a web worker bundle.
+   */
+  isWorkerEntry?: boolean
   /**
    * The list of statically imported chunks by this chunk
    *
@@ -148,6 +157,13 @@ export function manifestPlugin(): Plugin {
                 }
               }
             }
+
+            const workerManifest = getWorkerManifest(this.environment)
+            if (workerManifest) {
+              manifest ??= JSON.parse(asset.source.toString()) as Manifest
+              Object.assign(manifest, workerManifest)
+            }
+
             const environment = this.environment as BuildEnvironment
             // The manifest is always computed and stored on
             // `environment.manifest`. The `build.manifest` option only controls

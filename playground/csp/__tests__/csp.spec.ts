@@ -1,7 +1,20 @@
 import { expect, test } from 'vitest'
-import { getColor, page } from '~utils'
+import {
+  browserErrors,
+  bundledDevTodo,
+  getColor,
+  isServe,
+  page,
+  untilBrowserLogAfter,
+  viteServer,
+} from '~utils'
 
-test('linked css', async () => {
+const transformIndexHtmlTodo = bundledDevTodo(
+  '`server.transformIndexHtml` currently returns HTML that points at the source files, not at the files bundled dev produces; how it should work in bundled dev is not decided yet, e.g. return the HTML that the build HTML plugin emits as `index.html` in `bundledDev.memoryFiles`',
+  { vite: [20374] },
+)
+
+test('linked css', transformIndexHtmlTodo, async () => {
   expect(await getColor('.linked')).toBe('blue')
 })
 
@@ -9,19 +22,19 @@ test('inline style tag', async () => {
   expect(await getColor('.inline')).toBe('green')
 })
 
-test('imported css', async () => {
+test('imported css', transformIndexHtmlTodo, async () => {
   expect(await getColor('.from-js')).toBe('blue')
 })
 
-test('dynamic css', async () => {
+test('dynamic css', transformIndexHtmlTodo, async () => {
   expect(await getColor('.dynamic')).toBe('red')
 })
 
-test('script tag', async () => {
+test('script tag', transformIndexHtmlTodo, async () => {
   await expect.poll(() => page.textContent('.js')).toBe('js: ok')
 })
 
-test('dynamic js', async () => {
+test('dynamic js', transformIndexHtmlTodo, async () => {
   await expect
     .poll(() => page.textContent('.dynamic-js'))
     .toBe('dynamic-js: ok')
@@ -42,4 +55,18 @@ test('nonce attributes are not repeated', async () => {
 test('meta[property=csp-nonce] is injected', async () => {
   const meta = await page.$('meta[property=csp-nonce]')
   expect(await (await meta.getProperty('nonce')).jsonValue()).not.toBe('')
+})
+
+test.runIf(isServe)('reconnects after a server restart', async () => {
+  browserErrors.length = 0
+
+  await untilBrowserLogAfter(
+    () => viteServer.restart(),
+    [
+      '[vite] server connection lost. Polling for restart...',
+      '[vite] connected.',
+    ],
+  )
+
+  expect(browserErrors).toStrictEqual([])
 })

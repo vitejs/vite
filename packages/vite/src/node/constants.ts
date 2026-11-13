@@ -131,6 +131,9 @@ export const BUNDLED_DEV_CLIENT_ENTRY: string = resolve(
 )
 /** URL filename the bundled-dev server serves the vite client under */
 export const BUNDLED_DEV_CLIENT_FILENAME: string = 'bundledDevClient.mjs'
+/** URL path the bundled-dev server serves rolldown's dev runtime under */
+export const BUNDLED_DEV_ROLLDOWN_RUNTIME_FILENAME: string =
+  '@rolldown/experimental-runtime.mjs'
 export const ENV_ENTRY: string = resolve(
   VITE_PACKAGE_DIR,
   'dist/client/env.mjs',
@@ -188,7 +191,7 @@ export const KNOWN_ASSET_TYPES: string[] = [
 ]
 
 export const DEFAULT_ASSETS_RE: RegExp = new RegExp(
-  `\\.(` + KNOWN_ASSET_TYPES.join('|') + `)(\\?.*)?$`,
+  `\\.(?:` + KNOWN_ASSET_TYPES.join('|') + `)(\\?.*)?$`,
   'i',
 )
 

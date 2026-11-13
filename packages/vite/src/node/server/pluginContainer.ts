@@ -49,7 +49,6 @@ import type {
   ModuleOptions,
   ModuleType,
   NormalizedInputOptions,
-  OutputOptions,
   ParallelPluginHooks,
   PartialNull,
   PartialResolvedId,
@@ -135,13 +134,6 @@ export function throwClosedServerError(): never {
   throw err
 }
 
-export interface PluginContainerOptions {
-  cwd?: string
-  output?: OutputOptions
-  modules?: Map<string, { info: ModuleInfo }>
-  writeFile?: (name: string, source: string | Uint8Array) => void
-}
-
 /**
  * Create a plugin container with a set of plugins. We pass them as a parameter
  * instead of using environment.plugins to allow the creation of different
@@ -194,6 +186,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   private _started = false
   private _buildStartPromise: Promise<void> | undefined
   private _closed = false
+  private _closePromise: Promise<void> | undefined
 
   /**
    * @internal use `createEnvironmentPluginContainer` instead
@@ -642,9 +635,19 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   }
 
   async close(): Promise<void> {
-    if (this._closed) return
+    if (this._closed) return this._closePromise
     this._closed = true
-    await Promise.allSettled(Array.from(this._processesing))
+    this._closePromise = this._close()
+    try {
+      await this._closePromise
+    } finally {
+      // Once cleanup settles, repeated closes remain a no-op, including after errors.
+      this._closePromise = undefined
+    }
+  }
+
+  private async _close(): Promise<void> {
+    await Promise.allSettled(this._processesing)
     const config = this.environment.getTopLevelConfig()
     let buildEndError: Error | undefined
     try {

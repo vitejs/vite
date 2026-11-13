@@ -1,5 +1,4 @@
 import fsp from 'node:fs/promises'
-import path from 'node:path'
 import colors from 'picocolors'
 import type { ExistingRawSourceMap } from 'rolldown'
 import type { Connect } from '#dep-types/connect'
@@ -9,27 +8,25 @@ import {
   NULL_BYTE_PLACEHOLDER,
 } from '../../../shared/constants'
 import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
-import type { ResolvedConfig } from '../../config'
 import {
   DEP_VERSION_RE,
   ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
   ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
-  FS_PREFIX,
 } from '../../constants'
 import { isDirectCSSRequest, isDirectRequest } from '../../plugins/css'
 import { isHTMLProxy } from '../../plugins/html'
 import {
   createDebugger,
-  fsPathFromId,
   injectQuery,
   isCSSRequest,
   isImportRequest,
   isJSRequest,
-  normalizePath,
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
 } from '../../utils'
+import type { DevEnvironment } from '../environment'
+import { moduleUrlToFilePath } from '../moduleUrl'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { send } from '../send'
 import { applySourcemapIgnoreList } from '../sourcemap'
@@ -46,9 +43,19 @@ const documentFetchDests = new Set([
   'frame',
   'fencedframe',
 ])
-function isDocumentFetchDest(req: Connect.IncomingMessage) {
-  const fetchDest = req.headers['sec-fetch-dest']
+function isDocumentFetchDest(fetchDest: string | undefined) {
   return fetchDest !== undefined && documentFetchDests.has(fetchDest)
+}
+
+export function isTransformRequest(url: string, fetchDest?: string): boolean {
+  return (
+    !isDocumentFetchDest(fetchDest) &&
+    (fetchDest === 'script' ||
+      isJSRequest(url) ||
+      isImportRequest(url) ||
+      isCSSRequest(url) ||
+      isHTMLProxy(url))
+  )
 }
 
 // TODO: consolidate this regex pattern with the url, raw, and inline checks in plugins
@@ -56,15 +63,26 @@ const urlRE = /[?&]url\b/
 const rawRE = /[?&]raw\b/
 const inlineRE = /[?&]inline\b/
 const svgRE = /\.svg\b/
+const wasmRE = /(?<![?#].*)\.wasm$/
+const wasmInstanceRE = /[?&]vite-wasm-instance(?:&|$)/
 
 export function isServerAccessDeniedForTransform(
-  config: ResolvedConfig,
+  environment: DevEnvironment,
   id: string,
 ): boolean {
-  if (rawRE.test(id) || urlRE.test(id) || inlineRE.test(id) || svgRE.test(id)) {
+  const { config } = environment
+  if (
+    config.server.fs.strict === 'extended' ||
+    rawRE.test(id) ||
+    urlRE.test(id) ||
+    inlineRE.test(id) ||
+    svgRE.test(id) ||
+    wasmRE.test(id) ||
+    wasmInstanceRE.test(id)
+  ) {
     return (
-      checkLoadingAccess(config, cleanUrl(id)) !== 'allowed' ||
-      checkLoadingAccess(config, id) !== 'allowed'
+      checkLoadingAccess(environment, cleanUrl(id)) !== 'allowed' ||
+      checkLoadingAccess(environment, id) !== 'allowed'
     )
   }
   return false
@@ -80,7 +98,7 @@ export function cachedTransformMiddleware(
   return function viteCachedTransformMiddleware(req, res, next) {
     const environment = server.environments.client
 
-    if (isDocumentFetchDest(req)) {
+    if (isDocumentFetchDest(req.headers['sec-fetch-dest'])) {
       res.appendHeader('Vary', 'Sec-Fetch-Dest')
       return next()
     }
@@ -125,7 +143,7 @@ export function transformMiddleware(
     if (
       (req.method !== 'GET' && req.method !== 'HEAD') ||
       knownIgnoreList.has(req.url!) ||
-      isDocumentFetchDest(req)
+      isDocumentFetchDest(req.headers['sec-fetch-dest'])
     ) {
       return next()
     }
@@ -158,9 +176,10 @@ export function transformMiddleware(
         if (depsOptimizer?.isOptimizedDepUrl(url)) {
           // If the browser is requesting a source map for an optimized dep, it
           // means that the dependency has already been pre-bundled and loaded
-          const sourcemapPath = url.startsWith(FS_PREFIX)
-            ? fsPathFromId(url)
-            : normalizePath(path.resolve(server.config.root, url.slice(1)))
+          const sourcemapPath = moduleUrlToFilePath(
+            withoutQuery,
+            server.config.root,
+          )
           // url may contain relative path that may resolve outside of the optimized deps directory
           if (!depsOptimizer.isOptimizedDepFile(sourcemapPath)) {
             return next()
@@ -216,13 +235,7 @@ export function transformMiddleware(
         warnAboutExplicitPublicPathInUrl(url)
       }
 
-      if (
-        req.headers['sec-fetch-dest'] === 'script' ||
-        isJSRequest(url) ||
-        isImportRequest(url) ||
-        isCSSRequest(url) ||
-        isHTMLProxy(url)
-      ) {
+      if (isTransformRequest(url, req.headers['sec-fetch-dest'])) {
         // strip ?import
         url = removeImportQuery(url)
         // Strip valid id prefix. This is prepended to resolved Ids that are
@@ -326,12 +339,9 @@ export function transformMiddleware(
       }
       if (e?.code === ERR_DENIED_ID) {
         const id: string = e.id
-        let servingAccessResult = checkLoadingAccess(
-          server.config,
-          cleanUrl(id),
-        )
+        let servingAccessResult = checkLoadingAccess(environment, cleanUrl(id))
         if (servingAccessResult === 'allowed') {
-          servingAccessResult = checkLoadingAccess(server.config, id)
+          servingAccessResult = checkLoadingAccess(environment, id)
         }
         if (servingAccessResult === 'denied') {
           respondWithAccessDenied(id, server, res)

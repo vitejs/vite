@@ -43,8 +43,8 @@ See also [Virtual Modules Convention](https://rolldown.rs/apis/plugin-api#virtua
 Users will add plugins to the project `devDependencies` and configure them using the `plugins` array option.
 
 ```js [vite.config.js]
-import vitePlugin from 'vite-plugin-feature'
 import rollupPlugin from 'rollup-plugin-feature'
+import vitePlugin from 'vite-plugin-feature'
 
 export default defineConfig({
   plugins: [vitePlugin(), rollupPlugin()],
@@ -56,9 +56,8 @@ Falsy plugins will be ignored, which can be used to easily activate or deactivat
 `plugins` also accepts presets including several plugins as a single element. This is useful for complex features (like framework integration) that are implemented using several plugins. The array will be flattened internally.
 
 ```js
-// framework-plugin
+import frameworkDevTools from 'vite-plugin-framework-devtools'
 import frameworkRefresh from 'vite-plugin-framework-refresh'
-import frameworkDevtools from 'vite-plugin-framework-devtools'
 
 export default function framework(config) {
   return [frameworkRefresh(config), frameworkDevTools(config)]
@@ -434,7 +433,9 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       originalUrl?: string
     },
   ) =>
-    IndexHtmlTransformResult | void | Promise<IndexHtmlTransformResult | void>
+    | IndexHtmlTransformResult
+    | void
+    | Promise<IndexHtmlTransformResult | void>
 
   type IndexHtmlTransformResult =
     | string
@@ -532,7 +533,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 ## Plugin Context Meta
 
-For plugin hooks that has access to the plugin context, Vite exposes additional properties on `this.meta`:
+For plugin hooks that have access to the plugin context, Vite exposes additional properties on `this.meta`:
 
 - `this.meta.viteVersion`: The current Vite version string (e.g. `"8.0.0"`).
 
@@ -853,7 +854,7 @@ export default defineConfig({
 Internally, vite infers the type of a payload from the `CustomEventMap` interface, it is possible to type custom events by extending the interface:
 
 :::tip Note
-Make sure to include the `.d.ts` extension when specifying TypeScript declaration files. Otherwise, Typescript may not know which file the module is trying to extend.
+Make sure to include the `.d.ts` extension when specifying TypeScript declaration files. Otherwise, TypeScript may not know which file the module is trying to extend.
 :::
 
 ```ts [events.d.ts]
