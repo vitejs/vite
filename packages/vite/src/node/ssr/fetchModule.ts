@@ -1,6 +1,5 @@
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import type { SourceMap } from 'rolldown'
 import type { FetchResult } from 'vite/module-runner'
 import type { TransformResult } from '..'
 import {
@@ -164,11 +163,23 @@ async function fetchBundledModule(
     }
 
     // See https://github.com/rolldown/rolldown/issues/8376
-    const ssrResult = await ssrTransform(result.code, null, url, result.code)
+    const ssrResult = await ssrTransform(
+      result.code,
+      JSON.parse(lazyResult.sourcemap),
+      url,
+      result.code,
+    )
     if (!ssrResult) {
       throw new Error(`[vite] cannot apply ssr transform to '${url}'.`)
     }
     result.code = ssrResult.code
+    if (options.inlineSourceMap !== false) {
+      result.code = inlineSourceMap(
+        result.id,
+        ssrResult,
+        options.startOffset,
+      ).code
+    }
     return result
   }
 
@@ -216,6 +227,9 @@ async function fetchBundledModule(
       } was not bundled. Is server established?`,
     )
   }
+  const map = memoryFile?.sourcemapPath
+    ? bundledDev.memoryFiles.get(memoryFile.sourcemapPath)?.source.toString()
+    : undefined
   const result: ViteFetchResult = {
     code: code.toString(),
     // To make sure dynamic imports resolve assets correctly.
@@ -239,7 +253,7 @@ async function fetchBundledModule(
   // See https://github.com/rolldown/rolldown/issues/8376
   const ssrResult = await ssrTransform(
     result.code,
-    extractChunkSourceMap(result.code, result.file!),
+    map ? JSON.parse(map) : null,
     result.file!,
     result.code,
   )
@@ -298,22 +312,6 @@ function inlineSourceMap(
   )}\n${MODULE_RUNNER_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
 
   return result
-}
-
-const CHUNK_SOURCE_MAP_REGEXP = new RegExp(
-  `//# ${SOURCEMAPPING_URL}=data:application/json[^,]*;base64,([A-Za-z0-9+/=]+)\\s*$`,
-)
-
-function extractChunkSourceMap(code: string, file: string): SourceMap | null {
-  const base64 = CHUNK_SOURCE_MAP_REGEXP.exec(code)?.[1]
-  if (!base64) return null
-  const map: SourceMap = JSON.parse(Buffer.from(base64, 'base64').toString())
-  // the sources are relative to the chunk that is never written to disk
-  const dir = path.dirname(file)
-  map.sources = map.sources.map((source) =>
-    source ? normalizePath(path.resolve(dir, source)) : source,
-  )
-  return map
 }
 
 function isBundledChunkUrl(environment: DevEnvironment, url: string) {

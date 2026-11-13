@@ -38,6 +38,7 @@ type HmrOutput = BindingClientHmrUpdate['update']
 
 type MemoryFile = {
   source: string | Uint8Array
+  sourcemapPath?: string
   etag?: string
   contentType?: string
 }
@@ -369,7 +370,9 @@ export class BundledDev {
   async triggerLazyBundling(
     moduleId: string | null,
     clientId: string | null,
-  ): Promise<{ code: string; filename: string } | undefined> {
+  ): Promise<
+    { code: string; filename: string; sourcemap: string } | undefined
+  > {
     if (!moduleId || !clientId) {
       return
     }
@@ -390,6 +393,7 @@ export class BundledDev {
     return {
       filename: result.filename,
       code: result.code + payloadDeliveredAck(result.filename),
+      sourcemap: result.sourcemap ?? '',
     }
   }
 
@@ -470,6 +474,10 @@ export class BundledDev {
           outputFile.type === 'chunk' ? outputFile.code : outputFile.source
         return {
           source,
+          sourcemapPath:
+            outputFile.type === 'chunk' && outputFile.sourcemapFileName
+              ? normalizePath(outputFile.sourcemapFileName)
+              : undefined,
           etag: getEtag(Buffer.from(source), { weak: true }),
         }
       })
@@ -530,8 +538,7 @@ export class BundledDev {
       chunkFileNames: 'assets/[name]-[hash].js',
       assetFileNames: 'assets/[name]-[hash][extname]',
       minify: false,
-      sourcemap:
-        this.environment.config.consumer === 'server' ? 'inline' : true,
+      sourcemap: true,
     }
   }
 
@@ -578,6 +585,9 @@ export class BundledDev {
         hmrOutput.code +
         payloadDeliveredAck(hmrOutput.filename) +
         '\n; export {}',
+      sourcemapPath: hmrOutput.sourcemapFilename
+        ? normalizePath(hmrOutput.sourcemapFilename)
+        : undefined,
     })
     if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
       this.memoryFiles.set(hmrOutput.sourcemapFilename, {

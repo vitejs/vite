@@ -407,9 +407,9 @@ export class ModuleRunner {
     fetchedModule.id = moduleId
     module.meta = fetchedModule
 
-    // Do not keep lazy "patches" in memory
+    // Do not keep lazy "patches" in memory, but keep the sourcemap
     if (module.url.startsWith('/@vite/lazy?')) {
-      this.evaluatedModules.removeModule(module)
+      this.evaluatedModules.removeModule(module, { retainSourceMap: true })
     }
 
     return module
