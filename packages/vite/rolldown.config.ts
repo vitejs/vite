@@ -86,7 +86,7 @@ const nodeConfig = defineConfig({
   },
   external: [
     /^vite\//,
-    'fsevents',
+    ...Object.keys(pkg.optionalDependencies),
     /^rolldown\//,
     /^tsx\//,
     /^@vitejs\/devtools\//,

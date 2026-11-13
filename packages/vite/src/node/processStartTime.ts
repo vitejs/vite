@@ -23,6 +23,15 @@ export async function getProcessStartTime(
     }
 
     const isWindows = process.platform === 'win32'
+    if (isWindows) {
+      try {
+        const { getProcessStartTime } =
+          await import('napi-windows-process-start-time')
+        return getProcessStartTime(pid) ?? undefined
+      } catch {
+        // The optional native addon may be missing or unsupported.
+      }
+    }
     const { stdout } = await x(
       isWindows ? 'powershell.exe' : 'ps',
       isWindows

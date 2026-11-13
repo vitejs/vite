@@ -71,6 +71,7 @@ minimumReleaseAgeExclude:
   - '@rolldown/binding-*'
   - '@vitejs/devtools'
   - '@vitejs/devtools-*'
+  - napi-windows-process-start-time@0.1.0
 trustPolicy: no-downgrade
 trustPolicyExcludePrune: true
 trustPolicyExclude:
