@@ -1811,6 +1811,20 @@ importers:
 
   playground/ssr-conditions/no-external: {}
 
+  playground/ssr-css:
+    devDependencies:
+      '@vitejs/test-ssr-css-dep':
+        specifier: file:./css-dep
+        version: file:playground/ssr-css/css-dep
+      less:
+        specifier: ^4.9.1
+        version: 4.9.1(ms@2.1.3)
+      sass:
+        specifier: ^1.108.1
+        version: 1.108.1
+
+  playground/ssr-css/css-dep: {}
+
   playground/ssr-deps:
     dependencies:
       '@node-rs/bcrypt':
@@ -5011,6 +5025,9 @@ packages:
 
   '@vitejs/test-ssr-conditions-no-external@file:playground/ssr-conditions/no-external':
     resolution: {directory: playground/ssr-conditions/no-external, type: directory}
+
+  '@vitejs/test-ssr-css-dep@file:playground/ssr-css/css-dep':
+    resolution: {directory: playground/ssr-css/css-dep, type: directory}
 
   '@vitejs/test-ts-transpiled-exports@file:playground/ssr-deps/ts-transpiled-exports':
     resolution: {directory: playground/ssr-deps/ts-transpiled-exports, type: directory}
@@ -10574,6 +10591,8 @@ snapshots:
   '@vitejs/test-ssr-conditions-external@file:playground/ssr-conditions/external': {}
 
   '@vitejs/test-ssr-conditions-no-external@file:playground/ssr-conditions/no-external': {}
+
+  '@vitejs/test-ssr-css-dep@file:playground/ssr-css/css-dep': {}
 
   '@vitejs/test-ts-transpiled-exports@file:playground/ssr-deps/ts-transpiled-exports': {}
 
