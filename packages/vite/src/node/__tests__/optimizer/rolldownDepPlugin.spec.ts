@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { rolldownDepPlugin } from '../../optimizer/rolldownDepPlugin'
 import { optionalPeerDepId } from '../../plugins/resolve'
+import { SafeModulePaths } from '../../server/safeModulePaths'
 import { normalizePath } from '../../utils'
 
 function createRolldownDepPlugins(cacheDir: string) {
@@ -13,6 +14,8 @@ function createRolldownDepPlugins(cacheDir: string) {
   }
 
   const mockEnvironment = {
+    mode: 'dev',
+    safeModulePaths: new SafeModulePaths(),
     config: baseConfig,
     getTopLevelConfig: () => baseConfig,
   } as any

@@ -466,6 +466,63 @@ describe('build', () => {
     ).rejects.toThrow('CSS files cannot be used as entry points')
   })
 
+  describe('empty CSS assets', () => {
+    async function buildProject(
+      css: string,
+      cssCodeSplit: boolean,
+      input = 'entry.js',
+    ) {
+      return (await build({
+        root: resolve(dirname, 'packages/build-project'),
+        configFile: false,
+        input,
+        logLevel: 'silent',
+        build: {
+          write: false,
+          cssCodeSplit,
+        },
+        plugins: [
+          {
+            name: 'test-empty-css',
+            resolveId(id) {
+              if (id === 'entry.js' || id === 'empty.css') {
+                return '\0' + id
+              }
+            },
+            load(id) {
+              if (id === '\0entry.js') {
+                return `import 'empty.css'; console.log('entry')`
+              }
+              if (id === '\0empty.css') return css
+            },
+          },
+        ],
+      })) as RolldownOutput
+    }
+
+    for (const css of ['', '.empty {}']) {
+      for (const cssCodeSplit of [true, false]) {
+        test(`skips empty CSS ${JSON.stringify(css)} (cssCodeSplit: ${cssCodeSplit})`, async () => {
+          const { output } = await buildProject(css, cssCodeSplit)
+          expect(output.filter((file) => file.type === 'chunk')).toHaveLength(1)
+          expect(
+            output.filter((file) => file.fileName.endsWith('.css')),
+          ).toHaveLength(0)
+        })
+      }
+
+      test(`preserves an empty CSS entrypoint (${JSON.stringify(css)})`, async () => {
+        const { output } = await buildProject(css, true, 'empty.css')
+        expect(output).toHaveLength(1)
+        expect(output[0]).toMatchObject({
+          type: 'asset',
+          fileName: expect.stringMatching(/\.css$/),
+          source: '',
+        })
+      })
+    }
+  })
+
   test('file hash should change when pure css chunk changes', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({
@@ -2145,6 +2202,105 @@ test('watch rebuild manifest', async (ctx) => {
       "entry.js",
     ]
   `)
+})
+
+test('environment.manifest is populated when build.manifest is disabled without emitting a file', async () => {
+  const root = resolve(dirname, 'fixtures/watch-rebuild-manifest')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'error',
+    environments: {
+      client: {
+        build: {
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    build: {
+      write: false,
+      manifest: false,
+    },
+  })
+
+  const environment = builder.environments.client
+  const result = (await builder.build(environment)) as RolldownOutput
+
+  // the manifest file should not be emitted
+  expect(
+    result.output.find((o) => o.fileName === '.vite/manifest.json'),
+  ).toBeUndefined()
+
+  // but the manifest should be available on the environment
+  expect(environment.manifest).toBeDefined()
+  expect(Object.keys(environment.manifest!)).toMatchInlineSnapshot(`
+    [
+      "dep.js",
+      "entry.js",
+    ]
+  `)
+})
+
+test('environment.manifest matches the emitted manifest file when build.manifest is enabled', async () => {
+  const root = resolve(dirname, 'fixtures/watch-rebuild-manifest')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'error',
+    environments: {
+      client: {
+        build: {
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    build: {
+      write: false,
+      manifest: true,
+    },
+  })
+
+  const environment = builder.environments.client
+  const result = (await builder.build(environment)) as RolldownOutput
+
+  const manifestFile = result.output.find(
+    (o) => o.fileName === '.vite/manifest.json',
+  )
+  expect(manifestFile).toBeDefined()
+  assert(manifestFile?.type === 'asset')
+  expect(environment.manifest).toStrictEqual(
+    JSON.parse(manifestFile.source.toString()),
+  )
+})
+
+test('environment.manifest is populated for the ssr environment', async () => {
+  const root = resolve(dirname, 'fixtures/watch-rebuild-manifest')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'error',
+    environments: {
+      ssr: {
+        build: {
+          ssr: true,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    build: {
+      write: false,
+      manifest: false,
+    },
+  })
+
+  const environment = builder.environments.ssr
+  await builder.build(environment)
+
+  expect(environment.manifest).toBeDefined()
+  expect(Object.keys(environment.manifest!)).toContain('entry.js')
 })
 
 test('copies public directory after building same environment with write false first', async (ctx) => {

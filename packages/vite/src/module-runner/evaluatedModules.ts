@@ -29,50 +29,32 @@ export class EvaluatedModules {
   public readonly fileToModulesMap: Map<string, Set<EvaluatedModuleNode>>
   public readonly urlToIdModuleMap: Map<string, EvaluatedModuleNode>
 
+  private readonly retainedSourceMaps: Map<string, DecodedMap>
+
   constructor(source?: EvaluatedModules) {
     // Retain module nodes when snapshotting the indexes before a full reload.
     this.idToModuleMap = new Map(source?.idToModuleMap)
     this.fileToModulesMap = new Map(source?.fileToModulesMap)
     this.urlToIdModuleMap = new Map(source?.urlToIdModuleMap)
+    this.retainedSourceMaps = new Map(source?.retainedSourceMaps)
   }
 
-  /**
-   * Returns the module node by the resolved module ID. Usually, module ID is
-   * the file system path with query and/or hash. It can also be a virtual module.
-   *
-   * Module runner graph will have 1 to 1 mapping with the server module graph.
-   * @param id Resolved module ID
-   */
+  /** Get a node by resolved ID, including virtual IDs and paths with query/hash. */
   public getModuleById(id: string): EvaluatedModuleNode | undefined {
     return this.idToModuleMap.get(id)
   }
 
-  /**
-   * Returns all modules related to the file system path. Different modules
-   * might have different query parameters or hash, so it's possible to have
-   * multiple modules for the same file.
-   * @param file The file system path of the module
-   */
+  /** Get all nodes for a file, including variants with different queries/hashes. */
   public getModulesByFile(file: string): Set<EvaluatedModuleNode> | undefined {
     return this.fileToModulesMap.get(file)
   }
 
-  /**
-   * Returns the module node by the URL that was used in the import statement.
-   * Unlike module graph on the server, the URL is not resolved and is used as is.
-   * @param url Server URL that was used in the import statement
-   */
+  /** Get a node by its unresolved import URL. */
   public getModuleByUrl(url: string): EvaluatedModuleNode | undefined {
     return this.urlToIdModuleMap.get(unwrapId(url))
   }
 
-  /**
-   * Ensure that module is in the graph. If the module is already in the graph,
-   * it will return the existing module node. Otherwise, it will create a new
-   * module node and add it to the graph.
-   * @param id Resolved module ID
-   * @param url URL that was used in the import statement
-   */
+  /** Ensure a node by resolved ID and register its import URL in this graph. */
   public ensureModule(id: string, url: string): EvaluatedModuleNode {
     id = normalizeModuleId(id)
     if (this.idToModuleMap.has(id)) {
@@ -80,6 +62,7 @@ export class EvaluatedModules {
       this.urlToIdModuleMap.set(url, moduleNode)
       return moduleNode
     }
+    this.retainedSourceMaps.delete(id)
     const moduleNode = new EvaluatedModuleNode(id, url)
     this.idToModuleMap.set(id, moduleNode)
     this.urlToIdModuleMap.set(url, moduleNode)
@@ -91,6 +74,7 @@ export class EvaluatedModules {
   }
 
   public invalidateModule(node: EvaluatedModuleNode): void {
+    this.retainedSourceMaps.delete(node.id)
     node.evaluated = false
     node.meta = undefined
     node.map = undefined
@@ -103,6 +87,21 @@ export class EvaluatedModules {
     node.imports.clear()
   }
 
+  public removeModule(
+    node: EvaluatedModuleNode,
+    options?: { retainSourceMap?: boolean },
+  ): void {
+    if (options?.retainSourceMap) {
+      const map = this.getModuleSourceMapById(node.id)
+      if (map) this.retainedSourceMaps.set(node.id, map)
+    } else {
+      this.retainedSourceMaps.delete(node.id)
+    }
+    this.fileToModulesMap.delete(node.file)
+    this.idToModuleMap.delete(node.id)
+    this.urlToIdModuleMap.delete(node.url)
+  }
+
   /**
    * Extracts the inlined source map from the module code and returns the decoded
    * source map. If the source map is not inlined, it will return null.
@@ -110,7 +109,7 @@ export class EvaluatedModules {
    */
   getModuleSourceMapById(id: string): DecodedMap | null {
     const mod = this.getModuleById(id)
-    if (!mod) return null
+    if (!mod) return this.retainedSourceMaps.get(id) ?? null
     if (mod.map) return mod.map
     if (!mod.meta || !('code' in mod.meta)) return null
 
@@ -124,6 +123,7 @@ export class EvaluatedModules {
     this.idToModuleMap.clear()
     this.fileToModulesMap.clear()
     this.urlToIdModuleMap.clear()
+    this.retainedSourceMaps.clear()
   }
 }
 

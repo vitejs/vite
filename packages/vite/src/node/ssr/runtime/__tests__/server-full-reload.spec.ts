@@ -6,6 +6,7 @@ import { assert, expect, onTestFinished, test } from 'vitest'
 import { EvaluatedModules } from '../../../../module-runner/evaluatedModules'
 import type { EvaluatedModuleNode } from '../../../../module-runner/evaluatedModules'
 import { ModuleRunner } from '../../../../module-runner/runner'
+import { SOURCEMAPPING_URL } from '../../../../shared/constants'
 import { promiseWithResolvers } from '../../../../shared/utils'
 import { createServer, type ViteDevServer } from '../../../server'
 import { isRunnableDevEnvironment } from '../../../server/environments/runnableEnvironment'
@@ -496,4 +497,65 @@ test('preserves directRequest overrides and the supplied public cache', async ()
     await Promise.allSettled(requests)
     await runner.close()
   }
+})
+
+test.each([false, true])(
+  'isolates custom hot contexts across reloads (old first: %s)',
+  async (oldFirst) => {
+    const fixture = await createFixture({
+      'b.js': `
+        export { registry } from './registry.js'
+        export const customHot = { marker: {} }
+        import.meta.hot = customHot
+        export function readHot() { return import.meta.hot }
+        export function setHot(value) { import.meta.hot = value }
+      `,
+    })
+    const first = fixture.import()
+    await fixture.started[0].promise
+    await fixture.reload()
+    const second = fixture.import()
+    fixture.gates[oldFirst ? 0 : 1].resolve()
+    const completed = await (oldFirst ? first : second)
+    expect(completed.b.readHot()).toBe(completed.b.customHot)
+    fixture.gates[oldFirst ? 1 : 0].resolve()
+    const [old, fresh] = await Promise.all([first, second])
+    expect(old.b.readHot()).toBe(old.b.customHot)
+    expect(fresh.b.readHot()).toBe(fresh.b.customHot)
+    const replacement = { marker: 'retired' }
+    old.b.setHot(replacement)
+    expect(old.b.readHot()).toBe(replacement)
+    expect(fresh.b.readHot()).toBe(fresh.b.customHot)
+  },
+)
+
+test('retains removed source maps in independent graph snapshots', () => {
+  const modules = new EvaluatedModules()
+  const id = '/virtual/lazy.js'
+  const node = modules.ensureModule(id, '/@vite/lazy?id=example')
+  const sourceMap = {
+    version: 3,
+    sources: ['original.ts'],
+    names: [],
+    mappings: 'AAAA',
+  }
+  node.meta = {
+    id,
+    url: node.url,
+    code: `//# ${SOURCEMAPPING_URL}=data:application/json;base64,${btoa(JSON.stringify(sourceMap))}`,
+  }
+  const decoded = modules.getModuleSourceMapById(id)
+  expect(decoded).not.toBeNull()
+  modules.removeModule(node, { retainSourceMap: true })
+  expect(modules.getModuleById(id)).toBeUndefined()
+  const retained = new EvaluatedModules(modules)
+  modules.clear()
+  expect(modules.getModuleSourceMapById(id)).toBeNull()
+  expect(retained.getModuleSourceMapById(id)).toBe(decoded)
+  const next = modules.ensureModule(id, '/@vite/lazy?id=next')
+  expect(modules.getModuleSourceMapById(id)).toBeNull()
+  expect(retained.getModuleSourceMapById(id)).toBe(decoded)
+  modules.removeModule(next)
+  retained.clear()
+  expect(retained.getModuleSourceMapById(id)).toBeNull()
 })
