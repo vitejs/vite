@@ -6,6 +6,7 @@ import {
   isBuild,
   page,
   untilBrowserLogAfter,
+  untilBrowserLogAfterNavigation,
   viteTestUrl,
 } from '~utils'
 
@@ -19,7 +20,7 @@ describe.runIf(!isBuild)('acceptExports with hmrPartialAccept off', () => {
     const file = `${testDir}/target.ts`
 
     beforeAll(async () => {
-      await untilBrowserLogAfter(
+      await untilBrowserLogAfterNavigation(
         () => openPage(testDir),
         [CONNECTED, />>>>>>/],
         (logs) => {
@@ -50,7 +51,7 @@ describe.runIf(!isBuild)('acceptExports with hmrPartialAccept off', () => {
     const file = `${testDir}/deps-all-accepted.ts`
 
     it('still accepts itself', async () => {
-      await untilBrowserLogAfter(
+      await untilBrowserLogAfterNavigation(
         () => openPage(testDir),
         [CONNECTED, '>>> ready <<<'],
         (logs) => {
