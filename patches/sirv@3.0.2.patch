@@ -85,7 +85,7 @@ index 8bfe364f1db2d1382c56a9b75a014579083cfa70..a8dfa1c473ff15c979bbfbc28c3630a1
  	onNoMatch?: (req: IncomingMessage, res: ServerResponse) => void;
  	setHeaders?: (res: ServerResponse, pathname: string, stats: Stats) => void;
 +	/** patched */
-+	shouldServe?: (absoluteFilePath: string) => void;
++	shouldServe?: (absoluteFilePath: string) => boolean;
  }
  
  export default function (dir?: string, opts?: Options): RequestHandler;
@@ -98,7 +98,7 @@ index 96cc63e7ee1ccdd7266e9193252b799068ef2e3c..9e298d627002cd0b073073aa13528b74
  		onNoMatch?: (req: IncomingMessage, res: ServerResponse) => void;
  		setHeaders?: (res: ServerResponse, pathname: string, stats: Stats) => void;
 +		/** patched */
-+		shouldServe?: (absoluteFilePath: string) => void;
++		shouldServe?: (absoluteFilePath: string) => boolean;
  	}
  }
  

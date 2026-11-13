@@ -174,7 +174,7 @@ packageExtensionsChecksum: sha256-If0sPrN3HV7D+EgeoSZUm8CYcOJOyo0gWobIh2WtTMM=
 patchedDependencies:
   chokidar@3.6.0: e17269188c54412478078f7ac7877c1d5a475a2f2438328e3a7e725513ccbf1f
   dotenv-expand@13.0.0: 49330a663821151418e003e822a82a6a61d2f0f8a6e3cab00c1c94815a112889
-  sirv@3.0.2: c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95
+  sirv@3.0.2: bdff24dcf974e66c415307615e28db5fdf44c1b4aba389e84b0e094350655330
 
 importers:
 
@@ -544,7 +544,7 @@ importers:
         version: 1.108.1(source-map-js@1.2.2)
       sirv:
         specifier: ^3.0.2
-        version: 3.0.2(patch_hash=c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95)
+        version: 3.0.2(patch_hash=bdff24dcf974e66c415307615e28db5fdf44c1b4aba389e84b0e094350655330)
       std-env:
         specifier: ^4.3.0
         version: 4.3.0
@@ -1187,7 +1187,7 @@ importers:
     devDependencies:
       sirv:
         specifier: ^3.0.2
-        version: 3.0.2(patch_hash=c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95)
+        version: 3.0.2(patch_hash=bdff24dcf974e66c415307615e28db5fdf44c1b4aba389e84b0e094350655330)
 
   playground/minify:
     dependencies:
@@ -1796,7 +1796,7 @@ importers:
         version: 5.3.0(ms@2.1.3)
       sirv:
         specifier: ^3.0.2
-        version: 3.0.2(patch_hash=c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95)
+        version: 3.0.2(patch_hash=bdff24dcf974e66c415307615e28db5fdf44c1b4aba389e84b0e094350655330)
 
   playground/ssr-conditions/external: {}
 
@@ -13299,7 +13299,7 @@ snapshots:
 
   simple-git-hooks@2.14.0: {}
 
-  sirv@3.0.2(patch_hash=c07c56eb72faea34341d465cde2314e89db472106ed378181e3447893af6bf95):
+  sirv@3.0.2(patch_hash=bdff24dcf974e66c415307615e28db5fdf44c1b4aba389e84b0e094350655330):
     dependencies:
       '@polka/url': 1.0.0-next.29
       mrmime: 2.0.1
