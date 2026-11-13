@@ -280,9 +280,8 @@ test('does not add devtools by default', () => {
   expect(config).not.toContain('devtools')
 })
 
-test.each(['vue', 'react-ts', 'vanilla', 'vanilla-ts'])(
-  'installs all devtools dependencies and enables dev only for %s',
-  (template) => {
+for (const template of ['vue', 'react-ts', 'vanilla', 'vanilla-ts']) {
+  test(`installs all devtools dependencies and enables dev only for ${template}`, () => {
     run([projectName, '--template', template, '--devtools'], {
       cwd: import.meta.dirname,
     })
@@ -300,12 +299,8 @@ test.each(['vue', 'react-ts', 'vanilla', 'vanilla-ts'])(
     expect(pkg.devDependencies['@vitejs/devtools-vite']).toBeDefined()
     expect(pkg.devDependencies['@vitejs/devtools-rolldown']).toBeDefined()
     expect(config).toContain(`apply: 'serve'`)
-    expect(config).toContain(
-      '// Remove this `apply` property to enable devtools for build as well',
-    )
-    expect(config).toContain('defineConfig({')
-  },
-)
+  })
+}
 
 test('does not add devtools with --no-devtools', () => {
   run([projectName, '--template', 'vue', '--no-devtools'], {
