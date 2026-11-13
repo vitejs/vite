@@ -2412,3 +2412,74 @@ function getOutputHashChanges(
     unchanged: names.filter((name) => map1[name] === map2[name]),
   }
 }
+
+test.skipIf(process.platform === 'win32')(
+  'build watch follows a retargeted symlink after a later rebuild',
+  async () => {
+    const root = await fsp.realpath(
+      await fsp.mkdtemp(join(tmpdir(), 'vite-watch-symlink-retarget-')),
+    )
+    onTestFinished(() => fsp.rm(root, { recursive: true, force: true }))
+
+    const srcDir = join(root, 'src')
+    const storeDir = join(root, 'store')
+    await fsp.mkdir(srcDir)
+    await fsp.mkdir(storeDir)
+    await fsp.writeFile(join(storeDir, 'a.js'), "export default 'TARGET_A'\n")
+    await fsp.writeFile(join(storeDir, 'b.js'), "export default 'TARGET_B'\n")
+    await fsp.writeFile(join(srcDir, 'plain.js'), "export default 'PLAIN1'\n")
+    await fsp.writeFile(
+      join(srcDir, 'main.js'),
+      "import link from './link.js'\nimport plain from './plain.js'\nconsole.log(link, plain)\n",
+    )
+    await fsp.symlink('../store/a.js', join(srcDir, 'link.js'))
+    await fsp.writeFile(
+      join(root, 'package.json'),
+      JSON.stringify({ type: 'module', private: true }),
+    )
+
+    const watcher = await build({
+      root,
+      configFile: false,
+      logLevel: 'silent',
+      build: {
+        ssr: 'src/main.js',
+        minify: false,
+        watch: {},
+      },
+    })
+    if (!('on' in watcher)) {
+      throw new Error('Expected a watcher from build({ watch })')
+    }
+    onTestFinished(() => watcher.close())
+
+    const outFile = join(root, 'dist/main.js')
+    const readOut = async () => {
+      try {
+        return await fsp.readFile(outFile, 'utf-8')
+      } catch {
+        return ''
+      }
+    }
+
+    await expect
+      .poll(readOut, { timeout: 15000, interval: 50 })
+      .toContain('TARGET_A')
+    expect(await readOut()).toContain('PLAIN1')
+
+    const tmpLink = join(srcDir, '.link.tmp')
+    await fsp.symlink('../store/b.js', tmpLink)
+    await fsp.rename(tmpLink, join(srcDir, 'link.js'))
+    await fsp.writeFile(
+      join(srcDir, 'plain.js'),
+      "export default 'PLAIN_LATER'\n",
+    )
+
+    await expect
+      .poll(readOut, { timeout: 15000, interval: 50 })
+      .toContain('PLAIN_LATER')
+    expect(await readOut()).toContain('TARGET_B')
+    expect(await readOut()).not.toContain('TARGET_A')
+  },
+  30000,
+)
