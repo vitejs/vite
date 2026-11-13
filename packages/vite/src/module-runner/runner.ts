@@ -13,7 +13,7 @@ import {
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
-import { cleanUrl, isPrimitive } from '../shared/utils'
+import { cleanUrl, isPrimitive, unwrapId } from '../shared/utils'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -42,6 +42,8 @@ import { posixDirname, posixJoin } from './utils'
 interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
 }
+
+const absoluteUrlRE = /^(?:file:\/\/|\/|[a-zA-Z]:[\\/])/
 
 export class ModuleRunner {
   public evaluatedModules: EvaluatedModules
@@ -397,6 +399,17 @@ export class ModuleRunner {
         : fetchedModule.id
     const moduleUrl = 'url' in fetchedModule ? fetchedModule.url : url
     const module = this.evaluatedModules.ensureModule(moduleId, moduleUrl)
+
+    // Also cache under the requested url, except bare specifiers (can resolve
+    // differently per importer) and urls with a query (can be another request).
+    const requestedUrl = unwrapId(url)
+    if (
+      requestedUrl !== moduleUrl &&
+      absoluteUrlRE.test(requestedUrl) &&
+      !requestedUrl.includes('?')
+    ) {
+      this.evaluatedModules.urlToIdModuleMap.set(requestedUrl, module)
+    }
 
     if ('invalidate' in fetchedModule && fetchedModule.invalidate) {
       this.evaluatedModules.invalidateModule(module)
