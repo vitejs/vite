@@ -81,25 +81,6 @@ describe.for([
     expect(mod).toBe(mod3)
   })
 
-  it("doesn't refetch a module imported again by file url or path", async ({
-    runner,
-    environment,
-  }) => {
-    const mod = await runner.import('/fixtures/simple.js')
-    const fileUrl = new _URL('./fixtures/simple.js', import.meta.url).toString()
-    const filePath = fileURLToPath(fileUrl)
-    await runner.import(fileUrl)
-    await runner.import(filePath)
-
-    const fetchModule = vi.spyOn(environment, 'fetchModule')
-    expect(await runner.import(fileUrl)).toBe(mod)
-    expect(await runner.import(filePath)).toBe(mod)
-    expect(fetchModule).toHaveBeenCalledTimes(2)
-    for (const { value } of fetchModule.mock.results) {
-      expect(await value).toStrictEqual({ cache: true })
-    }
-  })
-
   it('css is loaded correctly', async ({ runner }) => {
     const css = await runner.import('/fixtures/test.css')
     expect(css.default).toBeUndefined()
@@ -439,6 +420,25 @@ describe('not supported by bundle mode', () => {
     expect(modules.static).toBe(modules.dynamicAbsoluteExtension)
     expect(modules.static).toBe(modules.dynamicAbsoluteFull)
     expect(modules.static).toBe(modules.dynamicFileUrl)
+  })
+
+  it("doesn't refetch a module imported again by file url or path", async ({
+    runner,
+    environment,
+  }) => {
+    const mod = await runner.import('/fixtures/simple.js')
+    const fileUrl = new _URL('./fixtures/simple.js', import.meta.url).toString()
+    const filePath = fileURLToPath(fileUrl)
+    await runner.import(fileUrl)
+    await runner.import(filePath)
+
+    const fetchModule = vi.spyOn(environment, 'fetchModule')
+    expect(await runner.import(fileUrl)).toBe(mod)
+    expect(await runner.import(filePath)).toBe(mod)
+    expect(fetchModule).toHaveBeenCalledTimes(2)
+    for (const { value } of fetchModule.mock.results) {
+      expect(await value).toStrictEqual({ cache: true })
+    }
   })
 
   it('can load virtual modules as an entry point', async ({ runner }) => {
