@@ -1459,6 +1459,132 @@ describe('resolveBuildOutputs', () => {
   })
 })
 
+describe('ViteBuilder app hooks', () => {
+  test('runs postBuildApp after the app build in hook order', async () => {
+    const calls: string[] = []
+
+    const builder = await createBuilder({
+      configFile: false,
+      root: resolve(dirname, 'fixtures/emit-assets'),
+      logLevel: 'warn',
+      environments: {
+        client: {
+          build: {
+            write: false,
+            rolldownOptions: {
+              input: '/entry.mjs',
+            },
+          },
+        },
+      },
+      builder: {
+        async buildApp() {
+          calls.push('builder')
+        },
+      },
+      plugins: [
+        {
+          name: 'build-pre',
+          buildApp: {
+            order: 'pre',
+            async handler() {
+              calls.push('build:pre')
+            },
+          },
+        },
+        {
+          name: 'build-normal',
+          async buildApp() {
+            calls.push('build:normal')
+          },
+        },
+        {
+          name: 'build-post',
+          buildApp: {
+            order: 'post',
+            async handler() {
+              calls.push('build:post')
+            },
+          },
+        },
+        {
+          name: 'post-build-pre',
+          postBuildApp: {
+            order: 'pre',
+            async handler() {
+              expect(builder.environments.client.isBuilt).toBe(true)
+              calls.push('post:pre:start')
+              await Promise.resolve()
+              calls.push('post:pre:end')
+            },
+          },
+        },
+        {
+          name: 'post-build-normal',
+          async postBuildApp() {
+            expect(this).toMatchObject({
+              debug: expect.any(Function),
+              info: expect.any(Function),
+              warn: expect.any(Function),
+              error: expect.any(Function),
+              meta: expect.any(Object),
+            })
+            expect(this).not.toHaveProperty('environment')
+            calls.push('post:normal')
+          },
+        },
+        {
+          name: 'post-build-post',
+          postBuildApp: {
+            order: 'post',
+            async handler() {
+              calls.push('post:post')
+            },
+          },
+        },
+      ],
+    })
+
+    await builder.buildApp()
+
+    expect(calls).toStrictEqual([
+      'build:pre',
+      'build:normal',
+      'builder',
+      'build:post',
+      'post:pre:start',
+      'post:pre:end',
+      'post:normal',
+      'post:post',
+    ])
+  })
+
+  test('does not run postBuildApp when the app build fails', async () => {
+    const postBuildApp = vi.fn()
+    const builder = await createBuilder({
+      configFile: false,
+      root: resolve(dirname, 'fixtures/emit-assets'),
+      logLevel: 'warn',
+      builder: {
+        async buildApp() {
+          throw new Error('build failed')
+        },
+      },
+      plugins: [
+        {
+          name: 'post-build',
+          async postBuildApp() {
+            postBuildApp()
+          },
+        },
+      ],
+    })
+
+    await expect(builder.buildApp()).rejects.toThrow('build failed')
+    expect(postBuildApp).not.toHaveBeenCalled()
+  })
+})
+
 test('default sharedConfigBuild true on build api', async () => {
   let counter = 0
   await build({

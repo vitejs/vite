@@ -1894,6 +1894,9 @@ export async function createBuilder(
           await builder.build(environment)
         }
       }
+      for (const hook of config.getSortedPluginHooks('postBuildApp')) {
+        await hook.call(pluginContext)
+      }
     },
     async build(
       environment: BuildEnvironment,
@@ -1987,4 +1990,8 @@ export async function createBuilder(
 export type BuildAppHook = (
   this: MinimalPluginContextWithoutEnvironment,
   builder: ViteBuilder,
+) => Promise<void>
+
+export type PostBuildAppHook = (
+  this: MinimalPluginContextWithoutEnvironment,
 ) => Promise<void>

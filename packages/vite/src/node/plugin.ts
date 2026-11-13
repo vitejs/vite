@@ -14,7 +14,7 @@ import type {
   TransformResult,
 } from 'rolldown'
 import type { PartialEnvironment } from './baseEnvironment'
-import type { BuildAppHook } from './build'
+import type { BuildAppHook, PostBuildAppHook } from './build'
 import type {
   ConfigEnv,
   EnvironmentOptions,
@@ -348,6 +348,12 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
    * @experimental
    */
   buildApp?: ObjectHook<BuildAppHook>
+  /**
+   * Run logic after the app build orchestration has completed.
+   *
+   * @experimental
+   */
+  postBuildApp?: ObjectHook<PostBuildAppHook>
   /**
    * Perform custom handling of HMR updates.
    * The handler receives a context containing changed filename, timestamp, a
