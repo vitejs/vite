@@ -404,9 +404,8 @@ test('uses vp commands in the done message when run via vp dlx', () => {
   expect(stdout).toContain('vp run dev')
 })
 
-test.each([undefined, ''])(
-  'uses npm_config_user_agent when VP_USER_AGENT is %j',
-  (vpUserAgent) => {
+for (const vpUserAgent of [undefined, '']) {
+  test(`uses npm_config_user_agent when VP_USER_AGENT is ${vpUserAgent}`, () => {
     const { stdout } = run(
       [projectName, '--template', 'vue', '--no-immediate'],
       {
@@ -420,8 +419,8 @@ test.each([undefined, ''])(
     expect(stdout).toContain('pnpm install')
     expect(stdout).toContain('pnpm dev')
     expect(stdout).not.toContain('vp install')
-  },
-)
+  })
+}
 
 test('accepts immediate flag and skips install prompt', () => {
   const { stdout } = run([projectName, '--template', 'vue', '--no-immediate'], {
