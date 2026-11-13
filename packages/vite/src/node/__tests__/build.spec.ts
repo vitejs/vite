@@ -2204,6 +2204,82 @@ test('watch rebuild manifest', async (ctx) => {
   `)
 })
 
+describe('SSR manifest rebuilds', () => {
+  async function setup(output?: OutputOptions[]) {
+    const root = normalizePath(
+      await fsp.mkdtemp(join(tmpdir(), 'vite-ssr-manifest-')),
+    )
+    onTestFinished(() => fsp.rm(root, { recursive: true, force: true }))
+    await fsp.writeFile(
+      resolve(root, 'entry.js'),
+      `console.log(import('./dep.js'))`,
+    )
+    await fsp.writeFile(resolve(root, 'dep.js'), `console.log('dep.js')`)
+
+    const builder = await createBuilder({
+      root,
+      configFile: false,
+      logLevel: 'silent',
+      build: {
+        ssrManifest: true,
+        write: false,
+        rolldownOptions: {
+          input: '/entry.js',
+          output,
+        },
+      },
+    })
+
+    // Reuse the environment and its plugins, as in watch mode.
+    async function buildManifest() {
+      const result = (await builder.build(builder.environments.client)) as
+        | RolldownOutput
+        | RolldownOutput[]
+      const lastOutput = Array.isArray(result) ? result.at(-1)! : result
+      const manifest = lastOutput.output.find(
+        (output) => output.fileName === '.vite/ssr-manifest.json',
+      )
+      assert(manifest?.type === 'asset')
+      return JSON.parse(manifest.source.toString()) as Record<string, string[]>
+    }
+
+    return { root, buildManifest }
+  }
+
+  test('replaces old chunk filenames after a dependency changes', async () => {
+    const { root, buildManifest } = await setup()
+    const before = (await buildManifest())['dep.js']
+    expect(before).toHaveLength(1)
+
+    await fsp.writeFile(
+      resolve(root, 'dep.js'),
+      `console.log('updated dep.js')`,
+    )
+    const after = (await buildManifest())['dep.js']
+    expect(after).toHaveLength(1)
+    expect(after[0]).not.toBe(before[0])
+  })
+
+  test('removes modules that are no longer imported', async () => {
+    const { root, buildManifest } = await setup()
+    expect((await buildManifest())['dep.js']).toHaveLength(1)
+
+    await fsp.writeFile(resolve(root, 'entry.js'), `console.log('entry.js')`)
+    expect(await buildManifest()).not.toHaveProperty(['dep.js'])
+  })
+
+  test('only includes chunks from the current output', async () => {
+    const { buildManifest } = await setup([
+      { format: 'es', chunkFileNames: 'es/[name]-[hash].js' },
+      { format: 'cjs', chunkFileNames: 'cjs/[name]-[hash].cjs' },
+    ])
+
+    expect((await buildManifest())['dep.js']).toStrictEqual([
+      expect.stringMatching(/^\/cjs\/dep-/),
+    ])
+  })
+})
+
 test('copies public directory after building same environment with write false first', async (ctx) => {
   const root = resolve(dirname, 'fixtures/public-dir-write-false')
   ctx.onTestFinished(() =>
