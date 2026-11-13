@@ -1755,6 +1755,7 @@ export class BuildEnvironment extends BaseEnvironment {
   mode = 'build' as const
 
   isBuilt = false
+
   /**
    * The build manifest for this environment. It is populated once the
    * environment has been built and is available regardless of the
@@ -1765,6 +1766,7 @@ export class BuildEnvironment extends BaseEnvironment {
    * @experimental
    */
   manifest?: Manifest
+
   constructor(
     name: string,
     config: ResolvedConfig,
