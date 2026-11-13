@@ -87,7 +87,7 @@ async function reimportEntrypoints(
   if (runner._bundledDevHmrClient) {
     await runner._resetBundledDevRuntime()
   } else {
-    runner.evaluatedModules.clear()
+    runner.clearModuleCache()
   }
 
   for (const url of entrypointUrls) {

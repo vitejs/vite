@@ -43,6 +43,13 @@ interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
 }
 
+interface ModuleGraph {
+  modules: EvaluatedModules
+  requests: Map<string, Promise<EvaluatedModuleNode>>
+  detached: boolean
+  hotContexts: Map<string, HMRContext>
+}
+
 export class ModuleRunner {
   public evaluatedModules: EvaluatedModules
   public hmrClient?: HMRClient
@@ -54,9 +61,10 @@ export class ModuleRunner {
 
   private readonly transport: NormalizedModuleRunnerTransport
   private readonly resetSourceMapSupport?: () => void
-  private readonly concurrentModuleNodePromises = new Map<
-    string,
-    Promise<EvaluatedModuleNode>
+  private moduleGraph: ModuleGraph
+  private readonly moduleGraphs = new WeakMap<
+    EvaluatedModuleNode,
+    ModuleGraph
   >()
   private isBuiltin?: (id: string) => boolean
   private builtinsPromise?: Promise<void>
@@ -74,6 +82,12 @@ export class ModuleRunner {
     private debug?: ModuleRunnerDebugger | undefined,
   ) {
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
+    this.moduleGraph = {
+      modules: this.evaluatedModules,
+      requests: new Map(),
+      detached: false,
+      hotContexts: new Map(),
+    }
     this.transport = normalizeModuleRunnerTransport(options.transport)
     // independent of HMR: the bundle needs `__rolldown_runtime__` to execute
     // at all, so the runtime exists even when HMR is disabled
@@ -169,14 +183,30 @@ export class ModuleRunner {
    * Clear all caches including HMR listeners.
    */
   public clearCache(): void {
-    this.evaluatedModules.clear()
+    this.clearModuleCache()
     this.hmrClient?.clear()
+  }
+
+  /** @internal */
+  public clearModuleCache(): void {
+    // Pending evaluations retain their module nodes, including dependencies
+    // that finished before the reload. Keep resolving their later imports in
+    // that graph while new public imports use the cleared, public cache.
+    this.moduleGraph.modules = new EvaluatedModules(this.evaluatedModules)
+    this.moduleGraph.detached = true
+    this.evaluatedModules.clear()
+    this.moduleGraph = {
+      modules: this.evaluatedModules,
+      requests: new Map(),
+      detached: false,
+      hotContexts: new Map(),
+    }
   }
 
   /** @internal */
   public async _resetBundledDevRuntime(): Promise<void> {
     this.evaluatedModules.clear()
-    this.moduleHotContexts.clear()
+    this.moduleGraph.hotContexts.clear()
 
     const oldClientId = this.rolldownDevRuntime!.clientId
     const runtime = this.createRolldownDevRuntime()
@@ -225,6 +255,7 @@ export class ModuleRunner {
   private isCircularRequest(
     mod: EvaluatedModuleNode,
     callstack: string[],
+    graph: ModuleGraph,
     visited = new Set<string>(),
   ): boolean {
     if (visited.has(mod.id)) {
@@ -233,8 +264,7 @@ export class ModuleRunner {
     visited.add(mod.id)
 
     for (const importedModuleId of mod.imports) {
-      const importedModule =
-        this.evaluatedModules.getModuleById(importedModuleId)
+      const importedModule = graph.modules.getModuleById(importedModuleId)
       if (!importedModule?.promise || importedModule.evaluated) {
         continue
       }
@@ -243,7 +273,7 @@ export class ModuleRunner {
         return true
       }
 
-      if (this.isCircularRequest(importedModule, callstack, visited)) {
+      if (this.isCircularRequest(importedModule, callstack, graph, visited)) {
         return true
       }
     }
@@ -272,7 +302,12 @@ export class ModuleRunner {
     if (mod.promise) {
       if (
         mod.exports &&
-        (callstack.includes(moduleId) || this.isCircularRequest(mod, callstack))
+        (callstack.includes(moduleId) ||
+          this.isCircularRequest(
+            mod,
+            callstack,
+            this.moduleGraphs.get(mod) ?? this.moduleGraph,
+          ))
       ) {
         return this.processImport(mod.exports, meta, metadata)
       }
@@ -308,21 +343,27 @@ export class ModuleRunner {
   private async cachedModule(
     url: string,
     importer?: string,
+    graph = this.moduleGraph,
   ): Promise<EvaluatedModuleNode> {
-    let cached = this.concurrentModuleNodePromises.get(url)
+    let cached = graph.requests.get(url)
     if (!cached) {
-      const cachedModule = this.evaluatedModules.getModuleByUrl(url)
-      cached = this.getModuleInformation(url, importer, cachedModule).finally(
-        () => {
-          this.concurrentModuleNodePromises.delete(url)
-        },
-      )
-      this.concurrentModuleNodePromises.set(url, cached)
+      const cachedModule = graph.modules.getModuleByUrl(url)
+      cached = this.getModuleInformation(
+        url,
+        importer,
+        cachedModule,
+        graph,
+      ).finally(() => {
+        graph.requests.delete(url)
+      })
+      graph.requests.set(url, cached)
     } else {
       this.debug?.('[module runner] using cached module info for', url)
     }
 
-    return cached
+    const mod = await cached
+    this.moduleGraphs.set(mod, graph)
+    return mod
   }
 
   private ensureBuiltins(): Promise<void> | undefined {
@@ -357,9 +398,14 @@ export class ModuleRunner {
     url: string,
     importer: string | undefined,
     cachedModule: EvaluatedModuleNode | undefined,
+    graph: ModuleGraph,
   ): Promise<EvaluatedModuleNode> {
     if (this.closed) {
       throw new Error(`Vite module runner has been closed.`)
+    }
+
+    if (graph.detached && cachedModule?.meta) {
+      return cachedModule
     }
 
     await this.ensureBuiltins()
@@ -396,11 +442,17 @@ export class ModuleRunner {
         ? fetchedModule.externalize
         : fetchedModule.id
     const moduleUrl = 'url' in fetchedModule ? fetchedModule.url : url
-    const module = this.evaluatedModules.ensureModule(moduleId, moduleUrl)
+    const module = graph.modules.ensureModule(moduleId, moduleUrl)
+
+    // Another URL may resolve to an already evaluated module in a retired
+    // graph. Its exports must remain the same even if the server changed it.
+    if (graph.detached && module.meta) {
+      return module
+    }
 
     if ('invalidate' in fetchedModule && fetchedModule.invalidate) {
-      this.evaluatedModules.invalidateModule(module)
-      this.moduleHotContexts.delete(module.url)
+      graph.modules.invalidateModule(module)
+      graph.hotContexts.delete(module.url)
     }
 
     fetchedModule.url = moduleUrl
@@ -409,7 +461,7 @@ export class ModuleRunner {
 
     // Do not keep lazy "patches" in memory, but keep the sourcemap
     if (module.url.startsWith('/@vite/lazy?')) {
-      this.evaluatedModules.removeModule(module, { retainSourceMap: true })
+      graph.modules.removeModule(module, { retainSourceMap: true })
     }
 
     return module
@@ -424,11 +476,11 @@ export class ModuleRunner {
     const fetchResult = mod.meta!
     const moduleId = fetchResult.id
     const callstack = [..._callstack, moduleId]
+    const graph = this.moduleGraphs.get(mod) ?? this.moduleGraph
 
     const request = async (dep: string, metadata?: SSRImportMetadata) => {
       const importer = ('file' in fetchResult && fetchResult.file) || moduleId
-      const depMod = await this.cachedModule(dep, importer)
-      depMod.importers.add(moduleId)
+      const depMod = await this.cachedModule(dep, importer, graph)
       mod.imports.add(depMod.id)
 
       return this.cachedRequest(dep, depMod, callstack, metadata)
@@ -482,10 +534,10 @@ export class ModuleRunner {
       Object.defineProperty(meta, 'hot', {
         enumerable: true,
         get: () => {
-          return this.ensureModuleHotContext(mod.url)
+          return this.ensureModuleHotContext(mod.url, graph)
         },
         set: (value) => {
-          this.moduleHotContexts.set(mod.url, value)
+          graph.hotContexts.set(mod.url, value)
         },
       })
     }
@@ -511,8 +563,6 @@ export class ModuleRunner {
 
     return exports
   }
-
-  private moduleHotContexts = new Map<string, HMRContext>()
 
   private createRolldownDevRuntime(): DevRuntime {
     class ViteDevRuntime extends DevRuntime {
@@ -544,21 +594,21 @@ export class ModuleRunner {
     return new ViteDevRuntime(this)
   }
 
-  private ensureModuleHotContext(url: string) {
+  private ensureModuleHotContext(url: string, graph = this.moduleGraph) {
     if (!this.hmrClient) {
       return
     }
 
-    if (!this.moduleHotContexts.has(url)) {
+    if (!graph.hotContexts.has(url)) {
       this.debug?.('[module runner] creating hmr context for', url)
       // in full-bundle mode `invalidate()` is resolved locally against the
       // rolldown runtime graph instead of being sent to the server
       const hotContext = this._bundledDevHmrClient
         ? new BundledDevHMRContext(this._bundledDevHmrClient, url)
-        : new HMRContext(this.hmrClient, url)
-      this.moduleHotContexts.set(url, hotContext)
+        : new HMRContext(this.hmrClient, url, () => !graph.detached)
+      graph.hotContexts.set(url, hotContext)
     }
-    return this.moduleHotContexts.get(url)
+    return graph.hotContexts.get(url)
   }
 }
 
