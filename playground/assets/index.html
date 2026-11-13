@@ -510,6 +510,12 @@
 <template>
   <img class="template" src="./nested/asset.png" />
 </template>
+<div class="template-shadow-host">
+  <template shadowrootmode="open">
+    <link rel="stylesheet" href="./css/template-shadow.css" />
+    <span class="template-shadow">stylesheet in shadow root template</span>
+  </template>
+</div>
 
 <link rel="stylesheet" href="asset/style.css" />
 <div class="relative-css">link style</div>

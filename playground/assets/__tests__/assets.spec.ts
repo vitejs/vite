@@ -959,3 +959,17 @@ test.runIf(isBuild)('assets inside <template> is rewrote', async () => {
     /<img class="template" src="\/foo\/bar\/assets\/asset-[-\w]+\.png" \/>/,
   )
 })
+
+test('stylesheet link inside shadow root <template> applies to the shadow root', async () => {
+  expect(await getColor('.template-shadow')).toBe('red')
+})
+
+test.runIf(isBuild)(
+  'stylesheet link inside <template> is kept in place',
+  async () => {
+    const indexHtml = readFile('./dist/foo/index.html')
+    expect(indexHtml).toMatch(
+      /<template shadowrootmode="open">\s*<link rel="stylesheet" href="data:text\/css;base64,[^"]+" \/>/,
+    )
+  },
+)
