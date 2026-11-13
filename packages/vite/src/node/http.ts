@@ -205,6 +205,7 @@ function tryListen(
 ): Promise<number | null> {
   return new Promise((resolve) => {
     const server = net.createServer()
+    server.on('connection', (socket) => socket.destroy())
     server.once('error', (e: NodeJS.ErrnoException) => {
       server.close(() => resolve(e.code === 'EADDRINUSE' ? null : port))
     })
