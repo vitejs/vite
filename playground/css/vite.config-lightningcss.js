@@ -10,6 +10,9 @@ import baseConfig from './vite.config.js'
 
 export default defineConfig({
   ...baseConfig,
+  input: Object.fromEntries(
+    Object.entries(baseConfig.input).filter(([name]) => name !== 'composed'),
+  ),
   css: {
     ...baseConfig.css,
     transformer: 'lightningcss',

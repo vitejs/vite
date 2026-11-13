@@ -11,6 +11,7 @@ export default {
     testSourceInput,
     testInjectUrl,
     testInjectUrlOnceExit,
+    testModuleUrl,
   ],
 }
 
@@ -116,3 +117,17 @@ function testInjectUrlOnceExit() {
   }
 }
 testInjectUrlOnceExit.postcss = true
+
+function testModuleUrl() {
+  return {
+    postcssPlugin: 'module-url',
+    OnceExit(root) {
+      root.walkDecls('border-image-source', (decl) => {
+        if (decl.value === 'module-url') {
+          decl.value = "url('./image.svg')"
+        }
+      })
+    },
+  }
+}
+testModuleUrl.postcss = true

@@ -1,0 +1,12 @@
+@value icon: url('./image.svg');
+@value importedIcon from '../nested/values.module.css';
+
+.shared {
+  composes: nested from '../nested/nested.module.css';
+  border-image-source: module-url;
+  background-image: icon;
+  list-style-image: importedIcon;
+  &.shared {
+    color: purple;
+  }
+}

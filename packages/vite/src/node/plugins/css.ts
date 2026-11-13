@@ -1738,6 +1738,7 @@ async function compilePostCSS(
     )
   }
 
+  const moduleUrls = isModule ? new Map<string, string>() : undefined
   if (
     urlResolver &&
     // when a postcss plugin is used (including the internal postcss plugins),
@@ -1751,6 +1752,7 @@ async function compilePostCSS(
         resolver: urlResolver,
         deps,
         logger: environment.logger,
+        moduleUrls,
       }),
     )
   }
@@ -1758,15 +1760,27 @@ async function compilePostCSS(
   let modules: Record<string, string> | undefined
 
   if (isModule) {
-    postcssPlugins.unshift(
+    // The loader runs preceding plugins on composed modules before inlining them.
+    postcssPlugins.push(
       (await importPostcssModules()).default({
         ...modulesOptions,
         localsConvention: modulesOptions?.localsConvention,
-        getJSON(
+        async getJSON(
           cssFileName: string,
           _modules: Record<string, string>,
           outputFileName: string,
         ) {
+          if (moduleUrls) {
+            for (const key of Object.keys(_modules)) {
+              _modules[key] = await restoreCssModuleUrls(
+                _modules[key],
+                moduleUrls,
+                urlResolver,
+                cssFileName,
+                deps,
+              )
+            }
+          }
           modules = _modules
           if (modulesOptions && typeof modulesOptions.getJSON === 'function') {
             modulesOptions.getJSON(cssFileName, _modules, outputFileName)
@@ -1788,6 +1802,29 @@ async function compilePostCSS(
         },
       }),
     )
+  }
+
+  if (moduleUrls) {
+    postcssPlugins.push({
+      postcssPlugin: 'vite-css-module-urls',
+      OnceExit(root) {
+        const promises: Promise<void>[] = []
+        root.walkDecls((declaration) => {
+          promises.push(
+            restoreCssModuleUrls(
+              declaration.value,
+              moduleUrls,
+              urlResolver,
+              declaration.source?.input.file ?? id,
+              deps,
+            ).then((value) => {
+              declaration.value = value
+            }),
+          )
+        })
+        return Promise.all(promises) as any
+      },
+    })
   }
 
   const postcssOptions = postcssConfig?.options ?? {}
@@ -2151,6 +2188,7 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
   resolver: CssUrlResolver
   deps: Set<string>
   logger: Logger
+  moduleUrls?: Map<string, string>
 }> = (opts) => {
   if (!opts) {
     throw new Error('base or replace is required')
@@ -2160,8 +2198,39 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
     postcssPlugin: 'vite-url-rewrite',
     OnceExit(root) {
       const promises: Promise<void>[] = []
-      root.walkDecls((declaration) => {
-        const importer = declaration.source?.input.file
+      const valueNames = new Set<string>()
+      if (opts.moduleUrls) {
+        root.walkAtRules(/^value$/i, (node) => {
+          const imported = /\sfrom\s/.exec(node.params)
+          if (imported) {
+            const aliases = node.params.slice(0, imported.index)
+            for (const alias of aliases.replace(/[()]/g, '').split(',')) {
+              const names = alias.trim().split(/\s+as\s+/)
+              valueNames.add(names.at(-1)!)
+            }
+          } else {
+            const name = /^([\w-]+)/.exec(node.params)?.[1]
+            if (name) valueNames.add(name)
+          }
+        })
+        root.walkRules((rule) => {
+          if (rule.selector.startsWith(':import(')) {
+            rule.walkDecls((decl) => {
+              valueNames.add(decl.prop)
+            })
+          }
+        })
+      }
+      const rewrite = (node: PostCSS.Declaration | PostCSS.AtRule) => {
+        const value = node.type === 'decl' ? node.value : node.params
+        const isCssUrl = cssUrlRE.test(value)
+        const isCssImageSet = cssImageSetRE.test(value)
+        if (!isCssUrl && !isCssImageSet) return
+        const importer =
+          node.source?.input.file ??
+          (node.parent?.type === 'rule' && node.parent.selector === ':export'
+            ? root.source?.input.file
+            : undefined)
         if (!importer) {
           opts.logger.warnOnce(
             '\nA PostCSS plugin did not pass the `from` option to `postcss.parse`. ' +
@@ -2170,38 +2239,56 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
               'please contact the package author to fix the issue.',
           )
         }
-        const isCssUrl = cssUrlRE.test(declaration.value)
-        const isCssImageSet = cssImageSetRE.test(declaration.value)
-        if (isCssUrl || isCssImageSet) {
-          const replacerForDeclaration = async (rawUrl: string) => {
-            const [newUrl, resolvedId] = await opts.resolver(rawUrl, importer)
-            if (resolvedId) {
-              opts.deps.add(resolvedId)
-            }
-            return newUrl
-          }
-          if (isCssUrl && isCssImageSet) {
-            promises.push(
-              rewriteCssUrls(declaration.value, replacerForDeclaration)
-                .then((url) => rewriteCssImageSet(url, replacerForDeclaration))
-                .then((url) => {
-                  declaration.value = url
-                }),
+        const replacerForDeclaration = async (rawUrl: string) => {
+          // Match CSS Modules' identifier replacement within paths and fragments.
+          if (
+            valueNames.size &&
+            [...rawUrl.matchAll(/\$?[\w-]+/g)].some(([name]) =>
+              valueNames.has(name),
             )
-          } else {
-            const rewriterToUse = isCssImageSet
-              ? rewriteCssImageSet
-              : rewriteCssUrls
-            promises.push(
-              rewriterToUse(declaration.value, replacerForDeclaration).then(
-                (url) => {
-                  declaration.value = url
-                },
-              ),
-            )
+          ) {
+            return false
           }
+          // image-set() may visit the same url() twice.
+          if (opts.moduleUrls?.has(rawUrl)) return rawUrl
+          const [newUrl, resolvedId] = await opts.resolver(rawUrl, importer)
+          if (resolvedId) {
+            opts.deps.add(resolvedId)
+          }
+          if (opts.moduleUrls) {
+            // Keep each occurrence distinct through value expansion and the
+            // module loader's serialization, even if resolved URLs collide.
+            const placeholder = `__VITE_CSS_MODULE_URL_${opts.moduleUrls.size}__`
+            opts.moduleUrls.set(placeholder, newUrl)
+            return placeholder
+          }
+          return newUrl
         }
-      })
+        const setValue = (value: string) => {
+          if (node.type === 'decl') node.value = value
+          else node.params = value
+        }
+        if (isCssUrl && isCssImageSet) {
+          promises.push(
+            rewriteCssUrls(value, replacerForDeclaration)
+              .then((url) => rewriteCssImageSet(url, replacerForDeclaration))
+              .then((url) => {
+                setValue(url)
+              }),
+          )
+        } else {
+          const rewriterToUse = isCssImageSet
+            ? rewriteCssImageSet
+            : rewriteCssUrls
+          promises.push(
+            rewriterToUse(value, replacerForDeclaration).then((url) => {
+              setValue(url)
+            }),
+          )
+        }
+      }
+      root.walkDecls(rewrite)
+      if (opts.moduleUrls) root.walkAtRules('value', rewrite)
       if (promises.length) {
         return Promise.all(promises) as any
       }
@@ -2209,6 +2296,31 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
   }
 }
 UrlRewritePostcssPlugin.postcss = true
+
+async function restoreCssModuleUrls(
+  value: string,
+  urls: Map<string, string>,
+  resolver?: CssUrlResolver,
+  importer?: string,
+  deps?: Set<string>,
+): Promise<string> {
+  if (resolver) {
+    const resolve: CssUrlReplacer = async (url) => {
+      if (urls.has(url)) return url
+      const [resolvedUrl, resolvedId] = await resolver(url, importer)
+      if (resolvedId) deps?.add(resolvedId)
+      const placeholder = `__VITE_CSS_MODULE_URL_${urls.size}__`
+      urls.set(placeholder, resolvedUrl)
+      return placeholder
+    }
+    value = await rewriteCssImageSet(
+      await rewriteCssUrls(value, resolve),
+      resolve,
+    )
+  }
+  const replace: CssUrlReplacer = (url) => urls.get(url) ?? url
+  return rewriteCssImageSet(await rewriteCssUrls(value, replace), replace)
+}
 
 function rewriteCssUrls(
   css: string,
