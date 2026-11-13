@@ -94,13 +94,13 @@ Everyone on the Vite team participated in defining the new API, which was co-des
 
 ## Main Changes
 
-- [Default value for `resolve.conditions`](/guide/migration#default-value-for-resolve-conditions)
-- [JSON stringify](/guide/migration#json-stringify)
-- [Extended support of asset references in HTML elements](/guide/migration#extended-support-of-asset-references-in-html-elements)
-- [postcss-load-config](/guide/migration#postcss-load-config)
-- [Sass now uses modern API by default](/guide/migration#sass-now-uses-modern-api-by-default)
-- [Customize CSS output file name in library mode](/guide/migration#customize-css-output-file-name-in-library-mode)
-- [And more changes that should only affect a few users](/guide/migration#advanced)
+- [Default value for `resolve.conditions`](https://v6.vite.dev/guide/migration#default-value-for-resolve-conditions)
+- [JSON stringify](https://v6.vite.dev/guide/migration#json-stringify)
+- [Extended support of asset references in HTML elements](https://v6.vite.dev/guide/migration#extended-support-of-asset-references-in-html-elements)
+- [postcss-load-config](https://v6.vite.dev/guide/migration#postcss-load-config)
+- [Sass now uses modern API by default](https://v6.vite.dev/guide/migration#sass-now-uses-modern-api-by-default)
+- [Customize CSS output file name in library mode](https://v6.vite.dev/guide/migration#customize-css-output-file-name-in-library-mode)
+- [And more changes that should only affect a few users](https://v6.vite.dev/guide/migration#advanced)
 
 There is also a new [Breaking Changes](/changes/) page that lists all planned, considering, and past changes in Vite.
 

@@ -39,7 +39,7 @@ Six months ago, Vite 4.3 [was released](./announcing-vite4.md). This release sig
 
 Today, we mark another big milestone in Vite's path. The Vite [team](/team), [contributors](https://github.com/vitejs/vite/graphs/contributors), and ecosystem partners, are excited to announce the release of Vite 5. Vite is now using [Rollup 4](https://github.com/vitejs/vite/pull/14508), which already represents a big boost in build performance. And there are also new options to improve your dev server performance profile.
 
-Vite 5 focuses on cleaning up the API (removing deprecated features) and streamlines several features closing long-standing issues, for example switching `define` to use proper AST replacements instead of regexes. We also continue to take steps to future-proof Vite (Node.js 18+ is now required, and [the CJS Node API has been deprecated](/guide/migration#deprecate-cjs-node-api)).
+Vite 5 focuses on cleaning up the API (removing deprecated features) and streamlines several features closing long-standing issues, for example switching `define` to use proper AST replacements instead of regexes. We also continue to take steps to future-proof Vite (Node.js 18+ is now required, and [the CJS Node API has been deprecated](https://v5.vite.dev/guide/migration#deprecate-cjs-node-api)).
 
 Quick links:
 
@@ -80,20 +80,20 @@ Vite 5 also introduces [server.warmup](/guide/performance.html#warm-up-frequentl
 
 ## Main Changes
 
-- [Vite is now powered by Rollup 4](/guide/migration#rollup-4)
-- [The CJS Node API has been deprecated](/guide/migration#deprecate-cjs-node-api)
-- [Rework `define` and `import.meta.env.*` replacement strategy](/guide/migration#rework-define-and-import-meta-env-replacement-strategy)
-- [SSR externalized modules value now matches production](/guide/migration#ssr-externalized-modules-value-now-matches-production)
-- [`worker.plugins` is now a function](/guide/migration#worker-plugins-is-now-a-function)
-- [Allow path containing `.` to fallback to index.html](/guide/migration#allow-path-containing-to-fallback-to-index-html)
+- [Vite is now powered by Rollup 4](https://v5.vite.dev/guide/migration#rollup-4)
+- [The CJS Node API has been deprecated](https://v5.vite.dev/guide/migration#deprecate-cjs-node-api)
+- [Rework `define` and `import.meta.env.*` replacement strategy](https://v5.vite.dev/guide/migration#rework-define-and-import-meta-env-replacement-strategy)
+- [SSR externalized modules value now matches production](https://v5.vite.dev/guide/migration#ssr-externalized-modules-value-now-matches-production)
+- [`worker.plugins` is now a function](https://v5.vite.dev/guide/migration#worker-plugins-is-now-a-function)
+- [Allow path containing `.` to fallback to index.html](https://v5.vite.dev/guide/migration#allow-path-containing-to-fallback-to-index-html)
 - [Align dev and preview HTML serving behavior](https://v5.vite.dev/guide/migration#align-dev-and-preview-html-serving-behaviour)
-- [Manifest files are now generated in `.vite` directory by default](/guide/migration#manifest-files-are-now-generated-in-vite-directory-by-default)
-- [CLI shortcuts require an additional `Enter` press](/guide/migration#cli-shortcuts-require-an-additional-enter-press)
+- [Manifest files are now generated in `.vite` directory by default](https://v5.vite.dev/guide/migration#manifest-files-are-now-generated-in-vite-directory-by-default)
+- [CLI shortcuts require an additional `Enter` press](https://v5.vite.dev/guide/migration#cli-shortcuts-require-an-additional-enter-press)
 - [Update `experimentalDecorators` and `useDefineForClassFields` TypeScript behavior](https://v5.vite.dev/guide/migration#update-experimentaldecorators-and-usedefineforclassfields-typescript-behaviour)
-- [Remove `--https` flag and `https: true`](/guide/migration#remove-https-flag-and-https-true)
-- [Remove `resolvePackageEntry` and `resolvePackageData` APIs](/guide/migration#remove-resolvepackageentry-and-resolvepackagedata-apis)
-- [Removes previously deprecated APIs](/guide/migration#removed-deprecated-apis)
-- [Read more about advanced changes affecting plugin and tool authors](/guide/migration#advanced)
+- [Remove `--https` flag and `https: true`](https://v5.vite.dev/guide/migration#remove-https-flag-and-https-true)
+- [Remove `resolvePackageEntry` and `resolvePackageData` APIs](https://v5.vite.dev/guide/migration#remove-resolvepackageentry-and-resolvepackagedata-apis)
+- [Removes previously deprecated APIs](https://v5.vite.dev/guide/migration#removed-deprecated-apis)
+- [Read more about advanced changes affecting plugin and tool authors](https://v5.vite.dev/guide/migration#advanced)
 
 ## Migrating to Vite 5
 
