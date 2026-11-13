@@ -118,6 +118,43 @@ if (!isBuild) {
     await expect.poll(() => el.textContent()).toMatch('3')
   })
 
+  test('lazy imports preserve module identity above a self-accepting boundary', async () => {
+    const evaluations = page.locator('.self-accepting-parent-evaluations')
+    await expect.poll(() => evaluations.textContent()).toBe('1')
+    await expect
+      .poll(() => page.textContent('.self-accepting-boundary-value'))
+      .toBe('initial')
+
+    editFile('self-accepting-lazy/dep.js', (code) =>
+      code.replace('initial', 'updated value'),
+    )
+    await expect
+      .poll(() => page.textContent('.self-accepting-boundary-value'))
+      .toBe('updated value')
+    expect(await evaluations.textContent()).toBe('1')
+
+    await page.click('.self-accepting-lazy-import')
+    await expect
+      .poll(async () => ({
+        identity: await page.textContent('.self-accepting-parent-identity'),
+        evaluations: await evaluations.textContent(),
+      }))
+      .toEqual({ identity: 'true', evaluations: '1' })
+
+    if (!isBundledDev) {
+      const parentUrls = await page.evaluate(() =>
+        performance
+          .getEntriesByType('resource')
+          .map((entry) => new URL(entry.name))
+          .filter((url) =>
+            url.pathname.endsWith('/self-accepting-lazy/parent.js'),
+          )
+          .map((url) => url.pathname + url.search),
+      )
+      expect(parentUrls).toEqual(['/self-accepting-lazy/parent.js'])
+    }
+  })
+
   test('hot data persists across module instances', async () => {
     await untilBrowserLogAfter(
       () =>
