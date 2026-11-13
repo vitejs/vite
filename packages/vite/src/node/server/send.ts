@@ -48,8 +48,7 @@ export function send(
   }
 
   if (req.headers['if-none-match'] === etag) {
-    res.statusCode = 304
-    res.end()
+    send304(res, { etag, cacheControl, headers })
     return
   }
 
@@ -98,4 +97,28 @@ export function send(
     res.end(content)
   }
   return
+}
+
+// a 304 still carries the ETag, Cache-Control and configured headers a 200 would
+export function send304(
+  res: ServerResponse,
+  options: Pick<SendOptions, 'etag' | 'cacheControl' | 'headers'>,
+): void {
+  if (res.writableEnded) {
+    return
+  }
+  const { etag, cacheControl, headers } = options
+  res.statusCode = 304
+  if (etag !== undefined) {
+    res.setHeader('Etag', etag)
+  }
+  if (cacheControl !== undefined) {
+    res.setHeader('Cache-Control', cacheControl)
+  }
+  if (headers) {
+    for (const name in headers) {
+      res.setHeader(name, headers[name]!)
+    }
+  }
+  res.end()
 }

@@ -2,6 +2,7 @@ import * as mrmime from 'mrmime'
 import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '..'
 import { cleanUrl } from '../../../shared/utils'
+import { send304 } from '../send'
 
 export function memoryFilesMiddleware(
   server: ViteDevServer,
@@ -32,8 +33,7 @@ export function memoryFilesMiddleware(
     if (file) {
       if (file.etag) {
         if (req.headers['if-none-match'] === file.etag) {
-          res.statusCode = 304
-          res.end()
+          send304(res, { etag: file.etag, headers })
           return
         }
         res.setHeader('Etag', file.etag)
