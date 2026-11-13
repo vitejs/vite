@@ -411,12 +411,14 @@ export function tryStatSync(file: string): fs.Stats | undefined {
 export function lookupFile(
   dir: string,
   fileNames: string[],
+  stopDir?: string,
 ): string | undefined {
   while (dir) {
     for (const fileName of fileNames) {
       const fullPath = path.join(dir, fileName)
       if (tryStatSync(fullPath)?.isFile()) return fullPath
     }
+    if (dir === stopDir) return
     const parentDir = path.dirname(dir)
     if (parentDir === dir) return
 

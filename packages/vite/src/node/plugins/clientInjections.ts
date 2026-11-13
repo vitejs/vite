@@ -206,6 +206,7 @@ export function bundledDevClientImportsPlugin(config: ResolvedConfig): Plugin {
       )
     },
     resolveId: {
+      cache: true,
       filter: {
         id: [
           exactRegex(clientUrl),
@@ -217,6 +218,7 @@ export function bundledDevClientImportsPlugin(config: ResolvedConfig): Plugin {
       },
     },
     load: {
+      cache: true,
       filter: {
         id: new RegExp(
           `^(?:${escapeRegex(normalizedClientEntry)}|${escapeRegex(normalizedEnvEntry)})(?:\\?.*)?$`,

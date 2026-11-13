@@ -64,6 +64,7 @@ import { prepareOutDirPlugin } from './plugins/prepareOutDir'
 import { buildReporterPlugin } from './plugins/reporter'
 import { type TerserOptions, terserPlugin } from './plugins/terser'
 import { webWorkerPostPlugin } from './plugins/worker'
+import { resolveRolldownCacheOptions } from './rolldownCache'
 import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
@@ -656,6 +657,7 @@ export function resolveRolldownOptions(
   const plugins = environment.plugins.map((p) =>
     injectEnvironmentToHooks(environment, chunkMetadataMap, p),
   )
+  const cacheOptions = resolveRolldownCacheOptions(environment)
 
   const rolldownOptions: RolldownOptions = {
     preserveEntrySignatures: ssr
@@ -703,6 +705,7 @@ export function resolveRolldownOptions(
             baseUrl: base,
           }
         : options.rolldownOptions.experimental?.chunkImportMap,
+      ...(cacheOptions && { cache: cacheOptions }),
     },
   }
 

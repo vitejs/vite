@@ -201,6 +201,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     resolveId: {
+      cache: true,
       filter: {
         id: [
           urlRE,

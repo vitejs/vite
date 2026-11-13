@@ -111,6 +111,7 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:html-inline-proxy',
 
     resolveId: {
+      cache: true,
       filter: { id: isHtmlProxyRE },
       handler(id) {
         return id
