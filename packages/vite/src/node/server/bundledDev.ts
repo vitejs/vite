@@ -1,17 +1,25 @@
 import { setTimeout } from 'node:timers/promises'
 import colors from 'picocolors'
-import type { RolldownOutput } from 'rolldown'
+import type {
+  OutputOptions,
+  Plugin,
+  RolldownOptions,
+  RolldownOutput,
+} from 'rolldown'
 import {
   type BindingClientHmrUpdate,
   type DevEngine,
   dev,
 } from 'rolldown/experimental'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
-import { BUNDLED_DEV_CLIENT_FILENAME } from '../constants'
+import {
+  BUNDLED_DEV_CLIENT_FILENAME,
+  BUNDLED_DEV_ROLLDOWN_RUNTIME_FILENAME,
+} from '../constants'
 import {
   getBundledDevClientAliases,
   getHmrImplementation,
-  getRolldownDevRuntimeFiles,
+  getRolldownDevRuntime,
 } from '../plugins/clientInjections'
 import {
   createDebugger,
@@ -30,6 +38,7 @@ type HmrOutput = BindingClientHmrUpdate['update']
 
 type MemoryFile = {
   source: string | Uint8Array
+  sourcemapPath?: string
   etag?: string
   contentType?: string
 }
@@ -98,14 +107,10 @@ export class BundledDev {
   private lastBuildError: Error | null = null
 
   memoryFiles: MemoryFiles = new MemoryFiles()
+  facadeToChunk: Map<string, string> = new Map()
+  private entryResolver?: (id: string) => Promise<string | undefined>
 
-  constructor(private environment: DevEnvironment) {
-    if (environment.name !== 'client') {
-      throw new Error(
-        'currently full bundle mode is only available for client environment',
-      )
-    }
-  }
+  constructor(private environment: DevEnvironment) {}
 
   private get devEngine(): DevEngine {
     if (!this._devEngine) {
@@ -120,11 +125,21 @@ export class BundledDev {
     return this.memoryFiles.size > this.staticFiles.size
   }
 
+  async resolveEntryFacade(id: string): Promise<string | undefined> {
+    return this.entryResolver?.(id)
+  }
+
   async listen(): Promise<void> {
     this._closed = false
     debug?.('INITIAL: setup bundle options')
     const rolldownOptions = await this.getRolldownOptions()
-    await this.storeStaticFiles()
+    if (isEmptyInput(rolldownOptions.input)) {
+      debug?.('INITIAL: no entry points, skipping the build')
+      return
+    }
+    if (this.environment.config.consumer !== 'server') {
+      await this.storeStaticFiles()
+    }
     // NOTE: only single outputOptions is supported here
     if (
       Array.isArray(rolldownOptions.output) &&
@@ -142,7 +157,7 @@ export class BundledDev {
       'vite:client-connected',
       async (payload, client) => {
         this.clients.setupIfNeeded(client, payload.clientId)
-        this.devEngine.registerClient(payload.clientId)
+        await this.devEngine.registerClient(payload.clientId)
       },
     )
     this.environment.hot.on('vite:bundled-dev:payload-delivered', (payload) => {
@@ -283,6 +298,21 @@ export class BundledDev {
     })
   }
 
+  /**
+   * @internal
+   */
+  public async _waitForInitialBuildSuccess(): Promise<void> {
+    // the build is skipped when there are no entry points
+    if (!this._devEngine) return
+    await this.devEngine.ensureCurrentBuildFinish()
+    const bundleState = await this.devEngine.getBundleState()
+    if (bundleState.lastBuildErrored) {
+      throw new Error(
+        `The last full bundle mode build has failed. See logs for more information.`,
+      )
+    }
+  }
+
   private async waitForInitialBuildFinish(): Promise<void> {
     if (this._closed) return
     await this.devEngine.ensureCurrentBuildFinish()
@@ -340,7 +370,10 @@ export class BundledDev {
   async triggerLazyBundling(
     moduleId: string | null,
     clientId: string | null,
-  ): Promise<{ code: string; filename: string } | undefined> {
+  ): Promise<
+    | { code: string; filename: string; sourcemap: string | undefined }
+    | undefined
+  > {
     if (!moduleId || !clientId) {
       return
     }
@@ -361,7 +394,19 @@ export class BundledDev {
     return {
       filename: result.filename,
       code: result.code + payloadDeliveredAck(result.filename),
+      sourcemap: result.sourcemap,
     }
+  }
+
+  async resetClient(oldClientId: string, newClientId: string): Promise<void> {
+    const client = this.clients.get(oldClientId)
+    if (!client) {
+      throw new Error(`bundled dev client ${oldClientId} is not registered`)
+    }
+    this.clients.replace(client, newClientId)
+    this.reloadNeededClientIds.delete(oldClientId)
+    await this.devEngine.removeClient(oldClientId)
+    await this.devEngine.registerClient(newClientId)
   }
 
   /**
@@ -381,8 +426,12 @@ export class BundledDev {
   async close(): Promise<void> {
     this._closed = true
     this.memoryFiles.clear()
-    await this._devEngine?.close()
-    this.initialBuildCompleted = false
+    try {
+      await this._devEngine?.close()
+    } finally {
+      this.entryResolver = undefined
+      this.initialBuildCompleted = false
+    }
   }
 
   private async storeStaticFiles(): Promise<void> {
@@ -391,7 +440,7 @@ export class BundledDev {
         BUNDLED_DEV_CLIENT_FILENAME,
         await getHmrImplementation(this.environment.getTopLevelConfig()),
       ],
-      ...getRolldownDevRuntimeFiles(),
+      [BUNDLED_DEV_ROLLDOWN_RUNTIME_FILENAME, getRolldownDevRuntime()],
     ])
     const aliases = getBundledDevClientAliases(
       this.environment.getTopLevelConfig(),
@@ -411,23 +460,51 @@ export class BundledDev {
   private storeOutputFiles(output: RolldownOutput['output'][number][]): void {
     // NOTE: don't clear memoryFiles here as incremental build reuses the files
     for (const outputFile of output) {
+      if (
+        outputFile.type === 'chunk' &&
+        outputFile.isEntry &&
+        outputFile.facadeModuleId
+      ) {
+        this.facadeToChunk.set(
+          outputFile.facadeModuleId,
+          normalizePath(outputFile.fileName),
+        )
+      }
       this.memoryFiles.set(normalizePath(outputFile.fileName), () => {
         const source =
           outputFile.type === 'chunk' ? outputFile.code : outputFile.source
         return {
           source,
+          sourcemapPath:
+            outputFile.type === 'chunk' && outputFile.sourcemapFileName
+              ? normalizePath(outputFile.sourcemapFileName)
+              : undefined,
           etag: getEtag(Buffer.from(source), { weak: true }),
         }
       })
     }
   }
 
-  private async getRolldownOptions() {
+  protected async getRolldownOptions(): Promise<RolldownOptions> {
     const chunkMetadataMap = new ChunkMetadataMap()
     const rolldownOptions = resolveRolldownOptions(
       this.environment,
       chunkMetadataMap,
     )
+    const setEntryResolver = (
+      resolver: (id: string) => Promise<string | undefined>,
+    ) => {
+      this.entryResolver = resolver
+    }
+    const resolveEntriesPlugin: Plugin = {
+      name: 'vite:bundled-dev-resolve-entries',
+      buildStart() {
+        setEntryResolver(async (id) => {
+          return (await this.resolve(id, undefined, { isEntry: true }))?.id
+        })
+      },
+    }
+    rolldownOptions.plugins = [rolldownOptions.plugins, resolveEntriesPlugin]
     rolldownOptions.experimental ??= {}
     rolldownOptions.experimental.devMode = {
       lazy: true,
@@ -446,22 +523,24 @@ export class BundledDev {
     // set filenames to make output paths predictable so that `renderChunk` hook does not need to be used
     if (Array.isArray(rolldownOptions.output)) {
       for (const output of rolldownOptions.output) {
-        output.entryFileNames = 'assets/[name].js'
-        output.chunkFileNames = 'assets/[name]-[hash].js'
-        output.assetFileNames = 'assets/[name]-[hash][extname]'
-        output.minify = false
-        output.sourcemap = true
+        Object.assign(output, this.getOutputOptions())
       }
     } else {
       rolldownOptions.output ??= {}
-      rolldownOptions.output.entryFileNames = 'assets/[name].js'
-      rolldownOptions.output.chunkFileNames = 'assets/[name]-[hash].js'
-      rolldownOptions.output.assetFileNames = 'assets/[name]-[hash][extname]'
-      rolldownOptions.output.minify = false
-      rolldownOptions.output.sourcemap = true
+      Object.assign(rolldownOptions.output, this.getOutputOptions())
     }
 
     return rolldownOptions
+  }
+
+  protected getOutputOptions(): OutputOptions {
+    return {
+      entryFileNames: 'assets/[name].js',
+      chunkFileNames: 'assets/[name]-[hash].js',
+      assetFileNames: 'assets/[name]-[hash][extname]',
+      minify: false,
+      sourcemap: true,
+    }
   }
 
   private handleHmrOutput(
@@ -507,6 +586,9 @@ export class BundledDev {
         hmrOutput.code +
         payloadDeliveredAck(hmrOutput.filename) +
         '\n; export {}',
+      sourcemapPath: hmrOutput.sourcemapFilename
+        ? normalizePath(hmrOutput.sourcemapFilename)
+        : undefined,
     })
     if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
       this.memoryFiles.set(hmrOutput.sourcemapFilename, {
@@ -544,6 +626,13 @@ class Clients {
         'client ID conflict detected. Please restart the dev server.',
       )
     }
+    this.clientToId.set(client, clientId)
+    this.idToClient.set(clientId, client)
+  }
+
+  replace(client: NormalizedHotChannelClient, clientId: string): void {
+    const previousClientId = this.clientToId.get(client)
+    if (previousClientId) this.idToClient.delete(previousClientId)
     this.clientToId.set(client, clientId)
     this.idToClient.set(clientId, client)
   }
@@ -589,4 +678,12 @@ function debounce(time: number, cb: () => void) {
  */
 function payloadDeliveredAck(filename: string): string {
   return `\n;__rolldown_runtime__.payloadDelivered(${JSON.stringify(filename)});`
+}
+
+function isEmptyInput(input: RolldownOptions['input']): boolean {
+  if (Array.isArray(input)) return input.length === 0
+  if (typeof input === 'object' && input != null) {
+    return Object.keys(input).length === 0
+  }
+  return false
 }

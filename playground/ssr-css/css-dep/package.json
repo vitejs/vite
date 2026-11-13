@@ -1,0 +1,14 @@
+{
+  "name": "@vitejs/test-ssr-css-dep",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "sass": "./style.scss",
+      "less": "./style.less",
+      "style": "./style.css",
+      "default": "./index.js"
+    }
+  }
+}

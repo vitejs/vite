@@ -80,7 +80,7 @@ baseOptions.forEach(({ base, label }) => {
 
         expect(await getColor('.css-dynamic-import')).toBe('green')
         // in serve there is no preloading
-        expect(await getLinks()).toEqual([
+        expect(await getLinks()).toStrictEqual([
           {
             pathname: '/dynamic.css',
             rel: 'preload',
