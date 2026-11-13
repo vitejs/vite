@@ -754,9 +754,15 @@ importers:
 
   playground/alias/dir/module: {}
 
-  playground/assets: {}
+  playground/assets:
+    dependencies:
+      '@vitejs/test-assets-unused-asset-dep':
+        specifier: link:./unused-asset-dep
+        version: link:unused-asset-dep
 
   playground/assets-sanitize: {}
+
+  playground/assets/unused-asset-dep: {}
 
   playground/backend-integration:
     devDependencies:
