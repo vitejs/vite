@@ -401,6 +401,9 @@ importers:
       '@jridgewell/remapping':
         specifier: ^2.3.5
         version: 2.3.5
+      '@jridgewell/sourcemap-codec':
+        specifier: ^1.6.0
+        version: 1.6.0
       '@jridgewell/trace-mapping':
         specifier: ^0.3.31
         version: 0.3.31

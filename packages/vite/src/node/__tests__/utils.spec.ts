@@ -3,6 +3,8 @@ import fs from 'node:fs'
 import os, { type NetworkInterfaceInfoIPv4 } from 'node:os'
 import path from 'node:path'
 import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
+import { decode, encode } from '@jridgewell/sourcemap-codec'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
 import { fileURLToPath } from 'mlly'
 import { describe, expect, test, vi, onTestFinished } from 'vitest'
@@ -32,6 +34,8 @@ import {
   removeTimestampQuery,
   resolveHostname,
   resolveServerUrls,
+  type SourceEdit,
+  shiftSourcemapForEdits,
 } from '../utils'
 
 // Test certificate for SAN parsing (localhost, foo.localhost, *.vite.localhost)
@@ -1064,6 +1068,176 @@ describe('combineSourcemaps', () => {
         ],
       }),
     )
+  })
+})
+
+describe('shiftSourcemapForEdits', () => {
+  // segments are [generated column, original line, original column]
+  const chunkMap = (lines: [number, number, number][][]): RawSourceMap => ({
+    version: 3,
+    file: 'index.js',
+    sources: ['src/index.js'],
+    names: [],
+    mappings: encode(
+      lines.map((segments) =>
+        segments.map(([column, line, originalColumn]) => [
+          column,
+          0,
+          line,
+          originalColumn,
+        ]),
+      ),
+    ),
+  })
+
+  // Compares every position of the edited code against the chunk map traced
+  // through a character-level map of the edits.
+  const expectExactMapping = (
+    code: string,
+    map: RawSourceMap,
+    edits: SourceEdit[],
+  ) => {
+    const s = new MagicString(code)
+    for (const { start, end, content } of edits) {
+      if (start === end) s.prependLeft(start, content)
+      else s.update(start, end, content)
+    }
+    const exact = new TraceMap(
+      combineSourcemaps('index.js', [
+        s.generateDecodedMap({ source: 'index.js', hires: true }),
+        map,
+      ]),
+    )
+    const shifted = shiftSourcemapForEdits(map, code, edits)
+    expect(shifted).toBeDefined()
+    const shiftedMap = new TraceMap(shifted!)
+
+    s.toString()
+      .split('\n')
+      .forEach((text, line) => {
+        for (let column = 0; column <= text.length; column++) {
+          const position = { line: line + 1, column }
+          expect(
+            originalPositionFor(shiftedMap, position),
+            `${line}:${column}`,
+          ).toStrictEqual(originalPositionFor(exact, position))
+        }
+      })
+  }
+
+  const marker = '__MARKER__'
+
+  test('replaces spans with longer and shorter content', () => {
+    const code = `a(${marker});b(${marker});c()`
+    expectExactMapping(
+      code,
+      chunkMap([
+        [
+          [0, 0, 0],
+          [2, 0, 4],
+          [12, 0, 20],
+          [14, 1, 0],
+          [16, 1, 4],
+          [26, 1, 20],
+          [28, 2, 0],
+        ],
+      ]),
+      [
+        { start: 2, end: 12, content: '__vite__mapDeps([0,1])' },
+        { start: 16, end: 26, content: '[]' },
+      ],
+    )
+  })
+
+  test('maps the code after a replaced span like the segment inside it', () => {
+    const code = `a(${marker}, b)`
+    expectExactMapping(
+      code,
+      chunkMap([
+        [
+          [0, 0, 0],
+          [5, 3, 7],
+          [14, 4, 0],
+        ],
+      ]),
+      [{ start: 2, end: 12, content: 'void 0' }],
+    )
+  })
+
+  test('keeps segments that share a column', () => {
+    const code = `a(${marker});parent?.x`
+    expectExactMapping(
+      code,
+      chunkMap([
+        [
+          [0, 0, 0],
+          [14, 1, 4],
+          [14, 2, 6],
+          [21, 2, 13],
+        ],
+      ]),
+      [{ start: 2, end: 12, content: '[]' }],
+    )
+  })
+
+  test('moves lines down for inserted lines', () => {
+    const code = `#!/usr/bin/env node\nfoo(${marker})\nbar()`
+    expectExactMapping(
+      code,
+      chunkMap([
+        [[0, 0, 0]],
+        [
+          [0, 1, 0],
+          [4, 1, 4],
+        ],
+        [[0, 2, 0]],
+      ]),
+      [
+        { start: 20, end: 20, content: 'const __vite__mapDeps=0;\n' },
+        { start: 24, end: 34, content: '[]' },
+      ],
+    )
+  })
+
+  test('drops redundant segments and unused names', () => {
+    const map: RawSourceMap = {
+      version: 3,
+      file: 'index.js',
+      sources: ['src/index.js'],
+      names: ['unused', 'foo'],
+      mappings: encode([
+        [[0], [5, 0, 0, 0], [9, 0, 0, 0], [12], [14], [16, 0, 1, 0]],
+        [
+          [0, 0, 2, 0],
+          [7, 0, 2, 0],
+          [7, 0, 2, 0, 1],
+          [9, 0, 2, 0, 1],
+        ],
+      ]),
+    }
+    const shifted = shiftSourcemapForEdits(map, 'x'.repeat(20) + '\n', [])!
+    expect(shifted.names).toStrictEqual(['foo'])
+    expect(decode(shifted.mappings)).toStrictEqual([
+      [[5, 0, 0, 0], [12], [16, 0, 1, 0]],
+      [
+        [0, 0, 2, 0],
+        [7, 0, 2, 0],
+        [7, 0, 2, 0, 0],
+      ],
+    ])
+  })
+
+  test('returns undefined for edits it does not support', () => {
+    const code = 'a(\nb)\nc'
+    const map = chunkMap([[[0, 0, 0]], [[0, 1, 0]], [[0, 2, 0]]])
+    expect(
+      shiftSourcemapForEdits(map, code, [{ start: 1, end: 4, content: 'x' }]),
+    ).toBeUndefined()
+    expect(
+      shiftSourcemapForEdits(map, code, [
+        { start: 1, end: 1, content: 'x;\n' },
+      ]),
+    ).toBeUndefined()
   })
 })
 

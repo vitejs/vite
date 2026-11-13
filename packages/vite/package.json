@@ -78,6 +78,7 @@
   "devDependencies": {
     "@babel/parser": "^7.29.13",
     "@jridgewell/remapping": "^2.3.5",
+    "@jridgewell/sourcemap-codec": "^1.6.0",
     "@jridgewell/trace-mapping": "^0.3.31",
     "@polka/compression": "^1.0.0-next.25",
     "@rollup/plugin-alias": "^6.0.1",
