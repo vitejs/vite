@@ -30,8 +30,16 @@ const argv = mri<{
   immediate?: boolean
   interactive?: boolean
   eslint?: boolean
+  devtools?: boolean
 }>(process.argv.slice(2), {
-  boolean: ['help', 'overwrite', 'immediate', 'interactive', 'eslint'],
+  boolean: [
+    'help',
+    'overwrite',
+    'immediate',
+    'interactive',
+    'eslint',
+    'devtools',
+  ],
   alias: { h: 'help', t: 'template', i: 'immediate' },
   string: ['template'],
 })
@@ -48,6 +56,7 @@ Options:
   -t, --template NAME                   use a specific template
   -i, --immediate / --no-immediate      install dependencies and start dev
   --eslint / --no-eslint                use ESLint instead of Oxlint (only for React templates)
+  --devtools / --no-devtools            add Vite DevTools
   --overwrite                           remove existing files if target directory is not empty
   --interactive / --no-interactive      force interactive / non-interactive mode
   -h, --help                            display this help message
@@ -465,6 +474,7 @@ async function init() {
   const argImmediate = argv.immediate
   const argInteractive = argv.interactive
   const argEslint = argv.eslint
+  const argDevtools = argv.devtools
 
   const help = argv.help
   if (help) {
@@ -676,7 +686,25 @@ async function init() {
     }
   }
 
-  // 6. Ask about immediate install and package manager
+  // 6. Ask whether to add Vite DevTools
+  let devtools = argDevtools
+  if (devtools === undefined) {
+    if (interactive) {
+      const devtoolsResult = await prompts.select<boolean>({
+        message: 'Add Vite DevTools?',
+        options: [
+          { label: 'No', value: false },
+          { label: 'Yes', value: true },
+        ],
+      })
+      if (prompts.isCancel(devtoolsResult)) return cancel()
+      devtools = devtoolsResult
+    } else {
+      devtools = false
+    }
+  }
+
+  // 7. Ask about immediate install and package manager
   let immediate = argImmediate
   if (immediate === undefined) {
     if (interactive) {
@@ -736,6 +764,10 @@ async function init() {
 
   if (eslint) {
     setupEslint(root, template.endsWith('-ts'))
+  }
+
+  if (devtools) {
+    setupDevTools(root, template.endsWith('-ts'))
   }
 
   if (immediate) {
@@ -1072,6 +1104,63 @@ function updateReactCompilerReadme(root: string, newBody: string) {
     return content.replace(
       content.slice(bodyStart + 2, compilerSectionEnd - 1),
       newBody,
+    )
+  })
+}
+
+function setupDevTools(root: string, isTs: boolean) {
+  // renovate: datasource=npm depName=@vitejs/devtools
+  const devtoolsVersion = '0.8.0'
+  // renovate: datasource=npm depName=@vitejs/devtools-vite
+  const devtoolsViteVersion = '0.8.0'
+  // renovate: datasource=npm depName=@vitejs/devtools-rolldown
+  const devtoolsRolldownVersion = '0.8.0'
+
+  const option = `{
+    // Remove this \`apply\` property to enable devtools for build as well
+    apply: 'serve',
+  }`
+
+  editFile(path.resolve(root, 'package.json'), (content) => {
+    const asObject = JSON.parse(content)
+    const devDepsEntries = Object.entries(asObject.devDependencies ?? {})
+    devDepsEntries.push(['@vitejs/devtools', `^${devtoolsVersion}`])
+    devDepsEntries.push(['@vitejs/devtools-vite', `^${devtoolsViteVersion}`])
+    devDepsEntries.push([
+      '@vitejs/devtools-rolldown',
+      `^${devtoolsRolldownVersion}`,
+    ])
+    // oxlint-disable-next-line typescript/require-array-sort-compare
+    devDepsEntries.sort()
+    asObject.devDependencies = Object.fromEntries(devDepsEntries)
+    return JSON.stringify(asObject, null, 2) + '\n'
+  })
+
+  const configPath = path.resolve(root, `vite.config.${isTs ? 'ts' : 'js'}`)
+  if (!fs.existsSync(configPath)) {
+    // vanilla and lit templates don't ship a config file
+    fs.writeFileSync(
+      configPath,
+      /* js */ `import { defineConfig } from 'vite'
+
+// https://vite.dev/config/
+export default defineConfig({
+  devtools: ${option},
+})
+`,
+    )
+    return
+  }
+  editFile(configPath, (content) => {
+    if (!content.includes('defineConfig({')) {
+      prompts.log.warn(
+        `Could not add \`devtools\` to ${path.basename(configPath)}, please add it manually`,
+      )
+      return content
+    }
+    return content.replace(
+      'defineConfig({',
+      `defineConfig({\n  devtools: ${option},`,
     )
   })
 }
