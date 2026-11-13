@@ -196,6 +196,7 @@ export class BundledDev {
               error: result,
             },
           )
+          this.fullReloadPending = true
           // TODO: send to the specific client
           for (const client of this.clients.getAll()) {
             client.send({
@@ -207,6 +208,12 @@ export class BundledDev {
         }
         const { updates, changedFiles } = result
         if (changedFiles.length === 0) {
+          return
+        }
+        // Pending reloads need fresh bundle output instead of individual HMR
+        // updates. Successful onOutput consumes the pending reload.
+        if (this.fullReloadPending) {
+          void this.devEngine.ensureLatestBuildOutput()
           return
         }
         if (updates.every((update) => update.update.type === 'Noop')) {
@@ -235,7 +242,7 @@ export class BundledDev {
             },
           )
           this.lastBuildError = result
-          this.fullReloadPending = false
+          this.fullReloadPending = true
           this.environment.hot.send({
             type: 'error',
             err: prepareError(result),
@@ -246,9 +253,9 @@ export class BundledDev {
 
         this.storeOutputFiles(result.output)
 
-        // Trigger a full reload if there's no error in the result and a reload is pending from HMR.
         if (this.fullReloadPending) {
           this.fullReloadPending = false
+          this.reloadNeededClientIds.clear()
           this.debouncedFullReload()
         }
         if (this.reloadNeededClientIds.size) {
@@ -319,11 +326,10 @@ export class BundledDev {
       bundleState.lastErrorStage === 'Hmr'
     ) {
       debug?.(`TRIGGER: access after HMR-stage failure, forcing full rebuild`)
+      this.fullReloadPending = true
 
       this.devEngine.triggerFullBuild()
-      this.devEngine.ensureLatestBuildOutput().then(() => {
-        this.debouncedFullReload()
-      })
+      void this.devEngine.ensureLatestBuildOutput()
       return true
     }
 

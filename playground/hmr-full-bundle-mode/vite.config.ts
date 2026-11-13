@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import { type Plugin, defineConfig } from 'vite'
 
 export default defineConfig({
@@ -8,8 +10,28 @@ export default defineConfig({
     // emit assets as files instead of inlining, for the new-asset HMR test
     assetsInlineLimit: 0,
   },
-  plugins: [waitBundleCompleteUntilAccess(), delayTransformComment()],
+  plugins: [
+    waitBundleCompleteUntilAccess(),
+    delayTransformComment(),
+    failBundleGeneration(),
+  ],
 })
+
+function failBundleGeneration(): Plugin {
+  let hmrFile: string
+  return {
+    name: 'fail-bundle-generation',
+    apply: 'serve',
+    configResolved(config) {
+      hmrFile = path.resolve(config.root, 'hmr.js')
+    },
+    generateBundle() {
+      if (readFileSync(hmrFile, 'utf-8').includes('// @fail-generate-bundle')) {
+        this.error('test bundle generation failed')
+      }
+    },
+  }
+}
 
 function waitBundleCompleteUntilAccess(): Plugin {
   let resolvers: PromiseWithResolvers<void>
