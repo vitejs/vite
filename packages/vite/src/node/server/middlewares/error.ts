@@ -5,14 +5,16 @@ import type { RollupError } from 'rolldown'
 import type { Connect } from '#dep-types/connect'
 import type { ErrorPayload } from '#types/hmrPayload'
 import type { ViteDevServer } from '../..'
+import { getOriginalRollupErrorMessage } from '../../build'
 import { CLIENT_PUBLIC_PATH } from '../../constants'
 import { pad } from '../../utils'
 
 export function prepareError(err: Error | RollupError): ErrorPayload['err'] {
+  const rawMessage = getOriginalRollupErrorMessage(err) ?? err.message
   // only copy the information we need and avoid serializing unnecessary
   // properties, since some errors may attach full objects (e.g. PostCSS)
   return {
-    message: strip(err.message),
+    message: strip(rawMessage),
     stack: strip(cleanStack(err.stack || '')),
     id: (err as RollupError).id,
     frame: strip((err as RollupError).frame || ''),
@@ -43,8 +45,9 @@ function cleanStack(stack: string) {
 }
 
 export function logError(server: ViteDevServer, err: RollupError): void {
+  const rawMessage = getOriginalRollupErrorMessage(err) ?? err.message
   const msg = buildErrorMessage(err, [
-    colors.red(`Internal server error: ${err.message}`),
+    colors.red(`Internal server error: ${rawMessage}`),
   ])
 
   server.config.logger.error(msg, {

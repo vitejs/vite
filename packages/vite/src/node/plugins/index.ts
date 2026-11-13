@@ -1,11 +1,15 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
-import type { ObjectHook } from 'rolldown'
+import type { ObjectHook, RollupError } from 'rolldown'
 import {
   viteAliasPlugin as nativeAliasPlugin,
   viteJsonPlugin as nativeJsonPlugin,
   oxcRuntimePlugin,
 } from 'rolldown/experimental'
-import { resolveBuildPlugins } from '../build'
+import {
+  enhanceRollupError,
+  isRollupErrorEnhanced,
+  resolveBuildPlugins,
+} from '../build'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { watchPackageDataPlugin } from '../packages'
 import {
@@ -13,6 +17,7 @@ import {
   type Plugin,
   type PluginWithRequiredHook,
 } from '../plugin'
+import { ERR_CLOSED_SERVER } from '../server/pluginContainer'
 import { assetPlugin } from './asset'
 import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
 import {
@@ -218,6 +223,24 @@ export function getHookHandler<T extends ObjectHook<Function>>(
   hook: T,
 ): HookHandler<T> {
   return (typeof hook === 'object' ? hook.handler : hook) as HookHandler<T>
+}
+
+export function handleHookError(
+  e: unknown,
+  pluginName: string,
+  hookName: string,
+): never {
+  if ((e as { code?: unknown })?.code === ERR_CLOSED_SERVER) {
+    throw e
+  }
+  const err = typeof e === 'string' ? new Error(e) : e
+  if (typeof err === 'object' && err !== null && !isRollupErrorEnhanced(err)) {
+    const rollupErr = err as RollupError
+    rollupErr.plugin ??= pluginName
+    rollupErr.hook ??= hookName
+    enhanceRollupError(rollupErr)
+  }
+  throw err
 }
 
 type FilterForPluginValue = {

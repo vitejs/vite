@@ -81,6 +81,7 @@ import {
   createPluginHookUtils,
   getCachedFilterForPlugin,
   getHookHandler,
+  handleHookError,
 } from '../plugins'
 import {
   combineSourcemaps,
@@ -272,14 +273,19 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
   async resolveRolldownOptions(): Promise<InputOptions> {
     if (!this._resolvedRolldownOptions) {
       let options = this.environment.config.build.rolldownOptions
-      for (const optionsHook of this.getSortedPluginHooks('options')) {
+      for (const plugin of this.getSortedPlugins('options')) {
         if (this._closed) {
           throwClosedServerError()
         }
-        options =
-          (await this.handleHookPromise(
-            optionsHook.call(this.minimalContext, options),
-          )) || options
+        const optionsHook = getHookHandler(plugin.options)
+        try {
+          options =
+            (await this.handleHookPromise(
+              optionsHook.call(this.minimalContext, options),
+            )) || options
+        } catch (e) {
+          handleHookError(e, plugin.name, 'options')
+        }
       }
       this._resolvedRolldownOptions = options
     }
@@ -307,12 +313,19 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
 
       const hook = plugin[hookName]
       const handler: Function = getHookHandler(hook)
+      const runHook = async () => {
+        try {
+          await handler.apply(context(plugin), args(plugin))
+        } catch (e) {
+          handleHookError(e, plugin.name, hookName)
+        }
+      }
       if ((hook as { sequential?: boolean }).sequential) {
         await Promise.all(parallelPromises)
         parallelPromises.length = 0
-        await handler.apply(context(plugin), args(plugin))
+        await runHook()
       } else {
-        parallelPromises.push(handler.apply(context(plugin), args(plugin)))
+        parallelPromises.push(runHook())
       }
     }
     await Promise.all(parallelPromises)
@@ -431,9 +444,15 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
 
       const pluginResolveStart = debugPluginResolve ? performance.now() : 0
       const handler = getHookHandler(plugin.resolveId)
-      const result = await this.handleHookPromise(
-        handler.call(ctx as any, rawId, importer, normalizedOptions),
-      )
+      let result: Awaited<ReturnType<typeof handler>>
+      try {
+        result = await this.handleHookPromise(
+          handler.call(ctx as any, rawId, importer, normalizedOptions),
+        )
+      } catch (e) {
+        if ((e as any)?.code === ERR_CLOSED_SERVER) throw e
+        ctx.error(e as any)
+      }
       if (!result) continue
 
       if (typeof result === 'string') {
@@ -510,9 +529,15 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       }
 
       const handler = getHookHandler(plugin.load)
-      const result = await this.handleHookPromise(
-        handler.call(ctx as any, id, options),
-      )
+      let result: LoadResult | null | undefined
+      try {
+        result = await this.handleHookPromise(
+          handler.call(ctx as any, id, options),
+        )
+      } catch (e) {
+        if ((e as any)?.code === ERR_CLOSED_SERVER) throw e
+        ctx.error(e as any)
+      }
       if (result != null) {
         if (isObject(result)) {
           ctx._updateModuleInfo(id, result)
@@ -584,7 +609,8 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
           handler.call(ctx as any, code, id, optionsWithSSR),
         )
       } catch (e) {
-        ctx.error(e)
+        if ((e as any)?.code === ERR_CLOSED_SERVER) throw e
+        ctx.error(e as any)
       }
       if (!result) continue
       debugPluginTransform?.(
@@ -758,6 +784,8 @@ const fsModule: RollupFsModule = {
   writeFile: fsp.writeFile,
 }
 
+const handledPluginErrors = new WeakSet<object>()
+
 class PluginContext
   extends MinimalPluginContext
   implements Omit<RollupPluginContext, 'cache'>
@@ -766,6 +794,7 @@ class PluginContext
   _scan = false
   _activeId: string | null = null
   _activeCode: string | null = null
+  _activeHook: string | null = null
   _resolveSkips?: Set<Plugin>
   _resolveSkipCalls?: readonly SkipInformation[]
 
@@ -930,7 +959,29 @@ class PluginContext
   ): never {
     // error thrown here is caught by the transform middleware and passed on
     // the error middleware.
-    throw this._formatLog(e, position)
+    if ((typeof e !== 'object' || e === null) && typeof e !== 'string') {
+      throw e
+    }
+    if (typeof e === 'object' && e !== null && handledPluginErrors.has(e)) {
+      throw e
+    }
+    let err: RollupError
+    try {
+      err = this._formatLog(e, position)
+    } catch (thrown) {
+      if (typeof thrown === 'object' && thrown !== null) {
+        if (this._activeHook && !(thrown as RollupError).hook) {
+          ;(thrown as RollupError).hook = this._activeHook
+        }
+        handledPluginErrors.add(thrown)
+      }
+      throw thrown
+    }
+    if (this._activeHook && !err.hook) {
+      err.hook = this._activeHook
+    }
+    handledPluginErrors.add(err)
+    throw err
   }
 
   private _formatLog<E extends RollupLog>(
@@ -1048,6 +1099,8 @@ class PluginContext
 }
 
 class ResolveIdContext extends PluginContext {
+  override _activeHook = 'resolveId'
+
   constructor(
     container: EnvironmentPluginContainer,
     skip: Set<Plugin> | undefined,
@@ -1062,6 +1115,7 @@ class ResolveIdContext extends PluginContext {
 }
 
 class LoadPluginContext extends PluginContext {
+  override _activeHook = 'load'
   _addedImports: Set<string> | null = null
 
   constructor(container: EnvironmentPluginContainer) {
@@ -1081,6 +1135,7 @@ class TransformPluginContext
   extends LoadPluginContext
   implements Omit<RollupTransformPluginContext, 'cache'>
 {
+  override _activeHook = 'transform'
   filename: string
   originalCode: string
   originalSourcemap: SourceMap | null = null
