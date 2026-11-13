@@ -119,8 +119,17 @@ if (typeof window !== 'undefined') {
 
 function cleanUrl(pathname: string): string {
   const url = new URL(pathname, 'http://vite.dev')
-  url.searchParams.delete('direct')
-  return url.pathname + url.search
+  // Drop `direct` from the raw query string instead of going through
+  // `URLSearchParams`: re-serializing the query would append `=` to
+  // valueless flags (e.g. `vue`, `lang.scss`), and `lang.scss=` no longer
+  // matches the CSS language pattern, so the updated link would stop
+  // being treated as CSS.
+  const query = url.search
+    .slice(1)
+    .split('&')
+    .filter((p) => p && p !== 'direct' && !p.startsWith('direct='))
+    .join('&')
+  return url.pathname + (query ? `?${query}` : '')
 }
 
 let isFirstUpdate = true
