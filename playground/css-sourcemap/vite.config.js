@@ -2,13 +2,15 @@ import MagicString from 'magic-string'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
+  dev: {
+    sourcemap: { css: true },
+  },
   resolve: {
     alias: {
       '@': import.meta.dirname,
     },
   },
   css: {
-    devSourcemap: true,
     preprocessorOptions: {
       less: {
         additionalData: '@color: red;',

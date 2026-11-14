@@ -224,8 +224,8 @@
 
   // All these imports should end up resolved to the same URL (same ?v= injected on them)
   import { add as addFromDirectAbsolutePath } from '/node_modules/@vitejs/test-dep-non-optimized/index.js'
-  import { add as addFromDirectRelativePath } from './node_modules/@vitejs/test-dep-non-optimized/index.js'
   import { get as getFromBareImport } from '@vitejs/test-dep-non-optimized'
+  import { add as addFromDirectRelativePath } from './node_modules/@vitejs/test-dep-non-optimized/index.js'
 
   addFromDirectAbsolutePath('from-absolute-path')
   addFromDirectRelativePath('from-relative-path')
@@ -350,8 +350,8 @@
 </script>
 
 <script type="module">
-  import cloneDeepSlash from '@vitejs/test-dep-lodash/cloneDeep'
   import cloneDeepDot from '@vitejs/test-dep-lodash.clonedeep'
+  import cloneDeepSlash from '@vitejs/test-dep-lodash/cloneDeep'
   import { msg as plusSubpath } from '@vitejs/test-dep-with-plus-subpath/core+feature'
 
   text('.clonedeep-slash', cloneDeepSlash({ name: 'clonedeep-slash' }).name)
@@ -377,9 +377,9 @@
 </script>
 
 <script type="module">
+  import * as all from '@vitejs/test-dep-source-map-no-sources/all.js'
   // manually check Firefox doesn't show warning in devtool debugger
   import * as sub from '@vitejs/test-dep-source-map-no-sources/sub.js'
-  import * as all from '@vitejs/test-dep-source-map-no-sources/all.js'
 </script>
 
 <h2>Pre-bundle dependency with external sub-dependencies</h2>
@@ -399,6 +399,19 @@
   text(
     '.dep-cjs-with-external-deps-node-builtin',
     optimized.externalDummyNodeBuiltinResult,
+  )
+</script>
+
+<h2>TypeScript Enum Import</h2>
+<div>
+  Named import from TypeScript enum:
+  <span class="ts-enum-named-import"></span>
+</div>
+<script type="module">
+  import { Status, statusMessage } from '@vitejs/test-dep-ts-enum'
+  text(
+    '.ts-enum-named-import',
+    `${Status.GREEN}:${statusMessage(Status.GREEN)}`,
   )
 </script>
 

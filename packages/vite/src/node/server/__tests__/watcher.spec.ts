@@ -139,7 +139,9 @@ describe('watcher configuration', () => {
     // a file outside the root must still be added to the watcher
     addWatchFile(join(resolve(root, '../custom-public'), 'foo.txt'))
 
-    expect(addedFiles).toEqual([resolve(root, '../custom-public/foo.txt')])
+    expect(addedFiles).toStrictEqual([
+      resolve(root, '../custom-public/foo.txt'),
+    ])
   })
 
   it('should watch the root directory, config file dependencies, dotenv files, and the public directory', async () => {
@@ -149,7 +151,7 @@ describe('watcher configuration', () => {
     // after the `ready` event
     await vi.waitFor(() => {
       const watchedDirs = Object.keys(server.watcher.getWatched())
-      expect(watchedDirs).toEqual(
+      expect(watchedDirs).toStrictEqual(
         expect.arrayContaining([
           root,
           resolve(root, '../config-deps'),

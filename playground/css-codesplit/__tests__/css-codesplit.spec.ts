@@ -59,8 +59,8 @@ describe.runIf(isBuild)('build', () => {
 
   test('should generate correct manifest', async () => {
     const manifest = readManifest()
-    expect(manifest['index.html'].css.length).toBe(2)
-    expect(manifest['other.js'].css.length).toBe(1)
+    expect(manifest['index.html'].css).toHaveLength(2)
+    expect(manifest['other.js'].css).toHaveLength(1)
   })
 
   // Regression test for vitejs/vite#22856: when rolldown deduplicates two same-content css
@@ -77,6 +77,6 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('should not mark a css chunk with ?url and normal import as pure css chunk', () => {
-    expect(findAssetFile(/chunk-.*\.js$/)).toBeTruthy()
+    expect(findAssetFile(/chunk-.*\.js$/)).toBeDefined()
   })
 })
