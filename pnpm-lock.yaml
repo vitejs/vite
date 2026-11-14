@@ -2119,7 +2119,13 @@ importers:
 
   playground/tsconfig-json-load-error: {}
 
-  playground/wasm: {}
+  playground/wasm:
+    dependencies:
+      '@vitejs/test-wasm-dep':
+        specifier: file:./wasm-dep
+        version: file:playground/wasm/wasm-dep
+
+  playground/wasm/wasm-dep: {}
 
   playground/worker:
     dependencies:
@@ -5031,6 +5037,9 @@ packages:
 
   '@vitejs/test-ts-transpiled-exports@file:playground/ssr-deps/ts-transpiled-exports':
     resolution: {directory: playground/ssr-deps/ts-transpiled-exports, type: directory}
+
+  '@vitejs/test-wasm-dep@file:playground/wasm/wasm-dep':
+    resolution: {directory: playground/wasm/wasm-dep, type: directory}
 
   '@vitejs/test-worker-dep-cjs@file:playground/worker/dep-cjs':
     resolution: {directory: playground/worker/dep-cjs, type: directory}
@@ -10595,6 +10604,8 @@ snapshots:
   '@vitejs/test-ssr-css-dep@file:playground/ssr-css/css-dep': {}
 
   '@vitejs/test-ts-transpiled-exports@file:playground/ssr-deps/ts-transpiled-exports': {}
+
+  '@vitejs/test-wasm-dep@file:playground/wasm/wasm-dep': {}
 
   '@vitejs/test-worker-dep-cjs@file:playground/worker/dep-cjs': {}
 

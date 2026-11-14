@@ -69,6 +69,12 @@ test('wasm using js-string builtins and imported string constants', async () => 
     .toMatch('5')
 })
 
+test('wasm importing its JS glue from an optimized dependency', async () => {
+  await expect
+    .poll(() => page.textContent('.wasm-from-optimized-dep .result'))
+  .toMatch('42')
+})
+
 test('source phase import yields a WebAssembly.Module', async () => {
   await expect
     .poll(() => page.textContent('.source-phase-wasm .result'))

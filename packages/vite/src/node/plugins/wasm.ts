@@ -244,12 +244,12 @@ ${glueCode}
   })
 }
 
-interface WasmName {
+export interface WasmName {
   name: string
   isGlobal: boolean
 }
 
-interface WasmInfo {
+export interface WasmInfo {
   imports: {
     from: string
     names: WasmName[]
@@ -258,7 +258,7 @@ interface WasmInfo {
   hasGlobalExport: boolean
 }
 
-async function parseWasm(wasmFilePath: string): Promise<WasmInfo> {
+export async function parseWasm(wasmFilePath: string): Promise<WasmInfo> {
   try {
     const wasmBinary = await fsp.readFile(wasmFilePath)
     const wasmModule = await WebAssembly.compile(wasmBinary, wasmCompileOptions)

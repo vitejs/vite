@@ -1,0 +1,9 @@
+{
+  "name": "@vitejs/test-wasm-dep",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  }
+}
