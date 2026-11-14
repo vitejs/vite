@@ -71,6 +71,11 @@ const debug = createDebugger('vite:resolve-details', {
   onlyWhenFocused: true,
 })
 
+/**
+ * When it is `true`, the resolver prints debug lines in the `resolveId` hook.
+ */
+export const isResolveDetailsDebugEnabled: boolean = !!debug
+
 export interface EnvironmentResolveOptions {
   /**
    * @default ['browser', 'module', 'jsnext:main', 'jsnext']
