@@ -1,8 +1,9 @@
 import fs from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import type { RolldownOutput } from 'rolldown'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
-import type { InlineConfig } from '..'
+import type { Environment, InlineConfig } from '..'
 import { createLogger, normalizePath } from '..'
 import {
   ChunkMetadataMap,
@@ -10,6 +11,18 @@ import {
   resolveRolldownOptions,
 } from '../build'
 import { getConfigCacheKey, hashForCacheKey } from '../rolldownCache'
+
+const createProject = (files: Record<string, string | Buffer>) => {
+  const root = fs.mkdtempSync(path.join(tmpdir(), 'vite-rolldown-cache-'))
+  onTestFinished(() => {
+    fs.rmSync(root, { recursive: true, force: true })
+  })
+  for (const [file, content] of Object.entries(files)) {
+    fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true })
+    fs.writeFileSync(path.join(root, file), content)
+  }
+  return normalizePath(fs.realpathSync(root))
+}
 
 describe('hashForCacheKey', () => {
   test('ignores the order of object keys', () => {
@@ -189,18 +202,6 @@ describe('getConfigCacheKey', () => {
 })
 
 describe('experimental.cache in resolveRolldownOptions', () => {
-  const createProject = (files: Record<string, string>) => {
-    const root = fs.mkdtempSync(path.join(tmpdir(), 'vite-rolldown-cache-'))
-    onTestFinished(() => {
-      fs.rmSync(root, { recursive: true, force: true })
-    })
-    for (const [file, content] of Object.entries(files)) {
-      fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true })
-      fs.writeFileSync(path.join(root, file), content)
-    }
-    return normalizePath(fs.realpathSync(root))
-  }
-
   const getCacheOption = async (
     config: InlineConfig,
     environment: 'client' | 'ssr' = 'client',
@@ -384,6 +385,124 @@ describe('experimental.cache in resolveRolldownOptions', () => {
     expect(cache.assumeUnchanged).toStrictEqual(['**/node_modules/**'])
   })
 
+  test('adds the PostCSS config file', async () => {
+    const root = createProject({
+      'node_modules/.pnpm/lock.yaml': 'lockfileVersion: 9',
+      'postcss.config.mjs': 'export default {}',
+    })
+    const config: InlineConfig = {
+      root,
+      configFile: false,
+      experimental: { cache: true },
+    }
+    const cache = await getCacheOption(config)
+    expect(cache.buildDependencies).toStrictEqual([
+      `${root}/node_modules/.pnpm/lock.yaml`,
+      `${root}/postcss.config.mjs`,
+    ])
+
+    // The key covers a config file that is removed.
+    fs.rmSync(`${root}/postcss.config.mjs`)
+    const cacheWithoutFile = await getCacheOption(config)
+    expect(cacheWithoutFile.buildDependencies).toStrictEqual([
+      `${root}/node_modules/.pnpm/lock.yaml`,
+    ])
+    expect(cacheWithoutFile.cacheKey).not.toBe(cache.cacheKey)
+    expect((await getCacheOption(config)).cacheKey).toBe(
+      cacheWithoutFile.cacheKey,
+    )
+  })
+
+  describe('with `DEBUG=vite:sourcemap`', () => {
+    // The flag is read when the module is loaded.
+    const importWithFlag = async () => {
+      vi.resetModules()
+      vi.doMock('../server/sourcemap', async (importOriginal) => ({
+        ...(await importOriginal<object>()),
+        isSourcemapDebugEnabled: true,
+      }))
+      onTestFinished(() => {
+        vi.doUnmock('../server/sourcemap')
+        vi.resetModules()
+      })
+      const [
+        { resolveConfig },
+        { PartialEnvironment },
+        { resolveRolldownCacheOptions },
+        { cssPlugin, cssPostPlugin },
+      ] = await Promise.all([
+        import('../config'),
+        import('../baseEnvironment'),
+        import('../rolldownCache'),
+        import('../plugins/css'),
+      ])
+      const createEnvironment = async (
+        root: string,
+        command: 'build' | 'serve',
+        devSourcemap: boolean,
+      ) => {
+        const config = await resolveConfig(
+          {
+            root,
+            configFile: false,
+            logLevel: 'silent',
+            css: { devSourcemap },
+            experimental: { cache: true },
+          },
+          command,
+        )
+        return new PartialEnvironment('client', config) as Environment
+      }
+      return {
+        createEnvironment,
+        resolveRolldownCacheOptions,
+        cssPlugin,
+        cssPostPlugin,
+      }
+    }
+
+    // For a cache that the user turns on in `build.rolldownOptions`.
+    test('`vite:css-post` marks the module', async () => {
+      const root = createProject({})
+      const { createEnvironment, cssPlugin, cssPostPlugin } =
+        await importWithFlag()
+      const getReasons = async (devSourcemap: boolean) => {
+        const environment = await createEnvironment(root, 'serve', devSourcemap)
+        const config = environment.getTopLevelConfig()
+        // `vite:css` makes the map of CSS modules that `vite:css-post` reads.
+        const { buildStart, buildEnd } = cssPlugin(config)
+        // @ts-expect-error buildStart is function
+        await buildStart.call({})
+        onTestFinished(async () => {
+          // @ts-expect-error buildEnd is function
+          await buildEnd.call({})
+        })
+        const reasons: string[] = []
+        const { transform } = cssPostPlugin(config)
+        // @ts-expect-error transform.handler is function
+        await transform.handler.call(
+          {
+            environment,
+            markNotCacheable: (reason: string) => reasons.push(reason),
+            getCombinedSourcemap: () => ({
+              version: 3,
+              mappings: '',
+              names: [],
+              sources: [],
+            }),
+          },
+          '.a { color: red }',
+          `${root}/a.css`,
+        )
+        return reasons
+      }
+      expect(await getReasons(true)).toStrictEqual([
+        '`DEBUG=vite:sourcemap` changes the code',
+      ])
+      expect(await getReasons(false)).toStrictEqual([])
+    })
+  })
+
   test('sets no assumeUnchanged with resolve.preserveSymlinks', async () => {
     const root = createProject({
       'node_modules/.pnpm/lock.yaml': 'lockfileVersion: 9',
@@ -398,5 +517,318 @@ describe('experimental.cache in resolveRolldownOptions', () => {
       `${root}/node_modules/.pnpm/lock.yaml`,
     ])
     expect(cache.assumeUnchanged).toBeUndefined()
+  })
+})
+
+describe('experimental.cache for CSS modules', () => {
+  /**
+   * `transformed` lists the CSS modules whose hooks ran. A module that reuses
+   * its saved result is not in the list.
+   */
+  const buildProject = async (
+    root: string,
+    cache = true,
+    config: InlineConfig = {},
+  ) => {
+    // A test above resets the modules. Vitest then runs the linked Rolldown
+    // again, so there are two copies of it. Import `build` here, so that the
+    // built-in plugins of Vite and `rolldown()` come from the same copy.
+    // Another copy does not see them as built-in plugins (`instanceof`), runs
+    // them as JavaScript plugins without `cache: true`, and saves no results.
+    const { build } = await import('../build')
+    const transformed: string[] = []
+    const logs: string[] = []
+    const outputs = [
+      await build({
+        root,
+        configFile: false,
+        logLevel: 'silent',
+        customLogger: {
+          ...createLogger('silent'),
+          warn: (msg) => logs.push(msg),
+          warnOnce: (msg) => logs.push(msg),
+          error: (msg) => logs.push(msg),
+        },
+        experimental: { cache },
+        build: {
+          write: false,
+          rolldownOptions: { input: `${root}/main.js` },
+        },
+        plugins: [
+          {
+            name: 'test:record',
+            transform: {
+              cache: true,
+              filter: { id: /\.s?css$/ },
+              handler(_, id) {
+                transformed.push(path.basename(id))
+              },
+            },
+          },
+        ],
+        ...config,
+      }),
+    ].flat() as RolldownOutput[]
+    const files: Record<string, string> = {}
+    for (const file of outputs.flatMap((output) => output.output)) {
+      files[file.fileName] =
+        file.type === 'chunk' ? file.code : file.source.toString()
+    }
+    const css = Object.entries(files)
+      .filter(([fileName]) => fileName.endsWith('.css'))
+      .map(([, source]) => source)
+      .join('\n')
+    return { transformed: transformed.sort(), logs, files, css }
+  }
+
+  const baseFiles = {
+    'node_modules/.pnpm/lock.yaml': 'lockfileVersion: 9',
+    'main.js': `import './a.css'`,
+  }
+
+  test('a plain CSS file reuses its saved result', async () => {
+    const root = createProject({
+      ...baseFiles,
+      'a.css': '.a { margin: 1px }',
+    })
+    const withoutCache = await buildProject(root, false)
+    expect(withoutCache.css).toContain('1px')
+
+    const first = await buildProject(root)
+    expect(first.transformed).toStrictEqual(['a.css'])
+    expect(first.files).toStrictEqual(withoutCache.files)
+
+    const second = await buildProject(root)
+    expect(second.transformed).toStrictEqual([])
+    expect(second.files).toStrictEqual(withoutCache.files)
+
+    fs.writeFileSync(`${root}/a.css`, '.a { margin: 2px }')
+    const third = await buildProject(root)
+    expect(third.transformed).toStrictEqual(['a.css'])
+    expect(third.css).toContain('2px')
+  })
+
+  test('a CSS file that uses an output asset file runs its hooks again', async () => {
+    const root = createProject({
+      ...baseFiles,
+      'main.js': `import './a.css'\nimport './b.css'\nimport './c.css'`,
+      'a.css': '.a { background: url(./big.png) }',
+      'b.css': '.b { margin: 1px }',
+      // Small enough to be inlined as a data URL.
+      'c.css': '.c { background: url(./small.png) }',
+      'big.png': Buffer.alloc(5000, 1),
+      'small.png': Buffer.alloc(10, 1),
+    })
+    const withoutCache = await buildProject(root, false)
+    const assetFile = Object.keys(withoutCache.files).find((fileName) =>
+      fileName.endsWith('.png'),
+    )!
+    expect(withoutCache.css).toContain(`url(/${assetFile})`)
+    expect(withoutCache.css).toContain('url(data:image/png;base64,')
+
+    const first = await buildProject(root)
+    expect(first.transformed).toStrictEqual(['a.css', 'b.css', 'c.css'])
+    expect(first.files).toStrictEqual(withoutCache.files)
+
+    const second = await buildProject(root)
+    expect(second.transformed).toStrictEqual(['a.css'])
+    expect(second.files).toStrictEqual(withoutCache.files)
+
+    // The data URL holds the content of the file.
+    fs.writeFileSync(`${root}/small.png`, Buffer.alloc(10, 2))
+    const third = await buildProject(root)
+    expect(third.transformed).toStrictEqual(['a.css', 'c.css'])
+    expect(third.files).toStrictEqual((await buildProject(root, false)).files)
+  })
+
+  test('a `url()` to a file in the public directory works on reuse', async () => {
+    const root = createProject({
+      ...baseFiles,
+      'a.css': '.a { background: url(/logo.png) }',
+      'public/logo.png': Buffer.alloc(10, 1),
+    })
+    const withoutCache = await buildProject(root, false)
+    expect(withoutCache.css).toContain('url(/logo.png)')
+
+    await buildProject(root)
+    const second = await buildProject(root)
+    expect(second.transformed).toStrictEqual([])
+    expect(second.files).toStrictEqual(withoutCache.files)
+
+    // Without the file, the URL does not point to the public directory.
+    fs.rmSync(`${root}/public/logo.png`)
+    const third = await buildProject(root)
+    expect(third.transformed).toStrictEqual(['a.css'])
+    expect(third.logs).toStrictEqual((await buildProject(root, false)).logs)
+    expect(third.logs).toHaveLength(1)
+  })
+
+  test('a CSS file that sends a message to the logger runs its hooks again', async () => {
+    const root = createProject({
+      ...baseFiles,
+      'main.js': `import './a.css'\nimport './b.css'`,
+      'a.css': '.a { background: url(./missing.png) }',
+      'b.css': '.b { margin: 1px }',
+    })
+    const withoutCache = await buildProject(root, false)
+    expect(withoutCache.logs).toStrictEqual([
+      expect.stringContaining("didn't resolve at build time"),
+    ])
+
+    await buildProject(root)
+    const second = await buildProject(root)
+    expect(second.transformed).toStrictEqual(['a.css'])
+    expect(second.logs).toStrictEqual(withoutCache.logs)
+    expect(second.files).toStrictEqual(withoutCache.files)
+  })
+
+  test('a CSS file whose resolver sends a warning runs its hooks again', async () => {
+    const root = createProject({
+      ...baseFiles,
+      'main.js': `import './a.scss'\nimport './b.css'`,
+      // `constants` is also the name of a Node.js module, so the resolver
+      // sends a warning. Sass then finds the file through `loadPaths`.
+      'a.scss': '@use "constants";\n.a { margin: constants.$m }',
+      'styles/_constants.scss': '$m: 1px;',
+      'b.css': '.b { margin: 2px }',
+    })
+    const config: InlineConfig = {
+      css: {
+        preprocessorOptions: { scss: { loadPaths: [`${root}/styles`] } },
+      },
+    }
+    // The resolver sends this warning only in production.
+    vi.stubEnv('NODE_ENV', 'production')
+    onTestFinished(() => {
+      vi.unstubAllEnvs()
+    })
+    const withoutCache = await buildProject(root, false, config)
+    expect(withoutCache.logs).toStrictEqual([
+      expect.stringContaining(
+        'Module "constants" has been externalized for browser compatibility',
+      ),
+    ])
+    expect(withoutCache.css).toContain('1px')
+
+    await buildProject(root, true, config)
+    const second = await buildProject(root, true, config)
+    expect(second.transformed).toStrictEqual(['a.scss'])
+    expect(second.logs).toStrictEqual(withoutCache.logs)
+    expect(second.files).toStrictEqual(withoutCache.files)
+  })
+
+  test('a CSS file that uses a file with a Git LFS warning runs its hooks again', async () => {
+    const root = createProject({
+      ...baseFiles,
+      'main.js': `import './a.css'\nimport './b.css'`,
+      // The second `url()` takes the result of the first one from a map.
+      'a.css': '.a { background: url(./lfs.png), url(./lfs.png) }',
+      'b.css': '.b { margin: 1px }',
+      'lfs.png': 'version https://git-lfs.github.com/spec/v1\nsize 1\n',
+    })
+    const config: InlineConfig = {
+      build: {
+        write: false,
+        lib: {
+          entry: `${root}/main.js`,
+          formats: ['es'],
+          cssFileName: 'style',
+        },
+      },
+    }
+    const withoutCache = await buildProject(root, false, config)
+    expect(withoutCache.logs).toStrictEqual([
+      expect.stringContaining('was not downloaded via Git LFS'),
+    ])
+
+    await buildProject(root, true, config)
+    const second = await buildProject(root, true, config)
+    expect(second.transformed).toStrictEqual(['a.css'])
+    expect(second.logs).toStrictEqual(withoutCache.logs)
+    expect(second.files).toStrictEqual(withoutCache.files)
+  })
+
+  test('a change to the PostCSS config causes a miss', async () => {
+    const postcssConfig = (value: string) => `export default {
+      plugins: [{
+        postcssPlugin: 'test',
+        Declaration(decl) {
+          decl.value = '${value}'
+        },
+      }],
+    }`
+    const root = createProject({
+      ...baseFiles,
+      'a.css': '.a { margin: 1px }',
+      'postcss.config.mjs': postcssConfig('2px'),
+    })
+    const first = await buildProject(root)
+    expect(first.css).toContain('2px')
+
+    const second = await buildProject(root)
+    expect(second.transformed).toStrictEqual([])
+    expect(second.files).toStrictEqual(first.files)
+
+    fs.writeFileSync(`${root}/postcss.config.mjs`, postcssConfig('3px'))
+    const third = await buildProject(root)
+    expect(third.transformed).toStrictEqual(['a.css'])
+    expect(third.css).toContain('3px')
+
+    fs.rmSync(`${root}/postcss.config.mjs`)
+    const fourth = await buildProject(root)
+    expect(fourth.transformed).toStrictEqual(['a.css'])
+    expect(fourth.css).toContain('1px')
+  })
+
+  describe('`composes` picks up a change to the other file', () => {
+    const files = {
+      ...baseFiles,
+      'main.js': `import styles from './a.module.css'\nconsole.log(styles.a)`,
+      'a.module.css': `.a { composes: base from './base.module.css'; padding: 1px }`,
+      'base.module.css': '.base { margin: 1px }',
+    }
+
+    // postcss-modules does not pass `from` to `postcss.parse`. Vite prints a
+    // warning for it, so the module gets no saved result.
+    test('with PostCSS', async () => {
+      const root = createProject(files)
+      const first = await buildProject(root)
+      expect(first.css).toContain('margin:1px')
+      expect(first.logs).toStrictEqual([
+        expect.stringContaining('did not pass the `from` option'),
+      ])
+
+      const second = await buildProject(root)
+      expect(second.transformed).toStrictEqual(['a.module.css'])
+      expect(second.logs).toStrictEqual(first.logs)
+      expect(second.files).toStrictEqual(first.files)
+
+      fs.writeFileSync(`${root}/base.module.css`, '.base { margin: 2px }')
+      const third = await buildProject(root)
+      expect(third.transformed).toStrictEqual(['a.module.css'])
+      expect(third.css).toContain('margin:2px')
+      const withoutCache = await buildProject(root, false)
+      expect(third.files).toStrictEqual(withoutCache.files)
+      expect(third.logs).toStrictEqual(withoutCache.logs)
+    })
+
+    test('with lightningcss', async () => {
+      const config: InlineConfig = { css: { transformer: 'lightningcss' } }
+      const root = createProject(files)
+      const first = await buildProject(root, true, config)
+      expect(first.css).toContain('margin:1px')
+
+      const second = await buildProject(root, true, config)
+      expect(second.transformed).toStrictEqual([])
+      expect(second.files).toStrictEqual(first.files)
+
+      fs.writeFileSync(`${root}/base.module.css`, '.base { margin: 2px }')
+      const third = await buildProject(root, true, config)
+      expect(third.transformed).toStrictEqual(['a.module.css'])
+      expect(third.css).toContain('margin:2px')
+      expect(third.files).toStrictEqual(
+        (await buildProject(root, false, config)).files,
+      )
+    })
   })
 })

@@ -5,6 +5,7 @@ import colors from 'picocolors'
 import { VERSION } from './constants'
 import type { Environment } from './environment'
 import { findInstalledStateFile, findPatchesDir } from './optimizer'
+import { getPostcssConfigFile } from './plugins/css'
 import { searchForWorkspaceRoot } from './server/searchRoot'
 import { normalizePath } from './utils'
 
@@ -59,6 +60,8 @@ export function resolveRolldownCacheOptions(
   // A patch changes files under node_modules without changing that file.
   const patchesDir = findPatchesDir(installedStateFile)
   const patchFiles = patchesDir ? listFiles(patchesDir) : []
+  // `resolveConfig` loads the PostCSS config when the cache is on.
+  const postcssConfigFile = getPostcssConfigFile(config)
 
   const dependencies = new Set<string>()
   for (const file of [
@@ -66,6 +69,7 @@ export function resolveRolldownCacheOptions(
     ...config.configFileDependencies,
     installedStateFile,
     ...patchFiles,
+    postcssConfigFile,
     ...buildDependencies,
   ]) {
     if (file) dependencies.add(normalizePath(path.resolve(root, file)))
@@ -77,7 +81,7 @@ export function resolveRolldownCacheOptions(
         ? path.resolve(root, dir)
         : path.join(config.cacheDir, 'rolldown-cache'),
     ),
-    cacheKey: getConfigCacheKey(environment, cacheKey),
+    cacheKey: getConfigCacheKey(environment, cacheKey, postcssConfigFile),
     buildDependencies: [...dependencies],
   }
   if (maxAge !== undefined) options.maxAge = maxAge
@@ -104,6 +108,7 @@ const skippedConfigKeys = new Set([
 export function getConfigCacheKey(
   environment: Environment,
   userCacheKey: string | undefined,
+  postcssConfigFile?: string | null,
 ): string {
   const config = environment.config
   // `environment.config` is a proxy: the keys of the environment options,
@@ -136,6 +141,9 @@ export function getConfigCacheKey(
     nodeEnv: process.env.NODE_ENV,
     viteVersion: VERSION,
     userCacheKey,
+    // A build dependency covers the content of the file. The path covers a
+    // file that is created, removed, or found in another directory.
+    postcssConfigFile,
   })
 }
 

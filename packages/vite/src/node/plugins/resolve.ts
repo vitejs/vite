@@ -164,6 +164,13 @@ interface ResolvePluginOptions {
   disableOptionalPeerDepHandling?: boolean
 
   /**
+   * Set by `createBackCompatIdResolver`. Called when the plugin in a JS plugin
+   * container sends a warning or a debug log to Vite's logger.
+   * @internal
+   */
+  onLog?: () => void
+
+  /**
    * Enable when `legacy.inconsistentCjsInterop` is true. See that option for more details.
    */
   legacyInconsistentCjsInterop?: boolean
@@ -365,6 +372,7 @@ export function oxcResolvePlugin(
           ...(partialEnv.config.command === 'serve' || isJsPluginContainer
             ? {
                 async onWarn(msg) {
+                  resolveOptions.onLog?.()
                   // use `partialEnv` instead of `getEnv()` because `buildStart` is
                   // not called for plugin container used by `createIdResolver`
                   partialEnv.config.logger.warn(`warning: ${msg}`, {
@@ -377,6 +385,7 @@ export function oxcResolvePlugin(
           ...(debug
             ? {
                 async onDebug(message) {
+                  resolveOptions.onLog?.()
                   debug(message)
                 },
               }

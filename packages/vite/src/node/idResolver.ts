@@ -15,6 +15,19 @@ export type ResolveIdFn = (
   aliasOnly?: boolean,
 ) => Promise<string | undefined>
 
+export type ResolveIdWithLogListenerFn = (
+  environment: PartialEnvironment,
+  id: string,
+  importer?: string,
+  aliasOnly?: boolean,
+  /**
+   * Called when the resolver sends a warning or a debug log to Vite's logger
+   * during this call. The resolver cannot tell which call a message belongs
+   * to. So every call that runs at that time and has a listener gets it.
+   */
+  onLog?: () => void,
+) => Promise<string | undefined>
+
 /**
  * Some projects like Astro were overriding config.createResolver to add a custom
  * alias plugin. For the client and ssr environments, we root through it to avoid
@@ -23,15 +36,41 @@ export type ResolveIdFn = (
 export function createBackCompatIdResolver(
   config: ResolvedConfig,
   options?: Partial<InternalResolveOptions>,
-): ResolveIdFn {
-  const compatResolve = config.createResolver(options)
+): ResolveIdWithLogListenerFn {
+  // The listeners of the calls that run now.
+  const logListeners = new Set<() => void>()
+  // `config.createResolver` is a public API that takes no listener for a
+  // call. So the listeners reach the resolve plugin through its options.
+  const optionsWithListener: Partial<InternalResolveOptions> = {
+    ...options,
+    onLog() {
+      for (const listener of logListeners) listener()
+    },
+  }
+  const compatResolve = config.createResolver(optionsWithListener)
   let resolve: ResolveIdFn
-  return async (environment, id, importer, aliasOnly) => {
+  const resolveId: ResolveIdFn = async (
+    environment,
+    id,
+    importer,
+    aliasOnly,
+  ) => {
     if (environment.name === 'client' || environment.name === 'ssr') {
       return compatResolve(id, importer, aliasOnly, environment.name === 'ssr')
     }
-    resolve ??= createIdResolver(config, options)
+    resolve ??= createIdResolver(config, optionsWithListener)
     return resolve(environment, id, importer, aliasOnly)
+  }
+  return async (environment, id, importer, aliasOnly, onLog) => {
+    if (!onLog) return resolveId(environment, id, importer, aliasOnly)
+    // One function can listen for more than one call at the same time.
+    const listener = () => onLog()
+    logListeners.add(listener)
+    try {
+      return await resolveId(environment, id, importer, aliasOnly)
+    } finally {
+      logListeners.delete(listener)
+    }
   }
 }
 
