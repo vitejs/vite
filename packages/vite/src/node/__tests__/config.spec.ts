@@ -2450,13 +2450,13 @@ describe('resolveServerOptions', () => {
 
   test('copies the default filesystem deny patterns for each configuration', async () => {
     const first = await resolveServerOptions('/root', undefined, logger)
-    expect(first.fs.deny).toEqual(defaultServerFsDeny)
+    expect(first.fs.deny).toStrictEqual(defaultServerFsDeny)
     expect(first.fs.deny).not.toBe(defaultServerFsDeny)
 
     first.fs.deny.push('**/custom/**')
 
     const second = await resolveServerOptions('/root', undefined, logger)
-    expect(second.fs.deny).toEqual(defaultServerFsDeny)
+    expect(second.fs.deny).toStrictEqual(defaultServerFsDeny)
     expect(second.fs.deny).not.toBe(first.fs.deny)
     expect(defaultServerFsDeny).not.toContain('**/custom/**')
   })
@@ -2468,7 +2468,7 @@ describe('resolveServerOptions', () => {
       { fs: { deny } },
       logger,
     )
-    expect(resolved.fs.deny).toEqual(deny)
+    expect(resolved.fs.deny).toStrictEqual(deny)
   })
 
   test.each([{ deny: [] }, { deny: ['**/custom/**'] }])(
@@ -2479,7 +2479,7 @@ describe('resolveServerOptions', () => {
         { fs: { deny } },
         logger,
       )
-      expect(resolved.fs.deny).toEqual(deny)
+      expect(resolved.fs.deny).toStrictEqual(deny)
     },
   )
 

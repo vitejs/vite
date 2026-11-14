@@ -3,7 +3,7 @@ import { defaultServerFsDeny } from '..'
 import { defaultAllowedOrigins } from '../constants'
 
 test('defaultServerFsDeny', () => {
-  expect(defaultServerFsDeny).toEqual([
+  expect(defaultServerFsDeny).toStrictEqual([
     '.env',
     '.env.*',
     '*.{crt,pem,key,p12,pfx,cer,der}',
