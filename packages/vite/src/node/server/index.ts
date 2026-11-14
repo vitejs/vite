@@ -243,11 +243,12 @@ export interface FileSystemServeOptions {
   /**
    * Strictly restrict file accessing outside of allowing paths.
    *
-   * Set to `false` to disable the warning
+   * Set to `'extended'` to also check all modules before plugin load hooks.
+   * Set to `false` to disable the restrictions.
    *
    * @default true
    */
-  strict?: boolean
+  strict?: boolean | 'extended'
 
   /**
    * Restrict accessing files outside the allowed directories.
@@ -1306,12 +1307,15 @@ export async function resolveServerOptions(
     // search for package root to find a path that exists
     try {
       const enableGlobalCache =
-        execSync('yarn config get enableGlobalCache', { cwd })
+        execSync('yarn config get enableGlobalCache', {
+          cwd,
+          windowsHide: true,
+        })
           .toString()
           .trim() === 'true'
       const yarnCacheDir = execSync(
         `yarn config get ${enableGlobalCache ? 'globalFolder' : 'cacheFolder'}`,
-        { cwd },
+        { cwd, windowsHide: true },
       )
         .toString()
         .trim()

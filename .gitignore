@@ -17,7 +17,7 @@ node_modules
 !**/fixtures/glob-exports/node_modules/my-pkg/dist
 !**/fixtures/config/native-compat/json-named-import-bare/node_modules
 !**/fixtures/config/native-compat/json-named-import-ok/node_modules
-playground-temp
+playground-temp-*
 temp
 TODOs.md
 .eslintcache

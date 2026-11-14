@@ -1,5 +1,9 @@
 # Command Line Interface
 
+## Process locks
+
+The `vite`, `vite build`, and `vite preview` commands create lock files in the `lock` subdirectory of [`cacheDir`](/config/shared-options#cachedir). If a lock belongs to another running process with the same command, project root, config file, and mode, Vite exits. To run another instance, pass `--bypass-lock`.
+
 ## Dev server
 
 ### `vite`
@@ -23,11 +27,12 @@ vite [root]
 | `--strictPort`            | Exit if specified port is already in use (`boolean`)                                                                                                                                  |
 | `--force`                 | Force the optimizer to ignore the cache and re-bundle (`boolean`)                                                                                                                     |
 | `--experimentalBundle`    | Use experimental full bundle mode (this is highly experimental) (`boolean`)                                                                                                           |
+| `--bypass-lock`           | Allow running alongside another Vite process for this project (`boolean`)                                                                                                             |
 | `-c, --config <file>`     | Use specified config file (`string`)                                                                                                                                                  |
 | `--base <path>`           | Public base path (default: `/`) (`string`)                                                                                                                                            |
 | `-l, --logLevel <level>`  | info \| warn \| error \| silent (`string`)                                                                                                                                            |
 | `--clearScreen`           | Allow/disable clear screen when logging (`boolean`)                                                                                                                                   |
-| `--configLoader <loader>` | Use `bundle` to bundle the config with Rolldown, or `runner` (experimental) to process it on the fly, or `native` (experimental) to load using the native runtime (default: `bundle`) |
+| `--configLoader <loader>` | Use `bundle` to bundle the config with Rolldown, or `native` to load using the native runtime (default: `bundle`)                                                                     |
 | `--profile [name]`        | Start built-in Node.js inspector and write the profile to `<name>.cpuprofile` (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks)) (`boolean \| string`) |
 | `-d, --debug [feat]`      | Show debug logs (`string \| boolean`)                                                                                                                                                 |
 | `-f, --filter <filter>`   | Filter debug logs (`string`)                                                                                                                                                          |
@@ -62,11 +67,12 @@ vite build [root]
 | `--ssrManifest [name]`         | Emit ssr manifest json (`boolean \| string`)                                                                                                                                          |
 | `--emptyOutDir`                | Force empty outDir when it's outside of root (`boolean`)                                                                                                                              |
 | `-w, --watch`                  | Rebuilds when modules have changed on disk (`boolean`)                                                                                                                                |
+| `--bypass-lock`                | Allow running alongside another Vite process for this project (`boolean`)                                                                                                             |
 | `-c, --config <file>`          | Use specified config file (`string`)                                                                                                                                                  |
 | `--base <path>`                | Public base path (default: `/`) (`string`)                                                                                                                                            |
 | `-l, --logLevel <level>`       | info \| warn \| error \| silent (`string`)                                                                                                                                            |
 | `--clearScreen`                | Allow/disable clear screen when logging (`boolean`)                                                                                                                                   |
-| `--configLoader <loader>`      | Use `bundle` to bundle the config with Rolldown, or `runner` (experimental) to process it on the fly, or `native` (experimental) to load using the native runtime (default: `bundle`) |
+| `--configLoader <loader>`      | Use `bundle` to bundle the config with Rolldown, or `native` to load using the native runtime (default: `bundle`)                                                                     |
 | `--profile [name]`             | Start built-in Node.js inspector and write the profile to `<name>.cpuprofile` (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks)) (`boolean \| string`) |
 | `-d, --debug [feat]`           | Show debug logs (`string \| boolean`)                                                                                                                                                 |
 | `-f, --filter <filter>`        | Filter debug logs (`string`)                                                                                                                                                          |
@@ -90,18 +96,18 @@ vite optimize [root]
 
 #### Options
 
-| Options                   |                                                                                                                                                                                       |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--force`                 | Force the optimizer to ignore the cache and re-bundle (`boolean`)                                                                                                                     |
-| `-c, --config <file>`     | Use specified config file (`string`)                                                                                                                                                  |
-| `--base <path>`           | Public base path (default: `/`) (`string`)                                                                                                                                            |
-| `-l, --logLevel <level>`  | info \| warn \| error \| silent (`string`)                                                                                                                                            |
-| `--clearScreen`           | Allow/disable clear screen when logging (`boolean`)                                                                                                                                   |
-| `--configLoader <loader>` | Use `bundle` to bundle the config with Rolldown, or `runner` (experimental) to process it on the fly, or `native` (experimental) to load using the native runtime (default: `bundle`) |
-| `-d, --debug [feat]`      | Show debug logs (`string \| boolean`)                                                                                                                                                 |
-| `-f, --filter <filter>`   | Filter debug logs (`string`)                                                                                                                                                          |
-| `-m, --mode <mode>`       | Set env mode (`string`)                                                                                                                                                               |
-| `-h, --help`              | Display available CLI options                                                                                                                                                         |
+| Options                   |                                                                                                                   |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `--force`                 | Force the optimizer to ignore the cache and re-bundle (`boolean`)                                                 |
+| `-c, --config <file>`     | Use specified config file (`string`)                                                                              |
+| `--base <path>`           | Public base path (default: `/`) (`string`)                                                                        |
+| `-l, --logLevel <level>`  | info \| warn \| error \| silent (`string`)                                                                        |
+| `--clearScreen`           | Allow/disable clear screen when logging (`boolean`)                                                               |
+| `--configLoader <loader>` | Use `bundle` to bundle the config with Rolldown, or `native` to load using the native runtime (default: `bundle`) |
+| `-d, --debug [feat]`      | Show debug logs (`string \| boolean`)                                                                             |
+| `-f, --filter <filter>`   | Filter debug logs (`string`)                                                                                      |
+| `-m, --mode <mode>`       | Set env mode (`string`)                                                                                           |
+| `-h, --help`              | Display available CLI options                                                                                     |
 
 ### `vite preview`
 
@@ -117,19 +123,20 @@ vite preview [root]
 
 #### Options
 
-| Options                   |                                                                                                                                                                                       |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--host [host]`           | Specify hostname (`string`)                                                                                                                                                           |
-| `--port <port>`           | Specify port (`number`)                                                                                                                                                               |
-| `--strictPort`            | Exit if specified port is already in use (`boolean`)                                                                                                                                  |
-| `--open [path]`           | Open browser on startup (`boolean \| string`)                                                                                                                                         |
-| `--outDir <dir>`          | Output directory (default: `dist`) (`string`)                                                                                                                                         |
-| `-c, --config <file>`     | Use specified config file (`string`)                                                                                                                                                  |
-| `--base <path>`           | Public base path (default: `/`) (`string`)                                                                                                                                            |
-| `-l, --logLevel <level>`  | info \| warn \| error \| silent (`string`)                                                                                                                                            |
-| `--clearScreen`           | Allow/disable clear screen when logging (`boolean`)                                                                                                                                   |
-| `--configLoader <loader>` | Use `bundle` to bundle the config with Rolldown, or `runner` (experimental) to process it on the fly, or `native` (experimental) to load using the native runtime (default: `bundle`) |
-| `-d, --debug [feat]`      | Show debug logs (`string \| boolean`)                                                                                                                                                 |
-| `-f, --filter <filter>`   | Filter debug logs (`string`)                                                                                                                                                          |
-| `-m, --mode <mode>`       | Set env mode (`string`)                                                                                                                                                               |
-| `-h, --help`              | Display available CLI options                                                                                                                                                         |
+| Options                   |                                                                                                                   |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `--host [host]`           | Specify hostname (`string`)                                                                                       |
+| `--port <port>`           | Specify port (`number`)                                                                                           |
+| `--strictPort`            | Exit if specified port is already in use (`boolean`)                                                              |
+| `--open [path]`           | Open browser on startup (`boolean \| string`)                                                                     |
+| `--outDir <dir>`          | Output directory (default: `dist`) (`string`)                                                                     |
+| `--bypass-lock`           | Allow running alongside another Vite process for this project (`boolean`)                                         |
+| `-c, --config <file>`     | Use specified config file (`string`)                                                                              |
+| `--base <path>`           | Public base path (default: `/`) (`string`)                                                                        |
+| `-l, --logLevel <level>`  | info \| warn \| error \| silent (`string`)                                                                        |
+| `--clearScreen`           | Allow/disable clear screen when logging (`boolean`)                                                               |
+| `--configLoader <loader>` | Use `bundle` to bundle the config with Rolldown, or `native` to load using the native runtime (default: `bundle`) |
+| `-d, --debug [feat]`      | Show debug logs (`string \| boolean`)                                                                             |
+| `-f, --filter <filter>`   | Filter debug logs (`string`)                                                                                      |
+| `-m, --mode <mode>`       | Set env mode (`string`)                                                                                           |
+| `-h, --help`              | Display available CLI options                                                                                     |

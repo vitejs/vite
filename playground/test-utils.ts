@@ -9,12 +9,12 @@ import {
   removeComments,
 } from 'convert-source-map'
 import colors from 'css-color-names'
-import type { ResultPromise as ExecaResultPromise } from 'execa'
 import type {
   ConsoleMessage,
   ElementHandle,
   Locator,
 } from 'playwright-chromium'
+import { xSync, type Result as TinyExecResult } from 'tinyexec'
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { expect } from 'vitest'
@@ -55,6 +55,7 @@ export const ports = {
   'proxy-hmr': 9616, // not imported but used in `proxy-hmr/vite.config.js`
   'proxy-hmr/other-app': 9617, // not imported but used in `proxy-hmr/other-app/vite.config.js`
   'ssr-conditions': 9620,
+  'ssr-bundled-dev': 9621,
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006,
   'css/dynamic-import': 5007,
@@ -77,6 +78,7 @@ export const hmrPorts = {
   'ssr-conditions': 24688,
   'client-reload/hmr-port': 24689,
   'client-reload/cross-origin': 24690,
+  'ssr-bundled-dev': 24692,
 }
 
 const hexToNameMap: Record<string, string> = {}
@@ -491,17 +493,23 @@ export const formatSourcemapForSnapshot = (
 
 // helper function to kill process, uses taskkill on windows to ensure child process is killed too
 export async function killProcess(
-  serverProcess: ExecaResultPromise,
+  serverProcess: TinyExecResult,
 ): Promise<void> {
   if (isWindows) {
     try {
-      const { execaCommandSync } = await import('execa')
-      execaCommandSync(`taskkill /pid ${serverProcess.pid} /T /F`)
+      xSync('taskkill', ['/pid', `${serverProcess.pid}`, '/T', '/F'])
     } catch (e) {
       console.error('failed to taskkill:', e)
     }
   } else {
     serverProcess.kill('SIGTERM')
+    // follow up with SIGKILL if the process has not exited after 3 seconds
+    const forceKillTimer = setTimeout(() => {
+      if (serverProcess.exitCode === undefined) {
+        serverProcess.kill('SIGKILL')
+      }
+    }, 3000)
+    serverProcess.process?.once('close', () => clearTimeout(forceKillTimer))
   }
 }
 
