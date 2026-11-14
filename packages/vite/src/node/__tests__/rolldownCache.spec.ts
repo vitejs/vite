@@ -461,6 +461,25 @@ describe('experimental.cache in resolveRolldownOptions', () => {
       }
     }
 
+    test('is off in dev with CSS source maps', async () => {
+      const root = createProject({
+        'node_modules/.pnpm/lock.yaml': 'lockfileVersion: 9',
+      })
+      const { createEnvironment, resolveRolldownCacheOptions } =
+        await importWithFlag()
+      const getOptions = async (
+        command: 'build' | 'serve',
+        devSourcemap: boolean,
+      ) =>
+        resolveRolldownCacheOptions(
+          await createEnvironment(root, command, devSourcemap),
+        )
+      expect(await getOptions('serve', true)).toBeUndefined()
+      expect(await getOptions('serve', false)).toBeDefined()
+      // A build does not add the source map to the CSS code.
+      expect(await getOptions('build', true)).toBeDefined()
+    })
+
     // For a cache that the user turns on in `build.rolldownOptions`.
     test('`vite:css-post` marks the module', async () => {
       const root = createProject({})
@@ -501,6 +520,50 @@ describe('experimental.cache in resolveRolldownOptions', () => {
       ])
       expect(await getReasons(false)).toStrictEqual([])
     })
+  })
+
+  test('is off with `DEBUG=vite:resolve-details`', async () => {
+    const root = createProject({
+      'node_modules/.pnpm/lock.yaml': 'lockfileVersion: 9',
+    })
+    // The flag is read when the module is loaded.
+    vi.resetModules()
+    vi.doMock('../plugins/resolve', async (importOriginal) => ({
+      ...(await importOriginal<object>()),
+      isResolveDetailsDebugEnabled: true,
+    }))
+    onTestFinished(() => {
+      vi.doUnmock('../plugins/resolve')
+      vi.resetModules()
+    })
+    // One at a time: with parallel imports, the mock loads the modules in
+    // another order, and a class in an import cycle is still undefined.
+    const { resolveConfig } = await import('../config')
+    const { PartialEnvironment } = await import('../baseEnvironment')
+    const { resolveRolldownCacheOptions } = await import('../rolldownCache')
+    const warnings: string[] = []
+    const logger = createLogger('silent')
+    logger.warnOnce = (msg) => warnings.push(msg)
+    const getOptions = async (command: 'build' | 'serve') => {
+      const config = await resolveConfig(
+        {
+          root,
+          configFile: false,
+          customLogger: logger,
+          experimental: { cache: true },
+        },
+        command,
+      )
+      return resolveRolldownCacheOptions(
+        new PartialEnvironment('client', config) as Environment,
+      )
+    }
+    expect(await getOptions('build')).toBeUndefined()
+    expect(await getOptions('serve')).toBeUndefined()
+    expect(warnings).toHaveLength(2)
+    expect(warnings[0]).toContain(
+      '`experimental.cache` is off: `DEBUG=vite:resolve-details`',
+    )
   })
 
   test('sets no assumeUnchanged with resolve.preserveSymlinks', async () => {

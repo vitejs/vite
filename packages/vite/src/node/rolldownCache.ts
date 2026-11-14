@@ -6,7 +6,9 @@ import { VERSION } from './constants'
 import type { Environment } from './environment'
 import { findInstalledStateFile, findPatchesDir } from './optimizer'
 import { getPostcssConfigFile } from './plugins/css'
+import { isResolveDetailsDebugEnabled } from './plugins/resolve'
 import { searchForWorkspaceRoot } from './server/searchRoot'
+import { isSourcemapDebugEnabled } from './server/sourcemap'
 import { normalizePath } from './utils'
 
 /** The `experimental.cache` option of Rolldown. */
@@ -29,6 +31,30 @@ export function resolveRolldownCacheOptions(
     config.logger.warnOnce(
       colors.yellow(
         "`experimental.cache` is off: Vite cannot find the files that the config file imports with `configLoader: 'native'` on this runtime. Use another `configLoader` to turn the cache on.",
+      ),
+    )
+    return
+  }
+  if (isResolveDetailsDebugEnabled) {
+    // A mark in the hook stops only the saving. A result that a run without
+    // the flag saved prints no debug lines, and this run would reuse it.
+    config.logger.warnOnce(
+      colors.yellow(
+        '`experimental.cache` is off: `DEBUG=vite:resolve-details` prints debug lines in hooks that the cache skips.',
+      ),
+    )
+    return
+  }
+  if (
+    config.command === 'serve' &&
+    isSourcemapDebugEnabled &&
+    environment.config.dev.sourcemap.css
+  ) {
+    // A mark in the hook stops only the saving. A result that a run without
+    // the flag saved has no comment, and this run would reuse it.
+    config.logger.warnOnce(
+      colors.yellow(
+        '`experimental.cache` is off: `DEBUG=vite:sourcemap` adds the source map to the code of CSS modules as a comment.',
       ),
     )
     return
