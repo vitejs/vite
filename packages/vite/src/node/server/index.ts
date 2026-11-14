@@ -610,29 +610,6 @@ export async function _createServer(
 
   const environments: Record<string, DevEnvironment> = {}
 
-  await Promise.all(
-    Object.entries(config.environments).map(
-      async ([name, environmentOptions]) => {
-        const environment = await environmentOptions.dev.createEnvironment(
-          name,
-          config,
-          {
-            ws,
-          },
-        )
-        environments[name] = environment
-
-        const previousInstance =
-          options.previousEnvironments?.[environment.name]
-        await environment.init({ watcher, previousInstance })
-      },
-    ),
-  )
-
-  // Release previous environments after initialization to prevent memory leaks
-  // from retaining old server graphs across restarts.
-  options.previousEnvironments = undefined
-
   // Backward compatibility
 
   let moduleGraph = new ModuleGraph({
@@ -913,13 +890,6 @@ export async function _createServer(
     }
   }
 
-  if (!middlewareMode) {
-    setupSIGTERMListener(closeServerAndExit)
-  }
-
-  // these handlers read the server through reflexServer since a restart swaps in a different server object after they're set up
-  setupWatcherListeners(reflexServer, publicFiles)
-
   if (!middlewareMode && httpServer) {
     httpServer.once('listening', () => {
       // update actual port since this may be different from initial value
@@ -958,6 +928,19 @@ export async function _createServer(
   }
 
   try {
+    await initEnvironments(server, options.previousEnvironments)
+
+    // Release previous environments after initialization to prevent memory leaks
+    // from retaining old server graphs across restarts.
+    options.previousEnvironments = undefined
+
+    if (!middlewareMode) {
+      setupSIGTERMListener(closeServerAndExit)
+    }
+
+    // these handlers read the server through reflexServer since a restart swaps in a different server object after they're set up
+    setupWatcherListeners(reflexServer, publicFiles)
+
     await applyMiddlewares(server, reflexServer, publicFiles)
 
     if (!middlewareMode && httpServer) {
@@ -987,6 +970,30 @@ export async function _createServer(
   }
 
   return server
+}
+
+async function initEnvironments(
+  server: ViteDevServer,
+  previousEnvironments: Record<string, DevEnvironment> | undefined,
+): Promise<void> {
+  const { config, ws, watcher, environments } = server
+  await Promise.all(
+    Object.entries(config.environments).map(
+      async ([name, environmentOptions]) => {
+        const environment = await environmentOptions.dev.createEnvironment(
+          name,
+          config,
+          {
+            ws,
+          },
+        )
+        environments[name] = environment
+
+        const previousInstance = previousEnvironments?.[environment.name]
+        await environment.init({ watcher, previousInstance })
+      },
+    ),
+  )
 }
 
 function setupWatcherListeners(

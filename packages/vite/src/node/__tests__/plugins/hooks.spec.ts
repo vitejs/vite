@@ -610,6 +610,40 @@ describe('createServer startup failure', () => {
       expect(closeWrapper).toHaveBeenCalledOnce()
     },
   )
+
+  test.each(['options', 'createEnvironment'] as const)(
+    'closes the server when %s throws',
+    async (hook) => {
+      const error = new Error(`${hook} failed`)
+      const closeServer = vi.fn()
+
+      await expect(
+        createServerWithPlugin({
+          name: 'test',
+          config() {
+            if (hook === 'createEnvironment') {
+              return {
+                environments: {
+                  custom: {
+                    dev: {
+                      createEnvironment() {
+                        throw error
+                      },
+                    },
+                  },
+                },
+              }
+            }
+          },
+          options() {
+            if (hook === 'options') throw error
+          },
+          closeServer,
+        }),
+      ).rejects.toBe(error)
+      expect(closeServer).toHaveBeenCalledOnce()
+    },
+  )
 })
 
 describe('closePreviewServer hook', () => {
