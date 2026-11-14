@@ -2,6 +2,8 @@ packages:
   - 'packages/*'
   - 'playground/**'
   - 'packages/**/__tests__/**'
+  # test fixture that needs to be detected as its own workspace root
+  - '!packages/vite/src/node/server/__tests__/fixtures/pnpm'
   - docs
 
 hoistPattern:
@@ -69,6 +71,7 @@ minimumReleaseAgeExclude:
   - '@rolldown/binding-*'
   - '@vitejs/devtools'
   - '@vitejs/devtools-*'
+  - napi-windows-process-start-time@0.1.0
 trustPolicy: no-downgrade
 trustPolicyExcludePrune: true
 trustPolicyExclude:

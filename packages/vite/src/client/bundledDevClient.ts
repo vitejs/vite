@@ -3,7 +3,7 @@ import { DevRuntime } from 'rolldown/experimental/runtime'
 import {
   BundledDevHMRClient,
   BundledDevHMRContext,
-} from './bundledDevHmrClient'
+} from '../shared/bundledDevHmr'
 import {
   base,
   clearOverlayOrReloadOnFirstUpdate,
@@ -35,6 +35,12 @@ if (typeof DevRuntime !== 'undefined') {
     override createModuleHotContext(moduleId: string) {
       return new BundledDevHMRContext(bundledDevHmrClient, moduleId)
     }
+
+    override loadLazyChunk(proxyModuleId: string): Promise<unknown> {
+      return import(
+        /* @vite-ignore */ `${base}@vite/lazy?id=${encodeURIComponent(proxyModuleId)}&clientId=${this.clientId}`
+      )
+    }
   }
 
   const clientId = nanoid()
@@ -56,7 +62,7 @@ if (typeof DevRuntime !== 'undefined') {
     transport,
     runtime,
     {
-      base,
+      loadPatch: (url) => import(/* @vite-ignore */ base + url),
       partialAccept: __HMR_PARTIAL_ACCEPT__,
       beforeApply: clearOverlayOrReloadOnFirstUpdate,
     },

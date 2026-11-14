@@ -70,15 +70,33 @@
   <span class="result"></span>
 </div>
 
+<div class="source-phase-wasm">
+  <h3>Source phase import, result should be 3</h3>
+  <span class="result"></span>
+</div>
+
+<div class="source-phase-wasm-dynamic">
+  <h3>Dynamic source phase import, result should be 7</h3>
+  <span class="result"></span>
+</div>
+
+<div class="source-phase-wasm-with-imports">
+  <h3>Source phase import instantiated with imports, result should be 42</h3>
+  <span class="result"></span>
+</div>
+
 <script type="module">
   import { getWasmDepResult } from '@vitejs/test-wasm-dep'
   import { add } from './add.wasm'
+  import source addModule from './add.wasm'
   import { getAnswerPlusOne, readCounter } from './global-consumer.wasm'
   import { answer } from './global.wasm'
   import { bumpCounter } from './global.wasm'
   import heavy from './heavy.wasm?init'
   import { getResult } from './imports.js'
+  import { imported_func } from './imports.js'
   import { exported_func } from './light-with-imports.wasm'
+  import source lightWithImportsModule from './light-with-imports.wasm'
   import light from './light.wasm?init'
   import { helloLength } from './string-constants.wasm'
   import myWorker from './worker?worker'
@@ -156,4 +174,26 @@
 
   import lightUrl from './light.wasm?url'
   text('.url', lightUrl)
+
+  ;(async () => {
+    const addInstance = await WebAssembly.instantiate(addModule)
+    text('.source-phase-wasm .result', addInstance.exports.add(1, 2))
+  })()
+
+  ;(async () => {
+    const dynamicModule = await import.source('./add.wasm')
+    const dynamicInstance = await WebAssembly.instantiate(dynamicModule)
+    text(
+      '.source-phase-wasm-dynamic .result',
+      dynamicInstance.exports.add(3, 4),
+    )
+  })()
+
+  ;(async () => {
+    const lwiInstance = await WebAssembly.instantiate(lightWithImportsModule, {
+      './imports.js': { imported_func },
+    })
+    lwiInstance.exports.exported_func()
+    text('.source-phase-wasm-with-imports .result', getResult())
+  })()
 </script>
