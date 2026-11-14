@@ -108,6 +108,7 @@ const config = defineConfig({
     es: { label: 'Español', link: 'https://es.vite.dev' },
     ko: { label: '한국어', link: 'https://ko.vite.dev' },
     de: { label: 'Deutsch', link: 'https://de.vite.dev' },
+    id: { label: 'Indonesian', link:'https:/id.vite.dev'},
   },
 
   themeConfig: {
