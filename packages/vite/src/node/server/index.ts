@@ -917,6 +917,85 @@ export async function _createServer(
     setupSIGTERMListener(closeServerAndExit)
   }
 
+  // these handlers read the server through reflexServer since a restart swaps in a different server object after they're set up
+  setupWatcherListeners(reflexServer, publicFiles)
+
+  if (!middlewareMode && httpServer) {
+    httpServer.once('listening', () => {
+      // update actual port since this may be different from initial value
+      serverConfig.port = (httpServer.address() as net.AddressInfo).port
+    })
+  }
+
+  // httpServer.listen can be called multiple times
+  // when port when using next port number
+  // this code is to avoid calling buildStart multiple times
+  let initingServer: Promise<void> | undefined
+  let serverInited = false
+  const initServer = async (onListen: boolean) => {
+    if (serverInited) return
+    if (initingServer) return initingServer
+
+    initingServer = (async function () {
+      if (!config.experimental.bundledDev) {
+        // For backward compatibility, we call buildStart for the client
+        // environment when initing the server. For other environments
+        // buildStart will be called when the first request is transformed
+        await environments.client.pluginContainer.buildStart()
+      }
+
+      // ensure ws server started
+      if (onListen || options.listen) {
+        await Promise.all(
+          Object.values(environments).map((e) => e.listen(server)),
+        )
+      }
+
+      initingServer = undefined
+      serverInited = true
+    })()
+    return initingServer
+  }
+
+  try {
+    await applyMiddlewares(server, reflexServer, publicFiles)
+
+    if (!middlewareMode && httpServer) {
+      // overwrite listen to init optimizer before server start
+      const listen = httpServer.listen.bind(httpServer)
+      httpServer.listen = (async (port: number, ...args: any[]) => {
+        try {
+          await initServer(true)
+        } catch (e) {
+          httpServer.emit('error', e)
+          return
+        }
+        return listen(port, ...args)
+      }) as any
+    } else {
+      await initServer(false)
+    }
+  } catch (e) {
+    // close everything we started, because the caller never gets a server to call
+    // close() on when createServer rejects.
+    // this goes through server.close() because plugins wrap it. @cloudflare/vite-plugin
+    // stops workerd from its wrapper so _closeServer() would skip that
+    try {
+      await server.close()
+    } catch {}
+    throw e
+  }
+
+  return server
+}
+
+function setupWatcherListeners(
+  server: ViteDevServer,
+  publicFiles: Set<string> | undefined,
+): void {
+  const { watcher } = server
+  const { publicDir, server: serverConfig } = server.config
+
   const onHMRUpdate = async (
     type: 'create' | 'delete' | 'update',
     file: string,
@@ -990,13 +1069,16 @@ export async function _createServer(
   watcher.on('unlink', (file) => {
     onFileAddUnlink(file, true).catch((e) => server.config.logger.error(e))
   })
+}
 
-  if (!middlewareMode && httpServer) {
-    httpServer.once('listening', () => {
-      // update actual port since this may be different from initial value
-      serverConfig.port = (httpServer.address() as net.AddressInfo).port
-    })
-  }
+async function applyMiddlewares(
+  server: ViteDevServer,
+  reflexServer: ViteDevServer,
+  publicFiles: Set<string> | undefined,
+): Promise<void> {
+  const { config, middlewares, httpServer } = server
+  const { root, publicDir, server: serverConfig } = config
+  const { middlewareMode } = serverConfig
 
   // Pre applied internal middlewares ------------------------------------------
 
@@ -1020,154 +1102,95 @@ export async function _createServer(
     middlewares.use(hostValidationMiddleware(allowedHosts, false))
   }
 
-  try {
-    // apply configureServer hooks ----------------------------------------------
+  // apply configureServer hooks ------------------------------------------------
 
-    const configureServerContext = new BasicMinimalPluginContext(
-      { ...basePluginContextMeta, watchMode: true },
-      config.logger,
-    )
-    const postHooks: ((() => void) | void)[] = []
-    for (const hook of config.getSortedPluginHooks('configureServer')) {
-      postHooks.push(await hook.call(configureServerContext, reflexServer))
-    }
-
-    // Internal middlewares ----------------------------------------------------
-
-    if (!config.experimental.bundledDev) {
-      middlewares.use(cachedTransformMiddleware(server))
-    }
-
-    // proxy
-    const { proxy } = serverConfig
-    if (proxy) {
-      const middlewareServer =
-        (isObject(middlewareMode) ? middlewareMode.server : null) || httpServer
-      middlewares.use(proxyMiddleware(middlewareServer, proxy, config))
-    }
-
-    // base
-    if (config.base !== '/') {
-      middlewares.use(baseMiddleware(config.rawBase, !!middlewareMode))
-    }
-
-    // open in editor support
-    middlewares.use('/__open-in-editor', launchEditorMiddleware())
-
-    // ping request handler
-    // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-    middlewares.use(function viteHMRPingMiddleware(req, res, next) {
-      if (req.headers.accept === 'text/x-vite-ping') {
-        res.writeHead(204).end()
-      } else {
-        next()
-      }
-    })
-
-    // serve static files under /public
-    // this applies before the transform middleware so that these files are served
-    // as-is without transforms.
-    if (publicDir) {
-      middlewares.use(servePublicMiddleware(server, publicFiles))
-    }
-
-    if (config.experimental.bundledDev) {
-      middlewares.use(triggerLazyBundlingMiddleware(server))
-      middlewares.use(memoryFilesMiddleware(server))
-    } else {
-      // main transform middleware
-      middlewares.use(transformMiddleware(server))
-
-      // serve static files
-      middlewares.use(serveRawFsMiddleware(server))
-      middlewares.use(serveStaticMiddleware(server))
-    }
-
-    // html fallback
-    if (config.appType === 'spa' || config.appType === 'mpa') {
-      middlewares.use(
-        htmlFallbackMiddleware(
-          root,
-          config.appType === 'spa',
-          server.environments.client,
-        ),
-      )
-    }
-
-    // apply configureServer post hooks ----------------------------------------
-
-    // This is applied before the html middleware so that user middleware can
-    // serve custom content instead of index.html.
-    postHooks.forEach((fn) => fn && fn())
-
-    if (config.appType === 'spa' || config.appType === 'mpa') {
-      // transform index.html
-      middlewares.use(indexHtmlMiddleware(root, server))
-
-      // handle 404s
-      middlewares.use(notFoundMiddleware())
-    }
-
-    // error handler
-    middlewares.use(errorMiddleware(server, !!middlewareMode))
-
-    // httpServer.listen can be called multiple times
-    // when port when using next port number
-    // this code is to avoid calling buildStart multiple times
-    let initingServer: Promise<void> | undefined
-    let serverInited = false
-    const initServer = async (onListen: boolean) => {
-      if (serverInited) return
-      if (initingServer) return initingServer
-
-      initingServer = (async function () {
-        if (!config.experimental.bundledDev) {
-          // For backward compatibility, we call buildStart for the client
-          // environment when initing the server. For other environments
-          // buildStart will be called when the first request is transformed
-          await environments.client.pluginContainer.buildStart()
-        }
-
-        // ensure ws server started
-        if (onListen || options.listen) {
-          await Promise.all(
-            Object.values(environments).map((e) => e.listen(server)),
-          )
-        }
-
-        initingServer = undefined
-        serverInited = true
-      })()
-      return initingServer
-    }
-
-    if (!middlewareMode && httpServer) {
-      // overwrite listen to init optimizer before server start
-      const listen = httpServer.listen.bind(httpServer)
-      httpServer.listen = (async (port: number, ...args: any[]) => {
-        try {
-          await initServer(true)
-        } catch (e) {
-          httpServer.emit('error', e)
-          return
-        }
-        return listen(port, ...args)
-      }) as any
-    } else {
-      await initServer(false)
-    }
-  } catch (e) {
-    // close everything we started, because the caller never gets a server to call
-    // close() on when createServer rejects.
-    // this goes through server.close() because plugins wrap it. @cloudflare/vite-plugin
-    // stops workerd from its wrapper, so calling _closeServer() here would leave workerd running
-    try {
-      await server.close()
-    } catch {}
-    throw e
+  const configureServerContext = new BasicMinimalPluginContext(
+    { ...basePluginContextMeta, watchMode: true },
+    config.logger,
+  )
+  const postHooks: ((() => void) | void)[] = []
+  for (const hook of config.getSortedPluginHooks('configureServer')) {
+    postHooks.push(await hook.call(configureServerContext, reflexServer))
   }
 
-  return server
+  // Internal middlewares ------------------------------------------------------
+
+  if (!config.experimental.bundledDev) {
+    middlewares.use(cachedTransformMiddleware(server))
+  }
+
+  // proxy
+  const { proxy } = serverConfig
+  if (proxy) {
+    const middlewareServer =
+      (isObject(middlewareMode) ? middlewareMode.server : null) || httpServer
+    middlewares.use(proxyMiddleware(middlewareServer, proxy, config))
+  }
+
+  // base
+  if (config.base !== '/') {
+    middlewares.use(baseMiddleware(config.rawBase, !!middlewareMode))
+  }
+
+  // open in editor support
+  middlewares.use('/__open-in-editor', launchEditorMiddleware())
+
+  // ping request handler
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  middlewares.use(function viteHMRPingMiddleware(req, res, next) {
+    if (req.headers.accept === 'text/x-vite-ping') {
+      res.writeHead(204).end()
+    } else {
+      next()
+    }
+  })
+
+  // serve static files under /public
+  // this applies before the transform middleware so that these files are served
+  // as-is without transforms.
+  if (publicDir) {
+    middlewares.use(servePublicMiddleware(server, publicFiles))
+  }
+
+  if (config.experimental.bundledDev) {
+    middlewares.use(triggerLazyBundlingMiddleware(server))
+    middlewares.use(memoryFilesMiddleware(server))
+  } else {
+    // main transform middleware
+    middlewares.use(transformMiddleware(server))
+
+    // serve static files
+    middlewares.use(serveRawFsMiddleware(server))
+    middlewares.use(serveStaticMiddleware(server))
+  }
+
+  // html fallback
+  if (config.appType === 'spa' || config.appType === 'mpa') {
+    middlewares.use(
+      htmlFallbackMiddleware(
+        root,
+        config.appType === 'spa',
+        server.environments.client,
+      ),
+    )
+  }
+
+  // apply configureServer post hooks ------------------------------------------
+
+  // This is applied before the html middleware so that user middleware can
+  // serve custom content in place of index.html.
+  postHooks.forEach((fn) => fn && fn())
+
+  if (config.appType === 'spa' || config.appType === 'mpa') {
+    // transform index.html
+    middlewares.use(indexHtmlMiddleware(root, server))
+
+    // handle 404s
+    middlewares.use(notFoundMiddleware())
+  }
+
+  // error handler
+  middlewares.use(errorMiddleware(server, !!middlewareMode))
 }
 
 async function startServer(
