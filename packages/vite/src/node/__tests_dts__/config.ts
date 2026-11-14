@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { Equal, ExpectTrue } from '@type-challenges/utils'
+import { defaultServerFsDeny } from '..'
 import {
   type UserConfig,
   type UserConfigExport,
@@ -22,7 +23,19 @@ const configFnDefined = defineConfig(() =>
 )
 const configExportDefined = defineConfig({} as UserConfigExport)
 
+defineConfig({
+  server: {
+    fs: {
+      deny: [...defaultServerFsDeny, '**/.local/**'],
+    },
+  },
+})
+
+// @ts-expect-error --- exported defaults are readonly
+defaultServerFsDeny.push('**/custom/**')
+
 export type cases1 = [
+  ExpectTrue<Equal<typeof defaultServerFsDeny, readonly string[]>>,
   ExpectTrue<Equal<typeof configObjectDefined, UserConfig>>,
   ExpectTrue<Equal<typeof configObjectPromiseDefined, Promise<UserConfig>>>,
   ExpectTrue<Equal<typeof configFnObjectDefined, UserConfigFnObject>>,

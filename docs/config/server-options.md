@@ -436,11 +436,25 @@ export default defineConfig({
 ## server.fs.deny
 
 - **Type:** `string[]`
-- **Default:** `['.env', '.env.*', '*.{crt,pem,key,p12,pfx,cer,der}', '.npmrc', '.yarnrc.yml', '**/.git/**']`
+- **Default:** `defaultServerFsDeny`
 
 Blocklist for sensitive files being restricted to be served by Vite dev server. This will have higher priority than [`server.fs.allow`](#server-fs-allow). [picomatch patterns](https://github.com/micromatch/picomatch#globbing-features) are supported.
 
 Setting this option replaces the default list entirely. Include any default patterns you want to keep in your custom list.
+
+To extend the defaults, import `defaultServerFsDeny` from `vite`. It is a frozen, readonly array:
+
+```js
+import { defaultServerFsDeny, defineConfig } from 'vite'
+
+export default defineConfig({
+  server: {
+    fs: {
+      deny: [...defaultServerFsDeny, '**/.local/**'],
+    },
+  },
+})
+```
 
 ::: tip NOTE
 
