@@ -96,6 +96,7 @@ import {
   type CSSOptions,
   type ResolvedCSSOptions,
   cssConfigDefaults,
+  preloadPostcssConfig,
   resolveCSSOptions,
 } from './plugins/css'
 import type { ESBuildOptions } from './plugins/esbuild'
@@ -673,7 +674,9 @@ export interface CacheOptions {
   cacheKey?: string
   /**
    * Files that the config reads without importing them, for example with
-   * `fs.readFileSync`. When one of them changes, no saved result is reused.
+   * `fs.readFileSync`. Also the files that the PostCSS config imports, and
+   * the files that a PostCSS plugin reads by itself, such as
+   * `.browserslistrc`. When one of them changes, no saved result is reused.
    * Relative paths are resolved against `root`.
    */
   buildDependencies?: string[]
@@ -2319,6 +2322,12 @@ export async function resolveConfig(
 
   applyDepOptimizationOptionCompat(resolved)
   await setOptimizeDepsPluginNames(resolved)
+
+  if (resolved.experimental.cache) {
+    // The persistent cache needs the path of the PostCSS config file before
+    // the build starts.
+    await preloadPostcssConfig(resolved)
+  }
 
   debug?.(`using resolved config: %O`, {
     ...resolved,
