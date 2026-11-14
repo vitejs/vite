@@ -53,6 +53,7 @@ export interface WsOptions {
   path?: string
   timeout?: number
   server?: HttpServer
+  runtimeErrors?: boolean
 }
 
 export interface HmrOptions {
