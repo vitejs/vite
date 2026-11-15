@@ -1,7 +1,8 @@
 import { defineConfig } from 'vite'
 import workerPluginTestPlugin from './worker-plugin-test-plugin.js'
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  input: command === 'serve' ? ['index.html', 'classic-esm.js'] : undefined,
   base: '/iife/',
   resolve: {
     alias: {
@@ -54,4 +55,4 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['@vitejs/test-dep-self-reference-url-worker'],
   },
-})
+}))

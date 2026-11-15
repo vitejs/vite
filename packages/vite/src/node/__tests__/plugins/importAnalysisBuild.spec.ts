@@ -10,7 +10,7 @@ import {
 } from '../../plugins/importAnalysisBuild'
 
 beforeAll(async () => {
-  await init
+  await init()
 })
 
 test('chunk import map key signatures follow rendered chunk order', () => {
@@ -41,30 +41,36 @@ test('chunk import map key signatures follow rendered chunk order', () => {
 
   expect(
     Object.fromEntries(
-      getChunkImportMapKeySignatures({
-        [unhashed.fileName]: unhashed,
-        [chunkA.fileName]: chunkA,
-        [chunkB.fileName]: chunkB,
-        [facade.fileName]: facade,
-      }),
+      getChunkImportMapKeySignatures(
+        {
+          [unhashed.fileName]: unhashed,
+          [chunkA.fileName]: chunkA,
+          [chunkB.fileName]: chunkB,
+          [facade.fileName]: facade,
+        },
+        '/',
+      ),
     ),
   ).toStrictEqual({
     [unhashed.fileName]: JSON.stringify(['file', unhashed.fileName]),
     [chunkA.fileName]: JSON.stringify(['name', 'shared']),
-    [chunkB.fileName]: JSON.stringify(['module', '/b.js']),
-    [facade.fileName]: JSON.stringify(['facade', '/entry.js']),
+    [chunkB.fileName]: JSON.stringify(['module', true, 'b.js']),
+    [facade.fileName]: JSON.stringify(['facade', true, 'entry.js']),
   })
 
   expect(
     Object.fromEntries(
-      getChunkImportMapKeySignatures({
-        [chunkB.fileName]: chunkB,
-        [chunkA.fileName]: chunkA,
-      }),
+      getChunkImportMapKeySignatures(
+        {
+          [chunkB.fileName]: chunkB,
+          [chunkA.fileName]: chunkA,
+        },
+        '/',
+      ),
     ),
   ).toStrictEqual({
     [chunkB.fileName]: JSON.stringify(['name', 'shared']),
-    [chunkA.fileName]: JSON.stringify(['module', '/a.js']),
+    [chunkA.fileName]: JSON.stringify(['module', true, 'a.js']),
   })
 })
 
@@ -77,7 +83,7 @@ for (const { name, moduleIds, signature } of [
   {
     name: 'an empty module ID',
     moduleIds: ['/a.js', ''],
-    signature: ['module', ''],
+    signature: ['module', false, ''],
   },
 ]) {
   test(`chunk import map key signatures handle duplicate names with ${name}`, () => {
@@ -92,14 +98,65 @@ for (const { name, moduleIds, signature } of [
       fileName: 'assets/shared-!~{002}~.js',
       moduleIds,
     }
-    const signatures = getChunkImportMapKeySignatures({
-      [first.fileName]: first,
-      [duplicate.fileName]: duplicate,
-    })
+    const signatures = getChunkImportMapKeySignatures(
+      {
+        [first.fileName]: first,
+        [duplicate.fileName]: duplicate,
+      },
+      '/',
+    )
     expect(signatures.size).toBe(2)
     expect(signatures.get(duplicate.fileName)).toBe(JSON.stringify(signature))
   })
 }
+
+test('chunk import map key signatures do not depend on the build folder', () => {
+  const chunksIn = (root: string) => ({
+    'assets/entry-!~{001}~.js': {
+      facadeModuleId: `${root}/src/entry.js`,
+      fileName: 'assets/entry-!~{001}~.js',
+      moduleIds: [`${root}/src/entry.js`],
+      name: 'entry',
+    },
+    'assets/shared-!~{002}~.js': {
+      facadeModuleId: null,
+      fileName: 'assets/shared-!~{002}~.js',
+      moduleIds: [`${root}/src/a.js`],
+      name: 'shared',
+    },
+    'assets/shared-!~{003}~.js': {
+      facadeModuleId: null,
+      fileName: 'assets/shared-!~{003}~.js',
+      moduleIds: [`${root}/src/b.js`],
+      name: 'shared',
+    },
+  })
+
+  expect(
+    getChunkImportMapKeySignatures(chunksIn('/project'), '/project'),
+  ).toStrictEqual(
+    getChunkImportMapKeySignatures(
+      chunksIn('/a/much/longer/project'),
+      '/a/much/longer/project',
+    ),
+  )
+})
+
+test('chunk import map key signatures keep file and non-file module IDs apart', () => {
+  const chunk = (id: string) => ({
+    facadeModuleId: id,
+    fileName: 'assets/lazy-!~{001}~.js',
+    moduleIds: [id],
+    name: 'lazy',
+  })
+  const signatureOf = (id: string) =>
+    getChunkImportMapKeySignatures(
+      { 'assets/lazy-!~{001}~.js': chunk(id) },
+      '/project',
+    ).get('assets/lazy-!~{001}~.js')
+
+  expect(signatureOf('/project/lazy.js')).not.toBe(signatureOf('lazy.js'))
+})
 
 // the start position of every `__VITE_PRELOAD__` marker, in source order
 function markerPositions(code: string): number[] {
@@ -116,7 +173,7 @@ function markerPositions(code: string): number[] {
 
 // pair dynamic imports with markers the way the plugin does (see `generateBundle`)
 function match(code: string) {
-  const imports = parseImports(code)[0].filter((i) => i.d > -1)
+  const imports = parseImports(code)[0].filter((i) => i.type === 'dynamic')
   return matchImportsToPreloadMarkers(code, imports)
 }
 
@@ -195,18 +252,29 @@ describe('preloadOnce', () => {
     expect(preloadCount).toBe(1)
   })
 
-  test('shares a preload rejection with every waiter', async () => {
+  test('shares a preload rejection with every waiter and retries later', async () => {
     const seen = {}
     const { promise, reject } = promiseWithResolvers<void>()
     const error = new Error('failed to preload')
+    let preloadCount = 0
+    const preload = () => {
+      preloadCount++
+      return preloadCount === 1 ? promise : Promise.resolve()
+    }
 
-    const first = preloadOnce(seen, 'style.css', () => promise)
-    const second = preloadOnce(seen, 'style.css', () => promise)
+    const first = preloadOnce(seen, 'style.css', preload)
+    const second = preloadOnce(seen, 'style.css', preload)
     reject(error)
 
     expect(await Promise.allSettled([first, second])).toStrictEqual([
       { status: 'rejected', reason: error },
       { status: 'rejected', reason: error },
     ])
+    expect(preloadCount).toBe(1)
+
+    await expect(
+      preloadOnce(seen, 'style.css', preload),
+    ).resolves.toBeUndefined()
+    expect(preloadCount).toBe(2)
   })
 })

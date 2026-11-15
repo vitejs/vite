@@ -5,7 +5,7 @@ export default defineConfig({
   options: {
     typeAware: true,
   },
-  plugins: ['typescript', 'node', 'import', 'unicorn'],
+  plugins: ['typescript', 'node', 'import', 'unicorn', 'vitest'],
   jsPlugins: ['eslint-plugin-n', 'eslint-plugin-regexp', '@e18e/eslint-plugin'],
   categories: {
     correctness: 'error',
@@ -19,7 +19,7 @@ export default defineConfig({
     'packages/create-vite/template-*',
     '**/dist/**',
     '**/fixtures/**',
-    '**/playground-temp/**',
+    '**/playground-temp-*/**',
     '**/temp/**',
     '**/.vitepress/cache/**',
     '**/*.snap',
@@ -88,21 +88,38 @@ export default defineConfig({
     'typescript/no-implied-eval': 'off', // we intentionally use `Function()`
     'typescript/no-floating-promises': 'off',
     'typescript/no-redundant-type-constituents': 'off', // hard to handle some cases
-    'typescript/no-unnecessary-type-assertion': 'off',
     'typescript/prefer-string-starts-ends-with': 'off', // prefer indexed access for better performance
-    'typescript/require-await': 'off', // does not handle inferred required async functions well
     'typescript/restrict-template-expressions': 'off', // does not matter for us
     'typescript/unbound-method': 'off',
-
-    // These correctness rules are disabled for compatibility with the codebase.
-    'typescript/no-misused-spread': 'off',
-    'typescript/require-array-sort-compare': 'off',
-    'unicorn/no-new-array': 'off',
     // https://github.com/oxc-project/oxc/issues/14895
     'typescript/consistent-generic-constructors': 'off',
 
+    // These type-aware rules are disabled for compatibility with the codebase.
+    'vitest/no-conditional-expect': 'off',
+    'vitest/no-conditional-tests': 'off',
+
     'import/no-duplicates': 'error',
     'import/default': 'off',
+
+    'vitest/valid-expect': ['error', { maxArgs: 2 }],
+    'vitest/valid-title': 'off',
+    'vitest/no-disabled-tests': 'off',
+    'vitest/expect-expect': 'off',
+    // https://github.com/oxc-project/oxc/issues/29167
+    'vitest/no-standalone-expect': 'off',
+    // https://github.com/oxc-project/oxc/issues/29165
+    'vitest/require-mock-type-parameters': 'off',
+
+    'vitest/prefer-comparison-matcher': 'error',
+    'vitest/prefer-equality-matcher': 'error',
+    'vitest/prefer-expect-type-of': 'error',
+    'vitest/prefer-spy-on': 'error',
+    'vitest/prefer-strict-boolean-matchers': 'error',
+    'vitest/prefer-strict-equal': 'error',
+    'vitest/prefer-to-be': 'error',
+    'vitest/prefer-to-contain': 'error',
+    'vitest/prefer-to-have-been-called-times': 'error',
+    'vitest/prefer-to-have-length': 'error',
 
     'node/no-exports-assign': 'error',
     'n/no-unpublished-bin': 'error',

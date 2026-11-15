@@ -331,13 +331,13 @@ test('escapes special chars in globs without mangling user supplied glob suffix'
       const text = await page.textContent('.escape-relative')
       return text.split('\n').sort()
     })
-    .toEqual(expectedNames)
+    .toStrictEqual(expectedNames)
   await expect
     .poll(async () => {
       const text = await page.textContent('.escape-alias')
       return text.split('\n').sort()
     })
-    .toEqual(expectedNames)
+    .toStrictEqual(expectedNames)
 })
 
 test('escape literal parenthesis in glob pattern', async () => {

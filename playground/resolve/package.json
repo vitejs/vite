@@ -25,7 +25,7 @@
     "#hash": "./imports-path/hash.js"
   },
   "dependencies": {
-    "@babel/runtime": "^7.29.10",
+    "@babel/runtime": "^7.29.13",
     "normalize.css": "^8.0.1",
     "@vitejs/test-resolve-browser-field": "link:./browser-field",
     "@vitejs/test-resolve-browser-module-field1": "link:./browser-module-field1",

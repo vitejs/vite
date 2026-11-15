@@ -388,12 +388,14 @@ export function tests() {
   test('URL separation', async () => {
     const urlSeparated = await page.$('.url-separated')
     const baseUrl = 'url(images/dog.webp)'
-    const cases = new Array(5)
+    const cases = Array.from({ length: 5 })
       .fill('')
       .flatMap((_, i) =>
         [',', ' ,', ', ', ' , '].map(
           (sep) =>
-            `background-image:${new Array(i + 1).fill(baseUrl).join(sep)};`,
+            `background-image:${Array.from({ length: i + 1 })
+              .fill(baseUrl)
+              .join(sep)};`,
         ),
       )
 
@@ -503,6 +505,23 @@ export function tests() {
     expect(await getColor('.imports-field')).toBe('red')
   })
 
+  test('resolve imports field in CSS URLs', async () => {
+    for (const selector of [
+      '.imports-field-url',
+      '.imports-field-pattern-url',
+    ]) {
+      expect(await getBg(selector)).toMatch(
+        isBundled ? /\/assets\/ok-[\w-]+\.png/ : '/ok.png?no-inline',
+      )
+    }
+    expect(
+      await page.$eval(
+        '.imports-field-fragment',
+        (el) => getComputedStyle(el).filter,
+      ),
+    ).toContain('#filter')
+  })
+
   test.runIf(isBuild)(
     'warning can be suppressed by esbuild.logOverride',
     () => {
@@ -572,7 +591,7 @@ export function tests() {
         undefined,
         'assets/dir/dir2',
       ),
-    ).not.toBeUndefined()
+    ).toBeDefined()
   })
 
   test.runIf(isBuild)('CSS modules should be treeshaken if not used', () => {
@@ -596,7 +615,7 @@ export function tests() {
     'empty CSS files should generate .css assets, not .js assets',
     () => {
       // Check that empty CSS entry point generates a .css file, not a .js file
-      expect(findAssetFile(/empty-[-\w]{8}\.css$/)).not.toBeUndefined()
+      expect(findAssetFile(/empty-[-\w]{8}\.css$/)).toBeDefined()
       expect(findAssetFile(/empty-[-\w]{8}\.js$/)).toBeUndefined()
     },
   )

@@ -66,11 +66,7 @@ export function resolveChokidarOptions(
 ): WatchOptions {
   const {
     ignored: ignoredList,
-    pollInterval,
-    useDebounce,
-    debounceDuration,
-    debounceTickRate,
-    compareContentsForPolling,
+    watcher,
     include,
     exclude,
     ...otherOptions
@@ -117,12 +113,11 @@ export function convertToDevWatchOptions(
   if (!options) return {}
 
   return {
-    usePolling: options.usePolling,
-    pollInterval: options.pollInterval ?? options.interval,
-    useDebounce: options.useDebounce,
-    debounceDuration: options.debounceDuration,
-    debounceTickRate: options.debounceTickRate,
-    compareContentsForPolling: options.compareContentsForPolling,
+    watcher: {
+      ...options.watcher,
+      usePolling: options.watcher?.usePolling ?? options.usePolling,
+      pollInterval: options.watcher?.pollInterval ?? options.interval,
+    },
     include: options.include,
     exclude: options.exclude,
   }

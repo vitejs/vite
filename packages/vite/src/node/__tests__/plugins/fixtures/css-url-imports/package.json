@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "imports": {
+    "#logo": "./logo.svg",
+    "#collision": "./logo.svg",
+    "#assets/*": "./*"
+  }
+}

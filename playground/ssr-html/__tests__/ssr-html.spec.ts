@@ -39,7 +39,7 @@ describe.runIf(isServe)('injected inline scripts', () => {
 
     // all proxied scripts return code
     for (const code of scriptContents) {
-      expect(code).toBeTruthy()
+      expect(code).not.toBe('')
     }
   })
 })
@@ -53,8 +53,8 @@ describe.runIf(isServe)('trailing slash html paths', () => {
     await response.text()
 
     await setTimeout(100) // wait for pre-transform to happen
-    expect(serverLogs).not.toEqual(
-      expect.arrayContaining([expect.stringContaining('Pre-transform error')]),
+    expect(serverLogs).not.toContainEqual(
+      expect.stringContaining('Pre-transform error'),
     )
   })
 

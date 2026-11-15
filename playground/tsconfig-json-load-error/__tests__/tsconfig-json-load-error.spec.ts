@@ -15,7 +15,7 @@ const tsconfigLoadErrorRE =
 
 describe.runIf(isBuild)('build', () => {
   test('should throw an error on build', () => {
-    expect(serveError).toBeTruthy()
+    expect(serveError).toBeDefined()
     expect(serveError.message).toMatch(tsconfigLoadErrorRE)
     clearServeError() // got expected error, null it here so testsuite does not fail from rethrow in afterAll
   })
@@ -27,7 +27,7 @@ describe.runIf(isBuild)('build', () => {
     } catch (e) {
       err = e
     }
-    expect(err).toBeTruthy()
+    expect(err).toBeDefined()
     expect(err.code).toBe('ENOENT')
   })
 })
@@ -37,7 +37,7 @@ describe.runIf(isServe)('server', () => {
     'should log 500 error in browser for malformed tsconfig',
     () => {
       // don't test for actual complete message as this might be locale dependent. chrome does log 500 consistently though
-      expect(browserLogs.find((x) => x.includes('500'))).toBeTruthy()
+      expect(browserLogs).toContainEqual(expect.stringContaining('500'))
       expect(browserLogs).not.toContain('tsconfig error fixed, file loaded')
     },
   )
@@ -60,7 +60,7 @@ describe.runIf(isServe)('server', () => {
 
   test('should show error overlay for tsconfig error', async () => {
     const errorOverlay = await page.waitForSelector('vite-error-overlay')
-    expect(errorOverlay).toBeTruthy()
+    expect(errorOverlay).toBeDefined()
     const message = await errorOverlay.$$eval('.message-body', (m) => {
       return m[0].innerHTML
     })

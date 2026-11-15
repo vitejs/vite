@@ -486,9 +486,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           if (startOffset === 0) return 0
 
           // Gets the offset for the start of the line including the
-          // newline trailing the previous node
-          const lineStartOffset =
-            startOffset - node.sourceCodeLocation!.startCol
+          // newline trailing the previous node.
+          // Columns are one-based and offsets are zero-based, so their difference
+          // is -1 on the first line. Clamp to 0 because there is no preceding newline.
+          const lineStartOffset = Math.max(
+            0,
+            startOffset - node.sourceCodeLocation!.startCol,
+          )
 
           // <previous-line-node></previous-line-node>
           // <target-node></target-node>
@@ -503,7 +507,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // previous newline, we cannot strip it out without risking content deletion.
           let isLineEmpty = false
           try {
-            const line = s.slice(Math.max(0, lineStartOffset), startOffset)
+            const line = s.slice(lineStartOffset, startOffset)
             isLineEmpty = !line.trim()
           } catch {
             // magic-string may throw if there's some content removed in the sliced string,
@@ -616,7 +620,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
                     code: contents,
                   })
-                  js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.js"`
+                  js += `\nimport ${JSON.stringify(`${id}?html-proxy&index=${inlineModuleIndex}.js`)}`
                   shouldRemove = true
                 }
 
@@ -731,7 +735,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const filePath = id.replace(normalizePath(config.root), '')
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
             // will transform with css plugin and cache result with css-post plugin
-            js += `\nimport "${id}?html-proxy&inline-css&style-attr&index=${inlineModuleIndex}.css"`
+            js += `\nimport ${JSON.stringify(`${id}?html-proxy&inline-css&style-attr&index=${inlineModuleIndex}.css`)}`
             const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             overwriteAttrValue(
@@ -750,7 +754,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
               code: styleNode.value,
             })
-            js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
+            js += `\nimport ${JSON.stringify(`${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css`)}`
             const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             s.update(
