@@ -19,6 +19,32 @@ describe('moduleGraph', () => {
       expect(entryModule.ssrError).toBeNull()
     })
 
+    it('does not stamp importers above a self-accepting HMR boundary', async () => {
+      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
+        id: url,
+      }))
+      const leaf = await moduleGraph.ensureEntryFromUrl('/leaf.js', false)
+      const boundary = await moduleGraph.ensureEntryFromUrl(
+        '/boundary.js',
+        false,
+      )
+      const importer = await moduleGraph.ensureEntryFromUrl(
+        '/importer.js',
+        false,
+      )
+      leaf.importers.add(boundary)
+      boundary.importers.add(importer)
+      boundary.acceptedHmrDeps.add(boundary)
+
+      const timestamp = 123
+      moduleGraph.invalidateModule(leaf, new Set(), timestamp, true)
+
+      expect(leaf.lastHMRTimestamp).toBe(timestamp)
+      expect(boundary.lastHMRTimestamp).toBe(timestamp)
+      expect(importer.lastHMRTimestamp).toBe(0)
+      expect(importer.lastInvalidationTimestamp).toBe(timestamp)
+    })
+
     it('ensureEntryFromUrl should based on resolvedId', async () => {
       const moduleGraph = new EnvironmentModuleGraph('client', async (url) => {
         if (url === '/xx.js') {

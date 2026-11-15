@@ -224,7 +224,11 @@ export class EnvironmentModuleGraph {
           importer,
           seen,
           timestamp,
-          isHmr,
+          // A self-accepting module is the HMR boundary: the browser replaces
+          // it, but not the modules that import it. Invalidate their transform
+          // results without giving them a new HMR timestamp, otherwise a later
+          // lazy import of an importer above the boundary loads it a second time.
+          isHmr && !mod.acceptedHmrDeps.has(mod),
           shouldSoftInvalidateImporter,
         )
       }
