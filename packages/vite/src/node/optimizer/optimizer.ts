@@ -239,6 +239,12 @@ export function createDepsOptimizer(
                 clearTimeout(scanTimer)
               }
 
+              // The close path waits for the scanner, so don't start a new
+              // optimizer run after the server has been closed.
+              if (closed) {
+                return
+              }
+
               const manuallyIncluded = Object.keys(manuallyIncludedDepsInfo)
               discoveredDepsWhileScanning.push(
                 ...Object.keys(metadata.discovered).filter(
