@@ -862,7 +862,7 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
 
 function setupReactCompiler(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@rolldown/plugin-babel
-  const babelPluginVersion = '0.3.0'
+  const babelPluginVersion = '0.3.1'
   // renovate: datasource=npm depName=babel-plugin-react-compiler
   const reactCompilerPluginVersion = '1.0.0'
   // renovate: datasource=npm depName=@babel/core
@@ -917,7 +917,7 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@eslint/js
   const eslintJsVersion = '10.0.1'
   // renovate: datasource=npm depName=eslint
-  const eslintVersion = '10.14.0'
+  const eslintVersion = '10.15.0'
   // renovate: datasource=npm depName=eslint-plugin-react-hooks
   const eslintPluginReactHooksVersion = '7.1.1'
   // renovate: datasource=npm depName=eslint-plugin-react-refresh
@@ -925,7 +925,7 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=globals
   const globalsVersion = '17.14.0'
   // renovate: datasource=npm depName=typescript-eslint
-  const typescriptEslintVersion = '8.72.1'
+  const typescriptEslintVersion = '8.72.2'
 
   const eslintConfigForTS = /* js */ `import js from '@eslint/js'
 import globals from 'globals'
@@ -1110,11 +1110,11 @@ function updateReactCompilerReadme(root: string, newBody: string) {
 
 function setupDevTools(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@vitejs/devtools
-  const devtoolsVersion = '0.8.0'
+  const devtoolsVersion = '0.8.2'
   // renovate: datasource=npm depName=@vitejs/devtools-vite
-  const devtoolsViteVersion = '0.8.0'
+  const devtoolsViteVersion = '0.8.2'
   // renovate: datasource=npm depName=@vitejs/devtools-rolldown
-  const devtoolsRolldownVersion = '0.8.0'
+  const devtoolsRolldownVersion = '0.8.2'
 
   const option = `{
     // Remove this \`apply\` property to enable devtools for build as well
