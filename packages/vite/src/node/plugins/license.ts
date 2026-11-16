@@ -1,9 +1,12 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { cleanUrl } from '../../shared/utils'
 import type { PackageCache } from '../packages'
 import { findNearestMainPackageData } from '../packages'
 import type { Plugin } from '../plugin'
 import { isInNodeModules, sortObjectKeys } from '../utils'
+import { cssDepsCache, removedPureCssFilesCache } from './css'
+import { getWorkerModuleIds } from './worker'
 
 export interface LicenseEntry {
   /**
@@ -49,41 +52,95 @@ export function licensePlugin(): Plugin {
       const licenseOption = this.environment.config.build.license
       if (licenseOption === false) return
 
+      const topLevelConfig = this.environment.getTopLevelConfig()
       const packageCache: PackageCache = new Map()
       // Track license via a key to its license entry.
       // A key consists of "name@version" of a package.
       const licenses: Record<string, LicenseEntry> = {}
 
+      function addLicense(moduleId: string) {
+        if (moduleId.startsWith('\0') || !isInNodeModules(moduleId)) return
+
+        // Find the dependency package.json
+        const pkgData = findNearestMainPackageData(
+          path.dirname(moduleId),
+          packageCache,
+        )
+        if (!pkgData) return
+
+        // Grab the package.json keys and check if already exists in the licenses
+        // oxlint-disable-next-line typescript/no-useless-default-assignment -- version might be actually missing
+        const { name, version = '0.0.0', license } = pkgData.data
+        const key = `${name}@${version}`
+        if (licenses[key]) return
+
+        // If not, create a new license entry
+        const entry: LicenseEntry = { name, version }
+        if (license) {
+          entry.identifier = license.trim()
+        }
+        const licenseFile = findLicenseFile(pkgData.dir)
+        if (licenseFile) {
+          entry.text = fs.readFileSync(licenseFile, 'utf-8').trim()
+        }
+        licenses[key] = entry
+      }
+
+      const cssDeps = cssDepsCache.get(topLevelConfig)
+      const visitedModules = new Set<string>()
+
+      function processModule(moduleId: string) {
+        if (visitedModules.has(moduleId)) return
+        visitedModules.add(moduleId)
+
+        addLicense(moduleId)
+
+        // If this module has CSS dependencies (e.g. from @import or CSS preprocessor),
+        // include them as well.
+        const deps = cssDeps?.get(moduleId) ?? cssDeps?.get(cleanUrl(moduleId))
+        if (deps) {
+          for (const dep of deps) {
+            processModule(dep)
+          }
+        }
+      }
+
       for (const file in bundle) {
         const chunk = bundle[file]
-        if (chunk.type === 'asset') continue
+        if (chunk.type === 'asset') {
+          const files = chunk.originalFileNames?.length
+            ? chunk.originalFileNames
+            : chunk.originalFileName
+              ? [chunk.originalFileName]
+              : []
+          for (const originalFile of files) {
+            if (originalFile) {
+              processModule(originalFile)
+            }
+          }
+          continue
+        }
 
         for (const moduleId of chunk.moduleIds) {
-          if (moduleId.startsWith('\0') || !isInNodeModules(moduleId)) continue
+          processModule(moduleId)
+        }
+      }
 
-          // Find the dependency package.json
-          const pkgData = findNearestMainPackageData(
-            path.dirname(moduleId),
-            packageCache,
-          )
-          if (!pkgData) continue
-
-          // Grab the package.json keys and check if already exists in the licenses
-          // oxlint-disable-next-line typescript/no-useless-default-assignment -- version might be actually missing
-          const { name, version = '0.0.0', license } = pkgData.data
-          const key = `${name}@${version}`
-          if (licenses[key]) continue
-
-          // If not, create a new license entry
-          const entry: LicenseEntry = { name, version }
-          if (license) {
-            entry.identifier = license.trim()
+      // Process pure CSS chunks whose JS placeholders were removed from the bundle
+      const removedPureCssFiles = removedPureCssFilesCache.get(topLevelConfig)
+      if (removedPureCssFiles) {
+        for (const chunk of removedPureCssFiles.values()) {
+          for (const moduleId of chunk.moduleIds) {
+            processModule(moduleId)
           }
-          const licenseFile = findLicenseFile(pkgData.dir)
-          if (licenseFile) {
-            entry.text = fs.readFileSync(licenseFile, 'utf-8').trim()
-          }
-          licenses[key] = entry
+        }
+      }
+
+      // Process worker sub-build modules
+      const workerModuleIds = getWorkerModuleIds(this.environment)
+      if (workerModuleIds) {
+        for (const moduleId of workerModuleIds) {
+          processModule(moduleId)
         }
       }
 
