@@ -33,6 +33,7 @@ import { fileToModuleUrl } from '../server/moduleUrl'
 import {
   encodeURIPath,
   getHash,
+  getBuildSourcemap,
   injectQuery,
   normalizePath,
   rawRE,
@@ -357,7 +358,10 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
             if (s) {
               return {
                 code: s.toString(),
-                map: this.environment.config.build.sourcemap
+                map: getBuildSourcemap(
+                  this.environment.config.build.sourcemap,
+                  'js',
+                )
                   ? s.generateMap({ hires: 'boundary' })
                   : null,
               }

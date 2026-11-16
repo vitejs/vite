@@ -2,7 +2,7 @@ import { transformSync } from 'rolldown/utils'
 import type { ResolvedConfig } from '../config'
 import type { Environment } from '../environment'
 import type { Plugin } from '../plugin'
-import { escapeRegex, isCSSRequest } from '../utils'
+import { escapeRegex, getBuildSourcemap, isCSSRequest } from '../utils'
 import { isHTMLRequest } from './html'
 
 const nonJsRe = /\.json(?:$|\?)/
@@ -182,7 +182,7 @@ export function replaceDefine(
     define,
     sourcemap:
       environment.config.command === 'build'
-        ? !!environment.config.build.sourcemap
+        ? !!getBuildSourcemap(environment.config.build.sourcemap, 'js')
         : true,
     tsconfig: false,
   })

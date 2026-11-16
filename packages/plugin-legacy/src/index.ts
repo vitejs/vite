@@ -57,6 +57,10 @@ async function loadPolyfillPlugins(): Promise<BabelPlugin[]> {
 // which may not support all module.exports as named exports
 const { loadConfig: browserslistLoadConfig } = browserslist
 
+function isSourcemapEnabled(sourcemap: BuildOptions['sourcemap']): boolean {
+  return !!(typeof sourcemap === 'object' ? sourcemap.js : sourcemap)
+}
+
 // Duplicated from build.ts in Vite Core, at least while the feature is experimental
 // We should later expose this helper for other plugins to use
 function toOutputFilePathInHtml(
@@ -620,7 +624,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           }
         }
 
-        if (this.environment.config.build.sourcemap) {
+        if (isSourcemapEnabled(this.environment.config.build.sourcemap)) {
           return {
             code: ms.toString(),
             map: ms.generateMap({ hires: 'boundary' }),
@@ -642,7 +646,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         options.polyfills !== false && !Array.isArray(options.polyfills)
 
       // transform the legacy chunk with @babel/preset-env
-      const sourceMaps = !!this.environment.config.build.sourcemap
+      const sourceMaps = isSourcemapEnabled(
+        this.environment.config.build.sourcemap,
+      )
       const babel = await loadBabel()
 
       // need to transform into systemjs separately from other plugins
@@ -1075,7 +1081,7 @@ function prependModenChunkLegacyGuardPlugin(): Plugin {
   return {
     name: 'vite:legacy-prepend-moden-chunk-legacy-guard',
     configResolved(config) {
-      sourceMapEnabled = !!config.build.sourcemap
+      sourceMapEnabled = isSourcemapEnabled(config.build.sourcemap)
     },
     renderChunk(code, chunk) {
       const modernChunkLegacyGuard = createModernChunkLegacyGuard(
