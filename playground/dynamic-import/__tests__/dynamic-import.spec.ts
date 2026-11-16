@@ -176,46 +176,33 @@ test('should work a load path that contains parentheses.', async () => {
     .toMatch('dynamic-import-with-vars-contains-parenthesis')
 })
 
-test.runIf(isBuild)(
-  'should rollup warn when static and dynamic import a module in same chunk',
-  // NOTE: this is a warning related to rollup's chunking behavior
-  { skip: true },
-  async () => {
-    const log = serverLogs.join('\n')
-    expect(log).toContain(
-      'dynamic import will not move module into another chunk',
-    )
-    expect(log).toMatch(
-      /\(!\).*\/dynamic-import\/files\/mxd\.js is dynamically imported by/,
-    )
-    expect(log).toMatch(
-      /\(!\).*\/dynamic-import\/files\/mxd\.json is dynamically imported by/,
-    )
-    expect(log).not.toMatch(
-      /\(!\).*\/dynamic-import\/nested\/shared\.js is dynamically imported by/,
-    )
-  },
-)
-
 test('dynamic import treeshaken log', async () => {
-  const log = browserLogs.join('\n')
-  expect(log).toContain('treeshaken foo')
-  expect(log).toContain('treeshaken bar')
-  expect(log).toContain('treeshaken baz1')
-  expect(log).toContain('treeshaken baz2')
-  expect(log).toContain('treeshaken baz3')
-  expect(log).toContain('treeshaken baz4')
-  expect(log).toContain('treeshaken baz5')
-  expect(log).toContain('treeshaken baz6')
-  expect(log).toContain('treeshaken default')
-
-  expect(log).not.toContain('treeshaken removed')
+  const containLogs = [
+    'treeshaken foo',
+    'treeshaken bar',
+    'treeshaken baz1',
+    'treeshaken baz2',
+    'treeshaken baz3',
+    'treeshaken baz4',
+    'treeshaken baz5',
+    'treeshaken baz6',
+    'treeshaken default',
+  ]
+  for (const l of containLogs) {
+    expect(browserLogs).toContainEqual(expect.stringContaining(l))
+  }
+  expect(browserLogs).not.toContainEqual(
+    expect.stringContaining('treeshaken removed'),
+  )
 })
 
 test('dynamic import syntax parsing', async () => {
-  const log = browserLogs.join('\n')
-  expect(log).toContain('treeshaken syntax foo')
-  expect(log).toContain('treeshaken syntax default')
+  expect(browserLogs).toContainEqual(
+    expect.stringContaining('treeshaken syntax foo'),
+  )
+  expect(browserLogs).toContainEqual(
+    expect.stringContaining('treeshaken syntax default'),
+  )
 })
 
 test.runIf(isBuild)('dynamic import treeshaken file', async () => {
@@ -225,7 +212,7 @@ test.runIf(isBuild)('dynamic import treeshaken file', async () => {
 test.runIf(isBuild)('should not preload for non-analyzable urls', () => {
   const js = findAssetFile(/index-[-\w]{8}\.js$/)
   // should match e.g. await import(e.jss);o(".view",p===i)
-  expect(js).to.match(/\.jss\);/)
+  expect(js).toMatch(/\.jss\);/)
 })
 
 describe(

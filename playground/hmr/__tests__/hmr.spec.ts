@@ -19,6 +19,7 @@ import {
   removeFile,
   serverLogs,
   untilBrowserLogAfter,
+  untilBrowserLogAfterNavigation,
   viteTestUrl,
 } from '~utils'
 
@@ -35,7 +36,7 @@ if (!isBuild) {
       // if the first bundle is not ready and a fallback page is shown when the client connects.
       expect(browserLogs.length).toBeOneOf([5, 7])
     } else {
-      expect(browserLogs.length).toBe(5)
+      expect(browserLogs).toHaveLength(5)
     }
     expect(browserLogs.some((msg) => msg.includes('connected'))).toBe(true)
     browserLogs.length = 0
@@ -536,7 +537,7 @@ if (!isBuild) {
       let dep = 'dep0'
 
       beforeAll(async () => {
-        await untilBrowserLogAfter(
+        await untilBrowserLogAfterNavigation(
           () => openPage(testDir),
           [CONNECTED, />>>>>>/],
           (logs) => {
@@ -559,7 +560,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               'reloaded >>> Y',
               hotUpdatedLog(callbackFile),
             ])
@@ -574,7 +575,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               'reloaded (2) >>> Z',
               hotUpdatedLog(callbackFile),
             ])
@@ -595,7 +596,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               `<<<<<< A0 B0 D0 ; ${dep}`,
               hotUpdatedLog(file),
             ])
@@ -610,7 +611,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               `<<<<<< A1 B1 D1 ; ${dep}`,
               hotUpdatedLog(file),
             ])
@@ -634,7 +635,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               `<<<<<< A2 B2 D2 ; ${dep}`,
               hotUpdatedLog(file),
             ])
@@ -671,7 +672,7 @@ if (!isBuild) {
       let dep = 'dep0'
 
       beforeAll(async () => {
-        await untilBrowserLogAfter(
+        await untilBrowserLogAfterNavigation(
           () => openPage(testDir),
           [CONNECTED, />>>>>>/],
           (logs) => {
@@ -734,7 +735,7 @@ if (!isBuild) {
       const testDir = baseDir + '/side-effects'
       const file = 'side-effects.ts'
 
-      await untilBrowserLogAfter(
+      await untilBrowserLogAfterNavigation(
         () => openPage(testDir),
         [CONNECTED, />>>/],
         (logs) => {
@@ -750,7 +751,7 @@ if (!isBuild) {
         },
         HOT_UPDATED,
         (logs) => {
-          expect(logs).toEqual([
+          expect(logs).toStrictEqual([
             '>>> side FX !!',
             hotUpdatedLog(`${testDir}/${file}`),
           ])
@@ -765,7 +766,7 @@ if (!isBuild) {
         const fileName = 'unused.ts'
         const file = `${testDir}/${fileName}`
 
-        await untilBrowserLogAfter(
+        await untilBrowserLogAfterNavigation(
           () => openPage(testDir),
           [CONNECTED, '-- unused --'],
           (logs) => {
@@ -782,7 +783,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual(['-> unused <-', hotUpdatedLog(file)])
+            expect(logs).toStrictEqual(['-> unused <-', hotUpdatedLog(file)])
           },
         )
       })
@@ -791,7 +792,7 @@ if (!isBuild) {
         const fileName = 'used.ts'
         const file = `${testDir}/${fileName}`
 
-        await untilBrowserLogAfter(
+        await untilBrowserLogAfterNavigation(
           () => openPage(testDir),
           [CONNECTED, '-- used --'],
           (logs) => {
@@ -828,7 +829,7 @@ if (!isBuild) {
           const fileName = 'deps-all-accepted.ts'
           const file = `${testDir}/${fileName}`
 
-          await untilBrowserLogAfter(
+          await untilBrowserLogAfterNavigation(
             () => openPage(testDir),
             [CONNECTED, '>>> ready <<<'],
             (logs) => {
@@ -843,7 +844,7 @@ if (!isBuild) {
             },
             HOT_UPDATED,
             (logs) => {
-              expect(logs).toEqual([
+              expect(logs).toStrictEqual([
                 'all >>>>>> a1, b1, c1',
                 hotUpdatedLog(file),
               ])
@@ -856,7 +857,7 @@ if (!isBuild) {
             },
             HOT_UPDATED,
             (logs) => {
-              expect(logs).toEqual([
+              expect(logs).toStrictEqual([
                 'all >>>>>> a2, b2, c2',
                 hotUpdatedLog(file),
               ])
@@ -868,7 +869,7 @@ if (!isBuild) {
           const fileName = 'deps-some-accepted.ts'
           const file = `${testDir}/${fileName}`
 
-          await untilBrowserLogAfter(
+          await untilBrowserLogAfterNavigation(
             () => openPage(testDir),
             [CONNECTED, '>>> ready <<<'],
             (logs) => {
@@ -892,9 +893,13 @@ if (!isBuild) {
         })
       }
 
-      describe('import * from ...', () => testStarExports('star-imports'))
+      describe('import * from ...', () => {
+        testStarExports('star-imports')
+      })
 
-      describe('dynamic import(...)', () => testStarExports('dynamic-imports'))
+      describe('dynamic import(...)', () => {
+        testStarExports('dynamic-imports')
+      })
     })
   })
 
@@ -1035,6 +1040,7 @@ if (!isBuild) {
           () => removeFile(childFile),
           `${childFile} is disposed`,
         ),
+        // oxlint-disable-next-line vitest/require-awaited-expect-poll -- https://github.com/oxc-project/oxc/issues/29173
         expect
           .poll(() => page.textContent('.file-delete-restore'))
           .toMatch('parent:not-child'),
@@ -1135,7 +1141,10 @@ if (!isBuild) {
         .poll(() => page.textContent('.file-delete-restore'))
         .toMatch('parent:not-child')
 
-      // restore the file
+      // restore the file. The child's own update already renders
+      // `parent:child`, so also wait for the parent's: if it lands after the
+      // next test opens the page but before its HMR client connects, that page
+      // keeps the old parent
       await untilBrowserLogAfter(() => {
         addFile(childFile, originalChildFileCode)
         editFile(parentFile, (code) =>
@@ -1144,7 +1153,10 @@ if (!isBuild) {
             "export { value as childValue } from './child'",
           ),
         )
-      }, 'file-delete-restore/child.js hot data after prune: undefined')
+      }, [
+        'file-delete-restore/child.js hot data after prune: undefined',
+        hotUpdatedLog(parentFile),
+      ])
       await expect
         .poll(() => page.textContent('.file-delete-restore'))
         .toMatch('parent:child')

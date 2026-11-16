@@ -1,5 +1,6 @@
 import type { ErrorPayload, HotPayload } from '#types/hmrPayload'
 import type { ViteHotContext } from '#types/hot'
+import type { BundledDevHMRClient } from '../shared/bundledDevHmr'
 import { setupForwardConsoleHandler } from '../shared/forwardConsole'
 import { HMRClient, HMRContext } from '../shared/hmr'
 import { createHMRHandler } from '../shared/hmrHandler'
@@ -8,7 +9,6 @@ import {
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
 import { moduleUrlToBrowserUrl } from '../shared/utils'
-import type { BundledDevHMRClient } from './bundledDevHmrClient'
 import { ErrorOverlay, cspNonce, overlayId } from './overlay'
 // @ts-expect-error internal virtual module
 import '@vite/env'
@@ -352,7 +352,7 @@ function hasErrorOverlay() {
 }
 
 function waitForSuccessfulPing(socketUrl: string) {
-  if (typeof SharedWorker === 'undefined') {
+  const useMainThreadFallback = () => {
     const visibilityManager: VisibilityManager = {
       currentState: document.visibilityState,
       listeners: new Set(),
@@ -365,6 +365,10 @@ function waitForSuccessfulPing(socketUrl: string) {
     }
     document.addEventListener('visibilitychange', onVisibilityChange)
     return waitForSuccessfulPingInternal(socketUrl, visibilityManager)
+  }
+
+  if (typeof SharedWorker === 'undefined') {
+    return useMainThreadFallback()
   }
 
   // needs to be inlined to
@@ -380,7 +384,18 @@ function waitForSuccessfulPing(socketUrl: string) {
     { type: 'application/javascript' },
   )
   const objURL = URL.createObjectURL(blob)
-  const sharedWorker = new SharedWorker(objURL)
+
+  let sharedWorker: SharedWorker
+  try {
+    sharedWorker = new SharedWorker(objURL)
+  } catch (error) {
+    URL.revokeObjectURL(objURL)
+    // Trusted Types enforcement rejects string worker URLs.
+    if (error instanceof TypeError) {
+      return useMainThreadFallback()
+    }
+    throw error
+  }
   return new Promise<void>((resolve, reject) => {
     const onVisibilityChange = () => {
       sharedWorker.port.postMessage({ visibility: document.visibilityState })

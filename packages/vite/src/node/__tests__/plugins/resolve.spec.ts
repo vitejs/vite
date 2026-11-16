@@ -71,7 +71,7 @@ describe('externalized module error stubs escape module names', () => {
       evaluateStub(
         await container.load(`${browserExternalId}:${browserModule}`),
       ),
-    ).toEqual({})
+    ).toStrictEqual({})
     const code = await container.load(
       `${optionalPeerDepId}:${peerDep}:${parentDep}`,
     )

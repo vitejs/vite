@@ -148,7 +148,10 @@ export async function preview(
   if (
     !fs.existsSync(distDir) &&
     // error if no plugins implement `configurePreviewServer`
-    config.plugins.every((plugin) => !plugin.configurePreviewServer) &&
+    config.plugins.every(
+      (plugin) =>
+        !plugin.configurePreviewServer || plugin.name === 'vite:command-lock',
+    ) &&
     // error if called in CLI only. programmatic usage could access `httpServer`
     // and affect file serving
     process.argv[1]?.endsWith(path.normalize('bin/vite.js')) &&
@@ -252,7 +255,12 @@ export async function preview(
     app.use(proxyMiddleware(httpServer, proxy, config))
   }
 
-  app.use(compression())
+  app.use(
+    compression({
+      // Compress text and structured data, plus mime-db types such as WebAssembly.
+      mimes: /text|javascript|\/json|xml|application\/wasm/i,
+    }),
+  )
 
   // base
   if (config.base !== '/') {
@@ -300,20 +308,22 @@ export async function preview(
 
   const hostname = await resolveHostname(options.host)
 
+  httpServer.prependOnceListener('listening', () => {
+    server.resolvedUrls = resolveServerUrls(
+      httpServer,
+      config.preview,
+      hostname,
+      httpsOptions,
+      config,
+    )
+  })
+
   await httpServerStart(httpServer, {
     port: options.port,
     strictPort: options.strictPort,
     host: hostname.host,
     logger,
   })
-
-  server.resolvedUrls = resolveServerUrls(
-    httpServer,
-    config.preview,
-    hostname,
-    httpsOptions,
-    config,
-  )
 
   if (options.open) {
     const url = getServerUrlByHost(server.resolvedUrls, options.host)

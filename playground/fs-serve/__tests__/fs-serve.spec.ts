@@ -41,7 +41,7 @@ describe.runIf(isServe)('invalid request', () => {
         },
       )
       client.on('data', (data) => {
-        buf.push(data)
+        buf.push(data as Buffer)
       })
       client.on('end', (hadError) => {
         if (!hadError) {
@@ -137,6 +137,7 @@ describe.runIf(isServe)('invalid request', () => {
     },
   ]
   for (const { name, target, status, content } of testCases) {
+    // oxlint-disable-next-line vitest/valid-title
     test(name, async () => {
       const response = await sendRawRequest(viteTestUrl, target)
       expect(response).toContain(status)
