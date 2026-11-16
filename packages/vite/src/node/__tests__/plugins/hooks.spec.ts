@@ -100,6 +100,11 @@ const buildAppWithPlugin = async (plugin: Plugin) => {
   await builder.buildApp()
 }
 
+const transformIndexHtmlWithPlugin = async (plugin: Plugin) => {
+  const server = await createServerWithPlugin(plugin)
+  await server.transformIndexHtml('/', '<html></html>')
+}
+
 describe('supports plugin context', () => {
   test('config hook', async () => {
     expect.assertions(4)
@@ -633,6 +638,7 @@ describe('plugin hook errors', () => {
     ['configureServer', createServerWithPlugin],
     ['buildStart', createServerWithPlugin],
     ['buildApp', buildAppWithPlugin],
+    ['transformIndexHtml', transformIndexHtmlWithPlugin],
   ] as const)('%s hook error has the plugin and hook', async (hook, run) => {
     const plugin = {
       name: 'throws',
