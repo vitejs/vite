@@ -237,6 +237,34 @@ test('scan import.meta.glob respects rolldown transform jsx options', async (ctx
   expect(scanResult.deps).not.toHaveProperty('react/jsx-runtime')
 })
 
+test('scan uses the top-level tsconfig option', async (ctx) => {
+  const root = path.join(import.meta.dirname, 'fixtures', 'scan-tsconfig')
+  const server = await createServer({
+    configFile: false,
+    logLevel: 'error',
+    root,
+    tsconfig: './selected.json',
+    optimizeDeps: {
+      force: true,
+      noDiscovery: false,
+      entries: ['./src/main.ts'],
+    },
+  })
+  ctx.onTestFinished(() => server.close())
+
+  const { cancel, result } = scanImports(
+    devToScanEnvironment(server.environments.client),
+  )
+  ctx.onTestFinished(cancel)
+
+  await expect(result).resolves.toMatchObject({
+    deps: {
+      picocolors: expect.any(String),
+    },
+    missing: {},
+  })
+})
+
 test('scan respects oxc jsxInject', async (ctx) => {
   const server = await createServer({
     oxc: { jsxInject: `import 'vue'` },

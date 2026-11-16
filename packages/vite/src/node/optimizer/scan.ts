@@ -296,6 +296,7 @@ async function prepareRolldownScanner(
   async function build() {
     await scan({
       ...rolldownOptions,
+      tsconfig: environment.config.tsconfig ?? rolldownOptions.tsconfig,
       transform: transformOptions,
       input: entries,
       logLevel: 'silent',

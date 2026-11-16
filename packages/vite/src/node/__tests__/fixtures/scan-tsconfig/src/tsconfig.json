@@ -1,0 +1,4 @@
+{
+  "extends": "./missing-config.json",
+  "include": ["*.ts"]
+}
