@@ -1365,7 +1365,7 @@ export function getEmptyChunkReplacer(
   pureCssChunkNames: string[],
   outputFormat: InternalModuleFormat,
 ): (code: string, chunkFileName: string) => string {
-  return (code: string, chunkFileName: string) => {
+  return (code, chunkFileName) => {
     // match the path of each pure css chunk relative to this chunk, so that
     // another chunk whose path ends with the same file name is not matched
     const chunkDir = path.posix.dirname(normalizePath(chunkFileName))
