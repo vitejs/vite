@@ -16,7 +16,7 @@ import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
 import { decode, encode } from '@jridgewell/sourcemap-codec'
 import type { SourceMapSegment } from '@jridgewell/sourcemap-codec'
 import type { Equal } from '@type-challenges/utils'
-import type MagicString from 'magic-string'
+import MagicString from 'magic-string'
 import type { Debugger } from 'obug'
 import debug from 'obug'
 import colors from 'picocolors'
@@ -973,6 +973,54 @@ export function combineSourcemaps(
   map.file = filename
 
   return map as RawSourceMap
+}
+
+/**
+ * Tracks edits through a limited MagicString API so sourcemaps can be shifted
+ * without generating and tracing a map of the edits when possible.
+ */
+export class SourcemapEditor {
+  private s: MagicString
+  private edits: SourceEdit[] = []
+
+  constructor(code: string) {
+    this.s = new MagicString(code)
+  }
+
+  update(start: number, end: number, content: string): this {
+    this.s.update(start, end, content)
+    this.edits.push({ start, end, content })
+    return this
+  }
+
+  prependLeft(index: number, content: string): this {
+    this.s.prependLeft(index, content)
+    this.edits.push({ start: index, end: index, content })
+    return this
+  }
+
+  hasChanged(): boolean {
+    return this.s.hasChanged()
+  }
+
+  toString(): string {
+    return this.s.toString()
+  }
+
+  generateMap(filename: string, map: RawSourceMap): RawSourceMap {
+    return (
+      shiftSourcemapForEdits(map, this.s.original, this.edits) ??
+      // For edits it can't shift, e.g. `Promise.resolve({})` replacing an
+      // import that spans lines.
+      combineSourcemaps(filename, [
+        this.s.generateDecodedMap({
+          source: filename,
+          hires: 'boundary',
+        }) as DecodedSourceMap,
+        map,
+      ])
+    )
+  }
 }
 
 export interface SourceEdit {

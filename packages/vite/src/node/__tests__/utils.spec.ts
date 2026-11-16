@@ -11,6 +11,7 @@ import { describe, expect, test, vi, onTestFinished } from 'vitest'
 import type { CommonServerOptions, ResolvedServerUrls } from '..'
 import { isWindows } from '../../shared/utils'
 import {
+  SourcemapEditor,
   asyncFlatten,
   bareImportRE,
   combineSourcemaps,
@@ -34,8 +35,6 @@ import {
   removeTimestampQuery,
   resolveHostname,
   resolveServerUrls,
-  type SourceEdit,
-  shiftSourcemapForEdits,
 } from '../utils'
 
 // Test certificate for SAN parsing (localhost, foo.localhost, *.vite.localhost)
@@ -1071,7 +1070,14 @@ describe('combineSourcemaps', () => {
   })
 })
 
-describe('shiftSourcemapForEdits', () => {
+describe('SourcemapEditor', () => {
+  test('reports whether the code has changed', () => {
+    const s = new SourcemapEditor('foo(bar)')
+    expect(s.hasChanged()).toBe(false)
+    s.update(4, 7, '[]')
+    expect(s.hasChanged()).toBe(true)
+  })
+
   // segments are [generated column, original line, original column]
   const chunkMap = (lines: [number, number, number][][]): RawSourceMap => ({
     version: 3,
@@ -1095,22 +1101,20 @@ describe('shiftSourcemapForEdits', () => {
   const expectExactMapping = (
     code: string,
     map: RawSourceMap,
-    edits: SourceEdit[],
+    edit: (s: SourcemapEditor | MagicString) => void,
   ) => {
-    const s = new MagicString(code)
-    for (const { start, end, content } of edits) {
-      if (start === end) s.prependLeft(start, content)
-      else s.update(start, end, content)
-    }
+    const s = new SourcemapEditor(code)
+    const expected = new MagicString(code)
+    edit(s)
+    edit(expected)
+    expect(s.toString()).toBe(expected.toString())
     const exact = new TraceMap(
       combineSourcemaps('index.js', [
-        s.generateDecodedMap({ source: 'index.js', hires: true }),
+        expected.generateDecodedMap({ source: 'index.js', hires: true }),
         map,
       ]),
     )
-    const shifted = shiftSourcemapForEdits(map, code, edits)
-    expect(shifted).toBeDefined()
-    const shiftedMap = new TraceMap(shifted!)
+    const actual = new TraceMap(s.generateMap('index.js', map))
 
     s.toString()
       .split('\n')
@@ -1118,7 +1122,7 @@ describe('shiftSourcemapForEdits', () => {
         for (let column = 0; column <= text.length; column++) {
           const position = { line: line + 1, column }
           expect(
-            originalPositionFor(shiftedMap, position),
+            originalPositionFor(actual, position),
             `${line}:${column}`,
           ).toStrictEqual(originalPositionFor(exact, position))
         }
@@ -1142,10 +1146,10 @@ describe('shiftSourcemapForEdits', () => {
           [28, 2, 0],
         ],
       ]),
-      [
-        { start: 2, end: 12, content: '__vite__mapDeps([0,1])' },
-        { start: 16, end: 26, content: '[]' },
-      ],
+      (s) => {
+        s.update(2, 12, '__vite__mapDeps([0,1])')
+        s.update(16, 26, '[]')
+      },
     )
   })
 
@@ -1160,7 +1164,7 @@ describe('shiftSourcemapForEdits', () => {
           [14, 4, 0],
         ],
       ]),
-      [{ start: 2, end: 12, content: 'void 0' }],
+      (s) => s.update(2, 12, 'void 0'),
     )
   })
 
@@ -1176,7 +1180,7 @@ describe('shiftSourcemapForEdits', () => {
           [21, 2, 13],
         ],
       ]),
-      [{ start: 2, end: 12, content: '[]' }],
+      (s) => s.update(2, 12, '[]'),
     )
   })
 
@@ -1192,10 +1196,10 @@ describe('shiftSourcemapForEdits', () => {
         ],
         [[0, 2, 0]],
       ]),
-      [
-        { start: 20, end: 20, content: 'const __vite__mapDeps=0;\n' },
-        { start: 24, end: 34, content: '[]' },
-      ],
+      (s) => {
+        s.prependLeft(20, 'const __vite__mapDeps=0;\n')
+        s.update(24, 34, '[]')
+      },
     )
   })
 
@@ -1215,9 +1219,10 @@ describe('shiftSourcemapForEdits', () => {
         ],
       ]),
     }
-    const shifted = shiftSourcemapForEdits(map, 'x'.repeat(20) + '\n', [])!
-    expect(shifted.names).toStrictEqual(['foo'])
-    expect(decode(shifted.mappings)).toStrictEqual([
+    const s = new SourcemapEditor('x'.repeat(20) + '\n')
+    const result = s.generateMap('index.js', map)
+    expect(result.names).toStrictEqual(['foo'])
+    expect(decode(result.mappings)).toStrictEqual([
       [[5, 0, 0, 0], [12], [16, 0, 1, 0]],
       [
         [0, 0, 2, 0],
@@ -1227,17 +1232,16 @@ describe('shiftSourcemapForEdits', () => {
     ])
   })
 
-  test('returns undefined for edits it does not support', () => {
+  test('maps replacements that span lines', () => {
     const code = 'a(\nb)\nc'
     const map = chunkMap([[[0, 0, 0]], [[0, 1, 0]], [[0, 2, 0]]])
-    expect(
-      shiftSourcemapForEdits(map, code, [{ start: 1, end: 4, content: 'x' }]),
-    ).toBeUndefined()
-    expect(
-      shiftSourcemapForEdits(map, code, [
-        { start: 1, end: 1, content: 'x;\n' },
-      ]),
-    ).toBeUndefined()
+    expectExactMapping(code, map, (s) => s.update(1, 4, 'x'))
+  })
+
+  test('maps line insertions within a line', () => {
+    const code = 'a(\nb)\nc'
+    const map = chunkMap([[[0, 0, 0]], [[0, 1, 0]], [[0, 2, 0]]])
+    expectExactMapping(code, map, (s) => s.prependLeft(1, 'x;\n'))
   })
 })
 
