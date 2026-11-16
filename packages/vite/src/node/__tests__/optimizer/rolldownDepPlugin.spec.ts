@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'vitest'
 import { rolldownDepPlugin } from '../../optimizer/rolldownDepPlugin'
+import { optionalPeerDepId } from '../../plugins/resolve'
+import { SafeModulePaths } from '../../server/safeModulePaths'
 import { normalizePath } from '../../utils'
 
-async function createRolldownDepPluginTransform(cacheDir: string) {
+function createRolldownDepPlugins(cacheDir: string) {
   const baseConfig = {
     cacheDir: normalizePath(cacheDir),
     optimizeDeps: { extensions: [] },
@@ -12,11 +14,17 @@ async function createRolldownDepPluginTransform(cacheDir: string) {
   }
 
   const mockEnvironment = {
+    mode: 'dev',
+    safeModulePaths: new SafeModulePaths(),
     config: baseConfig,
     getTopLevelConfig: () => baseConfig,
   } as any
 
-  const plugins = rolldownDepPlugin(mockEnvironment, {}, [])
+  return rolldownDepPlugin(mockEnvironment, {}, [])
+}
+
+async function createRolldownDepPluginTransform(cacheDir: string) {
+  const plugins = createRolldownDepPlugins(cacheDir)
   const plugin = plugins.find(
     (p: any) => p.name === 'vite:dep-pre-bundle',
   ) as any
@@ -32,6 +40,64 @@ async function createRolldownDepPluginTransform(cacheDir: string) {
     return result?.code || result
   }
 }
+
+describe('rolldownDepPlugin escaped specifiers', () => {
+  const [assetsPlugin, depPlugin] = createRolldownDepPlugins('/root/.vite')
+  const specialCharacters = '\'"`\\\n${value}'
+
+  test('escapes CSS imports', () => {
+    // @ts-expect-error load.handler should exist
+    const { code } = assetsPlugin.load.handler(
+      'vite:dep-pre-bundle:external-conversion/root/asset".css',
+    )
+    expect(code).toMatchInlineSnapshot(
+      `"import "vite-dep-pre-bundle-external:/root/asset\\".css";"`,
+    )
+  })
+
+  test('escapes CSS module re-exports', () => {
+    // @ts-expect-error load.handler should exist
+    const { code } = assetsPlugin.load.handler(
+      'vite:dep-pre-bundle:external-conversion/root/asset".module.css',
+    )
+    expect(code).toMatchInlineSnapshot(
+      `"export { default } from "vite-dep-pre-bundle-external:/root/asset\\".module.css";export * from "vite-dep-pre-bundle-external:/root/asset\\".module.css";"`,
+    )
+  })
+
+  test('escapes browser external module names', () => {
+    const path = `dep${specialCharacters}`
+    // @ts-expect-error load.handler should exist
+    const { code } = depPlugin.load.handler(`browser-external:${path}`)
+    expect(code).toMatchInlineSnapshot(`
+      "    module.exports = Object.create(new Proxy({}, {
+              get(_, key) {
+              if (
+                  key !== '__esModule' &&
+                  key !== '__proto__' &&
+                  key !== 'constructor' &&
+                  key !== 'splice'
+              ) {
+                  const path = "dep'\\"\`\\\\\\n\${value}"
+                  console.warn(\`Module "\${path}" has been externalized for browser compatibility. Cannot access "\${path}.\${key}" in client code. See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\`)
+              }
+              }
+          }))"
+    `)
+  })
+
+  test('escapes optional peer dependency names', () => {
+    const peerDep = `peer${specialCharacters}`
+    const parentDep = `parent${specialCharacters}`
+    // @ts-expect-error load.handler should exist
+    const { code } = depPlugin.load.handler(
+      `optional-peer-dep:${optionalPeerDepId}:${peerDep}:${parentDep}`,
+    )
+    expect(code).toMatchInlineSnapshot(
+      `"module.exports = {};const peerDep = "peer'\\"\`\\\\\\n\${value}";const parentDep = "parent'\\"\`\\\\\\n\${value}";throw new Error(\`Could not resolve "\${peerDep}" imported by "\${parentDep}". Is it installed?\`)"`,
+    )
+  })
+})
 
 describe('rolldownDepPlugin transform', async () => {
   const transform = await createRolldownDepPluginTransform('/root/.vite')

@@ -109,6 +109,7 @@ export async function resolvePlugins(
             consumer: 'client',
             isBundled: true,
             optimizeDepsPluginNames: [],
+            safeModulePaths: config.environments.client.safeModulePaths,
           }
         : undefined,
     ),

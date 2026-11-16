@@ -1,5 +1,9 @@
 import { relative, resolve } from 'node:path'
 import { defineConfig } from 'vite'
+import { inject } from 'vitest'
+
+const isBundledDev =
+  !!process.env.VITEST && inject('playgroundMode') === 'serve-bundled'
 
 const dirname = import.meta.dirname
 
@@ -44,8 +48,21 @@ const input = {
   ),
 }
 
-export default defineConfig({
-  input,
+const serveInput = {
+  ...input,
+  ...(isBundledDev
+    ? {}
+    : {
+        invalid: resolve(dirname, 'invalid.html'),
+        invalidClick: resolve(dirname, 'invalidClick.html'),
+        invalidEscape: resolve(dirname, 'invalidEscape.html'),
+      }),
+  protocolRelative: resolve(dirname, 'protocol-relative.html'),
+  relativeInput: resolve(dirname, 'relative-input.html'),
+}
+
+export default defineConfig(({ command }) => ({
+  input: command === 'serve' ? serveInput : input,
 
   base: './',
   build: {
@@ -277,7 +294,7 @@ ${
     },
     serveExternalPathPlugin(),
   ],
-})
+}))
 
 /** @returns {import('vite').Plugin} */
 function serveExternalPathPlugin() {

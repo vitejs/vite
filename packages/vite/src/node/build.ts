@@ -59,7 +59,7 @@ import { getHookHandler } from './plugins'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { type LicenseOptions, licensePlugin } from './plugins/license'
-import { manifestPlugin } from './plugins/manifest'
+import { type Manifest, manifestPlugin } from './plugins/manifest'
 import { prepareOutDirPlugin } from './plugins/prepareOutDir'
 import { buildReporterPlugin } from './plugins/reporter'
 import { type TerserOptions, terserPlugin } from './plugins/terser'
@@ -465,7 +465,7 @@ export function resolveBuildEnvironmentOptions(
     } satisfies BuildEnvironmentOptions,
     raw,
   )
-  setupRollupOptionCompat(merged, 'build')
+  setupRollupOptionCompat(merged)
   if (isBundledDev) {
     merged.chunkImportMap = false
   }
@@ -521,7 +521,7 @@ export function resolveBuildEnvironmentOptions(
   }
   // The object spread above evaluates the `rollupOptions` getter set up on
   // `merged` and copies it as a plain data property.
-  setupRollupOptionCompat(resolved, 'build')
+  setupRollupOptionCompat(resolved)
 
   return resolved
 }
@@ -1762,6 +1762,18 @@ export class BuildEnvironment extends BaseEnvironment {
   mode = 'build' as const
 
   isBuilt = false
+
+  /**
+   * The build manifest for this environment. It is populated once the
+   * environment has been built and is available regardless of the
+   * `build.manifest` option, which only controls whether the manifest file is
+   * written to disk. This allows accessing the manifest in the `buildApp` hook
+   * without reading it from the file system.
+   *
+   * @experimental
+   */
+  manifest?: Manifest
+
   constructor(
     name: string,
     config: ResolvedConfig,

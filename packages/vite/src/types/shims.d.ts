@@ -23,6 +23,11 @@ declare module 'postcss-import' {
   export = plugin
 }
 
+// declare it here as it's an optional dependency and is not installed on non-Windows platforms
+declare module 'napi-windows-process-start-time' {
+  export function getProcessStartTime(pid: number): `win32:${string}` | null
+}
+
 // eslint-disable-next-line no-var
 declare var __vite_profile_session: import('node:inspector').Session | undefined
 // eslint-disable-next-line no-var

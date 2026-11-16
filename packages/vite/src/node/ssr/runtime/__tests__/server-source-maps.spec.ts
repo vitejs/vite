@@ -1,29 +1,24 @@
 import { resolve } from 'node:path'
 import { runInThisContext } from 'node:vm'
-import { describe, expect } from 'vitest'
+import { describe, expect, vi } from 'vitest'
 import type { ViteDevServer } from '../../..'
 import type { ModuleRunnerContext } from '../../../../module-runner'
 import { ESModulesEvaluator } from '../../../../module-runner'
 import { SOURCEMAPPING_URL } from '../../../../shared/constants'
-import {
-  createFixtureEditor,
-  createModuleRunnerTester,
-  resolvePath,
-} from './utils'
+import { createFixtureEditor, runnerTest as it, resolvePath } from './utils'
 
 describe('module runner initialization', () => {
-  const it = createModuleRunnerTester(
-    {},
-    {
+  it.override({
+    runnerOptions: {
       sourcemapInterceptor: 'prepareStackTrace',
     },
-  )
+  })
 
   const getError = async (cb: () => void): Promise<Error> => {
     try {
       await cb()
       expect.unreachable()
-    } catch (err) {
+    } catch (err: any) {
       return err
     }
   }
@@ -137,6 +132,69 @@ describe('module runner initialization', () => {
       '    at crash (<root>/fixtures/has-error-deep.ts:2:9)',
       '    at Module.main (<root>/fixtures/has-error-deep.ts:6:3)',
     ])
+  })
+
+  describe('bundled lazy imports', () => {
+    it.override('fullBundle', ['./fixtures/dynamic-import-source-map.js'])
+
+    it('maps lazy module stack traces to the original source', async ({
+      runner,
+      server,
+      environment,
+      onTestFinished,
+    }) => {
+      const fetchModule = vi.spyOn(environment, 'fetchModule')
+      onTestFinished(() => fetchModule.mockRestore())
+
+      const entry = await runner.import(
+        '/fixtures/dynamic-import-source-map.js',
+      )
+      const mod = await entry.load()
+
+      expect(fetchModule).toHaveBeenCalledWith(
+        expect.stringContaining('/@vite/lazy?'),
+        undefined,
+        expect.any(Object),
+      )
+
+      const error = await getError(() => mod.main())
+      expect(serializeStackDeep(server, error).slice(1, 3)).toStrictEqual([
+        expect.stringContaining('<root>/fixtures/has-error-deep.ts:2:9'),
+        expect.stringContaining('<root>/fixtures/has-error-deep.ts:6:3'),
+      ])
+    })
+  })
+
+  it('preserves async stack frame formatting', async ({ runner, server }) => {
+    const error = await getError(async () => {
+      const mod = await runner.import('/fixtures/has-error-async.ts')
+      await mod.main()
+    })
+    expect(serializeStackDeep(server, error).slice(0, 4)).toStrictEqual([
+      'Error: crash',
+      '    at crash (<root>/fixtures/has-error-async.ts:3:9)',
+      '    at async Promise.all (index 0)',
+      '    at async Module.main (<root>/fixtures/has-error-async.ts:7:3)',
+    ])
+  })
+
+  it('matches V8 method name formatting', async ({ runner, server }) => {
+    const mod = await runner.import('/fixtures/has-error-method-names.ts')
+
+    const getterError = await getError(() => mod.callGetter())
+    expect(serializeStack(server, getterError)).toBe(
+      '    at get foo (<root>/fixtures/has-error-method-names.ts:3:11)',
+    )
+
+    const methodError = await getError(() => mod.callAliasedMethod())
+    expect(serializeStack(server, methodError)).toBe(
+      '    at F.Foo [as m] (<root>/fixtures/has-error-method-names.ts:9:11)',
+    )
+
+    const astralNameError = await getError(() => mod.callAstralNamedMethod())
+    expect(serializeStack(server, astralNameError)).toBe(
+      '    at 𐐀 [as m] (<root>/fixtures/has-error-method-names.ts:17:11)',
+    )
   })
 
   it('prints the file name of a frame without a source map', async ({
@@ -259,13 +317,12 @@ describe('module runner with node:vm executor', () => {
     }
   }
 
-  const it = createModuleRunnerTester(
-    {},
-    {
+  it.override({
+    runnerOptions: {
       sourcemapInterceptor: 'prepareStackTrace',
       evaluator: new Evaluator(),
     },
-  )
+  })
 
   it('should not crash when error stacktrace contains negative column', async ({
     runner,
@@ -307,9 +364,8 @@ describe('module runner interceptor with inline data: source map', () => {
     }
   }
 
-  const it = createModuleRunnerTester(
-    {},
-    {
+  it.override({
+    runnerOptions: {
       sourcemapInterceptor: {
         // Serves a file that is not part of the runner module graph and
         // carries an inline base64 source map, so mapping goes through
@@ -322,7 +378,7 @@ describe('module runner interceptor with inline data: source map', () => {
       },
       evaluator: new Evaluator(),
     },
-  )
+  })
 
   it('should not crash when decoding an inline source map while globalThis.Buffer is absent', async ({
     runner,

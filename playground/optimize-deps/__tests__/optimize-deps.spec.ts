@@ -410,6 +410,12 @@ describe('optimize-deps', clientOptimizerUnsupported, () => {
       .toBe('foo bar')
   })
 
+  test('named import from TypeScript enum', async () => {
+    await expect
+      .poll(() => page.textContent('.ts-enum-named-import'))
+      .toBe('GREEN:All good')
+  })
+
   test.runIf(isServe)(
     'discovers deep imports with custom html-like extensions during dep scan',
     async () => {

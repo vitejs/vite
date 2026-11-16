@@ -505,6 +505,23 @@ export function tests() {
     expect(await getColor('.imports-field')).toBe('red')
   })
 
+  test('resolve imports field in CSS URLs', async () => {
+    for (const selector of [
+      '.imports-field-url',
+      '.imports-field-pattern-url',
+    ]) {
+      expect(await getBg(selector)).toMatch(
+        isBundled ? /\/assets\/ok-[\w-]+\.png/ : '/ok.png?no-inline',
+      )
+    }
+    expect(
+      await page.$eval(
+        '.imports-field-fragment',
+        (el) => getComputedStyle(el).filter,
+      ),
+    ).toContain('#filter')
+  })
+
   test.runIf(isBuild)(
     'warning can be suppressed by esbuild.logOverride',
     () => {
