@@ -54,6 +54,12 @@ export interface ViteFetchResult {
    * Invalidate module on the client side.
    */
   invalidate: boolean
+  /**
+   * Original entry module ID in Rolldown's runtime.
+   * Used to retrieve updated exports after HMR.
+   * @experimental
+   */
+  rolldownModuleId?: string
 }
 
 export type InvokeSendData<
@@ -89,4 +95,9 @@ export type InvokeMethods = {
       | { type: 'RegExp'; source: string; flags: string }
     >
   >
+
+  resetBundledDevClient: (
+    oldClientId: string,
+    newClientId: string,
+  ) => Promise<void>
 }
