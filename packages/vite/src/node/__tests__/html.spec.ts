@@ -3,7 +3,17 @@ import type { OutputBundle, OutputChunk } from 'rolldown'
 import { describe, expect, test } from 'vitest'
 import { PartialEnvironment } from '../baseEnvironment'
 import { resolveConfig } from '../config'
-import { buildHtmlPlugin, getCssFilesForChunk } from '../plugins/html'
+import { createLogger } from '../logger'
+import type { HtmlTagDescriptor } from '../plugins/html'
+import {
+  applyHtmlTransforms,
+  buildHtmlPlugin,
+  getCssFilesForChunk,
+} from '../plugins/html'
+import {
+  BasicMinimalPluginContext,
+  basePluginContextMeta,
+} from '../server/pluginContainer'
 import { normalizePath } from '../utils'
 
 test('buildHtmlPlugin escapes HTML proxy imports', async () => {
@@ -294,5 +304,48 @@ describe('getCssFilesForChunk', () => {
       'b.css',
       'a.css',
     ])
+  })
+})
+
+describe('applyHtmlTransforms injects head-prepend tags', () => {
+  const pluginContext = new BasicMinimalPluginContext(
+    basePluginContextMeta,
+    createLogger('silent'),
+  )
+  const inject = (html: string) =>
+    applyHtmlTransforms(
+      html,
+      [(): HtmlTagDescriptor[] => [{ tag: 'meta', attrs: { name: 'x' } }]],
+      pluginContext,
+      { path: '/', filename: '/index.html' },
+    )
+
+  test('does not treat <header> as <head>', async () => {
+    expect(
+      await inject(
+        '<html>\n<body>\n<header><h1>Hi</h1></header>\n</body>\n</html>',
+      ),
+    ).toBe(
+      '<html>\n<meta name="x">\n\n<body>\n<header><h1>Hi</h1></header>\n</body>\n</html>',
+    )
+    expect(
+      await inject('<html>\n<header class="top"><h1>Hi</h1></header>\n</html>'),
+    ).toBe(
+      '<html>\n<meta name="x">\n\n<header class="top"><h1>Hi</h1></header>\n</html>',
+    )
+  })
+
+  test('still finds <head> with or without attributes', async () => {
+    expect(
+      await inject('<html>\n<head>\n</head>\n<header></header>\n</html>'),
+    ).toBe(
+      '<html>\n<head>\n  <meta name="x">\n\n</head>\n<header></header>\n</html>',
+    )
+    expect(await inject('<html>\n<HEAD lang="en">\n</HEAD>\n</html>')).toBe(
+      '<html>\n<HEAD lang="en">\n  <meta name="x">\n\n</HEAD>\n</html>',
+    )
+    expect(await inject('<html>\n<head/>\n</html>')).toBe(
+      '<html>\n<head/>\n  <meta name="x">\n\n</html>',
+    )
   })
 })

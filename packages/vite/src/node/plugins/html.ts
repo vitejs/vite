@@ -1574,7 +1574,7 @@ function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
 }
 
 const headInjectRE = /([ \t]*)<\/head>/i
-const headPrependInjectRE = /([ \t]*)<head[^>]*>/i
+const headPrependInjectRE = /([ \t]*)<head(?=[\s/>])[^>]*>/i
 
 const htmlInjectRE = /<\/html>/i
 const htmlPrependInjectRE = /([ \t]*)<html[^>]*>/i
