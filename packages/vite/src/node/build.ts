@@ -55,7 +55,7 @@ import { findNearestMainPackageData, findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import { perEnvironmentPlugin } from './plugin'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
-import { getHookHandler } from './plugins'
+import { getHookHandler, getPluginHookHandler } from './plugins'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { type LicenseOptions, licensePlugin } from './plugins/license'
@@ -1890,7 +1890,7 @@ export async function createBuilder(
           configBuilderBuildAppCalled = true
           await configBuilder.buildApp(builder)
         }
-        const handler = getHookHandler(hook)
+        const handler = getPluginHookHandler(p, 'buildApp')
         await handler.call(pluginContext, builder)
       }
       if (!configBuilderBuildAppCalled) {

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { promiseWithResolvers } from '../../../shared/utils'
-import { build } from '../../build'
+import { build, createBuilder } from '../../build'
 import { resolveConfig } from '../../config'
 import { type Logger, createLogger } from '../../logger'
 import type { Plugin } from '../../plugin'
@@ -86,6 +86,18 @@ const buildWithPlugin = async (plugin: Plugin) => {
     },
     plugins: [plugin, resolveEntryPlugin],
   })
+}
+
+const buildAppWithPlugin = async (plugin: Plugin) => {
+  const builder = await createBuilder({
+    root: path.resolve(import.meta.dirname, '../packages/build-project'),
+    logLevel: 'error',
+    build: {
+      write: false,
+    },
+    plugins: [plugin, resolveEntryPlugin],
+  })
+  await builder.buildApp()
 }
 
 describe('supports plugin context', () => {
@@ -610,5 +622,82 @@ describe('closePreviewServer hook', () => {
 
     // `server.close()` does not resolve until the async hook has completed.
     expect(hookDone).toBe(true)
+  })
+})
+
+describe('plugin hook errors', () => {
+  test.each([
+    ['config', resolveConfigWithPlugin],
+    ['configEnvironment', resolveConfigWithPlugin],
+    ['configResolved', resolveConfigWithPlugin],
+    ['configureServer', createServerWithPlugin],
+    ['buildStart', createServerWithPlugin],
+    ['buildApp', buildAppWithPlugin],
+  ] as const)('%s hook error has the plugin and hook', async (hook, run) => {
+    const plugin = {
+      name: 'throws',
+      [hook]() {
+        throw new Error('missing apiKey')
+      },
+    } as Plugin
+
+    await expect(run(plugin)).rejects.toMatchObject({
+      plugin: 'throws',
+      hook,
+      message: expect.stringContaining('[throws] missing apiKey'),
+    })
+  })
+
+  test.each(['hotUpdate', 'handleHotUpdate'] as const)(
+    '%s hook error sent to the client has the plugin',
+    async (hook) => {
+      const server = await createServerWithPlugin({
+        name: 'throws',
+        [hook]() {
+          throw new Error('missing apiKey')
+        },
+      } as Plugin)
+      const { promise, resolve } = promiseWithResolvers<unknown>()
+      vi.spyOn(server.environments.client.hot, 'send').mockImplementation(
+        resolve as never,
+      )
+
+      server.watcher.emit(
+        'change',
+        path.resolve(import.meta.dirname, 'index.html'),
+      )
+
+      expect(await promise).toMatchObject({
+        type: 'error',
+        err: {
+          plugin: 'throws',
+          message: expect.stringContaining('[throws] missing apiKey'),
+        },
+      })
+    },
+  )
+
+  test('keeps the plugin of an error that already has one', async () => {
+    const error = Object.assign(new Error('bad syntax'), { plugin: 'inner' })
+
+    await expect(
+      createServerWithPlugin({
+        name: 'outer',
+        configureServer() {
+          throw error
+        },
+      }),
+    ).rejects.toMatchObject({ plugin: 'inner', message: 'bad syntax' })
+  })
+
+  test('rethrows a non-error value as is', async () => {
+    await expect(
+      createServerWithPlugin({
+        name: 'throws',
+        configureServer() {
+          throw 'oops'
+        },
+      }),
+    ).rejects.toBe('oops')
   })
 })
