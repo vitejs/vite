@@ -1,5 +1,5 @@
 import path from 'node:path'
-import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
+import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
 import type { DynamicImport } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
@@ -14,13 +14,11 @@ import { perEnvironmentState } from '../environment'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import { genSourceMapUrl } from '../server/sourcemap'
 import {
-  combineSourcemaps,
   generateCodeFrame,
   getFileStartIndex,
   normalizePath,
   numberToPos,
-  type SourceEdit,
-  shiftSourcemapForEdits,
+  shiftSourcemap,
 } from '../utils'
 import { removedPureCssFilesCache } from './css'
 import { getImportMap, getImportMapFilename } from './html'
@@ -671,10 +669,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           }
 
           const s = new MagicString(code)
-          const edits: SourceEdit[] = []
-          const update = (start: number, end: number, content: string) => {
-            s.update(start, end, content)
-            edits.push({ start, end, content })
+          if (buildSourcemap && chunk.map) {
+            // MagicString omits the initial range of chunks starting with a
+            // newline. Split at line starts before editing to preserve them.
+            // https://github.com/Rich-Harris/magic-string/issues/389
+            for (
+              let i = code.indexOf('\n');
+              i !== -1;
+              i = code.indexOf('\n', i + 1)
+            ) {
+              s.appendLeft(i + 1, '')
+            }
           }
           const rewroteMarkerStartPos = new Set() // position of the leading double quote
 
@@ -759,7 +764,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                   ),
                 )
                 if (shouldRewriteImport) {
-                  update(expStart, expEnd, 'Promise.resolve({})')
+                  s.update(expStart, expEnd, 'Promise.resolve({})')
                 }
               }
 
@@ -832,7 +837,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                   )
                 }
 
-                update(
+                s.update(
                   markerStartPos,
                   markerStartPos + marker[0].length,
                   renderedDeps.length > 0
@@ -856,11 +861,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             // inject extra code at the top or next line of hashbang
             const fileStartIndex = getFileStartIndex(code)
             s.prependLeft(fileStartIndex, mapDepsCode)
-            edits.push({
-              start: fileStartIndex,
-              end: fileStartIndex,
-              content: mapDepsCode,
-            })
           }
 
           // there may still be markers due to inlined dynamic imports, remove
@@ -869,7 +869,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           while (marker) {
             const markerStartPos = marker.index
             if (!rewroteMarkerStartPos.has(markerStartPos)) {
-              update(
+              s.update(
                 markerStartPos,
                 markerStartPos + marker[0].length,
                 'void 0',
@@ -882,20 +882,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             chunk.code = s.toString()
             if (buildSourcemap && chunk.map) {
               const originalFile = chunk.map.file
-              const map = (shiftSourcemapForEdits(
+              const map = shiftSourcemap(
                 chunk.map as RawSourceMap,
-                code,
-                edits,
-              ) ??
-                // for edits it can't shift, e.g. `Promise.resolve({})`
-                // replacing an import that spans lines
-                combineSourcemaps(chunk.fileName, [
-                  s.generateDecodedMap({
-                    source: chunk.fileName,
-                    hires: 'boundary',
-                  }) as DecodedSourceMap,
-                  chunk.map as RawSourceMap,
-                ])) as SourceMap
+                s.generateDecodedMap({ hires: 'experimental-range' }),
+              ) as SourceMap
               map.toString = () => JSON.stringify(map)
               map.toUrl = () => genSourceMapUrl(map)
               map.file = originalFile || chunk.fileName

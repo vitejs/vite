@@ -17,6 +17,7 @@ import { decode, encode } from '@jridgewell/sourcemap-codec'
 import type { SourceMapSegment } from '@jridgewell/sourcemap-codec'
 import type { Equal } from '@type-challenges/utils'
 import type MagicString from 'magic-string'
+import type { DecodedSourceMap as MagicStringDecodedSourceMap } from 'magic-string'
 import type { Debugger } from 'obug'
 import debug from 'obug'
 import colors from 'picocolors'
@@ -975,65 +976,94 @@ export function combineSourcemaps(
   return map as RawSourceMap
 }
 
-export interface SourceEdit {
-  start: number
-  end: number
-  content: string
-}
-
 /**
- * Returns `map` updated for `edits` to the code it maps, by moving its
- * segments instead of tracing it through a map of the edits like
- * `combineSourcemaps`. Supports edits that replace a span within one line and
- * edits that insert whole lines at the start of a line. Returns `undefined` for
- * any other edit.
+ * Shifts `map` through a MagicString map generated with
+ * `hires: 'experimental-range'`. Copies the original segments covered by each
+ * range, preserving their resolution without a mapping for every character.
+ *
+ * TODO: Explore adding range-mapping input support to @jridgewell/remapping
+ * so combineSourcemaps can handle this directly.
  */
-export function shiftSourcemapForEdits(
+export function shiftSourcemap(
   map: RawSourceMap,
-  code: string,
-  edits: SourceEdit[],
-): RawSourceMap | undefined {
-  // [start column, end column, added length] for each edit, by line
-  const columnEdits = new Map<number, [number, number, number][]>()
-  const insertedLines = new Map<number, number>()
-  let line = 0
-  let lineStart = 0
-  let nextNewline = code.indexOf('\n')
-  for (const { start, end, content } of [...edits].sort(
-    (a, b) => a.start - b.start,
-  )) {
-    while (nextNewline !== -1 && nextNewline < start) {
-      line++
-      lineStart = nextNewline + 1
-      nextNewline = code.indexOf('\n', lineStart)
-    }
-    if (nextNewline !== -1 && nextNewline < end) return
-
-    if (content.includes('\n')) {
-      if (start !== end || start !== lineStart || !content.endsWith('\n')) {
-        return
+  mapOfEdits: MagicStringDecodedSourceMap,
+): RawSourceMap {
+  const originalMappings = decode(map.mappings)
+  let originalLine = 0
+  let range = false
+  const lines = mapOfEdits.mappings.map((segments, line) => {
+    const shifted: SourceMapSegment[] = []
+    const trace = (
+      column: number,
+      sourceLine: number,
+      sourceColumn: number,
+      endColumn?: number,
+    ) => {
+      const sourceSegments = originalMappings[sourceLine] ?? []
+      // Find the first segment after sourceColumn, then trace to the first
+      // of any segments sharing the preceding column (as trace-mapping does).
+      let low = 0
+      let high = sourceSegments.length
+      while (low < high) {
+        const mid = (low + high) >>> 1
+        if (sourceSegments[mid][0] <= sourceColumn) low = mid + 1
+        else high = mid
       }
-      const count = content.split('\n').length - 1
-      insertedLines.set(line, (insertedLines.get(line) ?? 0) + count)
-      continue
+      let index = low - 1
+      while (
+        index > 0 &&
+        sourceSegments[index - 1][0] === sourceSegments[index][0]
+      ) {
+        index--
+      }
+      const segment = sourceSegments[index]
+      shifted.push(
+        segment
+          ? ([column, ...segment.slice(1)] as SourceMapSegment)
+          : [column],
+      )
+      if (endColumn !== undefined) {
+        for (let i = low; i < sourceSegments.length; i++) {
+          const segment = sourceSegments[i]
+          const generatedColumn = column + segment[0] - sourceColumn
+          if (generatedColumn >= endColumn) break
+          shifted.push([
+            generatedColumn,
+            ...segment.slice(1),
+          ] as SourceMapSegment)
+        }
+      }
     }
 
-    let lineEdits = columnEdits.get(line)
-    if (!lineEdits) columnEdits.set(line, (lineEdits = []))
-    lineEdits.push([
-      start - lineStart,
-      end - lineStart,
-      content.length - (end - start),
-    ])
-  }
-
-  const lines: SourceMapSegment[][] = []
-  decode(map.mappings).forEach((segments, i) => {
-    for (let n = insertedLines.get(i) ?? 0; n > 0; n--) lines.push([])
-    const lineEdits = columnEdits.get(i)
-    lines.push(lineEdits ? shiftSegments(segments, lineEdits) : segments)
+    // Range mappings continue across newlines until the next mapping.
+    if (range) {
+      originalLine++
+      if (segments[0]?.[0] !== 0) {
+        trace(0, originalLine, 0, segments[0]?.[0] ?? Infinity)
+      }
+    }
+    const rangeIndices = mapOfEdits.rangeMappings?.[line] ?? []
+    let rangeIndex = 0
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i]
+      range = rangeIndices[rangeIndex] === i
+      if (range) rangeIndex++
+      if (segment.length === 1) {
+        shifted.push([segment[0]])
+        continue
+      }
+      originalLine = segment[2]
+      trace(
+        segment[0],
+        originalLine,
+        segment[3],
+        range ? (segments[i + 1]?.[0] ?? Infinity) : undefined,
+      )
+    }
+    return shifted
   })
   const names = removeRedundantSegments(lines, map.names)
+  while (lines.length && lines.at(-1)!.length === 0) lines.pop()
   return { ...map, names, mappings: encode(lines) }
 }
 
@@ -1086,41 +1116,6 @@ function removeRedundantSegments(
     lines[i] = kept
   }
   return usedNames
-}
-
-function shiftSegments(
-  segments: SourceMapSegment[],
-  edits: [start: number, end: number, added: number][],
-): SourceMapSegment[] {
-  const shifted: SourceMapSegment[] = []
-  let e = 0
-  let delta = 0
-  // the last segment inside a replaced span, which the original map uses for
-  // the code after the span unless another segment starts there
-  let segmentInsideEdit: SourceMapSegment | undefined
-  const passEdit = (nextColumn: number) => {
-    const [, end, added] = edits[e++]
-    delta += added
-    if (segmentInsideEdit && nextColumn !== end) {
-      const segment = [...segmentInsideEdit] as SourceMapSegment
-      segment[0] = end + delta
-      shifted.push(segment)
-    }
-    segmentInsideEdit = undefined
-  }
-
-  for (const segment of segments) {
-    const column = segment[0]
-    while (e < edits.length && edits[e][1] <= column) passEdit(column)
-    if (e < edits.length && edits[e][0] < column) {
-      segmentInsideEdit = segment
-      continue
-    }
-    segment[0] = column + delta
-    shifted.push(segment)
-  }
-  while (e < edits.length) passEdit(Infinity)
-  return shifted
 }
 
 export function unique<T>(arr: T[]): T[] {
