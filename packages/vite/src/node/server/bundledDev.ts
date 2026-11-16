@@ -284,18 +284,27 @@ export class BundledDev {
         debug?.('INITIAL: run error', e)
       },
     )
-    this.waitForInitialBuildFinish().then(() => {
-      if (this._closed) return
-      debug?.('INITIAL: build done')
-      this.initialBuildCompleted = true
-      if (!this.lastBuildError) {
-        this.environment.hot.send({
-          type: 'full-reload',
-          path: '*',
-          ifFallback: true,
-        })
-      }
-    })
+    this.waitForInitialBuildFinish().then(
+      () => {
+        if (this._closed) return
+        debug?.('INITIAL: build done')
+        this.initialBuildCompleted = true
+        if (!this.lastBuildError) {
+          this.environment.hot.send({
+            type: 'full-reload',
+            path: '*',
+            ifFallback: true,
+          })
+        }
+      },
+      (e) => {
+        // Closing the dev engine can reject an in-flight bundle-state query.
+        // That rejection belongs to the close path and must not become an
+        // unhandled rejection after the server has already been closed.
+        if (this._closed) return
+        debug?.('INITIAL: wait error', e)
+      },
+    )
   }
 
   /**
