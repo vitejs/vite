@@ -556,7 +556,7 @@ function rolldownScanPlugin(
     return js
   }
 
-  const ASSET_TYPE_RE = new RegExp(`\\.(${KNOWN_ASSET_TYPES.join('|')})$`)
+  const ASSET_TYPE_RE = new RegExp(`\\.(?:${KNOWN_ASSET_TYPES.join('|')})$`)
 
   return [
     {
