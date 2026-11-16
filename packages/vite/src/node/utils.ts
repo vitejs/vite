@@ -995,11 +995,10 @@ export function shiftSourcemap(
     const shifted: SourceMapSegment[] = []
     const trace = (
       column: number,
-      sourceLine: number,
       sourceColumn: number,
-      endColumn?: number,
+      endColumn = column,
     ) => {
-      const sourceSegments = originalMappings[sourceLine] ?? []
+      const sourceSegments = originalMappings[originalLine] ?? []
       // Find the first segment after sourceColumn, then trace to the first
       // of any segments sharing the preceding column (as trace-mapping does).
       let low = 0
@@ -1022,16 +1021,11 @@ export function shiftSourcemap(
           ? ([column, ...segment.slice(1)] as SourceMapSegment)
           : [column],
       )
-      if (endColumn !== undefined) {
-        for (let i = low; i < sourceSegments.length; i++) {
-          const segment = sourceSegments[i]
-          const generatedColumn = column + segment[0] - sourceColumn
-          if (generatedColumn >= endColumn) break
-          shifted.push([
-            generatedColumn,
-            ...segment.slice(1),
-          ] as SourceMapSegment)
-        }
+      for (let i = low; i < sourceSegments.length; i++) {
+        const segment = sourceSegments[i]
+        const generatedColumn = column + segment[0] - sourceColumn
+        if (generatedColumn >= endColumn) break
+        shifted.push([generatedColumn, ...segment.slice(1)] as SourceMapSegment)
       }
     }
 
@@ -1039,15 +1033,12 @@ export function shiftSourcemap(
     if (range) {
       originalLine++
       if (segments[0]?.[0] !== 0) {
-        trace(0, originalLine, 0, segments[0]?.[0] ?? Infinity)
+        trace(0, 0, segments[0]?.[0] ?? Infinity)
       }
     }
-    const rangeIndices = mapOfEdits.rangeMappings?.[line] ?? []
-    let rangeIndex = 0
-    for (let i = 0; i < segments.length; i++) {
-      const segment = segments[i]
-      range = rangeIndices[rangeIndex] === i
-      if (range) rangeIndex++
+    const rangeIndices = new Set(mapOfEdits.rangeMappings?.[line])
+    for (const [i, segment] of segments.entries()) {
+      range = rangeIndices.has(i)
       if (segment.length === 1) {
         shifted.push([segment[0]])
         continue
@@ -1055,7 +1046,6 @@ export function shiftSourcemap(
       originalLine = segment[2]
       trace(
         segment[0],
-        originalLine,
         segment[3],
         range ? (segments[i + 1]?.[0] ?? Infinity) : undefined,
       )
@@ -1076,44 +1066,24 @@ function removeRedundantSegments(
   names: string[],
 ): string[] {
   const usedNames: string[] = []
-  const newNameIndex = new Map<number, number>()
-  for (let i = 0; i < lines.length; i++) {
-    const kept: SourceMapSegment[] = []
-    const segments = lines[i]
-    for (let s = 0; s < segments.length; s++) {
-      const segment = segments[s]
-      // lookups use the first of several segments at one column, so dropping
-      // it would change what the column maps to
-      const sharesColumn = segments[s + 1]?.[0] === segment[0]
-      const previous = kept.at(-1)
-      if (segment.length === 1) {
-        if (sharesColumn || (previous && previous.length !== 1)) {
-          kept.push(segment)
-        }
-        continue
-      }
+  const newNameIndex: number[] = []
+  for (const [i, segments] of lines.entries()) {
+    let previous: SourceMapSegment | undefined
+    lines[i] = segments.filter((segment, s) => {
       if (segment.length === 5) {
-        let index = newNameIndex.get(segment[4])
-        if (index === undefined) {
-          index = usedNames.push(names[segment[4]]) - 1
-          newNameIndex.set(segment[4], index)
-        }
-        segment[4] = index
+        const name = segment[4]
+        newNameIndex[name] ??= usedNames.push(names[name]) - 1
+        segment[4] = newNameIndex[name]
       }
-      if (
-        !sharesColumn &&
-        previous &&
-        previous.length !== 1 &&
-        previous[1] === segment[1] &&
-        previous[2] === segment[2] &&
-        previous[3] === segment[3] &&
-        previous[4] === segment[4]
-      ) {
-        continue
-      }
-      kept.push(segment)
-    }
-    lines[i] = kept
+      // Keep the first mapping at a shared column so lookups keep their target.
+      const sharesColumn = segments[s + 1]?.[0] === segment[0]
+      const redundant =
+        segment.length === (previous?.length ?? 1) &&
+        segment.every((value, i) => i === 0 || value === previous?.[i])
+      if (!sharesColumn && redundant) return false
+      previous = segment
+      return true
+    })
   }
   return usedNames
 }
