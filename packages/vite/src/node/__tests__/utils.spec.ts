@@ -34,7 +34,8 @@ import {
   removeTimestampQuery,
   resolveHostname,
   resolveServerUrls,
-  shiftSourcemap,
+  type SourceEdit,
+  shiftSourcemapForEdits,
 } from '../utils'
 
 // Test certificate for SAN parsing (localhost, foo.localhost, *.vite.localhost)
@@ -1070,7 +1071,7 @@ describe('combineSourcemaps', () => {
   })
 })
 
-describe('shiftSourcemap', () => {
+describe('shiftSourcemapForEdits', () => {
   // segments are [generated column, original line, original column]
   const chunkMap = (lines: [number, number, number][][]): RawSourceMap => ({
     version: 3,
@@ -1094,7 +1095,7 @@ describe('shiftSourcemap', () => {
   const expectExactMapping = (
     code: string,
     map: RawSourceMap,
-    edits: { start: number; end: number; content: string }[],
+    edits: SourceEdit[],
   ) => {
     const s = new MagicString(code)
     for (const { start, end, content } of edits) {
@@ -1107,11 +1108,9 @@ describe('shiftSourcemap', () => {
         map,
       ]),
     )
-    const shifted = shiftSourcemap(
-      map,
-      s.generateDecodedMap({ hires: 'experimental-range' }),
-    )
-    const shiftedMap = new TraceMap(shifted)
+    const shifted = shiftSourcemapForEdits(map, code, edits)
+    expect(shifted).toBeDefined()
+    const shiftedMap = new TraceMap(shifted!)
 
     s.toString()
       .split('\n')
@@ -1124,7 +1123,6 @@ describe('shiftSourcemap', () => {
           ).toStrictEqual(originalPositionFor(exact, position))
         }
       })
-    return shifted
   }
 
   const marker = '__MARKER__'
@@ -1217,14 +1215,7 @@ describe('shiftSourcemap', () => {
         ],
       ]),
     }
-    const shifted = shiftSourcemap(
-      map,
-      new MagicString(
-        'x'.repeat(20) + '\n' + 'x'.repeat(20),
-      ).generateDecodedMap({
-        hires: 'experimental-range',
-      }),
-    )
+    const shifted = shiftSourcemapForEdits(map, 'x'.repeat(20) + '\n', [])!
     expect(shifted.names).toStrictEqual(['foo'])
     expect(decode(shifted.mappings)).toStrictEqual([
       [[5, 0, 0, 0], [12], [16, 0, 1, 0]],
@@ -1236,131 +1227,17 @@ describe('shiftSourcemap', () => {
     ])
   })
 
-  test('preserves multiple sources, names, unmapped spans, and metadata', () => {
-    const code = `foo(${marker});bar()`
-    const map = {
-      ...chunkMap([]),
-      sources: ['src/foo.js', 'src/bar.js'],
-      sourcesContent: ['foo()', 'bar()'],
-      names: ['unused', 'foo', 'bar'],
-      x_google_ignoreList: [1],
-      debugId: 'test-debug-id',
-      mappings: encode([
-        [[0, 0, 0, 0, 1], [4], [8, 1, 2, 3, 2], [14], [16, 1, 3, 0, 2]],
+  test('returns undefined for edits it does not support', () => {
+    const code = 'a(\nb)\nc'
+    const map = chunkMap([[[0, 0, 0]], [[0, 1, 0]], [[0, 2, 0]]])
+    expect(
+      shiftSourcemapForEdits(map, code, [{ start: 1, end: 4, content: 'x' }]),
+    ).toBeUndefined()
+    expect(
+      shiftSourcemapForEdits(map, code, [
+        { start: 1, end: 1, content: 'x;\n' },
       ]),
-    }
-    const originalMap = structuredClone(map)
-    const shifted = expectExactMapping(code, map, [
-      { start: 0, end: 0, content: 'const deps = [];\n' },
-      { start: 4, end: 14, content: '[]' },
-    ])
-    expect(map).toStrictEqual(originalMap)
-    expect(shifted).toMatchObject({
-      file: map.file,
-      sources: map.sources,
-      sourcesContent: map.sourcesContent,
-      names: ['foo', 'bar'],
-      x_google_ignoreList: [1],
-      debugId: 'test-debug-id',
-    })
-  })
-
-  test('maps lines following a replacement ending before a newline', () => {
-    const code = 'aa\nbb'
-    const s = new MagicString(code)
-    for (let i = code.indexOf('\n'); i !== -1; i = code.indexOf('\n', i + 1)) {
-      s.appendLeft(i + 1, '')
-    }
-    s.update(0, 2, 'x')
-    const map = shiftSourcemap(
-      chunkMap([
-        [[0, 0, 0]],
-        [
-          [0, 1, 0],
-          [1, 1, 1],
-        ],
-      ]),
-      s.generateDecodedMap({ hires: 'experimental-range' }),
-    )
-    expect(decode(map.mappings)).toStrictEqual([
-      [[0, 0, 0, 0]],
-      [
-        [0, 0, 1, 0],
-        [1, 0, 1, 1],
-      ],
-    ])
-  })
-
-  test('replaces imports spanning lines', () => {
-    const code = 'a(import(\n  "./style.css"\n));b()'
-    expectExactMapping(
-      code,
-      chunkMap([
-        [
-          [0, 0, 0],
-          [2, 0, 2],
-        ],
-        [[2, 1, 2]],
-        [
-          [0, 2, 0],
-          [3, 2, 3],
-        ],
-      ]),
-      [{ start: 2, end: code.indexOf(';'), content: 'Promise.resolve({})' }],
-    )
-  })
-
-  test('inserts lines in the middle of a line', () => {
-    expectExactMapping(
-      'foo();bar()',
-      chunkMap([
-        [
-          [0, 0, 0],
-          [6, 1, 0],
-          [9, 1, 3],
-        ],
-      ]),
-      [{ start: 6, end: 6, content: 'const deps = [];\n' }],
-    )
-  })
-
-  test('preserves mappings across unchanged lines', () => {
-    const code = 'foo()\nbar()\nbaz()\nqux()'
-    expectExactMapping(
-      code,
-      chunkMap([
-        [
-          [0, 0, 0],
-          [3, 0, 6],
-        ],
-        [
-          [0, 1, 0],
-          [3, 1, 6],
-        ],
-        [
-          [1, 2, 1],
-          [3, 2, 6],
-        ],
-        [
-          [0, 3, 0],
-          [3, 3, 6],
-        ],
-      ]),
-      [{ start: 0, end: 0, content: 'const deps = [];\n' }],
-    )
-  })
-
-  test('traces replacements with no unchanged ranges', () => {
-    expectExactMapping(
-      marker,
-      chunkMap([
-        [
-          [0, 2, 4],
-          [5, 3, 7],
-        ],
-      ]),
-      [{ start: 0, end: marker.length, content: '[]' }],
-    )
+    ).toBeUndefined()
   })
 })
 
