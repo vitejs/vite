@@ -83,6 +83,7 @@ const identifierReplacements: Record<string, Record<string, string>> = {
   'rolldown/utils': {
     TransformOptions: 'rolldown_utils_TransformOptions',
     TransformResult: 'rolldown_utils_TransformResult',
+    ESTree: 'rolldown_utils_ESTree',
   },
   'node:http': {
     Server: 'http.Server',

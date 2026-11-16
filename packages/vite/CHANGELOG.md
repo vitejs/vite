@@ -1,3 +1,57 @@
+## [8.4.0-beta.1](https://github.com/vitejs/vite/compare/v8.3.8...v8.4.0-beta.1) (2026-11-16)
+### Features
+
+* add `environment.addSafeModule` ([#23974](https://github.com/vitejs/vite/issues/23974)) ([e0fe98a](https://github.com/vitejs/vite/commit/e0fe98a050db0fcfa04c24a09b7d8f72dbbf68e1))
+* add `server.fs.strict: 'extended'` ([#23972](https://github.com/vitejs/vite/issues/23972)) ([e4babd7](https://github.com/vitejs/vite/commit/e4babd7262256a3c5c383109eb7f7d489760faf5))
+* **build:** include worker chunks in manifest ([#23699](https://github.com/vitejs/vite/issues/23699)) ([bc6e03c](https://github.com/vitejs/vite/commit/bc6e03c1d7eb5c2a7e202cd25d9ca1512cd06f6f))
+* **build:** support retrying failed CSS preloads ([#23710](https://github.com/vitejs/vite/issues/23710)) ([2155e12](https://github.com/vitejs/vite/commit/2155e125cac5792785a485759ecc0e8af18f0438))
+* **cli:** omit `-0` suffix from the first profile file name ([#23490](https://github.com/vitejs/vite/issues/23490)) ([c64ba40](https://github.com/vitejs/vite/commit/c64ba40bc5951eebc266aea4609277e566db3c3c))
+* **css:** skip emitting empty CSS files ([#24059](https://github.com/vitejs/vite/issues/24059)) ([c5be55f](https://github.com/vitejs/vite/commit/c5be55f571e418992fd39f34267ec4929e79d014))
+* **css:** support subpath imports in CSS `url()` ([#23869](https://github.com/vitejs/vite/issues/23869)) ([c110663](https://github.com/vitejs/vite/commit/c110663facf21a8cee199d1c668908e919d6218e))
+* **environment:** expose build manifest on build environment ([#23292](https://github.com/vitejs/vite/issues/23292)) ([4db9844](https://github.com/vitejs/vite/commit/4db98449a802abd67a6975fb4fdf260fa8f82979))
+* migrate to `dev.sourcemap.css` from `css.devSourcemap` ([#23765](https://github.com/vitejs/vite/issues/23765)) ([76cb51b](https://github.com/vitejs/vite/commit/76cb51bba1a8988b00a5becae5829c3e7a49d9ab))
+* **module-runner:** align stacktrace with v8 ([#23690](https://github.com/vitejs/vite/issues/23690)) ([bd32fea](https://github.com/vitejs/vite/commit/bd32fea2cb171cf993c70b4dd12097d5166b3b28))
+* **preview:** serve wasm compressed ([#24051](https://github.com/vitejs/vite/issues/24051)) ([39d63b8](https://github.com/vitejs/vite/commit/39d63b8479c6314caab9b78a05d3aaaf36a86b2c))
+* register more references to safe modules ([#23168](https://github.com/vitejs/vite/issues/23168)) ([e258ce1](https://github.com/vitejs/vite/commit/e258ce140eef64cf89ff38c410125abd8726f274))
+* register references in HTML to safe modules ([#23169](https://github.com/vitejs/vite/issues/23169)) ([ef30399](https://github.com/vitejs/vite/commit/ef30399e751740b8ad28f0a7523b3fb42c7cc539))
+* separate `safeModulePaths` per environment ([#23973](https://github.com/vitejs/vite/issues/23973)) ([7480c54](https://github.com/vitejs/vite/commit/7480c547947d0b1dc519815d8f6f670964b15026))
+* show running process for the same project ([#23624](https://github.com/vitejs/vite/issues/23624)) ([3e1a86e](https://github.com/vitejs/vite/commit/3e1a86e6c87a3c18356252c5d69bf9604cb85950))
+* stabilize `--configLoader` and deprecate `--configLoader=runner` ([#23714](https://github.com/vitejs/vite/issues/23714)) ([e719122](https://github.com/vitejs/vite/commit/e719122cf6758086c1c228c14ad016358337cf09))
+* support bundled dev mode in ssr ([#21626](https://github.com/vitejs/vite/issues/21626)) ([5ff255e](https://github.com/vitejs/vite/commit/5ff255e5b9f1460dd844ccf7a82d6f59f8899033))
+* **wasm:** support source phase imports ([#22675](https://github.com/vitejs/vite/issues/22675)) ([97bb00f](https://github.com/vitejs/vite/commit/97bb00f8f55e18caa5621c1a23dd057f1ca836e8))
+
+### Bug Fixes
+
+* **build:** keep `magicString` and `ast` in transform hook meta ([#24067](https://github.com/vitejs/vite/issues/24067)) ([c0d590d](https://github.com/vitejs/vite/commit/c0d590d697bb21530f687ea094a36c943620232c))
+* **bundled-dev:** load lazy chunks under `base` ([#23798](https://github.com/vitejs/vite/issues/23798)) ([d5c79c7](https://github.com/vitejs/vite/commit/d5c79c7a7c7a3794491f67fbb344d08d7ff814ab))
+* **client:** fallback to waiting on main thread for server start when trusted types are enforced ([#21483](https://github.com/vitejs/vite/issues/21483)) ([2dcd391](https://github.com/vitejs/vite/commit/2dcd391edfa858d8acf99d5585ec98c024e41ba8))
+* **css:** match pure css chunk imports by relative path ([#24105](https://github.com/vitejs/vite/issues/24105)) ([76f9618](https://github.com/vitejs/vite/commit/76f9618ef0d8df285229c96f0968b5689be11571))
+* **css:** no-externalize by default even for SSR ([#24075](https://github.com/vitejs/vite/issues/24075)) ([f898888](https://github.com/vitejs/vite/commit/f898888222297aa56d6fc281c585d4d4e4d51f58))
+* **deps:** update all non-major dependencies ([#24103](https://github.com/vitejs/vite/issues/24103)) ([c11a671](https://github.com/vitejs/vite/commit/c11a671c2af3a0fa8db8345e684798a91fa105d7))
+* **deps:** update rolldown-related dependencies ([#24028](https://github.com/vitejs/vite/issues/24028)) ([a1b813b](https://github.com/vitejs/vite/commit/a1b813be91d48b0a978aaacab875b274770d7bf4))
+* **deps:** update rolldown-related dependencies ([#24104](https://github.com/vitejs/vite/issues/24104)) ([1404166](https://github.com/vitejs/vite/commit/140416668690c1f21cdf85394376f4764b51b2de))
+* escape import specifiers ([#24074](https://github.com/vitejs/vite/issues/24074)) ([9bf5965](https://github.com/vitejs/vite/commit/9bf5965864a31f9a324ad676caae19e0dc3cbbb7))
+* escape imported name in `transformCjsImport` ([#24080](https://github.com/vitejs/vite/issues/24080)) ([0512d78](https://github.com/vitejs/vite/commit/0512d780a3d1046419666e814dd6d28b63bf3bff))
+
+### Performance Improvements
+
+* use native binary for getting process start time on windows ([#24087](https://github.com/vitejs/vite/issues/24087)) ([4bf4f32](https://github.com/vitejs/vite/commit/4bf4f32f7ff02d2b08a83688bed0f8d0479c5235))
+
+### Miscellaneous Chores
+
+* add debug log when falling back to powershell for process start time ([#24090](https://github.com/vitejs/vite/issues/24090)) ([880f1cf](https://github.com/vitejs/vite/commit/880f1cf12147e5e14f92492c0771206413adedae))
+* **deps:** update dependency es-module-lexer to v3 ([#23603](https://github.com/vitejs/vite/issues/23603)) ([785b0ad](https://github.com/vitejs/vite/commit/785b0add368b212881617ab093cff4c4fde133ea))
+
+### Code Refactoring
+
+* **bundled-dev:** serve the rolldown dev runtime as a single file ([#23587](https://github.com/vitejs/vite/issues/23587)) ([69df8ad](https://github.com/vitejs/vite/commit/69df8ad865b06aa49ea6d7eac530d6f1f072fb43))
+* drop unused capture groups in test-only regexes ([#24097](https://github.com/vitejs/vite/issues/24097)) ([2decae3](https://github.com/vitejs/vite/commit/2decae3422bfbb6357e3cc95ec8ee9c97f29e7f0))
+* remove `optimizeDeps.rollupOptions` ([#23760](https://github.com/vitejs/vite/issues/23760)) ([0651e2c](https://github.com/vitejs/vite/commit/0651e2cc0f747a8e6ca1f9235dbc9d1fdc464598))
+
+### Build System
+
+* look up dts identifier replacements by imported name ([#24068](https://github.com/vitejs/vite/issues/24068)) ([f60fac3](https://github.com/vitejs/vite/commit/f60fac396c03d1e36f750378f615a1d570ecda90))
+
 ## <small>[8.3.8](https://github.com/vitejs/vite/compare/v8.3.7...v8.3.8) (2026-11-11)</small>
 ### Bug Fixes
 

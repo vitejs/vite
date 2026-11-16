@@ -43,6 +43,7 @@ jobs:
           mode: labels
           cache-path: .agentscan-cache
           trusted-author-associations: "member,owner,collaborator"
+          allowed-users: maschwenk
           label-mixed: "bot: maybe"
           label-automation: "bot: likely"
           label-community-flagged: "bot: likely"
