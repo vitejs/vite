@@ -1181,21 +1181,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             Object.entries(importMap.mapping).map(([k, v]) => [v, k]),
           )
         }
-        const pureCssChunkNamesInCode = importMapReverseMapping
-          ? pureCssChunkNames.map(
-              (name) => importMapReverseMapping![name] ?? name,
-            )
-          : pureCssChunkNames
-
-        const replaceEmptyChunk = getEmptyChunkReplacer(
-          pureCssChunkNamesInCode,
-          opts.format,
-        )
-
         for (const file in bundle) {
           const chunk = bundle[file]
           if (chunk.type === 'chunk') {
-            let chunkImportsPureCssChunk = false
+            const importedPureCssChunkNames: string[] = []
             // remove pure css chunk from other chunk's imports,
             // and also register the emitted CSS files under the importer
             // chunks instead.
@@ -1210,13 +1199,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                 importedAssets.forEach((file) =>
                   chunk.viteMetadata!.importedAssets.add(file),
                 )
-                chunkImportsPureCssChunk = true
+                importedPureCssChunkNames.push(
+                  importMapReverseMapping?.[file] ?? file,
+                )
                 return false
               }
               return true
             })
-            if (chunkImportsPureCssChunk) {
-              chunk.code = replaceEmptyChunk(chunk.code)
+            if (importedPureCssChunkNames.length) {
+              chunk.code = getEmptyChunkReplacer(
+                importedPureCssChunkNames,
+                opts.format,
+              )(chunk.code, chunk.fileName)
             }
           }
         }
@@ -1363,29 +1357,38 @@ function isCssScopeToRendered(
 
 /**
  * Create a replacer function that takes code and replaces given pure CSS chunk imports
- * @param pureCssChunkNames The chunks that only contain pure CSS and should be replaced
+ * @param pureCssChunkNames The names of the chunks that only contain pure CSS and should be replaced. These are import map keys when chunk import maps are used
  * @param outputFormat The module output format to decide whether to replace `import` or `require`
+ * @returns A function that takes the code and the file name of the importing chunk
  */
 export function getEmptyChunkReplacer(
   pureCssChunkNames: string[],
   outputFormat: InternalModuleFormat,
-): (code: string) => string {
-  const emptyChunkFiles = pureCssChunkNames
-    .map((file) => escapeRegex(path.basename(file)))
-    .join('|')
+): (code: string, chunkFileName: string) => string {
+  return (code, chunkFileName) => {
+    // match the path of each pure css chunk relative to this chunk, so that
+    // another chunk whose path ends with the same file name is not matched
+    const chunkDir = path.posix.dirname(normalizePath(chunkFileName))
+    const emptyChunkFiles = pureCssChunkNames
+      .map((file) => {
+        const importPath = path.posix.relative(chunkDir, normalizePath(file))
+        return importPath.startsWith('../')
+          ? escapeRegex(importPath)
+          : `(?:\\./)?${escapeRegex(importPath)}`
+      })
+      .join('|')
 
-  // for cjs, require calls might be chained by minifier using the comma operator.
-  // in this case we have to keep one comma if a next require is chained
-  // or add a semicolon to terminate the chain.
-  const emptyChunkRE = new RegExp(
-    outputFormat === 'es'
-      ? `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];`
-      : `(\\b|,\\s*)require\\(\\s*["'\`][^"'\`]*(?:${emptyChunkFiles})["'\`]\\)(;|,)`,
-    'g',
-  )
+    // for cjs, require calls might be chained by minifier using the comma operator.
+    // in this case we have to keep one comma if a next require is chained
+    // or add a semicolon to terminate the chain.
+    const emptyChunkRE = new RegExp(
+      outputFormat === 'es'
+        ? `\\bimport\\s*["'](?:${emptyChunkFiles})["'];`
+        : `(\\b|,\\s*)require\\(\\s*["'\`](?:${emptyChunkFiles})["'\`]\\)(;|,)`,
+      'g',
+    )
 
-  return (code: string) =>
-    code.replace(
+    return code.replace(
       emptyChunkRE,
       // remove css import while preserving source map location
       (m, p1, p2) => {
@@ -1400,6 +1403,7 @@ export function getEmptyChunkReplacer(
         return `${p1}/* empty css ${''.padEnd(m.length - 15 - p1.length)}*/`
       },
     )
+  }
 }
 
 const fileURLWithWindowsDriveRE = /^file:\/\/\/[a-zA-Z]:\//
