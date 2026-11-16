@@ -458,7 +458,7 @@ import "pure_css_chunk.js";
 import "other-module";`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'es')
-    const replaced = replacer(code)
+    const replaced = replacer(code, 'index.js')
     expect(replaced).toHaveLength(code.length)
     expect(replaced).toMatchInlineSnapshot(`
       "import "some-module";
@@ -471,7 +471,7 @@ import "other-module";`
     const code = `import "some-module";import "pure_css_chunk.js";import "other-module";`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'es')
-    const replaced = replacer(code)
+    const replaced = replacer(code, 'index.js')
     expect(replaced).toHaveLength(code.length)
     expect(replaced).toMatchInlineSnapshot(
       `"import "some-module";/* empty css             */import "other-module";"`,
@@ -485,7 +485,7 @@ require("pure_css_chunk.js");
 require("other-module");`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
-    const replaced = replacer(code)
+    const replaced = replacer(code, 'index.js')
     expect(replaced).toHaveLength(code.length)
     expect(replaced).toMatchInlineSnapshot(`
       "require("some-module");
@@ -498,7 +498,7 @@ require("other-module");`
     const code = `require("some-module");require("pure_css_chunk.js");require("other-module");`
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
-    const replaced = replacer(code)
+    const replaced = replacer(code, 'index.js')
     expect(replaced).toHaveLength(code.length)
     expect(replaced).toMatchInlineSnapshot(
       `"require("some-module");;/* empty css              */require("other-module");"`,
@@ -510,7 +510,7 @@ require("other-module");`
       'require("some-module"),require("pure_css_chunk.js"),require("other-module");'
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
-    const newCode = replacer(code)
+    const newCode = replacer(code, 'index.js')
     expect(newCode).toHaveLength(code.length)
     expect(newCode).toMatchInlineSnapshot(
       `"require("some-module"),/* empty css               */require("other-module");"`,
@@ -522,7 +522,7 @@ require("other-module");`
   test('replaces require call in minified code that uses comma operator 2', () => {
     const code = 'require("pure_css_chunk.js"),console.log();'
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
-    const newCode = replacer(code)
+    const newCode = replacer(code, 'index.js')
     expect(newCode).toHaveLength(code.length)
     expect(newCode).toMatchInlineSnapshot(
       `"/* empty css               */console.log();"`,
@@ -535,12 +535,43 @@ require("other-module");`
       'require("some-module"),require("pure_css_chunk.js");const v=require("other-module");'
 
     const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
-    const newCode = replacer(code)
+    const newCode = replacer(code, 'index.js')
     expect(newCode).toHaveLength(code.length)
     expect(newCode).toMatchInlineSnapshot(
       `"require("some-module");/* empty css               */const v=require("other-module");"`,
     )
     expect(newCode).not.toContain('pure_css_chunk.js')
+  })
+
+  test('keeps imports of other chunks whose path ends with the pure css chunk file name', () => {
+    const code = `import "./dep.js";import "./styles/dep.js";import "./notdep.js";`
+
+    const replacer = getEmptyChunkReplacer(['styles/dep.js'], 'es')
+    const replaced = replacer(code, 'index.js')
+    expect(replaced).toHaveLength(code.length)
+    expect(replaced).toBe(
+      `import "./dep.js";/* empty css           */import "./notdep.js";`,
+    )
+  })
+
+  test('keeps requires of other chunks whose path ends with the pure css chunk file name', () => {
+    const code = `const require_dep = require("./dep.js");require("./styles/dep.js");`
+
+    const replacer = getEmptyChunkReplacer(['styles/dep.js'], 'cjs')
+    const replaced = replacer(code, 'index.js')
+    expect(replaced).toHaveLength(code.length)
+    expect(replaced).toBe(
+      `const require_dep = require("./dep.js");;/* empty css            */`,
+    )
+  })
+
+  test('resolves imports against the directory of the importing chunk', () => {
+    const code = `import "../styles/dep.js";import "./styles/dep.js";`
+
+    const replacer = getEmptyChunkReplacer(['styles/dep.js'], 'es')
+    const replaced = replacer(code, 'nested/index.js')
+    expect(replaced).toHaveLength(code.length)
+    expect(replaced).toBe(`/* empty css            */import "./styles/dep.js";`)
   })
 })
 
