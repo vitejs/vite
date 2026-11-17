@@ -27,8 +27,8 @@ import {
   sourcemapSnapshot,
   testDir,
   viteServer,
-  watchActivity,
   watchBuilds,
+  watchIdleSince,
 } from './vitestSetupUtils'
 
 export * from './vitestSetupUtils'
@@ -302,9 +302,7 @@ export async function gotoLatestBuild(url: string): Promise<void> {
  * https://github.com/rolldown/rolldown/issues/10613
  * Call immediately after a synchronous edit, before yielding to watcher callbacks.
  *
- * Then wait for build watch to settle: a change event that arrives while the
- * rebuild runs, such as a second event for the same write, starts another
- * rebuild right after it, and that one empties the outDir again.
+ * Wait for 100 ms of idle time to allow queued rebuilds to empty and refill outDir.
  */
 export async function waitForRebuild(filename: string): Promise<void> {
   const id = path.resolve(testDir, filename)
@@ -324,13 +322,7 @@ export async function waitForRebuild(filename: string): Promise<void> {
       ),
     )
     .toBe(true)
-  await expect
-    .poll(
-      () =>
-        !watchActivity.building &&
-        performance.now() - watchActivity.lastAt > 100,
-    )
-    .toBe(true)
+  await expect.poll(() => performance.now() - watchIdleSince > 100).toBe(true)
 }
 
 export function hotUpdatedLog(file: string): string {
