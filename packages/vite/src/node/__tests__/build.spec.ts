@@ -393,7 +393,6 @@ describe('build', () => {
     async (modulePreload) => {
       const buildProject = async (lazy: string, color: string) => {
         const modules: Record<string, string> = {
-          // `entry.js` reaches `dep.js` only through the mapped `lazy.js`
           'entry.js': `window.loadLazy = () => import('lazy.js')`,
           'lazy.js': `
             import { dep } from 'dep.js'
@@ -438,12 +437,10 @@ describe('build', () => {
         buildProject('b', 'red'),
         buildProject('a', 'blue'),
       ])
-      // `_entry` only holds the stable name of `_lazy`
       expect(getOutputHashChanges(base, lazyChanged).changed).toStrictEqual([
         '_lazy',
       ])
       assertOutputHashContentChange(base, lazyChanged)
-      // `_entry` holds the hashed file names of `dep`
       expect(getOutputHashChanges(base, depChanged).changed).toStrictEqual([
         '_entry',
         '_lazy',
