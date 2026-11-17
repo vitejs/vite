@@ -34,3 +34,14 @@ test('prefers lockfiles in node_modules over yarn.lock', () => {
 
   expect(getLockfileHash(fixture)).toBe(getHash(content))
 })
+
+test('hash changes when a patch file is edited in place', () => {
+  const fixture = path.join(root, 'yarn-patches')
+  const patchPath = path.join(fixture, 'patches/foo+1.0.0.patch')
+  const hashBefore = getLockfileHash(fixture)
+
+  // overwriting an existing file does not change the directory's mtime
+  fs.writeFileSync(patchPath, 'edited patch content\n')
+
+  expect(getLockfileHash(fixture)).not.toBe(hashBefore)
+})
