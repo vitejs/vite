@@ -582,8 +582,19 @@ export class BundledDev {
       code: typeof hmrOutput.code === 'string' ? '[code]' : hmrOutput.code,
     })
 
+    // Rolldown may return platform-native paths for incremental output. HMR
+    // filenames and module ids cross the HTTP/runtime boundary, so keep them
+    // in the same POSIX form used by the memory-file middleware and browser.
+    const filename = normalizePath(hmrOutput.filename)
+    const changedIds = hmrOutput.changedIds.map(normalizePath)
+    const sourcemapFilename = hmrOutput.sourcemapFilename
+      ? normalizePath(hmrOutput.sourcemapFilename)
+      : undefined
+
+    // Keep the original filename in the acknowledgement. Rolldown tracks
+    // payload delivery by the exact filename it generated.
     this.pendingPayloadFilenames.add(hmrOutput.filename)
-    this.memoryFiles.set(hmrOutput.filename, {
+    this.memoryFiles.set(filename, {
       // ensure that the generated hmr patch contains ESM syntax
       // this is to avoid attacks like GHSA-4v9v-hfq4-rm2v
       // https://github.com/webpack/webpack-dev-server/security/advisories/GHSA-4v9v-hfq4-rm2v
@@ -595,25 +606,21 @@ export class BundledDev {
         hmrOutput.code +
         payloadDeliveredAck(hmrOutput.filename) +
         '\n; export {}',
-      sourcemapPath: hmrOutput.sourcemapFilename
-        ? normalizePath(hmrOutput.sourcemapFilename)
-        : undefined,
+      sourcemapPath: sourcemapFilename,
     })
     if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
-      this.memoryFiles.set(hmrOutput.sourcemapFilename, {
+      this.memoryFiles.set(sourcemapFilename!, {
         source: hmrOutput.sourcemap,
       })
     }
     client.send({
       type: 'bundled-dev-update',
-      changedIds: hmrOutput.changedIds,
-      url: hmrOutput.filename,
+      changedIds,
+      url: filename,
       seq: hmrOutput.seq,
     })
-    const { formatted, truncated } = formatAndTruncateFileList(
-      hmrOutput.changedIds,
-    )
-    if (truncated) debugHmr?.(`hmr update ${hmrOutput.changedIds.join(', ')}`)
+    const { formatted, truncated } = formatAndTruncateFileList(changedIds)
+    if (truncated) debugHmr?.(`hmr update ${changedIds.join(', ')}`)
     this.environment.logger.info(
       colors.green(`hmr update `) + colors.dim(formatted),
       {
