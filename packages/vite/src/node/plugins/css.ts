@@ -1142,6 +1142,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const chunk = chunksByPreliminaryFileName.get(chunkFileName)
           if (!chunk) continue
 
+          // A hashed chunk that `chunkImportMap.include` leaves out of the import map
+          // has no stable name, so its CSS file is not added to the import map.
+          if (
+            !importMapReverseMapping[chunk.fileName] &&
+            chunk.fileName !== chunk.preliminaryFileName
+          ) {
+            continue
+          }
+
           const stableChunkFileName =
             importMapReverseMapping[chunk.fileName] ?? chunk.fileName
           const extension = path.posix.extname(stableChunkFileName)

@@ -388,6 +388,64 @@ describe('build', () => {
     )
   })
 
+  test.for([true, false])(
+    'file hash should change when a chunk behind a mapped chunk changes (modulePreload: %s)',
+    async (modulePreload) => {
+      const buildProject = async (color: string) => {
+        const modules: Record<string, string> = {
+          // `entry.js` reaches `dep.js` only through the mapped `lazy.js`
+          'entry.js': `window.loadLazy = () => import('lazy.js')`,
+          'lazy.js': `
+            import { dep } from 'dep.js'
+            export const lazy = dep + 'lazy'`,
+          'dep.js': `
+            import 'dep.css'
+            export const dep = 'dep'.repeat(64)`,
+          'dep.css': `.dep { color: ${color} }`,
+        }
+        return (await build({
+          root: resolve(dirname, 'packages/build-project'),
+          logLevel: 'silent',
+          input: 'entry.js',
+          build: {
+            chunkImportMap: true,
+            modulePreload,
+            minify: false,
+            write: false,
+            rolldownOptions: {
+              experimental: { chunkImportMap: { include: '_lazy' } },
+              output: {
+                codeSplitting: { groups: [{ name: 'dep', test: /dep\./ }] },
+              },
+            },
+          },
+          plugins: [
+            {
+              name: 'partial-chunk-import-map',
+              resolveId(id) {
+                if (id in modules) return `\0${id}`
+              },
+              load(id) {
+                return modules[id.slice(1)]
+              },
+            },
+          ],
+        })) as RolldownOutput
+      }
+
+      const result = await Promise.all([
+        buildProject('red'),
+        buildProject('blue'),
+      ])
+      expect(getOutputHashChanges(result[0], result[1]).changed).toStrictEqual([
+        '_entry',
+        '_lazy',
+        'dep',
+        'dep.css',
+      ])
+    },
+  )
+
   test('renderBuiltUrl receives asset postfixes in JS and CSS', async () => {
     const result = await buildProjectWithRenderBuiltUrl(
       (filename) => injectQuery(filename, 'dpl=id'),
