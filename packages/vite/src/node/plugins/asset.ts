@@ -32,7 +32,6 @@ import { checkPublicFile } from '../publicDir'
 import { fileToModuleUrl } from '../server/moduleUrl'
 import {
   encodeURIPath,
-  getHash,
   injectQuery,
   normalizePath,
   rawRE,
@@ -65,13 +64,14 @@ export const inlineRE: RegExp = /[?&]inline\b/
 /**
  * The resolved form of an asset request during build.
  * - `string`: a URL usable as-is (an inlined `data:` URL, a
- *   `__VITE_PUBLIC_ASSET__` token, or a bundled-dev output URL).
+ *   `__VITE_PUBLIC_ASSET__` token, or a bundled-dev output URL). `warned`
+ *   says that a warning was printed when the result was made.
  * - `reference`: an emitted file referenced by its `referenceId`, to be turned
  *   into `import.meta.ROLLDOWN_FILE_URL_<referenceId>` (JS) or a `__VITE_ASSET__`
  *   token (CSS/HTML). The `postfix` is the query/hash appended after the URL.
  */
 type FileToBuiltUrlResult =
-  | { type: 'string'; value: string }
+  | { type: 'string'; value: string; warned?: boolean }
   | { type: 'reference'; referenceId: string; postfix: string }
 
 /**
@@ -156,16 +156,13 @@ export function renderAssetUrlInJS(
     s.update(match.index, match.index + full.length, replacementString)
   }
 
-  // Replace __VITE_PUBLIC_ASSET__5aA0Ddc0__ with absolute paths
+  // Replace __VITE_PUBLIC_ASSET__<hex of the URL>__ with absolute paths
 
-  const publicAssetUrlMap = publicAssetUrlCache.get(
-    environment.getTopLevelConfig(),
-  )!
   publicAssetUrlRE.lastIndex = 0
   while ((match = publicAssetUrlRE.exec(code))) {
     s ||= new MagicString(code)
-    const [full, hash] = match
-    const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
+    const [full, urlHex] = match
+    const publicUrl = decodePublicAssetUrl(urlHex).slice(1)
     const replacement = toOutputFilePathInJS(
       environment,
       publicUrl,
@@ -201,6 +198,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     resolveId: {
+      cache: true,
       filter: {
         id: [
           urlRE,
@@ -491,20 +489,13 @@ export async function fileToDevUrl(
   return moduleUrlToBrowserUrl(moduleUrl, base)
 }
 
-export function getPublicAssetFilename(
-  hash: string,
-  config: ResolvedConfig,
-): string | undefined {
-  return publicAssetUrlCache.get(config)?.get(hash)
+// The placeholder holds the URL itself as hex, so a later hook needs no data
+// from the hook that made it.
+export const publicAssetUrlRE: RegExp = /__VITE_PUBLIC_ASSET__([a-f\d]+)__/g
+
+export function decodePublicAssetUrl(urlHex: string): string {
+  return Buffer.from(urlHex, 'hex').toString()
 }
-
-// inner map: hash -> url
-export const publicAssetUrlCache: WeakMap<
-  ResolvedConfig,
-  Map<string, string>
-> = new WeakMap()
-
-export const publicAssetUrlRE: RegExp = /__VITE_PUBLIC_ASSET__([a-z\d]{8})__/g
 
 export function publicFileToBuiltUrl(
   url: string,
@@ -515,16 +506,7 @@ export function publicFileToBuiltUrl(
     const base = joinUrlSegments(config.server.origin ?? '', config.decodedBase)
     return joinUrlSegments(base, url)
   }
-  const hash = getHash(url)
-  let cache = publicAssetUrlCache.get(config)
-  if (!cache) {
-    cache = new Map<string, string>()
-    publicAssetUrlCache.set(config, cache)
-  }
-  if (!cache.get(hash)) {
-    cache.set(hash, url)
-  }
-  return `__VITE_PUBLIC_ASSET__${hash}__`
+  return `__VITE_PUBLIC_ASSET__${Buffer.from(url).toString('hex')}__`
 }
 
 const GIT_LFS_PREFIX = Buffer.from('version https://git-lfs.github.com')
@@ -653,6 +635,7 @@ async function resolveBuiltAsset(
   const cache = assetCache.get(environment)!
   const cached = cache.get(id)
   if (cached) {
+    markNotCacheableIfWarned(pluginContext, cached)
     return cached
   }
 
@@ -666,6 +649,7 @@ async function resolveBuiltAsset(
     result = {
       type: 'string',
       value: assetToDataURL(environment, file, content),
+      warned: isGitLfsPlaceholderInLib(environment, content),
     }
   } else {
     // emit as asset
@@ -699,7 +683,20 @@ async function resolveBuiltAsset(
   }
 
   cache.set(id, result)
+  markNotCacheableIfWarned(pluginContext, result)
   return result
+}
+
+// The warning is printed once for each file in a build, by the first hook
+// call that uses the file. Rolldown cannot print it again when it reuses a
+// saved result, so no module that uses the file gets one.
+function markNotCacheableIfWarned(
+  pluginContext: PluginContext,
+  result: FileToBuiltUrlResult,
+) {
+  if (result.type === 'string' && result.warned) {
+    pluginContext.markNotCacheable('uses a file that printed a warning')
+  }
 }
 
 export function toOutputFilePathInJSForBundledDev(
@@ -783,12 +780,19 @@ function shouldInline(
   return content.length < limit && !isGitLfsPlaceholder(content)
 }
 
+function isGitLfsPlaceholderInLib(
+  environment: Environment,
+  content: Buffer,
+): boolean {
+  return !!environment.config.build.lib && isGitLfsPlaceholder(content)
+}
+
 function assetToDataURL(
   environment: Environment,
   file: string,
   content: Buffer,
 ) {
-  if (environment.config.build.lib && isGitLfsPlaceholder(content)) {
+  if (isGitLfsPlaceholderInLib(environment, content)) {
     environment.logger.warn(
       colors.yellow(`Inlined file ${file} was not downloaded via Git LFS`),
     )

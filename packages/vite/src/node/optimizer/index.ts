@@ -1221,39 +1221,46 @@ function isSingleDefaultExport(exports: readonly string[]) {
 const lockfileFormats = [
   {
     path: 'node_modules/.pnpm/lock.yaml',
+    recordsInstalledState: true,
     // Included in lockfile
     checkPatchesDir: false,
     manager: 'pnpm',
   },
   {
     path: 'node_modules/.package-lock.json',
+    recordsInstalledState: true,
     checkPatchesDir: 'patches',
     manager: 'npm',
   },
   {
     // Yarn non-PnP
     path: 'node_modules/.yarn-state.yml',
+    recordsInstalledState: true,
     checkPatchesDir: false,
     manager: 'yarn',
   },
   {
     path: 'bun.lock',
+    recordsInstalledState: false,
     checkPatchesDir: 'patches',
     manager: 'bun',
   },
   {
     path: '.rush/temp/shrinkwrap-deps.json',
+    recordsInstalledState: true,
     // Included in lockfile
     checkPatchesDir: false,
     manager: 'pnpm',
   },
   {
     path: 'aube-lock.yaml',
+    recordsInstalledState: false,
     checkPatchesDir: false,
     manager: 'aube',
   },
   {
     path: 'nub.lock',
+    recordsInstalledState: false,
     // Included in lockfile (`patchedDependencies` has patch hashes)
     checkPatchesDir: false,
     manager: 'nub',
@@ -1264,23 +1271,27 @@ const lockfileFormats = [
   {
     // Yarn v3+ PnP
     path: '.pnp.cjs',
+    recordsInstalledState: true,
     checkPatchesDir: '.yarn/patches',
     manager: 'yarn',
   },
   {
     // Yarn v2 PnP
     path: '.pnp.js',
+    recordsInstalledState: true,
     checkPatchesDir: '.yarn/patches',
     manager: 'yarn',
   },
   {
     // yarn 1
     path: 'node_modules/.yarn-integrity',
+    recordsInstalledState: true,
     checkPatchesDir: 'patches',
     manager: 'yarn',
   },
   {
     path: 'bun.lockb',
+    recordsInstalledState: false,
     checkPatchesDir: 'patches',
     manager: 'bun',
   },
@@ -1295,6 +1306,7 @@ const lockfilePaths = lockfileFormats.map((l) => l.path)
 const fallbackLockfileFormats = [
   {
     path: 'yarn.lock',
+    recordsInstalledState: false,
     // Included in lockfile
     checkPatchesDir: false,
     manager: 'yarn',
@@ -1347,28 +1359,53 @@ function getConfigHash(environment: Environment): string {
   return getHash(content)
 }
 
-export function getLockfileHash(root: string): string {
-  const lockfilePath =
+const installedStateFilePaths = lockfileFormats
+  .filter((f) => f.recordsInstalledState)
+  .map((f) => f.path)
+
+/**
+ * The file that the package manager writes when it installs packages, so
+ * that it changes exactly when the installed packages change. A lockfile in
+ * the project root such as `yarn.lock` is not one: it can change without an
+ * install, for example after `git pull`. The lookup does not go above
+ * `stopDir`.
+ */
+export function findInstalledStateFile(
+  root: string,
+  stopDir: string,
+): string | undefined {
+  return lookupFile(root, installedStateFilePaths, stopDir)
+}
+
+function findLockfilePath(root: string): string | undefined {
+  return (
     lookupFile(root, lockfilePaths) ?? lookupFile(root, fallbackLockfilePaths)
+  )
+}
+
+/**
+ * The directory of patches that a tool such as patch-package applies to the
+ * installed packages, if the package manager of `lockfilePath` uses one and
+ * it exists.
+ */
+export function findPatchesDir(lockfilePath: string): string | undefined {
+  const normalizedLockfilePath = lockfilePath.replaceAll('\\', '/')
+  const lockfileFormat = [...lockfileFormats, ...fallbackLockfileFormats].find(
+    (f) => normalizedLockfilePath.endsWith(f.path),
+  )!
+  if (!lockfileFormat.checkPatchesDir) return
+  // Default of https://github.com/ds300/patch-package
+  const baseDir = lockfilePath.slice(0, -lockfileFormat.path.length)
+  const fullPath = path.join(baseDir, lockfileFormat.checkPatchesDir as string)
+  return tryStatSync(fullPath)?.isDirectory() ? fullPath : undefined
+}
+
+export function getLockfileHash(root: string): string {
+  const lockfilePath = findLockfilePath(root)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
-  if (lockfilePath) {
-    const normalizedLockfilePath = lockfilePath.replaceAll('\\', '/')
-    const lockfileFormat = [
-      ...lockfileFormats,
-      ...fallbackLockfileFormats,
-    ].find((f) => normalizedLockfilePath.endsWith(f.path))!
-    if (lockfileFormat.checkPatchesDir) {
-      // Default of https://github.com/ds300/patch-package
-      const baseDir = lockfilePath.slice(0, -lockfileFormat.path.length)
-      const fullPath = path.join(
-        baseDir,
-        lockfileFormat.checkPatchesDir as string,
-      )
-      const stat = tryStatSync(fullPath)
-      if (stat?.isDirectory()) {
-        content += stat.mtimeMs.toString()
-      }
-    }
+  const patchesDir = lockfilePath && findPatchesDir(lockfilePath)
+  if (patchesDir) {
+    content += fs.statSync(patchesDir).mtimeMs.toString()
   }
   return getHash(content)
 }

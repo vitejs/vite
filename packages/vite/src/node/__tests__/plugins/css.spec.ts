@@ -2,14 +2,16 @@ import path from 'node:path'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
 import type { InternalModuleFormat } from 'rolldown'
-import { describe, expect, onTestFinished, test } from 'vitest'
+import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { PartialEnvironment } from '../../baseEnvironment'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
+import { createLogger } from '../../logger'
 import {
   convertTargets,
   createCSSResolvers,
   cssPlugin,
+  cssPostPlugin,
   cssUrlRE,
   getEmptyChunkReplacer,
   hoistAtRules,
@@ -300,6 +302,315 @@ describe('url()', () => {
   })
 })
 
+describe('files that become dependencies of the module', () => {
+  test('the file of `composes`', async () => {
+    const root = path.join(dirname, 'fixtures/css-module-compose')
+    const { transform, watchFiles } = await createCssPluginTransform({
+      configFile: false,
+      root,
+    })
+    await transform(
+      `.foo { composes: bar from './bar.module.css' }`,
+      path.join(root, 'css/foo.module.css'),
+    )
+    expect(watchFiles).toStrictEqual([
+      normalizePath(path.join(root, 'css/bar.module.css')),
+    ])
+  })
+
+  for (const transformer of ['postcss', 'lightningcss'] as const) {
+    describe(transformer, () => {
+      const root = path.join(dirname, 'fixtures/css-public-dir')
+
+      test('a file in the public directory that a `url()` points to', async () => {
+        const { transform, watchFiles } = await createCssPluginTransform({
+          configFile: false,
+          root,
+          css: { transformer },
+        })
+        const result = await transform(
+          `.logo { background: url(/logo.svg) }`,
+          path.join(root, 'style.css'),
+        )
+        expect(result.code).toContain('/logo.svg')
+        expect(watchFiles).toStrictEqual([
+          normalizePath(path.join(root, 'public/logo.svg')),
+        ])
+      })
+
+      test('a file in the public directory that an `@import` inlines', async () => {
+        const { transform, watchFiles } = await createCssPluginTransform({
+          configFile: false,
+          root,
+          css: { transformer },
+        })
+        const result = await transform(
+          `@import '/base.css';`,
+          path.join(root, 'style.css'),
+        )
+        expect(result.code).toContain('.base')
+        expect(watchFiles).toStrictEqual([
+          normalizePath(path.join(root, 'public/base.css')),
+        ])
+      })
+    })
+  }
+})
+
+describe('modules that get no saved result in the persistent cache', () => {
+  const root = path.join(dirname, 'fixtures/css-url-imports')
+  const id = path.join(root, 'style.css')
+
+  const getReasons = async (
+    code: string,
+    inlineConfig: InlineConfig = {},
+    file = id,
+  ) => {
+    const { transform, notCacheableReasons } = await createCssPluginTransform({
+      configFile: false,
+      root,
+      experimental: { cache: true },
+      ...inlineConfig,
+    })
+    await transform(code, file)
+    return [...new Set(notCacheableReasons)]
+  }
+
+  test('a plain file is not marked', async () => {
+    expect(await getReasons('.a { color: red }')).toStrictEqual([])
+  })
+
+  test('nothing is marked when the cache is off', async () => {
+    expect(
+      await getReasons('.a { background: url(./logo.svg) }', {
+        experimental: {},
+        build: { assetsInlineLimit: 0 },
+      }),
+    ).toStrictEqual([])
+  })
+
+  for (const transformer of ['postcss', 'lightningcss'] as const) {
+    describe(transformer, () => {
+      const css = { transformer }
+
+      test('a `url()` that is inlined is not marked', async () => {
+        expect(
+          await getReasons('.a { background: url(./logo.svg) }', { css }),
+        ).toStrictEqual([])
+      })
+
+      test('a `url()` to an output asset file', async () => {
+        expect(
+          await getReasons('.a { background: url(./logo.svg) }', {
+            css,
+            build: { assetsInlineLimit: 0 },
+          }),
+        ).toStrictEqual(['uses an output asset file'])
+      })
+
+      // A rebuild without the cache does not see a file that is created
+      // later either. In build, Vite also prints a warning, which marks the
+      // module.
+      test('a `url()` that does not resolve to a file is not marked in dev', async () => {
+        expect(
+          await getReasons('.a { background: url(./missing.png) }', { css }),
+        ).toStrictEqual([])
+      })
+
+      test('a `url()` that starts with `#` is not marked', async () => {
+        expect(
+          await getReasons('.a { filter: url(#blur) }', { css }),
+        ).toStrictEqual([])
+      })
+    })
+  }
+
+  // A rebuild without the cache does not see a new file in the directory
+  // either.
+  test('a PostCSS plugin that depends on a directory is not marked', async () => {
+    expect(
+      await getReasons('.a { color: red }', {
+        css: {
+          postcss: {
+            plugins: [
+              {
+                postcssPlugin: 'dir-dependency',
+                Once(_, { result }) {
+                  result.messages.push({
+                    type: 'dir-dependency',
+                    plugin: 'dir-dependency',
+                    dir: root,
+                  })
+                },
+              },
+            ],
+          },
+        },
+      }),
+    ).toStrictEqual([])
+  })
+
+  test('a warning of a PostCSS plugin', async () => {
+    expect(
+      await getReasons('.a { color: red }', {
+        logLevel: 'silent',
+        css: {
+          postcss: {
+            plugins: [
+              {
+                postcssPlugin: 'warning',
+                Once(cssRoot, { result }) {
+                  cssRoot.warn(result, 'a warning')
+                },
+              },
+            ],
+          },
+        },
+      }),
+    ).toStrictEqual(["sent a message to Vite's logger"])
+  })
+
+  test('a warning and a debug message of Sass', async () => {
+    const stderr = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const stderrWrite = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation(() => true)
+    onTestFinished(() => {
+      stderr.mockRestore()
+      stderrWrite.mockRestore()
+    })
+    const scss = path.join(root, 'style.scss')
+    expect(await getReasons('.a { color: red }', {}, scss)).toStrictEqual([])
+    expect(
+      await getReasons('@warn "a warning"; .a { color: red }', {}, scss),
+    ).toStrictEqual(['Sass printed a warning'])
+    expect(
+      await getReasons('@debug "a message"; .a { color: red }', {}, scss),
+    ).toStrictEqual(['Sass printed a debug message'])
+
+    // The logger of the user still gets the message.
+    const warn = vi.fn()
+    expect(
+      await getReasons(
+        '@warn "a warning"; .a { color: red }',
+        { css: { preprocessorOptions: { scss: { logger: { warn } } } } },
+        scss,
+      ),
+    ).toStrictEqual(['Sass printed a warning'])
+    expect(warn).toHaveBeenCalledWith('a warning', expect.anything())
+  })
+
+  // A rebuild without the cache does not see a new file that matches the glob
+  // either.
+  test('a glob dependency of lightningcss is not marked', async () => {
+    const css: InlineConfig['css'] = {
+      transformer: 'lightningcss',
+      lightningcss: {
+        visitor: ({ addDependency }) => ({
+          StyleSheet() {
+            addDependency({ type: 'glob', glob: path.join(root, '*.svg') })
+          },
+        }),
+      },
+    }
+    expect(await getReasons('.a { color: red }', { css })).toStrictEqual([])
+  })
+
+  // Only the CSS playground has Less and Stylus.
+  describe('Less and Stylus', () => {
+    const playgroundRoot = path.resolve(
+      dirname,
+      '../../../../../../playground/css',
+    )
+    // No PostCSS config of the playground.
+    const config: InlineConfig = { root: playgroundRoot, css: { postcss: {} } }
+    const less = path.join(playgroundRoot, 'style.less')
+
+    // Less does not report the files of `data-uri()`, `image-*()` and
+    // `@import (inline)`, so Vite does not watch them either. The cache keeps
+    // the same behavior as a rebuild without the cache.
+    test.for([
+      '@import "./less/ommer.less";\n.a { color: red }',
+      '.a { background: data-uri("./ok.png") }',
+      '.a { width: image-width("./ok.png") }',
+      '@import (inline) "./minify.css";',
+    ])('a Less file is not marked: %s', async (code) => {
+      expect(await getReasons(code, config, less)).toStrictEqual([])
+    })
+
+    test('a warning of the resolver in a Less file', async () => {
+      // The resolver sends this warning only in production.
+      vi.stubEnv('NODE_ENV', 'production')
+      onTestFinished(() => {
+        vi.unstubAllEnvs()
+      })
+      const logger = createLogger('silent')
+      const warn = vi.spyOn(logger, 'warn')
+      // `constants` is also the name of a Node.js module.
+      const code = '@import (optional) "constants";\n.a { color: red }'
+      expect(
+        await getReasons(code, { ...config, customLogger: logger }, less),
+      ).toStrictEqual(["a resolver sent a message to Vite's logger"])
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('Module "constants" has been externalized'),
+        expect.anything(),
+      )
+    })
+
+    test('a Stylus file is not marked', async () => {
+      expect(
+        await getReasons(
+          '.a\n  color red',
+          config,
+          path.join(playgroundRoot, 'style.styl'),
+        ),
+      ).toStrictEqual([])
+    })
+  })
+
+  test('a message that `vite:css-post` sends to the logger', async () => {
+    const getPostReasons = async (sources: string[]) => {
+      const { transform, notCacheableReasons } =
+        await createCssPostPluginTransform({
+          configFile: false,
+          root,
+          logLevel: 'silent',
+          css: { devSourcemap: true },
+          experimental: { cache: true },
+        })
+      await transform('.a { color: red }', id, {
+        version: 3,
+        mappings: 'AAAA',
+        names: [],
+        sources,
+      })
+      return notCacheableReasons
+    }
+    expect(await getPostReasons([path.join(root, 'logo.svg')])).toStrictEqual(
+      [],
+    )
+    // Vite prints a warning for a source file that does not exist.
+    expect(
+      await getPostReasons([path.join(root, 'missing.css')]),
+    ).toStrictEqual(["sent a message to Vite's logger"])
+  })
+
+  test('`css.modules.getJSON`', async () => {
+    const getJSON = vi.fn()
+    const config: InlineConfig = { css: { modules: { getJSON } } }
+    expect(await getReasons('.a { color: red }', config)).toStrictEqual([])
+    expect(getJSON).not.toHaveBeenCalled()
+    expect(
+      await getReasons(
+        '.a { color: red }',
+        config,
+        path.join(root, 'style.module.css'),
+      ),
+    ).toStrictEqual(['`css.modules.getJSON` is set'])
+    expect(getJSON).toHaveBeenCalledOnce()
+  })
+})
+
 describe('hoist @ rules', () => {
   test('hoist @import', async () => {
     const css = `.foo{color:red;}@import "bla";`
@@ -403,14 +714,55 @@ async function createCssPluginTransform(inlineConfig: InlineConfig = {}) {
     await buildEnd.call({})
   })
 
+  const watchFiles: string[] = []
+  const notCacheableReasons: string[] = []
   return {
+    watchFiles,
+    notCacheableReasons,
     async transform(code: string, id: string) {
       // @ts-expect-error transform.handler is function
       return await transform.handler.call(
         {
-          addWatchFile() {
-            return
+          addWatchFile(file: string) {
+            watchFiles.push(file)
           },
+          markNotCacheable(reason: string) {
+            notCacheableReasons.push(reason)
+          },
+          environment,
+        },
+        code,
+        id,
+      )
+    },
+  }
+}
+
+async function createCssPostPluginTransform(inlineConfig: InlineConfig = {}) {
+  const config = await resolveConfig(inlineConfig, 'serve')
+  const environment = new PartialEnvironment('client', config)
+
+  // `vite:css` makes the map of CSS modules that `vite:css-post` reads.
+  const { buildStart, buildEnd } = cssPlugin(config)
+  // @ts-expect-error buildStart is function
+  await buildStart.call({})
+  onTestFinished(async () => {
+    // @ts-expect-error buildEnd is function
+    await buildEnd.call({})
+  })
+  const { transform } = cssPostPlugin(config)
+
+  const notCacheableReasons: string[] = []
+  return {
+    notCacheableReasons,
+    async transform(code: string, id: string, sourcemap: object) {
+      // @ts-expect-error transform.handler is function
+      return await transform.handler.call(
+        {
+          markNotCacheable(reason: string) {
+            notCacheableReasons.push(reason)
+          },
+          getCombinedSourcemap: () => sourcemap,
           environment,
         },
         code,
