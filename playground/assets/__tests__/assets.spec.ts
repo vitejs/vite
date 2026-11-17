@@ -11,14 +11,12 @@ import {
   isBundled,
   isServe,
   listAssets,
-  notifyRebuildComplete,
   page,
   readFile,
   readManifest,
   serverLogs,
   viteTestUrl,
   waitForRebuild,
-  watcher,
 } from '~utils'
 
 const assetMatch = isBundled
@@ -854,7 +852,7 @@ test.runIf(isBuild)('manifest', async () => {
 describe.runIf(isBuild)('css and assets in css in build watch', () => {
   test('css will not be lost and css does not contain undefined', async () => {
     editFile('index.html', (code) => code.replace('Assets', 'assets2'))
-    await notifyRebuildComplete(watcher)
+    await waitForRebuild('index.html')
     const cssFile = findAssetFile(/index-[-\w]+\.css$/, 'foo')
     expect(cssFile).not.toBe('')
     expect(cssFile).not.toMatch(/undefined/)
@@ -870,7 +868,7 @@ describe.runIf(isBuild)('css and assets in css in build watch', () => {
     const oldMainJsFile = oldMainJsFiles[0]
 
     editFile('asset/update.js', (code) => code.replace('hello', 'world2'))
-    await notifyRebuildComplete(watcher)
+    await waitForRebuild('asset/update.js')
     await page.reload()
     await expect.poll(() => page.textContent('.update-content')).toBe('world2')
 

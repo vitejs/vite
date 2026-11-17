@@ -27,6 +27,7 @@ import {
   sourcemapSnapshot,
   testDir,
   viteServer,
+  watchActivity,
   watchBuilds,
 } from './vitestSetupUtils'
 
@@ -300,6 +301,10 @@ export async function gotoLatestBuild(url: string): Promise<void> {
  * Workaround for Rolldown emitting END per output before all outputs finish:
  * https://github.com/rolldown/rolldown/issues/10613
  * Call immediately after a synchronous edit, before yielding to watcher callbacks.
+ *
+ * Then wait for build watch to settle: a change event that arrives while the
+ * rebuild runs, such as a second event for the same write, starts another
+ * rebuild right after it, and that one empties the outDir again.
  */
 export async function waitForRebuild(filename: string): Promise<void> {
   const id = path.resolve(testDir, filename)
@@ -317,6 +322,13 @@ export async function waitForRebuild(filename: string): Promise<void> {
       builds.every(
         ({ build, version }) => (build.completed.get(id) ?? 0) > version,
       ),
+    )
+    .toBe(true)
+  await expect
+    .poll(
+      () =>
+        !watchActivity.building &&
+        performance.now() - watchActivity.lastAt > 100,
     )
     .toBe(true)
 }
