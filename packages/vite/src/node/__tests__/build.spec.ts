@@ -391,13 +391,13 @@ describe('build', () => {
   test.for([true, false])(
     'file hash should change when a chunk behind a mapped chunk changes (modulePreload: %s)',
     async (modulePreload) => {
-      const buildProject = async (color: string) => {
+      const buildProject = async (lazy: string, color: string) => {
         const modules: Record<string, string> = {
           // `entry.js` reaches `dep.js` only through the mapped `lazy.js`
           'entry.js': `window.loadLazy = () => import('lazy.js')`,
           'lazy.js': `
             import { dep } from 'dep.js'
-            export const lazy = dep + 'lazy'`,
+            export const lazy = dep + '${lazy}'`,
           'dep.js': `
             import 'dep.css'
             export const dep = 'dep'.repeat(64)`,
@@ -433,11 +433,18 @@ describe('build', () => {
         })) as RolldownOutput
       }
 
-      const result = await Promise.all([
-        buildProject('red'),
-        buildProject('blue'),
+      const [base, lazyChanged, depChanged] = await Promise.all([
+        buildProject('a', 'red'),
+        buildProject('b', 'red'),
+        buildProject('a', 'blue'),
       ])
-      expect(getOutputHashChanges(result[0], result[1]).changed).toStrictEqual([
+      // `_entry` only holds the stable name of `_lazy`
+      expect(getOutputHashChanges(base, lazyChanged).changed).toStrictEqual([
+        '_lazy',
+      ])
+      assertOutputHashContentChange(base, lazyChanged)
+      // `_entry` holds the hashed file names of `dep`
+      expect(getOutputHashChanges(base, depChanged).changed).toStrictEqual([
         '_entry',
         '_lazy',
         'dep',
