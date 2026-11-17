@@ -6,7 +6,7 @@ import type {
   TransformOptions as OxcTransformOptions,
   TransformResult as OxcTransformResult,
 } from 'rolldown/utils'
-import { transformSync } from 'rolldown/utils'
+import { transform, transformSync } from 'rolldown/utils'
 import type { FSWatcher } from '#dep-types/chokidar'
 import type { Environment } from '..'
 import { cleanUrl } from '../../shared/utils'
@@ -15,6 +15,7 @@ import { JS_TYPES_RE } from '../constants'
 import type { Logger } from '../logger'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
+import type { DevEnvironment } from '../server/environment'
 import { createFilter, ensureWatchedFile, normalizePath } from '../utils'
 import { type ESBuildOptions, getTSConfigResolutionCache } from './esbuild'
 
@@ -125,6 +126,26 @@ export async function transformWithOxc(
   config?: ResolvedConfig,
   watcher?: FSWatcher,
 ): Promise<Omit<OxcTransformResult, 'errors'>> {
+  return transformWithOxcInternal(
+    code,
+    filename,
+    options,
+    inMap,
+    config,
+    watcher,
+    true,
+  )
+}
+
+async function transformWithOxcInternal(
+  code: string,
+  filename: string,
+  options: OxcTransformOptions | undefined,
+  inMap: object | undefined,
+  config: ResolvedConfig | undefined,
+  watcher: FSWatcher | undefined,
+  sync: boolean,
+): Promise<Omit<OxcTransformResult, 'errors'>> {
   let lang = options?.lang
   if (!lang) {
     // if the id ends with a valid ext, use it (e.g. vue blocks)
@@ -149,14 +170,13 @@ export async function transformWithOxc(
     lang,
   }
 
-  const result = transformSync(
-    filename,
-    code,
-    resolvedOptions,
+  const tsconfigCache =
     options?.tsconfig === undefined || options.tsconfig === config?.tsconfig
       ? getTSConfigResolutionCache(config)
-      : undefined,
-  )
+      : undefined
+  const result = sync
+    ? transformSync(filename, code, resolvedOptions, tsconfigCache)
+    : await transform(filename, code, resolvedOptions, tsconfigCache)
   if (
     watcher &&
     config &&
@@ -322,13 +342,19 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
           code,
           this.environment,
         )
-        const result = await transformWithOxc(
+        // the thread pool pays off when other requests can use the main thread
+        // meanwhile. for a lone request, like SSR imports that the module runner
+        // fetches one by one, the thread hop can cost more than it saves
+        const pendingRequests = (this.environment as DevEnvironment)
+          ._pendingRequests
+        const result = await transformWithOxcInternal(
           code,
           id,
           modifiedOxcTransformOptions,
           undefined,
           config,
           server?.watcher,
+          !pendingRequests || pendingRequests.size <= 1,
         )
         if (jsxInject && jsxExtensionsRE.test(id)) {
           result.code = jsxInject + ';' + result.code
