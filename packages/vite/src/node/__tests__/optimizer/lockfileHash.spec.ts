@@ -38,10 +38,18 @@ test('prefers lockfiles in node_modules over yarn.lock', () => {
 test('hash changes when a patch file is edited in place', () => {
   const fixture = path.join(root, 'yarn-patches')
   const patchPath = path.join(fixture, 'patches/foo+1.0.0.patch')
+  // the patches dir is only hashed when a lockfile whose format opts into
+  // it (here: yarn 1's .yarn-integrity) exists
+  fs.mkdirSync(path.join(fixture, 'node_modules'), { recursive: true })
+  fs.writeFileSync(path.join(fixture, 'node_modules/.yarn-integrity'), '{}')
   const hashBefore = getLockfileHash(fixture)
 
   // overwriting an existing file does not change the directory's mtime
   fs.writeFileSync(patchPath, 'edited patch content\n')
+  // bump the mtime explicitly so the test does not depend on the
+  // filesystem's timestamp resolution
+  const { atime, mtime } = fs.statSync(patchPath)
+  fs.utimesSync(patchPath, atime, new Date(mtime.getTime() + 1000))
 
   expect(getLockfileHash(fixture)).not.toBe(hashBefore)
 })
