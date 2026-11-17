@@ -764,18 +764,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               cssAssetName: string,
               originalFileName?: string,
             ) => {
-              const encodedPublicUrls = encodePublicUrlsInCSS(config)
-
-              const relative = config.base === './' || config.base === ''
-              const cssAssetDirname =
-                encodedPublicUrls || relative
-                  ? slash(getCssAssetDirname(cssAssetName, originalFileName))
-                  : undefined
+              const cssAssetDirname = slash(
+                getCssAssetDirname(cssAssetName, originalFileName),
+              )
 
               const toRelative = (filename: string) => {
                 // relative base + extracted CSS
                 const relativePath = normalizePath(
-                  path.relative(cssAssetDirname!, filename),
+                  path.relative(cssAssetDirname, filename),
                 )
                 return relativePath[0] === '.'
                   ? relativePath
@@ -800,24 +796,22 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                 )
               })
               // resolve public URL from CSS paths
-              if (encodedPublicUrls) {
-                const relativePathToPublicFromCSS = normalizePath(
-                  path.relative(cssAssetDirname!, ''),
+              const relativePathToPublicFromCSS = normalizePath(
+                path.relative(cssAssetDirname, ''),
+              )
+              chunkCSS = chunkCSS.replace(publicAssetUrlRE, (_, hash) => {
+                const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
+                return encodeURIPath(
+                  toOutputFilePathInCss(
+                    publicUrl,
+                    'public',
+                    cssAssetName,
+                    'css',
+                    config,
+                    () => `${relativePathToPublicFromCSS}/${publicUrl}`,
+                  ),
                 )
-                chunkCSS = chunkCSS.replace(publicAssetUrlRE, (_, hash) => {
-                  const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
-                  return encodeURIPath(
-                    toOutputFilePathInCss(
-                      publicUrl,
-                      'public',
-                      cssAssetName,
-                      'css',
-                      config,
-                      () => `${relativePathToPublicFromCSS}/${publicUrl}`,
-                    ),
-                  )
-                })
-              }
+              })
               return chunkCSS
             }
 
