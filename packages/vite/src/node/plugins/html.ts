@@ -1017,8 +1017,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // prepend dev client runtime for bundled client build before other chunk scripts
         if (
           config.command === 'serve' &&
-          this.environment.config.consumer === 'client' &&
-          this.environment.config.isBundled
+          this.environment.config.consumer === 'client'
         ) {
           result = injectToHead(
             result,
