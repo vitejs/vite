@@ -51,6 +51,7 @@ import {
 } from './asset'
 import { cssBundleNameCache } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
+import { getPluginHookHandler } from './index'
 
 interface ScriptAssetsUrl {
   start: number
@@ -1439,17 +1440,14 @@ export function resolveHtmlTransforms(
     const hook = plugin.transformIndexHtml
     if (!hook) continue
 
-    if (typeof hook === 'function') {
-      normalHooks.push(hook)
+    const handler = getPluginHookHandler(plugin, 'transformIndexHtml')
+    const order = typeof hook === 'function' ? undefined : hook.order
+    if (order === 'pre') {
+      preHooks.push(handler)
+    } else if (order === 'post') {
+      postHooks.push(handler)
     } else {
-      const handler = hook.handler
-      if (hook.order === 'pre') {
-        preHooks.push(handler)
-      } else if (hook.order === 'post') {
-        postHooks.push(handler)
-      } else {
-        normalHooks.push(handler)
-      }
+      normalHooks.push(handler)
     }
   }
 
