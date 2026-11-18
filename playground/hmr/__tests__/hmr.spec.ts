@@ -19,6 +19,7 @@ import {
   removeFile,
   serverLogs,
   untilBrowserLogAfter,
+  untilBrowserLogAfterNavigation,
   viteTestUrl,
 } from '~utils'
 
@@ -536,7 +537,7 @@ if (!isBuild) {
       let dep = 'dep0'
 
       beforeAll(async () => {
-        await untilBrowserLogAfter(
+        await untilBrowserLogAfterNavigation(
           () => openPage(testDir),
           [CONNECTED, />>>>>>/],
           (logs) => {
@@ -671,7 +672,7 @@ if (!isBuild) {
       let dep = 'dep0'
 
       beforeAll(async () => {
-        await untilBrowserLogAfter(
+        await untilBrowserLogAfterNavigation(
           () => openPage(testDir),
           [CONNECTED, />>>>>>/],
           (logs) => {
@@ -734,7 +735,7 @@ if (!isBuild) {
       const testDir = baseDir + '/side-effects'
       const file = 'side-effects.ts'
 
-      await untilBrowserLogAfter(
+      await untilBrowserLogAfterNavigation(
         () => openPage(testDir),
         [CONNECTED, />>>/],
         (logs) => {
@@ -765,7 +766,7 @@ if (!isBuild) {
         const fileName = 'unused.ts'
         const file = `${testDir}/${fileName}`
 
-        await untilBrowserLogAfter(
+        await untilBrowserLogAfterNavigation(
           () => openPage(testDir),
           [CONNECTED, '-- unused --'],
           (logs) => {
@@ -791,7 +792,7 @@ if (!isBuild) {
         const fileName = 'used.ts'
         const file = `${testDir}/${fileName}`
 
-        await untilBrowserLogAfter(
+        await untilBrowserLogAfterNavigation(
           () => openPage(testDir),
           [CONNECTED, '-- used --'],
           (logs) => {
@@ -828,7 +829,7 @@ if (!isBuild) {
           const fileName = 'deps-all-accepted.ts'
           const file = `${testDir}/${fileName}`
 
-          await untilBrowserLogAfter(
+          await untilBrowserLogAfterNavigation(
             () => openPage(testDir),
             [CONNECTED, '>>> ready <<<'],
             (logs) => {
@@ -868,7 +869,7 @@ if (!isBuild) {
           const fileName = 'deps-some-accepted.ts'
           const file = `${testDir}/${fileName}`
 
-          await untilBrowserLogAfter(
+          await untilBrowserLogAfterNavigation(
             () => openPage(testDir),
             [CONNECTED, '>>> ready <<<'],
             (logs) => {
@@ -1140,7 +1141,10 @@ if (!isBuild) {
         .poll(() => page.textContent('.file-delete-restore'))
         .toMatch('parent:not-child')
 
-      // restore the file
+      // restore the file. The child's own update already renders
+      // `parent:child`, so also wait for the parent's: if it lands after the
+      // next test opens the page but before its HMR client connects, that page
+      // keeps the old parent
       await untilBrowserLogAfter(() => {
         addFile(childFile, originalChildFileCode)
         editFile(parentFile, (code) =>
@@ -1149,7 +1153,10 @@ if (!isBuild) {
             "export { value as childValue } from './child'",
           ),
         )
-      }, 'file-delete-restore/child.js hot data after prune: undefined')
+      }, [
+        'file-delete-restore/child.js hot data after prune: undefined',
+        hotUpdatedLog(parentFile),
+      ])
       await expect
         .poll(() => page.textContent('.file-delete-restore'))
         .toMatch('parent:child')

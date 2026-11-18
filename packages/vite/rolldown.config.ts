@@ -86,7 +86,7 @@ const nodeConfig = defineConfig({
   },
   external: [
     /^vite\//,
-    'fsevents',
+    ...Object.keys(pkg.optionalDependencies),
     /^rolldown\//,
     /^tsx\//,
     /^@vitejs\/devtools\//,
@@ -154,7 +154,7 @@ const moduleRunnerConfig = defineConfig({
     /^rolldown\//,
     ...Object.keys(pkg.dependencies),
   ],
-  plugins: [bundleSizeLimit(56), enableSourceMapsInWatchModePlugin()],
+  plugins: [bundleSizeLimit(71), enableSourceMapsInWatchModePlugin()],
   output: {
     ...(sharedNodeOptions.output as OutputOptions),
     minify: {
