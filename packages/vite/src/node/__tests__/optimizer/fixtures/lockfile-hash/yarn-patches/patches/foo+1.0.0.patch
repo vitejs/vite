@@ -1,0 +1,7 @@
+diff --git a/node_modules/foo/index.js b/node_modules/foo/index.js
+index 1111111..2222222 100644
+--- a/node_modules/foo/index.js
++++ b/node_modules/foo/index.js
+@@ -1,1 +1,1 @@
+-old
++new
