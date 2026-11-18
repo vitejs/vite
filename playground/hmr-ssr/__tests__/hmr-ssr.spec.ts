@@ -1001,7 +1001,8 @@ test('deleting a pruned module should not reload it', async () => {
   await expect
     .poll(() => serverLogs)
     .toContain('hmr update /file-delete-restore/child.js')
-  // updates are handled in order, so wait for a later one before asserting
+  // the runner handles HMR payloads in order: once this later update is
+  // handled, the update for the deleted file has been handled too
   await untilConsoleLogAfter(
     () =>
       editFile(parentFile, (code) =>

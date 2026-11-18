@@ -50,7 +50,6 @@ export function createHMRHandlerForRunner(
       case 'prune':
         await hmrClient.notifyListeners('vite:beforePrune', payload)
         await hmrClient.prunePaths(payload.paths)
-        // evaluate them again if they are imported again, like browsers do
         runner._invalidatePrunedModules(payload.paths)
         break
       case 'error': {
