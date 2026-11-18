@@ -1,0 +1,6 @@
+{
+  "name": "t",
+  "dependencies": {
+    "fake-dep": "1.0.0"
+  }
+}
