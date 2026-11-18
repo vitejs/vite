@@ -18,6 +18,7 @@ export async function runnerImport<T>(
 ): Promise<RunnerImportResult<T>> {
   const isModuleSyncConditionEnabled = (await import('#module-sync-enabled'))
     .default
+  const nodeEnv = process.env.NODE_ENV
   const config = await resolveConfig(
     mergeConfig(inlineConfig || {}, {
       configFile: false,
@@ -41,7 +42,17 @@ export async function runnerImport<T>(
       },
     } satisfies InlineConfig),
     'serve',
-  )
+  ).finally(() => {
+    // `resolveConfig` defaults an unset `NODE_ENV` for the dev server and the
+    // build. Importing a file shouldn't leave that default on the process.
+    if (!nodeEnv && process.env.NODE_ENV === 'development') {
+      if (nodeEnv === undefined) {
+        delete process.env.NODE_ENV
+      } else {
+        process.env.NODE_ENV = nodeEnv
+      }
+    }
+  })
   const environment = createRunnableDevEnvironment('inline', config, {
     runnerOptions: {
       hmr: {
