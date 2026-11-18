@@ -61,6 +61,16 @@ Certain options are omitted since changing them would not be compatible with Vit
 
 - `plugins` are merged with Vite's dep plugin
 
+## optimizeDeps.extensions <NonInheritBadge />
+
+- **Experimental**
+- **Type:** `string[]`
+- **Default:** `[]`
+
+Additional file extensions that can be pre-bundled. By default, Vite can optimize JS/TS files such as `.mjs`, `.js`, `.ts`, and `.mts`. Use this option to include other extensions (for example `.vue` or `.marko`).
+
+Custom extensions are transformed with Rolldown so they can be parsed as JavaScript. You may need a corresponding plugin or `moduleTypes` mapping in [`optimizeDeps.rolldownOptions`](#optimizedeps-rolldownoptions).
+
 ## optimizeDeps.esbuildOptions <NonInheritBadge />
 
 - **Type:** <code>Omit<<a href="https://esbuild.github.io/api/#general-options">EsbuildBuildOptions</a>, 'bundle' | 'entryPoints' | 'external' | 'write' | 'watch' | 'outdir' | 'outfile' | 'outbase' | 'outExtension' | 'metafile'></code>
