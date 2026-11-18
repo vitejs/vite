@@ -2,6 +2,9 @@ import { expect, test } from 'vitest'
 import { isBundled, page } from '~utils'
 
 test('should work when inlined', async () => {
+  // `.url` is populated last in the script tag, so it signals initialization is complete.
+  await expect.poll(() => page.textContent('.url')).toBeTruthy()
+
   await page.click('.inline-wasm .run')
   await expect
     .poll(() => page.textContent('.inline-wasm .result'))
@@ -64,4 +67,22 @@ test('wasm using js-string builtins and imported string constants', async () => 
   await expect
     .poll(() => page.textContent('.direct-wasm-string-builtins .result'))
     .toMatch('5')
+})
+
+test('source phase import yields a WebAssembly.Module', async () => {
+  await expect
+    .poll(() => page.textContent('.source-phase-wasm .result'))
+    .toMatch('3')
+})
+
+test('dynamic source phase import yields a WebAssembly.Module', async () => {
+  await expect
+    .poll(() => page.textContent('.source-phase-wasm-dynamic .result'))
+    .toMatch('7')
+})
+
+test('source phase import instantiated with imports', async () => {
+  await expect
+    .poll(() => page.textContent('.source-phase-wasm-with-imports .result'))
+    .toMatch('42')
 })

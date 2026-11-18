@@ -34,7 +34,7 @@ describe('injected inline scripts', () => {
 
     // all proxied scripts return code
     for (const code of scriptContents) {
-      expect(code).toBeTruthy()
+      expect(code).not.toBe('')
     }
   })
 })

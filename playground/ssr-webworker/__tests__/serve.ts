@@ -3,9 +3,10 @@
 
 import path from 'node:path'
 import kill from 'kill-port'
-import { ports, rootDir } from '~utils'
+import { createInMemoryLogger, ports, rootDir } from '~utils'
 
 export const port = ports['ssr-webworker']
+export const serverLogs: string[] = []
 
 export async function serve(): Promise<{ close(): Promise<void> }> {
   await kill(port)
@@ -17,7 +18,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
   // worker build
   await build({
     root: rootDir,
-    logLevel: 'silent',
+    customLogger: createInMemoryLogger(serverLogs),
     build: {
       target: 'esnext',
       ssr: 'src/entry-worker.jsx',

@@ -109,6 +109,7 @@ export async function resolvePlugins(
             consumer: 'client',
             isBundled: true,
             optimizeDepsPluginNames: [],
+            safeModulePaths: config.environments.client.safeModulePaths,
           }
         : undefined,
     ),
@@ -118,6 +119,7 @@ export async function resolvePlugins(
     // @oxc-project/runtime resolution is handled by rolldown in build
     config.oxc !== false
       ? ({
+          // oxlint-disable-next-line typescript/no-misused-spread - BuiltinPlugin is fine
           ...oxcRuntimePlugin(),
           applyToEnvironment(environment) {
             return !environment.config.isBundled

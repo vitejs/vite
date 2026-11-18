@@ -1,9 +1,7 @@
 import path from 'node:path'
 import { defineConfig } from 'vite'
 
-const root = process.env.VITEST
-  ? path.resolve(import.meta.dirname, '../../playground-temp/lib')
-  : import.meta.dirname
+const root = import.meta.dirname
 
 export default defineConfig({
   build: {
@@ -17,7 +15,7 @@ export default defineConfig({
     },
     outDir: 'dist/multiple-output',
     rolldownOptions: {
-      // due to playground-temp, the `dir` needs to be relative to the resolvedRoot
+      // Resolve output directories relative to the fixture root.
       output: [
         {
           dir: path.resolve(root, 'dist/multiple-output/es'),

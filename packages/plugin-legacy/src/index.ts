@@ -620,7 +620,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           }
         }
 
-        if (config.build.sourcemap) {
+        if (this.environment.config.build.sourcemap) {
           return {
             code: ms.toString(),
             map: ms.generateMap({ hires: 'boundary' }),
@@ -642,7 +642,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         options.polyfills !== false && !Array.isArray(options.polyfills)
 
       // transform the legacy chunk with @babel/preset-env
-      const sourceMaps = !!config.build.sourcemap
+      const sourceMaps = !!this.environment.config.build.sourcemap
       const babel = await loadBabel()
 
       // need to transform into systemjs separately from other plugins

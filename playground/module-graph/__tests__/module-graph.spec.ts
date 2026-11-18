@@ -10,5 +10,8 @@ test.runIf(!isBundled)('importedUrls order is preserved', async () => {
     '/imported-urls-order.js',
   )
   const importedModuleIds = [...mod.importedModules].map((m) => m.url)
-  expect(importedModuleIds).toEqual(['\x00virtual:slow-module', '/empty.js'])
+  expect(importedModuleIds).toStrictEqual([
+    '\x00virtual:slow-module',
+    '/empty.js',
+  ])
 })

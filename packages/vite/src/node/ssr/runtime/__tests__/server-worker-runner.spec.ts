@@ -73,6 +73,7 @@ describe('running module runner inside a worker', () => {
     })
     const server = await createServer({
       root: import.meta.dirname,
+      input: './fixtures/default-string.ts',
       logLevel: 'error',
       server: {
         middlewareMode: true,
@@ -101,7 +102,7 @@ describe('running module runner inside a worker', () => {
     return new Promise<void>((resolve, reject) => {
       channel.onmessage = (event) => {
         try {
-          expect(event.data).toEqual({
+          expect(event.data).toStrictEqual({
             result: 'hello world',
           })
         } catch (e) {

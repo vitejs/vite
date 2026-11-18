@@ -15,7 +15,7 @@ describe.runIf(isBuild).skip('build', () => {
 
   test('should generate correct manifest', async () => {
     const manifest = readManifest()
-    expect(manifest['index.html'].css.length).toBe(2)
-    expect(manifest['other.js'].css.length).toBe(1)
+    expect(manifest['index.html'].css).toHaveLength(2)
+    expect(manifest['other.js'].css).toHaveLength(1)
   })
 })
