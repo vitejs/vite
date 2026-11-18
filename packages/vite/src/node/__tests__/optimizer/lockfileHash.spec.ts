@@ -40,8 +40,6 @@ test('hash changes when a patch file is edited in place', () => {
   const patchPath = path.join(fixture, 'patches/foo+1.0.0.patch')
   // the patches dir is only hashed when a lockfile whose format opts into
   // it (here: yarn 1's .yarn-integrity) exists
-  fs.mkdirSync(path.join(fixture, 'node_modules'), { recursive: true })
-  fs.writeFileSync(path.join(fixture, 'node_modules/.yarn-integrity'), '{}')
   const hashBefore = getLockfileHash(fixture)
 
   // overwriting an existing file does not change the directory's mtime
