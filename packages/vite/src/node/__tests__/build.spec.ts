@@ -22,7 +22,11 @@ import {
   vi,
 } from 'vitest'
 import { BuildEnvironment, normalizePath, resolveConfig } from '..'
-import type { LibraryFormats, LibraryOptions,ResolveModulePreloadDependenciesFn } from '../build'
+import type {
+  LibraryFormats,
+  LibraryOptions,
+  ResolveModulePreloadDependenciesFn,
+} from '../build'
 import {
   ChunkMetadataMap,
   build,
