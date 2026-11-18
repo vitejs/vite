@@ -1,6 +1,7 @@
 import EventEmitter from 'node:events'
 import fs from 'node:fs'
 import { posix, resolve } from 'node:path'
+import { stripVTControlCharacters } from 'node:util'
 import type {
   InlineConfig,
   Plugin,
@@ -999,7 +1000,7 @@ test('deleting a pruned module should not reload it', async () => {
   clientLogs.length = 0
   removeFile(childFile)
   await expect
-    .poll(() => serverLogs)
+    .poll(() => serverLogs.map((log) => stripVTControlCharacters(log)))
     .toContain('hmr update /file-delete-restore/child.js')
   // the runner handles HMR payloads in order: once this later update is
   // handled, the update for the deleted file has been handled too
