@@ -631,7 +631,7 @@ describe('closePreviewServer hook', () => {
 })
 
 describe('plugin hook errors', () => {
-  test.each([
+  for (const [hook, run] of [
     ['config', resolveConfigWithPlugin],
     ['configEnvironment', resolveConfigWithPlugin],
     ['configResolved', resolveConfigWithPlugin],
@@ -639,24 +639,25 @@ describe('plugin hook errors', () => {
     ['buildStart', createServerWithPlugin],
     ['buildApp', buildAppWithPlugin],
     ['transformIndexHtml', transformIndexHtmlWithPlugin],
-  ] as const)('%s hook error has the plugin and hook', async (hook, run) => {
-    const plugin = {
-      name: 'throws',
-      [hook]() {
-        throw new Error('missing apiKey')
-      },
-    } as Plugin
+  ] as const) {
+    test(`${hook} hook error has the plugin and hook`, async () => {
+      const plugin = {
+        name: 'throws',
+        [hook]() {
+          throw new Error('missing apiKey')
+        },
+      } as Plugin
 
-    await expect(run(plugin)).rejects.toMatchObject({
-      plugin: 'throws',
-      hook,
-      message: expect.stringContaining('[throws] missing apiKey'),
+      await expect(run(plugin)).rejects.toMatchObject({
+        plugin: 'throws',
+        hook,
+        message: expect.stringContaining('[throws] missing apiKey'),
+      })
     })
-  })
+  }
 
-  test.each(['hotUpdate', 'handleHotUpdate'] as const)(
-    '%s hook error sent to the client has the plugin',
-    async (hook) => {
+  for (const hook of ['hotUpdate', 'handleHotUpdate'] as const) {
+    test(`${hook} hook error sent to the client has the plugin`, async () => {
       const server = await createServerWithPlugin({
         name: 'throws',
         [hook]() {
@@ -680,8 +681,8 @@ describe('plugin hook errors', () => {
           message: expect.stringContaining('[throws] missing apiKey'),
         },
       })
-    },
-  )
+    })
+  }
 
   test('keeps the plugin of an error that already has one', async () => {
     const error = Object.assign(new Error('bad syntax'), { plugin: 'inner' })
