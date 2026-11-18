@@ -462,6 +462,7 @@ cli
           configFile: options.config,
           configLoader: options.configLoader,
           logLevel: options.logLevel,
+          clearScreen: options.clearScreen,
           mode: options.mode,
           plugins: options.bypassLock ? [] : [commandLockPlugin()],
           build: {

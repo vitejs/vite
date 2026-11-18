@@ -94,6 +94,27 @@ test('preview reports a missing build directory', async () => {
   )
 })
 
+test('preview forwards the clearScreen option to the resolved config', async () => {
+  const result = await x(
+    viteBinPath,
+    [
+      'preview',
+      '--config',
+      'vite.clear-screen.config.js',
+      '--outDir',
+      'missing-command-lock',
+      '--clearScreen',
+      'false',
+    ],
+    { nodeOptions: { cwd: rootDir } },
+  )
+  expect(result.stdout).toContain('resolved clearScreen: false')
+  expect(result.exitCode).toBe(1)
+  expect(result.stderr).toContain(
+    'The directory "missing-command-lock" does not exist.',
+  )
+})
+
 test.runIf(!isWindows)(
   'exits when another Vite process owns the port',
   async () => {
