@@ -2,12 +2,12 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { expect, test } from 'vitest'
-import { createServer } from '../..'
 import {
   initDepsOptimizerMetadata,
   runOptimizeDeps,
   toDiscoveredDependencies,
 } from '../../optimizer'
+import { createTestServer } from '../testUtils'
 
 // tsconfig lookup is skipped for files in node_modules, but it applies to
 // dependencies outside of it, e.g. linked packages
@@ -16,7 +16,7 @@ test('optimizer respects the top-level tsconfig option', async (ctx) => {
   const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vite-optimizer-'))
   ctx.onTestFinished(() => fs.rmSync(cacheDir, { recursive: true }))
 
-  const server = await createServer({
+  const server = await createTestServer({
     configFile: false,
     logLevel: 'error',
     root,
@@ -26,7 +26,6 @@ test('optimizer respects the top-level tsconfig option', async (ctx) => {
     tsconfig: 'tsconfig.selected.json',
     optimizeDeps: { noDiscovery: true },
   })
-  ctx.onTestFinished(() => server.close())
 
   const environment = server.environments.client
   const { cancel, result } = runOptimizeDeps(
@@ -40,16 +39,15 @@ test('optimizer respects the top-level tsconfig option', async (ctx) => {
   await expect(result).resolves.toHaveProperty('metadata')
 })
 
-test('changing the top-level tsconfig option changes the config hash', async (ctx) => {
+test('changing the top-level tsconfig option changes the config hash', async () => {
   const getConfigHash = async (tsconfig: string | undefined) => {
-    const server = await createServer({
+    const server = await createTestServer({
       configFile: false,
       logLevel: 'error',
       root: path.join(import.meta.dirname, '../fixtures/scan-tsconfig'),
       tsconfig,
       optimizeDeps: { noDiscovery: true },
     })
-    ctx.onTestFinished(() => server.close())
     return initDepsOptimizerMetadata(server.environments.client).configHash
   }
 
