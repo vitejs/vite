@@ -42,6 +42,34 @@ describe(
       }
     })
 
+    it('ignores updates for a pruned self-accepting module', async ({
+      runner,
+    }) => {
+      const path = '/fixtures/hmr.js'
+      const { hmr } = await runner.import(path)
+      const accept = vi.fn()
+      const dispose = vi.fn()
+      const prune = vi.fn()
+      hmr.accept(accept)
+      hmr.dispose(dispose)
+      hmr.prune(prune)
+
+      const client = runner.hmrClient
+      assert(client)
+      await client.prunePaths([path])
+      expect(dispose).toHaveBeenCalledTimes(1)
+      expect(prune).toHaveBeenCalledTimes(1)
+
+      await client.queueUpdate({
+        type: 'js-update',
+        path,
+        acceptedPath: path,
+        timestamp: Date.now(),
+      })
+      expect(accept).not.toHaveBeenCalled()
+      expect(dispose).toHaveBeenCalledTimes(1)
+    })
+
     it('does not expose partial exports during concurrent updates', async ({
       runner,
     }) => {
