@@ -929,6 +929,107 @@ test('deleted file should trigger dispose and prune callbacks', async () => {
   await expect.poll(() => hmr('.file-delete-restore')).toMatch('parent:child')
 })
 
+test('should hmr a pruned module after it is imported again', async () => {
+  await setupModuleRunner('/hmr.ts')
+
+  const parentFile = 'file-delete-restore/parent.js'
+  const childFile = 'file-delete-restore/child.js'
+
+  await expect.poll(() => hmr('.file-delete-restore')).toMatch('parent:child')
+
+  // stop importing the child, so that it is pruned (the file stays)
+  await untilConsoleLogAfter(
+    () =>
+      editFile(parentFile, (code) =>
+        code.replace(
+          "export { value as childValue } from './child'",
+          "export const childValue = 'not-child'",
+        ),
+      ),
+    'file-delete-restore/child.js is pruned',
+  )
+  await expect
+    .poll(() => hmr('.file-delete-restore'))
+    .toMatch('parent:not-child')
+
+  // import it again: it should be evaluated again with new hot data
+  await untilConsoleLogAfter(
+    () =>
+      editFile(parentFile, (code) =>
+        code.replace(
+          "export const childValue = 'not-child'",
+          "export { value as childValue } from './child'",
+        ),
+      ),
+    'file-delete-restore/child.js hot data after prune: undefined',
+  )
+  await expect.poll(() => hmr('.file-delete-restore')).toMatch('parent:child')
+
+  // it should still accept updates
+  editFile(childFile, (code) =>
+    code.replace(/value = '[^']*'/, "value = 'child-reimported'"),
+  )
+  await expect
+    .poll(() => hmr('.file-delete-restore'))
+    .toMatch('parent:child-reimported')
+})
+
+test('deleting a pruned module should not reload it', async () => {
+  await setupModuleRunner('/hmr.ts')
+
+  const parentFile = 'file-delete-restore/parent.js'
+  const childFile = 'file-delete-restore/child.js'
+  const originalChildFileCode = readFile(childFile)
+
+  await expect.poll(() => hmr('.file-delete-restore')).toMatch('parent:child')
+
+  // stop importing the child, so that it is pruned
+  await untilConsoleLogAfter(
+    () =>
+      editFile(parentFile, (code) =>
+        code.replace(
+          "export { value as childValue } from './child'",
+          "export const childValue = 'not-child'",
+        ),
+      ),
+    'file-delete-restore/child.js is pruned',
+  )
+
+  // delete the pruned file. The server still sends an update for it.
+  clientLogs.length = 0
+  removeFile(childFile)
+  await expect
+    .poll(() => serverLogs)
+    .toContain('hmr update /file-delete-restore/child.js')
+  // updates are handled in order, so wait for a later one before asserting
+  await untilConsoleLogAfter(
+    () =>
+      editFile(parentFile, (code) =>
+        code.replace(
+          "export const childValue = 'not-child'",
+          "export const childValue = 'not-child2'",
+        ),
+      ),
+    updated('/file-delete-restore/parent.js'),
+  )
+  expect(clientLogs).not.toContainEqual(
+    expect.stringContaining('Failed to reload'),
+  )
+  expect(clientLogs).not.toContainEqual(
+    expect.stringContaining('file-delete-restore/child.js is disposed'),
+  )
+
+  // restore the file
+  addFile(childFile, originalChildFileCode)
+  editFile(parentFile, (code) =>
+    code.replace(
+      "export const childValue = 'not-child2'",
+      "export { value as childValue } from './child'",
+    ),
+  )
+  await expect.poll(() => hmr('.file-delete-restore')).toMatch('parent:child')
+})
+
 test('import.meta.hot?.accept', async () => {
   await setupModuleRunner('/hmr.ts')
   await untilConsoleLogAfter(

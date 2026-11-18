@@ -70,6 +70,33 @@ describe(
       expect(dispose).toHaveBeenCalledTimes(1)
     })
 
+    it('evaluates a pruned module again when it is imported again', async ({
+      runner,
+      environment,
+    }) => {
+      const path = '/fixtures/hmr.js'
+      const mod1 = await runner.import(path)
+      const hot1 = mod1.hmr
+      hot1.accept(() => {})
+      hot1.data.value = 1
+      const pruned = promiseWithResolvers<void>()
+      hot1.prune(() => pruned.resolve())
+
+      environment.hot.send({ type: 'prune', paths: [path] })
+      await pruned.promise
+      await vi.waitFor(() => {
+        expect(runner.evaluatedModules.getModuleByUrl(path)?.evaluated).toBe(
+          false,
+        )
+      })
+      expect(runner.hmrClient?.hotModulesMap.has(path)).toBe(false)
+
+      const mod2 = await runner.import(path)
+      expect(mod2).not.toBe(mod1)
+      expect(mod2.hmr).not.toBe(hot1)
+      expect(mod2.hmr.data).toStrictEqual({})
+    })
+
     it('does not expose partial exports during concurrent updates', async ({
       runner,
     }) => {

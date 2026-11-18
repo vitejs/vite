@@ -174,6 +174,17 @@ export class ModuleRunner {
   }
 
   /** @internal */
+  public _invalidatePrunedModules(urls: string[]): void {
+    for (const url of urls) {
+      const mod = this.evaluatedModules.getModuleByUrl(url)
+      if (mod) {
+        this.evaluatedModules.invalidateModule(mod)
+        this.moduleHotContexts.delete(mod.url)
+      }
+    }
+  }
+
+  /** @internal */
   public async _resetBundledDevRuntime(): Promise<void> {
     this.evaluatedModules.clear()
     this.moduleHotContexts.clear()
