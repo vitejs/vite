@@ -8,6 +8,10 @@ import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from
 import { cleanUrl } from '../../shared/utils'
 import type { PartialEnvironment } from '../baseEnvironment'
 import { toOutputFilePathInJS } from '../build'
+import type {
+  RenderBuiltAssetUrl,
+  ResolveModulePreloadDependenciesFn,
+} from '../build'
 import type { ResolvedConfig } from '../config'
 import { perEnvironmentState } from '../environment'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
@@ -86,20 +90,20 @@ export function getChunkImportMapKeySignatures(
   return signatures
 }
 
-type PreloadDependency = {
+type PreloadDependency<T> = {
   fileName: string
-  js?: string
+  js?: T
   imports?: readonly string[]
-  css?: Iterable<string>
+  css?: Iterable<T>
 }
 
-function collectPreloadDependencies(
+function collectPreloadDependencies<T>(
   fileName: string,
   ownerFileName: string,
-  getDependency: (fileName: string) => PreloadDependency | undefined,
-): string[] {
+  getDependency: (fileName: string) => PreloadDependency<T> | undefined,
+): T[] {
   const visited = new Set([ownerFileName])
-  const dependencies: string[] = []
+  const dependencies: T[] = []
   const visit = (fileName: string) => {
     const dependency = getDependency(fileName)
     if (!dependency || visited.has(dependency.fileName)) return
@@ -116,6 +120,107 @@ function collectPreloadDependencies(
   }
   visit(fileName)
   return dependencies
+}
+
+type PreloadRewriteSignatureGraph = {
+  chunks: Record<string, RenderedChunk>
+  chunkInfo: Map<string, { importedCssCount: number; isPureCss: boolean }>
+}
+
+/**
+ * Hashes the effect of `modulePreload.resolveDependencies` and
+ * `experimental.renderBuiltUrl` on the preload lists injected after hashing,
+ * so changed rewrites change the chunk's hashed file name. Chunks only have
+ * preliminary file names at this point, so the callbacks run against those
+ * and the resolved lists are mapped back to stable key signatures. Decisions
+ * based on the hash part of a final URL are not covered; the hashed callback
+ * sources cover adding, removing or editing the callbacks.
+ *
+ * @internal
+ */
+export function getPreloadDependencyRewriteSignature(
+  owner: RenderedChunk,
+  graph: PreloadRewriteSignatureGraph,
+  getKey: (fileName: string) => string,
+  rewrites: {
+    resolveDependencies?: ResolveModulePreloadDependenciesFn
+    renderBuiltUrl?: RenderBuiltAssetUrl
+    modulePreloadDisabled: boolean
+  },
+): string {
+  const dynamicImports = owner.dynamicImports.map((dynamicImport) => {
+    const jsEntries: { url: string; key: string }[] = []
+    const cssKeys: string[] = []
+    collectPreloadDependencies<{ url: string; key: string } | { css: string }>(
+      dynamicImport,
+      owner.fileName,
+      (fileName) => {
+        const dependency = graph.chunks[fileName]
+        if (!dependency) return
+        const key = getKey(fileName)
+        const { importedCssCount = 0, isPureCss = false } =
+          graph.chunkInfo.get(fileName) ?? {}
+        return {
+          fileName,
+          js:
+            !rewrites.modulePreloadDisabled && !isPureCss
+              ? { url: dependency.fileName, key }
+              : undefined,
+          imports: dependency.imports,
+          css:
+            importedCssCount > 0
+              ? [{ css: `css:${key}:${importedCssCount}` }]
+              : undefined,
+        }
+      },
+    ).forEach((entry) => {
+      if ('css' in entry) cssKeys.push(entry.css)
+      else jsEntries.push(entry)
+    })
+
+    const fallback = {
+      failed: true,
+      jsKeys: jsEntries.map((entry) => entry.key),
+      cssKeys,
+    }
+    try {
+      // generateBundle passes no deps when the list holds only the
+      // imported chunk itself
+      const depUrls =
+        jsEntries.length + cssKeys.length > 1
+          ? jsEntries.map((entry) => entry.url)
+          : []
+      const resolved = rewrites.resolveDependencies
+        ? rewrites.resolveDependencies(dynamicImport, depUrls, {
+            hostId: owner.fileName,
+            hostType: 'js',
+          })
+        : depUrls
+      const urlToKey = new Map(jsEntries.map((entry) => [entry.url, entry.key]))
+      const resolvedKeys = resolved.map((dep) => urlToKey.get(dep) ?? dep)
+      const renderedUrls = rewrites.renderBuiltUrl
+        ? resolved.map((dep) =>
+            JSON.stringify(
+              rewrites.renderBuiltUrl!(dep, {
+                type: 'asset',
+                hostId: owner.fileName,
+                hostType: 'js',
+                ssr: false,
+              }) ?? null,
+            ),
+          )
+        : undefined
+      return { resolvedKeys, cssKeys, renderedUrls }
+    } catch {
+      return fallback
+    }
+  })
+
+  return JSON.stringify([
+    rewrites.resolveDependencies ? String(rewrites.resolveDependencies) : 0,
+    rewrites.renderBuiltUrl ? String(rewrites.renderBuiltUrl) : 0,
+    dynamicImports,
+  ])
 }
 
 /**
@@ -422,11 +527,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
   const renderBuiltUrl = config.experimental.renderBuiltUrl
   const isRelativeBase = config.base === './' || config.base === ''
 
-  // With chunkImportMap: true, stable import specifiers can hide changes to the
-  // preload dependencies injected in generateBundle after hashing. Keep the graph
-  // per environment so augmentChunkHash includes those changes before hashing.
-  // With chunkImportMap: false, imports use hashed filenames, so dependency
-  // changes already propagate into the importing chunk's hash.
+  // The preload dependency lists are injected in generateBundle, after chunks
+  // are hashed and named. The graph is kept per environment so augmentChunkHash
+  // can compensate: chunkImportMap hides graph changes behind stable specifiers,
+  // and resolveDependencies/renderBuiltUrl change the lists without touching
+  // the graph at all.
   const getPreloadHashGraph = perEnvironmentState(() => ({
     chunks: {} as Record<string, RenderedChunk>,
     chunkImportMapKeySignatures: new Map<string, string>(),
@@ -434,6 +539,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       string,
       { importedCssCount: number; isPureCss: boolean }
     >(),
+    rewriteSignatures: new Map<string, string>(),
   }))
 
   const plugin: Plugin = {
@@ -444,13 +550,18 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       graph.chunks = {}
       graph.chunkImportMapKeySignatures.clear()
       graph.chunkInfo.clear()
+      graph.rewriteSignatures.clear()
     },
 
     renderChunk(code, chunk, { format }, { chunks }) {
+      const environment = this.environment
+      const { chunkImportMap, modulePreload } = environment.config.build
       if (
         format === 'es' &&
-        getInsertPreload(this.environment) &&
-        this.environment.config.build.chunkImportMap
+        getInsertPreload(environment) &&
+        (chunkImportMap ||
+          (modulePreload && modulePreload.resolveDependencies) ||
+          renderBuiltUrl)
       ) {
         const graph = getPreloadHashGraph(this)
         graph.chunks = chunks
@@ -479,7 +590,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       const environment = this.environment
       if (!getInsertPreload(environment)) return
       const { chunkImportMap, modulePreload } = environment.config.build
-      if (!chunkImportMap) return
+      const resolveDependencies = modulePreload
+        ? modulePreload.resolveDependencies
+        : undefined
+      const needsRewriteSignature = !!(
+        resolveDependencies ||
+        renderBuiltUrl ||
+        chunkImportMap
+      )
+      // Without chunkImportMap, graph changes reach the hash through the
+      // hashed import specifiers, so only user rewrites need extra hashing.
+      if (!needsRewriteSignature) return
 
       const graph = getPreloadHashGraph(this)
       const owner = graph.chunks[chunk.fileName]
@@ -495,6 +616,29 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       }
       const getKey = (fileName: string) =>
         graph.chunkImportMapKeySignatures.get(fileName)!
+
+      let rewriteSignature: string | undefined
+      if (
+        (resolveDependencies || renderBuiltUrl) &&
+        owner.dynamicImports.length
+      ) {
+        rewriteSignature = graph.rewriteSignatures.get(chunk.fileName)
+        if (rewriteSignature === undefined) {
+          rewriteSignature = getPreloadDependencyRewriteSignature(
+            owner,
+            graph,
+            getKey,
+            {
+              resolveDependencies,
+              renderBuiltUrl,
+              modulePreloadDisabled: modulePreload === false,
+            },
+          )
+          graph.rewriteSignatures.set(chunk.fileName, rewriteSignature)
+        }
+      }
+
+      if (!chunkImportMap) return rewriteSignature
 
       const pureCssImports = [...owner.imports, ...owner.dynamicImports]
         .filter((fileName) => graph.chunkInfo.get(fileName)?.isPureCss)
@@ -528,8 +672,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         pureCssImports.length ||
         preloadSignatures.some((dependencies) => dependencies.length)
       ) {
-        return JSON.stringify([pureCssImports, preloadSignatures])
+        return rewriteSignature === undefined
+          ? JSON.stringify([pureCssImports, preloadSignatures])
+          : JSON.stringify([
+              pureCssImports,
+              preloadSignatures,
+              rewriteSignature,
+            ])
       }
+      return rewriteSignature
     },
 
     async generateBundle(opts, bundle) {
