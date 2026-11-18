@@ -81,6 +81,7 @@ import {
   createPluginHookUtils,
   getCachedFilterForPlugin,
   getHookHandler,
+  getPluginHookHandler,
 } from '../plugins'
 import {
   combineSourcemaps,
@@ -306,7 +307,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       if (condition && !condition(plugin)) continue
 
       const hook = plugin[hookName]
-      const handler: Function = getHookHandler(hook)
+      const handler: Function = getPluginHookHandler(plugin, hookName)
       if ((hook as { sequential?: boolean }).sequential) {
         await Promise.all(parallelPromises)
         parallelPromises.length = 0
