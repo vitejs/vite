@@ -1371,7 +1371,16 @@ export function getLockfileHash(root: string): string {
       )
       const stat = tryStatSync(fullPath)
       if (stat?.isDirectory()) {
-        content += stat.mtimeMs.toString()
+        // the patches directory's mtime only changes when entries are added
+        // or removed, so use each patch file's mtime to also detect in-place
+        // edits and overwrites of existing patch files
+        for (const name of fs.readdirSync(fullPath)) {
+          if (!name.endsWith('.patch')) continue
+          const fileStat = tryStatSync(path.join(fullPath, name))
+          if (fileStat?.isFile()) {
+            content += name + fileStat.mtimeMs.toString()
+          }
+        }
       }
     }
   }
