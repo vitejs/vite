@@ -174,7 +174,7 @@ export class ModuleRunner {
   }
 
   /** @internal */
-  public _invalidatePrunedModules(urls: string[]): void {
+  public _prune(urls: string[]): void {
     // Invalidate pruned modules so that they are evaluated again if they are
     // imported again. The server keeps their transform result, so otherwise the
     // evaluated module is reused and the HMR callbacks cleared by `prunePaths`

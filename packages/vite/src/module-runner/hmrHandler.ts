@@ -49,8 +49,11 @@ export function createHMRHandlerForRunner(
       }
       case 'prune':
         await hmrClient.notifyListeners('vite:beforePrune', payload)
-        await hmrClient.prunePaths(payload.paths)
-        runner._invalidatePrunedModules(payload.paths)
+        try {
+          await hmrClient.prunePaths(payload.paths)
+        } finally {
+          runner._prune(payload.paths)
+        }
         break
       case 'error': {
         await hmrClient.notifyListeners('vite:error', payload)

@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import { resolve } from 'node:path'
 import { assert, describe, expect, onTestFinished, vi } from 'vitest'
+import { createHMRHandlerForRunner } from '../../../../module-runner/hmrHandler'
 import { promiseWithResolvers } from '../../../../shared/utils'
 import { runnerTest as it } from './utils'
 
@@ -96,6 +97,29 @@ describe(
       expect(mod2.hmr).not.toBe(hot1)
       expect(mod2.hmr.data).toStrictEqual({})
     })
+
+    for (const hook of ['dispose', 'prune'] as const) {
+      it(`evaluates a pruned module again after its ${hook} hook fails`, async ({
+        runner,
+      }) => {
+        const path = '/fixtures/hmr.js'
+        const original = await runner.import(path)
+        original.hmr.accept(() => {})
+        original.hmr[hook](() => {
+          throw new Error('hook failed')
+        })
+
+        const handleHmr = createHMRHandlerForRunner(runner)
+        await expect(
+          handleHmr({ type: 'prune', paths: [path] }),
+        ).rejects.toThrow('hook failed')
+
+        expect(runner.hmrClient?.hotModulesMap.has(path)).toBe(false)
+        const reimported = await runner.import(path)
+        expect(reimported).not.toBe(original)
+        expect(reimported.hmr.data).toStrictEqual({})
+      })
+    }
 
     it('does not expose partial exports during concurrent updates', async ({
       runner,
