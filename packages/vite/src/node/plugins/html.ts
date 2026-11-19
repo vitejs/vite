@@ -604,7 +604,15 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                         return this.load({
                           ...resolved,
                           moduleSideEffects: true,
-                        }).then(() => {})
+                        }).then(() => {
+                          // `this.load` ignores `moduleSideEffects` when another
+                          // importer already started loading the module, so set it
+                          // on the module info as well
+                          const loadedInfo = this.getModuleInfo(resolved.id)
+                          if (loadedInfo) {
+                            loadedInfo.moduleSideEffects = true
+                          }
+                        })
                       }
                     }),
                   )
