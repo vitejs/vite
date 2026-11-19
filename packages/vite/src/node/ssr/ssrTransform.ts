@@ -156,6 +156,8 @@ async function ssrTransformScript(
     ESTree.ExportNamedDeclaration | ESTree.ExportAllDeclaration,
     string
   >()
+  const sourceToImportMap = new Map<string, { id: string; end: number }>()
+  const earlyExportAllDeclarations = new Set<ESTree.ExportAllDeclaration>()
 
   for (const node of ast.body) {
     if (node.type === 'ImportDeclaration') {
@@ -189,14 +191,31 @@ async function ssrTransformScript(
           },
         )
         reExportImportIdMap.set(node, importId)
+        sourceToImportMap.set(node.source.value, {
+          id: importId,
+          end: node.end,
+        })
       }
       continue
     }
     if (node.type === 'ExportAllDeclaration') {
       if (node.source) {
         // export * from './foo'
-        const importId = defineImport(hoistIndex, node)
-        reExportImportIdMap.set(node, importId)
+        const existingImport = !node.exported
+          ? sourceToImportMap.get(node.source.value)
+          : undefined
+        if (existingImport) {
+          reExportImportIdMap.set(node, existingImport.id)
+          earlyExportAllDeclarations.add(node)
+          s.remove(node.start, node.end)
+          s.appendLeft(
+            existingImport.end,
+            `${ssrExportAllKey}(${existingImport.id});\n`,
+          )
+        } else {
+          const importId = defineImport(hoistIndex, node)
+          reExportImportIdMap.set(node, importId)
+        }
       }
       continue
     }
@@ -213,6 +232,7 @@ async function ssrTransformScript(
         })
         .filter(isDefined),
     })
+    sourceToImportMap.set(node.source.value, { id: importId, end: node.end })
     for (const spec of node.specifiers) {
       if (spec.type === 'ImportSpecifier') {
         if (spec.imported.type === 'Identifier') {
@@ -320,6 +340,8 @@ async function ssrTransformScript(
       if (node.exported) {
         const exportedAs = getIdentifierNameOrLiteralValue(node.exported)
         defineExport(exportedAs, `${importId}`)
+      } else if (earlyExportAllDeclarations.has(node)) {
+        // Already emitted next to the earlier same-source import.
       } else {
         s.appendLeft(node.end, `${ssrExportAllKey}(${importId});\n`)
       }

@@ -293,6 +293,19 @@ describe.for([
     `)
   })
 
+  it('resolves export star bindings through a cyclic facade', async ({
+    runner,
+  }) => {
+    const mod = await runner.import(
+      '/fixtures/cyclic-reexport-facade/facade.js',
+    )
+
+    expect(mod.client).toEqual({
+      started: true,
+      middleware: 'middleware',
+    })
+  })
+
   it(`live binding (export default function f)`, async ({ runner }) => {
     const mod = await runner.import('/fixtures/live-binding/test1/index.js')
     expect(mod.default).toMatchInlineSnapshot(`
