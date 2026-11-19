@@ -1,9 +1,11 @@
 import { init, parse as parseImports } from 'es-module-lexer'
 import { beforeAll, describe, expect, test } from 'vitest'
 import { promiseWithResolvers } from '../../../shared/utils'
+import { resolveConfig } from '../../config'
 import {
   getChunkImportMapKeySignatures,
   isCssPreloadUrl,
+  isModernFlag,
   matchImportsToPreloadMarkers,
   preloadMarker,
   preloadOnce,
@@ -11,6 +13,32 @@ import {
 
 beforeAll(async () => {
   await init()
+})
+
+test('build import analysis only receives chunks that need rewriting', async () => {
+  const getPlugins = async (chunkImportMap: boolean) =>
+    (
+      await resolveConfig(
+        { configFile: false, logLevel: 'silent', build: { chunkImportMap } },
+        'build',
+      )
+    ).environments.client.plugins
+
+  const plugins = await getPlugins(false)
+  expect(
+    plugins.find((plugin) => plugin.name === 'vite:build-import-analysis')
+      ?.renderChunk,
+  ).toMatchObject({ filter: { code: isModernFlag } })
+  expect(
+    plugins.some(
+      (plugin) => plugin.name === 'vite:build-import-analysis-chunk-hash',
+    ),
+  ).toBe(false)
+  expect(
+    (await getPlugins(true)).some(
+      (plugin) => plugin.name === 'vite:build-import-analysis-chunk-hash',
+    ),
+  ).toBe(true)
 })
 
 test('chunk import map key signatures follow rendered chunk order', () => {
