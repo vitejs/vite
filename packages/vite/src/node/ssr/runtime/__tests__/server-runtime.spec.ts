@@ -2,10 +2,14 @@ import { existsSync, readdirSync } from 'node:fs'
 import { posix, resolve, win32 } from 'node:path'
 import { setTimeout } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
-import { describe, expect, vi } from 'vitest'
-import type { HMRLogger } from '../../../../module-runner'
+import { describe, expect, onTestFinished, vi } from 'vitest'
+import type { HMRLogger, ModuleRunner } from '../../../../module-runner'
 import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
-import { isWindows, slash } from '../../../../shared/utils'
+import {
+  isWindows,
+  promiseWithResolvers,
+  slash,
+} from '../../../../shared/utils'
 import { createServer } from '../../../server'
 import {
   createRunnableDevEnvironment,
@@ -804,5 +808,156 @@ describe('server.fs check', () => {
   it('it is not applied to the server module runner', async ({ runner }) => {
     const mod = await runner.import('/fixtures/basic.js')
     expect(mod.name).toBe('basic')
+  })
+})
+
+describe('concurrent imports of a cycle', () => {
+  // Modules call `wait(name)` to pause until the test opens that gate.
+  function createGates() {
+    const gates = new Map<
+      string,
+      {
+        open: ReturnType<typeof promiseWithResolvers<void>>
+        reached: ReturnType<typeof promiseWithResolvers<void>>
+      }
+    >()
+    const get = (name: string) => {
+      let gate = gates.get(name)
+      if (!gate) {
+        gate = {
+          open: promiseWithResolvers<void>(),
+          reached: promiseWithResolvers<void>(),
+        }
+        gates.set(name, gate)
+      }
+      return gate
+    }
+    ;(globalThis as any).__vite_ssr_concurrent_cycle__ = {
+      wait: (name: string) => {
+        const gate = get(name)
+        gate.reached.resolve()
+        return gate.open.promise
+      },
+    }
+    onTestFinished(() => {
+      delete (globalThis as any).__vite_ssr_concurrent_cycle__
+    })
+    return {
+      reached: (name: string) => get(name).reached.promise,
+      open: (name: string) => get(name).open.resolve(),
+      fail: (name: string, error: Error) => get(name).open.reject(error),
+    }
+  }
+
+  async function waitForImporter(
+    runner: ModuleRunner,
+    url: string,
+    importerUrl: string,
+  ) {
+    await vi.waitUntil(() => {
+      const importer = runner.evaluatedModules.getModuleByUrl(importerUrl)
+      return (
+        importer &&
+        runner.evaluatedModules.getModuleByUrl(url)?.importers.has(importer.id)
+      )
+    })
+  }
+
+  // menu.js ⇔ dialog.js, entered from menu.js by layout.js and from dialog.js
+  // by page.js
+  const basic = '/fixtures/concurrent-cycle/basic'
+
+  it('waits for the rest of the cycle when another import entered it first', async ({
+    runner,
+  }) => {
+    const gates = createGates()
+    const layout = runner.import(`${basic}/layout.js`)
+    // dialog.js has run with the unfinished exports of menu.js
+    await gates.reached('menu')
+
+    let pageSettled = false
+    const page = runner.import(`${basic}/page.js`).then((mod) => {
+      pageSettled = true
+      // like in Node.js, the whole cycle has run once page.js is imported
+      return mod.readMenu()
+    })
+    await waitForImporter(runner, `${basic}/dialog.js`, `${basic}/page.js`)
+    await setTimeout()
+    expect(pageSettled).toBe(false)
+
+    gates.open('menu')
+    expect(await page).toBe('menu')
+    expect((await layout).readOverlay()).toBe('overlay')
+  })
+
+  it('rejects every importer when a module of the cycle throws', async ({
+    runner,
+  }) => {
+    const gates = createGates()
+    const layout = runner.import(`${basic}/layout.js`)
+    await gates.reached('menu')
+    const page = runner.import(`${basic}/page.js`)
+    await waitForImporter(runner, `${basic}/dialog.js`, `${basic}/page.js`)
+
+    gates.fail('menu', new Error('menu failed'))
+    await expect(layout).rejects.toThrow('menu failed')
+    await expect(page).rejects.toThrow('menu failed')
+    // also once the cycle has failed
+    await expect(runner.import(`${basic}/dialog.js`)).rejects.toThrow(
+      'menu failed',
+    )
+  })
+
+  it('joins the cycle when it reaches back into the waiting import', async ({
+    runner,
+  }) => {
+    // e2.js → m.js ⇔ x.js, and m.js → q.js after a gate
+    // e1.js → q.js → r.js → x.js
+    const dir = '/fixtures/concurrent-cycle/back-edge'
+    const gates = createGates()
+    const e2 = runner.import(`${dir}/e2.js`)
+    await gates.reached('m')
+
+    // r.js waits for the cycle of x.js, which is still waiting for m.js
+    let e1Menu: string | undefined
+    const e1 = runner.import(`${dir}/e1.js`).then((mod) => {
+      e1Menu = mod.readM()
+    })
+    await waitForImporter(runner, `${dir}/x.js`, `${dir}/r.js`)
+
+    // m.js now imports q.js, which waits on r.js: q.js and r.js are part of
+    // the cycle and must not wait for it
+    gates.open('m')
+    await e1
+    expect(e1Menu).toBe('m')
+    expect((await e2).readQ()).toBe('q')
+  })
+
+  it('joins the cycle when it waits on the import through another path', async ({
+    runner,
+  }) => {
+    // w.js → c.js → d.js → x.js, with a gate in c.js
+    // x.js → z.js ⇔ s.js, z.js ⇔ x.js, with a gate in z.js, then x.js → y.js → w.js
+    // s.js → z.js, then s.js → c.js
+    const dir = '/fixtures/concurrent-cycle/indirect'
+    const gates = createGates()
+    const w = runner.import(`${dir}/w.js`)
+    await gates.reached('c')
+    const x = runner.import(`${dir}/x.js`)
+    await gates.reached('z')
+    const s = runner.import(`${dir}/s.js`)
+    await waitForImporter(runner, `${dir}/z.js`, `${dir}/s.js`)
+
+    // z.js and s.js run as a cycle with x.js, then x.js waits on w.js
+    gates.open('z')
+    await waitForImporter(runner, `${dir}/w.js`, `${dir}/y.js`)
+
+    // d.js closes the cycle through x.js, z.js and s.js. Once c.js has run,
+    // w.js has to join the cycle too: the cycle waits on it through y.js.
+    gates.open('c')
+    const [wMod, xMod, sMod] = await Promise.all([w, x, s])
+    expect(wMod.w).toBe('w')
+    expect(xMod.x).toBe('x')
+    expect(sMod.s).toBe('s')
   })
 })
