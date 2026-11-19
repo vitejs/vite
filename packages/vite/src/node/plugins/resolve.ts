@@ -720,8 +720,9 @@ function tryCleanFsResolve(
 }
 
 /**
- * The directory `tryNodeResolve` starts resolving a bare import from:
- * the importer's directory if the importer exists on disk, otherwise `root`.
+ * The directory `tryNodeResolve` starts resolving a bare import from, unless
+ * the package is deduped: the importer's directory if the importer exists on
+ * disk, otherwise `root`.
  */
 export function getNodeResolveBasedir(
   importer: string | null | undefined,

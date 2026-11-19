@@ -136,7 +136,7 @@ function createIsExternal(
 
   const getBasedir = (importer: string) => {
     let basedir = importerBasedirs.get(importer)
-    if (basedir === undefined) {
+    if (!basedir) {
       basedir = getNodeResolveBasedir(importer, environment.config.root)
       importerBasedirs.set(importer, basedir)
     }
