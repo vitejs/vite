@@ -584,9 +584,8 @@ describe('closeServer hook', () => {
 })
 
 describe('createServer startup failure', () => {
-  test.each(['configureServer', 'buildStart'] as const)(
-    'closes the server when %s throws in middleware mode',
-    async (hook) => {
+  for (const hook of ['configureServer', 'buildStart']) {
+    test(`closes the server when ${hook} throws in middleware mode`, async () => {
       const error = new Error(`${hook} failed`)
       const closeWrapper = vi.fn()
 
@@ -608,12 +607,11 @@ describe('createServer startup failure', () => {
         }),
       ).rejects.toBe(error)
       expect(closeWrapper).toHaveBeenCalledOnce()
-    },
-  )
+    })
+  }
 
-  test.each(['options', 'createEnvironment'] as const)(
-    'closes the server when %s throws',
-    async (hook) => {
+  for (const hook of ['options', 'createEnvironment']) {
+    test(`closes the server when ${hook} throws`, async () => {
       const error = new Error(`${hook} failed`)
       const closeServer = vi.fn()
 
@@ -642,8 +640,8 @@ describe('createServer startup failure', () => {
         }),
       ).rejects.toBe(error)
       expect(closeServer).toHaveBeenCalledOnce()
-    },
-  )
+    })
+  }
 })
 
 describe('closePreviewServer hook', () => {
