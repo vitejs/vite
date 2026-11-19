@@ -265,7 +265,7 @@ async function loadAndTransform(
 
   // load
   const loadStart = debugLoad ? performance.now() : 0
-  const loadResult = await pluginContainer.load(id)
+  const loadResult = await pluginContainer.load(id, { withMetadata: true })
 
   if (loadResult.code == null) {
     const file = cleanUrl(id)

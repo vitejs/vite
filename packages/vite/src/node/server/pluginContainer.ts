@@ -164,6 +164,10 @@ export type SkipInformation = {
   called?: boolean
 }
 
+type LoadResultWithMetadata = Partial<SourceDescription> & {
+  addedImports: Set<string> | null
+}
+
 class EnvironmentPluginContainer<Env extends Environment = Environment> {
   private _pluginContextMap = new Map<Plugin, PluginContext>()
   private _resolvedRolldownOptions?: InputOptions
@@ -475,11 +479,15 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     }
   }
 
-  async load(id: string): Promise<
-    Partial<SourceDescription> & {
-      addedImports: Set<string> | null
-    }
-  > {
+  load(
+    id: string,
+    loadOptions: { withMetadata: true },
+  ): Promise<LoadResultWithMetadata>
+  load(id: string): Promise<LoadResult | null>
+  async load(
+    id: string,
+    loadOptions?: { withMetadata: true },
+  ): Promise<LoadResultWithMetadata | LoadResult | null> {
     let ssr = this.environment.config.consumer === 'server'
     const topLevelConfig = this.environment.getTopLevelConfig()
     const options = { ssr }
@@ -523,6 +531,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
           ctx._updateModuleInfo(id, result)
         }
         this._updateModuleLoadAddedImports(id, ctx._addedImports)
+        if (!loadOptions?.withMetadata) return result
         return {
           ...(typeof result === 'string' ? { code: result } : result),
           addedImports: ctx._addedImports,
@@ -530,6 +539,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       }
     }
     this._updateModuleLoadAddedImports(id, ctx._addedImports)
+    if (!loadOptions?.withMetadata) return null
     return { addedImports: ctx._addedImports }
   }
 
@@ -851,7 +861,7 @@ class PluginContext
     this._updateModuleInfo(options.id, options)
 
     const loadResult = await this._container.load(options.id)
-    const code = loadResult.code
+    const code = typeof loadResult === 'string' ? loadResult : loadResult?.code
     if (code != null) {
       await this._container.transform(code, options.id)
     }
@@ -1313,7 +1323,9 @@ class PluginContainer {
       ssr?: boolean
     },
   ): Promise<LoadResult | null> {
-    const result = await this._getPluginContainer(options).load(id)
+    const result = await this._getPluginContainer(options).load(id, {
+      withMetadata: true,
+    })
     return result.code == null ? null : { ...result, code: result.code }
   }
 
