@@ -1419,7 +1419,7 @@ export function createCSSResolvers(
       return (cssResolve ??= createBackCompatIdResolver(config, {
         extensions: ['.css'],
         mainFields: ['style'],
-        conditions: ['style', DEV_PROD_CONDITION],
+        conditions: ['style', DEV_PROD_CONDITION, ...config.resolve.conditions],
         tryIndex: false,
         preferRelative: true,
         // Avoid automatic externalization when resolving CSS imports.
@@ -1433,7 +1433,12 @@ export function createCSSResolvers(
         const resolver = createBackCompatIdResolver(config, {
           extensions: ['.scss', '.sass', '.css'],
           mainFields: ['sass', 'style'],
-          conditions: ['sass', 'style', DEV_PROD_CONDITION],
+          conditions: [
+            'sass',
+            'style',
+            DEV_PROD_CONDITION,
+            ...config.resolve.conditions,
+          ],
           tryIndex: true,
           tryPrefix: '_',
           preferRelative: true,
@@ -1462,7 +1467,12 @@ export function createCSSResolvers(
       return (lessResolve ??= createBackCompatIdResolver(config, {
         extensions: ['.less', '.css'],
         mainFields: ['less', 'style'],
-        conditions: ['less', 'style', DEV_PROD_CONDITION],
+        conditions: [
+          'less',
+          'style',
+          DEV_PROD_CONDITION,
+          ...config.resolve.conditions,
+        ],
         tryIndex: false,
         preferRelative: true,
         noExternal: [/./],
