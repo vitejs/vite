@@ -29,6 +29,7 @@ export class EvaluatedModules {
   public readonly fileToModulesMap: Map<string, Set<EvaluatedModuleNode>> =
     new Map()
   public readonly urlToIdModuleMap: Map<string, EvaluatedModuleNode> = new Map()
+  private readonly retainedSourceMaps = new Map<string, DecodedMap>()
 
   /**
    * Returns the module node by the resolved module ID. Usually, module ID is
@@ -74,6 +75,7 @@ export class EvaluatedModules {
       this.urlToIdModuleMap.set(url, moduleNode)
       return moduleNode
     }
+    this.retainedSourceMaps.delete(id)
     const moduleNode = new EvaluatedModuleNode(id, url)
     this.idToModuleMap.set(id, moduleNode)
     this.urlToIdModuleMap.set(url, moduleNode)
@@ -85,6 +87,7 @@ export class EvaluatedModules {
   }
 
   public invalidateModule(node: EvaluatedModuleNode): void {
+    this.retainedSourceMaps.delete(node.id)
     node.evaluated = false
     node.meta = undefined
     node.map = undefined
@@ -97,6 +100,21 @@ export class EvaluatedModules {
     node.imports.clear()
   }
 
+  public removeModule(
+    node: EvaluatedModuleNode,
+    options?: { retainSourceMap?: boolean },
+  ): void {
+    if (options?.retainSourceMap) {
+      const map = this.getModuleSourceMapById(node.id)
+      if (map) this.retainedSourceMaps.set(node.id, map)
+    } else {
+      this.retainedSourceMaps.delete(node.id)
+    }
+    this.fileToModulesMap.delete(node.file)
+    this.idToModuleMap.delete(node.id)
+    this.urlToIdModuleMap.delete(node.url)
+  }
+
   /**
    * Extracts the inlined source map from the module code and returns the decoded
    * source map. If the source map is not inlined, it will return null.
@@ -104,7 +122,7 @@ export class EvaluatedModules {
    */
   getModuleSourceMapById(id: string): DecodedMap | null {
     const mod = this.getModuleById(id)
-    if (!mod) return null
+    if (!mod) return this.retainedSourceMaps.get(id) ?? null
     if (mod.map) return mod.map
     if (!mod.meta || !('code' in mod.meta)) return null
 
@@ -118,6 +136,7 @@ export class EvaluatedModules {
     this.idToModuleMap.clear()
     this.fileToModulesMap.clear()
     this.urlToIdModuleMap.clear()
+    this.retainedSourceMaps.clear()
   }
 }
 

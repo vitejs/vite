@@ -22,7 +22,7 @@ describe('resolveEsbuildTranspileOptions', () => {
       }),
       'es',
     )
-    expect(options).toEqual({
+    expect(options).toStrictEqual({
       loader: 'js',
       target: 'es2020',
       format: 'esm',
@@ -49,7 +49,7 @@ describe('resolveEsbuildTranspileOptions', () => {
       }),
       'es',
     )
-    expect(options).toEqual(null)
+    expect(options).toBeNull()
   })
 
   test('resolve specific minify options', () => {
@@ -65,7 +65,7 @@ describe('resolveEsbuildTranspileOptions', () => {
       }),
       'es',
     )
-    expect(options).toEqual({
+    expect(options).toStrictEqual({
       loader: 'js',
       target: undefined,
       format: 'esm',
@@ -95,7 +95,7 @@ describe('resolveEsbuildTranspileOptions', () => {
       }),
       'es',
     )
-    expect(options).toEqual({
+    expect(options).toStrictEqual({
       loader: 'js',
       target: 'es2020',
       format: 'esm',
@@ -127,7 +127,7 @@ describe('resolveEsbuildTranspileOptions', () => {
       }),
       'es',
     )
-    expect(options).toEqual({
+    expect(options).toStrictEqual({
       loader: 'js',
       target: undefined,
       format: 'esm',
@@ -159,7 +159,7 @@ describe('resolveEsbuildTranspileOptions', () => {
       }),
       'cjs',
     )
-    expect(options).toEqual({
+    expect(options).toStrictEqual({
       loader: 'js',
       target: undefined,
       format: 'cjs',
@@ -190,7 +190,7 @@ describe('resolveEsbuildTranspileOptions', () => {
       }),
       'es',
     )
-    expect(options).toEqual({
+    expect(options).toStrictEqual({
       loader: 'js',
       target: undefined,
       format: 'esm',
@@ -225,7 +225,7 @@ describe('resolveEsbuildTranspileOptions', () => {
       }),
       'cjs',
     )
-    expect(options).toEqual({
+    expect(options).toStrictEqual({
       loader: 'js',
       target: undefined,
       format: 'cjs',
@@ -248,8 +248,8 @@ describe('transformWithEsbuild', () => {
     const result = await transformWithEsbuild(`const foo = 'bar'`, '', {
       sourcemap: 'inline',
     })
-    expect(result?.code).toBeTruthy()
-    expect(result?.map).toBeTruthy()
+    expect(result?.code).toBeDefined()
+    expect(result?.map).toBeDefined()
   })
 
   test('correctly overrides TS configuration and applies automatic transform', async () => {

@@ -1,6 +1,6 @@
 {
   "name": "create-vite",
-  "version": "9.3.3",
+  "version": "9.3.4",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -34,11 +34,11 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/create-vite#readme",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "devDependencies": {
-    "@clack/prompts": "^1.8.1",
+    "@clack/prompts": "^1.9.0",
     "mri": "^1.2.0",
     "std-env": "^4.3.0",
     "tinyexec": "^1.3.1",
-    "tsdown": "^0.23.2",
+    "tsdown": "^0.23.7",
     "unrun": "^0.3.1"
   }
 }

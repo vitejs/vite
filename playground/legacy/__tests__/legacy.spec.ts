@@ -156,9 +156,7 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('should emit css file', async () => {
-    expect(
-      listAssets().some((filename) => filename.endsWith('.css')),
-    ).toBeTruthy()
+    expect(listAssets()).toContainEqual(expect.stringMatching(/\.css$/))
   })
 
   test('includes structuredClone polyfill which is supported after core-js v3', () => {
@@ -167,22 +165,16 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('should generate legacy sourcemap file', async () => {
-    expect(
-      listAssets().some((filename) =>
-        /chunk-main-legacy\.[-\w]{8}\.js\.map$/.test(filename),
-      ),
-    ).toBeTruthy()
-    expect(
-      listAssets().some((filename) =>
-        /polyfills-legacy-[-\w]{8}\.js\.map$/.test(filename),
-      ),
-    ).toBeTruthy()
+    expect(listAssets()).toContainEqual(
+      expect.stringMatching(/chunk-main-legacy\.[-\w]{8}\.js\.map$/),
+    )
+    expect(listAssets()).toContainEqual(
+      expect.stringMatching(/polyfills-legacy-[-\w]{8}\.js\.map$/),
+    )
     // also for modern polyfills
-    expect(
-      listAssets().some((filename) =>
-        /polyfills-[-\w]{8}\.js\.map$/.test(filename),
-      ),
-    ).toBeTruthy()
+    expect(listAssets()).toContainEqual(
+      expect.stringMatching(/polyfills-[-\w]{8}\.js\.map$/),
+    )
   })
 
   test('should have only modern entry files guarded', async () => {
