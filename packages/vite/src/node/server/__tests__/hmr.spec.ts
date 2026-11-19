@@ -2,6 +2,7 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { expect, onTestFinished, test } from 'vitest'
+import { normalizePath } from '../../utils'
 import { handleHMRUpdate } from '../hmr'
 import { type ServerOptions, createServer } from '../index'
 
@@ -60,9 +61,9 @@ test('removes orphaned file-only entries from the module graph', async () => {
   const root = await fs.realpath(
     await fs.mkdtemp(path.join(os.tmpdir(), 'vite-css-watch-')),
   )
-  const cssFile = path.join(root, 'style.css')
-  const probeFile = path.join(root, 'probe.js')
-  const otherFile = path.join(root, 'other.js')
+  const cssFile = normalizePath(path.join(root, 'style.css'))
+  const probeFile = normalizePath(path.join(root, 'probe.js'))
+  const otherFile = normalizePath(path.join(root, 'other.js'))
   await fs.writeFile(cssFile, '.foo { color: red; }')
   await fs.writeFile(probeFile, 'export default true')
   const watchedFiles = new Set([probeFile])
