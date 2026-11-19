@@ -68,6 +68,8 @@ test('does not leave optimizer output behind when closed while it is writing', a
 
   // the post-scan optimizer run is now generating its output
   await renderStarted.promise
+  // Let the crawl-end handler start waiting for the in-flight optimization.
+  await server.waitForRequestsIdle()
 
   const closePromise = server.close()
   server = undefined
