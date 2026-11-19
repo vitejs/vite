@@ -22,7 +22,11 @@ import {
   vi,
 } from 'vitest'
 import { BuildEnvironment, normalizePath, resolveConfig } from '..'
-import type { LibraryFormats, LibraryOptions } from '../build'
+import type {
+  LibraryFormats,
+  LibraryOptions,
+  ResolveModulePreloadDependenciesFn,
+} from '../build'
 import {
   ChunkMetadataMap,
   build,
@@ -300,6 +304,142 @@ describe('build', () => {
       getOutputHashChanges(withoutPreload[0], withoutPreload[1]).unchanged,
     ).toStrictEqual(expect.arrayContaining(['_entry', '_lazy']))
     assertOutputHashContentChange(withoutPreload[0], withoutPreload[1])
+  })
+
+  const preloadRewriteModules: Record<string, string> = {
+    'entry.js': `
+      window.loadPage = () => import('page.js').then((m) => m.render())
+      window.loadChart = () => import('chart.js').then((m) => m.chart())
+    `,
+    'page.js': `
+      import { chart } from 'chart.js'
+      export function render() { return chart() }
+    `,
+    'chart.js': `
+      export function chart() { return 'chart' }
+    `,
+  }
+
+  const buildProjectWithPreloadRewrite = (
+    modulePreload:
+      | boolean
+      | { resolveDependencies: ResolveModulePreloadDependenciesFn },
+    chunkImportMap = false,
+  ) =>
+    build({
+      root: resolve(dirname, 'packages/build-project'),
+      logLevel: 'silent',
+      input: 'entry.js',
+      build: {
+        chunkImportMap,
+        minify: false,
+        write: false,
+        modulePreload,
+      },
+      plugins: [
+        {
+          name: 'preload-resolve-dependencies',
+          resolveId(id) {
+            if (id in preloadRewriteModules) return `\0${id}`
+          },
+          load(id) {
+            return preloadRewriteModules[id.slice(1)]
+          },
+        },
+      ],
+    }) as Promise<RolldownOutput>
+
+  const dropChartFromPagePreload: ResolveModulePreloadDependenciesFn = (
+    filename,
+    deps,
+  ) => {
+    if (filename.includes('page')) {
+      return deps.filter((dep) => !dep.includes('chart'))
+    }
+    return deps
+  }
+
+  test('file hash should change when resolveDependencies is removed', async () => {
+    const result = await Promise.all([
+      buildProjectWithPreloadRewrite({
+        resolveDependencies: dropChartFromPagePreload,
+      }),
+      buildProjectWithPreloadRewrite(true),
+    ])
+    expect(getOutputHashChanges(result[0], result[1])).toMatchInlineSnapshot(`
+      {
+        "changed": [
+          "_entry",
+        ],
+        "unchanged": [
+          "_chart",
+          "_page",
+        ],
+      }
+    `)
+    assertOutputHashContentChange(result[0], result[1])
+  })
+
+  test('file hash should change when resolveDependencies is removed with chunkImportMap', async () => {
+    const result = await Promise.all([
+      buildProjectWithPreloadRewrite(
+        {
+          resolveDependencies: dropChartFromPagePreload,
+        },
+        true,
+      ),
+      buildProjectWithPreloadRewrite(true, true),
+    ])
+    expect(getOutputHashChanges(result[0], result[1])).toMatchInlineSnapshot(`
+      {
+        "changed": [
+          "_entry",
+        ],
+        "unchanged": [
+          "_chart",
+          "_page",
+          "undefined",
+        ],
+      }
+    `)
+    assertOutputHashContentChange(result[0], result[1])
+  })
+
+  test('file hash should change when resolveDependencies behavior changes with the same source', async () => {
+    const createResolveDependencies =
+      (dropChart: boolean): ResolveModulePreloadDependenciesFn =>
+      (filename, deps) => {
+        if (filename.includes('page') && dropChart) {
+          return deps.filter((dep) => !dep.includes('chart'))
+        }
+        return deps
+      }
+    const resolveDependenciesA = createResolveDependencies(false)
+    const resolveDependenciesB = createResolveDependencies(true)
+    expect(resolveDependenciesA.toString()).toBe(
+      resolveDependenciesB.toString(),
+    )
+
+    const result = await Promise.all([
+      buildProjectWithPreloadRewrite({
+        resolveDependencies: resolveDependenciesA,
+      }),
+      buildProjectWithPreloadRewrite({
+        resolveDependencies: resolveDependenciesB,
+      }),
+    ])
+    expect(getOutputHashChanges(result[0], result[1])).toMatchInlineSnapshot(`
+      {
+        "changed": [
+          "_entry",
+        ],
+        "unchanged": [
+          "_chart",
+          "_page",
+        ],
+      }
+    `)
+    assertOutputHashContentChange(result[0], result[1])
   })
 
   test('file hash should change when a shared chunk becomes pure css', async () => {
