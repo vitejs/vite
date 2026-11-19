@@ -17,7 +17,6 @@ import {
   flattenId,
   isBuiltin,
   isCSSRequest,
-  isDataUrl,
   isExternalUrl,
   isNodeBuiltin,
   moduleListContains,
@@ -347,7 +346,8 @@ export function rolldownDepPlugin(
             }
 
             const url = rawUrl.slice(1, -1)
-            if (isDataUrl(url) || isExternalUrl(url) || url.startsWith('/')) {
+            if (!url.startsWith('.')) {
+              // This is not a relative url
               continue
             }
 
