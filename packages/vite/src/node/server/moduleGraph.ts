@@ -194,6 +194,13 @@ export class EnvironmentModuleGraph {
     if (isHmr) {
       mod.lastHMRTimestamp = timestamp
       mod.lastHMRInvalidationReceived = false
+      // Also record the invalidation here, so a transform that started
+      // while the `hotUpdate` hooks were running is not cached after
+      // the update. Its own timestamp predates this one, so the
+      // `timestamp > lastInvalidationTimestamp` guard in transformRequest
+      // discards it instead of keeping a result built with pre-update
+      // import URLs.
+      mod.lastInvalidationTimestamp = timestamp
     } else {
       // Save the timestamp for this invalidation, so we can avoid caching the result of possible already started
       // processing being done for this module

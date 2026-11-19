@@ -654,7 +654,11 @@ export async function handleHMRUpdate(
         return
       }
 
-      updateModules(environment, shortFile, options.modules, timestamp)
+      // Take a fresh timestamp here instead of the one captured before
+      // the `hotUpdate` hooks ran. A transform started while the hooks run
+      // would otherwise pass the `timestamp > lastInvalidationTimestamp`
+      // guard and cache a result built with pre-update import URLs.
+      updateModules(environment, shortFile, options.modules, monotonicDateNow())
     } catch (err) {
       environment.hot.send({
         type: 'error',
