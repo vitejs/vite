@@ -1297,7 +1297,7 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
           exclude: [commonjsProxyRE, SPECIAL_QUERY_RE],
         },
       },
-      handler(_, id) {
+      async handler(_, id) {
         const { moduleGraph } = this.environment as DevEnvironment
         const thisModule = moduleGraph.getModuleById(id)
 
@@ -1319,7 +1319,7 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
             for (const file of pluginImports) {
               depModules.add(moduleGraph.createFileOnlyEntry(file))
             }
-            moduleGraph.updateModuleInfo(
+            const noLongerImported = await moduleGraph.updateModuleInfo(
               thisModule,
               depModules,
               null,
@@ -1329,6 +1329,15 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
               null,
               isSelfAccepting,
             )
+            for (const dep of noLongerImported ?? []) {
+              if (!dep.id && !dep.importers.size && dep.file) {
+                const fileModules = moduleGraph.fileToModulesMap.get(dep.file)
+                fileModules?.delete(dep)
+                if (!fileModules?.size) {
+                  moduleGraph.fileToModulesMap.delete(dep.file)
+                }
+              }
+            }
           } else {
             thisModule.isSelfAccepting = isSelfAccepting
           }
