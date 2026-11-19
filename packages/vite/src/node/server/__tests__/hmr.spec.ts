@@ -57,7 +57,9 @@ test('does not schedule stale HMR with a custom environment handler', async () =
 })
 
 test('removes orphaned file-only entries from the module graph', async () => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'vite-css-watch-'))
+  const root = await fs.realpath(
+    await fs.mkdtemp(path.join(os.tmpdir(), 'vite-css-watch-')),
+  )
   const cssFile = path.join(root, 'style.css')
   const probeFile = path.join(root, 'probe.js')
   const otherFile = path.join(root, 'other.js')
