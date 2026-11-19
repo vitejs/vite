@@ -152,7 +152,7 @@ if (!isBuild) {
           )
           .map((url) => url.pathname + url.search),
       )
-      expect(parentUrls).toEqual(['/self-accepting-lazy/parent.js'])
+      expect(parentUrls).toStrictEqual(['/self-accepting-lazy/parent.js'])
     }
   })
 
