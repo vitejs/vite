@@ -260,20 +260,12 @@ export async function preview(
     mimes: /text|javascript|\/json|xml|application\/wasm/i,
   })
   app.use((req, res, next) => {
-    if (req.httpVersionMajor < 2) {
-      return compressionMiddleware(req, res, next)
+    // Avoid wrapping HTTP/2 responses so a streaming response cannot stall
+    // other streams on the same session.
+    if (req.httpVersionMajor >= 2) {
+      return next()
     }
-
-    // @polka/compression wraps streaming responses before deciding whether
-    // to compress them, which can stall other streams on the same HTTP/2 session.
-    const acceptEncoding = req.headers['accept-encoding']
-    delete req.headers['accept-encoding']
-    compressionMiddleware(req, res, (err) => {
-      if (acceptEncoding) {
-        req.headers['accept-encoding'] = acceptEncoding
-      }
-      next(err)
-    })
+    return compressionMiddleware(req, res, next)
   })
 
   // base
