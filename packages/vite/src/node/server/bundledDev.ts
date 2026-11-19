@@ -94,6 +94,7 @@ export class BundledDev {
 
   private reloadNeededClientIds = new Set<string>()
   private debouncedReloadNeededFlush = debounce(20, () => {
+    if (this.environment.config.server.hmr === false) return
     if (this.lastBuildError || this.reloadNeededClientIds.size === 0) return
     for (const clientId of this.reloadNeededClientIds) {
       this.clients.get(clientId)?.send({ type: 'full-reload', path: '*' })
@@ -548,6 +549,7 @@ export class BundledDev {
     files: string[],
     hmrOutput: HmrOutput,
   ) {
+    if (this.environment.config.server.hmr === false) return
     if (hmrOutput.type === 'Noop') return
 
     const shortFile = files
