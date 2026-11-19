@@ -54,7 +54,7 @@ export async function runnerImport<T>(
   try {
     const module = await environment.runner.import(moduleId)
     const modules = [
-      ...environment.runner.evaluatedModules.urlToIdModuleMap.values(),
+      ...environment.runner.evaluatedModules.idToModuleMap.values(),
     ]
     const dependencies = modules
       .filter((m) => {

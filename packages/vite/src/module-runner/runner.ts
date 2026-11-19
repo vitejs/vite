@@ -13,7 +13,7 @@ import {
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
-import { cleanUrl, isPrimitive, unwrapId } from '../shared/utils'
+import { cleanUrl, isPrimitive } from '../shared/utils'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -42,8 +42,6 @@ import { posixDirname, posixJoin } from './utils'
 interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
 }
-
-const absoluteUrlRE = /^(?:file:\/\/|\/|[a-zA-Z]:[\\/])/
 
 export class ModuleRunner {
   public evaluatedModules: EvaluatedModules
@@ -400,15 +398,11 @@ export class ModuleRunner {
     const moduleUrl = 'url' in fetchedModule ? fetchedModule.url : url
     const module = this.evaluatedModules.ensureModule(moduleId, moduleUrl)
 
-    // Also cache under the requested url, except bare specifiers (can resolve
-    // differently per importer) and urls with a query (can be another request).
-    const requestedUrl = unwrapId(url)
-    if (
-      requestedUrl !== moduleUrl &&
-      absoluteUrlRE.test(requestedUrl) &&
-      !requestedUrl.includes('?')
-    ) {
-      this.evaluatedModules.urlToIdModuleMap.set(requestedUrl, module)
+    // Also cache the requested URL when fetchModule returns a canonical URL.
+    // Non-externalized imports are rewritten to importer-independent URLs during
+    // import analysis. Externalized responses have no `url`
+    if ('url' in fetchedModule && url !== moduleUrl) {
+      this.evaluatedModules.setModuleByUrl(url, module)
     }
 
     if ('invalidate' in fetchedModule && fetchedModule.invalidate) {
