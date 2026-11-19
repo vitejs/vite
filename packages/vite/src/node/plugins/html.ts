@@ -706,7 +706,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                     'media' in attr.attributes || 'disabled' in attr.attributes
                   ) &&
                   // a stylesheet inside <template> applies to wherever the
-                  // template content ends up (e.g. a shadow root), not the document
+                  // template content ends up (e.g. a shadow root), not the document.
+                  // Its href is processed as a plain asset, so CSS plugins
+                  // (PostCSS, preprocessors, CSS modules) do not run on it.
                   !isInsideTemplate(node)
                 ) {
                   // CSS references, convert to import
