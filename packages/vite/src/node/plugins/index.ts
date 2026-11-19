@@ -5,7 +5,7 @@ import {
   viteJsonPlugin as nativeJsonPlugin,
   oxcRuntimePlugin,
 } from 'rolldown/experimental'
-import { enhanceRollupError, resolveBuildPlugins } from '../build'
+import { resolveBuildPlugins } from '../build'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { watchPackageDataPlugin } from '../packages'
 import {
@@ -249,7 +249,6 @@ function tagPluginError(e: unknown, plugin: string, hook: string): void {
   if (err.plugin) return
   err.plugin = plugin
   err.hook = hook
-  enhanceRollupError(err)
 }
 
 type FilterForPluginValue = {
