@@ -145,10 +145,20 @@ export class EvaluatedModules {
 function extractInlineSourceMap(code: string): string | undefined {
   const start = code.lastIndexOf(MODULE_RUNNER_SOURCEMAPPING_PREFIX)
   if (start === -1) return
+
   const dataStart = start + MODULE_RUNNER_SOURCEMAPPING_PREFIX.length
-  let dataEnd = code.indexOf('\n', dataStart)
-  if (dataEnd === -1) dataEnd = code.length
-  if (code.charCodeAt(dataEnd - 1) === 13 /* \r */) dataEnd--
+  let dataEnd = code.length
+
+  const lf = code.indexOf('\n', dataStart)
+  const cr = code.indexOf('\r', dataStart)
+  const ls = code.indexOf('\u2028', dataStart)
+  const ps = code.indexOf('\u2029', dataStart)
+
+  if (lf !== -1 && lf < dataEnd) dataEnd = lf
+  if (cr !== -1 && cr < dataEnd) dataEnd = cr
+  if (ls !== -1 && ls < dataEnd) dataEnd = ls
+  if (ps !== -1 && ps < dataEnd) dataEnd = ps
+
   return code.slice(dataStart, dataEnd)
 }
 
