@@ -82,6 +82,35 @@ export default {
 
   Add custom imports to the modern polyfills chunk. Since the usage-based polyfill detection only covers ES language features, it may be necessary to manually specify additional DOM API polyfills using this option.
 
+### `excludeLegacyPolyfills`
+
+- **Type:** `(string | RegExp)[]`
+
+  Remove polyfills from the legacy polyfills chunk after the usage-based detection has run. This is useful when the detection includes polyfills you don't need, for example because the feature is polyfilled elsewhere, the code using it never runs in legacy browsers, or the polyfill only provides strict standards compliance you do not need.
+
+  Strings are [polyfill specifiers](#polyfill-specifiers), e.g. `es.json.stringify`. Regular expressions are tested against the import path of each detected polyfill, e.g. `core-js/modules/es.json.stringify.js`. Run `vite build --debug legacy` to see which polyfills were excluded.
+
+  Only automatically detected polyfills are removed. Polyfills listed in `polyfills` or `additionalLegacyPolyfills` are always included. Note that SystemJS relies on `Promise`, so if you exclude the `Promise` polyfills you need to provide them yourself in browsers without native support.
+
+### `excludeModernPolyfills`
+
+- **Type:** `(string | RegExp)[]`
+
+  Same as [`excludeLegacyPolyfills`](#excludelegacypolyfills), but for the modern polyfills chunk. It only has an effect when `modernPolyfills` is `true`.
+
+  ```js
+  import legacy from '@vitejs/plugin-legacy'
+
+  export default {
+    plugins: [
+      legacy({
+        modernPolyfills: true,
+        excludeModernPolyfills: ['es.json.stringify', /\.typed-array\./],
+      }),
+    ],
+  }
+  ```
+
 ### `modernPolyfills`
 
 - **Type:** `boolean | string[]`
@@ -146,7 +175,7 @@ The following features are considered as widely-available:
 
 ## Polyfill Specifiers
 
-Polyfill specifier strings for `polyfills` and `modernPolyfills` can be either of the following:
+Polyfill specifier strings for `polyfills`, `modernPolyfills`, `excludeLegacyPolyfills` and `excludeModernPolyfills` can be either of the following:
 
 - Any [`core-js` 3 sub import paths](https://unpkg.com/browse/core-js@latest/) - e.g. `es/map` will import `core-js/es/map`
 
