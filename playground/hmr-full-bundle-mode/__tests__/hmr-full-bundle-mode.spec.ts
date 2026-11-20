@@ -1,4 +1,5 @@
 import { setTimeout } from 'node:timers/promises'
+import { stripVTControlCharacters } from 'node:util'
 import type { Response } from 'playwright-chromium'
 import { expect, test, onTestFinished } from 'vitest'
 import {
@@ -57,6 +58,7 @@ if (isBuild) {
 
   // BUNDLED -> GENERATE_HMR_PATCH -> BUNDLING -> BUNDLE_ERROR -> BUNDLING -> BUNDLED
   test('handle bundle error', async () => {
+    const lastServerLogIndex = serverLogs.length
     editFile('main.js', (code) =>
       code.replace("text('.app', 'hello')", "text('.app', 'hello'); text("),
     )
@@ -66,6 +68,9 @@ if (isBuild) {
     )
     await expect.poll(() => page.isVisible('vite-error-overlay')).toBe(false)
     await expect.poll(() => page.textContent('.app')).toBe('hello')
+    const logs = serverLogs.slice(lastServerLogIndex)
+    expect(logs).toContainEqual(expect.stringContaining('page reload'))
+    expect(logs).not.toContainEqual(expect.stringContaining('hmr update'))
   })
 
   // BUNDLED -> GENERATE_HMR_PATCH -> BUNDLING -> BUNDLED
@@ -534,6 +539,158 @@ if (isBuild) {
       .toBe('worker-plain-updated')
   })
 
+  // BUNDLED -...-> HMR_ERROR -...-> BUNDLE_ERROR -...-> BUNDLED
+  test('waits for successful bundle output after an HMR error', async () => {
+    const original = readFile('hmr.js')
+    onTestFinished(async () => {
+      addFile('hmr.js', original)
+      await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+    })
+
+    const getDocumentLoadCount = trackDocumentLoads()
+    const logIndex = serverLogs.length
+
+    addFile(
+      'hmr.js',
+      original.replace("const foo = 'hello'", "const foo = 'hello"),
+    )
+    await expect
+      .poll(() => page.locator('vite-error-overlay .message').textContent())
+      .toContain('Unterminated string')
+
+    addFile('hmr.js', original + '\n// @fail-generate-bundle')
+    await expect
+      .poll(() => page.locator('vite-error-overlay .message').textContent())
+      .toContain('test bundle generation failed')
+    // Give a debounced reload time to fire before checking that none occurred.
+    await setTimeout(300)
+    expect(getDocumentLoadCount()).toBe(0)
+    expect(serverLogs.slice(logIndex)).not.toContainEqual(
+      expect.stringContaining('page reload'),
+    )
+
+    addFile('hmr.js', original.replace("'hello'", "'recovered'"))
+    await expect.poll(() => page.textContent('.hmr')).toBe('recovered')
+    await expect.poll(() => page.isVisible('vite-error-overlay')).toBe(false)
+    expect(getDocumentLoadCount()).toBe(1)
+    expect(serverLogs.slice(logIndex)).not.toContainEqual(
+      expect.stringContaining('hmr update'),
+    )
+  })
+
+  // BUNDLED -...-> HMR_ERROR -...-> BUNDLE_ERROR (via new request) -> BUNDLED -...-> BUNDLED
+  test('recovers from a failed full rebuild requested after an HMR error', async () => {
+    const original = readFile('hmr.js')
+    onTestFinished(async () => {
+      addFile('hmr.js', original)
+      await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+    })
+
+    addFile(
+      'hmr.js',
+      original.replace("const foo = 'hello'", "const foo = 'hello"),
+    )
+    await expect
+      .poll(() => page.locator('vite-error-overlay .message').textContent())
+      .toContain('Unterminated string')
+
+    const logIndex = serverLogs.length
+    const response = await page.request.get(page.url())
+    expect(await response.text()).toContain('__vite_is_fallback_page__')
+    await expect
+      .poll(() => serverLogs.slice(logIndex))
+      .toContainEqual(expect.stringContaining('Build error'))
+    // Give the reload debounce time to run before asserting no reload was sent.
+    await setTimeout(300)
+    expect(serverLogs.slice(logIndex)).not.toContainEqual(
+      expect.stringContaining('page reload'),
+    )
+
+    addFile('hmr.js', original.replace("'hello'", "'full-build-recovered'"))
+    await expect
+      .poll(() => page.textContent('.hmr'))
+      .toBe('full-build-recovered')
+    await expect.poll(() => page.isVisible('vite-error-overlay')).toBe(false)
+
+    await page.evaluate(() => {
+      ;(window as any).__fullBuildRecoveryKeptAlive = true
+    })
+    addFile('hmr.js', original)
+    await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+    expect(
+      await page.evaluate(() => (window as any).__fullBuildRecoveryKeptAlive),
+    ).toBe(true)
+  })
+
+  // BUNDLED -...-> BUNDLED -...-> BUNDLE_ERROR -...-> BUNDLED
+  test('a recovery reload also satisfies a pending client reload request', async () => {
+    const original = readFile('hmr.js')
+    const originalDeadAccept = readFile('dead-accept.js')
+    onTestFinished(async () => {
+      addFile('hmr.js', original)
+      addFile('dead-accept.js', originalDeadAccept)
+      await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+      await expect
+        .poll(() => page.textContent('.dead-accept'))
+        .toBe('dead-accept')
+    })
+
+    addFile(
+      'hmr.js',
+      original.replace("'hello'", "'before-reload'") +
+        '\n// @fail-generate-bundle',
+    )
+    await expect.poll(() => page.textContent('.hmr')).toBe('before-reload')
+
+    const logIndex = serverLogs.length
+    editFile('dead-accept.js', (code) =>
+      code.replace("'dead-accept'", "'recovered-client-reload'"),
+    )
+    await expect
+      .poll(() => page.locator('vite-error-overlay .message').textContent())
+      .toContain('test bundle generation failed')
+    expect(serverLogs.slice(logIndex)).toContainEqual(
+      expect.stringContaining('bundling for page reload'),
+    )
+
+    addFile('hmr.js', original)
+    await expect
+      .poll(() => page.textContent('.dead-accept'))
+      .toBe('recovered-client-reload')
+    await expect.poll(() => page.isVisible('vite-error-overlay')).toBe(false)
+    // Allow queued reloads to fire before checking that recovery sent only one.
+    await setTimeout(300)
+    expect(
+      serverLogs
+        .slice(logIndex)
+        .filter(
+          (log) => stripVTControlCharacters(log).trim() === 'page reload',
+        ),
+    ).toHaveLength(1)
+  })
+
+  // BUNDLED -> GENERATING_HMR_PATCH -> BUNDLED -> BUNDLING -> BUNDLED
+  test('rebuilds a stale bundle when its HTML is requested', async () => {
+    const original = readFile('hmr.js')
+    onTestFinished(async () => {
+      addFile('hmr.js', original)
+      await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+    })
+
+    addFile('hmr.js', original.replace("'hello'", "'stale-output'"))
+    await expect.poll(() => page.textContent('.hmr')).toBe('stale-output')
+    await page.evaluate(() => {
+      ;(window as any).__staleBundle = true
+    })
+
+    const response = await page.request.get(page.url())
+    expect(await response.text()).toContain('__vite_is_fallback_page__')
+    await expect
+      .poll(() => page.evaluate(() => (window as any).__staleBundle))
+      .toBeUndefined()
+    await expect.poll(() => page.textContent('.hmr')).toBe('stale-output')
+  })
+
   test('lazy bundling errors return 500', async () => {
     const response = await page.request.get(
       new URL('/@vite/lazy?id=%2Ffoo%2Fbar&clientId=x', page.url()).href,
@@ -566,4 +723,16 @@ if (isBuild) {
     expect(invalidateCount()).toBe(settled)
     expect(settled).toBeLessThanOrEqual(2)
   })
+}
+
+function trackDocumentLoads() {
+  let documentLoads = 0
+  const onResponse = (response: Response) => {
+    if (response.request().resourceType() === 'document') documentLoads++
+  }
+  page.on('response', onResponse)
+  onTestFinished(() => {
+    page.off('response', onResponse)
+  })
+  return () => documentLoads
 }
