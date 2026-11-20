@@ -658,7 +658,7 @@ export async function handleHMRUpdate(
     } catch (err) {
       environment.hot.send({
         type: 'error',
-        err: prepareError(err),
+        err: prepareError(err, environment.config.hiddenPluginNames),
       })
     }
   }

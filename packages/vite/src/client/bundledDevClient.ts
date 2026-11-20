@@ -10,6 +10,7 @@ import {
   registerBundledDevClient,
   transport,
 } from './client'
+import { logPrefix } from './logPrefix'
 
 declare const __HMR_PARTIAL_ACCEPT__: boolean
 
@@ -56,8 +57,8 @@ if (typeof DevRuntime !== 'undefined') {
 
   const bundledDevHmrClient = new BundledDevHMRClient(
     {
-      error: (err) => console.error('[vite]', err),
-      debug: (...msg) => console.debug('[vite]', ...msg),
+      error: (err) => console.error(logPrefix, err),
+      debug: (...msg) => console.debug(logPrefix, ...msg),
     },
     transport,
     runtime,
