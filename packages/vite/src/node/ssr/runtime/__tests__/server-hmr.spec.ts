@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import { resolve } from 'node:path'
 import { assert, describe, expect, onTestFinished, vi } from 'vitest'
+import { createHMRHandlerForRunner } from '../../../../module-runner/hmrHandler'
 import { promiseWithResolvers } from '../../../../shared/utils'
 import { runnerTest as it } from './utils'
 
@@ -41,6 +42,84 @@ describe(
         expect(runner.hmrClient.ctxToListenersMap.has(fixture)).toBe(true)
       }
     })
+
+    it('ignores updates for a pruned self-accepting module', async ({
+      runner,
+    }) => {
+      const path = '/fixtures/hmr.js'
+      const { hmr } = await runner.import(path)
+      const accept = vi.fn()
+      const dispose = vi.fn()
+      const prune = vi.fn()
+      hmr.accept(accept)
+      hmr.dispose(dispose)
+      hmr.prune(prune)
+
+      const client = runner.hmrClient
+      assert(client)
+      await client.prunePaths([path])
+      expect(dispose).toHaveBeenCalledTimes(1)
+      expect(prune).toHaveBeenCalledTimes(1)
+
+      await client.queueUpdate({
+        type: 'js-update',
+        path,
+        acceptedPath: path,
+        timestamp: Date.now(),
+      })
+      expect(accept).not.toHaveBeenCalled()
+      expect(dispose).toHaveBeenCalledTimes(1)
+    })
+
+    it('evaluates a pruned module again when it is imported again', async ({
+      runner,
+      environment,
+    }) => {
+      const path = '/fixtures/hmr.js'
+      const mod1 = await runner.import(path)
+      const hot1 = mod1.hmr
+      hot1.accept(() => {})
+      hot1.data.value = 1
+      const pruned = promiseWithResolvers<void>()
+      hot1.prune(() => pruned.resolve())
+
+      environment.hot.send({ type: 'prune', paths: [path] })
+      await pruned.promise
+      await vi.waitFor(() => {
+        expect(runner.evaluatedModules.getModuleByUrl(path)?.evaluated).toBe(
+          false,
+        )
+      })
+      expect(runner.hmrClient?.hotModulesMap.has(path)).toBe(false)
+
+      const mod2 = await runner.import(path)
+      expect(mod2).not.toBe(mod1)
+      expect(mod2.hmr).not.toBe(hot1)
+      expect(mod2.hmr.data).toStrictEqual({})
+    })
+
+    for (const hook of ['dispose', 'prune'] as const) {
+      it(`evaluates a pruned module again after its ${hook} hook fails`, async ({
+        runner,
+      }) => {
+        const path = '/fixtures/hmr.js'
+        const original = await runner.import(path)
+        original.hmr.accept(() => {})
+        original.hmr[hook](() => {
+          throw new Error('hook failed')
+        })
+
+        const handleHmr = createHMRHandlerForRunner(runner)
+        await expect(
+          handleHmr({ type: 'prune', paths: [path] }),
+        ).rejects.toThrow('hook failed')
+
+        expect(runner.hmrClient?.hotModulesMap.has(path)).toBe(false)
+        const reimported = await runner.import(path)
+        expect(reimported).not.toBe(original)
+        expect(reimported.hmr.data).toStrictEqual({})
+      })
+    }
 
     it('does not expose partial exports during concurrent updates', async ({
       runner,
