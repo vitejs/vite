@@ -1,0 +1,5 @@
+@value icon from './values/value.module.css';
+
+.entry {
+  background-image: icon;
+}

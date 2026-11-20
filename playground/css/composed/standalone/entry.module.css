@@ -1,0 +1,7 @@
+@value icon: url('./image.svg');
+@value importedIcon from '../nested/values.module.css';
+
+.standalone {
+  background-image: icon;
+  mask-image: importedIcon;
+}
