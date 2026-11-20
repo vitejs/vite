@@ -448,7 +448,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const processedHtml = perEnvironmentState(() => new Map<string, string>())
 
   const isExcludedUrl = (url: string) =>
-    url[0] === '#' || isExternalUrl(url) || isDataUrl(url)
+    url[0] === '#' || url[0] === '?' || isExternalUrl(url) || isDataUrl(url)
 
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
