@@ -105,4 +105,144 @@ describe('moduleGraph', () => {
       )
     })
   })
+
+  describe('onFileDelete', () => {
+    it('clears transform result and breaks outgoing references', async () => {
+      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
+        id: url,
+      }))
+
+      const mod = await moduleGraph.ensureEntryFromUrl('/test.js', false)
+      moduleGraph.updateModuleTransformResult(mod, {
+        code: 'export default "test"',
+        map: null,
+        etag: 'W/"test-etag"',
+      })
+      mod.info = { some: 'info' }
+      mod.meta = { some: 'meta' }
+
+      // Add an imported module to verify outgoing reference cleanup
+      const dep = await moduleGraph.ensureEntryFromUrl('/dep.js', false)
+      mod.importedModules.add(dep)
+      dep.importers.add(mod)
+
+      moduleGraph.onFileDelete('/test.js')
+
+      // transformResult/info/meta should be cleared so stale source code
+      // is not served if the node is reused
+      expect(mod.transformResult).toBe(null)
+      expect(mod.info).toBeUndefined()
+      expect(mod.meta).toBeUndefined()
+
+      // Outgoing references should be broken
+      expect(mod.importedModules.size).toBe(0)
+      expect(dep.importers.has(mod)).toBe(false)
+
+      // Module stays in all maps for HMR propagation
+      expect(moduleGraph.urlToModuleMap.get('/test.js')).toBe(mod)
+      expect(moduleGraph.idToModuleMap.get('/test.js')).toBe(mod)
+      expect(moduleGraph.fileToModulesMap.get('/test.js')).toContain(mod)
+    })
+
+    it('reuses module node with cleared transform result after deletion', async () => {
+      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
+        id: url,
+      }))
+
+      const mod1 = await moduleGraph.ensureEntryFromUrl('/test.js', false)
+      moduleGraph.updateModuleTransformResult(mod1, {
+        code: 'export default "v1"',
+        map: null,
+        etag: 'W/"v1"',
+      })
+
+      moduleGraph.onFileDelete('/test.js')
+
+      // Re-ensuring the URL reuses the same module node (it stays in the
+      // maps for HMR propagation), but the transformResult is cleared so
+      // stale source code is not served
+      const mod2 = await moduleGraph.ensureEntryFromUrl('/test.js', false)
+      expect(mod2).toBe(mod1)
+      expect(mod2.transformResult).toBe(null)
+    })
+
+    it('keeps fileToModulesMap bounded on repeated create/delete cycles', async () => {
+      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
+        id: url,
+      }))
+
+      // Simulate repeated create/delete cycles. onFileDelete preserves the
+      // module node in fileToModulesMap for HMR propagation, but the node is
+      // reused on recreation so the set must not grow unboundedly.
+      for (let i = 0; i < 5; i++) {
+        const mod = await moduleGraph.ensureEntryFromUrl('/test.js', false)
+        moduleGraph.updateModuleTransformResult(mod, {
+          code: `export default "v${i}"`,
+          map: null,
+          etag: `W/"v${i}"`,
+        })
+        moduleGraph.onFileDelete('/test.js')
+      }
+
+      const fileMods = moduleGraph.fileToModulesMap.get('/test.js')
+      expect(fileMods).toBeDefined()
+      expect(fileMods!.size).toBe(1)
+
+      // Final recreation reuses the same node with cleared transformResult
+      const mod = await moduleGraph.ensureEntryFromUrl('/test.js', false)
+      expect(mod.transformResult).toBe(null)
+    })
+
+    it('clears stale ETag mapping on file delete', async () => {
+      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
+        id: url,
+      }))
+
+      const mod = await moduleGraph.ensureEntryFromUrl('/test.js', false)
+      moduleGraph.updateModuleTransformResult(mod, {
+        code: 'export default "test"',
+        map: null,
+        etag: 'W/"test-etag"',
+      })
+
+      // ETag is registered before deletion
+      expect(moduleGraph.getModuleByEtag('W/"test-etag"')).toBe(mod)
+
+      moduleGraph.onFileDelete('/test.js')
+
+      // ETag mapping must be cleaned up so getModuleByEtag does not
+      // return a module whose transformResult has been cleared
+      expect(moduleGraph.getModuleByEtag('W/"test-etag"')).toBeUndefined()
+      expect(mod.transformResult).toBe(null)
+    })
+
+    it('clears transformResult for distinct deleted files', async () => {
+      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
+        id: url,
+      }))
+
+      // Simulate the original #23907 scenario: creating and deleting
+      // distinct filenames. Each file gets its own module node, and
+      // onFileDelete must clear the transformResult (the main memory
+      // consumer) for each one.
+      for (let i = 0; i < 5; i++) {
+        const mod = await moduleGraph.ensureEntryFromUrl(`/file${i}.js`, false)
+        moduleGraph.updateModuleTransformResult(mod, {
+          code: `export default "v${i}"`,
+          map: null,
+          etag: `W/"file${i}"`,
+        })
+        moduleGraph.onFileDelete(`/file${i}.js`)
+      }
+
+      // Each distinct file has its own node, but all transformResults
+      // (which hold the transformed source code) are cleared
+      for (let i = 0; i < 5; i++) {
+        const mod = moduleGraph.urlToModuleMap.get(`/file${i}.js`)
+        expect(mod).toBeDefined()
+        expect(mod!.transformResult).toBe(null)
+        expect(moduleGraph.getModuleByEtag(`W/"file${i}"`)).toBeUndefined()
+      }
+    })
+  })
 })
