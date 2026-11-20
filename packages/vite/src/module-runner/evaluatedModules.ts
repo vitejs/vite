@@ -1,5 +1,11 @@
 import { SOURCEMAPPING_URL } from '../shared/constants'
-import { cleanUrl, isWindows, slash, unwrapId } from '../shared/utils'
+import {
+  type PromiseWithResolvers,
+  cleanUrl,
+  isWindows,
+  slash,
+  unwrapId,
+} from '../shared/utils'
 import { DecodedMap } from './sourcemap/decoder'
 import type { ResolvedResult } from './types'
 import { decodeBase64 } from './utils'
@@ -15,6 +21,16 @@ export class EvaluatedModuleNode {
   public exports: any
   public file: string
   public map: DecodedMap | undefined
+  /**
+   * The cycle this module was handed unfinished exports in, if any.
+   * @internal
+   */
+  public cycleGroup: CycleGroup | undefined
+  /**
+   * Number of evaluations of this module that are still running.
+   * @internal
+   */
+  public runs = 0
 
   constructor(
     public id: string,
@@ -22,6 +38,32 @@ export class EvaluatedModuleNode {
   ) {
     this.file = cleanUrl(id)
   }
+}
+
+/**
+ * A set of modules that import each other and were handed each other's
+ * unfinished exports. Like a cycle in Node.js, the group finishes as a unit:
+ * importers outside of it don't continue until every member has run.
+ * @internal
+ */
+export interface CycleGroup {
+  /** Set once the group was merged into another one. */
+  parent: CycleGroup | undefined
+  /** Evaluations of members that are still running. */
+  pending: number
+  done: boolean
+  error: unknown
+  /** Resolved when the group finishes or is merged. */
+  signal: PromiseWithResolvers<void>
+}
+
+/** @internal */
+export function findCycleGroup(group: CycleGroup): CycleGroup {
+  while (group.parent) {
+    if (group.parent.parent) group.parent = group.parent.parent
+    group = group.parent
+  }
+  return group
 }
 
 export class EvaluatedModules {
@@ -88,6 +130,11 @@ export class EvaluatedModules {
 
   public invalidateModule(node: EvaluatedModuleNode): void {
     this.retainedSourceMaps.delete(node.id)
+    // an unfinished group is kept: an evaluation that is still running counts
+    // itself out of it when it ends, and a new one counts itself in
+    if (node.cycleGroup && findCycleGroup(node.cycleGroup).done) {
+      node.cycleGroup = undefined
+    }
     node.evaluated = false
     node.meta = undefined
     node.map = undefined
