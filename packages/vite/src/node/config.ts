@@ -89,7 +89,7 @@ import type {
 } from './plugin'
 import {
   createPluginHookUtils,
-  getHookHandler,
+  getPluginHookHandler,
   getSortedPluginsByHook,
   resolvePlugins,
 } from './plugins'
@@ -118,6 +118,7 @@ import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from './server/pluginContainer'
+import { SafeModulePaths } from './server/safeModulePaths'
 import type { WebSocketServer } from './server/ws'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions, ssrConfigDefaults } from './ssr'
@@ -276,8 +277,9 @@ function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
 
 export type ResolvedDevEnvironmentOptions = Omit<
   Required<DevEnvironmentOptions>,
-  'sourcemapIgnoreList'
+  'sourcemap' | 'sourcemapIgnoreList'
 > & {
+  sourcemap: { js: boolean; css: boolean }
   sourcemapIgnoreList: Exclude<
     DevEnvironmentOptions['sourcemapIgnoreList'],
     false | undefined
@@ -359,6 +361,8 @@ export type ResolvedEnvironmentOptions = {
   plugins: readonly Plugin[]
   /** @internal */
   optimizeDepsPluginNames: string[]
+  /** @internal */
+  safeModulePaths: SafeModulePaths
 }
 
 export type DefaultEnvironmentOptions = Omit<
@@ -723,7 +727,13 @@ export interface ResolvedWorkerOptions {
 
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
-  /** @experimental */
+  /**
+   * The loader to use when loading the config file.
+   *
+   * `runner` is deprecated and will be removed in the next major version.
+   *
+   * @default 'bundle'
+   */
   configLoader?: 'bundle' | 'runner' | 'native'
   /** @deprecated */
   envFile?: false
@@ -833,8 +843,11 @@ export interface ResolvedConfig extends Readonly<
     webSocketToken: string
     /** @internal */
     fsDenyGlob: AnymatchFn
-    /** @internal */
-    safeModulePaths: Set<string>
+    /**
+     * @internal
+     * @deprecated Use `config.environments.client.safeModulePaths` instead.
+     */
+    safeModulePaths: SafeModulePaths
     /** @internal */
     [SYMBOL_RESOLVED_CONFIG]: true
   } & PluginHookUtils
@@ -1018,6 +1031,7 @@ export function resolveDevEnvironmentOptions(
   consumer: 'client' | 'server' | undefined,
   // Backward compatibility
   preTransformRequest?: boolean,
+  cssDevSourcemap?: boolean,
 ): ResolvedDevEnvironmentOptions {
   const resolved = mergeWithDefaults(
     {
@@ -1035,11 +1049,21 @@ export function resolveDevEnvironmentOptions(
   )
   return {
     ...resolved,
+    sourcemap: normalizeDevSourcemap(resolved.sourcemap, cssDevSourcemap),
     sourcemapIgnoreList:
       resolved.sourcemapIgnoreList === false
         ? () => false
         : resolved.sourcemapIgnoreList,
   }
+}
+
+function normalizeDevSourcemap(
+  sourcemap: DevEnvironmentOptions['sourcemap'],
+  cssDefault = false,
+): ResolvedDevEnvironmentOptions['sourcemap'] {
+  return typeof sourcemap === 'boolean'
+    ? { js: sourcemap, css: sourcemap }
+    : { js: sourcemap?.js ?? true, css: sourcemap?.css ?? cssDefault }
 }
 
 function resolveEnvironmentOptions(
@@ -1051,6 +1075,7 @@ function resolveEnvironmentOptions(
   environmentName: string,
   isBuild: boolean,
   isBundledDev: boolean,
+  cssDevSourcemap: boolean | undefined,
   // Backward compatibility
   isSsrTargetWebworkerSet?: boolean,
   preTransformRequests?: boolean,
@@ -1112,6 +1137,7 @@ function resolveEnvironmentOptions(
       environmentName,
       consumer,
       preTransformRequests,
+      cssDevSourcemap,
     ),
     build: resolveBuildEnvironmentOptions(
       options.build ?? {},
@@ -1125,6 +1151,7 @@ function resolveEnvironmentOptions(
     plugins: undefined!, // to be resolved later
     // will be set by `setOptimizeDepsPluginNames` later
     optimizeDepsPluginNames: undefined!,
+    safeModulePaths: new SafeModulePaths(),
   }
 }
 
@@ -1139,7 +1166,13 @@ export function getDefaultEnvironmentOptions(
       mainFields: undefined,
       conditions: undefined,
     },
-    dev: config.dev,
+    dev:
+      typeof config.dev?.sourcemap === 'boolean'
+        ? {
+            ...config.dev,
+            sourcemap: normalizeDevSourcemap(config.dev.sourcemap),
+          }
+        : config.dev,
     build: config.build,
   }
 }
@@ -1311,12 +1344,6 @@ function resolveDepOptimizationOptions(
   consumer: 'client' | 'server' | undefined,
   logger: Logger,
 ): DepOptimizationOptions {
-  if (
-    optimizeDeps?.rolldownOptions &&
-    optimizeDeps?.rolldownOptions === optimizeDeps?.rollupOptions
-  ) {
-    delete optimizeDeps?.rollupOptions
-  }
   const merged = mergeWithDefaults(
     {
       ...configDefaults.optimizeDeps,
@@ -1326,8 +1353,6 @@ function resolveDepOptimizationOptions(
     },
     optimizeDeps ?? {},
   )
-  setupRollupOptionCompat(merged, 'optimizeDeps')
-
   const rolldownOptions = merged.rolldownOptions as Exclude<
     DepOptimizationOptions['rolldownOptions'],
     undefined
@@ -1519,14 +1544,12 @@ export async function resolveConfig(
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   config.build ??= {}
-  setupRollupOptionCompat(config.build, 'build')
+  setupRollupOptionCompat(config.build)
   config.worker ??= {}
-  setupRollupOptionCompat(config.worker, 'worker')
+  setupRollupOptionCompat(config.worker)
   config.optimizeDeps ??= {}
-  setupRollupOptionCompat(config.optimizeDeps, 'optimizeDeps')
   if (config.ssr) {
     config.ssr.optimizeDeps ??= {}
-    setupRollupOptionCompat(config.ssr.optimizeDeps, 'ssr.optimizeDeps')
   }
 
   let configFileDependencies: string[] = []
@@ -1651,6 +1674,14 @@ export async function resolveConfig(
     )
   }
 
+  if (config.css?.devSourcemap !== undefined) {
+    logger.warn(
+      colors.yellow(
+        `The \`css.devSourcemap\` option is deprecated. Please use \`dev.sourcemap.css\` instead.`,
+      ),
+    )
+  }
+
   const tsconfigPathsPlugin = userPlugins.find(
     (p) =>
       p.name === 'vite-tsconfig-paths' ||
@@ -1769,6 +1800,10 @@ export async function resolveConfig(
     },
   }
 
+  if (isBuild && config.build?.ssr === true) {
+    config.environments.ssr.input ??= config.input
+  }
+
   for (const name of Object.keys(config.environments)) {
     config.environments[name] = mergeConfig(
       name === 'client'
@@ -1808,6 +1843,7 @@ export async function resolveConfig(
       environmentName,
       isBuild,
       isBundledDev,
+      config.css?.devSourcemap,
       config.ssr?.target === 'webworker',
       config.server?.preTransformRequests,
     )
@@ -1825,6 +1861,8 @@ export async function resolveConfig(
     // default environment options
     undefined,
     undefined,
+    undefined,
+    config.css?.devSourcemap,
   )
 
   const resolvedBuildOptions = resolveBuildEnvironmentOptions(
@@ -2051,7 +2089,7 @@ export async function resolveConfig(
     rollupOptions: config.worker?.rollupOptions || {},
     rolldownOptions: config.worker?.rolldownOptions, // will be set by setupRollupOptionCompat if undefined
   }
-  setupRollupOptionCompat(resolvedWorkerOptions, 'worker')
+  setupRollupOptionCompat(resolvedWorkerOptions)
 
   const base = withTrailingSlash(resolvedBase)
 
@@ -2240,7 +2278,7 @@ export async function resolveConfig(
         dot: true,
       },
     ),
-    safeModulePaths: new Set<string>(),
+    safeModulePaths: resolvedEnvironments.client.safeModulePaths,
     [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {
@@ -2468,6 +2506,13 @@ export async function loadConfigFromFile(
   ) {
     throw new Error(
       `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle', 'runner', and 'native'.`,
+    )
+  }
+  if (configLoader === 'runner') {
+    createLogger(logLevel, { customLogger }).warn(
+      colors.yellow(
+        `The \`runner\` config loader is deprecated and will be removed in Vite 9. Use \`bundle\` or \`native\` instead.`,
+      ),
     )
   }
 
@@ -2892,8 +2937,7 @@ async function runConfigHook(
   >(basePluginContextMeta, tempLogger)
 
   for (const p of getSortedPluginsByHook('config', plugins)) {
-    const hook = p.config
-    const handler = getHookHandler(hook)
+    const handler = getPluginHookHandler(p, 'config')
     const res = await handler.call(context, conf, configEnv)
     if (res && res !== conf) {
       if (hasBothRollupOptionsAndRolldownOptions(res)) {
@@ -2934,8 +2978,7 @@ async function runConfigEnvironmentHook(
 
   const environmentNames = Object.keys(environments)
   for (const p of getSortedPluginsByHook('configEnvironment', plugins)) {
-    const hook = p.configEnvironment
-    const handler = getHookHandler(hook)
+    const handler = getPluginHookHandler(p, 'configEnvironment')
     for (const name of environmentNames) {
       const res = await handler.call(context, name, environments[name], {
         ...configEnv,

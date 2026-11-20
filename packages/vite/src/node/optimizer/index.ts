@@ -105,15 +105,6 @@ export interface DepOptimizationConfig {
    */
   esbuildOptions?: DepsOptimizerEsbuildOptions
   /**
-   * @deprecated Use `rolldownOptions` instead.
-   */
-  rollupOptions?: Omit<RolldownOptions, 'input' | 'logLevel' | 'output'> & {
-    output?: Omit<
-      RolldownOutputOptions,
-      'format' | 'sourcemap' | 'dir' | 'banner'
-    >
-  }
-  /**
    * Options to pass to rolldown during the dep scanning and optimization
    *
    * Certain options are omitted since changing them would not be compatible
@@ -843,6 +834,7 @@ async function prepareRolldownOptimizerRun(
   async function build() {
     const bundle = await rolldown({
       ...rolldownOptions,
+      tsconfig: environment.config.tsconfig ?? rolldownOptions.tsconfig,
       input: flatIdDeps,
       logLevel: 'silent',
       plugins,
@@ -855,6 +847,9 @@ async function prepareRolldownOptimizerRun(
       resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js', '.css', '.json'],
         ...rolldownOptions.resolve,
+        ...(environment.config.tsconfig
+          ? { tsconfigFilename: undefined }
+          : undefined),
       },
       // TODO: remove this and enable rolldown's CSS support later
       moduleTypes: {
@@ -1108,7 +1103,7 @@ export async function extractExportsData(
   environment: Environment,
   filePath: string,
 ): Promise<ExportsData> {
-  await init
+  await init()
 
   const { optimizeDeps } = environment.config
 
@@ -1147,7 +1142,9 @@ export async function extractExportsData(
       const [, exports, , hasModuleSyntax] = parse(result.output[0].code)
       return {
         hasModuleSyntax,
-        exports: exports.map((e) => e.n),
+        exports: exports.flatMap((e) =>
+          e.type === 'reexport-all' || e.typeOnly ? [] : [e.name],
+        ),
       }
     } finally {
       await build.close()
@@ -1182,7 +1179,9 @@ export async function extractExportsData(
   const [, exports, , hasModuleSyntax] = parseResult
   const exportsData: ExportsData = {
     hasModuleSyntax,
-    exports: exports.map((e) => e.n),
+    exports: exports.flatMap((e) =>
+      e.type === 'reexport-all' || e.typeOnly ? [] : [e.name],
+    ),
     jsxLoader: usedJsxLoader,
   }
   return exportsData
@@ -1318,6 +1317,7 @@ function getConfigHash(environment: Environment): string {
         ? process.env.NODE_ENV || config.mode
         : null,
       root: config.root,
+      tsconfig: config.tsconfig,
       resolve: config.resolve,
       assetsInclude: config.assetsInclude,
       plugins: config.plugins.map((p) => p.name),
@@ -1371,7 +1371,16 @@ export function getLockfileHash(root: string): string {
       )
       const stat = tryStatSync(fullPath)
       if (stat?.isDirectory()) {
-        content += stat.mtimeMs.toString()
+        // the patches directory's mtime only changes when entries are added
+        // or removed, so use each patch file's mtime to also detect in-place
+        // edits and overwrites of existing patch files
+        for (const name of fs.readdirSync(fullPath)) {
+          if (!name.endsWith('.patch')) continue
+          const fileStat = tryStatSync(path.join(fullPath, name))
+          if (fileStat?.isFile()) {
+            content += name + fileStat.mtimeMs.toString()
+          }
+        }
       }
     }
   }

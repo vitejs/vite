@@ -6,12 +6,13 @@ const _dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
 export default defineConfig({
   test: {
+    includeTaskLocation: true,
     include: ['**/__tests__/**/*.spec.[tj]s'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
       './playground/**/*.*',
-      './playground-temp/**/*.*',
+      './playground-temp-*/**/*.*',
     ],
     deps: {
       // we specify 'packages' so Vitest doesn't inline the files

@@ -43,6 +43,7 @@ import {
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
   ROLLUP_HOOKS,
   VERSION,
+  CSS_LANGS_RE,
 } from './constants'
 import {
   isFutureDeprecationEnabled,
@@ -54,11 +55,11 @@ import { findNearestMainPackageData, findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import { perEnvironmentPlugin } from './plugin'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
-import { getHookHandler } from './plugins'
+import { getHookHandler, getPluginHookHandler } from './plugins'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { type LicenseOptions, licensePlugin } from './plugins/license'
-import { manifestPlugin } from './plugins/manifest'
+import { type Manifest, manifestPlugin } from './plugins/manifest'
 import { prepareOutDirPlugin } from './plugins/prepareOutDir'
 import { buildReporterPlugin } from './plugins/reporter'
 import { type TerserOptions, terserPlugin } from './plugins/terser'
@@ -465,7 +466,7 @@ export function resolveBuildEnvironmentOptions(
     } satisfies BuildEnvironmentOptions,
     raw,
   )
-  setupRollupOptionCompat(merged, 'build')
+  setupRollupOptionCompat(merged)
   if (isBundledDev) {
     merged.chunkImportMap = false
   }
@@ -521,7 +522,7 @@ export function resolveBuildEnvironmentOptions(
   }
   // The object spread above evaluates the `rollupOptions` getter set up on
   // `merged` and copies it as a plain data property.
-  setupRollupOptionCompat(resolved, 'build')
+  setupRollupOptionCompat(resolved)
 
   return resolved
 }
@@ -643,7 +644,7 @@ export function resolveRolldownOptions(
         : Array.isArray(input)
           ? input
           : Object.values(input)
-    if (inputs.some((input) => input.endsWith('.css'))) {
+    if (inputs.some((input) => CSS_LANGS_RE.test(input))) {
       throw new Error(
         `When "build.cssCodeSplit: false" is set, "rolldownOptions.input" should not include CSS files.`,
       )
@@ -1548,9 +1549,16 @@ function injectSsrFlag<T extends Record<string, any>>(
   pluginName: string,
 ): T & { ssr?: boolean } {
   let ssr = environment.config.consumer === 'server'
-  const newOptions = { ...options, ssr } as T & {
-    ssr?: boolean
-  }
+  // spreading the options would drop non-enumerable properties (e.g. the lazy
+  // `magicString` and `ast` getters rolldown attaches to the transform meta),
+  // so copy the property descriptors instead
+  const newOptions = Object.defineProperties(
+    {},
+    {
+      ...(options ? Object.getOwnPropertyDescriptors(options) : {}),
+      ssr: { value: ssr, writable: true, enumerable: true, configurable: true },
+    },
+  ) as T & { ssr?: boolean }
 
   if (
     isFutureDeprecationEnabled(
@@ -1758,6 +1766,18 @@ export class BuildEnvironment extends BaseEnvironment {
   mode = 'build' as const
 
   isBuilt = false
+
+  /**
+   * The build manifest for this environment. It is populated once the
+   * environment has been built and is available regardless of the
+   * `build.manifest` option, which only controls whether the manifest file is
+   * written to disk. This allows accessing the manifest in the `buildApp` hook
+   * without reading it from the file system.
+   *
+   * @experimental
+   */
+  manifest?: Manifest
+
   constructor(
     name: string,
     config: ResolvedConfig,
@@ -1881,7 +1901,7 @@ export async function createBuilder(
           configBuilderBuildAppCalled = true
           await configBuilder.buildApp(builder)
         }
-        const handler = getHookHandler(hook)
+        const handler = getPluginHookHandler(p, 'buildApp')
         await handler.call(pluginContext, builder)
       }
       if (!configBuilderBuildAppCalled) {

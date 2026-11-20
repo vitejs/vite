@@ -14,9 +14,9 @@ describe('moduleGraph', () => {
       const entryModule = await moduleGraph.ensureEntryFromUrl(entryUrl, false)
       entryModule.ssrError = new Error(`unable to execute module`)
 
-      expect(entryModule.ssrError).to.be.a('error')
+      expect(entryModule.ssrError).toBeInstanceOf(Error)
       moduleGraph.invalidateModule(entryModule)
-      expect(entryModule.ssrError).toBe(null)
+      expect(entryModule.ssrError).toBeNull()
     })
 
     it('ensureEntryFromUrl should based on resolvedId', async () => {
@@ -32,7 +32,7 @@ describe('moduleGraph', () => {
       const mod1 = await moduleGraph.ensureEntryFromUrl('/x.js', false)
       mod1.meta = meta
       const mod2 = await moduleGraph.ensureEntryFromUrl('/xx.js', false)
-      expect(mod2.meta).to.equal(meta)
+      expect(mod2.meta).toStrictEqual(meta)
     })
 
     it('ensure backward compatibility', async () => {
@@ -83,7 +83,7 @@ describe('moduleGraph', () => {
 
       const module1importers = module1.importers
       const module1importersValues = [...module1importers.values()]
-      expect(module1importersValues.length).toBe(importersUrls.length)
+      expect(module1importersValues).toHaveLength(importersUrls.length)
       expect(module1importersValues[1]._clientModule).toBe(
         clientModule1importersValues[1],
       )
@@ -96,7 +96,7 @@ describe('moduleGraph', () => {
         moduleGraph.invalidateModule(imp)
         module1importersFromForEach.push(imp)
       })
-      expect(module1importersFromForEach.length).toBe(importersUrls.length)
+      expect(module1importersFromForEach).toHaveLength(importersUrls.length)
       expect(module1importersFromForEach[1]._clientModule).toBe(
         clientModule1importersValues[1],
       )

@@ -123,9 +123,19 @@ describe.runIf(isBuild)('build', () => {
       .toMatch('"type":"constructor"')
   })
 
-  test('should not emit worker manifest', async () => {
+  test('includes worker entries in the manifest', async () => {
     const manifest = readManifest('iife')
     expect(manifest['index.html']).toBeDefined()
+    const workerEntry = manifest['_worker_assets/worker_entry-simple-worker.js']
+    expect(workerEntry).toStrictEqual({
+      file: 'assets/worker_entry-simple-worker.js',
+      name: 'simple-worker',
+      src: 'simple-worker.js',
+      isWorker: true,
+      isWorkerEntry: true,
+      isDynamicEntry: false,
+    })
+    expect(workerEntry.isEntry).toBeUndefined()
   })
 })
 

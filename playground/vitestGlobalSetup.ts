@@ -1,15 +1,13 @@
 import type { CopyOptions } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import type { BrowserServer } from 'playwright-chromium'
 import { chromium } from 'playwright-chromium'
 import type { TestProject } from 'vitest/node'
 
-let browserServer: BrowserServer | undefined
 const PLAYGROUND_NAME_REGEX = /playground\/([\w-]+)\//
 
-export async function setup(project: TestProject): Promise<void> {
-  browserServer = await chromium.launchServer({
+export default async function setup(project: TestProject) {
+  const browserServer = await chromium.launchServer({
     headless: !process.env.VITE_DEBUG_SERVE,
     args: process.env.CI
       ? ['--no-sandbox', '--disable-setuid-sandbox']
@@ -18,8 +16,18 @@ export async function setup(project: TestProject): Promise<void> {
 
   project.provide('wsEndpoint', browserServer.wsEndpoint())
 
-  const tempDir = path.resolve(import.meta.dirname, '../playground-temp')
-  const testFiles = project.vitest.state.getPaths()
+  const tempDir = path.resolve(
+    import.meta.dirname,
+    `../playground-temp-${project.name}`,
+  )
+  project.provide('playgroundTempDir', tempDir)
+  const testFiles = project.vitest.state
+    .getPaths()
+    .filter((file) =>
+      project.vitest
+        .getModuleSpecifications(file)
+        .some((spec) => spec.project === project),
+    )
   const playgroundDirs = [
     ...new Set(testFiles.map((file) => file.match(PLAYGROUND_NAME_REGEX)?.[1])),
   ]
@@ -62,14 +70,11 @@ export async function setup(project: TestProject): Promise<void> {
     }
   }
   await Promise.all(cpPromises)
-}
-
-export async function teardown(): Promise<void> {
-  await browserServer?.close()
-  if (!process.env.VITE_PRESERVE_BUILD_ARTIFACTS) {
-    await fs.rm(path.resolve(import.meta.dirname, '../playground-temp'), {
-      recursive: true,
-    })
+  return async () => {
+    await browserServer.close()
+    if (!process.env.VITE_PRESERVE_BUILD_ARTIFACTS) {
+      await fs.rm(tempDir, { recursive: true })
+    }
   }
 }
 
@@ -91,5 +96,12 @@ function copyWithFriendlyError(
 
 function filterForPlaygroundCopy(file: string): boolean {
   file = file.replace(/\\/g, '/')
-  return !file.includes('__tests__') && !/dist(?:\/|$)/.test(file)
+  return (
+    !file.includes('__tests__') &&
+    !/dist(?:\/|$)/.test(file) &&
+    // the glob-import symlink is created at runtime by its vite.config with a
+    // target relative to the playground dir; copying it would resolve the
+    // target to the original playground location, outside the copied root
+    !file.endsWith('glob-import/root/follow-symlinks/linked/my-lib')
+  )
 }

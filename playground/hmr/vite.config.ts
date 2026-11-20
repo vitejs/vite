@@ -3,8 +3,12 @@ import path from 'node:path'
 import { globSync } from 'tinyglobby'
 import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
+import { inject } from 'vitest'
 import { TestCssLinkPlugin } from './css-link/plugin.ts'
 import { TestCssStylePlugin } from './css-style/plugin.ts'
+
+const isBundledDev =
+  !!process.env.VITEST && inject('playgroundMode') === 'serve-bundled'
 
 const acceptExportsPages = globSync('./accept-exports/*/index.html', {
   absolute: true,
@@ -21,8 +25,20 @@ export default defineConfig(({ command }) => ({
     ...(command === 'build'
       ? []
       : [
-          path.resolve(import.meta.dirname, './missing-import/index.html'),
-          path.resolve(import.meta.dirname, './css-style/index.html'),
+          ...[
+            'css-link',
+            'css-style',
+            ...(isBundledDev ? [] : ['missing-file']),
+            'missing-import',
+          ].map((dir) => path.resolve(import.meta.dirname, dir, 'index.html')),
+          ...(isBundledDev
+            ? []
+            : [
+                path.resolve(
+                  import.meta.dirname,
+                  './missing-file/direct-script.html',
+                ),
+              ]),
           path.resolve(import.meta.dirname, './entry-cycle/index.html'),
           path.resolve(import.meta.dirname, './entry-cycle/entry-cycle.js'),
           path.resolve(
@@ -84,6 +100,7 @@ export default defineConfig(({ command }) => ({
     virtualInvalidationPlugin(),
     transformCountPlugin(),
     watchCssDepsPlugin(),
+    watchCssDepsLoadPlugin(),
     TestCssLinkPlugin(),
     TestCssStylePlugin(),
     hotEventsPlugin(),
@@ -170,6 +187,37 @@ function watchCssDepsPlugin(): Plugin {
         const dep = await fs.readFile(depPath, 'utf-8')
         const color = dep.match(/color = '(.+?)'/)[1]
         this.addWatchFile(depPath)
+        return code.replace('replaced', color)
+      }
+    },
+  }
+}
+
+function watchCssDepsLoadPlugin(): Plugin {
+  const virtualId = '\0virtual:css-deps-load.css'
+  const depPath = path.resolve(import.meta.dirname, './css-deps/dep-load.js')
+  return {
+    name: 'watch-css-deps-load',
+    resolveId(id) {
+      if (id.includes('css-deps/main-load.css')) {
+        const query = id.includes('?') ? id.slice(id.indexOf('?')) : ''
+        return virtualId + query
+      }
+    },
+    load(id) {
+      if (id.startsWith(virtualId)) {
+        this.addWatchFile(depPath)
+        return `\
+.css-deps-load {
+  color: replaced;
+}
+`
+      }
+    },
+    async transform(code, id) {
+      if (id.startsWith(virtualId)) {
+        const dep = await fs.readFile(depPath, 'utf-8')
+        const color = dep.match(/color = '(.+?)'/)[1]
         return code.replace('replaced', color)
       }
     },
