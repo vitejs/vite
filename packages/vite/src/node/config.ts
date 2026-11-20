@@ -212,7 +212,7 @@ export interface DevEnvironmentOptions {
   warmup?: string[]
   /**
    * Pre-transform known direct imports
-   * defaults to true for the client environment, false for the rest
+   * @default true
    */
   preTransformRequests?: boolean
   /**
@@ -983,7 +983,7 @@ export function resolveDevEnvironmentOptions(
     {
       ...configDefaults.dev,
       sourcemapIgnoreList: isInNodeModules,
-      preTransformRequests: preTransformRequest ?? consumer === 'client',
+      preTransformRequests: preTransformRequest ?? true,
       createEnvironment:
         environmentName === 'client'
           ? defaultCreateClientDevEnvironment

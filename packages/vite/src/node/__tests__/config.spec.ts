@@ -1896,10 +1896,10 @@ test('preTransformRequests', async () => {
   ).toMatchInlineSnapshot(`
     {
       "client": true,
-      "custom": false,
+      "custom": true,
       "customFalse": false,
       "customTrue": true,
-      "ssr": false,
+      "ssr": true,
     }
   `)
 
