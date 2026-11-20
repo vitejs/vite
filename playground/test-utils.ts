@@ -26,7 +26,6 @@ import {
   page,
   sourcemapSnapshot,
   testDir,
-  viteServer,
   watchBuilds,
   watchIdleSince,
 } from './vitestSetupUtils'
@@ -284,16 +283,6 @@ export function readDepOptimizationMetadata(
       'utf-8',
     ),
   )
-}
-
-export async function gotoLatestBuild(url: string): Promise<void> {
-  if (isBundledDev) {
-    // Earlier HMR edits leave the bundled-dev output stale. Opening a page then
-    // serves the fallback page first, which reloads into the real page later.
-    const bundledDev = viteServer.environments.client.bundledDev as any
-    await bundledDev.devEngine.ensureLatestBuildOutput()
-  }
-  await page.goto(url)
 }
 
 /**
