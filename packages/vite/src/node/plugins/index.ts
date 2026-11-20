@@ -220,6 +220,8 @@ export function getHookHandler<T extends ObjectHook<Function>>(
   return (typeof hook === 'object' ? hook.handler : hook) as HookHandler<T>
 }
 
+const taggedHandlers = new WeakMap<Plugin, Map<keyof Plugin, Function>>()
+
 export function getPluginHookHandler<K extends keyof Plugin>(
   plugin: Plugin,
   hookName: K,
@@ -227,8 +229,24 @@ export function getPluginHookHandler<K extends keyof Plugin>(
   const handler: ((this: unknown, ...args: unknown[]) => unknown) | undefined =
     getHookHandler(plugin[hookName])
   if (!handler) return handler as never
+
+  let handlers = taggedHandlers.get(plugin)
+  if (!handlers) taggedHandlers.set(plugin, (handlers = new Map()))
+  let tagged = handlers.get(hookName)
+  if (!tagged) {
+    tagged = tagHandlerErrors(handler, plugin.name, hookName)
+    handlers.set(hookName, tagged)
+  }
+  return tagged as NonNullable<HookHandler<Plugin[K]>>
+}
+
+function tagHandlerErrors(
+  handler: (this: unknown, ...args: unknown[]) => unknown,
+  plugin: string,
+  hook: string,
+) {
   const rethrowTagged = (e: unknown): never => {
-    tagPluginError(e, plugin.name, hookName)
+    tagPluginError(e, plugin, hook)
     throw e
   }
   return function (this: unknown, ...args: unknown[]) {
@@ -240,7 +258,7 @@ export function getPluginHookHandler<K extends keyof Plugin>(
     } catch (e) {
       rethrowTagged(e)
     }
-  } as NonNullable<HookHandler<Plugin[K]>>
+  }
 }
 
 function tagPluginError(e: unknown, plugin: string, hook: string): void {
