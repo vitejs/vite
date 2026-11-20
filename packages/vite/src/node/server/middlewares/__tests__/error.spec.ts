@@ -39,9 +39,9 @@ describe('prepareError', () => {
     expect(
       prepareError(pluginError('vite:css'), [/^vite:/]).plugin,
     ).toBeUndefined()
-    expect(prepareError(pluginError('my-plugin'), ['my-plugin']).plugin).toBe(
-      undefined,
-    )
+    expect(
+      prepareError(pluginError('my-plugin'), ['my-plugin']).plugin,
+    ).toBeUndefined()
     expect(prepareError(pluginError('my-plugin'), [/^vite:/]).plugin).toBe(
       'my-plugin',
     )
