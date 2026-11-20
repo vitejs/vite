@@ -180,6 +180,15 @@ export interface CSSOptions {
    * @experimental
    */
   lightningcss?: LightningCSSOptions
+  /**
+   * Controls how Vite handles unresolved `url()` asset references in CSS during build.
+   * - `'warn'`: emits a warning and leaves the URL unchanged to be resolved at runtime
+   * - `'error'`: throws a build error
+   * - `'ignore'`: ignores unresolved URLs without warning
+   *
+   * @default 'warn'
+   */
+  unresolvedUrlPolicy?: 'warn' | 'error' | 'ignore'
 }
 
 export interface CSSModulesOptions {
@@ -220,12 +229,13 @@ const _cssConfigDefaults = Object.freeze({
   /** @deprecated @experimental */
   devSourcemap: false,
   // lightningcss
+  unresolvedUrlPolicy: 'warn',
 } satisfies CSSOptions)
 export const cssConfigDefaults: Readonly<Partial<CSSOptions>> =
   _cssConfigDefaults
 
 export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> &
-  Required<Pick<CSSOptions, 'transformer' | 'devSourcemap'>> & {
+  Required<Pick<CSSOptions, 'transformer' | 'devSourcemap' | 'unresolvedUrlPolicy'>> & {
     lightningcss?: LightningCSSOptions
   }
 
@@ -481,10 +491,13 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
               : false
 
             if (!isExternal) {
-              // #9800 If we cannot resolve the css url, leave a warning.
-              config.logger.warnOnce(
-                `\n${decodedUrl} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
-              )
+              const message = `\n${decodedUrl} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`
+              if (config.css.unresolvedUrlPolicy === 'error') {
+                this.error(message)
+              } else if (config.css.unresolvedUrlPolicy === 'warn') {
+                // #9800 If we cannot resolve the css url, leave a warning.
+                config.logger.warnOnce(message)
+              }
             }
           }
           return [url, undefined]
