@@ -239,6 +239,8 @@ export function createDepsOptimizer(
                 clearTimeout(scanTimer)
               }
 
+              if (closed) return
+
               const manuallyIncluded = Object.keys(manuallyIncludedDepsInfo)
               discoveredDepsWhileScanning.push(
                 ...Object.keys(metadata.discovered).filter(
@@ -661,11 +663,11 @@ export function createDepsOptimizer(
       // If holdUntilCrawlEnd is false and we reach here, it means that the
       // scan+optimize step finished after crawl end. We follow the same
       // process as in the holdUntilCrawlEnd in this case.
-      const afterScanResult = optimizationResult.result
-      optimizationResult = undefined // signal that we'll be using the result
-
-      const result = await afterScanResult
+      // Keep the in-flight result available to close() until the write settles.
+      const result = await optimizationResult.result
+      optimizationResult = undefined
       currentlyProcessing = false
+      if (closed) return
 
       const crawlDeps = Object.keys(metadata.discovered)
       const scanDeps = Object.keys(result.metadata.optimized)
