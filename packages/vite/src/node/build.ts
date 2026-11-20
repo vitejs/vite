@@ -889,6 +889,7 @@ async function buildEnvironment(
         resolvedOutDirs,
         emptyOutDir,
         environment.config.cacheDir,
+        root,
       )
 
       const { watch } = await import('rolldown')
