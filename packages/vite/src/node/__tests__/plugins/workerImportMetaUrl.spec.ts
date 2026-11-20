@@ -27,7 +27,7 @@ describe('workerImportMetaUrlPlugin', async () => {
     expect(
       await transform('new Worker(new URL("./worker.js", import.meta.url))'),
     ).toMatchInlineSnapshot(
-      `"new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=classic", '' + import.meta.url))"`,
+      `"new Worker(new globalThis.URL(/* @vite-ignore */ "/worker.js?worker_file&type=classic", '' + import.meta.url))"`,
     )
   })
 
@@ -37,7 +37,7 @@ describe('workerImportMetaUrlPlugin', async () => {
         'new SharedWorker(new URL("./worker.js", import.meta.url))',
       ),
     ).toMatchInlineSnapshot(
-      `"new SharedWorker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=classic", '' + import.meta.url))"`,
+      `"new SharedWorker(new globalThis.URL(/* @vite-ignore */ "/worker.js?worker_file&type=classic", '' + import.meta.url))"`,
     )
   })
 
@@ -47,7 +47,7 @@ describe('workerImportMetaUrlPlugin', async () => {
         'new Worker(new URL("./worker.js", import.meta.url), { type: "module", name: "worker1" })',
       ),
     ).toMatchInlineSnapshot(
-      `"new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", '' + import.meta.url), { type: "module", name: "worker1" })"`,
+      `"new Worker(new globalThis.URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", '' + import.meta.url), { type: "module", name: "worker1" })"`,
     )
   })
 
@@ -57,7 +57,7 @@ describe('workerImportMetaUrlPlugin', async () => {
         'new Worker(new URL("./worker.js", import.meta.url), { "type": "module", "name": "worker1" })',
       ),
     ).toMatchInlineSnapshot(
-      `"new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", '' + import.meta.url), { "type": "module", "name": "worker1" })"`,
+      `"new Worker(new globalThis.URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", '' + import.meta.url), { "type": "module", "name": "worker1" })"`,
     )
   })
 
@@ -67,7 +67,7 @@ describe('workerImportMetaUrlPlugin', async () => {
         'const id = 1; new Worker(new URL("./worker.js", import.meta.url), { name: "worker" + id })',
       ),
     ).toMatchInlineSnapshot(
-      `"const id = 1; new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=classic", '' + import.meta.url), { name: "worker" + id })"`,
+      `"const id = 1; new Worker(new globalThis.URL(/* @vite-ignore */ "/worker.js?worker_file&type=classic", '' + import.meta.url), { name: "worker" + id })"`,
     )
   })
 
@@ -77,7 +77,7 @@ describe('workerImportMetaUrlPlugin', async () => {
         'const id = 1; new Worker(new URL("./worker.js", import.meta.url), { name: `worker-${id}` })',
       ),
     ).toMatchInlineSnapshot(
-      `"const id = 1; new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=classic", '' + import.meta.url), { name: \`worker-\${id}\` })"`,
+      `"const id = 1; new Worker(new globalThis.URL(/* @vite-ignore */ "/worker.js?worker_file&type=classic", '' + import.meta.url), { name: \`worker-\${id}\` })"`,
     )
   })
 
@@ -87,7 +87,7 @@ describe('workerImportMetaUrlPlugin', async () => {
         'const id = 1; new Worker(new URL("./worker.js", import.meta.url), { name: "worker" + id, type: "module" })',
       ),
     ).toMatchInlineSnapshot(
-      `"const id = 1; new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", '' + import.meta.url), { name: "worker" + id, type: "module" })"`,
+      `"const id = 1; new Worker(new globalThis.URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", '' + import.meta.url), { name: "worker" + id, type: "module" })"`,
     )
   })
 
@@ -97,7 +97,7 @@ describe('workerImportMetaUrlPlugin', async () => {
         'const id = 1; new Worker(new URL("./worker.js", import.meta.url), { name: `worker-${id}`, type: "module" })',
       ),
     ).toMatchInlineSnapshot(
-      `"const id = 1; new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", '' + import.meta.url), { name: \`worker-\${id}\`, type: "module" })"`,
+      `"const id = 1; new Worker(new globalThis.URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", '' + import.meta.url), { name: \`worker-\${id}\`, type: "module" })"`,
     )
   })
 
@@ -107,7 +107,7 @@ describe('workerImportMetaUrlPlugin', async () => {
         'const worker = new Worker(new URL("./worker.js", import.meta.url), { name: genName(), type: "module"})',
       ),
     ).toMatchInlineSnapshot(
-      `"const worker = new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", '' + import.meta.url), { name: genName(), type: "module"})"`,
+      `"const worker = new Worker(new globalThis.URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", '' + import.meta.url), { name: genName(), type: "module"})"`,
     )
   })
 
@@ -124,7 +124,7 @@ worker.addEventListener('message', (ev) => text('.simple-worker-url', JSON.strin
 `),
     ).toMatchInlineSnapshot(`
       "
-      const worker = new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", '' + import.meta.url), {
+      const worker = new Worker(new globalThis.URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", '' + import.meta.url), {
           name: genName(),
           type: "module",
         },
@@ -148,7 +148,7 @@ new Worker(
     ).toMatchInlineSnapshot(`
       "
       new Worker(
-        new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", '' + import.meta.url),
+        new globalThis.URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", '' + import.meta.url),
         {
           type: 'module'
         }, // },
@@ -211,14 +211,14 @@ new Worker(
         `(() => { new Worker(new URL('./worker', import.meta.url)); repro({ test: "foo", }); })();`,
       ),
     ).toMatchInlineSnapshot(
-      `"(() => { new Worker(new URL(/* @vite-ignore */ "/worker?worker_file&type=classic", '' + import.meta.url)); repro({ test: "foo", }); })();"`,
+      `"(() => { new Worker(new globalThis.URL(/* @vite-ignore */ "/worker?worker_file&type=classic", '' + import.meta.url)); repro({ test: "foo", }); })();"`,
     )
     expect(
       await transform(
         `repro(new Worker(new URL('./worker', import.meta.url)), { type: "module" })`,
       ),
     ).toMatchInlineSnapshot(
-      `"repro(new Worker(new URL(/* @vite-ignore */ "/worker?worker_file&type=classic", '' + import.meta.url)), { type: "module" })"`,
+      `"repro(new Worker(new globalThis.URL(/* @vite-ignore */ "/worker?worker_file&type=classic", '' + import.meta.url)), { type: "module" })"`,
     )
   })
 
@@ -232,7 +232,7 @@ new Worker(
 )`),
     ).toMatchInlineSnapshot(`
       "new Worker(
-        new URL(/* @vite-ignore */ "/worker.js?worker_file&type=classic", '' + import.meta.url)
+        new globalThis.URL(/* @vite-ignore */ "/worker.js?worker_file&type=classic", '' + import.meta.url)
       )"
     `)
   })
@@ -248,7 +248,7 @@ new Worker(
 )`),
     ).toMatchInlineSnapshot(`
       "const worker = new Worker(
-        new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", '' + import.meta.url),
+        new globalThis.URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", '' + import.meta.url),
         { type: "module" },
       )"
     `)
@@ -260,7 +260,7 @@ new Worker(
         'new Worker(new URL("./worker.js?foo=bar&baz=qux", import.meta.url), { type: "module" })',
       ),
     ).toMatchInlineSnapshot(
-      '"new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module&foo=bar&baz=qux", \'\' + import.meta.url), { type: "module" })"',
+      '"new Worker(new globalThis.URL(/* @vite-ignore */ "/worker.js?worker_file&type=module&foo=bar&baz=qux", \'\' + import.meta.url), { type: "module" })"',
     )
   })
 })
