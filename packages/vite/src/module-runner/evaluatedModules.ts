@@ -28,6 +28,7 @@ export class EvaluatedModules {
   public readonly idToModuleMap: Map<string, EvaluatedModuleNode> = new Map()
   public readonly fileToModulesMap: Map<string, Set<EvaluatedModuleNode>> =
     new Map()
+  /** Multiple URLs can map to the same module node. */
   public readonly urlToIdModuleMap: Map<string, EvaluatedModuleNode> = new Map()
   private readonly retainedSourceMaps = new Map<string, DecodedMap>()
 
@@ -61,6 +62,10 @@ export class EvaluatedModules {
     return this.urlToIdModuleMap.get(unwrapId(url))
   }
 
+  public setModuleByUrl(url: string, module: EvaluatedModuleNode): void {
+    this.urlToIdModuleMap.set(unwrapId(url), module)
+  }
+
   /**
    * Ensure that module is in the graph. If the module is already in the graph,
    * it will return the existing module node. Otherwise, it will create a new
@@ -72,13 +77,13 @@ export class EvaluatedModules {
     id = normalizeModuleId(id)
     if (this.idToModuleMap.has(id)) {
       const moduleNode = this.idToModuleMap.get(id)!
-      this.urlToIdModuleMap.set(url, moduleNode)
+      this.setModuleByUrl(url, moduleNode)
       return moduleNode
     }
     this.retainedSourceMaps.delete(id)
     const moduleNode = new EvaluatedModuleNode(id, url)
     this.idToModuleMap.set(id, moduleNode)
-    this.urlToIdModuleMap.set(url, moduleNode)
+    this.setModuleByUrl(url, moduleNode)
 
     const fileModules = this.fileToModulesMap.get(moduleNode.file) || new Set()
     fileModules.add(moduleNode)
@@ -110,9 +115,19 @@ export class EvaluatedModules {
     } else {
       this.retainedSourceMaps.delete(node.id)
     }
-    this.fileToModulesMap.delete(node.file)
+    const fileModules = this.fileToModulesMap.get(node.file)
+    if (fileModules) {
+      fileModules.delete(node)
+      if (!fileModules.size) {
+        this.fileToModulesMap.delete(node.file)
+      }
+    }
     this.idToModuleMap.delete(node.id)
-    this.urlToIdModuleMap.delete(node.url)
+    for (const [url, module] of this.urlToIdModuleMap) {
+      if (module === node) {
+        this.urlToIdModuleMap.delete(url)
+      }
+    }
   }
 
   /**

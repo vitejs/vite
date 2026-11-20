@@ -422,6 +422,65 @@ describe('not supported by bundle mode', () => {
     expect(modules.static).toBe(modules.dynamicFileUrl)
   })
 
+  it("doesn't refetch a module imported again by file url or path", async ({
+    runner,
+    environment,
+  }) => {
+    const mod = await runner.import('/fixtures/simple.js')
+    const fileUrl = new _URL('./fixtures/simple.js', import.meta.url).toString()
+    const filePath = fileURLToPath(fileUrl)
+    await runner.import(fileUrl)
+    await runner.import(filePath)
+
+    const fetchModule = vi.spyOn(environment, 'fetchModule')
+    expect(await runner.import(fileUrl)).toBe(mod)
+    expect(await runner.import(filePath)).toBe(mod)
+    expect(fetchModule).toHaveBeenCalledTimes(2)
+    for (const { value } of fetchModule.mock.results) {
+      expect(await value).toStrictEqual({ cache: true })
+    }
+  })
+
+  for (const { url, canonicalUrl } of [
+    { url: './fixtures/simple.js', canonicalUrl: '/fixtures/simple.js' },
+    {
+      url: '/fixtures/simple?custom',
+      canonicalUrl: '/fixtures/simple.js?custom',
+    },
+    {
+      url: 'virtual0:test',
+      canonicalUrl: '/@id/__x00__virtual:test',
+    },
+    {
+      url: '/@id/__x00__virtual:normal',
+      canonicalUrl: '\0virtual:normal',
+    },
+  ]) {
+    it(`caches the requested URL ${url}`, async ({
+      runner,
+      environment,
+      onTestFinished,
+    }) => {
+      const canonicalMod = await runner.import(canonicalUrl)
+      const mod = await runner.import(url)
+      expect(mod).toBe(canonicalMod)
+      const node = runner.evaluatedModules.getModuleByUrl(url)
+      expect(node?.exports).toBe(mod)
+
+      const fetchModule = vi.spyOn(environment, 'fetchModule')
+      onTestFinished(() => fetchModule.mockRestore())
+      expect(await runner.import(url)).toBe(mod)
+      expect(fetchModule).toHaveBeenCalledTimes(1)
+      expect(await fetchModule.mock.results[0].value).toStrictEqual({
+        cache: true,
+      })
+
+      runner.evaluatedModules.removeModule(node!)
+      expect(runner.evaluatedModules.getModuleByUrl(url)).toBeUndefined()
+      expect(runner.evaluatedModules.getModuleByUrl(node!.url)).toBeUndefined()
+    })
+  }
+
   it('can load virtual modules as an entry point', async ({ runner }) => {
     const mod = await runner.import('virtual:test')
     expect(mod.msg).toBe('virtual')
