@@ -193,10 +193,30 @@ async function getAvailableEphemeralPort(
 async function isPortAvailable(port: number): Promise<boolean> {
   for (const host of wildcardHosts) {
     // Gracefully handle errors (e.g., IPv6 disabled on the system)
-    const available = await tryListen(port, host).catch(() => true)
+    const available = await isPortFreeOnHost(port, host).catch(() => true)
     if (!available) return false
   }
   return true
+}
+
+// Probe a port without opening a listening socket: a connection that is accepted means another
+// process is already listening on that address. Listening on a wildcard address instead makes the
+// OS firewall ask the user to allow incoming connections, even when the server is configured to
+// listen on loopback only.
+function isPortFreeOnHost(
+  port: number,
+  host: string | undefined,
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    const socket = net.connect({ port, host })
+    const settle = (free: boolean) => {
+      socket.destroy()
+      resolve(free)
+    }
+    // Nothing is listening on the address
+    socket.once('error', () => settle(true))
+    socket.once('connect', () => settle(false))
+  })
 }
 
 function tryListen(
