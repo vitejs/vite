@@ -216,6 +216,17 @@ function traverseNodes(
   }
 }
 
+function isInsideTemplate(node: DefaultTreeAdapterMap['node']): boolean {
+  // `traverseHtml` parses a full document, so the only document fragments
+  // are the contents of <template> elements
+  let parent = 'parentNode' in node ? node.parentNode : null
+  while (parent) {
+    if (parent.nodeName === '#document-fragment') return true
+    parent = 'parentNode' in parent ? parent.parentNode : null
+  }
+  return false
+}
+
 type ParseWarnings = Partial<Record<ErrorCodes, string>>
 
 export async function traverseHtml(
@@ -704,7 +715,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   node.nodeName === 'link' &&
                   isCSSRequest(url) &&
                   // should not be converted if following attributes are present (#6748)
-                  !('media' in attr.attributes || 'disabled' in attr.attributes)
+                  !(
+                    'media' in attr.attributes || 'disabled' in attr.attributes
+                  ) &&
+                  // a stylesheet inside <template> applies to wherever the
+                  // template content ends up (e.g. a shadow root), not the document.
+                  // Its href is processed as a plain asset, so CSS plugins
+                  // (PostCSS, preprocessors, CSS modules) do not run on it.
+                  !isInsideTemplate(node)
                 ) {
                   // CSS references, convert to import
                   const importExpression = `\nimport ${JSON.stringify(url)}`
