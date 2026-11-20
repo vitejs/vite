@@ -1,5 +1,8 @@
 import fs from 'node:fs/promises'
 import { x } from 'tinyexec'
+import { createDebugger } from './utils'
+
+const debug = createDebugger('vite:command-lock')
 
 export async function getProcessStartTime(
   pid: number,
@@ -28,8 +31,11 @@ export async function getProcessStartTime(
         const { getProcessStartTime } =
           await import('napi-windows-process-start-time')
         return getProcessStartTime(pid) ?? undefined
-      } catch {
+      } catch (error) {
         // The optional native addon may be missing or unsupported.
+        debug?.(
+          `napi-windows-process-start-time is not available, falling back to powershell:\n${error}`,
+        )
       }
     }
     const { stdout } = await x(

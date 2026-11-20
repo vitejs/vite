@@ -18,7 +18,6 @@ import {
   createDebugger,
   ensureWatchedFile,
   injectQuery,
-  isObject,
   monotonicDateNow,
   prettifyUrl,
   removeImportQuery,
@@ -266,9 +265,9 @@ async function loadAndTransform(
 
   // load
   const loadStart = debugLoad ? performance.now() : 0
-  const loadResult = await pluginContainer.load(id)
+  const loadResult = await pluginContainer.load(id, { withMetadata: true })
 
-  if (loadResult == null) {
+  if (loadResult.code == null) {
     const file = cleanUrl(id)
 
     // try fallback loading it from fs as string
@@ -308,13 +307,9 @@ async function loadAndTransform(
     }
   } else {
     debugLoad?.(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
-    if (isObject(loadResult)) {
-      code = loadResult.code
-      map = loadResult.map
-      moduleType = loadResult.moduleType
-    } else {
-      code = loadResult
-    }
+    code = loadResult.code
+    map = loadResult.map
+    moduleType = loadResult.moduleType
   }
   if (code == null) {
     const isPublicFile = checkPublicFile(url, environment.getTopLevelConfig())
@@ -349,6 +344,7 @@ async function loadAndTransform(
 
   // ensure module in graph after successful load
   mod ??= await moduleGraph._ensureEntryFromUrl(url, undefined, resolved)
+  pluginContainer._updateModuleLoadAddedImports(id, loadResult.addedImports)
 
   // transform
   const transformStart = debugTransform ? performance.now() : 0

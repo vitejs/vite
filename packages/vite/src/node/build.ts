@@ -55,7 +55,7 @@ import { findNearestMainPackageData, findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import { perEnvironmentPlugin } from './plugin'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
-import { getHookHandler } from './plugins'
+import { getHookHandler, getPluginHookHandler } from './plugins'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { type LicenseOptions, licensePlugin } from './plugins/license'
@@ -1545,9 +1545,16 @@ function injectSsrFlag<T extends Record<string, any>>(
   pluginName: string,
 ): T & { ssr?: boolean } {
   let ssr = environment.config.consumer === 'server'
-  const newOptions = { ...options, ssr } as T & {
-    ssr?: boolean
-  }
+  // spreading the options would drop non-enumerable properties (e.g. the lazy
+  // `magicString` and `ast` getters rolldown attaches to the transform meta),
+  // so copy the property descriptors instead
+  const newOptions = Object.defineProperties(
+    {},
+    {
+      ...(options ? Object.getOwnPropertyDescriptors(options) : {}),
+      ssr: { value: ssr, writable: true, enumerable: true, configurable: true },
+    },
+  ) as T & { ssr?: boolean }
 
   if (
     isFutureDeprecationEnabled(
@@ -1890,7 +1897,7 @@ export async function createBuilder(
           configBuilderBuildAppCalled = true
           await configBuilder.buildApp(builder)
         }
-        const handler = getHookHandler(hook)
+        const handler = getPluginHookHandler(p, 'buildApp')
         await handler.call(pluginContext, builder)
       }
       if (!configBuilderBuildAppCalled) {

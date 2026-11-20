@@ -277,7 +277,7 @@ async function fetchBundledModule(
 }
 
 const OTHER_SOURCE_MAP_REGEXP = new RegExp(
-  `//# ${SOURCEMAPPING_URL}=data:application/json[^,]+base64,([A-Za-z0-9+/=]+)$`,
+  `//# ${SOURCEMAPPING_URL}=data:application/json[^,]+base64,[A-Za-z0-9+/=]+$`,
   'gm',
 )
 

@@ -19,7 +19,7 @@ import {
 import { getEnvFilesForMode } from '../env'
 import type { Environment } from '../environment'
 import type { Plugin } from '../plugin'
-import { getHookHandler } from '../plugins'
+import { getPluginHookHandler } from '../plugins'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import {
   createDebugger,
@@ -515,10 +515,10 @@ export async function handleHMRUpdate(
   try {
     for (const plugin of getSortedHotUpdatePlugins(clientEnvironment)) {
       if (plugin.hotUpdate) {
-        const filteredModules = await getHookHandler(plugin.hotUpdate).call(
-          clientContext,
-          clientHotUpdateOptions,
-        )
+        const filteredModules = await getPluginHookHandler(
+          plugin,
+          'hotUpdate',
+        ).call(clientContext, clientHotUpdateOptions)
         if (isStale()) return
         if (filteredModules) {
           clientHotUpdateOptions.modules = filteredModules
@@ -552,8 +552,9 @@ export async function handleHMRUpdate(
         )
         // later on, we'll need: if (runtime === 'client')
         // Backward compatibility with mixed client and ssr moduleGraph
-        const filteredModules = await getHookHandler(
-          plugin.handleHotUpdate!,
+        const filteredModules = await getPluginHookHandler(
+          plugin,
+          'handleHotUpdate',
         ).call(contextForHandleHotUpdate, mixedHmrContext)
         if (isStale()) return
         if (filteredModules) {
@@ -605,10 +606,10 @@ export async function handleHMRUpdate(
     try {
       for (const plugin of getSortedHotUpdatePlugins(environment)) {
         if (plugin.hotUpdate) {
-          const filteredModules = await getHookHandler(plugin.hotUpdate).call(
-            context,
-            hot.options,
-          )
+          const filteredModules = await getPluginHookHandler(
+            plugin,
+            'hotUpdate',
+          ).call(context, hot.options)
           if (isStale()) return
           if (filteredModules) {
             hot.options.modules = filteredModules
