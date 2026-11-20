@@ -66,6 +66,12 @@ describe('assetImportMetaUrlPlugin', async () => {
       await transform('new URL(`${file}.js`, import.meta.url)'),
     ).toMatchInlineSnapshot(`"new URL(\`\${file}.js\`, import.meta.url)"`)
   })
+
+  test('allow comments between URL arguments', async () => {
+    expect(
+      await transform(`new URL('./foo.js', /* some comments */ import.meta.url)`),
+    ).toContain("'' + import.meta.url")
+  })
 })
 
 describe('assetImportMetaUrlPlugin watch files', () => {

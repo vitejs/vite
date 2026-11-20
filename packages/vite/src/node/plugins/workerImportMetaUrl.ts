@@ -210,7 +210,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     },
 
     transform: {
-      filter: { code: workerImportMetaUrlRE },
+      filter: { code: 'import.meta.url' },
       async handler(code, id) {
         const isBundled = this.environment.config.isBundled
         let s: MagicString | undefined
