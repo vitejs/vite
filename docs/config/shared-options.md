@@ -456,6 +456,17 @@ import type {
 
 Configures Lightning CSS. Full transform options can be found in [the Lightning CSS repo](https://github.com/parcel-bundler/lightningcss/blob/master/node/index.d.ts).
 
+## css.unresolvedUrlPolicy
+
+- **Type:** `'warn' | 'error' | 'ignore'`
+- **Default:** `'warn'`
+
+Controls how Vite handles `url()` asset references in CSS that cannot be resolved at build time:
+
+- `'warn'`: emits a warning and leaves the URL unchanged to be resolved at runtime.
+- `'error'`: fails the build with an error retaining the source file context.
+- `'ignore'`: leaves the URL unchanged without emitting a warning.
+
 ## json.namedExports
 
 - **Type:** `boolean`
