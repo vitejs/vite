@@ -53,3 +53,72 @@ test('does not schedule stale HMR with a custom environment handler', async () =
   })
   expect(hotUpdateEnvironmentsCalls).toBe(0)
 })
+
+test('discards a transform that started before HMR invalidation', async () => {
+  const fixture = path.join(import.meta.dirname, 'hmr-inflight-fixture.js')
+  let blockTransform = false
+  let markTransformStarted!: () => void
+  const transformStarted = new Promise<void>((resolve) => {
+    markTransformStarted = resolve
+  })
+  let releaseTransform!: () => void
+  const transformReleased = new Promise<void>((resolve) => {
+    releaseTransform = resolve
+  })
+  let inFlight: Promise<unknown> | undefined
+
+  const server = await createServer({
+    configFile: false,
+    root: import.meta.dirname,
+    logLevel: 'silent',
+    server: {
+      middlewareMode: true,
+      ws: false,
+    },
+    plugins: [
+      {
+        name: 'block-inflight-transform',
+        async transform(_code, id) {
+          if (id === fixture && blockTransform) {
+            markTransformStarted()
+            await transformReleased
+          }
+          return null
+        },
+      },
+      {
+        name: 'request-during-hot-update',
+        async hotUpdate() {
+          if (!blockTransform || inFlight) return
+          inFlight = server.environments.client.transformRequest(
+            '/hmr-inflight-fixture.js',
+          )
+          await transformStarted
+        },
+      },
+    ],
+  })
+  onTestFinished(async () => {
+    releaseTransform()
+    await server.close()
+  })
+
+  await server.environments.client.transformRequest('/hmr-inflight-fixture.js')
+  const mod = await server.environments.client.moduleGraph.getModuleByUrl(
+    '/hmr-inflight-fixture.js',
+  )
+  expect(mod?.transformResult).not.toBeNull()
+
+  server.environments.client.moduleGraph.onFileChange(fixture)
+  blockTransform = true
+  await handleHMRUpdate('update', fixture, server)
+  blockTransform = false
+  releaseTransform()
+  await inFlight
+
+  expect(mod?.transformResult).toBeNull()
+  const result = await server.environments.client.transformRequest(
+    '/hmr-inflight-fixture.js',
+  )
+  expect(result?.code).toContain('/hmr-inflight-fixture.js?t=')
+})

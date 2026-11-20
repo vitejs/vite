@@ -654,7 +654,7 @@ export async function handleHMRUpdate(
         return
       }
 
-      updateModules(environment, shortFile, options.modules, timestamp)
+      updateModules(environment, shortFile, options.modules, monotonicDateNow())
     } catch (err) {
       environment.hot.send({
         type: 'error',

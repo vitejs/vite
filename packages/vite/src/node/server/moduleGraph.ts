@@ -193,6 +193,7 @@ export class EnvironmentModuleGraph {
 
     if (isHmr) {
       mod.lastHMRTimestamp = timestamp
+      mod.lastInvalidationTimestamp = timestamp
       mod.lastHMRInvalidationReceived = false
     } else {
       // Save the timestamp for this invalidation, so we can avoid caching the result of possible already started
