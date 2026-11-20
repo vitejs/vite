@@ -3,6 +3,7 @@ import path from 'node:path'
 import colors from 'picocolors'
 import type { OutputOptions, WatcherOptions } from 'rolldown'
 import type { DevWatchOptions } from 'rolldown/experimental'
+import type { ChokidarOptions } from 'rolldown/utils'
 import { escapePath } from 'tinyglobby'
 import type { FSWatcher, WatchOptions } from '#dep-types/chokidar'
 import { withTrailingSlash } from '../shared/utils'
@@ -63,7 +64,7 @@ export function resolveChokidarOptions(
   resolvedOutDirs: Set<string>,
   emptyOutDir: boolean,
   cacheDir: string,
-): WatchOptions {
+): ServerWatchOptions {
   const {
     ignored: ignoredList,
     watcher,
@@ -84,7 +85,7 @@ export function resolveChokidarOptions(
     )
   }
 
-  const resolvedWatchOptions: WatchOptions = {
+  const resolvedWatchOptions: ServerWatchOptions = {
     ignored,
     ignoreInitial: true,
     ignorePermissionErrors: true,
@@ -102,6 +103,21 @@ export function convertToWatcherOptions(
   return {
     usePolling: options.usePolling,
     pollInterval: options.interval,
+  }
+}
+
+export function convertToChokidarOptions(
+  options: ServerWatchOptions,
+): ChokidarOptions {
+  return {
+    usePolling: options.usePolling,
+    pollInterval: options.interval,
+    followSymlinks: options.followSymlinks,
+    ignored: options.ignored,
+    cwd: options.cwd,
+    ignorePermissionErrors: options.ignorePermissionErrors,
+    disableGlobbing: options.disableGlobbing,
+    ...options.watcher,
   }
 }
 
