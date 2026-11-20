@@ -6,7 +6,6 @@ import type {
 } from 'es-module-lexer'
 import type { OutputChunk } from 'rolldown'
 import { joinUrlSegments } from '../../shared/utils'
-import { perEnvironmentState } from '../environment'
 import type { Plugin } from '../plugin'
 import { preloadMethod } from '../plugins/importAnalysisBuild'
 import {
@@ -17,11 +16,6 @@ import {
 } from '../utils'
 
 export function ssrManifestPlugin(): Plugin {
-  // module id => preload assets mapping
-  const getSsrManifest = perEnvironmentState(() => {
-    return {} as Record<string, string[]>
-  })
-
   return {
     name: 'vite:ssr-manifest',
 
@@ -31,7 +25,8 @@ export function ssrManifestPlugin(): Plugin {
 
     generateBundle(_options, bundle) {
       const config = this.environment.config
-      const ssrManifest = getSsrManifest(this)
+      // module id => preload assets mapping
+      const ssrManifest: Record<string, string[]> = {}
       const { base } = config
       for (const file in bundle) {
         const chunk = bundle[file]
