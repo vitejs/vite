@@ -591,6 +591,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               }
               return
             }
+            // Local imports are served as JavaScript, including JSON modules.
+            if (isDynamicImport && importSpecifier.attributesStart > -1) {
+              str().remove(end, expEnd - 1)
+            }
             const id = resolved?.id
             const { moduleUrl } = await getImportModule(
               specifier,
