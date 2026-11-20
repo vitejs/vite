@@ -764,6 +764,7 @@ function windowsNativeRealpathSync(input: string): string {
 function windowsMappedRealpathSync(path: string): string {
   const realPath = windowsNativeRealpathSync(path)
   if (!realPath.startsWith('\\\\')) {
+    // local path, `windowsNativeRealpathSync` resolves it the same way as `fs.realpathSync`
     return realPath
   }
   for (const [network, volume] of windowsNetworkMap) {
@@ -779,6 +780,7 @@ const parseNetUseRE = /^\w* +(\w:) +([^ ]+)\s/
 function windowsLazyRealpathSync(path: string): string {
   const realPath = windowsNativeRealpathSync(path)
   if (!realPath.startsWith('\\\\')) {
+    // local path, `windowsNativeRealpathSync` resolves it the same way as `fs.realpathSync`
     return realPath
   }
   if (!windowsNetUseStarted) {
