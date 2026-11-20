@@ -333,6 +333,11 @@ export const removedPureCssFilesCache: WeakMap<
 // Used only if the config doesn't code-split CSS (builds a single CSS file)
 export const cssBundleNameCache: WeakMap<ResolvedConfig, string> = new WeakMap()
 
+export const cssDepsCache: WeakMap<
+  ResolvedConfig,
+  Map<string, Set<string>>
+> = new WeakMap()
+
 const postcssConfigCache = new WeakMap<
   ResolvedConfig,
   PostCSSConfigResult | null | Promise<PostCSSConfigResult | null>
@@ -376,6 +381,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       cssModulesCache.set(config, moduleCache)
 
       removedPureCssFilesCache.set(config, new Map<string, RenderedChunk>())
+      cssDepsCache.set(config, new Map<string, Set<string>>())
 
       preprocessorWorkerController = createPreprocessorWorkerController(
         normalizeMaxWorkers(config.css.preprocessorMaxWorkers),
@@ -507,6 +513,11 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         }
 
         if (deps) {
+          const cssDeps = cssDepsCache.get(config)
+          if (cssDeps) {
+            cssDeps.set(id, deps)
+            cssDeps.set(cleanUrl(id), deps)
+          }
           for (const file of deps) {
             this.addWatchFile(file)
           }
