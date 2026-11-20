@@ -70,7 +70,12 @@ test('css modules', async () => {
 
 test('inline css modules', async () => {
   const css = await page.textContent('.modules-inline')
-  expect(css).toMatch(/\._?\w{6}_apply-color-inline/)
+  const className = await page.getAttribute(
+    '.modules-inline',
+    'data-class-name',
+  )
+  expect(className).toMatch(/^_?\w{6}_apply-color-inline$/)
+  expect(css).toContain(`.${className}`)
 })
 
 test.runIf(isBuild)('minify css', async () => {

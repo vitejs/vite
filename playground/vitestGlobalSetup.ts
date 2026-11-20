@@ -50,6 +50,7 @@ export default async function setup(project: TestProject) {
   const dedicatedCopyList: Record<string, string[]> = {
     assets: ['encoded-base', 'relative-base', 'runtime-base', 'url-base'],
     css: ['lightningcss'],
+    'css-sourcemap': ['lib-entry', 'lightningcss'],
     hmr: ['no-partial-accept'],
     'transform-plugin': ['base'],
   }
