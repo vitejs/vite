@@ -536,7 +536,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
   let hasEmitted = false
-  let chunkCSSMap: Map<string, string>
+  // the CSS of each style module in a chunk, keyed by the chunk's file name
+  let chunkCSSMap: Map<string, Array<[id: string, css: string]>>
 
   const rolldownOptionsOutput = config.build.rolldownOptions.output
   const assetFileNames = (
@@ -720,6 +721,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       ? {
           async renderChunk(code, chunk, opts, meta) {
             let chunkCSS: string | undefined
+            const chunkStyleIds: string[] = []
             // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
             const isJsChunkEmpty = code === '' && !chunk.isEntry
             let isPureCssChunk = chunk.exports.length === 0
@@ -748,6 +750,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                 }
 
                 chunkCSS = (chunkCSS || '') + styles.get(id)
+                chunkStyleIds.push(id)
               } else if (!isJsChunkEmpty) {
                 // if the module does not have a style, then it's not a pure css chunk.
                 // this is true because in the `transform` hook above, only modules
@@ -758,9 +761,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
             const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
-            // resolve asset URL placeholders to their built file URLs
+            // resolve asset URL placeholders to their built file URLs,
+            // in the same order as if `cssList` were one string
             const resolveAssetUrlsInCss = (
-              chunkCSS: string,
+              cssList: string[],
               cssAssetName: string,
               originalFileName?: string,
             ) => {
@@ -779,7 +783,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               }
 
               // replace asset url references with resolved url.
-              chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, urlId) => {
+              const replaceAssetUrl = (
+                _: string,
+                fileHash: string,
+                urlId: string | undefined,
+              ) => {
                 const filename =
                   this.getFileName(fileHash) +
                   getAssetUrlPostfix(this.environment, urlId)
@@ -794,12 +802,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                     toRelative,
                   ),
                 )
-              })
+              }
               // resolve public URL from CSS paths
               const relativePathToPublicFromCSS = normalizePath(
                 path.relative(cssAssetDirname, ''),
               )
-              chunkCSS = chunkCSS.replace(publicAssetUrlRE, (_, hash) => {
+              const replacePublicUrl = (_: string, hash: string) => {
                 const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
                 return encodeURIPath(
                   toOutputFilePathInCss(
@@ -811,8 +819,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                     () => `${relativePathToPublicFromCSS}/${publicUrl}`,
                   ),
                 )
-              })
-              return chunkCSS
+              }
+              return cssList
+                .map((css) => css.replace(assetUrlRE, replaceAssetUrl))
+                .map((css) => css.replace(publicAssetUrlRE, replacePublicUrl))
             }
 
             function ensureFileExt(name: string, ext: string) {
@@ -850,10 +860,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                 let cssContent = styles.get(id)!
 
                 cssContent = resolveAssetUrlsInCss(
-                  cssContent,
+                  [cssContent],
                   cssAssetName,
                   originalFileName,
-                )
+                )[0]
 
                 urlEmitTasks.push({
                   cssAssetName,
@@ -956,10 +966,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   )
 
                   chunkCSS = resolveAssetUrlsInCss(
-                    chunkCSS,
+                    [chunkCSS],
                     cssAssetName,
                     originalFileName,
-                  )
+                  )[0]
 
                   // wait for previous tasks as well
                   chunkCSS = await codeSplitEmitQueue.run(async () => {
@@ -1013,14 +1023,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                 }
               } else {
                 // resolve public URL from CSS paths, we need to use absolute paths
-                chunkCSS = resolveAssetUrlsInCss(
-                  chunkCSS,
+                const chunkStyles = resolveAssetUrlsInCss(
+                  chunkStyleIds.map((id) => styles.get(id)!),
                   getCssBundleName(),
                   defaultCssBundleName,
                 )
                 // finalizeCss is called for the aggregated chunk in generateBundle
 
-                chunkCSSMap.set(chunk.fileName, chunkCSS)
+                chunkCSSMap.set(
+                  chunk.fileName,
+                  chunkStyleIds.map((id, i) => [id, chunkStyles[i]]),
+                )
               }
             }
 
@@ -1069,6 +1082,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       ) {
         let extractedCss = ''
         const collected = new Set<OutputChunk>()
+        // with `experimentalInlineCommonChunks`, a module can be in more than one chunk
+        const collectedStyleIds = new Set<string>()
         // will be populated in order they are used by entry points
         const dynamicImports = new Set<string>()
 
@@ -1083,7 +1098,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             dynamicImports.add(importName),
           )
           // Then collect the styles of the current chunk (might overwrite some styles from previous imports)
-          extractedCss += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
+          const chunkStyles = chunkCSSMap.get(chunk.preliminaryFileName) ?? []
+          for (const [id, css] of chunkStyles) {
+            if (collectedStyleIds.has(id)) continue
+            collectedStyleIds.add(id)
+            extractedCss += css
+          }
         }
 
         // The bundle is guaranteed to be deterministic, if not then we have a bug in rollup.
