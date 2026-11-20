@@ -73,6 +73,12 @@ describe('asset imports from js', () => {
     )
   })
 
+  test('inlines public assets with ?inline even when assetsInlineLimit is 0', async () => {
+    expect(await page.textContent('.inline-public-png')).toMatch(
+      /^data:image\/png;base64,/,
+    )
+  })
+
   test('typeof asset import', async () => {
     expect(await page.textContent('.asset-import-typeof')).toBe('string')
   })
