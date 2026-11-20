@@ -377,6 +377,14 @@ export async function untilBrowserLogAfterNavigation(
   const promise = untilBrowserLog(target, false, true)
   await operation()
   const logs = await promise
+  const bundledDev = viteServer?.environments.client.bundledDev as any
+  if (bundledDev) {
+    // Rolldown starts watching the files that the page's lazy `import()`s
+    // compiled only after the compile returns, so an edit made in between is
+    // never seen. The dev engine handles requests in order, so this returns
+    // after those files are watched.
+    await bundledDev.devEngine.getBundleState()
+  }
   if (callback) {
     await callback(logs)
   }
