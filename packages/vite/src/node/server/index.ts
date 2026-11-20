@@ -977,23 +977,32 @@ async function initEnvironments(
   previousEnvironments: Record<string, DevEnvironment> | undefined,
 ): Promise<void> {
   const { config, ws, watcher, environments } = server
-  await Promise.all(
-    Object.entries(config.environments).map(
-      async ([name, environmentOptions]) => {
-        const environment = await environmentOptions.dev.createEnvironment(
-          name,
-          config,
-          {
-            ws,
-          },
-        )
-        environments[name] = environment
+  const inits = Object.entries(config.environments).map(
+    async ([name, environmentOptions]) => {
+      const environment = await environmentOptions.dev.createEnvironment(
+        name,
+        config,
+        {
+          ws,
+        },
+      )
+      environments[name] = environment
 
-        const previousInstance = previousEnvironments?.[environment.name]
-        await environment.init({ watcher, previousInstance })
-      },
-    ),
+      const previousInstance = previousEnvironments?.[environment.name]
+      await environment.init({ watcher, previousInstance })
+    },
   )
+  try {
+    await Promise.all(inits)
+  } catch (e) {
+    // When one environment fails to initialize, the others are still
+    // initializing in the background. Wait for them to settle before
+    // rethrowing so the caller's `server.close()` can close every
+    // environment that got created instead of leaking the ones that
+    // finish initializing after the server was closed.
+    await Promise.allSettled(inits)
+    throw e
+  }
 }
 
 function setupWatcherListeners(
