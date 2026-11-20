@@ -165,6 +165,10 @@ Related issue: [#964](https://github.com/vitejs/vite/issues/964)
 
 If you are running Vite with WSL2, Vite cannot watch file changes in some conditions. See [`server.watch` option](/config/server-options.md#server-watch).
 
+On macOS, a project on an APFS volume group can be accessible through a firmlink on the System volume and directly through the Data volume. If Vite watches the System volume path and macOS reports file changes using the Data volume path, Vite can miss those changes. Pass the project path on the Data volume explicitly as the [Vite root](/guide/cli.md#vite).
+
+If you need to use the System volume path, set `server.watch.usePolling` to `true`. Polling can increase CPU usage.
+
 ### A full reload happens instead of HMR
 
 If HMR is not handled by Vite or a plugin, a full reload will happen as it's the only way to refresh the state.
