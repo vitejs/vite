@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import type { SourceMap } from 'rolldown'
 import type { FetchResult } from 'vite/module-runner'
 import type { TransformResult } from '..'
 import {
@@ -23,6 +24,7 @@ import { ssrTransform } from './ssrTransform'
 export interface FetchModuleOptions {
   cached?: boolean
   inlineSourceMap?: boolean
+  separateSourceMap?: boolean
   startOffset?: number
 }
 
@@ -119,7 +121,14 @@ export async function fetchModule(
     )
   }
 
-  if (options.inlineSourceMap !== false) {
+  // with `sourcemapForDebugger` on, the map stays inlined: the server writes it
+  // into the shared transform result once instead of every runner encoding it
+  const separate =
+    options.inlineSourceMap !== false &&
+    !!options.separateSourceMap &&
+    !environment.config.dev.sourcemapForDebugger
+
+  if (options.inlineSourceMap !== false && !separate) {
     result = inlineSourceMap(mod.id!, result, options.startOffset)
   }
 
@@ -127,12 +136,17 @@ export async function fetchModule(
   if (result.code[0] === '#')
     result.code = result.code.replace(/^#!.*/, (s) => ' '.repeat(s.length))
 
+  const separated = separate
+    ? separateSourceMap(mod.id!, result, options.startOffset)
+    : undefined
+
   return {
-    code: result.code,
+    code: separated?.code ?? result.code,
     file: mod.file,
     id: mod.id!,
     url: mod.url,
     invalidate: !cached,
+    ...(separated && { sourceMap: separated.sourceMap }),
   }
 }
 
@@ -281,37 +295,79 @@ const OTHER_SOURCE_MAP_REGEXP = new RegExp(
   'gm',
 )
 
+const INLINED_MAP_PREFIX = `${MODULE_RUNNER_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=`
+
 function inlineSourceMap(
   id: string,
   result: TransformResult,
   startOffset: number | undefined,
 ) {
   const map = result.map
-  let code = result.code
 
   if (
     !map ||
     !('version' in map) ||
-    code.includes(MODULE_RUNNER_SOURCEMAPPING_SOURCE)
+    result.code.includes(MODULE_RUNNER_SOURCEMAPPING_SOURCE)
   )
     return result
 
-  // to reduce the payload size, we only inline vite node source map, because it's also the only one we use
+  result.code = `${withSourceURL(id, result.code)}${INLINED_MAP_PREFIX}${genSourceMapUrl(offsetSourceMap(map, startOffset))}\n`
+
+  return result
+}
+
+interface SeparatedSourceMap {
+  startOffset: number | undefined
+  code: string
+  sourceMap: string
+}
+
+// Runners share a transform result until the module is invalidated, so the map
+// is separated once per result. Unlike `inlineSourceMap`, this can't cache by
+// writing to `result`, because runners that want the map inlined read it too.
+const separatedSourceMaps = new WeakMap<TransformResult, SeparatedSourceMap>()
+
+function separateSourceMap(
+  id: string,
+  result: TransformResult,
+  startOffset: number | undefined,
+): SeparatedSourceMap | undefined {
+  const map = result.map
+  if (!map || !('version' in map)) return
+
+  const cached = separatedSourceMaps.get(result)
+  if (cached && cached.startOffset === startOffset) return cached
+
+  // if a runner with inline maps fetched this transform result first, the code
+  // already ends with the sourceURL and the trailer `inlineSourceMap` wrote
+  const code = result.code
+  const trailer = code.lastIndexOf(INLINED_MAP_PREFIX)
+  const isInlined =
+    trailer !== -1 &&
+    code.indexOf('\n', trailer + INLINED_MAP_PREFIX.length) === code.length - 1
+
+  const separated = {
+    startOffset,
+    code: isInlined ? code.slice(0, trailer) : withSourceURL(id, code),
+    sourceMap: JSON.stringify(offsetSourceMap(map, startOffset)),
+  }
+  separatedSourceMaps.set(result, separated)
+  return separated
+}
+
+function withSourceURL(id: string, code: string) {
+  // to reduce the payload size, we only keep vite node source map, because it's also the only one we use
   OTHER_SOURCE_MAP_REGEXP.lastIndex = 0
   if (OTHER_SOURCE_MAP_REGEXP.test(code))
     code = code.replace(OTHER_SOURCE_MAP_REGEXP, '')
 
-  const sourceMap = startOffset
-    ? {
-        ...map,
-        mappings: ';'.repeat(startOffset) + map.mappings,
-      }
-    : map
-  result.code = `${code.trimEnd()}\n//# sourceURL=${encodeSourceURL(
-    id,
-  )}\n${MODULE_RUNNER_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
+  return `${code.trimEnd()}\n//# sourceURL=${encodeSourceURL(id)}\n`
+}
 
-  return result
+function offsetSourceMap(map: SourceMap, startOffset: number | undefined) {
+  return startOffset
+    ? { ...map, mappings: ';'.repeat(startOffset) + map.mappings }
+    : map
 }
 
 function isBundledChunkUrl(environment: DevEnvironment, url: string) {
