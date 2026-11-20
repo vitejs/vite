@@ -359,7 +359,37 @@ export async function untilBrowserLogAfter(
   if (callback) {
     await callback(logs)
   }
+  if (isBundledDev) {
+    await waitForPendingPayloads()
+  }
   return logs
+}
+
+async function waitForPendingPayloads(): Promise<void> {
+  const bundledDev = viteServer?.environments?.client?.bundledDev as any
+  if (!bundledDev) return
+
+  const clientId = await page
+    .evaluate(() => (globalThis as any).__rolldown_runtime__?.clientId)
+    .catch(() => undefined)
+
+  if (clientId) {
+    if (bundledDev.getPendingPayloadCount?.(clientId) > 0) {
+      await expect
+        .poll(() => bundledDev.getPendingPayloadCount(clientId), {
+          timeout: 5000,
+          interval: 20,
+        })
+        .toBe(0)
+    }
+  } else if (bundledDev.pendingPayloadFilenames?.size > 0) {
+    await expect
+      .poll(() => bundledDev.pendingPayloadFilenames.size, {
+        timeout: 5000,
+        interval: 20,
+      })
+      .toBe(0)
+  }
 }
 
 /**
@@ -379,6 +409,9 @@ export async function untilBrowserLogAfterNavigation(
   const logs = await promise
   if (callback) {
     await callback(logs)
+  }
+  if (isBundledDev) {
+    await waitForPendingPayloads()
   }
   return logs
 }

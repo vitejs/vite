@@ -120,6 +120,8 @@ export class BundledDev {
   }
 
   private pendingPayloadFilenames = new Set<string>()
+  private clientPendingPayloads = new Map<string, Set<string>>()
+  private payloadToClient = new Map<string, string>()
 
   get hasBuildOutput(): boolean {
     return this.memoryFiles.size > this.staticFiles.size
@@ -179,6 +181,7 @@ export class BundledDev {
       if (clientId) {
         this.devEngine.removeClient(clientId)
         this.reloadNeededClientIds.delete(clientId)
+        this.clearClientPendingPayloads(clientId)
       }
     })
     this.environment.hot.on(
@@ -381,7 +384,7 @@ export class BundledDev {
       `TRIGGER-LAZY: trigger lazy bundling for module ${moduleId} for client ${clientId}`,
     )
     const result = await this.devEngine.compileEntry(moduleId, clientId)
-    this.pendingPayloadFilenames.add(result.filename)
+    this.addPendingPayload(result.filename, clientId)
     // Serve the chunk's sourcemap, the same way an eager chunk's and an HMR
     // patch's maps are served. The chunk's relative `sourceMappingURL` resolves
     // against the URL it is imported from, `/@vite/lazy?...`, so register the map
@@ -405,6 +408,7 @@ export class BundledDev {
     }
     this.clients.replace(client, newClientId)
     this.reloadNeededClientIds.delete(oldClientId)
+    this.clearClientPendingPayloads(oldClientId)
     await this.devEngine.removeClient(oldClientId)
     await this.devEngine.registerClient(newClientId)
   }
@@ -419,13 +423,58 @@ export class BundledDev {
    */
   markPayloadDelivered(filename: string): void {
     if (this.pendingPayloadFilenames.delete(filename)) {
+      const clientId = this.payloadToClient.get(filename)
+      if (clientId) {
+        this.payloadToClient.delete(filename)
+        const payloads = this.clientPendingPayloads.get(clientId)
+        if (payloads) {
+          payloads.delete(filename)
+          if (payloads.size === 0) {
+            this.clientPendingPayloads.delete(clientId)
+          }
+        }
+      }
       this.devEngine.notifyPayloadDelivered(filename)
     }
+  }
+
+  private addPendingPayload(filename: string, clientId?: string): void {
+    this.pendingPayloadFilenames.add(filename)
+    if (clientId) {
+      this.payloadToClient.set(filename, clientId)
+      let payloads = this.clientPendingPayloads.get(clientId)
+      if (!payloads) {
+        payloads = new Set()
+        this.clientPendingPayloads.set(clientId, payloads)
+      }
+      payloads.add(filename)
+    }
+  }
+
+  private clearClientPendingPayloads(clientId: string): void {
+    const payloads = this.clientPendingPayloads.get(clientId)
+    if (payloads) {
+      for (const filename of payloads) {
+        this.pendingPayloadFilenames.delete(filename)
+        this.payloadToClient.delete(filename)
+      }
+      this.clientPendingPayloads.delete(clientId)
+    }
+  }
+
+  getPendingPayloadCount(clientId?: string): number {
+    if (clientId) {
+      return this.clientPendingPayloads.get(clientId)?.size ?? 0
+    }
+    return this.pendingPayloadFilenames.size
   }
 
   async close(): Promise<void> {
     this._closed = true
     this.memoryFiles.clear()
+    this.pendingPayloadFilenames.clear()
+    this.clientPendingPayloads.clear()
+    this.payloadToClient.clear()
     try {
       await this._devEngine?.close()
     } finally {
@@ -573,7 +622,7 @@ export class BundledDev {
       code: typeof hmrOutput.code === 'string' ? '[code]' : hmrOutput.code,
     })
 
-    this.pendingPayloadFilenames.add(hmrOutput.filename)
+    this.addPendingPayload(hmrOutput.filename, this.clients.getId(client))
     this.memoryFiles.set(hmrOutput.filename, {
       // ensure that the generated hmr patch contains ESM syntax
       // this is to avoid attacks like GHSA-4v9v-hfq4-rm2v
