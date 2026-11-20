@@ -2,9 +2,38 @@ import { resolve } from 'node:path'
 import type { RollupOutput } from 'rollup'
 import { build } from 'vite'
 import { describe, expect, test } from 'vitest'
+import { resolveConfig } from '../../config'
+import type { Plugin } from '../../plugin'
 import type { TerserOptions } from '../../plugins/terser'
 
 describe('terser', () => {
+  const hasTerserPlugin = async (
+    minify: 'oxc' | 'terser' | false,
+    plugins: Plugin[] = [],
+  ) =>
+    (
+      await resolveConfig(
+        { configFile: false, logLevel: 'silent', build: { minify }, plugins },
+        'build',
+      )
+    ).environments.client.plugins.some(
+      (plugin) => plugin.name === 'vite:terser',
+    )
+
+  test('is only applied when terser can minify chunks', async () => {
+    const legacyPlugin: Plugin = {
+      name: 'legacy',
+      configResolved(config) {
+        Object.assign(config, { isOutputOptionsForLegacyChunks: () => true })
+      },
+    }
+
+    expect(await hasTerserPlugin('oxc')).toBe(false)
+    expect(await hasTerserPlugin('terser')).toBe(true)
+    expect(await hasTerserPlugin('oxc', [legacyPlugin])).toBe(true)
+    expect(await hasTerserPlugin(false, [legacyPlugin])).toBe(false)
+  })
+
   const run = async (terserOptions: TerserOptions) => {
     const result = (await build({
       root: resolve(import.meta.dirname, '../packages/build-project'),
