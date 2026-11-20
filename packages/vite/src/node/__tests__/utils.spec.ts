@@ -3,12 +3,15 @@ import fs from 'node:fs'
 import os, { type NetworkInterfaceInfoIPv4 } from 'node:os'
 import path from 'node:path'
 import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
+import { decode, encode } from '@jridgewell/sourcemap-codec'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
 import { fileURLToPath } from 'mlly'
 import { describe, expect, test, vi, onTestFinished } from 'vitest'
 import type { CommonServerOptions, ResolvedServerUrls } from '..'
 import { isWindows } from '../../shared/utils'
 import {
+  SourcemapEditor,
   asyncFlatten,
   bareImportRE,
   combineSourcemaps,
@@ -1064,6 +1067,181 @@ describe('combineSourcemaps', () => {
         ],
       }),
     )
+  })
+})
+
+describe('SourcemapEditor', () => {
+  test('reports whether the code has changed', () => {
+    const s = new SourcemapEditor('foo(bar)')
+    expect(s.hasChanged()).toBe(false)
+    s.update(4, 7, '[]')
+    expect(s.hasChanged()).toBe(true)
+  })
+
+  // segments are [generated column, original line, original column]
+  const chunkMap = (lines: [number, number, number][][]): RawSourceMap => ({
+    version: 3,
+    file: 'index.js',
+    sources: ['src/index.js'],
+    names: [],
+    mappings: encode(
+      lines.map((segments) =>
+        segments.map(([column, line, originalColumn]) => [
+          column,
+          0,
+          line,
+          originalColumn,
+        ]),
+      ),
+    ),
+  })
+
+  // Compares every position of the edited code against the chunk map traced
+  // through a character-level map of the edits.
+  const expectExactMapping = (
+    code: string,
+    map: RawSourceMap,
+    edit: (s: SourcemapEditor | MagicString) => void,
+  ) => {
+    const s = new SourcemapEditor(code)
+    const expected = new MagicString(code)
+    edit(s)
+    edit(expected)
+    expect(s.toString()).toBe(expected.toString())
+    const exact = new TraceMap(
+      combineSourcemaps('index.js', [
+        expected.generateDecodedMap({ source: 'index.js', hires: true }),
+        map,
+      ]),
+    )
+    const actual = new TraceMap(s.generateMap('index.js', map))
+
+    s.toString()
+      .split('\n')
+      .forEach((text, line) => {
+        for (let column = 0; column <= text.length; column++) {
+          const position = { line: line + 1, column }
+          expect(
+            originalPositionFor(actual, position),
+            `${line}:${column}`,
+          ).toStrictEqual(originalPositionFor(exact, position))
+        }
+      })
+  }
+
+  const marker = '__MARKER__'
+
+  test('replaces spans with longer and shorter content', () => {
+    const code = `a(${marker});b(${marker});c()`
+    expectExactMapping(
+      code,
+      chunkMap([
+        [
+          [0, 0, 0],
+          [2, 0, 4],
+          [12, 0, 20],
+          [14, 1, 0],
+          [16, 1, 4],
+          [26, 1, 20],
+          [28, 2, 0],
+        ],
+      ]),
+      (s) => {
+        s.update(2, 12, '__vite__mapDeps([0,1])')
+        s.update(16, 26, '[]')
+      },
+    )
+  })
+
+  test('maps the code after a replaced span like the segment inside it', () => {
+    const code = `a(${marker}, b)`
+    expectExactMapping(
+      code,
+      chunkMap([
+        [
+          [0, 0, 0],
+          [5, 3, 7],
+          [14, 4, 0],
+        ],
+      ]),
+      (s) => s.update(2, 12, 'void 0'),
+    )
+  })
+
+  test('keeps segments that share a column', () => {
+    const code = `a(${marker});parent?.x`
+    expectExactMapping(
+      code,
+      chunkMap([
+        [
+          [0, 0, 0],
+          [14, 1, 4],
+          [14, 2, 6],
+          [21, 2, 13],
+        ],
+      ]),
+      (s) => s.update(2, 12, '[]'),
+    )
+  })
+
+  test('moves lines down for inserted lines', () => {
+    const code = `#!/usr/bin/env node\nfoo(${marker})\nbar()`
+    expectExactMapping(
+      code,
+      chunkMap([
+        [[0, 0, 0]],
+        [
+          [0, 1, 0],
+          [4, 1, 4],
+        ],
+        [[0, 2, 0]],
+      ]),
+      (s) => {
+        s.prependLeft(20, 'const __vite__mapDeps=0;\n')
+        s.update(24, 34, '[]')
+      },
+    )
+  })
+
+  test('drops redundant segments and unused names', () => {
+    const map: RawSourceMap = {
+      version: 3,
+      file: 'index.js',
+      sources: ['src/index.js'],
+      names: ['unused', 'foo'],
+      mappings: encode([
+        [[0], [5, 0, 0, 0], [9, 0, 0, 0], [12], [14], [16, 0, 1, 0]],
+        [
+          [0, 0, 2, 0],
+          [7, 0, 2, 0],
+          [7, 0, 2, 0, 1],
+          [9, 0, 2, 0, 1],
+        ],
+      ]),
+    }
+    const s = new SourcemapEditor('x'.repeat(20) + '\n')
+    const result = s.generateMap('index.js', map)
+    expect(result.names).toStrictEqual(['foo'])
+    expect(decode(result.mappings)).toStrictEqual([
+      [[5, 0, 0, 0], [12], [16, 0, 1, 0]],
+      [
+        [0, 0, 2, 0],
+        [7, 0, 2, 0],
+        [7, 0, 2, 0, 0],
+      ],
+    ])
+  })
+
+  test('maps replacements that span lines', () => {
+    const code = 'a(\nb)\nc'
+    const map = chunkMap([[[0, 0, 0]], [[0, 1, 0]], [[0, 2, 0]]])
+    expectExactMapping(code, map, (s) => s.update(1, 4, 'x'))
+  })
+
+  test('maps line insertions within a line', () => {
+    const code = 'a(\nb)\nc'
+    const map = chunkMap([[[0, 0, 0]], [[0, 1, 0]], [[0, 2, 0]]])
+    expectExactMapping(code, map, (s) => s.prependLeft(1, 'x;\n'))
   })
 })
 

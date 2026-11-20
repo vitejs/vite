@@ -378,16 +378,18 @@ createServer()
 
 ## server.fs.strict
 
-- **Type:** `boolean`
+- **Type:** `boolean | 'extended'`
 - **Default:** `true` (enabled by default since Vite 2.7)
 
 Restrict serving files outside of workspace root.
+
+Set to `'extended'` to also apply the access checks to modules `load`ed by plugins except with the IDs starting with `\0`.
 
 ## server.fs.allow
 
 - **Type:** `string[]`
 
-Restrict files that could be served via `/@fs/`. When `server.fs.strict` is set to `true`, accessing files outside this directory list that aren't imported from an allowed file will result in a 403.
+Restrict files that could be served via `/@fs/`. When `server.fs.strict` is set to `true` or `'extended'`, accessing files outside this directory list that aren't imported from an allowed file will result in a 403.
 
 Both directories and files can be provided.
 
