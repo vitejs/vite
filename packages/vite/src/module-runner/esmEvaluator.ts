@@ -49,7 +49,7 @@ export class ESModulesEvaluator implements ModuleEvaluator {
     Object.seal(context[ssrModuleExportsKey])
   }
 
-  runExternalModule(filepath: string): Promise<any> {
-    return import(filepath)
+  runExternalModule(externalSpecifier: string): Promise<any> {
+    return import(externalSpecifier)
   }
 }
