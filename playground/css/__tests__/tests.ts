@@ -17,7 +17,7 @@ import {
 } from '~utils'
 import { sassModuleTests, sassOtherTests, sassTest } from './sass-tests'
 
-export function tests() {
+export function tests({ lightningcss = false } = {}) {
   const droppedEditTodo = bundledDevTodo(
     'An edit that lands while the page is loading or before the HMR client connects is dropped, so the update never reaches the page',
     { rolldown: [10039] },
@@ -83,6 +83,16 @@ export function tests() {
 
     expect(await getBg(importedWithSpace)).toMatch(/.*\/ok.*\.png/)
   })
+
+  // lightningcss keeps only one of the identical rules
+  test.skipIf(lightningcss)(
+    '@import files with the same content from different paths',
+    async () => {
+      const sameContent = await page.$('.same-content')
+
+      expect(await getBg(sameContent)).toMatch(/green/)
+    },
+  )
 
   test('postcss config', async () => {
     const imported = await page.$('.postcss .nesting')
