@@ -23,7 +23,7 @@ import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
 import { definePlugin } from './define'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { esbuildBannerFooterCompatPlugin } from './esbuildBannerFooterCompatPlugin'
-import { forwardConsolePlugin } from './forwardConsole'
+import { forwardConsolePlugin, runtimeErrorsPlugin } from './forwardConsole'
 import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
 import { importAnalysisPlugin } from './importAnalysis'
 import { importGlobPlugin } from './importMetaGlob'
@@ -134,6 +134,11 @@ export async function resolvePlugins(
     // for now client only
     config.server.forwardConsole.enabled &&
       forwardConsolePlugin({ environments: ['client'] }),
+    // handle runtime error sourcemap resolution for the overlay
+    !isBuild &&
+      typeof config.server.ws === 'object' &&
+      config.server.ws.runtimeErrors === true &&
+      runtimeErrorsPlugin(),
 
     ...normalPlugins,
 

@@ -22,6 +22,12 @@ document.getElementById('test-dep-error').addEventListener('click', () => {
   testDepError()
 })
 
+document
+  .getElementById('test-runtime-overlay')
+  .addEventListener('click', () => {
+    testRuntimeOverlay()
+  })
+
 export type AnotherPadding = {
   there: boolean
 }
@@ -51,4 +57,8 @@ function testConsoleError() {
     'color:red',
     'done',
   )
+}
+
+function testRuntimeOverlay() {
+  throw new Error('this is runtime overlay error')
 }
