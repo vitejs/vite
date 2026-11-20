@@ -31,7 +31,7 @@ export interface LicenseOptions {
    *
    * @default '.vite/license.md'
    */
-  fileName: string
+  fileName?: string
 }
 
 const licenseConfigDefaults = Object.freeze({
@@ -92,9 +92,9 @@ export function licensePlugin(): Plugin {
 
       const licenseEntries = Object.values(sortObjectKeys(licenses))
       const licenseOutputFileName =
-        typeof licenseOption === 'object'
+        (typeof licenseOption === 'object'
           ? licenseOption.fileName
-          : licenseConfigDefaults.fileName
+          : undefined) ?? licenseConfigDefaults.fileName
 
       // Emit as a JSON file
       if (licenseOutputFileName.endsWith('.json')) {
