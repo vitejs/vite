@@ -43,6 +43,8 @@ The supported template presets are:
 |   [solid](https://vite.new/solid)   |   [solid-ts](https://vite.new/solid-ts)   |
 |    [qwik](https://vite.new/qwik)    |    [qwik-ts](https://vite.new/qwik-ts)    |
 
+Alternatively, you can run Vite on [BrowserCode](https://browsercode.io/), an in-browser IDE built on [BrowserPod](https://browserpod.io/), which boots a sandboxed Linux-like virtual machine in WebAssembly directly in your browser tab. Open [the vanilla template](https://browsercode.io/ide/github/vitejs/vite/tree/main/packages/create-vite/template-vanilla) to try it.
+
 ## Scaffolding Your First Vite Project
 
 ::: code-group
