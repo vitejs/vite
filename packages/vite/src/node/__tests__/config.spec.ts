@@ -4,6 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
 import { afterEach, assert, describe, expect, test, vi } from 'vitest'
+import { defaultServerFsDeny } from '..'
 import type { InlineConfig, Plugin, PluginOption } from '..'
 import { isWindows } from '../../shared/utils'
 import type { UserConfig, UserConfigExport } from '../config'
@@ -2446,6 +2447,41 @@ describe('root resolution', () => {
 describe('resolveServerOptions', () => {
   const warnFn = vi.fn()
   const logger = { warn: warnFn } as unknown as Logger
+
+  test('copies the default filesystem deny patterns for each configuration', async () => {
+    const first = await resolveServerOptions('/root', undefined, logger)
+    expect(first.fs.deny).toStrictEqual(defaultServerFsDeny)
+    expect(first.fs.deny).not.toBe(defaultServerFsDeny)
+
+    first.fs.deny.push('**/custom/**')
+
+    const second = await resolveServerOptions('/root', undefined, logger)
+    expect(second.fs.deny).toStrictEqual(defaultServerFsDeny)
+    expect(second.fs.deny).not.toBe(first.fs.deny)
+    expect(defaultServerFsDeny).not.toContain('**/custom/**')
+  })
+
+  test('allows extending the default filesystem deny patterns', async () => {
+    const deny = [...defaultServerFsDeny, '**/.local/**']
+    const resolved = await resolveServerOptions(
+      '/root',
+      { fs: { deny } },
+      logger,
+    )
+    expect(resolved.fs.deny).toStrictEqual(deny)
+  })
+
+  test.each([{ deny: [] }, { deny: ['**/custom/**'] }])(
+    'preserves an explicit filesystem deny list: $deny',
+    async ({ deny }) => {
+      const resolved = await resolveServerOptions(
+        '/root',
+        { fs: { deny } },
+        logger,
+      )
+      expect(resolved.fs.deny).toStrictEqual(deny)
+    },
+  )
 
   afterEach(() => {
     delete process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
