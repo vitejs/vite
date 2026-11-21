@@ -400,7 +400,7 @@ Vite will search for the root of the potential workspace and use it as default. 
   - `lerna.json`
   - `pnpm-workspace.yaml`
 
-Accepts a path to specify the custom workspace root. Could be a absolute path or a path relative to [project root](/guide/#index-html-and-project-root). For example:
+Accepts a path to specify the custom workspace root. Could be an absolute path or a path relative to [project root](/guide/#index-html-and-project-root). For example:
 
 ```js
 export default defineConfig({
