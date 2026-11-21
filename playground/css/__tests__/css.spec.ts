@@ -1,6 +1,8 @@
 import { expect, test } from 'vitest'
 import { getBg, isBundled, page, viteTestUrl } from '~utils'
-import './tests'
+import { tests } from './tests'
+
+tests()
 
 // not included in tests.ts because the lightningcss variant does not use
 // the postcss pipeline

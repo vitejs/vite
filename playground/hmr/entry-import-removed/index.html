@@ -1,0 +1,7 @@
+<div class="entry-import-removed-imported"></div>
+<div class="entry-import-removed-importing"></div>
+<!-- a page with no module script of its own loads its chunk as async, which can run before the hmr client -->
+<script type="module"></script>
+<!-- load the built chunks directly, so both files stay entries and are not imported by this page -->
+<script type="module" src="/assets/imported-entry.js" vite-ignore></script>
+<script type="module" src="/assets/importing-entry.js" vite-ignore></script>

@@ -14,7 +14,7 @@ import {
 } from 'rolldown'
 import { isDynamicPattern } from 'tinyglobby'
 import type { DepsOptimizerEsbuildOptions } from '#types/internal/esbuildOptions'
-import { isWindows } from '../../shared/utils'
+import { isWindows, withTrailingSlash } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
 import {
   ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
@@ -22,6 +22,7 @@ import {
 } from '../constants'
 import type { Environment } from '../environment'
 import { transformWithOxc } from '../plugins/oxc'
+import { fileToModuleUrl } from '../server/moduleUrl'
 import {
   arraify,
   asyncFlatten,
@@ -32,7 +33,6 @@ import {
   lookupFile,
   normalizeId,
   normalizePath,
-  removeLeadingSlash,
   tryStatSync,
   unique,
 } from '../utils'
@@ -104,15 +104,6 @@ export interface DepOptimizationConfig {
    * @deprecated Use `rolldownOptions` instead.
    */
   esbuildOptions?: DepsOptimizerEsbuildOptions
-  /**
-   * @deprecated Use `rolldownOptions` instead.
-   */
-  rollupOptions?: Omit<RolldownOptions, 'input' | 'logLevel' | 'output'> & {
-    output?: Omit<
-      RolldownOutputOptions,
-      'format' | 'sourcemap' | 'dir' | 'banner'
-    >
-  }
   /**
    * Options to pass to rolldown during the dep scanning and optimization
    *
@@ -843,6 +834,7 @@ async function prepareRolldownOptimizerRun(
   async function build() {
     const bundle = await rolldown({
       ...rolldownOptions,
+      tsconfig: environment.config.tsconfig ?? rolldownOptions.tsconfig,
       input: flatIdDeps,
       logLevel: 'silent',
       plugins,
@@ -855,6 +847,9 @@ async function prepareRolldownOptimizerRun(
       resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js', '.css', '.json'],
         ...rolldownOptions.resolve,
+        ...(environment.config.tsconfig
+          ? { tsconfigFilename: undefined }
+          : undefined),
       },
       // TODO: remove this and enable rolldown's CSS support later
       moduleTypes: {
@@ -988,7 +983,7 @@ function getDepsCacheDirPrefix(environment: Environment): string {
 export function createIsOptimizedDepFile(
   environment: Environment,
 ): (id: string) => boolean {
-  const depsCacheDirPrefix = getDepsCacheDirPrefix(environment)
+  const depsCacheDirPrefix = withTrailingSlash(getDepsCacheDir(environment))
   return (id) => id.startsWith(depsCacheDirPrefix)
 }
 
@@ -996,18 +991,10 @@ export function createIsOptimizedDepUrl(
   environment: Environment,
 ): (url: string) => boolean {
   const { root } = environment.config
-  const depsCacheDir = getDepsCacheDirPrefix(environment)
-
-  // determine the url prefix of files inside cache directory
-  const depsCacheDirRelative = normalizePath(path.relative(root, depsCacheDir))
-  const depsCacheDirPrefix = depsCacheDirRelative.startsWith('../')
-    ? // if the cache directory is outside root, the url prefix would be something
-      // like '/@fs/absolute/path/to/node_modules/.vite'
-      `/@fs/${removeLeadingSlash(normalizePath(depsCacheDir))}`
-    : // if the cache directory is inside root, the url prefix would be something
-      // like '/node_modules/.vite'
-      `/${depsCacheDirRelative}`
-
+  const depsCacheDir = getDepsCacheDir(environment)
+  const depsCacheDirPrefix = withTrailingSlash(
+    fileToModuleUrl(depsCacheDir, root),
+  )
   return function isOptimizedDepUrl(url: string): boolean {
     return url.startsWith(depsCacheDirPrefix)
   }
@@ -1116,7 +1103,7 @@ export async function extractExportsData(
   environment: Environment,
   filePath: string,
 ): Promise<ExportsData> {
-  await init
+  await init()
 
   const { optimizeDeps } = environment.config
 
@@ -1155,7 +1142,9 @@ export async function extractExportsData(
       const [, exports, , hasModuleSyntax] = parse(result.output[0].code)
       return {
         hasModuleSyntax,
-        exports: exports.map((e) => e.n),
+        exports: exports.flatMap((e) =>
+          e.type === 'reexport-all' || e.typeOnly ? [] : [e.name],
+        ),
       }
     } finally {
       await build.close()
@@ -1190,7 +1179,9 @@ export async function extractExportsData(
   const [, exports, , hasModuleSyntax] = parseResult
   const exportsData: ExportsData = {
     hasModuleSyntax,
-    exports: exports.map((e) => e.n),
+    exports: exports.flatMap((e) =>
+      e.type === 'reexport-all' || e.typeOnly ? [] : [e.name],
+    ),
     jsxLoader: usedJsxLoader,
   }
   return exportsData
@@ -1308,7 +1299,8 @@ const lockfilePaths = lockfileFormats.map((l) => l.path)
 const fallbackLockfileFormats = [
   {
     path: 'yarn.lock',
-    checkPatchesDir: '.yarn/patches',
+    // Included in lockfile
+    checkPatchesDir: false,
     manager: 'yarn',
   },
 ]
@@ -1325,6 +1317,7 @@ function getConfigHash(environment: Environment): string {
         ? process.env.NODE_ENV || config.mode
         : null,
       root: config.root,
+      tsconfig: config.tsconfig,
       resolve: config.resolve,
       assetsInclude: config.assetsInclude,
       plugins: config.plugins.map((p) => p.name),
@@ -1378,7 +1371,16 @@ export function getLockfileHash(root: string): string {
       )
       const stat = tryStatSync(fullPath)
       if (stat?.isDirectory()) {
-        content += stat.mtimeMs.toString()
+        // the patches directory's mtime only changes when entries are added
+        // or removed, so use each patch file's mtime to also detect in-place
+        // edits and overwrites of existing patch files
+        for (const name of fs.readdirSync(fullPath)) {
+          if (!name.endsWith('.patch')) continue
+          const fileStat = tryStatSync(path.join(fullPath, name))
+          if (fileStat?.isFile()) {
+            content += name + fileStat.mtimeMs.toString()
+          }
+        }
       }
     }
   }

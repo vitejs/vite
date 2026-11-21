@@ -3,7 +3,9 @@ import { browserLogs, isServe, page, serverLogs, viteTestUrl } from '~utils'
 
 test('proxy-bypass', async () => {
   await vi.waitFor(() => {
-    expect(browserLogs.join('\n')).toContain('status of 404 (Not Found)')
+    expect(browserLogs).toContainEqual(
+      expect.stringContaining('status of 404 (Not Found)'),
+    )
   })
 })
 
@@ -14,7 +16,7 @@ test('async-proxy-bypass', async () => {
 
 test('async-proxy-bypass-with-error', async () => {
   await vi.waitFor(() => {
-    expect(serverLogs.join('\n')).toContain('bypass error')
+    expect(serverLogs).toContainEqual(expect.stringContaining('bypass error'))
   })
 })
 

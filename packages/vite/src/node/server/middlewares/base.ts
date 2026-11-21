@@ -1,6 +1,11 @@
+import escapeHTML from 'escape-html'
 import type { Connect } from '#dep-types/connect'
-import { cleanUrl, withTrailingSlash } from '../../../shared/utils'
-import { joinUrlSegments, stripBase } from '../../utils'
+import {
+  cleanUrl,
+  joinUrlSegments,
+  withTrailingSlash,
+} from '../../../shared/utils'
+import { stripBase } from '../../utils'
 
 // this middleware is only active when (base !== '/')
 
@@ -43,8 +48,8 @@ export function baseMiddleware(
         'Content-Type': 'text/html',
       })
       res.end(
-        `The server is configured with a public base URL of ${base} - ` +
-          `did you mean to visit <a href="${redirectPath}">${redirectPath}</a> instead?`,
+        `The server is configured with a public base URL of ${escapeHTML(base)} - ` +
+          `did you mean to visit <a href="${escapeHTML(redirectPath)}">${escapeHTML(redirectPath)}</a> instead?`,
       )
       return
     } else {

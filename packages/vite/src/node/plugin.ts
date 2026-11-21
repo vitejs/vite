@@ -10,9 +10,11 @@ import type {
   PluginContextMeta,
   ResolveIdResult,
   Plugin as RolldownPlugin,
+  RolldownMagicString,
   TransformPluginContext,
   TransformResult,
 } from 'rolldown'
+import type { ESTree } from 'rolldown/utils'
 import type { PartialEnvironment } from './baseEnvironment'
 import type { BuildAppHook } from './build'
 import type {
@@ -151,6 +153,10 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
       id: string,
       options?: {
         ssr?: boolean | undefined
+        /** The module id without import attributes. Passed by Rolldown. */
+        rawId?: string
+        /** The import attributes the module was imported with. Passed by Rolldown. */
+        attributes?: Record<string, string>
       },
     ) => Promise<LoadResult> | LoadResult,
     { filter?: { id?: StringFilter } }
@@ -163,6 +169,18 @@ export interface Plugin<A = any> extends RolldownPlugin<A> {
       options?: {
         moduleType: ModuleType
         ssr?: boolean | undefined
+        /**
+         * A lazily-created MagicString instance for the module's code.
+         * Only available during build.
+         * @experimental
+         */
+        magicString?: RolldownMagicString | undefined
+        /**
+         * The lazily-parsed AST of the module's code.
+         * Only available during build.
+         * @experimental
+         */
+        ast?: ESTree.Program | undefined
       },
     ) => Promise<TransformResult> | TransformResult,
     {
@@ -408,10 +426,36 @@ const ignoredEnvironmentPluginHooks = [
   'configResolved',
 ] as const
 
+// Key by the resolved list so standalone CSS preprocessing can reuse it too.
+const userPreResolvePlugins = new WeakMap<readonly Plugin[], Plugin[]>()
+
+export function getUserPreResolvePlugins(
+  plugins: readonly Plugin[],
+): readonly Plugin[] | undefined {
+  return userPreResolvePlugins.get(plugins)
+}
+
 export async function resolveEnvironmentPlugins(
   environment: PartialEnvironment,
+  internalPlugins: ReadonlySet<Plugin>,
 ): Promise<Plugin[]> {
   const environmentPlugins: Plugin[] = []
+  const preResolvePlugins: Plugin[] = []
+
+  function addPlugin(plugin: Plugin, parent: Plugin) {
+    environmentPlugins.push(plugin)
+    if (internalPlugins.has(parent)) return
+    const hook = plugin.resolveId
+    // Replacements inherit the parent's tier, but keep their own hook order.
+    if (
+      hook &&
+      (parent.enforce === 'pre' ||
+        (typeof hook === 'object' && hook.order === 'pre'))
+    ) {
+      preResolvePlugins.push(plugin)
+    }
+  }
+
   for (const plugin of environment.getTopLevelConfig().plugins) {
     if (plugin.applyToEnvironment) {
       const applied = await plugin.applyToEnvironment(environment)
@@ -431,12 +475,15 @@ export async function resolveEnvironmentPlugins(
               `Plugin "${appliedPlugin.name}" defines Vite-specific hooks (${ignoredHooks.join(', ')}) in a plugin returned from applyToEnvironment. These hooks will be ignored.`,
             )
           }
+          addPlugin(appliedPlugin, plugin)
         }
-        environmentPlugins.push(...appliedPlugins)
         continue
       }
     }
-    environmentPlugins.push(plugin)
+    addPlugin(plugin, plugin)
+  }
+  if (preResolvePlugins.length) {
+    userPreResolvePlugins.set(environmentPlugins, preResolvePlugins)
   }
   return environmentPlugins
 }

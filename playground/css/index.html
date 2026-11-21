@@ -141,6 +141,9 @@
   <p class="path-resolved-modules-css">
     CSS modules composes path resolving: this should be turquoise
   </p>
+  <p class="path-resolved-modules-user">
+    CSS modules composes through a user resolver: this should be orchid
+  </p>
   <p class="path-resolved-modules-sass">
     CSS modules composes path resolving: this should be orangered
   </p>
@@ -252,6 +255,9 @@
   <p class="user-resolver-nested">
     nested @import '~layers/nested.css': this should be green
   </p>
+  <p class="user-resolver-legacy">
+    @import through a createResolver extension: this should be purple
+  </p>
   <p class="user-resolver-scss">
     import '~layers/layer.scss': this should be blue
   </p>
@@ -273,6 +279,13 @@
 
   <p>Imports field</p>
   <p class="imports-field">import '#imports': this should be red</p>
+  <p class="imports-field-url">
+    url('#logo'): this should have a background image
+  </p>
+  <p class="imports-field-pattern-url">
+    url('#assets/ok.png'): this should have a background image
+  </p>
+  <p class="imports-field-fragment">Local SVG fragment reference</p>
 </div>
 <style>
   @import url(./imported.scss);

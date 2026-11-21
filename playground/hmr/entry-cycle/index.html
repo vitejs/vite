@@ -1,0 +1,5 @@
+<div class="entry-cycle-display"></div>
+<!-- a page with no module script of its own loads its chunk as async, which can run before the hmr client -->
+<script type="module"></script>
+<!-- load the built chunk directly, so entry-cycle.js stays an entry and is not imported by this page -->
+<script type="module" src="/assets/entry-cycle.js" vite-ignore></script>

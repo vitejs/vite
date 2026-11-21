@@ -51,6 +51,7 @@ import {
 } from './asset'
 import { cssBundleNameCache } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
+import { getPluginHookHandler } from './index'
 
 interface ScriptAssetsUrl {
   start: number
@@ -486,9 +487,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           if (startOffset === 0) return 0
 
           // Gets the offset for the start of the line including the
-          // newline trailing the previous node
-          const lineStartOffset =
-            startOffset - node.sourceCodeLocation!.startCol
+          // newline trailing the previous node.
+          // Columns are one-based and offsets are zero-based, so their difference
+          // is -1 on the first line. Clamp to 0 because there is no preceding newline.
+          const lineStartOffset = Math.max(
+            0,
+            startOffset - node.sourceCodeLocation!.startCol,
+          )
 
           // <previous-line-node></previous-line-node>
           // <target-node></target-node>
@@ -503,7 +508,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // previous newline, we cannot strip it out without risking content deletion.
           let isLineEmpty = false
           try {
-            const line = s.slice(Math.max(0, lineStartOffset), startOffset)
+            const line = s.slice(lineStartOffset, startOffset)
             isLineEmpty = !line.trim()
           } catch {
             // magic-string may throw if there's some content removed in the sliced string,
@@ -599,7 +604,15 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                         return this.load({
                           ...resolved,
                           moduleSideEffects: true,
-                        }).then(() => {})
+                        }).then(() => {
+                          // `this.load` ignores `moduleSideEffects` when another
+                          // importer already started loading the module, so set it
+                          // on the module info as well
+                          const loadedInfo = this.getModuleInfo(resolved.id)
+                          if (loadedInfo) {
+                            loadedInfo.moduleSideEffects = true
+                          }
+                        })
                       }
                     }),
                   )
@@ -616,7 +629,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
                     code: contents,
                   })
-                  js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.js"`
+                  js += `\nimport ${JSON.stringify(`${id}?html-proxy&index=${inlineModuleIndex}.js`)}`
                   shouldRemove = true
                 }
 
@@ -731,7 +744,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const filePath = id.replace(normalizePath(config.root), '')
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
             // will transform with css plugin and cache result with css-post plugin
-            js += `\nimport "${id}?html-proxy&inline-css&style-attr&index=${inlineModuleIndex}.css"`
+            js += `\nimport ${JSON.stringify(`${id}?html-proxy&inline-css&style-attr&index=${inlineModuleIndex}.css`)}`
             const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             overwriteAttrValue(
@@ -750,7 +763,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
               code: styleNode.value,
             })
-            js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
+            js += `\nimport ${JSON.stringify(`${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css`)}`
             const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             s.update(
@@ -1013,8 +1026,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // prepend dev client runtime for bundled client build before other chunk scripts
         if (
           config.command === 'serve' &&
-          this.environment.config.consumer === 'client' &&
-          this.environment.config.isBundled
+          this.environment.config.consumer === 'client'
         ) {
           result = injectToHead(
             result,
@@ -1436,17 +1448,14 @@ export function resolveHtmlTransforms(
     const hook = plugin.transformIndexHtml
     if (!hook) continue
 
-    if (typeof hook === 'function') {
-      normalHooks.push(hook)
+    const handler = getPluginHookHandler(plugin, 'transformIndexHtml')
+    const order = typeof hook === 'function' ? undefined : hook.order
+    if (order === 'pre') {
+      preHooks.push(handler)
+    } else if (order === 'post') {
+      postHooks.push(handler)
     } else {
-      const handler = hook.handler
-      if (hook.order === 'pre') {
-        preHooks.push(handler)
-      } else if (hook.order === 'post') {
-        postHooks.push(handler)
-      } else {
-        normalHooks.push(handler)
-      }
+      normalHooks.push(handler)
     }
   }
 

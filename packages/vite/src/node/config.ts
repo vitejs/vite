@@ -88,7 +88,7 @@ import type {
 } from './plugin'
 import {
   createPluginHookUtils,
-  getHookHandler,
+  getPluginHookHandler,
   getSortedPluginsByHook,
   resolvePlugins,
 } from './plugins'
@@ -117,6 +117,7 @@ import {
   BasicMinimalPluginContext,
   basePluginContextMeta,
 } from './server/pluginContainer'
+import { SafeModulePaths } from './server/safeModulePaths'
 import type { WebSocketServer } from './server/ws'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions, ssrConfigDefaults } from './ssr'
@@ -275,8 +276,9 @@ function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
 
 export type ResolvedDevEnvironmentOptions = Omit<
   Required<DevEnvironmentOptions>,
-  'sourcemapIgnoreList'
+  'sourcemap' | 'sourcemapIgnoreList'
 > & {
+  sourcemap: { js: boolean; css: boolean }
   sourcemapIgnoreList: Exclude<
     DevEnvironmentOptions['sourcemapIgnoreList'],
     false | undefined
@@ -358,6 +360,8 @@ export type ResolvedEnvironmentOptions = {
   plugins: readonly Plugin[]
   /** @internal */
   optimizeDepsPluginNames: string[]
+  /** @internal */
+  safeModulePaths: SafeModulePaths
 }
 
 export type DefaultEnvironmentOptions = Omit<
@@ -678,7 +682,13 @@ export interface ResolvedWorkerOptions {
 
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
-  /** @experimental */
+  /**
+   * The loader to use when loading the config file.
+   *
+   * `runner` is deprecated and will be removed in the next major version.
+   *
+   * @default 'bundle'
+   */
   configLoader?: 'bundle' | 'runner' | 'native'
   /** @deprecated */
   envFile?: false
@@ -755,7 +765,7 @@ export interface ResolvedConfig extends Readonly<
      *
      * @deprecated Use `createIdResolver` from `vite` instead.
      */
-    createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
+    createResolver: (options?: CreateResolverOptions) => ResolveFn
     optimizeDeps: DepOptimizationOptions
     /** @internal */
     packageCache: PackageCache
@@ -781,8 +791,11 @@ export interface ResolvedConfig extends Readonly<
     webSocketToken: string
     /** @internal */
     fsDenyGlob: AnymatchFn
-    /** @internal */
-    safeModulePaths: Set<string>
+    /**
+     * @internal
+     * @deprecated Use `config.environments.client.safeModulePaths` instead.
+     */
+    safeModulePaths: SafeModulePaths
     /** @internal */
     [SYMBOL_RESOLVED_CONFIG]: true
   } & PluginHookUtils
@@ -964,6 +977,7 @@ export function resolveDevEnvironmentOptions(
   consumer: 'client' | 'server' | undefined,
   // Backward compatibility
   preTransformRequest?: boolean,
+  cssDevSourcemap?: boolean,
 ): ResolvedDevEnvironmentOptions {
   const resolved = mergeWithDefaults(
     {
@@ -981,11 +995,21 @@ export function resolveDevEnvironmentOptions(
   )
   return {
     ...resolved,
+    sourcemap: normalizeDevSourcemap(resolved.sourcemap, cssDevSourcemap),
     sourcemapIgnoreList:
       resolved.sourcemapIgnoreList === false
         ? () => false
         : resolved.sourcemapIgnoreList,
   }
+}
+
+function normalizeDevSourcemap(
+  sourcemap: DevEnvironmentOptions['sourcemap'],
+  cssDefault = false,
+): ResolvedDevEnvironmentOptions['sourcemap'] {
+  return typeof sourcemap === 'boolean'
+    ? { js: sourcemap, css: sourcemap }
+    : { js: sourcemap?.js ?? true, css: sourcemap?.css ?? cssDefault }
 }
 
 function resolveEnvironmentOptions(
@@ -997,6 +1021,7 @@ function resolveEnvironmentOptions(
   environmentName: string,
   isBuild: boolean,
   isBundledDev: boolean,
+  cssDevSourcemap: boolean | undefined,
   // Backward compatibility
   isSsrTargetWebworkerSet?: boolean,
   preTransformRequests?: boolean,
@@ -1058,6 +1083,7 @@ function resolveEnvironmentOptions(
       environmentName,
       consumer,
       preTransformRequests,
+      cssDevSourcemap,
     ),
     build: resolveBuildEnvironmentOptions(
       options.build ?? {},
@@ -1071,6 +1097,7 @@ function resolveEnvironmentOptions(
     plugins: undefined!, // to be resolved later
     // will be set by `setOptimizeDepsPluginNames` later
     optimizeDepsPluginNames: undefined!,
+    safeModulePaths: new SafeModulePaths(),
   }
 }
 
@@ -1085,7 +1112,13 @@ export function getDefaultEnvironmentOptions(
       mainFields: undefined,
       conditions: undefined,
     },
-    dev: config.dev,
+    dev:
+      typeof config.dev?.sourcemap === 'boolean'
+        ? {
+            ...config.dev,
+            sourcemap: normalizeDevSourcemap(config.dev.sourcemap),
+          }
+        : config.dev,
     build: config.build,
   }
 }
@@ -1097,6 +1130,11 @@ export interface PluginHookUtils {
   getSortedPluginHooks: <K extends keyof Plugin>(
     hookName: K,
   ) => NonNullable<HookHandler<Plugin[K]>>[]
+}
+
+interface CreateResolverOptions extends Partial<InternalResolveOptions> {
+  /** @internal The calling environment for stylesheet resolution. */
+  environment?: PartialEnvironment
 }
 
 export type ResolveFn = (
@@ -1257,12 +1295,6 @@ function resolveDepOptimizationOptions(
   consumer: 'client' | 'server' | undefined,
   logger: Logger,
 ): DepOptimizationOptions {
-  if (
-    optimizeDeps?.rolldownOptions &&
-    optimizeDeps?.rolldownOptions === optimizeDeps?.rollupOptions
-  ) {
-    delete optimizeDeps?.rollupOptions
-  }
   const merged = mergeWithDefaults(
     {
       ...configDefaults.optimizeDeps,
@@ -1272,8 +1304,6 @@ function resolveDepOptimizationOptions(
     },
     optimizeDeps ?? {},
   )
-  setupRollupOptionCompat(merged, 'optimizeDeps')
-
   const rolldownOptions = merged.rolldownOptions as Exclude<
     DepOptimizationOptions['rolldownOptions'],
     undefined
@@ -1465,14 +1495,12 @@ export async function resolveConfig(
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   config.build ??= {}
-  setupRollupOptionCompat(config.build, 'build')
+  setupRollupOptionCompat(config.build)
   config.worker ??= {}
-  setupRollupOptionCompat(config.worker, 'worker')
+  setupRollupOptionCompat(config.worker)
   config.optimizeDeps ??= {}
-  setupRollupOptionCompat(config.optimizeDeps, 'optimizeDeps')
   if (config.ssr) {
     config.ssr.optimizeDeps ??= {}
-    setupRollupOptionCompat(config.ssr.optimizeDeps, 'ssr.optimizeDeps')
   }
 
   let configFileDependencies: string[] = []
@@ -1545,12 +1573,11 @@ export async function resolveConfig(
     command,
     devtoolsOptions,
   )
-  const rawPlugins = (
-    await asyncFlatten([
-      ...(config.plugins || []),
-      ...(devtoolsIntegration?.plugins || []),
-    ])
-  ).filter(filterPlugin)
+  const configuredPlugins = await asyncFlatten(config.plugins || [])
+  const rawPlugins = [
+    ...configuredPlugins,
+    ...(devtoolsIntegration?.plugins || []),
+  ].filter(filterPlugin)
   const [prePlugins, normalPlugins, postPlugins] = sortUserPlugins(rawPlugins)
 
   const isBuild = command === 'build'
@@ -1592,6 +1619,14 @@ export async function resolveConfig(
     logger.warn(
       colors.yellow(
         `The \`devtools\` option cannot be changed from a plugin's \`config\` hook. Set it in the user config instead.`,
+      ),
+    )
+  }
+
+  if (config.css?.devSourcemap !== undefined) {
+    logger.warn(
+      colors.yellow(
+        `The \`css.devSourcemap\` option is deprecated. Please use \`dev.sourcemap.css\` instead.`,
       ),
     )
   }
@@ -1714,6 +1749,10 @@ export async function resolveConfig(
     },
   }
 
+  if (isBuild && config.build?.ssr === true) {
+    config.environments.ssr.input ??= config.input
+  }
+
   for (const name of Object.keys(config.environments)) {
     config.environments[name] = mergeConfig(
       name === 'client'
@@ -1753,6 +1792,7 @@ export async function resolveConfig(
       environmentName,
       isBuild,
       isBundledDev,
+      config.css?.devSourcemap,
       config.ssr?.target === 'webworker',
       config.server?.preTransformRequests,
     )
@@ -1770,6 +1810,8 @@ export async function resolveConfig(
     // default environment options
     undefined,
     undefined,
+    undefined,
+    config.css?.devSourcemap,
   )
 
   const resolvedBuildOptions = resolveBuildEnvironmentOptions(
@@ -1950,12 +1992,14 @@ export async function resolveConfig(
     }
 
     // Plugins resolution needs the resolved config (minus plugins) so we need to mutate here
-    ;(workerResolved.plugins as Plugin[]) = await resolvePlugins(
+    const { plugins, internalPlugins } = await resolvePlugins(
       workerResolved,
       workerPrePlugins,
       workerNormalPlugins,
       workerPostPlugins,
+      new Set(rawWorkerUserPlugins),
     )
+    ;(workerResolved.plugins as Plugin[]) = plugins
 
     // run configResolved hooks
     await Promise.all(
@@ -1978,6 +2022,7 @@ export async function resolveConfig(
         ...workerResolved.environments.client,
         plugins: await resolveEnvironmentPlugins(
           new PartialEnvironment('client', workerResolved),
+          internalPlugins,
         ),
       },
     }
@@ -1996,7 +2041,7 @@ export async function resolveConfig(
     rollupOptions: config.worker?.rollupOptions || {},
     rolldownOptions: config.worker?.rolldownOptions, // will be set by setupRollupOptionCompat if undefined
   }
-  setupRollupOptionCompat(resolvedWorkerOptions, 'worker')
+  setupRollupOptionCompat(resolvedWorkerOptions)
 
   const base = withTrailingSlash(resolvedBase)
 
@@ -2147,20 +2192,19 @@ export async function resolveConfig(
     getSortedPlugins: undefined!,
     getSortedPluginHooks: undefined!,
 
-    createResolver(options) {
+    createResolver({ environment, ...options } = {}) {
       const resolve = createIdResolver(this, options)
-      const clientEnvironment = new PartialEnvironment('client', this)
-      let ssrEnvironment: PartialEnvironment | undefined
+      let clientEnvironment =
+        environment?.name === 'client' ? environment : undefined
+      let ssrEnvironment = environment?.name === 'ssr' ? environment : undefined
+      if (!environment) {
+        clientEnvironment = new PartialEnvironment('client', this)
+      }
       return async (id, importer, aliasOnly, ssr) => {
-        if (ssr) {
-          ssrEnvironment ??= new PartialEnvironment('ssr', this)
-        }
-        return await resolve(
-          ssr ? ssrEnvironment! : clientEnvironment,
-          id,
-          importer,
-          aliasOnly,
-        )
+        const targetEnvironment = ssr
+          ? (ssrEnvironment ??= new PartialEnvironment('ssr', this))
+          : (clientEnvironment ??= new PartialEnvironment('client', this))
+        return await resolve(targetEnvironment, id, importer, aliasOnly)
       }
     },
     fsDenyGlob: picomatch(
@@ -2176,7 +2220,7 @@ export async function resolveConfig(
         dot: true,
       },
     ),
-    safeModulePaths: new Set<string>(),
+    safeModulePaths: resolvedEnvironments.client.safeModulePaths,
     [SYMBOL_RESOLVED_CONFIG]: true,
   }
   resolved = {
@@ -2191,15 +2235,14 @@ export async function resolveConfig(
   // gets called
   patchConfig?.(resolved)
 
-  const resolvedPlugins = await resolvePlugins(
+  const { plugins: resolvedPlugins, internalPlugins } = await resolvePlugins(
     resolved,
     prePlugins,
     normalPlugins,
     postPlugins,
+    new Set(configuredPlugins),
+    patchPlugins,
   )
-
-  // Backward compatibility hook used in builder, opt-in to shared plugins during build
-  patchPlugins?.(resolvedPlugins)
   ;(resolved.plugins as Plugin[]) = resolvedPlugins
 
   // TODO: Deprecate config.getSortedPlugins and config.getSortedPluginHooks
@@ -2218,6 +2261,7 @@ export async function resolveConfig(
   for (const name of Object.keys(resolved.environments)) {
     resolved.environments[name].plugins = await resolveEnvironmentPlugins(
       new PartialEnvironment(name, resolved),
+      internalPlugins,
     )
   }
 
@@ -2404,6 +2448,13 @@ export async function loadConfigFromFile(
   ) {
     throw new Error(
       `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle', 'runner', and 'native'.`,
+    )
+  }
+  if (configLoader === 'runner') {
+    createLogger(logLevel, { customLogger }).warn(
+      colors.yellow(
+        `The \`runner\` config loader is deprecated and will be removed in Vite 9. Use \`bundle\` or \`native\` instead.`,
+      ),
     )
   }
 
@@ -2827,8 +2878,7 @@ async function runConfigHook(
   >(basePluginContextMeta, tempLogger)
 
   for (const p of getSortedPluginsByHook('config', plugins)) {
-    const hook = p.config
-    const handler = getHookHandler(hook)
+    const handler = getPluginHookHandler(p, 'config')
     const res = await handler.call(context, conf, configEnv)
     if (res && res !== conf) {
       if (hasBothRollupOptionsAndRolldownOptions(res)) {
@@ -2869,8 +2919,7 @@ async function runConfigEnvironmentHook(
 
   const environmentNames = Object.keys(environments)
   for (const p of getSortedPluginsByHook('configEnvironment', plugins)) {
-    const hook = p.configEnvironment
-    const handler = getHookHandler(hook)
+    const handler = getPluginHookHandler(p, 'configEnvironment')
     for (const name of environmentNames) {
       const res = await handler.call(context, name, environments[name], {
         ...configEnv,

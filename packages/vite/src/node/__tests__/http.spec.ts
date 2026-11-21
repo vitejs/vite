@@ -1,9 +1,9 @@
 import http from 'node:http'
 import net from 'node:net'
-import { afterEach, describe, expect, test, vi } from 'vitest'
-import { createServer } from '..'
-import type { InlineConfig, ViteDevServer } from '..'
+import { describe, expect, test, vi } from 'vitest'
+import type { InlineConfig } from '..'
 import { wildcardHosts } from '../constants'
+import { createTestServer } from './testUtils'
 
 const BASE_PORT = 15181
 
@@ -14,25 +14,6 @@ const optimizeDeps: InlineConfig['optimizeDeps'] = {
 }
 
 describe('port detection', () => {
-  let blockingServer: http.Server | null = null
-  let viteServer: ViteDevServer | null = null
-
-  afterEach(async () => {
-    if (viteServer) {
-      await viteServer.close()
-      viteServer = null
-    }
-
-    await new Promise<void>((resolve) => {
-      if (blockingServer) {
-        blockingServer.close(() => resolve())
-        blockingServer = null
-      } else {
-        resolve()
-      }
-    })
-  })
-
   async function createSimpleServer(port: number, host: string) {
     const server = http.createServer()
     await new Promise<void>((resolve) => {
@@ -51,7 +32,7 @@ describe('port detection', () => {
     test('uses the same ephemeral port on every interface', async () => {
       using listen = vi.spyOn(net.Server.prototype, 'listen')
 
-      viteServer = await createServer({
+      const viteServer = await createTestServer({
         root: import.meta.dirname,
         optimizeDeps,
         logLevel: 'silent',
@@ -85,7 +66,7 @@ describe('port detection', () => {
         'localhost',
       )
 
-      viteServer = await createServer({
+      const viteServer = await createTestServer({
         root: import.meta.dirname,
         optimizeDeps,
         logLevel: 'silent',
@@ -109,7 +90,7 @@ describe('port detection', () => {
         'localhost',
       )
 
-      viteServer = await createServer({
+      const viteServer = await createTestServer({
         root: import.meta.dirname,
         optimizeDeps,
         logLevel: 'silent',
@@ -129,7 +110,7 @@ describe('port detection', () => {
         '0.0.0.0',
       )
 
-      viteServer = await createServer({
+      const viteServer = await createTestServer({
         root: import.meta.dirname,
         optimizeDeps,
         logLevel: 'silent',
@@ -154,7 +135,7 @@ describe('port detection', () => {
       }
       await using _blockingServer = blockingServer
 
-      viteServer = await createServer({
+      const viteServer = await createTestServer({
         root: import.meta.dirname,
         optimizeDeps,
         logLevel: 'silent',
@@ -182,7 +163,7 @@ describe('port detection', () => {
         '0.0.0.0',
       )
 
-      viteServer = await createServer({
+      const viteServer = await createTestServer({
         root: import.meta.dirname,
         optimizeDeps,
         logLevel: 'silent',
@@ -228,7 +209,7 @@ describe('port detection', () => {
       return server
     })
 
-    viteServer = await createServer({
+    const viteServer = await createTestServer({
       root: import.meta.dirname,
       optimizeDeps,
       logLevel: 'silent',
@@ -246,7 +227,7 @@ describe('port detection', () => {
       'localhost',
     )
 
-    viteServer = await createServer({
+    const viteServer = await createTestServer({
       root: import.meta.dirname,
       optimizeDeps,
       logLevel: 'silent',
@@ -262,7 +243,7 @@ describe('port detection', () => {
     await using _wildcardServer = await createSimpleServer(BASE_PORT, '0.0.0.0')
 
     const warnMessages: string[] = []
-    viteServer = await createServer({
+    const viteServer = await createTestServer({
       root: import.meta.dirname,
       optimizeDeps,
       customLogger: {
@@ -299,7 +280,7 @@ describe('port detection', () => {
 
   describe('port reuse on restart', () => {
     test('reuses the OS-assigned port on restart when port is 0', async () => {
-      viteServer = await createServer({
+      const viteServer = await createTestServer({
         root: import.meta.dirname,
         optimizeDeps,
         logLevel: 'silent',
@@ -323,7 +304,7 @@ describe('port detection', () => {
         'localhost',
       )
 
-      viteServer = await createServer({
+      const viteServer = await createTestServer({
         root: import.meta.dirname,
         optimizeDeps,
         logLevel: 'silent',

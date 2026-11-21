@@ -1,0 +1,8 @@
+{
+  "name": "resolve-subpath-imports",
+  "imports": {
+    "#hash": "./public.js",
+    "#hash#blocked": null,
+    "#hash?blocked": null
+  }
+}

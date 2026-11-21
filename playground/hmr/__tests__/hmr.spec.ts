@@ -19,6 +19,7 @@ import {
   removeFile,
   serverLogs,
   untilBrowserLogAfter,
+  untilBrowserLogAfterNavigation,
   viteTestUrl,
 } from '~utils'
 
@@ -35,7 +36,7 @@ if (!isBuild) {
       // if the first bundle is not ready and a fallback page is shown when the client connects.
       expect(browserLogs.length).toBeOneOf([5, 7])
     } else {
-      expect(browserLogs.length).toBe(5)
+      expect(browserLogs).toHaveLength(5)
     }
     expect(browserLogs.some((msg) => msg.includes('connected'))).toBe(true)
     browserLogs.length = 0
@@ -88,9 +89,9 @@ if (!isBuild) {
         '(self-accepting 1) foo is now: 2',
         '(self-accepting 2) foo is now: 2',
         // bundled dev: the client logs rolldown module ids (cwd-relative, like
-        // `playground-temp/hmr/hmr.ts`). The same `cwd` issue as in hot update log in #23028.
+        // `playground-temp-serve-bundled/hmr/hmr.ts`). The same `cwd` issue as in hot update log in #23028.
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hmr.ts'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hmr.ts'
           : '[vite] hot updated: /hmr.ts',
         '>>> vite:afterUpdate -- update',
       ],
@@ -109,7 +110,7 @@ if (!isBuild) {
         '(self-accepting 1) foo is now: 3',
         '(self-accepting 2) foo is now: 3',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hmr.ts'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hmr.ts'
           : '[vite] hot updated: /hmr.ts',
         '>>> vite:afterUpdate -- update',
       ],
@@ -129,7 +130,7 @@ if (!isBuild) {
         '(hot data) value from execution: 1',
         '(hot data) value from dispose: 1',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hotData.js'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hotData.js'
           : '[vite] hot updated: /hotData.js',
         '>>> vite:afterUpdate -- update',
       ],
@@ -146,7 +147,7 @@ if (!isBuild) {
         '(hot data) value from execution: 2',
         '(hot data) value from dispose: 2',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hotData.js'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hotData.js'
           : '[vite] hot updated: /hotData.js',
         '>>> vite:afterUpdate -- update',
       ],
@@ -170,7 +171,7 @@ if (!isBuild) {
         '(multi deps) foo is now: 2',
         '(multi deps) nested foo is now: 1',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hmrDep.js via playground-temp/hmr/hmr.ts'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hmrDep.js via playground-temp-serve-bundled/hmr/hmr.ts'
           : '[vite] hot updated: /hmrDep.js via /hmr.ts',
         '>>> vite:afterUpdate -- update',
       ],
@@ -192,7 +193,7 @@ if (!isBuild) {
         '(multi deps) foo is now: 3',
         '(multi deps) nested foo is now: 1',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hmrDep.js via playground-temp/hmr/hmr.ts'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hmrDep.js via playground-temp-serve-bundled/hmr/hmr.ts'
           : '[vite] hot updated: /hmrDep.js via /hmr.ts',
         '>>> vite:afterUpdate -- update',
       ],
@@ -217,7 +218,7 @@ if (!isBuild) {
         '(multi deps) foo is now: 3',
         '(multi deps) nested foo is now: 2',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hmrDep.js via playground-temp/hmr/hmr.ts'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hmrDep.js via playground-temp-serve-bundled/hmr/hmr.ts'
           : '[vite] hot updated: /hmrDep.js via /hmr.ts',
         '>>> vite:afterUpdate -- update',
       ],
@@ -239,7 +240,7 @@ if (!isBuild) {
         '(multi deps) foo is now: 3',
         '(multi deps) nested foo is now: 3',
         isBundledDev
-          ? '[vite] hot updated: playground-temp/hmr/hmrDep.js via playground-temp/hmr/hmr.ts'
+          ? '[vite] hot updated: playground-temp-serve-bundled/hmr/hmrDep.js via playground-temp-serve-bundled/hmr/hmr.ts'
           : '[vite] hot updated: /hmrDep.js via /hmr.ts',
         '>>> vite:afterUpdate -- update',
       ],
@@ -536,7 +537,7 @@ if (!isBuild) {
       let dep = 'dep0'
 
       beforeAll(async () => {
-        await untilBrowserLogAfter(
+        await untilBrowserLogAfterNavigation(
           () => openPage(testDir),
           [CONNECTED, />>>>>>/],
           (logs) => {
@@ -559,7 +560,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               'reloaded >>> Y',
               hotUpdatedLog(callbackFile),
             ])
@@ -574,7 +575,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               'reloaded (2) >>> Z',
               hotUpdatedLog(callbackFile),
             ])
@@ -595,7 +596,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               `<<<<<< A0 B0 D0 ; ${dep}`,
               hotUpdatedLog(file),
             ])
@@ -610,7 +611,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               `<<<<<< A1 B1 D1 ; ${dep}`,
               hotUpdatedLog(file),
             ])
@@ -634,7 +635,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual([
+            expect(logs).toStrictEqual([
               `<<<<<< A2 B2 D2 ; ${dep}`,
               hotUpdatedLog(file),
             ])
@@ -671,7 +672,7 @@ if (!isBuild) {
       let dep = 'dep0'
 
       beforeAll(async () => {
-        await untilBrowserLogAfter(
+        await untilBrowserLogAfterNavigation(
           () => openPage(testDir),
           [CONNECTED, />>>>>>/],
           (logs) => {
@@ -734,7 +735,7 @@ if (!isBuild) {
       const testDir = baseDir + '/side-effects'
       const file = 'side-effects.ts'
 
-      await untilBrowserLogAfter(
+      await untilBrowserLogAfterNavigation(
         () => openPage(testDir),
         [CONNECTED, />>>/],
         (logs) => {
@@ -750,7 +751,7 @@ if (!isBuild) {
         },
         HOT_UPDATED,
         (logs) => {
-          expect(logs).toEqual([
+          expect(logs).toStrictEqual([
             '>>> side FX !!',
             hotUpdatedLog(`${testDir}/${file}`),
           ])
@@ -765,7 +766,7 @@ if (!isBuild) {
         const fileName = 'unused.ts'
         const file = `${testDir}/${fileName}`
 
-        await untilBrowserLogAfter(
+        await untilBrowserLogAfterNavigation(
           () => openPage(testDir),
           [CONNECTED, '-- unused --'],
           (logs) => {
@@ -782,7 +783,7 @@ if (!isBuild) {
           },
           HOT_UPDATED,
           (logs) => {
-            expect(logs).toEqual(['-> unused <-', hotUpdatedLog(file)])
+            expect(logs).toStrictEqual(['-> unused <-', hotUpdatedLog(file)])
           },
         )
       })
@@ -791,7 +792,7 @@ if (!isBuild) {
         const fileName = 'used.ts'
         const file = `${testDir}/${fileName}`
 
-        await untilBrowserLogAfter(
+        await untilBrowserLogAfterNavigation(
           () => openPage(testDir),
           [CONNECTED, '-- used --'],
           (logs) => {
@@ -828,7 +829,7 @@ if (!isBuild) {
           const fileName = 'deps-all-accepted.ts'
           const file = `${testDir}/${fileName}`
 
-          await untilBrowserLogAfter(
+          await untilBrowserLogAfterNavigation(
             () => openPage(testDir),
             [CONNECTED, '>>> ready <<<'],
             (logs) => {
@@ -843,7 +844,7 @@ if (!isBuild) {
             },
             HOT_UPDATED,
             (logs) => {
-              expect(logs).toEqual([
+              expect(logs).toStrictEqual([
                 'all >>>>>> a1, b1, c1',
                 hotUpdatedLog(file),
               ])
@@ -856,7 +857,7 @@ if (!isBuild) {
             },
             HOT_UPDATED,
             (logs) => {
-              expect(logs).toEqual([
+              expect(logs).toStrictEqual([
                 'all >>>>>> a2, b2, c2',
                 hotUpdatedLog(file),
               ])
@@ -868,7 +869,7 @@ if (!isBuild) {
           const fileName = 'deps-some-accepted.ts'
           const file = `${testDir}/${fileName}`
 
-          await untilBrowserLogAfter(
+          await untilBrowserLogAfterNavigation(
             () => openPage(testDir),
             [CONNECTED, '>>> ready <<<'],
             (logs) => {
@@ -892,9 +893,13 @@ if (!isBuild) {
         })
       }
 
-      describe('import * from ...', () => testStarExports('star-imports'))
+      describe('import * from ...', () => {
+        testStarExports('star-imports')
+      })
 
-      describe('dynamic import(...)', () => testStarExports('dynamic-imports'))
+      describe('dynamic import(...)', () => {
+        testStarExports('dynamic-imports')
+      })
     })
   })
 
@@ -1035,6 +1040,7 @@ if (!isBuild) {
           () => removeFile(childFile),
           `${childFile} is disposed`,
         ),
+        // oxlint-disable-next-line vitest/require-awaited-expect-poll -- https://github.com/oxc-project/oxc/issues/29173
         expect
           .poll(() => page.textContent('.file-delete-restore'))
           .toMatch('parent:not-child'),
@@ -1062,13 +1068,13 @@ if (!isBuild) {
 
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
-      .toMatch('count is 1')
+      .toBe('count is 1')
 
     // add state
     await page.click('.intermediate-file-delete-increment')
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
-      .toMatch('count is 2')
+      .toBe('count is 2')
 
     // update import, hmr works
     editFile('intermediate-file-delete/index.js', (code) =>
@@ -1079,7 +1085,7 @@ if (!isBuild) {
     )
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
-      .toMatch('count is 2!')
+      .toBe('count is 2!')
 
     // remove unused file. Plain dev reloads the page, because the file is now
     // an entry point in its module graph. Bundled dev keeps the page as is: the
@@ -1087,13 +1093,13 @@ if (!isBuild) {
     removeFile('intermediate-file-delete/re-export.js')
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
-      .toMatch(isBundledDev ? 'count is 2!' : 'count is 1!')
+      .toBe(isBundledDev ? 'count is 2!' : 'count is 1!')
 
     // re-add state
     await page.click('.intermediate-file-delete-increment')
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
-      .toMatch(isBundledDev ? 'count is 3!' : 'count is 2!')
+      .toBe(isBundledDev ? 'count is 3!' : 'count is 2!')
 
     // hmr works after file deletion
     editFile('intermediate-file-delete/display.js', (code) =>
@@ -1101,7 +1107,7 @@ if (!isBuild) {
     )
     await expect
       .poll(() => page.textContent('.intermediate-file-delete-display'))
-      .toMatch(isBundledDev ? 'count is 3' : 'count is 2')
+      .toBe(isBundledDev ? 'count is 3' : 'count is 2')
   })
 
   test(
@@ -1135,7 +1141,10 @@ if (!isBuild) {
         .poll(() => page.textContent('.file-delete-restore'))
         .toMatch('parent:not-child')
 
-      // restore the file
+      // restore the file. The child's own update already renders
+      // `parent:child`, so also wait for the parent's: if it lands after the
+      // next test opens the page but before its HMR client connects, that page
+      // keeps the old parent
       await untilBrowserLogAfter(() => {
         addFile(childFile, originalChildFileCode)
         editFile(parentFile, (code) =>
@@ -1144,7 +1153,10 @@ if (!isBuild) {
             "export { value as childValue } from './child'",
           ),
         )
-      }, 'file-delete-restore/child.js hot data after prune: undefined')
+      }, [
+        'file-delete-restore/child.js hot data after prune: undefined',
+        hotUpdatedLog(parentFile),
+      ])
       await expect
         .poll(() => page.textContent('.file-delete-restore'))
         .toMatch('parent:child')
@@ -1212,6 +1224,145 @@ if (!isBuild) {
     },
   )
 
+  test('importing an unused file again should not use old code', async () => {
+    await page.goto(viteTestUrl)
+
+    const display = () => page.textContent('.orphan-reimport-display')
+
+    await expect.poll(display).toBe('count is 1')
+
+    await page.click('.orphan-reimport-increment')
+    await expect.poll(display).toBe('count is 2')
+
+    // re-export.js is no longer imported
+    await untilBrowserLogAfter(
+      () =>
+        editFile('orphan-reimport/index.js', (code) =>
+          code.replace("from './re-export.js'", "from './display.js'"),
+        ),
+      hotUpdatedLog('orphan-reimport/index.js'),
+    )
+
+    // update a dependency of re-export.js. Plain dev reloads the page, because
+    // re-export.js has no importers, so it is an entry point in its module graph.
+    // Bundled dev applies the update and stops at re-export.js.
+    editFile('orphan-reimport/display.js', (code) =>
+      code.replace('count is ${count}', 'count is ${count}!'),
+    )
+    await expect
+      .poll(display)
+      .toBe(isBundledDev ? 'count is 2!' : 'count is 1!')
+
+    // import re-export.js again
+    await untilBrowserLogAfter(
+      () =>
+        editFile('orphan-reimport/index.js', (code) =>
+          code.replace("from './display.js'", "from './re-export.js'"),
+        ),
+      hotUpdatedLog('orphan-reimport/index.js'),
+    )
+    await expect
+      .poll(display)
+      .toBe(isBundledDev ? 'count is 2!' : 'count is 1!')
+  })
+
+  test('updating a file that only an unused file imports should not keep old code', async () => {
+    await page.goto(viteTestUrl)
+
+    const display = () => page.textContent('.orphan-no-boundary-display')
+
+    await expect.poll(display).toBe('count is 1')
+
+    await page.click('.orphan-no-boundary-increment')
+    await expect.poll(display).toBe('count is 2')
+
+    // re-export.js and display.js are no longer imported
+    await untilBrowserLogAfter(
+      () =>
+        editFile('orphan-no-boundary/index.js', (code) =>
+          code.replace("from './re-export.js'", "from './local.js'"),
+        ),
+      hotUpdatedLog('orphan-no-boundary/index.js'),
+    )
+    await expect.poll(display).toBe('local 2')
+
+    // update display.js. Plain dev reloads the page, because re-export.js has
+    // no importers, so it is an entry point in its module graph. Bundled dev
+    // finds no hmr boundary, so nothing runs again and no update is logged.
+    // Wait for the dispose log instead, so that this edit is handled on its own
+    // and not in the same update as the next edit.
+    const editDisplay = () =>
+      editFile('orphan-no-boundary/display.js', (code) =>
+        code.replace('count is ${count}', 'count is ${count}!'),
+      )
+    if (isBundledDev) {
+      await untilBrowserLogAfter(
+        editDisplay,
+        '[orphan-no-boundary] re-export.js disposed',
+      )
+    } else {
+      editDisplay()
+    }
+    await expect.poll(display).toBe(isBundledDev ? 'local 2' : 'local 1')
+
+    // import re-export.js again
+    await untilBrowserLogAfter(
+      () =>
+        editFile('orphan-no-boundary/index.js', (code) =>
+          code.replace("from './local.js'", "from './re-export.js'"),
+        ),
+      hotUpdatedLog('orphan-no-boundary/index.js'),
+    )
+    await expect
+      .poll(display)
+      .toBe(isBundledDev ? 'count is 2!' : 'count is 1!')
+  })
+
+  // Plain dev serves no built chunk that a page could load as an entry.
+  test.runIf(isBundledDev)(
+    'updating a module in an import cycle with an entry reloads the page',
+    async () => {
+      await page.goto(viteTestUrl + '/entry-cycle/index.html')
+      const display = () => page.textContent('.entry-cycle-display')
+      await expect.poll(display).toBe('entry imports dep')
+
+      // Nothing accepts the update, and the walk from dep.js comes back to it
+      // through entry-cycle.js. Only a page load runs the entry again.
+      const loadPromise = page.waitForEvent('load')
+      editFile('entry-cycle/dep.js', (code) =>
+        code.replace('imports dep', 'imports dep!'),
+      )
+      await loadPromise
+      await expect.poll(display).toBe('entry imports dep!')
+    },
+  )
+
+  test.runIf(isBundledDev)(
+    'updating an entry that another entry no longer imports reloads the page',
+    async () => {
+      await page.goto(viteTestUrl + '/entry-import-removed/index.html')
+      const imported = () => page.textContent('.entry-import-removed-imported')
+      await expect.poll(imported).toBe('imported entry')
+
+      // imported-entry.js has no importer left, but the page still runs it
+      await untilBrowserLogAfter(
+        () =>
+          editFile('entry-import-removed/importing-entry.js', (code) =>
+            code.replace("import './imported-entry.js'\n", ''),
+          ),
+        hotUpdatedLog('entry-import-removed/importing-entry.js'),
+      )
+
+      // Only a page load runs the entry again.
+      const loadPromise = page.waitForEvent('load')
+      editFile('entry-import-removed/imported-entry.js', (code) =>
+        code.replace("'imported entry'", "'imported entry!'"),
+      )
+      await loadPromise
+      await expect.poll(imported).toBe('imported entry!')
+    },
+  )
+
   test('import.meta.hot?.accept', async () => {
     await gotoLatestBuild(viteTestUrl)
 
@@ -1241,7 +1392,7 @@ if (!isBuild) {
       serverLogs.slice(lastServerLogIndex).map(stripVTControlCharacters),
     ).toContain(
       isBundledDev
-        ? 'hmr update playground-temp/hmr/self-accept-within-circular/c.js'
+        ? 'hmr update playground-temp-serve-bundled/hmr/self-accept-within-circular/c.js'
         : 'hmr update /self-accept-within-circular/c.js',
     )
   })
@@ -1310,8 +1461,45 @@ if (!isBuild) {
     await expect.poll(() => getColor('.css-deps')).toBe('green')
   })
 
+  test('CSS HMR with this.addWatchFile in load hook (#23860)', async () => {
+    await page.goto(viteTestUrl + '/css-deps/index.html')
+    await expect.poll(() => getColor('.css-deps-load')).toBe('red')
+    editFile('css-deps/dep-load.js', (code) => code.replace(`red`, `green`))
+    await expect.poll(() => getColor('.css-deps-load')).toBe('green')
+  })
+
   const missingFileTodo = bundledDevTodo(
     'This test should move to a standalone playground. Bundled dev builds all pages in one build, so a page whose import is missing when the server starts fails the build for every page. So `missing-file/index.html` is not a build input here, and under bundled dev the test opens the root page. Even in a standalone playground, creating the missing file does not recover the build, because the dev engine does not watch missing import paths',
+  )
+
+  test(
+    'loads a previously missing file after it is created',
+    missingFileTodo,
+    async () => {
+      const file = 'missing-file/created.ts'
+      const [response] = await Promise.all([
+        page.waitForResponse(viteTestUrl + '/' + file),
+        page.goto(viteTestUrl + '/missing-file/direct-script.html'),
+      ])
+      expect(response.status()).toBe(404)
+
+      // TypeScript syntax requires the created file to pass through transforms.
+      addFile(
+        file,
+        `const message: string = 'created file'
+document.querySelector('.created-file').textContent = message`,
+      )
+      try {
+        await expect
+          .poll(async () => {
+            await page.reload()
+            return page.textContent('.created-file')
+          })
+          .toBe('created file')
+      } finally {
+        removeFile(file)
+      }
+    },
   )
 
   test(

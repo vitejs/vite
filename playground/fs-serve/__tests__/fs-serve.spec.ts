@@ -1,8 +1,17 @@
 import net from 'node:net'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { isBundledDev, isServe, isWindows, page, viteTestUrl } from '~utils'
-import './commonTests'
+import {
+  isBundledDev,
+  isServe,
+  isWindows,
+  page,
+  playgroundTempDir,
+  viteTestUrl,
+} from '~utils'
+import { tests } from './commonTests'
+
+tests()
 
 describe.runIf(isServe)('safe module paths', () => {
   test('keeps root-relative module URLs separate from absolute filesystem paths', async () => {
@@ -32,7 +41,7 @@ describe.runIf(isServe)('invalid request', () => {
         },
       )
       client.on('data', (data) => {
-        buf.push(data)
+        buf.push(data as Buffer)
       })
       client.on('end', (hadError) => {
         if (!hadError) {
@@ -45,9 +54,7 @@ describe.runIf(isServe)('invalid request', () => {
     })
   }
 
-  const root = path
-    .resolve(import.meta.dirname.replace('playground', 'playground-temp'), '..')
-    .replace(/\\/g, '/')
+  const root = path.resolve(playgroundTempDir, 'fs-serve').replace(/\\/g, '/')
   // bundled dev serves only the bundle output and the public directory. Other
   // requests fall back to `/index.html`, which this playground does not have.
   const notFound = 'HTTP/1.1 404 Not Found'
@@ -130,6 +137,7 @@ describe.runIf(isServe)('invalid request', () => {
     },
   ]
   for (const { name, target, status, content } of testCases) {
+    // oxlint-disable-next-line vitest/valid-title
     test(name, async () => {
       const response = await sendRawRequest(viteTestUrl, target)
       expect(response).toContain(status)

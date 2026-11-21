@@ -1,17 +1,17 @@
 import path from 'node:path'
-import { type ServerOptions, type ViteDevServer, createServer } from 'vite'
-import { afterEach, describe, expect, test } from 'vitest'
+import { type InlineConfig, type ServerOptions, createServer } from 'vite'
+import { describe, expect, onTestFinished, test } from 'vitest'
 import { hmrPorts, isServe, page, ports } from '~utils'
 
-let server: ViteDevServer
-
-afterEach(async () => {
-  await server?.close()
-})
+async function createTestServer(config: InlineConfig) {
+  const server = await createServer(config)
+  onTestFinished(() => server.close())
+  return server
+}
 
 async function testClientReload(serverOptions: ServerOptions) {
   // start server
-  server = await createServer({
+  const server = await createTestServer({
     root: path.resolve(import.meta.dirname, '..'),
     logLevel: 'silent',
     server: {

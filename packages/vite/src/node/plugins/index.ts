@@ -1,14 +1,15 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
-import type { ObjectHook } from 'rolldown'
+import type { ObjectHook, RollupError } from 'rolldown'
 import {
   viteAliasPlugin as nativeAliasPlugin,
   viteJsonPlugin as nativeJsonPlugin,
   oxcRuntimePlugin,
 } from 'rolldown/experimental'
-import { resolveBuildPlugins } from '../build'
+import { enhanceRollupError, resolveBuildPlugins } from '../build'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { watchPackageDataPlugin } from '../packages'
 import {
+  type FalsyPlugin,
   type HookHandler,
   type Plugin,
   type PluginWithRequiredHook,
@@ -47,17 +48,17 @@ export async function resolvePlugins(
   prePlugins: Plugin[],
   normalPlugins: Plugin[],
   postPlugins: Plugin[],
-): Promise<Plugin[]> {
+  configuredPlugins: ReadonlySet<Plugin | FalsyPlugin>,
+  patchPlugins?: (plugins: Plugin[]) => void,
+): Promise<{ plugins: Plugin[]; internalPlugins: Set<Plugin> }> {
   const isBuild = config.command === 'build'
   const isWorker = config.isWorker
   const anyEnvBundled =
     isBuild || Object.values(config.environments).some((env) => env.isBundled)
-  const buildPlugins = anyEnvBundled
-    ? resolveBuildPlugins(config)
-    : { pre: [], post: [] }
+  const buildPlugins = anyEnvBundled ? resolveBuildPlugins(config) : undefined
   const { modulePreload } = config.build
 
-  return [
+  const plugins = [
     optimizedDepsPlugin(),
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
     preAliasPlugin(config),
@@ -109,6 +110,7 @@ export async function resolvePlugins(
             consumer: 'client',
             isBundled: true,
             optimizeDepsPluginNames: [],
+            safeModulePaths: config.environments.client.safeModulePaths,
           }
         : undefined,
     ),
@@ -118,6 +120,7 @@ export async function resolvePlugins(
     // @oxc-project/runtime resolution is handled by rolldown in build
     config.oxc !== false
       ? ({
+          // oxlint-disable-next-line typescript/no-misused-spread - BuiltinPlugin is fine
           ...oxcRuntimePlugin(),
           applyToEnvironment(environment) {
             return !environment.config.isBundled
@@ -140,19 +143,34 @@ export async function resolvePlugins(
     buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
     assetImportMetaUrlPlugin(config),
-    ...buildPlugins.pre,
+    ...(buildPlugins?.pre ?? []),
     dynamicImportVarsPlugin(config),
     importGlobPlugin(config),
 
     ...postPlugins,
 
-    ...buildPlugins.post,
+    ...(buildPlugins?.post ?? []),
 
     // internal server-only plugins are always applied after everything else
     clientInjectionsPlugin(config),
     cssAnalysisPlugin(config),
     importAnalysisPlugin(config),
   ].filter(Boolean) as Plugin[]
+
+  // The builder can substitute shared instances at their original positions.
+  const resolvedPlugins = patchPlugins ? [...plugins] : plugins
+  patchPlugins?.(resolvedPlugins)
+  const internalPlugins = new Set(
+    resolvedPlugins.filter((_, index) => {
+      const original = plugins[index]
+      // The Rolldown options wrapper expands to user-configured plugins.
+      return (
+        !configuredPlugins.has(original) &&
+        original !== buildPlugins?.rolldownOptionsPlugin
+      )
+    }),
+  )
+  return { plugins: resolvedPlugins, internalPlugins }
 }
 
 export function createPluginHookUtils(
@@ -173,7 +191,7 @@ export function createPluginHookUtils(
     hookName: K,
   ): NonNullable<HookHandler<Plugin[K]>>[] {
     const plugins = getSortedPlugins(hookName)
-    return plugins.map((p) => getHookHandler(p[hookName])).filter(Boolean)
+    return plugins.map((p) => getPluginHookHandler(p, hookName)).filter(Boolean)
   }
 
   return {
@@ -216,6 +234,38 @@ export function getHookHandler<T extends ObjectHook<Function>>(
   hook: T,
 ): HookHandler<T> {
   return (typeof hook === 'object' ? hook.handler : hook) as HookHandler<T>
+}
+
+export function getPluginHookHandler<K extends keyof Plugin>(
+  plugin: Plugin,
+  hookName: K,
+): NonNullable<HookHandler<Plugin[K]>> {
+  const handler: ((this: unknown, ...args: unknown[]) => unknown) | undefined =
+    getHookHandler(plugin[hookName])
+  if (!handler) return handler as never
+  const rethrowTagged = (e: unknown): never => {
+    tagPluginError(e, plugin.name, hookName)
+    throw e
+  }
+  return function (this: unknown, ...args: unknown[]) {
+    try {
+      const result = handler.apply(this, args)
+      return result instanceof Promise
+        ? result.then(undefined, rethrowTagged)
+        : result
+    } catch (e) {
+      rethrowTagged(e)
+    }
+  } as NonNullable<HookHandler<Plugin[K]>>
+}
+
+function tagPluginError(e: unknown, plugin: string, hook: string): void {
+  if (typeof e !== 'object' || e == null) return
+  const err = e as RollupError
+  if (err.plugin) return
+  err.plugin = plugin
+  err.hook = hook
+  enhanceRollupError(err)
 }
 
 type FilterForPluginValue = {

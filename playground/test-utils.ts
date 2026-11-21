@@ -9,12 +9,13 @@ import {
   removeComments,
 } from 'convert-source-map'
 import colors from 'css-color-names'
-import type { ResultPromise as ExecaResultPromise } from 'execa'
 import type {
   ConsoleMessage,
   ElementHandle,
+  Frame,
   Locator,
 } from 'playwright-chromium'
+import { xSync, type Result as TinyExecResult } from 'tinyexec'
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { expect } from 'vitest'
@@ -26,9 +27,11 @@ import {
   sourcemapSnapshot,
   testDir,
   viteServer,
-} from './vitestSetup'
+  watchBuilds,
+  watchIdleSince,
+} from './vitestSetupUtils'
 
-export * from './vitestSetup'
+export * from './vitestSetupUtils'
 
 // make sure these ports are unique
 export const ports = {
@@ -54,6 +57,7 @@ export const ports = {
   'proxy-hmr': 9616, // not imported but used in `proxy-hmr/vite.config.js`
   'proxy-hmr/other-app': 9617, // not imported but used in `proxy-hmr/other-app/vite.config.js`
   'ssr-conditions': 9620,
+  'ssr-bundled-dev': 9621,
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006,
   'css/dynamic-import': 5007,
@@ -76,6 +80,7 @@ export const hmrPorts = {
   'ssr-conditions': 24688,
   'client-reload/hmr-port': 24689,
   'client-reload/cross-origin': 24690,
+  'ssr-bundled-dev': 24692,
 }
 
 const hexToNameMap: Record<string, string> = {}
@@ -291,6 +296,35 @@ export async function gotoLatestBuild(url: string): Promise<void> {
   await page.goto(url)
 }
 
+/**
+ * Wait for every output containing the edited module to finish rebuilding.
+ * Workaround for Rolldown emitting END per output before all outputs finish:
+ * https://github.com/rolldown/rolldown/issues/10613
+ * Call immediately after a synchronous edit, before yielding to watcher callbacks.
+ *
+ * Wait for 100 ms of idle time to allow queued rebuilds to empty and refill outDir.
+ */
+export async function waitForRebuild(filename: string): Promise<void> {
+  const id = path.resolve(testDir, filename)
+  const builds = watchBuilds
+    .filter((build) => build.files.has(id))
+    .map((build) => ({
+      build,
+      version: build.invalidated.get(id) ?? 0,
+    }))
+  if (!builds.length) {
+    throw new Error(`No build output contains "${filename}"`)
+  }
+  await expect
+    .poll(() =>
+      builds.every(
+        ({ build, version }) => (build.completed.get(id) ?? 0) > version,
+      ),
+    )
+    .toBe(true)
+  await expect.poll(() => performance.now() - watchIdleSince > 100).toBe(true)
+}
+
 export function hotUpdatedLog(file: string): string {
   return isBundledDev
     ? `[vite] hot updated: ${normalizePath(path.relative(process.cwd(), testDir))}/${file}`
@@ -328,47 +362,76 @@ export async function untilBrowserLogAfter(
   return logs
 }
 
+/**
+ * Like `untilBrowserLogAfter`, for an `operation` that opens a page. Only logs
+ * from the page that ends up open count: the previous page can still log while
+ * it unloads, and in bundled dev a stale build is served as a fallback page
+ * that reloads into the real one. Either could otherwise end the wait before
+ * the real page's HMR client has connected.
+ */
+export async function untilBrowserLogAfterNavigation(
+  operation: () => any,
+  target: string | RegExp | Array<string | RegExp>,
+  callback?: UntilBrowserLogAfterCallback,
+): Promise<string[]> {
+  const promise = untilBrowserLog(target, false, true)
+  await operation()
+  const logs = await promise
+  if (callback) {
+    await callback(logs)
+  }
+  return logs
+}
+
 async function untilBrowserLog(
   target?: string | RegExp | Array<string | RegExp>,
   expectOrder = true,
+  restartOnNavigation = false,
 ): Promise<string[]> {
   const { promise, resolve, reject } = promiseWithResolvers<void>()
   let timeoutId: ReturnType<typeof setTimeout>
 
   const logs = []
 
-  try {
-    const isMatch = (matcher: string | RegExp) => (text: string) =>
-      typeof matcher === 'string' ? text === matcher : matcher.test(text)
+  const handleNavigation = (frame: Frame) => {
+    if (frame !== page.mainFrame()) return
+    logs.length = 0
+    processMsg = createProcessMsg()
+  }
 
-    let processMsg: (text: string) => boolean
+  const isMatch = (matcher: string | RegExp) => (text: string) =>
+    typeof matcher === 'string' ? text === matcher : matcher.test(text)
 
+  const createProcessMsg = (): ((text: string) => boolean) => {
     if (!target) {
-      processMsg = () => true
-    } else if (Array.isArray(target)) {
+      return () => true
+    }
+    if (Array.isArray(target)) {
       if (expectOrder) {
         const remainingTargets = [...target]
-        processMsg = (text: string) => {
+        return (text: string) => {
           const nextTarget = remainingTargets.shift()
           expect(text).toMatch(nextTarget)
           return remainingTargets.length === 0
         }
-      } else {
-        const remainingMatchers = target.map(isMatch)
-        processMsg = (text: string) => {
-          const nextIndex = remainingMatchers.findIndex((matcher) =>
-            matcher(text),
-          )
-          if (nextIndex >= 0) {
-            remainingMatchers.splice(nextIndex, 1)
-          }
-          return remainingMatchers.length === 0
-        }
       }
-    } else {
-      processMsg = isMatch(target)
+      const remainingMatchers = target.map(isMatch)
+      return (text: string) => {
+        const nextIndex = remainingMatchers.findIndex((matcher) =>
+          matcher(text),
+        )
+        if (nextIndex >= 0) {
+          remainingMatchers.splice(nextIndex, 1)
+        }
+        return remainingMatchers.length === 0
+      }
     }
+    return isMatch(target)
+  }
 
+  let processMsg = createProcessMsg()
+
+  try {
     const handleMsg = (msg: ConsoleMessage) => {
       try {
         const text = msg.text()
@@ -397,11 +460,18 @@ async function untilBrowserLog(
     }, 5000)
 
     page.on('console', handleMsg)
+    if (restartOnNavigation) {
+      page.on('framenavigated', handleNavigation)
+    }
   } catch (err) {
     reject(err)
   }
 
-  await promise
+  try {
+    await promise
+  } finally {
+    page.off('framenavigated', handleNavigation)
+  }
   clearTimeout(timeoutId)
 
   return logs
@@ -464,17 +534,23 @@ export const formatSourcemapForSnapshot = (
 
 // helper function to kill process, uses taskkill on windows to ensure child process is killed too
 export async function killProcess(
-  serverProcess: ExecaResultPromise,
+  serverProcess: TinyExecResult,
 ): Promise<void> {
   if (isWindows) {
     try {
-      const { execaCommandSync } = await import('execa')
-      execaCommandSync(`taskkill /pid ${serverProcess.pid} /T /F`)
+      xSync('taskkill', ['/pid', `${serverProcess.pid}`, '/T', '/F'])
     } catch (e) {
       console.error('failed to taskkill:', e)
     }
   } else {
     serverProcess.kill('SIGTERM')
+    // follow up with SIGKILL if the process has not exited after 3 seconds
+    const forceKillTimer = setTimeout(() => {
+      if (serverProcess.exitCode === undefined) {
+        serverProcess.kill('SIGKILL')
+      }
+    }, 3000)
+    serverProcess.process?.once('close', () => clearTimeout(forceKillTimer))
   }
 }
 

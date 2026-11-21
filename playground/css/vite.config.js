@@ -11,6 +11,7 @@ globalThis.window = {}
 globalThis.location = new URL('http://localhost/')
 
 const dirname = import.meta.dirname
+const initializedEnvironments = new WeakSet()
 
 export default defineConfig({
   input: {
@@ -23,13 +24,57 @@ export default defineConfig({
       // the replacement the customResolver deprecation warning points users to
       name: 'test-layers-resolver',
       enforce: 'pre',
-      resolveId(id) {
-        if (id.startsWith('~layers/')) {
-          return path.resolve(
-            dirname,
-            'user-resolver',
-            id.slice('~layers/'.length),
-          )
+      applyToEnvironment() {
+        return {
+          name: 'test-layers-environment-resolver',
+          buildStart() {
+            initializedEnvironments.add(this.environment)
+          },
+          resolveId(id) {
+            if (id.startsWith('~layers/')) {
+              if (!initializedEnvironments.has(this.environment)) {
+                throw new Error(
+                  'CSS resolver did not use the initialized environment',
+                )
+              }
+              return path.resolve(
+                dirname,
+                'user-resolver',
+                id.slice('~layers/'.length),
+              )
+            }
+          },
+        }
+      },
+    },
+    {
+      name: 'test-legacy-css-resolver',
+      configResolved(config) {
+        const createResolver = config.createResolver.bind(config)
+        config.createResolver = (options) => {
+          const resolve = createResolver(options)
+          return (id, importer, aliasOnly, ssr) =>
+            resolve(
+              id.replace(/^~legacy-layers\//, '~layers/'),
+              importer,
+              aliasOnly,
+              ssr,
+            )
+        }
+      },
+    },
+    {
+      name: 'test-less-resolver-scope',
+      enforce: 'pre',
+      resolveId(id, importer) {
+        const from = importer?.replaceAll('\\', '/')
+        if (
+          (id === './icon.png' && from?.endsWith('/nested/nested.less')) ||
+          (id === '../images/backgrounds/form-select.svg' &&
+            from?.endsWith('/less/components/form.less')) ||
+          (id === 'less-plugin/test.js' && from?.endsWith('/*'))
+        ) {
+          throw new Error(`Less sent ${id} to a user resolver`)
         }
       },
     },

@@ -28,18 +28,21 @@ export function forwardConsolePlugin(pluginOpts: {
             payload.type === 'error' ||
             payload.type === 'unhandled-rejection'
           ) {
-            const output = formatError(
-              payload,
-              environment,
-              sourceMapCache,
-              bundledDevOutDir,
+            const output = escapeUnsupportedAnsiSequences(
+              formatError(
+                payload,
+                environment,
+                sourceMapCache,
+                bundledDevOutDir,
+              ),
             )
             environment.config.logger.error(output, {
               timestamp: true,
             })
           } else {
-            const output =
-              c.dim(`[console.${payload.data.level}] `) + payload.data.message
+            const output = escapeUnsupportedAnsiSequences(
+              c.dim(`[console.${payload.data.level}] `) + payload.data.message,
+            )
             if (payload.data.level === 'error') {
               environment.config.logger.error(output, {
                 timestamp: true,
@@ -58,6 +61,19 @@ export function forwardConsolePlugin(pluginOpts: {
       }
     },
   }
+}
+
+export function escapeUnsupportedAnsiSequences(message: string): string {
+  // Browser logs may contain terminal controls that write to the clipboard (OSC 52)
+  // or ring the terminal bell (BEL). Escape them to prevent side effects, preserving
+  // only SGR sequences recognized by Chrome DevTools.
+  // C1 controls can invoke terminal commands without an ESC character.
+  // https://developer.chrome.com/docs/devtools/console/format-style#style-ansi
+  return message.replace(
+    // eslint-disable-next-line no-control-regex
+    /[\x07\x80-\x9f]|\x1b(?!\[[\d;]*m)/g,
+    (char) => `\\x${char.charCodeAt(0).toString(16).padStart(2, '0')}`,
+  )
 }
 
 function formatError(

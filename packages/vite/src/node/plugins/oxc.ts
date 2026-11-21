@@ -188,12 +188,13 @@ export async function transformWithOxc(
       configurable: true,
       enumerable: true,
       get: () => result.errors,
-      set: (value) =>
+      set: (value) => {
         Object.defineProperty(wrapper, 'errors', {
           configurable: true,
           enumerable: true,
           value,
-        }),
+        })
+      },
     })
     throw wrapper
   }

@@ -69,7 +69,7 @@ Vite aims to be fully usable as a dependency in a TypeScript project (e.g. it sh
 
 To get around this, we inline some of these dependencies' types in `packages/vite/src/types`. This way, we can still expose the typing but bundle the dependency's source code.
 
-Use `pnpm run build-types-check` to check that the bundled types do not rely on types in `devDependencies`.
+Use `pnpm --filter vite run build-types` from the repository root to generate and check the bundled types do not rely on types in `devDependencies`.
 
 For types shared between client and node, they should be added into `packages/vite/types`. These types are not bundled and are published as is (though they are still considered internal).
 
@@ -148,13 +148,15 @@ Each integration test can be run under either dev server mode or build mode.
 
 - `pnpm test` by default runs every integration test in both serve and build mode, and also unit tests.
 
+- `pnpm run test-e2e` runs integration tests in the `serve`, `serve-bundled`, and `build` Vitest projects. Fixtures are copied to `playground-temp-<project>`. Projects run sequentially because playgrounds use fixed ports; test files within a project can run in parallel.
+
 - `pnpm run test-serve` runs tests only under serve mode.
 
 - `pnpm run test-build` runs tests only under build mode.
 
 - `pnpm run test-serve-bundled` runs tests under serve mode with `experimental.bundledDev` force-enabled (no separate configs needed). Spec files that do not pass in this mode yet are listed in `bundledDevExclude` in `vitest.config.e2e.ts` — remove a file from that list once it passes. When only a few cases in a file fail, keep the file out of that list and mark those cases with `test.skipIf(isBundledDev)` (or `describe.skipIf(isBundledDev)`) using the `isBundledDev` flag from `~utils` — they still run in the normal serve and build modes.
 
-`pnpm run test-serve [match]` or `pnpm run test-build [match]` runs tests in specific packages that match the given filter. e.g. `pnpm run test-serve assets` runs tests for both `playground/assets` and `playground/assets-sanitize` under serve mode. Note package matching is not available for the `pnpm test` script, which always runs all tests.
+`pnpm run test-e2e [match]` or `pnpm run test-serve [match]` or `pnpm run test-build [match]` runs tests in specific packages that match the given filter. e.g. `pnpm run test-serve assets` runs tests for both `playground/assets` and `playground/assets-sanitize` under serve mode. Note package matching is not available for the `pnpm test` script, which always runs all tests.
 
 ### Unit Tests
 

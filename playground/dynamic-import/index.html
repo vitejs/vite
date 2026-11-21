@@ -48,12 +48,35 @@
 
 <div class="dynamic-import-nested-self"></div>
 
+<p>dynamic-import-with-await-in-the-argument</p>
+<div class="dynamic-import-with-await-in-the-argument">todo</div>
+
 <div class="then-css-outer">todo</div>
 <div class="then-css-inner">todo</div>
 
 <div class="dynamic-import-rest"></div>
 
+<p>dynamic import of a CommonJS dep (plain module.exports object)</p>
+<div class="cjs-dynamic-plain-object"></div>
+<p>dynamic import of a CommonJS dep (webpack UMD)</p>
+<div class="cjs-dynamic-umd"></div>
+<p>dynamic import of a CommonJS dep (dep-cjs-compiled-from-esm)</p>
+<div class="cjs-dynamic-dep-cjs-compiled-from-esm"></div>
+<p>dynamic import of a CommonJS dep (dep-cjs-compiled-from-cjs)</p>
+<div class="cjs-dynamic-dep-cjs-compiled-from-cjs"></div>
+<p>dynamic import of a CommonJS dep (dep-cjs-with-es-module-flag)</p>
+<div class="cjs-dynamic-dep-cjs-with-es-module-flag"></div>
+<p>dynamic import of a CommonJS dep from an explicit CJS importer</p>
+<div class="cjs-dynamic-importer-cjs"></div>
+<p>dynamic import of a CommonJS dep from an ambiguous importer</p>
+<div class="cjs-dynamic-importer-ambiguous"></div>
+<p>dynamic named import from an ESM dep</p>
+<div class="esm-dynamic-named"></div>
+
 <script type="module" src="./nested/index.js"></script>
+<script type="module" src="./dynamic-deps.js"></script>
+<script type="module" src="./cjs-dynamic-importer-cjs/index.js"></script>
+<script type="module" src="./cjs-dynamic-importer-ambiguous/index.js"></script>
 <script type="module" src="./(app)/nest/index.js"></script>
 <style>
   p {

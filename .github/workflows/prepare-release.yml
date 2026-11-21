@@ -66,10 +66,10 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Install pnpm and node 24
-        uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
+      - name: Install pnpm and node 26
+        uses: pnpm/setup@731dfb6463bbd11c11fd0ee11fe00ed0e36d48a1 # v3.2.0
         with:
-          runtime: node@24
+          runtime: node@26
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 

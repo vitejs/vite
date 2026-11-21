@@ -1,8 +1,9 @@
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { promiseWithResolvers } from '../../../shared/utils'
-import { type ViteDevServer, createServer } from '../index'
+import { createTestServer } from '../../__tests__/testUtils'
+import type { ViteDevServer } from '../index'
 
 const stubGetWatchedCode = /\(\)\s*\{\s*return this;\s*\}/
 const root = fileURLToPath(
@@ -18,17 +19,8 @@ function expectWatcherToBeClosed(watcher: ViteDevServer['watcher']) {
 }
 
 describe('watcher configuration', () => {
-  let server: ViteDevServer | undefined
-
-  afterEach(async () => {
-    if (server) {
-      await server.close()
-      server = undefined
-    }
-  })
-
   it('when watcher is disabled, return noop watcher', async () => {
-    server = await createServer({
+    const server = await createTestServer({
       server: {
         watch: null,
       },
@@ -37,7 +29,7 @@ describe('watcher configuration', () => {
   })
 
   it('when watcher is not disabled, return chokidar watcher', async () => {
-    server = await createServer({
+    const server = await createTestServer({
       server: {
         watch: {},
       },
@@ -46,7 +38,7 @@ describe('watcher configuration', () => {
   })
 
   it('keeps the watcher closed when add is called after server close', async () => {
-    server = await createServer()
+    const server = await createTestServer()
     await server.close()
 
     try {
@@ -60,7 +52,7 @@ describe('watcher configuration', () => {
   it('keeps the watcher closed when add is called while server close is pending', async () => {
     const closeStarted = promiseWithResolvers<void>()
     const finishClose = promiseWithResolvers<void>()
-    server = await createServer({
+    const server = await createTestServer({
       plugins: [
         {
           name: 'delay-close',
@@ -89,7 +81,7 @@ describe('watcher configuration', () => {
     const closeStarted = promiseWithResolvers<void>()
     const finishClose = promiseWithResolvers<void>()
     let addWatch!: (id: string) => void
-    server = await createServer({
+    const server = await createTestServer({
       root,
       plugins: [
         {
@@ -122,7 +114,7 @@ describe('watcher configuration', () => {
   it('should not re-add files inside the root when addWatchFile is called with native paths', async () => {
     const addedFiles: string[] = []
     let addWatchFile!: (id: string) => void
-    server = await createServer({
+    const server = await createTestServer({
       root,
       plugins: [
         {
@@ -147,17 +139,19 @@ describe('watcher configuration', () => {
     // a file outside the root must still be added to the watcher
     addWatchFile(join(resolve(root, '../custom-public'), 'foo.txt'))
 
-    expect(addedFiles).toEqual([resolve(root, '../custom-public/foo.txt')])
+    expect(addedFiles).toStrictEqual([
+      resolve(root, '../custom-public/foo.txt'),
+    ])
   })
 
   it('should watch the root directory, config file dependencies, dotenv files, and the public directory', async () => {
-    server = await createServer({ root })
-    await new Promise((resolve) => server!.watcher.once('ready', resolve))
+    const server = await createTestServer({ root })
+    await new Promise((resolve) => server.watcher.once('ready', resolve))
     // Perform retries here as chokidar may still not be completely watching all directories
     // after the `ready` event
     await vi.waitFor(() => {
-      const watchedDirs = Object.keys(server!.watcher.getWatched())
-      expect(watchedDirs).toEqual(
+      const watchedDirs = Object.keys(server.watcher.getWatched())
+      expect(watchedDirs).toStrictEqual(
         expect.arrayContaining([
           root,
           resolve(root, '../config-deps'),

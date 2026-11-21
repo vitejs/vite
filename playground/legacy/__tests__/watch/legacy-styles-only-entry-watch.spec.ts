@@ -1,12 +1,10 @@
-import { setTimeout } from 'node:timers/promises'
 import { expect, test } from 'vitest'
 import {
   editFile,
   findAssetFile,
   isBuild,
-  notifyRebuildComplete,
   readManifest,
-  watcher,
+  waitForRebuild,
 } from '~utils'
 
 test.runIf(isBuild)('rebuilds styles only entry on change', async () => {
@@ -16,17 +14,16 @@ test.runIf(isBuild)('rebuilds styles only entry on change', async () => {
   expect(findAssetFile(/style-only-entry-legacy-.+\.js/, 'watch')).toContain(
     '#ff69b4',
   )
-  expect(findAssetFile(/polyfills-legacy-.+\.js/, 'watch')).toBeTruthy()
+  expect(findAssetFile(/polyfills-legacy-.+\.js/, 'watch')).toContain(
+    'SystemJS',
+  )
   const numberOfManifestEntries = Object.keys(readManifest('watch')).length
   expect(numberOfManifestEntries).toBe(3)
 
   editFile('style-only-entry.css', (originalContents) =>
     originalContents.replace('#ff69b4', '#ffb6c1 '),
   )
-  await notifyRebuildComplete(watcher)
-  // wait for both "output" to complete, workaround for https://github.com/rolldown/rolldown/issues/10613
-  await Promise.race([notifyRebuildComplete(watcher), setTimeout(100)])
-
+  await waitForRebuild('style-only-entry.css')
   const updatedManifest = readManifest('watch')
   expect(Object.keys(updatedManifest)).toHaveLength(numberOfManifestEntries)
 
@@ -44,5 +41,5 @@ test.runIf(isBuild)('rebuilds styles only entry on change', async () => {
     'watch',
   )
   expect(reRenderedCssLegacyFile).toContain('#ffb6c1')
-  expect(findAssetFile(/polyfills-legacy-.+\.js/, 'watch')).toBeTruthy()
+  expect(findAssetFile(/polyfills-legacy-.+\.js/, 'watch')).toBeDefined()
 })

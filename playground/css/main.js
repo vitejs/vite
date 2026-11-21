@@ -36,6 +36,9 @@ document
   .querySelector('.path-resolved-modules-css')
   .classList.add(...composesPathResolvingMod['path-resolving-css'].split(' '))
 document
+  .querySelector('.path-resolved-modules-user')
+  .classList.add(...composesPathResolvingMod['path-resolving-user'].split(' '))
+document
   .querySelector('.path-resolved-modules-sass')
   .classList.add(...composesPathResolvingMod['path-resolving-sass'].split(' '))
 document

@@ -1,4 +1,5 @@
 @import '~layers/nested.css';
+@import '~legacy-layers/legacy.css';
 
 .user-resolver-layer {
   color: blue;

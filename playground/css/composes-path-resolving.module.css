@@ -2,6 +2,10 @@
   composes: apply-color from '=/composed.module.css';
 }
 
+.path-resolving-user {
+  composes: apply-color from '~layers/composed-layer.module.css';
+}
+
 .path-resolving-sass {
   composes: apply-color from '=/composed.module.scss';
 }

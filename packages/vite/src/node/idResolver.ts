@@ -1,9 +1,11 @@
 import aliasPlugin from '@rollup/plugin-alias'
 import type { PartialResolvedId } from 'rolldown'
+import { BaseEnvironment } from './baseEnvironment'
 import type { PartialEnvironment } from './baseEnvironment'
-import type { ResolvedConfig } from './config'
+import type { ResolveFn, ResolvedConfig } from './config'
 import type { Environment } from './environment'
-import type { Plugin } from './plugin'
+import type { HookHandler, Plugin } from './plugin'
+import { getUserPreResolvePlugins } from './plugin'
 import { oxcResolvePlugin } from './plugins/resolve'
 import type { InternalResolveOptions } from './plugins/resolve'
 import type { EnvironmentPluginContainer } from './server/pluginContainer'
@@ -25,33 +27,61 @@ export function createBackCompatIdResolver(
   config: ResolvedConfig,
   options?: Partial<InternalResolveOptions>,
 ): ResolveIdFn {
-  const compatResolve = config.createResolver(options)
+  let compatResolve = options?.userPrePlugins
+    ? undefined
+    : config.createResolver(options)
+  const compatResolvers = new WeakMap<PartialEnvironment, ResolveFn>()
   let resolve: ResolveIdFn
   return async (environment, id, importer, aliasOnly) => {
     if (environment.name === 'client' || environment.name === 'ssr') {
-      return compatResolve(id, importer, aliasOnly, environment.name === 'ssr')
+      const ssr = environment.name === 'ssr'
+      // Standalone preprocessCSS creates a new PartialEnvironment for each
+      // call. Only bind an environment when a user hook can observe it.
+      if (
+        !options?.userPrePlugins ||
+        !(environment instanceof BaseEnvironment) ||
+        !getUserPreResolvePlugins(environment.config.plugins)
+      ) {
+        compatResolve ??= config.createResolver(options)
+        return compatResolve(id, importer, aliasOnly, ssr)
+      }
+      let resolver = compatResolvers.get(environment)
+      if (!resolver) {
+        // Bind the environment when creating the resolver so existing wrappers
+        // can keep forwarding the original four arguments.
+        resolver = config.createResolver({ ...options, environment })
+        compatResolvers.set(environment, resolver)
+      }
+      return resolver(id, importer, aliasOnly, ssr)
     }
     resolve ??= createIdResolver(config, options)
     return resolve(environment, id, importer, aliasOnly)
   }
 }
 
-// `@import` inlining needs a file, so a result a plugin marks as external is
-// dropped and resolution falls through to the next plugin.
-function withoutExternalResults(plugin: Plugin): Plugin {
+function toCssResolvePlugin(plugin: Plugin): Plugin {
   const hook = plugin.resolveId!
   const handler = typeof hook === 'object' ? hook.handler : hook
-  const wrapped = async function (this: any, ...args: any[]) {
-    const result = await (handler as any).apply(this, args)
-    return result && typeof result === 'object' && result.external
-      ? null
-      : result
-  }
+  const wrapped: HookHandler<NonNullable<Plugin['resolveId']>> =
+    async function (...args) {
+      const result = await handler.apply(this, args)
+      if (!result) return result
+      if (typeof result === 'object' && result.external) return null
+      // CSS reads the file directly. Let the next resolver try the original
+      // import when a plugin returns a virtual or query-bearing module ID.
+      const id = typeof result === 'string' ? result : result.id
+      if (id.includes('\0') || id.startsWith('virtual:') || id.includes('?')) {
+        return null
+      }
+      return result
+    }
   return {
-    ...plugin,
+    // This container only resolves files. Lifecycle hooks belong to the main
+    // pipeline and must not run again when a CSS resolver is created.
+    name: plugin.name,
     resolveId:
       typeof hook === 'object' ? { ...hook, handler: wrapped } : wrapped,
-  } as Plugin
+  }
 }
 
 /**
@@ -76,19 +106,10 @@ export function createIdResolver(
   ): Promise<PartialResolvedId | null> {
     let pluginContainer = pluginContainerMap.get(environment)
     if (!pluginContainer) {
-      // Same set of plugins the main pipeline runs before its own resolver
-      // (see `resolvePlugins`), so a `resolveId` hook that works for JS
-      // imports also works here.
       const prePlugins = userPrePlugins
-        ? environment.config.plugins
-            .filter(
-              (plugin) =>
-                plugin.resolveId &&
-                (plugin.enforce === 'pre' ||
-                  (typeof plugin.resolveId === 'object' &&
-                    plugin.resolveId.order === 'pre')),
-            )
-            .map(withoutExternalResults)
+        ? (getUserPreResolvePlugins(environment.config.plugins)?.map(
+            toCssResolvePlugin,
+          ) ?? [])
         : []
       pluginContainer = await createEnvironmentPluginContainer(
         environment as Environment,

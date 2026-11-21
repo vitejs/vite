@@ -335,8 +335,8 @@ test('dynamic import', async () => {
     const i = () => __vite_ssr_dynamic_import__('./foo')"
   `,
   )
-  expect(result?.deps).toEqual([])
-  expect(result?.dynamicDeps).toEqual(['./foo'])
+  expect(result?.deps).toStrictEqual([])
+  expect(result?.dynamicDeps).toStrictEqual(['./foo'])
 })
 
 test('do not rewrite method definition', async () => {
@@ -349,7 +349,7 @@ test('do not rewrite method definition', async () => {
     class A { fn() { (0,__vite_ssr_import_0__.fn)() } }"
   `,
   )
-  expect(result?.deps).toEqual(['vue'])
+  expect(result?.deps).toStrictEqual(['vue'])
 })
 
 test('do not rewrite when variable is in scope', async () => {
@@ -362,7 +362,7 @@ test('do not rewrite when variable is in scope', async () => {
     function A(){ const fn = () => {}; return { fn }; }"
   `,
   )
-  expect(result?.deps).toEqual(['vue'])
+  expect(result?.deps).toStrictEqual(['vue'])
 })
 
 // #5472
@@ -376,7 +376,7 @@ test('do not rewrite when variable is in scope with object destructuring', async
     function A(){ let {fn, test} = {fn: 'foo', test: 'bar'}; return { fn }; }"
   `,
   )
-  expect(result?.deps).toEqual(['vue'])
+  expect(result?.deps).toStrictEqual(['vue'])
 })
 
 // #5472
@@ -390,7 +390,7 @@ test('do not rewrite when variable is in scope with array destructuring', async 
     function A(){ let [fn, test] = ['foo', 'bar']; return { fn }; }"
   `,
   )
-  expect(result?.deps).toEqual(['vue'])
+  expect(result?.deps).toStrictEqual(['vue'])
 })
 
 // #5727
@@ -404,7 +404,7 @@ test('rewrite variable in string interpolation in function nested arguments', as
     function A({foo = \`test\${__vite_ssr_import_0__.fn}\`} = {}){ return {}; }"
   `,
   )
-  expect(result?.deps).toEqual(['vue'])
+  expect(result?.deps).toStrictEqual(['vue'])
 })
 
 // #6520
@@ -418,7 +418,7 @@ test('rewrite variables in default value of destructuring params', async () => {
     function A({foo = __vite_ssr_import_0__.fn}){ return {}; }"
   `,
   )
-  expect(result?.deps).toEqual(['vue'])
+  expect(result?.deps).toStrictEqual(['vue'])
 })
 
 test('do not rewrite when function declaration is in scope', async () => {
@@ -431,7 +431,7 @@ test('do not rewrite when function declaration is in scope', async () => {
     function A(){ function fn() {}; return { fn }; }"
   `,
   )
-  expect(result?.deps).toEqual(['vue'])
+  expect(result?.deps).toStrictEqual(['vue'])
 })
 
 // #16452
@@ -470,7 +470,7 @@ test('do not rewrite when class declaration is in scope', async () => {
     function A(){ class cls {} return { cls }; }"
   `,
   )
-  expect(result?.deps).toEqual(['vue'])
+  expect(result?.deps).toStrictEqual(['vue'])
 })
 
 test('do not rewrite when class expression is in scope', async () => {
@@ -507,7 +507,7 @@ test('do not rewrite catch clause', async () => {
     try {} catch(error) {}"
   `,
   )
-  expect(result?.deps).toEqual(['./dependency'])
+  expect(result?.deps).toStrictEqual(['./dependency'])
 })
 
 // #2221

@@ -1,8 +1,13 @@
 import { describe, expect, test } from 'vitest'
+import type {
+  ResolvedConfig,
+  ResolvedEnvironmentOptions,
+} from '../../../config'
 import { normalizeAlias } from '../../../utils'
 import {
   applyStaticAlias,
   isFileInTargetPath,
+  isFileLoadingAllowed,
   looksLikeWindowsShortNamePath,
 } from '../static'
 
@@ -42,6 +47,30 @@ describe('static file aliases', () => {
       pathname: '/normalized/file.txt',
       find: '/normalized/',
       replacement: '/root/aliased/',
+      expected: '/root/aliased/file.txt',
+    },
+    'replacement containing $$': {
+      pathname: '/images/file.txt',
+      find: '/images',
+      replacement: '/root/$$assets',
+      expected: '/root/$$assets/file.txt',
+    },
+    'replacement containing $&': {
+      pathname: '/images/file.txt',
+      find: '/images',
+      replacement: '/root/$&',
+      expected: '/root/$&/file.txt',
+    },
+    "replacement containing $'": {
+      pathname: '/images/file.txt',
+      find: '/images',
+      replacement: "/root/$'",
+      expected: "/root/$'/file.txt",
+    },
+    'regex alias capture group': {
+      pathname: '/regex/file.txt',
+      find: /^\/regex\/(.*)$/,
+      replacement: '/root/aliased/$1',
       expected: '/root/aliased/file.txt',
     },
   }
@@ -129,4 +158,20 @@ describe('looksLikeWindowsShortNamePath', () => {
       expect(looksLikeWindowsShortNamePath(filePath)).toBe(false)
     })
   }
+})
+
+describe('isFileLoadingAllowed', () => {
+  test('treats query syntax as part of the file path', () => {
+    const safeFilePath = '/foo/bar'
+    const environmentConfig = {
+      server: { fs: { strict: true, allow: [] } },
+      fsDenyGlob: () => false,
+      safeModulePaths: new Set([safeFilePath]),
+    } as ResolvedConfig & ResolvedEnvironmentOptions
+
+    expect(isFileLoadingAllowed(environmentConfig, safeFilePath)).toBe(true)
+    expect(isFileLoadingAllowed(environmentConfig, `${safeFilePath}?baz`)).toBe(
+      false,
+    )
+  })
 })
