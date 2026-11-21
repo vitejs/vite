@@ -842,6 +842,7 @@ async function prepareRolldownOptimizerRun(
   async function build() {
     const inputOptions: RolldownOptions = {
       ...rolldownOptions,
+      tsconfig: environment.config.tsconfig ?? rolldownOptions.tsconfig,
       input: flatIdDeps,
       logLevel: 'silent',
       plugins,
@@ -854,6 +855,9 @@ async function prepareRolldownOptimizerRun(
       resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js', '.css', '.json'],
         ...rolldownOptions.resolve,
+        ...(environment.config.tsconfig
+          ? { tsconfigFilename: undefined }
+          : undefined),
       },
       // TODO: remove this and enable rolldown's CSS support later
       moduleTypes: {
@@ -1354,6 +1358,7 @@ function getConfigHash(environment: Environment): string {
         ? process.env.NODE_ENV || config.mode
         : null,
       root: config.root,
+      tsconfig: config.tsconfig,
       resolve: config.resolve,
       assetsInclude: config.assetsInclude,
       plugins: config.plugins.map((p) => p.name),
@@ -1407,7 +1412,16 @@ export function getLockfileHash(root: string): string {
       )
       const stat = tryStatSync(fullPath)
       if (stat?.isDirectory()) {
-        content += stat.mtimeMs.toString()
+        // the patches directory's mtime only changes when entries are added
+        // or removed, so use each patch file's mtime to also detect in-place
+        // edits and overwrites of existing patch files
+        for (const name of fs.readdirSync(fullPath)) {
+          if (!name.endsWith('.patch')) continue
+          const fileStat = tryStatSync(path.join(fullPath, name))
+          if (fileStat?.isFile()) {
+            content += name + fileStat.mtimeMs.toString()
+          }
+        }
       }
     }
   }

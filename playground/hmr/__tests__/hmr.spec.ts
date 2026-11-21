@@ -19,6 +19,7 @@ import {
   removeFile,
   serverLogs,
   untilBrowserLogAfter,
+  untilBrowserLogAfterNavigation,
   viteTestUrl,
 } from '~utils'
 
@@ -536,7 +537,7 @@ if (!isBuild) {
       let dep = 'dep0'
 
       beforeAll(async () => {
-        await untilBrowserLogAfter(
+        await untilBrowserLogAfterNavigation(
           () => openPage(testDir),
           [CONNECTED, />>>>>>/],
           (logs) => {
@@ -671,7 +672,7 @@ if (!isBuild) {
       let dep = 'dep0'
 
       beforeAll(async () => {
-        await untilBrowserLogAfter(
+        await untilBrowserLogAfterNavigation(
           () => openPage(testDir),
           [CONNECTED, />>>>>>/],
           (logs) => {
@@ -734,7 +735,7 @@ if (!isBuild) {
       const testDir = baseDir + '/side-effects'
       const file = 'side-effects.ts'
 
-      await untilBrowserLogAfter(
+      await untilBrowserLogAfterNavigation(
         () => openPage(testDir),
         [CONNECTED, />>>/],
         (logs) => {
@@ -765,7 +766,7 @@ if (!isBuild) {
         const fileName = 'unused.ts'
         const file = `${testDir}/${fileName}`
 
-        await untilBrowserLogAfter(
+        await untilBrowserLogAfterNavigation(
           () => openPage(testDir),
           [CONNECTED, '-- unused --'],
           (logs) => {
@@ -791,7 +792,7 @@ if (!isBuild) {
         const fileName = 'used.ts'
         const file = `${testDir}/${fileName}`
 
-        await untilBrowserLogAfter(
+        await untilBrowserLogAfterNavigation(
           () => openPage(testDir),
           [CONNECTED, '-- used --'],
           (logs) => {
@@ -828,7 +829,7 @@ if (!isBuild) {
           const fileName = 'deps-all-accepted.ts'
           const file = `${testDir}/${fileName}`
 
-          await untilBrowserLogAfter(
+          await untilBrowserLogAfterNavigation(
             () => openPage(testDir),
             [CONNECTED, '>>> ready <<<'],
             (logs) => {
@@ -868,7 +869,7 @@ if (!isBuild) {
           const fileName = 'deps-some-accepted.ts'
           const file = `${testDir}/${fileName}`
 
-          await untilBrowserLogAfter(
+          await untilBrowserLogAfterNavigation(
             () => openPage(testDir),
             [CONNECTED, '>>> ready <<<'],
             (logs) => {
@@ -1140,7 +1141,10 @@ if (!isBuild) {
         .poll(() => page.textContent('.file-delete-restore'))
         .toMatch('parent:not-child')
 
-      // restore the file
+      // restore the file. The child's own update already renders
+      // `parent:child`, so also wait for the parent's: if it lands after the
+      // next test opens the page but before its HMR client connects, that page
+      // keeps the old parent
       await untilBrowserLogAfter(() => {
         addFile(childFile, originalChildFileCode)
         editFile(parentFile, (code) =>
@@ -1149,7 +1153,10 @@ if (!isBuild) {
             "export { value as childValue } from './child'",
           ),
         )
-      }, 'file-delete-restore/child.js hot data after prune: undefined')
+      }, [
+        'file-delete-restore/child.js hot data after prune: undefined',
+        hotUpdatedLog(parentFile),
+      ])
       await expect
         .poll(() => page.textContent('.file-delete-restore'))
         .toMatch('parent:child')
@@ -1454,8 +1461,45 @@ if (!isBuild) {
     await expect.poll(() => getColor('.css-deps')).toBe('green')
   })
 
+  test('CSS HMR with this.addWatchFile in load hook (#23860)', async () => {
+    await page.goto(viteTestUrl + '/css-deps/index.html')
+    await expect.poll(() => getColor('.css-deps-load')).toBe('red')
+    editFile('css-deps/dep-load.js', (code) => code.replace(`red`, `green`))
+    await expect.poll(() => getColor('.css-deps-load')).toBe('green')
+  })
+
   const missingFileTodo = bundledDevTodo(
     'This test should move to a standalone playground. Bundled dev builds all pages in one build, so a page whose import is missing when the server starts fails the build for every page. So `missing-file/index.html` is not a build input here, and under bundled dev the test opens the root page. Even in a standalone playground, creating the missing file does not recover the build, because the dev engine does not watch missing import paths',
+  )
+
+  test(
+    'loads a previously missing file after it is created',
+    missingFileTodo,
+    async () => {
+      const file = 'missing-file/created.ts'
+      const [response] = await Promise.all([
+        page.waitForResponse(viteTestUrl + '/' + file),
+        page.goto(viteTestUrl + '/missing-file/direct-script.html'),
+      ])
+      expect(response.status()).toBe(404)
+
+      // TypeScript syntax requires the created file to pass through transforms.
+      addFile(
+        file,
+        `const message: string = 'created file'
+document.querySelector('.created-file').textContent = message`,
+      )
+      try {
+        await expect
+          .poll(async () => {
+            await page.reload()
+            return page.textContent('.created-file')
+          })
+          .toBe('created file')
+      } finally {
+        removeFile(file)
+      }
+    },
   )
 
   test(

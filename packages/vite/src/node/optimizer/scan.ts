@@ -296,6 +296,10 @@ async function prepareRolldownScanner(
   async function build() {
     await scan({
       ...rolldownOptions,
+      tsconfig: environment.config.tsconfig ?? rolldownOptions.tsconfig,
+      resolve: environment.config.tsconfig
+        ? { ...rolldownOptions.resolve, tsconfigFilename: undefined }
+        : rolldownOptions.resolve,
       transform: transformOptions,
       input: entries,
       logLevel: 'silent',
@@ -556,7 +560,7 @@ function rolldownScanPlugin(
     return js
   }
 
-  const ASSET_TYPE_RE = new RegExp(`\\.(${KNOWN_ASSET_TYPES.join('|')})$`)
+  const ASSET_TYPE_RE = new RegExp(`\\.(?:${KNOWN_ASSET_TYPES.join('|')})$`)
 
   return [
     {

@@ -321,6 +321,32 @@ test('top-level input can be resolved by a plugin for dep scanning', async (ctx)
   expect(scanResult.deps).toHaveProperty('vue')
 })
 
+// regression test for https://github.com/vitejs/vite/issues/24117
+test('scan respects the top-level tsconfig option', async (ctx) => {
+  const server = await createServer({
+    configFile: false,
+    logLevel: 'error',
+    root: path.join(import.meta.dirname, 'fixtures', 'scan-tsconfig'),
+    // `src/tsconfig.json` extends a missing file and would fail the scan if it
+    // was picked up instead of the selected tsconfig
+    tsconfig: 'tsconfig.selected.json',
+    optimizeDeps: {
+      entries: ['src/main.ts'],
+      force: true,
+      noDiscovery: false,
+    },
+  })
+  ctx.onTestFinished(() => server.close())
+
+  const { cancel, result } = scanImports(
+    devToScanEnvironment(server.environments.client),
+  )
+  ctx.onTestFinished(cancel)
+
+  const scanResult = await result
+  expect(scanResult.deps).toHaveProperty('vue')
+})
+
 // regression test for https://github.com/vitejs/vite/issues/22752
 // `resolveRolldownOptions` resolves `build.rolldownOptions.input` relative to the root,
 // so the scanner needs to resolve a relative bare entry from the root

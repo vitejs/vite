@@ -13,8 +13,10 @@ import { performance } from 'node:perf_hooks'
 import { fileURLToPath } from 'node:url'
 import remapping from '@jridgewell/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
+import { decode, encode } from '@jridgewell/sourcemap-codec'
+import type { SourceMapSegment } from '@jridgewell/sourcemap-codec'
 import type { Equal } from '@type-challenges/utils'
-import type MagicString from 'magic-string'
+import MagicString from 'magic-string'
 import type { Debugger } from 'obug'
 import debug from 'obug'
 import colors from 'picocolors'
@@ -729,6 +731,7 @@ export async function recursiveReaddir(dir: string): Promise<string[]> {
 export let safeRealpathSync:
   | typeof windowsSafeRealPathSync
   | typeof windowsLazyRealpathSync
+  | typeof windowsNativeRealpathSync
   | typeof windowsMappedRealpathSync
   | typeof fs.realpathSync.native = isWindows
   ? windowsSafeRealPathSync
@@ -738,11 +741,30 @@ export let safeRealpathSync:
 // MIT License, Copyright (c) 2017 Larry Bahr
 const windowsNetworkMap = new Map()
 
+// `fs.realpathSync.native` returns the drive letter in its canonical
+// (uppercase) form, while `process.cwd()` / `import.meta.url` may carry the
+// drive letter as it was spelled (e.g. `c:\project`). Keep the input's drive
+// letter case so that paths derived from them stay identical.
+// https://github.com/vitejs/vite/issues/24145
+function windowsNativeRealpathSync(input: string): string {
+  const realPath = fs.realpathSync.native(input)
+  const inputDrive = input[0]
+  const realDrive = realPath[0]
+  if (
+    inputDrive !== realDrive &&
+    input[1] === ':' &&
+    realPath[1] === ':' &&
+    inputDrive.toLowerCase() === realDrive.toLowerCase()
+  ) {
+    return inputDrive + realPath.slice(1)
+  }
+  return realPath
+}
+
 function windowsMappedRealpathSync(path: string): string {
-  const realPath = fs.realpathSync.native(path)
+  const realPath = windowsNativeRealpathSync(path)
   if (!realPath.startsWith('\\\\')) {
-    // local path, `fs.realpathSync.native` resolves it the same way as
-    // `fs.realpathSync`
+    // local path, `windowsNativeRealpathSync` resolves it the same way as `fs.realpathSync`
     return realPath
   }
   for (const [network, volume] of windowsNetworkMap) {
@@ -756,10 +778,9 @@ let windowsNetUseStarted = false
 const parseNetUseRE = /^\w* +(\w:) +([^ ]+)\s/
 
 function windowsLazyRealpathSync(path: string): string {
-  const realPath = fs.realpathSync.native(path)
+  const realPath = windowsNativeRealpathSync(path)
   if (!realPath.startsWith('\\\\')) {
-    // local path, `fs.realpathSync.native` resolves it the same way as
-    // `fs.realpathSync`
+    // local path, `windowsNativeRealpathSync` resolves it the same way as `fs.realpathSync`
     return realPath
   }
   if (!windowsNetUseStarted) {
@@ -779,7 +800,7 @@ function windowsLazyRealpathSync(path: string): string {
       safeRealpathSync =
         windowsNetworkMap.size > 0
           ? windowsMappedRealpathSync
-          : fs.realpathSync.native
+          : windowsNativeRealpathSync
     })
   }
   // `fs.realpathSync` does not resolve mapped drive letters into UNC paths
@@ -971,6 +992,202 @@ export function combineSourcemaps(
   map.file = filename
 
   return map as RawSourceMap
+}
+
+/**
+ * Tracks edits through a limited MagicString API so sourcemaps can be shifted
+ * without generating and tracing a map of the edits when possible.
+ */
+export class SourcemapEditor {
+  private s: MagicString
+  private edits: SourceEdit[] = []
+
+  constructor(code: string) {
+    this.s = new MagicString(code)
+  }
+
+  update(start: number, end: number, content: string): this {
+    this.s.update(start, end, content)
+    this.edits.push({ start, end, content })
+    return this
+  }
+
+  prependLeft(index: number, content: string): this {
+    this.s.prependLeft(index, content)
+    this.edits.push({ start: index, end: index, content })
+    return this
+  }
+
+  hasChanged(): boolean {
+    return this.s.hasChanged()
+  }
+
+  toString(): string {
+    return this.s.toString()
+  }
+
+  generateMap(filename: string, map: RawSourceMap): RawSourceMap {
+    return (
+      shiftSourcemapForEdits(map, this.s.original, this.edits) ??
+      // For edits it can't shift, e.g. `Promise.resolve({})` replacing an
+      // import that spans lines.
+      combineSourcemaps(filename, [
+        this.s.generateDecodedMap({
+          source: filename,
+          hires: 'boundary',
+        }) as DecodedSourceMap,
+        map,
+      ])
+    )
+  }
+}
+
+export interface SourceEdit {
+  start: number
+  end: number
+  content: string
+}
+
+/**
+ * Returns `map` updated for `edits` to the code it maps, by moving its
+ * segments instead of tracing it through a map of the edits like
+ * `combineSourcemaps`. Supports edits that replace a span within one line and
+ * edits that insert whole lines at the start of a line. Returns `undefined` for
+ * any other edit.
+ */
+export function shiftSourcemapForEdits(
+  map: RawSourceMap,
+  code: string,
+  edits: SourceEdit[],
+): RawSourceMap | undefined {
+  // [start column, end column, added length] for each edit, by line
+  const columnEdits = new Map<number, [number, number, number][]>()
+  const insertedLines = new Map<number, number>()
+  let line = 0
+  let lineStart = 0
+  let nextNewline = code.indexOf('\n')
+  for (const { start, end, content } of [...edits].sort(
+    (a, b) => a.start - b.start,
+  )) {
+    while (nextNewline !== -1 && nextNewline < start) {
+      line++
+      lineStart = nextNewline + 1
+      nextNewline = code.indexOf('\n', lineStart)
+    }
+    if (nextNewline !== -1 && nextNewline < end) return
+
+    if (content.includes('\n')) {
+      if (start !== end || start !== lineStart || !content.endsWith('\n')) {
+        return
+      }
+      const count = content.split('\n').length - 1
+      insertedLines.set(line, (insertedLines.get(line) ?? 0) + count)
+      continue
+    }
+
+    let lineEdits = columnEdits.get(line)
+    if (!lineEdits) columnEdits.set(line, (lineEdits = []))
+    lineEdits.push([
+      start - lineStart,
+      end - lineStart,
+      content.length - (end - start),
+    ])
+  }
+
+  const lines: SourceMapSegment[][] = []
+  decode(map.mappings).forEach((segments, i) => {
+    for (let n = insertedLines.get(i) ?? 0; n > 0; n--) lines.push([])
+    const lineEdits = columnEdits.get(i)
+    lines.push(lineEdits ? shiftSegments(segments, lineEdits) : segments)
+  })
+  const names = removeRedundantSegments(lines, map.names)
+  return { ...map, names, mappings: encode(lines) }
+}
+
+/**
+ * Drops the segments `combineSourcemaps` would leave out (see gen-mapping's
+ * `maybeAddSegment`) and the names no segment uses. Lookups are unchanged.
+ */
+function removeRedundantSegments(
+  lines: SourceMapSegment[][],
+  names: string[],
+): string[] {
+  const usedNames: string[] = []
+  const newNameIndex = new Map<number, number>()
+  for (let i = 0; i < lines.length; i++) {
+    const kept: SourceMapSegment[] = []
+    const segments = lines[i]
+    for (let s = 0; s < segments.length; s++) {
+      const segment = segments[s]
+      // lookups use the first of several segments at one column, so dropping
+      // it would change what the column maps to
+      const sharesColumn = segments[s + 1]?.[0] === segment[0]
+      const previous = kept.at(-1)
+      if (segment.length === 1) {
+        if (sharesColumn || (previous && previous.length !== 1)) {
+          kept.push(segment)
+        }
+        continue
+      }
+      if (segment.length === 5) {
+        let index = newNameIndex.get(segment[4])
+        if (index === undefined) {
+          index = usedNames.push(names[segment[4]]) - 1
+          newNameIndex.set(segment[4], index)
+        }
+        segment[4] = index
+      }
+      if (
+        !sharesColumn &&
+        previous &&
+        previous.length !== 1 &&
+        previous[1] === segment[1] &&
+        previous[2] === segment[2] &&
+        previous[3] === segment[3] &&
+        previous[4] === segment[4]
+      ) {
+        continue
+      }
+      kept.push(segment)
+    }
+    lines[i] = kept
+  }
+  return usedNames
+}
+
+function shiftSegments(
+  segments: SourceMapSegment[],
+  edits: [start: number, end: number, added: number][],
+): SourceMapSegment[] {
+  const shifted: SourceMapSegment[] = []
+  let e = 0
+  let delta = 0
+  // the last segment inside a replaced span, which the original map uses for
+  // the code after the span unless another segment starts there
+  let segmentInsideEdit: SourceMapSegment | undefined
+  const passEdit = (nextColumn: number) => {
+    const [, end, added] = edits[e++]
+    delta += added
+    if (segmentInsideEdit && nextColumn !== end) {
+      const segment = [...segmentInsideEdit] as SourceMapSegment
+      segment[0] = end + delta
+      shifted.push(segment)
+    }
+    segmentInsideEdit = undefined
+  }
+
+  for (const segment of segments) {
+    const column = segment[0]
+    while (e < edits.length && edits[e][1] <= column) passEdit(column)
+    if (e < edits.length && edits[e][0] < column) {
+      segmentInsideEdit = segment
+      continue
+    }
+    segment[0] = column + delta
+    shifted.push(segment)
+  }
+  while (e < edits.length) passEdit(Infinity)
+  return shifted
 }
 
 export function unique<T>(arr: T[]): T[] {

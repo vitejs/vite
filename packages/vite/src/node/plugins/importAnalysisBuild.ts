@@ -1,9 +1,8 @@
 import path from 'node:path'
-import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
+import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
 import type { DynamicImport } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import MagicString from 'magic-string'
 import type { RenderedChunk, SourceMap } from 'rolldown'
 import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
 import { cleanUrl } from '../../shared/utils'
@@ -14,7 +13,7 @@ import { perEnvironmentState } from '../environment'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import { genSourceMapUrl } from '../server/sourcemap'
 import {
-  combineSourcemaps,
+  SourcemapEditor,
   generateCodeFrame,
   getFileStartIndex,
   normalizePath,
@@ -437,8 +436,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
     >(),
   }))
 
-  const plugin: Plugin = {
-    name: 'vite:build-import-analysis',
+  const preloadHashPlugin: Plugin = {
+    name: 'vite:build-import-analysis-chunk-hash',
+
+    applyToEnvironment(environment) {
+      return (
+        getInsertPreload(environment) &&
+        !!environment.config.build.chunkImportMap
+      )
+    },
 
     renderStart() {
       const graph = getPreloadHashGraph(this)
@@ -448,40 +454,20 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
     },
 
     renderChunk(code, chunk, { format }, { chunks }) {
-      if (
-        format === 'es' &&
-        getInsertPreload(this.environment) &&
-        this.environment.config.build.chunkImportMap
-      ) {
-        const graph = getPreloadHashGraph(this)
-        graph.chunks = chunks
-        const importedCssCount = chunk.viteMetadata?.importedCss.size ?? 0
-        graph.chunkInfo.set(chunk.fileName, {
-          importedCssCount,
-          isPureCss: code === '' && importedCssCount > 0,
-        })
-      }
+      if (format !== 'es') return
 
-      // make sure we only perform the preload logic in modern builds.
-      if (code.includes(isModernFlag)) {
-        const re = new RegExp(isModernFlag, 'g')
-        const isModern = String(format === 'es')
-        const isModernWithPadding =
-          isModern + ' '.repeat(isModernFlag.length - isModern.length)
-        return {
-          code: code.replace(re, isModernWithPadding),
-          map: null,
-        }
-      }
-      return null
+      const graph = getPreloadHashGraph(this)
+      graph.chunks = chunks
+      const importedCssCount = chunk.viteMetadata?.importedCss.size ?? 0
+      graph.chunkInfo.set(chunk.fileName, {
+        importedCssCount,
+        isPureCss: code === '' && importedCssCount > 0,
+      })
     },
 
     augmentChunkHash(chunk) {
       const environment = this.environment
-      if (!getInsertPreload(environment)) return
-      const { chunkImportMap, modulePreload } = environment.config.build
-      if (!chunkImportMap) return
-
+      const { modulePreload } = environment.config.build
       const graph = getPreloadHashGraph(this)
       const owner = graph.chunks[chunk.fileName]
       if (!owner) return
@@ -531,6 +517,25 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       ) {
         return JSON.stringify([pureCssImports, preloadSignatures])
       }
+    },
+  }
+
+  const plugin: Plugin = {
+    name: 'vite:build-import-analysis',
+
+    renderChunk: {
+      filter: { code: isModernFlag },
+      handler(code, _chunk, { format }) {
+        // make sure we only perform the preload logic in modern builds.
+        const re = new RegExp(isModernFlag, 'g')
+        const isModern = String(format === 'es')
+        const isModernWithPadding =
+          isModern + ' '.repeat(isModernFlag.length - isModern.length)
+        return {
+          code: code.replace(re, isModernWithPadding),
+          map: null,
+        }
+      },
     },
 
     async generateBundle(opts, bundle) {
@@ -668,7 +673,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             })
           }
 
-          const s = new MagicString(code)
+          const s = new SourcemapEditor(code)
           const rewroteMarkerStartPos = new Set() // position of the leading double quote
 
           const fileDeps: FileDep[] = []
@@ -847,11 +852,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             const mapDepsCode = `const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=${fileDepsCode})))=>i.map(i=>d[i]);\n`
 
             // inject extra code at the top or next line of hashbang
-            if (code.startsWith('#!')) {
-              s.prependLeft(getFileStartIndex(code), mapDepsCode)
-            } else {
-              s.prepend(mapDepsCode)
-            }
+            const fileStartIndex = getFileStartIndex(code)
+            s.prependLeft(fileStartIndex, mapDepsCode)
           }
 
           // there may still be markers due to inlined dynamic imports, remove
@@ -872,19 +874,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           if (s.hasChanged()) {
             chunk.code = s.toString()
             if (buildSourcemap && chunk.map) {
-              const nextMap = s.generateDecodedMap({
-                source: chunk.fileName,
-                hires: 'boundary',
-              })
               const originalFile = chunk.map.file
-              const map = combineSourcemaps(chunk.fileName, [
-                nextMap as DecodedSourceMap,
+              const map = s.generateMap(
+                chunk.fileName,
                 chunk.map as RawSourceMap,
-              ]) as SourceMap
+              ) as SourceMap
+              map.toString = () => JSON.stringify(map)
               map.toUrl = () => genSourceMapUrl(map)
-              if (originalFile) {
-                map.file = originalFile
-              }
+              map.file = originalFile || chunk.fileName
 
               const originalDebugId = chunk.map.debugId
               chunk.map = map
@@ -912,6 +909,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
   }
 
   return [
+    preloadHashPlugin,
     plugin,
     perEnvironmentPlugin('native:import-analysis-build', (environment) => {
       const preloadCode = getPreloadCode(
