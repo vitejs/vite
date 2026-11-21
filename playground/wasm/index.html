@@ -70,6 +70,16 @@
   <span class="result"></span>
 </div>
 
+<div class="wasm-from-nested-optimized-dep">
+  <h3>wasm importing JS glue from a parent directory</h3>
+  <span class="result"></span>
+</div>
+
+<div class="wasm-from-bare-optimized-dep">
+  <h3>wasm importing explicitly optimized JS glue by package name</h3>
+  <span class="result"></span>
+</div>
+
 <div class="source-phase-wasm">
   <h3>Source phase import, result should be 3</h3>
   <span class="result"></span>
@@ -86,7 +96,11 @@
 </div>
 
 <script type="module">
-  import { getWasmDepResult } from '@vitejs/test-wasm-dep'
+  import {
+    getWasmDepResult,
+    getNestedWasmDepResult,
+    getBareWasmDepResult,
+  } from '@vitejs/test-wasm-dep'
   import { add } from './add.wasm'
   import source addModule from './add.wasm'
   import { getAnswerPlusOne, readCounter } from './global-consumer.wasm'
@@ -131,6 +145,17 @@
     text('.wasm-from-optimized-dep .result', getWasmDepResult())
   } catch (e) {
     text('.wasm-from-optimized-dep .result', `error: ${e.message}`)
+  }
+
+  for (const [selector, getResult] of [
+    ['.wasm-from-nested-optimized-dep .result', getNestedWasmDepResult],
+    ['.wasm-from-bare-optimized-dep .result', getBareWasmDepResult],
+  ]) {
+    try {
+      text(selector, getResult())
+    } catch (e) {
+      text(selector, `error: ${e.message}`)
+    }
   }
 
   async function testWasm(init, resultElement) {

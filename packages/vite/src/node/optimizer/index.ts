@@ -778,6 +778,11 @@ async function prepareRolldownOptimizerRun(
   //    path.
   const flatIdDeps: Record<string, string> = {}
   const idToExports: Record<string, ExportsData> = {}
+  const wasmImports = {
+    files: new Set<string>(),
+    external: new Set<string>(),
+    entryExports: {} as Record<string, readonly string[]>,
+  }
 
   const { optimizeDeps } = environment.config
 
@@ -798,6 +803,7 @@ async function prepareRolldownOptimizerRun(
       const flatId = flattenId(id)
       flatIdDeps[flatId] = isWindows ? src.replaceAll('/', '\\') : src
       idToExports[id] = exportsData
+      wasmImports.entryExports[flatId] = exportsData.exports
     }),
   )
 
@@ -828,11 +834,13 @@ async function prepareRolldownOptimizerRun(
   if (external.length) {
     plugins.push(rolldownCjsExternalPlugin(external, platform, environment))
   }
-  plugins.push(...rolldownDepPlugin(environment, flatIdDeps, external))
+  plugins.push(
+    ...rolldownDepPlugin(environment, flatIdDeps, external, wasmImports),
+  )
 
   let canceled = false
   async function build() {
-    const bundle = await rolldown({
+    const inputOptions: RolldownOptions = {
       ...rolldownOptions,
       input: flatIdDeps,
       logLevel: 'silent',
@@ -853,7 +861,39 @@ async function prepareRolldownOptimizerRun(
         ...rolldownOptions.moduleTypes,
         ...(jsxLoader ? { '.js': 'jsx' } : {}),
       },
-    })
+    }
+    const result = await buildOnce(inputOptions)
+    if (
+      wasmImports.files.size &&
+      result.output.some(
+        (output) =>
+          output.type === 'chunk' &&
+          output.moduleIds.some((id) =>
+            wasmImports.files.has(normalizePath(id)),
+          ),
+      )
+    ) {
+      for (const id of wasmImports.files) wasmImports.external.add(id)
+      if (canceled) throw new Error('The build was canceled')
+      await Promise.all(
+        result.output.flatMap((output) => {
+          const files = [output.fileName]
+          if (output.type === 'chunk' && output.map) {
+            files.push(output.fileName + '.map')
+          }
+          return files.map((file) =>
+            fsp.rm(path.join(processingCacheDir, file), { force: true }),
+          )
+        }),
+      )
+      return buildOnce(inputOptions)
+    }
+    return result
+  }
+
+  async function buildOnce(inputOptions: RolldownOptions) {
+    if (canceled) throw new Error('The build was canceled')
+    const bundle = await rolldown(inputOptions)
     if (canceled) {
       await bundle.close()
       throw new Error('The build was canceled')

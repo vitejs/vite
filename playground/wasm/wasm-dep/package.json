@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "exports": {
-    ".": "./index.js"
+    ".": "./index.js",
+    "./bare-glue": "./bare-glue.js"
   }
 }

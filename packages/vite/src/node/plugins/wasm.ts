@@ -244,12 +244,12 @@ ${glueCode}
   })
 }
 
-export interface WasmName {
+interface WasmName {
   name: string
   isGlobal: boolean
 }
 
-export interface WasmInfo {
+interface WasmInfo {
   imports: {
     from: string
     names: WasmName[]
