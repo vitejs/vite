@@ -746,7 +746,7 @@ test('assets of a tree-shaken module are not emitted (#24002)', async () => {
   if (isBuild) {
     const assets = listAssets('foo')
     expect(assets).toContainEqual(expect.stringMatching(/^used-[-\w]{8}\.txt$/))
-    expect(assets.filter((f) => f.startsWith('unused'))).toEqual([])
+    expect(assets.filter((f) => f.startsWith('unused'))).toStrictEqual([])
   }
 })
 
