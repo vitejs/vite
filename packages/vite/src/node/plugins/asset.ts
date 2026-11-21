@@ -92,6 +92,19 @@ const importedAssetsFromFileUrl = new WeakMap<
   Map<string, Set<string>>
 >()
 
+/**
+ * The format each emitted asset was referenced with during the build, keyed by
+ * referenceId. Assets are emitted while their importer is transformed, before
+ * tree-shaking, so an asset only referenced from JS
+ * (`import.meta.ROLLDOWN_FILE_URL_*`) may end up unreferenced by any chunk.
+ * Those are removed in `generateBundle`. An asset referenced from CSS/HTML
+ * (`__VITE_ASSET__`) at least once is always kept.
+ */
+const assetReferenceFormats = new WeakMap<
+  Environment,
+  Map<string, AssetUrlFormat>
+>()
+
 /** a set of referenceId for entry CSS assets for each environment */
 export const cssEntriesMap: WeakMap<
   Environment,
@@ -197,6 +210,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
     buildStart() {
       assetCache.set(this.environment, new Map())
+      assetReferenceFormats.set(this.environment, new Map())
       cssEntriesMap.set(this.environment, new Map())
     },
 
@@ -264,7 +278,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
             value: await fileToDevUrl(this.environment, id),
           }
         } else {
-          resolved = await resolveBuiltAsset(this, id)
+          resolved = await resolveBuiltAsset(this, id, 'js')
         }
 
         // Inherit HMR timestamp if this asset was invalidated
@@ -369,6 +383,35 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       : {}),
 
     generateBundle(_, bundle) {
+      // Remove assets that were only referenced from JS modules that Rolldown
+      // tree-shook afterwards. Chunks of asset entries are removed below, so
+      // this needs to run first to keep assets referenced by those.
+      const formats = assetReferenceFormats.get(this.environment)
+      if (formats?.size) {
+        let referencedAssets: Set<string> | undefined
+        for (const [referenceId, format] of formats) {
+          if (format !== 'js') continue
+          if (!referencedAssets) {
+            referencedAssets = new Set()
+            for (const file in bundle) {
+              const chunk = bundle[file]
+              if (chunk.type === 'chunk' && chunk.viteMetadata) {
+                for (const asset of chunk.viteMetadata.importedAssets) {
+                  referencedAssets.add(asset)
+                }
+              }
+            }
+          }
+          const fileName = this.getFileName(referenceId)
+          if (
+            !referencedAssets.has(fileName) &&
+            bundle[fileName]?.type === 'asset'
+          ) {
+            delete bundle[fileName]
+          }
+        }
+      }
+
       // Remove empty entry point file
       let importedFiles: Set<string> | undefined
       for (const file in bundle) {
@@ -549,6 +592,7 @@ async function fileToBuiltUrl(
   const resolved = await resolveBuiltAsset(
     pluginContext,
     id,
+    format,
     skipPublicCheck,
     forceInline,
   )
@@ -630,6 +674,7 @@ function formatBuiltAsset(
 async function resolveBuiltAsset(
   pluginContext: PluginContext,
   id: string,
+  format: AssetUrlFormat,
   skipPublicCheck = false,
   forceInline?: boolean,
 ): Promise<FileToBuiltUrlResult> {
@@ -653,6 +698,7 @@ async function resolveBuiltAsset(
   const cache = assetCache.get(environment)!
   const cached = cache.get(id)
   if (cached) {
+    recordAssetReferenceFormat(environment, cached, format)
     return cached
   }
 
@@ -699,7 +745,22 @@ async function resolveBuiltAsset(
   }
 
   cache.set(id, result)
+  recordAssetReferenceFormat(environment, result, format)
   return result
+}
+
+function recordAssetReferenceFormat(
+  environment: Environment,
+  resolved: FileToBuiltUrlResult,
+  format: AssetUrlFormat,
+): void {
+  if (resolved.type !== 'reference') return
+  const formats = assetReferenceFormats.get(environment)
+  if (!formats) return
+  // a single reference from CSS/HTML keeps the asset
+  if (format === 'string' || !formats.has(resolved.referenceId)) {
+    formats.set(resolved.referenceId, format)
+  }
 }
 
 export function toOutputFilePathInJSForBundledDev(
