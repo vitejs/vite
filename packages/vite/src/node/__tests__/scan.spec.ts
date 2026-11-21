@@ -28,15 +28,15 @@ describe('optimizer-scan:script-test', () => {
     const [, tsOpenTag, tsContent] = scriptRE.exec(
       `<script lang="ts">${scriptContent}</script>`,
     )!
-    expect(tsOpenTag).toEqual('<script lang="ts">')
-    expect(tsContent).toEqual(scriptContent)
+    expect(tsOpenTag).toBe('<script lang="ts">')
+    expect(tsContent).toBe(scriptContent)
 
     scriptRE.lastIndex = 0
     const [, openTag, content] = scriptRE.exec(
       `<script>${scriptContent}</script>`,
     )!
-    expect(openTag).toEqual('<script>')
-    expect(content).toEqual(scriptContent)
+    expect(openTag).toBe('<script>')
+    expect(content).toBe(scriptContent)
   })
 
   test('include comments test', () => {
@@ -47,25 +47,25 @@ describe('optimizer-scan:script-test', () => {
         <!--  <script >var test2 = null</script> -->
       </template>`.replace(commentRE, ''),
     )
-    expect(ret).toEqual(null)
+    expect(ret).toBeNull()
   })
 
   test('components with script keyword test', () => {
     scriptRE.lastIndex = 0
     let ret = scriptRE.exec(`<template><script-develop-pane/></template>`)
-    expect(ret).toBe(null)
+    expect(ret).toBeNull()
 
     scriptRE.lastIndex = 0
     ret = scriptRE.exec(
       `<template><script-develop-pane></script-develop-pane></template>`,
     )
-    expect(ret).toBe(null)
+    expect(ret).toBeNull()
 
     scriptRE.lastIndex = 0
     ret = scriptRE.exec(
       `<template><script-develop-pane  > content </script-develop-pane></template>`,
     )
-    expect(ret).toBe(null)
+    expect(ret).toBeNull()
   })
 
   test('ordinary script tag test', () => {
@@ -73,15 +73,15 @@ describe('optimizer-scan:script-test', () => {
     const [, tag, content] = scriptRE.exec(
       `<script  >var test = null</script>`,
     )!
-    expect(tag).toEqual('<script  >')
-    expect(content).toEqual('var test = null')
+    expect(tag).toBe('<script  >')
+    expect(content).toBe('var test = null')
 
     scriptRE.lastIndex = 0
     const [, tag1, content1] = scriptRE.exec(
       `<script>var test = null</script>`,
     )!
-    expect(tag1).toEqual('<script>')
-    expect(content1).toEqual('var test = null')
+    expect(tag1).toBe('<script>')
+    expect(content1).toBe('var test = null')
   })
 
   test('imports regex should work', () => {
@@ -118,7 +118,7 @@ describe('optimizer-scan:script-test', () => {
 
     shouldMatchArray.forEach(([str, expected]) => {
       importsRE.lastIndex = 0
-      expect(importsRE.exec(str)![1]).toEqual(expected)
+      expect(importsRE.exec(str)![1]).toBe(expected)
     })
 
     const shouldFailArray = [
@@ -321,6 +321,32 @@ test('top-level input can be resolved by a plugin for dep scanning', async (ctx)
   expect(scanResult.deps).toHaveProperty('vue')
 })
 
+// regression test for https://github.com/vitejs/vite/issues/24117
+test('scan respects the top-level tsconfig option', async (ctx) => {
+  const server = await createServer({
+    configFile: false,
+    logLevel: 'error',
+    root: path.join(import.meta.dirname, 'fixtures', 'scan-tsconfig'),
+    // `src/tsconfig.json` extends a missing file and would fail the scan if it
+    // was picked up instead of the selected tsconfig
+    tsconfig: 'tsconfig.selected.json',
+    optimizeDeps: {
+      entries: ['src/main.ts'],
+      force: true,
+      noDiscovery: false,
+    },
+  })
+  ctx.onTestFinished(() => server.close())
+
+  const { cancel, result } = scanImports(
+    devToScanEnvironment(server.environments.client),
+  )
+  ctx.onTestFinished(cancel)
+
+  const scanResult = await result
+  expect(scanResult.deps).toHaveProperty('vue')
+})
+
 // regression test for https://github.com/vitejs/vite/issues/22752
 // `resolveRolldownOptions` resolves `build.rolldownOptions.input` relative to the root,
 // so the scanner needs to resolve a relative bare entry from the root
@@ -385,7 +411,7 @@ test('scan ignores the failure when the server is closed mid-scan', async (ctx) 
   )
   ctx.onTestFinished(cancel)
 
-  await expect(result).resolves.toEqual({ deps: {}, missing: {} })
+  await expect(result).resolves.toStrictEqual({ deps: {}, missing: {} })
 })
 
 test('scan import.meta.glob package imports patterns', async (ctx) => {
@@ -410,5 +436,5 @@ test('scan import.meta.glob package imports patterns', async (ctx) => {
   )
   ctx.onTestFinished(cancel)
 
-  await expect(result).resolves.toEqual({ deps: {}, missing: {} })
+  await expect(result).resolves.toStrictEqual({ deps: {}, missing: {} })
 })

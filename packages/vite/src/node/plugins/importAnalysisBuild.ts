@@ -1,9 +1,8 @@
 import path from 'node:path'
-import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
+import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
-import type { ImportSpecifier } from 'es-module-lexer'
+import type { DynamicImport } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import MagicString from 'magic-string'
 import type { RenderedChunk, SourceMap } from 'rolldown'
 import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
 import { cleanUrl } from '../../shared/utils'
@@ -14,7 +13,7 @@ import { perEnvironmentState } from '../environment'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import { genSourceMapUrl } from '../server/sourcemap'
 import {
-  combineSourcemaps,
+  SourcemapEditor,
   generateCodeFrame,
   getFileStartIndex,
   normalizePath,
@@ -129,7 +128,7 @@ export const preloadMethod = `__vitePreload`
 export const preloadMarker = `__VITE_PRELOAD__`
 
 export const preloadHelperId = '\0vite/preload-helper.js'
-const preloadMarkerRE = new RegExp(preloadMarker, 'g')
+const preloadMarkerRE = /__VITE_PRELOAD__(?:[\da-f]{32})?/g
 
 export function isCssPreloadUrl(url: URL): boolean {
   return url.pathname.endsWith('.css')
@@ -140,10 +139,12 @@ function toRelativePath(filename: string, importer: string) {
   return relPath[0] === '.' ? relPath : `./${relPath}`
 }
 
-function findPreloadMarker(str: string, pos: number = 0): number {
+export function findPreloadMarker(
+  str: string,
+  pos: number = 0,
+): RegExpExecArray | null {
   preloadMarkerRE.lastIndex = pos
-  const result = preloadMarkerRE.exec(str)
-  return result?.index ?? -1
+  return preloadMarkerRE.exec(str)
 }
 
 /**
@@ -162,24 +163,24 @@ function findPreloadMarker(str: string, pos: number = 0): number {
  */
 export function matchImportsToPreloadMarkers(
   code: string,
-  imports: readonly ImportSpecifier[],
+  imports: readonly DynamicImport[],
 ): number[] {
-  const importMarkerPos = new Array<number>(imports.length).fill(-1)
+  const importMarkerPos = Array.from<number>({ length: imports.length }).fill(
+    -1,
+  )
   if (imports.length === 0) return importMarkerPos
 
   const openImports: number[] = []
   let nextImport = 0
   for (
-    let markerStartPos = findPreloadMarker(code, imports[0].e);
-    markerStartPos !== -1;
-    markerStartPos = findPreloadMarker(
-      code,
-      markerStartPos + preloadMarker.length,
-    )
+    let marker = findPreloadMarker(code, imports[0].end);
+    marker;
+    marker = findPreloadMarker(code, marker.index + marker[0].length)
   ) {
+    const markerStartPos = marker.index
     while (
       nextImport < imports.length &&
-      imports[nextImport].e <= markerStartPos
+      imports[nextImport].end <= markerStartPos
     ) {
       openImports.push(nextImport++)
     }
@@ -189,7 +190,7 @@ export function matchImportsToPreloadMarkers(
   }
   // #3051: a lone import whose marker isn't placed after it pairs with the only marker
   if (imports.length === 1 && importMarkerPos[0] === -1) {
-    importMarkerPos[0] = findPreloadMarker(code)
+    importMarkerPos[0] = findPreloadMarker(code)?.index ?? -1
   }
 
   return importMarkerPos
@@ -228,7 +229,7 @@ export function preloadOnce(
       seen[href] = undefined
     },
     (err) => {
-      seen[href] = undefined
+      delete seen[href]
       throw err
     },
   )
@@ -238,6 +239,7 @@ export function preloadOnce(
 
 declare const scriptRel: string
 declare const seen: PreloadSeen
+declare const failedCssLinks: Record<string, HTMLLinkElement | undefined>
 function preload(
   baseModule: () => Promise<unknown>,
   deps?: string[],
@@ -308,7 +310,8 @@ function preload(
             const preloadedHrefSet = isCss
               ? preloadedHrefs.styles
               : preloadedHrefs.all
-            if (preloadedHrefSet.has(dep.href)) {
+            const failedCssLink = isCss ? failedCssLinks[dep.href] : undefined
+            if (!failedCssLink && preloadedHrefSet.has(dep.href)) {
               return
             }
 
@@ -322,13 +325,21 @@ function preload(
             if (cspNonce) {
               link.setAttribute('nonce', cspNonce)
             }
-            document.head.appendChild(link)
+            if (failedCssLink) {
+              delete failedCssLinks[dep.href]
+            }
+            if (failedCssLink?.isConnected) {
+              failedCssLink.replaceWith(link)
+            } else {
+              document.head.appendChild(link)
+            }
             if (isCss) {
               return new Promise((res, rej) => {
                 const handleSettle = (e: Event) => {
                   link.removeEventListener('load', handleSettle)
                   link.removeEventListener('error', handleSettle)
                   if (e.type === 'error') {
+                    failedCssLinks[dep.href] = link
                     rej(new Error(`Unable to preload CSS for ${dep}`))
                   } else {
                     res(e)
@@ -395,7 +406,7 @@ function getPreloadCode(
         `function(dep) { return ${JSON.stringify(environment.config.base)}+dep }`
   // replace `import` as a workaround for stackblitz: https://stackblitz.com/edit/node-vqfvv8dy?file=index.js
   const preloadMethodCode = preload.toString().replaceAll('𝐢𝐦𝐩𝐨𝐫𝐭', 'import')
-  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};const isCssPreloadUrl = ${isCssPreloadUrl.toString()};const preloadOnce = ${preloadOnce.toString()};export const ${preloadMethod} = ${preloadMethodCode}`
+  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};const failedCssLinks = {};const isCssPreloadUrl = ${isCssPreloadUrl.toString()};const preloadOnce = ${preloadOnce.toString()};export const ${preloadMethod} = ${preloadMethodCode}`
   return preloadCode
 }
 
@@ -425,8 +436,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
     >(),
   }))
 
-  const plugin: Plugin = {
-    name: 'vite:build-import-analysis',
+  const preloadHashPlugin: Plugin = {
+    name: 'vite:build-import-analysis-chunk-hash',
+
+    applyToEnvironment(environment) {
+      return (
+        getInsertPreload(environment) &&
+        !!environment.config.build.chunkImportMap
+      )
+    },
 
     renderStart() {
       const graph = getPreloadHashGraph(this)
@@ -436,40 +454,20 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
     },
 
     renderChunk(code, chunk, { format }, { chunks }) {
-      if (
-        format === 'es' &&
-        getInsertPreload(this.environment) &&
-        this.environment.config.build.chunkImportMap
-      ) {
-        const graph = getPreloadHashGraph(this)
-        graph.chunks = chunks
-        const importedCssCount = chunk.viteMetadata?.importedCss.size ?? 0
-        graph.chunkInfo.set(chunk.fileName, {
-          importedCssCount,
-          isPureCss: code === '' && importedCssCount > 0,
-        })
-      }
+      if (format !== 'es') return
 
-      // make sure we only perform the preload logic in modern builds.
-      if (code.includes(isModernFlag)) {
-        const re = new RegExp(isModernFlag, 'g')
-        const isModern = String(format === 'es')
-        const isModernWithPadding =
-          isModern + ' '.repeat(isModernFlag.length - isModern.length)
-        return {
-          code: code.replace(re, isModernWithPadding),
-          map: null,
-        }
-      }
-      return null
+      const graph = getPreloadHashGraph(this)
+      graph.chunks = chunks
+      const importedCssCount = chunk.viteMetadata?.importedCss.size ?? 0
+      graph.chunkInfo.set(chunk.fileName, {
+        importedCssCount,
+        isPureCss: code === '' && importedCssCount > 0,
+      })
     },
 
     augmentChunkHash(chunk) {
       const environment = this.environment
-      if (!getInsertPreload(environment)) return
-      const { chunkImportMap, modulePreload } = environment.config.build
-      if (!chunkImportMap) return
-
+      const { modulePreload } = environment.config.build
       const graph = getPreloadHashGraph(this)
       const owner = graph.chunks[chunk.fileName]
       if (!owner) return
@@ -520,6 +518,25 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         return JSON.stringify([pureCssImports, preloadSignatures])
       }
     },
+  }
+
+  const plugin: Plugin = {
+    name: 'vite:build-import-analysis',
+
+    renderChunk: {
+      filter: { code: isModernFlag },
+      handler(code, _chunk, { format }) {
+        // make sure we only perform the preload logic in modern builds.
+        const re = new RegExp(isModernFlag, 'g')
+        const isModern = String(format === 'es')
+        const isModernWithPadding =
+          isModern + ' '.repeat(isModernFlag.length - isModern.length)
+        return {
+          code: code.replace(re, isModernWithPadding),
+          map: null,
+        }
+      },
+    },
 
     async generateBundle(opts, bundle) {
       const { format } = opts
@@ -527,7 +544,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         return
       }
 
-      await init
+      await init()
 
       const importMap = getImportMap(bundle, this.environment.config)
       if (importMap) {
@@ -554,9 +571,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             const chunk = bundle[file]
             if (chunk.type === 'chunk' && chunk.code.includes('import')) {
               const code = chunk.code
-              let imports!: ImportSpecifier[]
+              let imports!: DynamicImport[]
               try {
-                imports = parseImports(code)[0].filter((i) => i.d > -1)
+                imports = parseImports(code)[0].filter(
+                  (i): i is DynamicImport => i.type === 'dynamic',
+                )
               } catch (e: any) {
                 const loc = numberToPos(code, e.idx)
                 this.error({
@@ -572,13 +591,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
               for (const imp of imports) {
                 const {
-                  n: name,
-                  s: start,
-                  e: end,
-                  ss: expStart,
-                  se: expEnd,
+                  specifier: name,
+                  start,
+                  end,
+                  importStart: expStart,
+                  importEnd: expEnd,
+                  glob,
                 } = imp
-                let url = name
+                let url = glob ? undefined : name
                 if (!url) {
                   const rawUrl = code.slice(start, end)
                   if (
@@ -635,9 +655,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         // dynamic import to constant json may get inlined.
         if (chunk.type === 'chunk' && chunk.code.includes(preloadMarker)) {
           const code = chunk.code
-          let imports!: ImportSpecifier[]
+          let imports!: DynamicImport[]
           try {
-            imports = parseImports(code)[0].filter((i) => i.d > -1)
+            imports = parseImports(code)[0].filter(
+              (i): i is DynamicImport => i.type === 'dynamic',
+            )
           } catch (e: any) {
             const loc = numberToPos(code, e.idx)
             this.error({
@@ -651,7 +673,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             })
           }
 
-          const s = new MagicString(code)
+          const s = new SourcemapEditor(code)
           const rewroteMarkerStartPos = new Set() // position of the leading double quote
 
           const fileDeps: FileDep[] = []
@@ -671,16 +693,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             const importMarkerPos = matchImportsToPreloadMarkers(code, imports)
 
             for (let index = 0; index < imports.length; index++) {
-              // To handle escape sequences in specifier strings, the .n field will be provided where possible.
+              // Use the decoded specifier to handle escape sequences.
               const {
-                n: name,
-                s: start,
-                e: end,
-                ss: expStart,
-                se: expEnd,
+                specifier: name,
+                start,
+                end,
+                importStart: expStart,
+                importEnd: expEnd,
+                glob,
               } = imports[index]
               // check the chunk being imported
-              let url = name
+              let url = glob ? undefined : name
               if (!url) {
                 const rawUrl = code.slice(start, end)
                 if (
@@ -741,6 +764,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
               const markerStartPos = importMarkerPos[index]
 
               if (markerStartPos > 0) {
+                const marker = findPreloadMarker(code, markerStartPos)!
                 // the dep list includes the main chunk, so only need to reload when there are actual other deps.
                 let depsArray =
                   deps.size > 1 ||
@@ -808,7 +832,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
 
                 s.update(
                   markerStartPos,
-                  markerStartPos + preloadMarker.length,
+                  markerStartPos + marker[0].length,
                   renderedDeps.length > 0
                     ? `__vite__mapDeps([${renderedDeps.join(',')}])`
                     : `[]`,
@@ -828,46 +852,36 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
             const mapDepsCode = `const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=${fileDepsCode})))=>i.map(i=>d[i]);\n`
 
             // inject extra code at the top or next line of hashbang
-            if (code.startsWith('#!')) {
-              s.prependLeft(getFileStartIndex(code), mapDepsCode)
-            } else {
-              s.prepend(mapDepsCode)
-            }
+            const fileStartIndex = getFileStartIndex(code)
+            s.prependLeft(fileStartIndex, mapDepsCode)
           }
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless
-          let markerStartPos = findPreloadMarker(code)
-          while (markerStartPos >= 0) {
+          let marker = findPreloadMarker(code)
+          while (marker) {
+            const markerStartPos = marker.index
             if (!rewroteMarkerStartPos.has(markerStartPos)) {
               s.update(
                 markerStartPos,
-                markerStartPos + preloadMarker.length,
+                markerStartPos + marker[0].length,
                 'void 0',
               )
             }
-            markerStartPos = findPreloadMarker(
-              code,
-              markerStartPos + preloadMarker.length,
-            )
+            marker = findPreloadMarker(code, markerStartPos + marker[0].length)
           }
 
           if (s.hasChanged()) {
             chunk.code = s.toString()
             if (buildSourcemap && chunk.map) {
-              const nextMap = s.generateDecodedMap({
-                source: chunk.fileName,
-                hires: 'boundary',
-              })
               const originalFile = chunk.map.file
-              const map = combineSourcemaps(chunk.fileName, [
-                nextMap as DecodedSourceMap,
+              const map = s.generateMap(
+                chunk.fileName,
                 chunk.map as RawSourceMap,
-              ]) as SourceMap
+              ) as SourceMap
+              map.toString = () => JSON.stringify(map)
               map.toUrl = () => genSourceMapUrl(map)
-              if (originalFile) {
-                map.file = originalFile
-              }
+              map.file = originalFile || chunk.fileName
 
               const originalDebugId = chunk.map.debugId
               chunk.map = map
@@ -895,6 +909,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
   }
 
   return [
+    preloadHashPlugin,
     plugin,
     perEnvironmentPlugin('native:import-analysis-build', (environment) => {
       const preloadCode = getPreloadCode(

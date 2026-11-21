@@ -20,7 +20,7 @@ describe('plugin container', () => {
           if (id === entryUrl) {
             // The module hasn't been resolved yet, so its info is null.
             const moduleInfo = this.getModuleInfo(entryUrl)
-            expect(moduleInfo).toEqual(null)
+            expect(moduleInfo).toBeNull()
 
             return { id, meta: { x: 1 } }
           }
@@ -55,15 +55,15 @@ describe('plugin container', () => {
         entryUrl,
         false,
       )
-      expect(entryModule.meta).toEqual({ x: 1 })
+      expect(entryModule.meta).toStrictEqual({ x: 1 })
 
       const loadResult: any = await environment.pluginContainer.load(entryUrl)
-      expect(loadResult?.meta).toEqual({ x: 2 })
+      expect(loadResult?.meta).toStrictEqual({ x: 2 })
 
       await environment.pluginContainer.transform(loadResult.code, entryUrl)
       await environment.pluginContainer.close()
 
-      expect(metaArray).toEqual([{ x: 1 }, { x: 2 }, { x: 3 }])
+      expect(metaArray).toStrictEqual([{ x: 1 }, { x: 2 }, { x: 3 }])
     })
 
     it('can pass metadata between plugins', async () => {
@@ -83,7 +83,7 @@ describe('plugin container', () => {
         load(id) {
           if (id === entryUrl) {
             const { meta } = this.getModuleInfo(entryUrl) ?? {}
-            expect(meta).toEqual({ x: 1 })
+            expect(meta).toStrictEqual({ x: 1 })
             return null
           }
         },
@@ -119,7 +119,7 @@ describe('plugin container', () => {
         resolveId(id, importer, opts) {
           if (id === 'foobar') {
             expect(importer).toBe('notreal')
-            expect(opts).toEqual(
+            expect(opts).toStrictEqual(
               expect.objectContaining({
                 custom: { p1: 'success' },
                 isEntry: true,
@@ -196,6 +196,32 @@ describe('plugin container', () => {
   })
 
   describe('load', () => {
+    for (const { result, source } of [
+      { result: null, source: {} },
+      { result: '', source: { code: '' } },
+      { result: { code: 'export {}' }, source: { code: 'export {}' } },
+    ]) {
+      it(`includes addedImports only when requested (${JSON.stringify(result)})`, async () => {
+        const watchedFile = '/watched.js'
+        const { pluginContainer } = await getDevEnvironment({
+          plugins: [
+            {
+              name: 'watch-on-load',
+              load() {
+                this.addWatchFile(watchedFile)
+                return result
+              },
+            },
+          ],
+        })
+
+        expect(await pluginContainer.load('/x.js')).toStrictEqual(result)
+        expect(
+          await pluginContainer.load('/x.js', { withMetadata: true }),
+        ).toStrictEqual({ ...source, addedImports: new Set([watchedFile]) })
+      })
+    }
+
     it('can resolve a secondary module', async () => {
       const entryUrl = '/x.js'
 

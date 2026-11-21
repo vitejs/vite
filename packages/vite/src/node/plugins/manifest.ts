@@ -2,10 +2,12 @@ import path from 'node:path'
 import type { OutputChunk, RenderedChunk } from 'rolldown'
 import { viteManifestPlugin as nativeManifestPlugin } from 'rolldown/experimental'
 import { type Environment, perEnvironmentPlugin } from '..'
+import type { BuildEnvironment } from '../build'
 import { perEnvironmentState } from '../environment'
 import type { Plugin } from '../plugin'
 import { normalizePath } from '../utils'
 import { cssEntriesMap } from './asset'
+import { getWorkerManifest } from './worker'
 
 const endsWithJSRE = /\.[cm]?js$/
 
@@ -44,6 +46,14 @@ export interface ManifestChunk {
    */
   isDynamicEntry?: boolean
   /**
+   * Whether this chunk belongs to a web worker bundle.
+   */
+  isWorker?: boolean
+  /**
+   * Whether this chunk is the entry point of a web worker bundle.
+   */
+  isWorkerEntry?: boolean
+  /**
    * The list of statically imported chunks by this chunk
    *
    * The values are the keys of the manifest. This field is only present in JS chunks.
@@ -70,13 +80,11 @@ export function manifestPlugin(): Plugin {
   })
 
   return perEnvironmentPlugin('native:manifest', (environment) => {
-    if (!environment.config.build.manifest) return false
-
     const root = environment.config.root
     const outPath =
-      environment.config.build.manifest === true
-        ? '.vite/manifest.json'
-        : environment.config.build.manifest
+      typeof environment.config.build.manifest === 'string'
+        ? environment.config.build.manifest
+        : '.vite/manifest.json'
 
     const envs: Record<string, Environment> = {}
     function getChunkName(chunk: OutputChunk) {
@@ -149,10 +157,31 @@ export function manifestPlugin(): Plugin {
                 }
               }
             }
+
+            const workerManifest = getWorkerManifest(this.environment)
+            if (workerManifest) {
+              manifest ??= JSON.parse(asset.source.toString()) as Manifest
+              Object.assign(manifest, workerManifest)
+            }
+
+            const environment = this.environment as BuildEnvironment
+            // The manifest is always computed and stored on
+            // `environment.manifest`. The `build.manifest` option only controls
+            // whether the manifest file is written to disk.
+            const emitManifestFile = !!environment.config.build.manifest
+            const finalize = (finalManifest: Manifest) => {
+              environment.manifest = finalManifest
+              if (emitManifestFile) {
+                asset.source = JSON.stringify(finalManifest, undefined, 2)
+              } else {
+                delete bundle[outPath]
+              }
+            }
+
             const output = this.environment.config.build.rolldownOptions.output
             const outputLength = Array.isArray(output) ? output.length : 1
-            if (manifest && outputLength === 1) {
-              asset.source = JSON.stringify(manifest, undefined, 2)
+            if (outputLength === 1) {
+              finalize(manifest ?? JSON.parse(asset.source.toString()))
               return
             }
 
@@ -163,7 +192,7 @@ export function manifestPlugin(): Plugin {
               manifest ?? JSON.parse(asset.source.toString()),
             )
             if (state.outputCount >= outputLength) {
-              asset.source = JSON.stringify(state.manifest, undefined, 2)
+              finalize(state.manifest)
               state.reset()
             } else {
               delete bundle[outPath]
