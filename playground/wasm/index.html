@@ -63,6 +63,23 @@
   <span class="result"></span>
 </div>
 
+<div class="wasm-from-optimized-dep">
+  <h3>
+    wasm importing its JS glue from an optimized dependency, result should be 42
+  </h3>
+  <span class="result"></span>
+</div>
+
+<div class="wasm-from-nested-optimized-dep">
+  <h3>wasm importing JS glue from a parent directory</h3>
+  <span class="result"></span>
+</div>
+
+<div class="wasm-from-bare-optimized-dep">
+  <h3>wasm importing explicitly optimized JS glue by package name</h3>
+  <span class="result"></span>
+</div>
+
 <div class="source-phase-wasm">
   <h3>Source phase import, result should be 3</h3>
   <span class="result"></span>
@@ -79,6 +96,11 @@
 </div>
 
 <script type="module">
+  import {
+    getWasmDepResult,
+    getNestedWasmDepResult,
+    getBareWasmDepResult,
+  } from '@vitejs/test-wasm-dep'
   import { add } from './add.wasm'
   import source addModule from './add.wasm'
   import { getAnswerPlusOne, readCounter } from './global-consumer.wasm'
@@ -115,6 +137,26 @@
   // 'hello'.length, where 'hello' is an engine-provided imported string constant
   // and `length` is a js-string builtin.
   text('.direct-wasm-string-builtins .result', helloLength())
+
+  // The wasm binary and its JS glue come from a dependency that is
+  // pre-bundled in dev. The wasm callbacks must use the same glue module
+  // instance that `__wbg_set_wasm` was called on.
+  try {
+    text('.wasm-from-optimized-dep .result', getWasmDepResult())
+  } catch (e) {
+    text('.wasm-from-optimized-dep .result', `error: ${e.message}`)
+  }
+
+  for (const [selector, getResult] of [
+    ['.wasm-from-nested-optimized-dep .result', getNestedWasmDepResult],
+    ['.wasm-from-bare-optimized-dep .result', getBareWasmDepResult],
+  ]) {
+    try {
+      text(selector, getResult())
+    } catch (e) {
+      text(selector, `error: ${e.message}`)
+    }
+  }
 
   async function testWasm(init, resultElement) {
     const { exported_func } = await init({

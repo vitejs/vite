@@ -69,6 +69,24 @@ test('wasm using js-string builtins and imported string constants', async () => 
     .toMatch('5')
 })
 
+test('wasm importing its JS glue from an optimized dependency', async () => {
+  await expect
+    .poll(() => page.textContent('.wasm-from-optimized-dep .result'))
+    .toBe('42')
+})
+
+test('wasm importing JS glue from a parent directory', async () => {
+  await expect
+    .poll(() => page.textContent('.wasm-from-nested-optimized-dep .result'))
+    .toBe('42')
+})
+
+test('wasm importing explicitly optimized JS glue by package name', async () => {
+  await expect
+    .poll(() => page.textContent('.wasm-from-bare-optimized-dep .result'))
+    .toBe('42')
+})
+
 test('source phase import yields a WebAssembly.Module', async () => {
   await expect
     .poll(() => page.textContent('.source-phase-wasm .result'))

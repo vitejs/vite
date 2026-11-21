@@ -778,6 +778,11 @@ async function prepareRolldownOptimizerRun(
   //    path.
   const flatIdDeps: Record<string, string> = {}
   const idToExports: Record<string, ExportsData> = {}
+  const wasmImports = {
+    files: new Set<string>(),
+    external: new Set<string>(),
+    entryExports: {} as Record<string, readonly string[]>,
+  }
 
   const { optimizeDeps } = environment.config
 
@@ -798,6 +803,7 @@ async function prepareRolldownOptimizerRun(
       const flatId = flattenId(id)
       flatIdDeps[flatId] = isWindows ? src.replaceAll('/', '\\') : src
       idToExports[id] = exportsData
+      wasmImports.entryExports[flatId] = exportsData.exports
     }),
   )
 
@@ -828,16 +834,45 @@ async function prepareRolldownOptimizerRun(
   if (external.length) {
     plugins.push(rolldownCjsExternalPlugin(external, platform, environment))
   }
-  plugins.push(...rolldownDepPlugin(environment, flatIdDeps, external))
 
   let canceled = false
   async function build() {
+    const result = await buildOnce()
+    // JS may be bundled before the wasm importing it is discovered. Rebuild
+    // with that JS external, after removing the stale output.
+    if (
+      wasmImports.files.size &&
+      result.output.some(
+        (output) =>
+          output.type === 'chunk' &&
+          output.moduleIds.some((id) =>
+            wasmImports.files.has(normalizePath(id)),
+          ),
+      )
+    ) {
+      for (const id of wasmImports.files) wasmImports.external.add(id)
+      await Promise.all(
+        result.output.map((output) =>
+          fsp.rm(path.join(processingCacheDir, output.fileName), {
+            force: true,
+          }),
+        ),
+      )
+      return buildOnce()
+    }
+    return result
+  }
+
+  async function buildOnce() {
     const bundle = await rolldown({
       ...rolldownOptions,
       tsconfig: environment.config.tsconfig ?? rolldownOptions.tsconfig,
       input: flatIdDeps,
       logLevel: 'silent',
-      plugins,
+      plugins: [
+        ...plugins,
+        ...rolldownDepPlugin(environment, flatIdDeps, external, wasmImports),
+      ],
       platform,
       transform: {
         target: ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
