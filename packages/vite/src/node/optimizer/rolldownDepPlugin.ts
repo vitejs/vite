@@ -84,20 +84,26 @@ export function rolldownDepPlugin(
   const cjsPackageCache: PackageCache = new Map()
   const wasmImportsCache = new Map<string, Promise<void>>()
 
+  // The serve-time wasm helper imports the original JS modules. Bundling a copy
+  // creates a second instance, breaking wasm-bindgen's __wbg_set_wasm state.
+  // Keep wasm-imported JS external: https://github.com/vitejs/vite/issues/24025
   function discoverWasmImports(id: string): Promise<void> | undefined {
     if (!wasmImports || !id.endsWith('.wasm')) return
     let imports = wasmImportsCache.get(id)
     if (!imports) {
-      imports = parseWasm(id).then(async ({ imports }) => {
-        await Promise.all(
-          imports.map(async ({ from }) => {
-            const resolved = await resolve(from, id, 'import-statement')
-            if (resolved && JS_TYPES_RE.test(resolved)) {
-              wasmImports.files.add(normalizePath(resolved))
-            }
-          }),
-        )
-      })
+      imports = parseWasm(id)
+        .then(async ({ imports }) => {
+          await Promise.all(
+            imports.map(async ({ from }) => {
+              const resolved = await resolve(from, id, 'import-statement')
+              if (resolved && JS_TYPES_RE.test(resolved)) {
+                wasmImports.files.add(normalizePath(resolved))
+              }
+            }),
+          )
+        })
+        // The wasm plugin reports parsing and resolution errors at serve time.
+        .catch(() => {})
       wasmImportsCache.set(id, imports)
     }
     return imports

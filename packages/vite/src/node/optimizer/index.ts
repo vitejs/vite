@@ -863,6 +863,7 @@ async function prepareRolldownOptimizerRun(
       },
     }
     const result = await buildOnce(inputOptions)
+    // JS may resolve before the wasm that imports it, requiring a second build.
     if (
       wasmImports.files.size &&
       result.output.some(

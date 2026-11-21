@@ -3,6 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { setTimeout } from 'node:timers/promises'
 import { expect, onTestFinished, test, vi } from 'vitest'
+import { createBackCompatIdResolver } from '../../idResolver'
 import { runOptimizeDeps, toDiscoveredDependencies } from '../../optimizer'
 import * as wasmPlugin from '../../plugins/wasm'
 import { normalizePath } from '../../utils'
@@ -146,14 +147,54 @@ test('keeps wasm with no imports external', async () => {
   expect(builds.count).toBe(1)
 })
 
-test('reports malformed wasm with the file path', async () => {
-  const { root, environment } = await setup()
+test('keeps malformed wasm external without failing optimization', async () => {
+  const { root, environment, builds } = await setup()
   fs.writeFileSync(path.join(root, 'invalid.wasm'), 'invalid')
   fs.writeFileSync(path.join(root, 'index.js'), "import './invalid.wasm'")
   const deps = toDiscoveredDependencies(environment, {
     dep: normalizePath(path.join(root, 'index.js')),
   })
-  await expect(runOptimizeDeps(environment, deps).result).rejects.toThrow(
-    'Failed to parse WASM file',
+  const result = await runOptimizeDeps(environment, deps).result
+  onTestFinished(() => result.cancel())
+  await result.commit()
+  expect(fs.readFileSync(result.metadata.optimized.dep.file, 'utf8')).toContain(
+    JSON.stringify(normalizePath(path.join(root, 'invalid.wasm'))),
   )
+  expect(builds.count).toBe(1)
+})
+
+test('ignores wasm import resolution errors during optimization', async () => {
+  const { root, environment, builds } = await setup()
+  const depDir = path.join(root, 'node_modules/@vitejs/test-wasm-dep')
+  fs.mkdirSync(depDir, { recursive: true })
+  fs.writeFileSync(
+    path.join(depDir, 'package.json'),
+    JSON.stringify({ exports: { '.': './index.js' } }),
+  )
+  const wasmFile = path.join(root, 'bare.wasm')
+  fs.copyFileSync(
+    path.resolve(
+      import.meta.dirname,
+      '../../../../../../playground/wasm/wasm-dep/nested/bare.wasm',
+    ),
+    wasmFile,
+  )
+  const resolve = createBackCompatIdResolver(environment.getTopLevelConfig(), {
+    asSrc: false,
+    scan: true,
+  })
+  await expect(
+    resolve(environment, '@vitejs/test-wasm-dep/bare-glue', wasmFile),
+  ).rejects.toThrow('"./bare-glue" is not exported')
+  fs.writeFileSync(path.join(root, 'index.js'), "import './bare.wasm'")
+  const deps = toDiscoveredDependencies(environment, {
+    dep: normalizePath(path.join(root, 'index.js')),
+  })
+  const result = await runOptimizeDeps(environment, deps).result
+  onTestFinished(() => result.cancel())
+  await result.commit()
+  expect(fs.readFileSync(result.metadata.optimized.dep.file, 'utf8')).toContain(
+    JSON.stringify(normalizePath(wasmFile)),
+  )
+  expect(builds.count).toBe(1)
 })
