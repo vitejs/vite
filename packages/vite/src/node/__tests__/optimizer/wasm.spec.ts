@@ -2,16 +2,20 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { setTimeout } from 'node:timers/promises'
+import { rolldown } from 'rolldown'
 import { expect, onTestFinished, test, vi } from 'vitest'
 import { createBackCompatIdResolver } from '../../idResolver'
 import { runOptimizeDeps, toDiscoveredDependencies } from '../../optimizer'
+import { rolldownDepPlugin } from '../../optimizer/rolldownDepPlugin'
 import * as wasmPlugin from '../../plugins/wasm'
 import { normalizePath } from '../../utils'
 import { createTestServer } from '../testUtils'
 
 async function setup(exclude: string[] = []) {
   const builds = { count: 0 }
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'vite-optimizer-wasm-'))
+  const root = fs.mkdtempSync(
+    path.join(fs.realpathSync(os.tmpdir()), 'vite-optimizer-wasm-'),
+  )
   onTestFinished(() => fs.rmSync(root, { recursive: true, force: true }))
   const server = await createTestServer({
     configFile: false,
@@ -85,6 +89,41 @@ test('externalizes nested and bare wasm imports even when JS resolves first', as
   expect(builds.count).toBe(2)
   expect(parseWasm).toHaveBeenCalledTimes(3)
 })
+
+test.each(['C:/deps/glue.js', String.raw`C:\deps\glue.js`])(
+  'externalizes a wasm-imported entry with a Windows drive path: %s',
+  async (file) => {
+    const { environment } = await setup()
+    const bundle = await rolldown({
+      input: { glue: file },
+      plugins: [
+        ...rolldownDepPlugin(environment, { glue: file }, [], {
+          files: new Set([normalizePath(file)]),
+          external: new Set([normalizePath(file)]),
+          entryExports: { glue: ['value'] },
+        }),
+        {
+          name: 'windows-path-fixture',
+          resolveId(id, importer) {
+            if (id === file) {
+              return { id, external: importer ? 'absolute' : false }
+            }
+          },
+          load(id) {
+            if (id === file) return 'export const value = 42'
+          },
+        },
+      ],
+    })
+    onTestFinished(() => bundle.close())
+    const { output } = await bundle.generate({ format: 'esm' })
+    expect(output[0].type).toBe('chunk')
+    if (output[0].type === 'chunk') {
+      expect(output[0].moduleIds).toStrictEqual(['vite:wasm-entry:glue'])
+      expect(output[0].code).not.toContain('42')
+    }
+  },
+)
 
 test('builds once without wasm', async () => {
   const { root, environment, builds } = await setup()

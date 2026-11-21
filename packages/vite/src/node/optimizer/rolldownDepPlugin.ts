@@ -449,7 +449,9 @@ export function rolldownDepPlugin(
       resolveId: {
         filter: { id: /^(?:\.{1,2}\/|\/|[A-Za-z]:[\\/])/ },
         async handler(id, importer, options) {
-          if (!importer || !wasmImports || !wasmImports.external.size) return
+          if (!wasmImports?.external.size) return
+          // Windows drive paths bypass the main dep plugin's resolve filter.
+          if (!importer) return resolveEntry(id)
           const resolved = await resolve(id, importer, options.kind)
           if (resolved && wasmImports.external.has(normalizePath(resolved))) {
             return resolveAssets(resolved, options.kind)
