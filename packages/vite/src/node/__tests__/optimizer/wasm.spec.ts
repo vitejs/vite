@@ -125,6 +125,22 @@ test.each(['C:/deps/glue.js', String.raw`C:\deps\glue.js`])(
   },
 )
 
+test('only hooks relative imports when rebuilding', async () => {
+  const { environment } = await setup()
+  const wasmImports = {
+    files: new Set<string>(),
+    external: new Set<string>(),
+    entryExports: {},
+  }
+  const names = () =>
+    rolldownDepPlugin(environment, {}, [], wasmImports).map(
+      (plugin) => 'name' in plugin && plugin.name,
+    )
+  expect(names()).not.toContain('vite:dep-pre-bundle-wasm-external')
+  wasmImports.external.add('/deps/glue.js')
+  expect(names()).toContain('vite:dep-pre-bundle-wasm-external')
+})
+
 test('builds once without wasm', async () => {
   const { root, environment, builds } = await setup()
   const parseWasm = vi.spyOn(wasmPlugin, 'parseWasm')

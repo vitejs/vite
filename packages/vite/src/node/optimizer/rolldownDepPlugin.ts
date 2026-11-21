@@ -83,12 +83,16 @@ export function rolldownDepPlugin(
   const esmPackageCache: PackageCache = new Map()
   const cjsPackageCache: PackageCache = new Map()
   const wasmImportsCache = new Map<string, Promise<void>>()
+  // Only set when rebuilding after wasm-imported JS was bundled.
+  const wasmExternal = wasmImports?.external.size
+    ? wasmImports.external
+    : undefined
 
   // The serve-time wasm helper imports the original JS modules. Bundling a copy
   // creates a second instance, breaking wasm-bindgen's __wbg_set_wasm state.
   // Keep wasm-imported JS external: https://github.com/vitejs/vite/issues/24025
   function discoverWasmImports(id: string): Promise<void> | undefined {
-    if (!wasmImports || !id.endsWith('.wasm')) return
+    if (!wasmImports || wasmExternal || !id.endsWith('.wasm')) return
     let imports = wasmImportsCache.get(id)
     if (!imports) {
       imports = parseWasm(id)
@@ -157,7 +161,7 @@ export function rolldownDepPlugin(
     resolved: string,
     kind: ImportKind,
   ) => {
-    if (wasmImports?.external.has(normalizePath(resolved))) {
+    if (wasmExternal?.has(normalizePath(resolved))) {
       return resolveAssets(resolved, kind)
     }
     // An exact browser-external id is an explicit browser:false mapping.
@@ -196,25 +200,59 @@ export function rolldownDepPlugin(
   const allExternalTypesReg = new RegExp(
     `\\.(?:` + allExternalTypes.join('|') + `)(\\?.*)?$`,
   )
-  const qualifiedIds = new Map(
-    Object.entries(qualified).map(([id, file]) => [normalizePath(file), id]),
-  )
 
   function resolveEntry(id: string) {
-    const flatId = qualifiedIds.get(normalizePath(id)) ?? flattenId(id)
+    const flatId = flattenId(id)
     if (flatId in qualified) {
-      if (wasmImports?.external.has(normalizePath(qualified[flatId]))) {
-        return { id: wasmEntryPrefix + flatId }
-      }
       return {
         id: qualified[flatId],
       }
     }
   }
 
+  // Relative and absolute imports skip `vite:dep-pre-bundle`, so they need a
+  // separate hook, which is only added when rebuilding.
+  function wasmExternalPlugin(wasmExternal: Set<string>): RolldownPlugin {
+    const entries = new Map(
+      Object.entries(qualified).map(([id, file]) => [normalizePath(file), id]),
+    )
+    return {
+      name: 'vite:dep-pre-bundle-wasm-external',
+      resolveId: {
+        filter: { id: /^[./\\]|^[A-Za-z]:[\\/]/ },
+        async handler(id, importer, options) {
+          if (!importer) {
+            // An optimized entry can't be external, re-export it instead.
+            const file = normalizePath(id)
+            const entry = wasmExternal.has(file) && entries.get(file)
+            return entry ? { id: wasmEntryPrefix + entry } : undefined
+          }
+          const resolved = await resolve(id, importer, options.kind)
+          if (resolved && wasmExternal.has(normalizePath(resolved))) {
+            return resolveAssets(resolved, options.kind)
+          }
+        },
+      },
+      load: {
+        filter: { id: prefixRegex(wasmEntryPrefix) },
+        handler(id) {
+          const entry = id.slice(wasmEntryPrefix.length)
+          const source = JSON.stringify(qualified[entry])
+          return (
+            `export * from ${source};` +
+            (wasmImports!.entryExports[entry].includes('default')
+              ? `export { default } from ${source};`
+              : '')
+          )
+        },
+      },
+    }
+  }
+
   const bundleOutputDir = path.join(environment.config.cacheDir, 'deps')
 
   return [
+    ...(wasmExternal ? [wasmExternalPlugin(wasmExternal)] : []),
     {
       name: 'vite:dep-pre-bundle-assets',
       // externalize assets and commonly known non-js file types
@@ -250,23 +288,9 @@ export function rolldownDepPlugin(
       },
       load: {
         filter: {
-          id: [
-            prefixRegex(externalWithConversionNamespace),
-            prefixRegex(wasmEntryPrefix),
-          ],
+          id: prefixRegex(externalWithConversionNamespace),
         },
         handler(id) {
-          if (id.startsWith(wasmEntryPrefix)) {
-            const flatId = id.slice(wasmEntryPrefix.length)
-            const source = JSON.stringify(qualified[flatId])
-            return (
-              `export * from ${source};` +
-              (wasmImports!.entryExports[flatId].includes('default')
-                ? `export { default } from ${source};`
-                : '')
-            )
-          }
-          if (!id.startsWith(externalWithConversionNamespace)) return
           const path = id.slice(externalWithConversionNamespace.length)
           // import itself with prefix (this is the actual part of require-import conversion)
           const modulePath = JSON.stringify(`${convertedExternalPrefix}${path}`)
@@ -288,7 +312,7 @@ export function rolldownDepPlugin(
         cjsPackageCache.clear()
       },
       resolveId: {
-        filter: { id: [/^[#\w@][^:]/, /^[\\/]/] },
+        filter: { id: /^[#\w@][^:]/ },
         async handler(id, importer, options) {
           const kind = options.kind
 
@@ -440,21 +464,6 @@ export function rolldownDepPlugin(
               code: s.toString(),
               map: s.generateMap({ hires: 'boundary' }),
             }
-          }
-        },
-      },
-    },
-    {
-      name: 'vite:dep-pre-bundle-wasm',
-      resolveId: {
-        filter: { id: /^(?:\.{1,2}\/|\/|[A-Za-z]:[\\/])/ },
-        async handler(id, importer, options) {
-          if (!wasmImports?.external.size) return
-          // Windows drive paths bypass the main dep plugin's resolve filter.
-          if (!importer) return resolveEntry(id)
-          const resolved = await resolve(id, importer, options.kind)
-          if (resolved && wasmImports.external.has(normalizePath(resolved))) {
-            return resolveAssets(resolved, options.kind)
           }
         },
       },

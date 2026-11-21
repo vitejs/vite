@@ -834,18 +834,45 @@ async function prepareRolldownOptimizerRun(
   if (external.length) {
     plugins.push(rolldownCjsExternalPlugin(external, platform, environment))
   }
-  plugins.push(
-    ...rolldownDepPlugin(environment, flatIdDeps, external, wasmImports),
-  )
 
   let canceled = false
   async function build() {
-    const inputOptions: RolldownOptions = {
+    const result = await buildOnce()
+    // JS may be bundled before the wasm importing it is discovered. Rebuild
+    // with that JS external, after removing the stale output.
+    if (
+      wasmImports.files.size &&
+      result.output.some(
+        (output) =>
+          output.type === 'chunk' &&
+          output.moduleIds.some((id) =>
+            wasmImports.files.has(normalizePath(id)),
+          ),
+      )
+    ) {
+      for (const id of wasmImports.files) wasmImports.external.add(id)
+      await Promise.all(
+        result.output.map((output) =>
+          fsp.rm(path.join(processingCacheDir, output.fileName), {
+            force: true,
+          }),
+        ),
+      )
+      return buildOnce()
+    }
+    return result
+  }
+
+  async function buildOnce() {
+    const bundle = await rolldown({
       ...rolldownOptions,
       tsconfig: environment.config.tsconfig ?? rolldownOptions.tsconfig,
       input: flatIdDeps,
       logLevel: 'silent',
-      plugins,
+      plugins: [
+        ...plugins,
+        ...rolldownDepPlugin(environment, flatIdDeps, external, wasmImports),
+      ],
       platform,
       transform: {
         target: ESBUILD_BASELINE_WIDELY_AVAILABLE_TARGET,
@@ -865,40 +892,7 @@ async function prepareRolldownOptimizerRun(
         ...rolldownOptions.moduleTypes,
         ...(jsxLoader ? { '.js': 'jsx' } : {}),
       },
-    }
-    const result = await buildOnce(inputOptions)
-    // JS may resolve before the wasm that imports it, requiring a second build.
-    if (
-      wasmImports.files.size &&
-      result.output.some(
-        (output) =>
-          output.type === 'chunk' &&
-          output.moduleIds.some((id) =>
-            wasmImports.files.has(normalizePath(id)),
-          ),
-      )
-    ) {
-      for (const id of wasmImports.files) wasmImports.external.add(id)
-      if (canceled) throw new Error('The build was canceled')
-      await Promise.all(
-        result.output.flatMap((output) => {
-          const files = [output.fileName]
-          if (output.type === 'chunk' && output.map) {
-            files.push(output.fileName + '.map')
-          }
-          return files.map((file) =>
-            fsp.rm(path.join(processingCacheDir, file), { force: true }),
-          )
-        }),
-      )
-      return buildOnce(inputOptions)
-    }
-    return result
-  }
-
-  async function buildOnce(inputOptions: RolldownOptions) {
-    if (canceled) throw new Error('The build was canceled')
-    const bundle = await rolldown(inputOptions)
+    })
     if (canceled) {
       await bundle.close()
       throw new Error('The build was canceled')
