@@ -7,6 +7,7 @@ import { type Logger, createLogger } from '../../logger'
 import type { Plugin } from '../../plugin'
 import { preview } from '../../preview'
 import { createServer } from '../../server'
+import { DevEnvironment } from '../../server/environment'
 
 const resolveConfigWithPlugin = (
   plugin: Plugin,
@@ -659,6 +660,42 @@ describe('createServer startup failure', () => {
       expect(closeServer).toHaveBeenCalledOnce()
     })
   }
+
+  test('closes the environment whose init failed', async () => {
+    const error = new Error('options failed')
+    const closeTransport = vi.fn()
+
+    await expect(
+      createServerWithPlugin({
+        name: 'test',
+        config() {
+          return {
+            environments: {
+              custom: {
+                dev: {
+                  createEnvironment(name, config) {
+                    return new DevEnvironment(name, config, {
+                      hot: false,
+                      transport: {
+                        send: vi.fn(),
+                        on: vi.fn(),
+                        off: vi.fn(),
+                        close: closeTransport,
+                      },
+                    })
+                  },
+                },
+              },
+            },
+          }
+        },
+        options() {
+          throw error
+        },
+      }),
+    ).rejects.toBe(error)
+    expect(closeTransport).toHaveBeenCalledOnce()
+  })
 })
 
 describe('closePreviewServer hook', () => {
