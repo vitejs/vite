@@ -24,6 +24,8 @@ describe.for([
       './fixtures/test.module.css',
       './fixtures/assets.js',
       './fixtures/top-level-object.js',
+      './fixtures/cyclic2/test11/index.js',
+      './fixtures/cyclic2/test10/index.js',
       './fixtures/cyclic2/test9/index.js',
       './fixtures/live-binding/test4/index.js',
       './fixtures/live-binding/test3/index.js',
@@ -276,6 +278,21 @@ describe.for([
       }
     `)
   })
+
+  it.for([
+    '/fixtures/cyclic2/test10/index.js',
+    '/fixtures/cyclic2/test11/index.js',
+  ] as const)(
+    `cyclic export * from a module still evaluating %s`,
+    async (entry, { runner }) => {
+      const mod = await runner.import(entry)
+      expect(mod.result).toStrictEqual({
+        fromA: 42,
+        fromB: 42,
+        bKeys: ['value'],
+      })
+    },
+  )
 
   it(`execution order with mixed import and re-export`, async ({
     runner,

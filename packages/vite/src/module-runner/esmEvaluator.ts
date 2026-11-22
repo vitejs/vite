@@ -11,6 +11,7 @@ import {
   ssrModuleExportsKey,
   ssrRolldownRuntimeKey,
 } from './constants'
+import { mayGainStarExports } from './exportAll'
 import type { ModuleEvaluator, ModuleRunnerContext } from './types'
 
 export class ESModulesEvaluator implements ModuleEvaluator {
@@ -46,7 +47,12 @@ export class ESModulesEvaluator implements ModuleEvaluator {
       context[ssrRolldownRuntimeKey],
     )
 
-    Object.seal(context[ssrModuleExportsKey])
+    const exports = context[ssrModuleExportsKey]
+    // keep it extensible so that `export *` keys resolved later in an import
+    // cycle can still be added
+    if (!mayGainStarExports(exports)) {
+      Object.seal(exports)
+    }
   }
 
   runExternalModule(filepath: string): Promise<any> {

@@ -13,7 +13,7 @@ import {
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
-import { cleanUrl, isPrimitive } from '../shared/utils'
+import { cleanUrl } from '../shared/utils'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -27,6 +27,7 @@ import { createDefaultImportMeta } from './createImportMeta'
 import { ESModulesEvaluator } from './esmEvaluator'
 import type { EvaluatedModuleNode } from './evaluatedModules'
 import { EvaluatedModules } from './evaluatedModules'
+import { evaluatingExports, exportAll } from './exportAll'
 import { createHMRHandlerForRunner } from './hmrHandler'
 import { hmrLogger, silentConsole } from './hmrLogger'
 import { enableSourceMapSupport } from './sourcemap/index'
@@ -507,7 +508,12 @@ export class ModuleRunner {
 
     this.debug?.('[module runner] executing', meta.href)
 
-    await this.evaluator.runInlinedModule(context, code, mod)
+    evaluatingExports.add(exports)
+    try {
+      await this.evaluator.runInlinedModule(context, code, mod)
+    } finally {
+      evaluatingExports.delete(exports)
+    }
 
     return exports
   }
@@ -559,30 +565,5 @@ export class ModuleRunner {
       this.moduleHotContexts.set(url, hotContext)
     }
     return this.moduleHotContexts.get(url)
-  }
-}
-
-function exportAll(exports: any, sourceModule: any) {
-  // when a module exports itself it causes
-  // call stack error
-  if (exports === sourceModule) return
-
-  if (
-    isPrimitive(sourceModule) ||
-    Array.isArray(sourceModule) ||
-    sourceModule instanceof Promise
-  )
-    return
-
-  for (const key in sourceModule) {
-    if (key !== 'default' && key !== '__esModule' && !(key in exports)) {
-      try {
-        Object.defineProperty(exports, key, {
-          enumerable: true,
-          configurable: true,
-          get: () => sourceModule[key],
-        })
-      } catch {}
-    }
   }
 }
