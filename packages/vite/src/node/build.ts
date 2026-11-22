@@ -838,6 +838,45 @@ export function resolveRolldownOptions(
   return rolldownOptions
 }
 
+// `vite build --watch` keeps the process alive through the rolldown watcher,
+// but nothing closed the watcher on SIGINT/SIGTERM, so plugin `closeWatcher`
+// hooks never ran when the build was interrupted (unlike `rollup -w`,
+// `rolldown -w`, and `vite dev`, which all close on both signals). Register
+// one pair of signal handlers per process that closes every active build
+// watcher, then exits with the conventional code for the signal (130 for
+// SIGINT, 143 for SIGTERM, matching the command lock in `./commandLock`).
+//
+// The handlers are registered after the command lock's own `process.once`
+// handlers (the CLI creates the lock before building), so on a signal the
+// lock releases and re-raises the signal first, and these handlers then run
+// on the re-raised signal. Without the lock (`--bypassLock`, or a
+// programmatic `build()`), the same handlers run on the original signal.
+const buildWatchers = new Set<RolldownWatcher>()
+let buildWatchSignalHandlersRegistered = false
+let buildWatchClosing = false
+
+export function registerBuildWatchSignalHandlers(
+  watcher: RolldownWatcher,
+): void {
+  buildWatchers.add(watcher)
+  if (buildWatchSignalHandlersRegistered) return
+  buildWatchSignalHandlersRegistered = true
+  process.once('SIGINT', () => closeBuildWatchersOnSignal('SIGINT'))
+  process.once('SIGTERM', () => closeBuildWatchersOnSignal('SIGTERM'))
+}
+
+function closeBuildWatchersOnSignal(signal: 'SIGINT' | 'SIGTERM'): void {
+  if (buildWatchClosing) return
+  buildWatchClosing = true
+  const exitCode = signal === 'SIGINT' ? 130 : 143
+  void Promise.allSettled(
+    [...buildWatchers].map((watcher) => watcher.close()),
+  ).then(
+    () => process.exit(exitCode),
+    () => process.exit(exitCode),
+  )
+}
+
 /**
  * Build an App environment, or a App library (if libraryOptions is provided)
  **/
@@ -915,6 +954,11 @@ async function buildEnvironment(
           logger.error(e.message, { error: e })
         }
       })
+
+      // Close the watcher (running plugin `closeWatcher` hooks) when the
+      // process is interrupted, instead of dying from the signal with the
+      // watcher still open. See `registerBuildWatchSignalHandlers`.
+      registerBuildWatchSignalHandlers(watcher)
 
       return watcher
     }

@@ -10,6 +10,7 @@ import type {
   OutputOptions,
   RolldownOptions,
   RolldownOutput,
+  RolldownWatcher,
   RollupLog,
 } from 'rolldown'
 import {
@@ -2458,3 +2459,81 @@ function getOutputHashChanges(
     unchanged: names.filter((name) => map1[name] === map2[name]),
   }
 }
+
+describe('build watch signal handlers', () => {
+  // Each test imports a fresh copy of '../build' so the module-level
+  // "handlers registered / closing" state starts clean.
+  async function freshRegister() {
+    vi.resetModules()
+    const mod = await import('../build')
+    return mod.registerBuildWatchSignalHandlers as (
+      watcher: RolldownWatcher,
+    ) => void
+  }
+
+  function removeNewListeners(
+    signal: 'SIGINT' | 'SIGTERM',
+    before: Function[],
+  ) {
+    for (const listener of process.listeners(signal)) {
+      if (!before.includes(listener)) {
+        process.off(signal, listener as (...args: any[]) => void)
+      }
+    }
+  }
+
+  function setup() {
+    const sigintBefore = process.listeners('SIGINT')
+    const sigtermBefore = process.listeners('SIGTERM')
+    const exit = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((() => undefined) as never)
+    onTestFinished(() => {
+      removeNewListeners('SIGINT', sigintBefore)
+      removeNewListeners('SIGTERM', sigtermBefore)
+      exit.mockRestore()
+    })
+    return { exit }
+  }
+
+  test('closes the watcher and exits 130 on SIGINT', async () => {
+    const register = await freshRegister()
+    const { exit } = setup()
+    const close = vi.fn().mockResolvedValue(undefined)
+    register({ close } as unknown as RolldownWatcher)
+    process.emit('SIGINT')
+    await vi.waitFor(() => {
+      expect(close).toHaveBeenCalledTimes(1)
+      expect(exit).toHaveBeenCalledWith(130)
+    })
+  })
+
+  test('closes the watcher and exits 143 on SIGTERM', async () => {
+    const register = await freshRegister()
+    const { exit } = setup()
+    const close = vi.fn().mockResolvedValue(undefined)
+    register({ close } as unknown as RolldownWatcher)
+    process.emit('SIGTERM')
+    await vi.waitFor(() => {
+      expect(close).toHaveBeenCalledTimes(1)
+      expect(exit).toHaveBeenCalledWith(143)
+    })
+  })
+
+  test('a second signal while closing does not close twice', async () => {
+    const register = await freshRegister()
+    const { exit } = setup()
+    const close1 = vi.fn().mockResolvedValue(undefined)
+    const close2 = vi.fn().mockResolvedValue(undefined)
+    register({ close: close1 } as unknown as RolldownWatcher)
+    register({ close: close2 } as unknown as RolldownWatcher)
+    process.emit('SIGINT')
+    process.emit('SIGTERM')
+    await vi.waitFor(() => {
+      expect(close1).toHaveBeenCalledTimes(1)
+      expect(close2).toHaveBeenCalledTimes(1)
+      expect(exit).toHaveBeenCalledTimes(1)
+      expect(exit).toHaveBeenCalledWith(130)
+    })
+  })
+})
