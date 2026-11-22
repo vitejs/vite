@@ -194,6 +194,11 @@ export class EnvironmentModuleGraph {
     if (isHmr) {
       mod.lastHMRTimestamp = timestamp
       mod.lastHMRInvalidationReceived = false
+      // Also record the invalidation time, so transform results from requests
+      // started while the `hotUpdate` hooks were running are not cached as
+      // fresh. `timestamp` was taken before the hooks ran, so it is older
+      // than those requests and cannot be used for this (fix #24142).
+      mod.lastInvalidationTimestamp = monotonicDateNow()
     } else {
       // Save the timestamp for this invalidation, so we can avoid caching the result of possible already started
       // processing being done for this module
