@@ -916,6 +916,22 @@ async function buildEnvironment(
         }
       })
 
+      // `vite build --watch` must close its watchers on SIGINT/SIGTERM so plugin `closeWatcher` hooks run before the
+      // process dies, as `rollup -w`, `rolldown -w`, and `vite dev` do (#24181). The command lock's handlers release
+      // the lock and re-raise the signal; these consume the (re-raised) signal while the watcher closes, then exit
+      // with the conventional code instead of relying on a default death that would cut the close short.
+      let closing = false
+      const closeWatcherOnSignal = (signal: 'SIGINT' | 'SIGTERM') => {
+        if (closing) return
+        closing = true
+        void watcher
+          .close()
+          .catch(() => {})
+          .finally(() => process.exit(signal === 'SIGINT' ? 130 : 143))
+      }
+      process.on('SIGINT', closeWatcherOnSignal)
+      process.on('SIGTERM', closeWatcherOnSignal)
+
       return watcher
     }
 
