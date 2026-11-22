@@ -302,15 +302,20 @@ describe.for([
     onTestFinished: (fn: () => void | Promise<void>) => void,
   ) {
     let resolve!: () => void
-    const promise = new Promise<void>((r) => (resolve = r))
-    ;(globalThis as any).__viteTestPending__ = promise
+    let started!: () => void
+    const isStarted = new Promise<void>((r) => (started = r))
+    ;(globalThis as any).__viteTestPending__ = {
+      promise: new Promise<void>((r) => (resolve = r)),
+      started,
+    }
     const pending = runner.import('/fixtures/cyclic2/test10/pending.js')
     onTestFinished(async () => {
       resolve()
       await pending
       delete (globalThis as any).__viteTestPending__
     })
-    await setTimeout(0)
+    // wait until pending.js is evaluating
+    await isStarted
   }
 
   it.for([false, true])(

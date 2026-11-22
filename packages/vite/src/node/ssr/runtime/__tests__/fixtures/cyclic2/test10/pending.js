@@ -1,2 +1,3 @@
 // stays pending until the test resolves it
-await globalThis.__viteTestPending__
+globalThis.__viteTestPending__.started()
+await globalThis.__viteTestPending__.promise
