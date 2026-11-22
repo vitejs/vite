@@ -2,7 +2,14 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import * as staticModule from './simple'
 
-export const initialize = async () => {
+export const initialize = async (isFullBundle) => {
+  if (isFullBundle) {
+    return {
+      dynamicProcessed: await import('./simple'),
+      static: staticModule,
+    }
+  }
+
   const nameRelative = './simple'
   const nameAbsolute = '/fixtures/simple'
   const nameAbsoluteExtension = '/fixtures/simple.js'

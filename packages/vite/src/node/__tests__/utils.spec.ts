@@ -3,12 +3,15 @@ import fs from 'node:fs'
 import os, { type NetworkInterfaceInfoIPv4 } from 'node:os'
 import path from 'node:path'
 import type { DecodedSourceMap, RawSourceMap } from '@jridgewell/remapping'
+import { decode, encode } from '@jridgewell/sourcemap-codec'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
 import { fileURLToPath } from 'mlly'
 import { describe, expect, test, vi, onTestFinished } from 'vitest'
 import type { CommonServerOptions, ResolvedServerUrls } from '..'
 import { isWindows } from '../../shared/utils'
 import {
+  SourcemapEditor,
   asyncFlatten,
   bareImportRE,
   combineSourcemaps,
@@ -32,6 +35,7 @@ import {
   removeTimestampQuery,
   resolveHostname,
   resolveServerUrls,
+  safeRealpathSync,
 } from '../utils'
 
 // Test certificate for SAN parsing (localhost, foo.localhost, *.vite.localhost)
@@ -136,17 +140,32 @@ describe('isParentDirectory', () => {
   }
 })
 
+test.runIf(isWindows)(
+  'safeRealpathSync preserves Windows drive letter case',
+  () => {
+    const realPath = fs.realpathSync.native(process.execPath)
+
+    const drive = realPath[0]
+    const rest = realPath.slice(2)
+    for (const driveLetter of [drive.toLowerCase(), drive.toUpperCase()]) {
+      expect(safeRealpathSync(`${driveLetter}:\\.${rest}`)).toBe(
+        `${driveLetter}:${rest}`,
+      )
+    }
+  },
+)
+
 describe('injectQuery', () => {
   if (isWindows) {
     // this test will work incorrectly on unix systems
     test('normalize windows path', () => {
-      expect(injectQuery('C:\\User\\Vite\\Project', 'direct')).toEqual(
+      expect(injectQuery('C:\\User\\Vite\\Project', 'direct')).toBe(
         'C:/User/Vite/Project?direct',
       )
     })
 
     test('absolute file path', () => {
-      expect(injectQuery('C:\\test-file.vue', 'direct')).toEqual(
+      expect(injectQuery('C:\\test-file.vue', 'direct')).toBe(
         'C:/test-file.vue?direct',
       )
     })
@@ -154,24 +173,24 @@ describe('injectQuery', () => {
     test('absolute file path with parameters', () => {
       expect(
         injectQuery('C:\\test-file.vue?vue&type=template&lang.js', 'direct'),
-      ).toEqual('C:/test-file.vue?direct&vue&type=template&lang.js')
+      ).toBe('C:/test-file.vue?direct&vue&type=template&lang.js')
     })
   }
 
   test('relative path', () => {
-    expect(injectQuery('usr/vite/%20a%20', 'direct')).toEqual(
+    expect(injectQuery('usr/vite/%20a%20', 'direct')).toBe(
       'usr/vite/%20a%20?direct',
     )
-    expect(injectQuery('./usr/vite/%20a%20', 'direct')).toEqual(
+    expect(injectQuery('./usr/vite/%20a%20', 'direct')).toBe(
       './usr/vite/%20a%20?direct',
     )
-    expect(injectQuery('../usr/vite/%20a%20', 'direct')).toEqual(
+    expect(injectQuery('../usr/vite/%20a%20', 'direct')).toBe(
       '../usr/vite/%20a%20?direct',
     )
   })
 
   test('path with hash', () => {
-    expect(injectQuery('/usr/vite/path with space/#1?2/', 'direct')).toEqual(
+    expect(injectQuery('/usr/vite/path with space/#1?2/', 'direct')).toBe(
       '/usr/vite/path with space/?direct#1?2/',
     )
   })
@@ -186,31 +205,31 @@ describe('injectQuery', () => {
   })
 
   test('path with multiple spaces', () => {
-    expect(injectQuery('/usr/vite/path with space', 'direct')).toEqual(
+    expect(injectQuery('/usr/vite/path with space', 'direct')).toBe(
       '/usr/vite/path with space?direct',
     )
   })
 
   test('path with multiple % characters', () => {
-    expect(injectQuery('/usr/vite/not%20a%20space', 'direct')).toEqual(
+    expect(injectQuery('/usr/vite/not%20a%20space', 'direct')).toBe(
       '/usr/vite/not%20a%20space?direct',
     )
   })
 
   test('path with %25', () => {
-    expect(injectQuery('/usr/vite/%25hello%25', 'direct')).toEqual(
+    expect(injectQuery('/usr/vite/%25hello%25', 'direct')).toBe(
       '/usr/vite/%25hello%25?direct',
     )
   })
 
   test('path with Unicode', () => {
-    expect(injectQuery('/usr/vite/東京', 'direct')).toEqual(
+    expect(injectQuery('/usr/vite/東京', 'direct')).toBe(
       '/usr/vite/東京?direct',
     )
   })
 
   test('path with Unicode, space, and %', () => {
-    expect(injectQuery('/usr/vite/東京 %20 hello', 'direct')).toEqual(
+    expect(injectQuery('/usr/vite/東京 %20 hello', 'direct')).toBe(
       '/usr/vite/東京 %20 hello?direct',
     )
   })
@@ -218,7 +237,7 @@ describe('injectQuery', () => {
   test('path with url-encoded path as query parameter', () => {
     const src = '/src/module.ts?url=https%3A%2F%2Fusr.vite%2F'
     const expected = '/src/module.ts?t=1234&url=https%3A%2F%2Fusr.vite%2F'
-    expect(injectQuery(src, 't=1234')).toEqual(expected)
+    expect(injectQuery(src, 't=1234')).toBe(expected)
   })
 })
 
@@ -253,7 +272,7 @@ describe('resolveHostname', () => {
   test('defaults to localhost', async () => {
     const resolved = await getLocalhostAddressIfDiffersFromDNS()
 
-    expect(await resolveHostname(undefined)).toEqual({
+    expect(await resolveHostname(undefined)).toStrictEqual({
       host: 'localhost',
       name: resolved ?? 'localhost',
     })
@@ -262,21 +281,21 @@ describe('resolveHostname', () => {
   test('accepts localhost', async () => {
     const resolved = await getLocalhostAddressIfDiffersFromDNS()
 
-    expect(await resolveHostname('localhost')).toEqual({
+    expect(await resolveHostname('localhost')).toStrictEqual({
       host: 'localhost',
       name: resolved ?? 'localhost',
     })
   })
 
   test('accepts 0.0.0.0', async () => {
-    expect(await resolveHostname('0.0.0.0')).toEqual({
+    expect(await resolveHostname('0.0.0.0')).toStrictEqual({
       host: '0.0.0.0',
       name: 'localhost',
     })
   })
 
   test('accepts ::', async () => {
-    expect(await resolveHostname('::')).toEqual({
+    expect(await resolveHostname('::')).toStrictEqual({
       host: '::',
       name: 'localhost',
     })
@@ -285,7 +304,7 @@ describe('resolveHostname', () => {
   test('accepts 0000:0000:0000:0000:0000:0000:0000:0000', async () => {
     expect(
       await resolveHostname('0000:0000:0000:0000:0000:0000:0000:0000'),
-    ).toEqual({
+    ).toStrictEqual({
       host: '0000:0000:0000:0000:0000:0000:0000:0000',
       name: 'localhost',
     })
@@ -346,23 +365,23 @@ describe('posToNumber', () => {
 describe('numberToPos', () => {
   test('simple', () => {
     const actual = numberToPos('a\nb', 2)
-    expect(actual).toEqual({ line: 2, column: 0 })
+    expect(actual).toStrictEqual({ line: 2, column: 0 })
   })
   test('pass though pos', () => {
     const actual = numberToPos('a\nb', { line: 2, column: 0 })
-    expect(actual).toEqual({ line: 2, column: 0 })
+    expect(actual).toStrictEqual({ line: 2, column: 0 })
   })
   test('empty line', () => {
     const actual = numberToPos('a\n\nb', 3)
-    expect(actual).toEqual({ line: 3, column: 0 })
+    expect(actual).toStrictEqual({ line: 3, column: 0 })
   })
   test('middle of line', () => {
     const actual = numberToPos('abc\ndef', 5)
-    expect(actual).toEqual({ line: 2, column: 1 })
+    expect(actual).toStrictEqual({ line: 2, column: 1 })
   })
   test('end of line', () => {
     const actual = numberToPos('abc\ndef', 3)
-    expect(actual).toEqual({ line: 1, column: 3 })
+    expect(actual).toStrictEqual({ line: 1, column: 3 })
   })
   test('out of range', () => {
     expect(() => numberToPos('a\nb', 5)).toThrowError(
@@ -570,22 +589,22 @@ describe('getHash', () => {
 describe('asyncFlatten', () => {
   test('plain array', async () => {
     const arr = await asyncFlatten([1, 2, 3])
-    expect(arr).toEqual([1, 2, 3])
+    expect(arr).toStrictEqual([1, 2, 3])
   })
 
   test('nested array', async () => {
     const arr = await asyncFlatten([1, 2, 3, [4, 5, 6]])
-    expect(arr).toEqual([1, 2, 3, 4, 5, 6])
+    expect(arr).toStrictEqual([1, 2, 3, 4, 5, 6])
   })
 
   test('nested falsy array', async () => {
     const arr = await asyncFlatten([1, 2, false, [4, null, undefined]])
-    expect(arr).toEqual([1, 2, false, 4, null, undefined])
+    expect(arr).toStrictEqual([1, 2, false, 4, null, undefined])
   })
 
   test('plain promise array', async () => {
     const arr = await asyncFlatten([1, 2, Promise.resolve(3)])
-    expect(arr).toEqual([1, 2, 3])
+    expect(arr).toStrictEqual([1, 2, 3])
   })
 
   test('nested promise array', async () => {
@@ -595,7 +614,7 @@ describe('asyncFlatten', () => {
       Promise.resolve(3),
       Promise.resolve([4, 5, 6]),
     ])
-    expect(arr).toEqual([1, 2, 3, 4, 5, 6])
+    expect(arr).toStrictEqual([1, 2, 3, 4, 5, 6])
   })
 
   test('2x nested promise array', async () => {
@@ -605,7 +624,7 @@ describe('asyncFlatten', () => {
       Promise.resolve(3),
       Promise.resolve([4, 5, Promise.resolve(6), Promise.resolve([7, 8, 9])]),
     ])
-    expect(arr).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    expect(arr).toStrictEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
   })
 })
 
@@ -789,7 +808,7 @@ describe('processSrcSetSync', () => {
       result.push(url)
       return url
     })
-    expect(result).toEqual(expected)
+    expect(result).toStrictEqual(expected)
   })
 })
 
@@ -1067,6 +1086,181 @@ describe('combineSourcemaps', () => {
   })
 })
 
+describe('SourcemapEditor', () => {
+  test('reports whether the code has changed', () => {
+    const s = new SourcemapEditor('foo(bar)')
+    expect(s.hasChanged()).toBe(false)
+    s.update(4, 7, '[]')
+    expect(s.hasChanged()).toBe(true)
+  })
+
+  // segments are [generated column, original line, original column]
+  const chunkMap = (lines: [number, number, number][][]): RawSourceMap => ({
+    version: 3,
+    file: 'index.js',
+    sources: ['src/index.js'],
+    names: [],
+    mappings: encode(
+      lines.map((segments) =>
+        segments.map(([column, line, originalColumn]) => [
+          column,
+          0,
+          line,
+          originalColumn,
+        ]),
+      ),
+    ),
+  })
+
+  // Compares every position of the edited code against the chunk map traced
+  // through a character-level map of the edits.
+  const expectExactMapping = (
+    code: string,
+    map: RawSourceMap,
+    edit: (s: SourcemapEditor | MagicString) => void,
+  ) => {
+    const s = new SourcemapEditor(code)
+    const expected = new MagicString(code)
+    edit(s)
+    edit(expected)
+    expect(s.toString()).toBe(expected.toString())
+    const exact = new TraceMap(
+      combineSourcemaps('index.js', [
+        expected.generateDecodedMap({ source: 'index.js', hires: true }),
+        map,
+      ]),
+    )
+    const actual = new TraceMap(s.generateMap('index.js', map))
+
+    s.toString()
+      .split('\n')
+      .forEach((text, line) => {
+        for (let column = 0; column <= text.length; column++) {
+          const position = { line: line + 1, column }
+          expect(
+            originalPositionFor(actual, position),
+            `${line}:${column}`,
+          ).toStrictEqual(originalPositionFor(exact, position))
+        }
+      })
+  }
+
+  const marker = '__MARKER__'
+
+  test('replaces spans with longer and shorter content', () => {
+    const code = `a(${marker});b(${marker});c()`
+    expectExactMapping(
+      code,
+      chunkMap([
+        [
+          [0, 0, 0],
+          [2, 0, 4],
+          [12, 0, 20],
+          [14, 1, 0],
+          [16, 1, 4],
+          [26, 1, 20],
+          [28, 2, 0],
+        ],
+      ]),
+      (s) => {
+        s.update(2, 12, '__vite__mapDeps([0,1])')
+        s.update(16, 26, '[]')
+      },
+    )
+  })
+
+  test('maps the code after a replaced span like the segment inside it', () => {
+    const code = `a(${marker}, b)`
+    expectExactMapping(
+      code,
+      chunkMap([
+        [
+          [0, 0, 0],
+          [5, 3, 7],
+          [14, 4, 0],
+        ],
+      ]),
+      (s) => s.update(2, 12, 'void 0'),
+    )
+  })
+
+  test('keeps segments that share a column', () => {
+    const code = `a(${marker});parent?.x`
+    expectExactMapping(
+      code,
+      chunkMap([
+        [
+          [0, 0, 0],
+          [14, 1, 4],
+          [14, 2, 6],
+          [21, 2, 13],
+        ],
+      ]),
+      (s) => s.update(2, 12, '[]'),
+    )
+  })
+
+  test('moves lines down for inserted lines', () => {
+    const code = `#!/usr/bin/env node\nfoo(${marker})\nbar()`
+    expectExactMapping(
+      code,
+      chunkMap([
+        [[0, 0, 0]],
+        [
+          [0, 1, 0],
+          [4, 1, 4],
+        ],
+        [[0, 2, 0]],
+      ]),
+      (s) => {
+        s.prependLeft(20, 'const __vite__mapDeps=0;\n')
+        s.update(24, 34, '[]')
+      },
+    )
+  })
+
+  test('drops redundant segments and unused names', () => {
+    const map: RawSourceMap = {
+      version: 3,
+      file: 'index.js',
+      sources: ['src/index.js'],
+      names: ['unused', 'foo'],
+      mappings: encode([
+        [[0], [5, 0, 0, 0], [9, 0, 0, 0], [12], [14], [16, 0, 1, 0]],
+        [
+          [0, 0, 2, 0],
+          [7, 0, 2, 0],
+          [7, 0, 2, 0, 1],
+          [9, 0, 2, 0, 1],
+        ],
+      ]),
+    }
+    const s = new SourcemapEditor('x'.repeat(20) + '\n')
+    const result = s.generateMap('index.js', map)
+    expect(result.names).toStrictEqual(['foo'])
+    expect(decode(result.mappings)).toStrictEqual([
+      [[5, 0, 0, 0], [12], [16, 0, 1, 0]],
+      [
+        [0, 0, 2, 0],
+        [7, 0, 2, 0],
+        [7, 0, 2, 0, 0],
+      ],
+    ])
+  })
+
+  test('maps replacements that span lines', () => {
+    const code = 'a(\nb)\nc'
+    const map = chunkMap([[[0, 0, 0]], [[0, 1, 0]], [[0, 2, 0]]])
+    expectExactMapping(code, map, (s) => s.update(1, 4, 'x'))
+  })
+
+  test('maps line insertions within a line', () => {
+    const code = 'a(\nb)\nc'
+    const map = chunkMap([[[0, 0, 0]], [[0, 1, 0]], [[0, 2, 0]]])
+    expectExactMapping(code, map, (s) => s.prependLeft(1, 'x;\n'))
+  })
+})
+
 describe('getServerUrlByHost', () => {
   const urls: ResolvedServerUrls = {
     local: ['http://localhost:5173'],
@@ -1289,7 +1483,7 @@ describe('resolveServerUrls', () => {
       { rawBase: '/' } as any,
     )
 
-    expect(result.network).toEqual([
+    expect(result.network).toStrictEqual([
       'http://192.168.1.10:3000/',
       'http://10.0.0.5:3000/',
     ])

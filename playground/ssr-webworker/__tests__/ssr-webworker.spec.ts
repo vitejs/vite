@@ -41,9 +41,10 @@ test('supports requiring an external node builtin from CommonJS', async () => {
 })
 
 test('warns when automatically externalizing a node builtin', () => {
-  const logs = serverLogs.join('\n')
-  expect(logs).toContain(
-    'Automatically externalized node built-in module "node:util"',
+  expect(serverLogs).toContainEqual(
+    expect.stringContaining(
+      'Automatically externalized node built-in module "node:util"',
+    ),
   )
 })
 

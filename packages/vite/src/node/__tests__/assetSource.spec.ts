@@ -15,7 +15,7 @@ describe('getNodeAssetAttributes', () => {
     expect(attrs[0]).toHaveProperty('type', 'src')
     expect(attrs[0]).toHaveProperty('key', 'src')
     expect(attrs[0]).toHaveProperty('value', 'foo.jpg')
-    expect(attrs[0].attributes).toEqual({ src: 'foo.jpg' })
+    expect(attrs[0].attributes).toStrictEqual({ src: 'foo.jpg' })
     expect(attrs[0].location).toHaveProperty('startOffset', 5)
     expect(attrs[0].location).toHaveProperty('endOffset', 18)
   })
@@ -27,7 +27,9 @@ describe('getNodeAssetAttributes', () => {
     expect(attrs[0]).toHaveProperty('type', 'srcset')
     expect(attrs[0]).toHaveProperty('key', 'srcset')
     expect(attrs[0]).toHaveProperty('value', 'foo.jpg 1x, bar.jpg 2x')
-    expect(attrs[0].attributes).toEqual({ srcset: 'foo.jpg 1x, bar.jpg 2x' })
+    expect(attrs[0].attributes).toStrictEqual({
+      srcset: 'foo.jpg 1x, bar.jpg 2x',
+    })
   })
 
   test('handles video src and poster', () => {
@@ -37,7 +39,7 @@ describe('getNodeAssetAttributes', () => {
     expect(attrs[0]).toHaveProperty('type', 'src')
     expect(attrs[0]).toHaveProperty('key', 'src')
     expect(attrs[0]).toHaveProperty('value', 'video.mp4')
-    expect(attrs[0].attributes).toEqual({
+    expect(attrs[0].attributes).toStrictEqual({
       src: 'video.mp4',
       poster: 'poster.jpg',
     })
@@ -53,7 +55,7 @@ describe('getNodeAssetAttributes', () => {
     expect(attrs[0]).toHaveProperty('type', 'src')
     expect(attrs[0]).toHaveProperty('key', 'href')
     expect(attrs[0]).toHaveProperty('value', 'style.css')
-    expect(attrs[0].attributes).toEqual({
+    expect(attrs[0].attributes).toStrictEqual({
       rel: 'stylesheet',
       href: 'style.css',
     })

@@ -97,15 +97,15 @@ test('virtual module invalidation simple', async () => {
   await server.environments.ssr.pluginContainer.buildStart({})
 
   const mod1 = await server.ssrLoadModule('virtual:test')
-  expect(mod1.default).toEqual(1)
+  expect(mod1.default).toBe(1)
   const mod2 = await server.ssrLoadModule('virtual:test')
-  expect(mod2.default).toEqual(1)
+  expect(mod2.default).toBe(1)
 
   const modNode = server.moduleGraph.getModuleById('\0virtual:test')
   server.moduleGraph.invalidateModule(modNode!)
 
   const mod3 = await server.ssrLoadModule('virtual:test')
-  expect(mod3.default).toEqual(2)
+  expect(mod3.default).toBe(2)
 })
 
 test('virtual module invalidation nested', async () => {
@@ -155,9 +155,9 @@ test('virtual module invalidation nested', async () => {
   await server.environments.ssr.pluginContainer.buildStart({})
 
   const mod1 = await server.ssrLoadModule('virtual:test')
-  expect(mod1.default).toEqual(1)
+  expect(mod1.default).toBe(1)
   const mod2 = await server.ssrLoadModule('virtual:test')
-  expect(mod2.default).toEqual(1)
+  expect(mod2.default).toBe(1)
 
   server.moduleGraph.invalidateModule(
     server.moduleGraph.getModuleById('\0virtual:test')!,
@@ -167,7 +167,7 @@ test('virtual module invalidation nested', async () => {
   )
 
   const mod3 = await server.ssrLoadModule('virtual:test')
-  expect(mod3.default).toEqual(2)
+  expect(mod3.default).toBe(2)
 })
 
 test('can export global', async () => {

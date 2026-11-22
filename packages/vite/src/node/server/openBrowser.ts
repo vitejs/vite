@@ -139,6 +139,7 @@ function execAsync(command: string, options?: ExecOptions): Promise<string> {
   return new Promise((resolve, reject) => {
     exec(command, options, (error, stdout) => {
       if (error) {
+        // oxlint-disable-next-line typescript/prefer-promise-reject-errors -- ExecError does not extend Error but quite similar
         reject(error)
       } else {
         resolve(stdout.toString())
