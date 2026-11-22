@@ -1,19 +1,42 @@
 import { isPrimitive } from '../shared/utils'
 
+// The state below only lives while modules are evaluating: once the last
+// evaluation settles, no namespace can gain keys anymore and it is reset.
+let activeEvaluations = 0
 // namespaces of inlined modules being evaluated
-export const evaluatingExports: WeakSet<object> = new WeakSet()
+const evaluatingExports = new Set<object>()
 // namespaces doing `export *` from a namespace that may still gain keys
-const pendingStarExports = new WeakSet<object>()
+const pendingStarExports = new Set<object>()
 // source namespace -> namespaces doing `export *` from it
-const starExportDependents = new WeakMap<object, Set<object>>()
+const starExportDependents = new Map<object, Set<object>>()
+// pending namespaces whose seal waits for the evaluations to settle
+const deferredSeals = new Set<object>()
 
-/**
- * Whether the namespace may still gain keys through `export *` from a module
- * that was still evaluating in an import cycle. Such namespaces must stay
- * extensible.
- */
-export function mayGainStarExports(exports: object): boolean {
-  return pendingStarExports.has(exports)
+export function startEvaluation(exports: object): void {
+  activeEvaluations++
+  evaluatingExports.add(exports)
+}
+
+export function endEvaluation(exports: object): void {
+  evaluatingExports.delete(exports)
+  if (--activeEvaluations === 0) {
+    for (const deferred of deferredSeals) {
+      Object.seal(deferred)
+    }
+    deferredSeals.clear()
+    pendingStarExports.clear()
+    starExportDependents.clear()
+  }
+}
+
+// seal the namespace, or defer it while it may still gain keys through
+// `export *` from a module that is still evaluating in an import cycle
+export function sealExports(exports: object): void {
+  if (pendingStarExports.has(exports)) {
+    deferredSeals.add(exports)
+  } else {
+    Object.seal(exports)
+  }
 }
 
 export function exportAll(exports: any, sourceModule: any): void {

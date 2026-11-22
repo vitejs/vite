@@ -27,7 +27,7 @@ import { createDefaultImportMeta } from './createImportMeta'
 import { ESModulesEvaluator } from './esmEvaluator'
 import type { EvaluatedModuleNode } from './evaluatedModules'
 import { EvaluatedModules } from './evaluatedModules'
-import { evaluatingExports, exportAll } from './exportAll'
+import { endEvaluation, exportAll, startEvaluation } from './exportAll'
 import { createHMRHandlerForRunner } from './hmrHandler'
 import { hmrLogger, silentConsole } from './hmrLogger'
 import { enableSourceMapSupport } from './sourcemap/index'
@@ -508,11 +508,11 @@ export class ModuleRunner {
 
     this.debug?.('[module runner] executing', meta.href)
 
-    evaluatingExports.add(exports)
+    startEvaluation(exports)
     try {
       await this.evaluator.runInlinedModule(context, code, mod)
     } finally {
-      evaluatingExports.delete(exports)
+      endEvaluation(exports)
     }
 
     return exports
