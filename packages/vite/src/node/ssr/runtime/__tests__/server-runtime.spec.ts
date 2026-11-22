@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { setFlagsFromString } from 'node:v8'
 import { runInNewContext } from 'node:vm'
 import { describe, expect, vi } from 'vitest'
-import type { HMRLogger } from '../../../../module-runner'
+import type { HMRLogger, ModuleRunner } from '../../../../module-runner'
 import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
 import { isWindows, slash } from '../../../../shared/utils'
 import { createServer } from '../../../server'
@@ -296,47 +296,69 @@ describe.for([
     },
   )
 
-  it(`cyclic export * namespaces are sealed once evaluated`, async ({
-    runner,
-    fullBundle,
-    skip,
-  }) => {
-    skip(!!fullBundle.length, "rolldown's module is not sealed")
-
-    await runner.import('/fixtures/cyclic2/test10/index.js')
-    const a = await runner.import('/fixtures/cyclic2/test10/a.js')
-    const b = await runner.import('/fixtures/cyclic2/test10/b.js')
-    // not part of the cycle, evaluated after it
-    const downstream = await runner.import(
-      '/fixtures/cyclic2/test10/downstream.js',
-    )
-    expect(downstream.value).toBe(42)
-    expect(Object.isSealed(a)).toBe(true)
-    expect(Object.isSealed(b)).toBe(true)
-    expect(Object.isSealed(downstream)).toBe(true)
-  })
-
-  it(`cyclic export * does not retain re-evaluated namespaces`, async ({
-    runner,
-    fullBundle,
-    skip,
-  }) => {
-    skip(!!fullBundle.length)
-    setFlagsFromString('--expose-gc')
-    const gc: () => void = runInNewContext('gc')
-
-    await runner.import('/fixtures/cyclic2/test10/index.js')
-    const url = '/fixtures/cyclic2/test10/downstream.js'
-    const first = new WeakRef(await runner.import(url))
-    runner.evaluatedModules.invalidateModule(
-      runner.evaluatedModules.getModuleByUrl(url)!,
-    )
-    expect((await runner.import(url)).value).toBe(42)
-
+  // an unrelated import that has not settled must not delay anything
+  async function startPendingImport(
+    runner: ModuleRunner,
+    onTestFinished: (fn: () => void | Promise<void>) => void,
+  ) {
+    let resolve!: () => void
+    const promise = new Promise<void>((r) => (resolve = r))
+    ;(globalThis as any).__viteTestPending__ = promise
+    const pending = runner.import('/fixtures/cyclic2/test10/pending.js')
+    onTestFinished(async () => {
+      resolve()
+      await pending
+      delete (globalThis as any).__viteTestPending__
+    })
     await setTimeout(0)
-    gc()
-    expect(first.deref()).toBeUndefined()
-  })
+  }
+
+  it.for([false, true])(
+    `cyclic export * namespaces are sealed once evaluated (pending import: %s)`,
+    async (withPending, { runner, fullBundle, skip, onTestFinished }) => {
+      skip(!!fullBundle.length, "rolldown's module is not sealed")
+      if (withPending) await startPendingImport(runner, onTestFinished)
+
+      await runner.import('/fixtures/cyclic2/test10/index.js')
+      const a = await runner.import('/fixtures/cyclic2/test10/a.js')
+      const b = await runner.import('/fixtures/cyclic2/test10/b.js')
+      // not part of the cycle, evaluated after it
+      const downstream = await runner.import(
+        '/fixtures/cyclic2/test10/downstream.js',
+      )
+      expect(downstream.value).toBe(42)
+      expect(Object.isSealed(a)).toBe(true)
+      expect(Object.isSealed(b)).toBe(true)
+      expect(Object.isSealed(downstream)).toBe(true)
+    },
+  )
+
+  it.for([false, true])(
+    `cyclic export * does not retain re-evaluated namespaces (pending import: %s)`,
+    async (withPending, { runner, fullBundle, skip, onTestFinished }) => {
+      skip(!!fullBundle.length)
+      if (withPending) await startPendingImport(runner, onTestFinished)
+      setFlagsFromString('--expose-gc')
+      const gc: () => void = runInNewContext('gc')
+
+      const files = ['a.js', 'b.js', 'leaf.js', 'index.js', 'downstream.js']
+      const url = '/fixtures/cyclic2/test10/downstream.js'
+      await runner.import('/fixtures/cyclic2/test10/index.js')
+      const first = new WeakRef(await runner.import(url))
+      for (const file of files) {
+        const mod = runner.evaluatedModules.getModuleByUrl(
+          `/fixtures/cyclic2/test10/${file}`,
+        )
+        if (mod) runner.evaluatedModules.invalidateModule(mod)
+      }
+      await runner.import('/fixtures/cyclic2/test10/index.js')
+      expect((await runner.import(url)).value).toBe(42)
+
+      await setTimeout(0)
+      gc()
+      expect(first.deref()).toBeUndefined()
+    },
+  )
 
   it(`execution order with mixed import and re-export`, async ({
     runner,
