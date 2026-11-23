@@ -32,6 +32,29 @@ test('buildHtmlPlugin escapes HTML proxy imports', async () => {
   ])
 })
 
+test('buildHtmlPlugin does not treat a query-string-only href as an asset (#23807)', async () => {
+  await init()
+
+  const config = await resolveConfig(
+    { configFile: false, build: { modulePreload: false } },
+    'build',
+  )
+  const plugin = buildHtmlPlugin(config)
+  const environment = new PartialEnvironment('client', config)
+  const id = normalizePath(`${config.root}/index.html`)
+
+  const html = `
+    <link rel="alternate" type="text/markdown" href="?md">
+  `
+  // @ts-expect-error transform.handler should exist
+  const result = await plugin.transform.handler.call({ environment }, html, id)
+  const [imports] = parseImports(result.code)
+  // The query-string href must be left untouched and not turned into an asset
+  // import (which previously resolved `?md` to the containing directory and
+  // failed the build with EISDIR).
+  expect(imports.map((specifier) => specifier.specifier)).toStrictEqual([])
+})
+
 function createChunk(
   fileName: string,
   imports: string[],
