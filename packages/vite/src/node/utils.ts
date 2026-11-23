@@ -731,6 +731,7 @@ export async function recursiveReaddir(dir: string): Promise<string[]> {
 export let safeRealpathSync:
   | typeof windowsSafeRealPathSync
   | typeof windowsLazyRealpathSync
+  | typeof windowsNativeRealpathSync
   | typeof windowsMappedRealpathSync
   | typeof fs.realpathSync.native = isWindows
   ? windowsSafeRealPathSync
@@ -740,11 +741,30 @@ export let safeRealpathSync:
 // MIT License, Copyright (c) 2017 Larry Bahr
 const windowsNetworkMap = new Map()
 
+// `fs.realpathSync.native` returns the drive letter in its canonical
+// (uppercase) form, while `process.cwd()` / `import.meta.url` may carry the
+// drive letter as it was spelled (e.g. `c:\project`). Keep the input's drive
+// letter case so that paths derived from them stay identical.
+// https://github.com/vitejs/vite/issues/24145
+function windowsNativeRealpathSync(input: string): string {
+  const realPath = fs.realpathSync.native(input)
+  const inputDrive = input[0]
+  const realDrive = realPath[0]
+  if (
+    inputDrive !== realDrive &&
+    input[1] === ':' &&
+    realPath[1] === ':' &&
+    inputDrive.toLowerCase() === realDrive.toLowerCase()
+  ) {
+    return inputDrive + realPath.slice(1)
+  }
+  return realPath
+}
+
 function windowsMappedRealpathSync(path: string): string {
-  const realPath = fs.realpathSync.native(path)
+  const realPath = windowsNativeRealpathSync(path)
   if (!realPath.startsWith('\\\\')) {
-    // local path, `fs.realpathSync.native` resolves it the same way as
-    // `fs.realpathSync`
+    // local path, `windowsNativeRealpathSync` resolves it the same way as `fs.realpathSync`
     return realPath
   }
   for (const [network, volume] of windowsNetworkMap) {
@@ -758,10 +778,9 @@ let windowsNetUseStarted = false
 const parseNetUseRE = /^\w* +(\w:) +([^ ]+)\s/
 
 function windowsLazyRealpathSync(path: string): string {
-  const realPath = fs.realpathSync.native(path)
+  const realPath = windowsNativeRealpathSync(path)
   if (!realPath.startsWith('\\\\')) {
-    // local path, `fs.realpathSync.native` resolves it the same way as
-    // `fs.realpathSync`
+    // local path, `windowsNativeRealpathSync` resolves it the same way as `fs.realpathSync`
     return realPath
   }
   if (!windowsNetUseStarted) {
@@ -781,7 +800,7 @@ function windowsLazyRealpathSync(path: string): string {
       safeRealpathSync =
         windowsNetworkMap.size > 0
           ? windowsMappedRealpathSync
-          : fs.realpathSync.native
+          : windowsNativeRealpathSync
     })
   }
   // `fs.realpathSync` does not resolve mapped drive letters into UNC paths
