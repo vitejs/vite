@@ -35,6 +35,7 @@ import {
   removeTimestampQuery,
   resolveHostname,
   resolveServerUrls,
+  safeRealpathSync,
 } from '../utils'
 
 // Test certificate for SAN parsing (localhost, foo.localhost, *.vite.localhost)
@@ -138,6 +139,21 @@ describe('isParentDirectory', () => {
     }
   }
 })
+
+test.runIf(isWindows)(
+  'safeRealpathSync preserves Windows drive letter case',
+  () => {
+    const realPath = fs.realpathSync.native(process.execPath)
+
+    const drive = realPath[0]
+    const rest = realPath.slice(2)
+    for (const driveLetter of [drive.toLowerCase(), drive.toUpperCase()]) {
+      expect(safeRealpathSync(`${driveLetter}:\\.${rest}`)).toBe(
+        `${driveLetter}:${rest}`,
+      )
+    }
+  },
+)
 
 describe('injectQuery', () => {
   if (isWindows) {
