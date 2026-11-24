@@ -243,7 +243,7 @@ export function getPluginHookHandler<K extends keyof Plugin>(
   if (cached?.handler !== handler) {
     cached = {
       handler,
-      tagged: tagHandlerErrors(handler, plugin.name, hookName),
+      tagged: tagHandlerErrors(handler, plugin, hookName),
     }
     handlers.set(hookName, cached)
   }
@@ -252,11 +252,11 @@ export function getPluginHookHandler<K extends keyof Plugin>(
 
 function tagHandlerErrors(
   handler: (this: unknown, ...args: unknown[]) => unknown,
-  plugin: string,
+  plugin: Plugin,
   hook: string,
 ) {
   const rethrowTagged = (e: unknown): never => {
-    tagPluginError(e, plugin, hook)
+    tagPluginError(e, plugin.name, hook)
     throw e
   }
   return function (this: unknown, ...args: unknown[]) {
