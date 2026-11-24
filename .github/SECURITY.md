@@ -41,6 +41,7 @@ This section describes what Vite treats as trusted and untrusted. A report is on
 - Availability issues that affect the build process are not considered vulnerabilities.
 - Availability issues in the build output caused by the code that Vite itself injects into the build output are in scope.
 - Vulnerabilities in user-written code or plugin-generated code in the build output are not in scope.
+- Vite assumes the application controls the deployed document's base URL, including any HTML `<base href>`. Some generated asset URLs use this base as a fallback.
 
 ### Examples of Vulnerabilities (in scope)
 
