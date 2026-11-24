@@ -192,6 +192,7 @@ packageExtensionsChecksum: sha256-If0sPrN3HV7D+EgeoSZUm8CYcOJOyo0gWobIh2WtTMM=
 
 patchedDependencies:
   chokidar@3.6.0: e17269188c54412478078f7ac7877c1d5a475a2f2438328e3a7e725513ccbf1f
+  devframe@1.4.0: 7445b6dff52b624fcabd243c82135925cb96315c5f738b48097e72234eb1ae65
   dotenv-expand@13.0.0: 49330a663821151418e003e822a82a6a61d2f0f8a6e3cab00c1c94815a112889
   sirv@3.0.2: bdff24dcf974e66c415307615e28db5fdf44c1b4aba389e84b0e094350655330
 
@@ -8909,7 +8910,7 @@ snapshots:
     dependencies:
       '@modelcontextprotocol/client': 2.4.0
       '@modelcontextprotocol/server': 2.4.0
-      devframe: 1.4.0(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
+      devframe: 1.4.0(patch_hash=7445b6dff52b624fcabd243c82135925cb96315c5f738b48097e72234eb1ae65)(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
       h3: 2.0.8(crossws@0.4.17)
       pathe: 2.0.3
     transitivePeerDependencies:
@@ -8919,14 +8920,14 @@ snapshots:
   '@devframes/hub-ui@1.4.0(@devframes/hub@1.4.0)(@devframes/json-render@1.4.0)(devframe@1.4.0)':
     dependencies:
       '@devframes/hub': 1.4.0(@devframes/agentic@1.4.0)(crossws@0.4.17)(devframe@1.4.0)
-      devframe: 1.4.0(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
+      devframe: 1.4.0(patch_hash=7445b6dff52b624fcabd243c82135925cb96315c5f738b48097e72234eb1ae65)(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
     optionalDependencies:
       '@devframes/json-render': 1.4.0(@devframes/hub@1.4.0)(devframe@1.4.0)
 
   '@devframes/hub@1.4.0(@devframes/agentic@1.4.0)(crossws@0.4.17)(devframe@1.4.0)':
     dependencies:
       destr: 2.0.5
-      devframe: 1.4.0(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
+      devframe: 1.4.0(patch_hash=7445b6dff52b624fcabd243c82135925cb96315c5f738b48097e72234eb1ae65)(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
       h3: 2.0.8(crossws@0.4.17)
       pathe: 2.0.3
       tinyexec: 1.3.1
@@ -8940,12 +8941,12 @@ snapshots:
   '@devframes/json-render-ui@1.4.0(@devframes/hub@1.4.0)(devframe@1.4.0)':
     optionalDependencies:
       '@devframes/hub': 1.4.0(@devframes/agentic@1.4.0)(crossws@0.4.17)(devframe@1.4.0)
-      devframe: 1.4.0(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
+      devframe: 1.4.0(patch_hash=7445b6dff52b624fcabd243c82135925cb96315c5f738b48097e72234eb1ae65)(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
 
   '@devframes/json-render@1.4.0(@devframes/hub@1.4.0)(devframe@1.4.0)':
     dependencies:
       '@json-render/core': 0.23.2
-      devframe: 1.4.0(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
+      devframe: 1.4.0(patch_hash=7445b6dff52b624fcabd243c82135925cb96315c5f738b48097e72234eb1ae65)(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
       zod: 4.6.7
     optionalDependencies:
       '@devframes/hub': 1.4.0(@devframes/agentic@1.4.0)(crossws@0.4.17)(devframe@1.4.0)
@@ -8953,7 +8954,7 @@ snapshots:
   '@devframes/plugin-inspect@1.4.0(devframe@1.4.0)(vite@packages+vite)':
     dependencies:
       cac: 7.1.1
-      devframe: 1.4.0(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
+      devframe: 1.4.0(patch_hash=7445b6dff52b624fcabd243c82135925cb96315c5f738b48097e72234eb1ae65)(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
     optionalDependencies:
       vite: link:packages/vite
 
@@ -8962,7 +8963,7 @@ snapshots:
       '@devframes/hub': 1.4.0(@devframes/agentic@1.4.0)(crossws@0.4.17)(devframe@1.4.0)
       '@devframes/service-open': 1.4.0(devframe@1.4.0)
       cac: 7.1.1
-      devframe: 1.4.0(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
+      devframe: 1.4.0(patch_hash=7445b6dff52b624fcabd243c82135925cb96315c5f738b48097e72234eb1ae65)(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
     optionalDependencies:
       vite: link:packages/vite
 
@@ -8970,7 +8971,7 @@ snapshots:
     dependencies:
       '@devframes/vite': 1.4.0(@devframes/hub-ui@1.4.0)(@devframes/hub@1.4.0)(devframe@1.4.0)(vite@packages+vite)
       cac: 7.1.1
-      devframe: 1.4.0(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
+      devframe: 1.4.0(patch_hash=7445b6dff52b624fcabd243c82135925cb96315c5f738b48097e72234eb1ae65)(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
       zigpty: 0.2.1
     optionalDependencies:
       vite: link:packages/vite
@@ -8980,12 +8981,12 @@ snapshots:
 
   '@devframes/service-open@1.4.0(devframe@1.4.0)':
     dependencies:
-      devframe: 1.4.0(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
+      devframe: 1.4.0(patch_hash=7445b6dff52b624fcabd243c82135925cb96315c5f738b48097e72234eb1ae65)(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
       pathe: 2.0.3
 
   '@devframes/vite@1.4.0(@devframes/hub-ui@1.4.0)(@devframes/hub@1.4.0)(devframe@1.4.0)(vite@packages+vite)':
     dependencies:
-      devframe: 1.4.0(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
+      devframe: 1.4.0(patch_hash=7445b6dff52b624fcabd243c82135925cb96315c5f738b48097e72234eb1ae65)(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
       pathe: 2.0.3
     optionalDependencies:
       '@devframes/hub': 1.4.0(@devframes/agentic@1.4.0)(crossws@0.4.17)(devframe@1.4.0)
@@ -10259,7 +10260,7 @@ snapshots:
   '@vitejs/devtools-kit@0.8.3(@devframes/agentic@1.4.0)(cac@7.1.1)(crossws@0.4.17)(srvx@1.0.6)(vite@packages+vite)':
     dependencies:
       '@devframes/hub': 1.4.0(@devframes/agentic@1.4.0)(crossws@0.4.17)(devframe@1.4.0)
-      devframe: 1.4.0(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
+      devframe: 1.4.0(patch_hash=7445b6dff52b624fcabd243c82135925cb96315c5f738b48097e72234eb1ae65)(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
       local-pkg: 2.0.0
       nostics: 1.4.0
       package-manager-detector: 1.9.0
@@ -10313,7 +10314,7 @@ snapshots:
       '@devframes/plugin-terminals': 1.4.0(@devframes/hub-ui@1.4.0)(@devframes/hub@1.4.0)(devframe@1.4.0)(vite@packages+vite)
       '@vitejs/devtools-kit': 0.8.3(@devframes/agentic@1.4.0)(cac@7.1.1)(crossws@0.4.17)(srvx@1.0.6)(vite@packages+vite)
       cac: 7.1.1
-      devframe: 1.4.0(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
+      devframe: 1.4.0(patch_hash=7445b6dff52b624fcabd243c82135925cb96315c5f738b48097e72234eb1ae65)(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6)
       h3: 2.0.8(crossws@0.4.17)
       local-pkg: 2.0.0
       nostics: 1.4.0
@@ -11324,7 +11325,7 @@ snapshots:
 
   detect-libc@2.1.2: {}
 
-  devframe@1.4.0(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6):
+  devframe@1.4.0(patch_hash=7445b6dff52b624fcabd243c82135925cb96315c5f738b48097e72234eb1ae65)(@devframes/agentic@1.4.0)(cac@7.1.1)(srvx@1.0.6):
     dependencies:
       crossws: 0.4.17(srvx@1.0.6)
       h3: 2.0.8(crossws@0.4.17)
