@@ -598,7 +598,7 @@ function walk(
       } else if (node.type === 'VariableDeclarator') {
         const parentFunction = findParentScope(
           parentStack,
-          varKindStack[varKindStack.length - 1] === 'var',
+          varKindStack.at(-1) === 'var',
         )
         if (parentFunction) {
           handlePattern(node.id, parentFunction)
@@ -624,7 +624,7 @@ function walk(
   // can be captured correctly
   identifiers.forEach(([node, stack]) => {
     if (!isInScope(node.name, stack)) {
-      onIdentifier(node, stack[stack.length - 1], stack)
+      onIdentifier(node, stack.at(-1)!, stack)
     }
   })
 }
