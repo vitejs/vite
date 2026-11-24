@@ -18,7 +18,7 @@ export interface SSROptions {
   target?: SSRTarget
 
   /**
-   * Control over which dependencies are optimized during SSR and esbuild options
+   * Control over which dependencies are optimized during SSR and Rolldown options
    * During build:
    *   no external CJS dependencies are optimized by default
    * During dev:
