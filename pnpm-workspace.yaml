@@ -77,5 +77,6 @@ trustPolicy: no-downgrade
 trustPolicyExcludePrune: true
 trustPolicyExclude:
   - semver@6.3.1
+  - tsrs@7.1.0-beta.tsrs4 # https://github.com/oxc-project/tsrs/issues/945
 
 dedupePeers: true
