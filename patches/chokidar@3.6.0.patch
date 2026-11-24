@@ -21,10 +21,63 @@ index 8752893ca4986cf05103a46c438223b7ee4e1907..9185d79f6ee5194bf259dd252b8105d9
    if (!list) {
      list = [];
 diff --git a/lib/fsevents-handler.js b/lib/fsevents-handler.js
-index fe29393c179d3d6673f996ca6f95bbc83f9a0699..0a341f3d6a2f1497486a23ea99b3c6da003c026f 100644
+index fe29393c179d3d6673f996ca6f95bbc83f9a0699..06352aa3be50566f14e00b403f9d8e9aaf2b27f3 100644
 --- a/lib/fsevents-handler.js
 +++ b/lib/fsevents-handler.js
-@@ -305,7 +305,8 @@ _watchWithFsEvents(watchPath, realPath, transform, globFilter) {
+@@ -95,6 +95,16 @@ const createFSEventsInstance = (path, callback) => {
+   return {stop};
+ };
+
++const isWithinPath = (file, root) => (
++  file === root || file.startsWith(root === '/' ? root : root + sysPath.sep)
++);
++
++const tryStat = (path) => {
++  try {
++    return fs.statSync(path, {bigint: true});
++  } catch (error) {}
++};
++
+ /**
+  * Instantiates the fsevents interface or binds listeners to an existing one covering
+  * the same file tree.
+@@ -121,12 +131,31 @@ function setFSEventsListener(path, realPath, listener, rawEmitter) {
+   const resolvedPath = sysPath.resolve(path);
+   const hasSymlink = resolvedPath !== realPath;
+
++  const rootName = sysPath.basename(realPath);
++  let rootStats;
++  let alternatePath;
++
+   const filteredListener = (fullPath, flags, info) => {
+     if (hasSymlink) fullPath = fullPath.replace(realPath, resolvedPath);
+-    if (
+-      fullPath === resolvedPath ||
+-      !fullPath.indexOf(resolvedPath + sysPath.sep)
+-    ) listener(fullPath, flags, info);
++    if (!isWithinPath(fullPath, resolvedPath)) {
++      // APFS can report events under another path to the watched directory.
++      if (!alternatePath && sysPath.isAbsolute(fullPath)) {
++        for (let candidate = fullPath; candidate !== '/'; candidate = sysPath.dirname(candidate)) {
++          if (sysPath.basename(candidate) !== rootName) continue;
++
++          rootStats = rootStats || tryStat(realPath);
++          if (!rootStats) return;
++          const stats = tryStat(candidate);
++          if (stats && stats.dev === rootStats.dev && stats.ino === rootStats.ino) {
++            alternatePath = candidate;
++            break;
++          }
++        }
++      }
++      if (!alternatePath || !isWithinPath(fullPath, alternatePath)) return;
++      fullPath = resolvedPath + fullPath.slice(alternatePath.length);
++    }
++    listener(fullPath, flags, info);
+   };
+
+   // check if there is already a watcher on a parent path
+@@ -305,7 +334,8 @@ _watchWithFsEvents(watchPath, realPath, transform, globFilter) {
    if (this.fsw.closed || this.fsw._isIgnored(watchPath)) return;
    const opts = this.fsw.options;
    const watchCallback = async (fullPath, flags, info) => {
