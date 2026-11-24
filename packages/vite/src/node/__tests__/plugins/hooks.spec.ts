@@ -777,3 +777,16 @@ describe('plugin hook errors', () => {
     ).rejects.toBe('oops')
   })
 })
+
+test('runs the new hook after a plugin replaces it', async () => {
+  const plugin: Plugin = { name: 'replaces', resolveId: () => '/first' }
+  const server = await createServerWithPlugin(plugin)
+  const { pluginContainer } = server.environments.client
+  await pluginContainer.resolveId('id')
+
+  plugin.resolveId = () => '/second'
+
+  expect(await pluginContainer.resolveId('id')).toMatchObject({
+    id: '/second',
+  })
+})
