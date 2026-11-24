@@ -749,7 +749,7 @@ describe('plugin hook errors', () => {
       await expect(run(plugin)).rejects.toMatchObject({
         plugin: 'throws',
         hook,
-        message: expect.stringContaining('[throws] missing apiKey'),
+        message: 'missing apiKey',
       })
     })
   }
@@ -776,7 +776,7 @@ describe('plugin hook errors', () => {
         type: 'error',
         err: {
           plugin: 'throws',
-          message: expect.stringContaining('[throws] missing apiKey'),
+          message: 'missing apiKey',
         },
       })
     })
