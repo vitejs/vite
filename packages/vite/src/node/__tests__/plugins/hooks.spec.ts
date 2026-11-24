@@ -776,6 +776,26 @@ describe('plugin hook errors', () => {
       }),
     ).rejects.toBe('oops')
   })
+
+  test('error has the new plugin name after a rename', async () => {
+    let fail = false
+    const plugin: Plugin = {
+      name: 'before',
+      resolveId() {
+        if (fail) throw new Error('missing apiKey')
+      },
+    }
+    const server = await createServerWithPlugin(plugin)
+    const { pluginContainer } = server.environments.client
+    await pluginContainer.resolveId('id')
+
+    plugin.name = 'after'
+    fail = true
+
+    await expect(pluginContainer.resolveId('id')).rejects.toMatchObject({
+      plugin: 'after',
+    })
+  })
 })
 
 test('runs the new hook after a plugin replaces it', async () => {
