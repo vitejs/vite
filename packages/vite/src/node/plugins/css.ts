@@ -1154,7 +1154,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // map each pure css chunk (rendered chunk) to it's corresponding bundle
         // chunk. we check that by `preliminaryFileName` as they have different
         // `filename`s (rendered chunk has the !~{XXX}~ placeholder)
-        const prelimaryNameToChunkMap = Object.fromEntries(
+        const preliminaryNameToChunkMap = Object.fromEntries(
           Object.values(bundle)
             .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
             .map((chunk) => [chunk.preliminaryFileName, chunk.fileName]),
@@ -1165,7 +1165,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // but they are still in `pureCssChunks`.
         // So we need to filter the names and only use those who are defined
         const pureCssChunkNames = [...pureCssChunks]
-          .map((pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName])
+          .map(
+            (pureCssChunk) => preliminaryNameToChunkMap[pureCssChunk.fileName],
+          )
           .filter(Boolean)
         const pureCssChunkNameSet = new Set(pureCssChunkNames)
 

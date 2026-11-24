@@ -39,7 +39,7 @@
     // pinned
     "slash3",
     "slash5",
-    "vue34",
+    "vue35",
 
     // breaking changes
     "kill-port", // `kill-port:^2.0.0 has perf issues (#8392)
