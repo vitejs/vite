@@ -851,35 +851,15 @@ describe('experimental.cache for CSS modules', () => {
       'base.module.css': '.base { margin: 1px }',
     }
 
-    // postcss-modules does not pass `from` to `postcss.parse`. Vite prints a
-    // warning for it, so the module gets no saved result.
-    test('with PostCSS', async () => {
-      const root = createProject(files)
-      const first = await buildProject(root)
-      expect(first.css).toContain('margin:1px')
-      expect(first.logs).toStrictEqual([
-        expect.stringContaining('did not pass the `from` option'),
-      ])
-
-      const second = await buildProject(root)
-      expect(second.transformed).toStrictEqual(['a.module.css'])
-      expect(second.logs).toStrictEqual(first.logs)
-      expect(second.files).toStrictEqual(first.files)
-
-      fs.writeFileSync(`${root}/base.module.css`, '.base { margin: 2px }')
-      const third = await buildProject(root)
-      expect(third.transformed).toStrictEqual(['a.module.css'])
-      expect(third.css).toContain('margin:2px')
-      const withoutCache = await buildProject(root, false)
-      expect(third.files).toStrictEqual(withoutCache.files)
-      expect(third.logs).toStrictEqual(withoutCache.logs)
-    })
-
-    test('with lightningcss', async () => {
-      const config: InlineConfig = { css: { transformer: 'lightningcss' } }
+    test.each([
+      ['PostCSS', {}],
+      ['lightningcss', { css: { transformer: 'lightningcss' } }],
+    ] satisfies [string, InlineConfig][])('with %s', async (_, config) => {
       const root = createProject(files)
       const first = await buildProject(root, true, config)
       expect(first.css).toContain('margin:1px')
+      // A warning would give the module no saved result.
+      expect(first.logs).toStrictEqual([])
 
       const second = await buildProject(root, true, config)
       expect(second.transformed).toStrictEqual([])
