@@ -548,6 +548,10 @@ const config = defineConfig({
         customIcon: {
           firebase: 'vscode-icons:file-type-firebase',
           '.gitlab-ci.yml': 'vscode-icons:file-type-gitlab',
+          vlt: {
+            dark: 'vscode-icons:file-type-vlt',
+            light: 'vscode-icons:file-type-light-vlt',
+          },
         },
       }),
       llmstxt({

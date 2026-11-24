@@ -19,6 +19,7 @@ const installTabs = [
   { label: 'pnpm', code: 'pnpm create vite', prefix: '$ ' },
   { label: 'Bun', code: 'bun create vite', prefix: '$ ' },
   { label: 'Deno', code: 'deno init --npm vite', prefix: '$ ' },
+  { label: 'vlt', code: 'vlt create vite', prefix: '$ ' },
 ]
 </script>
 

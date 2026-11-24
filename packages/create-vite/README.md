@@ -35,6 +35,12 @@ With Deno:
 deno init --npm vite
 ```
 
+With vlt:
+
+```bash
+vlt create vite
+```
+
 Then follow the prompts!
 
 You can also directly specify the project name and the template you want to use via additional command line options. For example, to scaffold a Vite + Vue project, run:
@@ -54,6 +60,9 @@ bun create vite my-vue-app --template vue
 
 # Deno
 deno init --npm vite my-vue-app --template vue
+
+# vlt
+vlt create vite my-vue-app -- --template vue
 ```
 
 Currently supported template presets include:

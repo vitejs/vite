@@ -126,6 +126,10 @@ $ bun add -D @rolldown/plugin-babel @babel/plugin-proposal-decorators
 $ deno add -D npm:@rolldown/plugin-babel npm:@babel/plugin-proposal-decorators
 ```
 
+```bash [vlt]
+$ vlt install -D @rolldown/plugin-babel @babel/plugin-proposal-decorators
+```
+
 :::
 
 ```ts [vite.config.ts]
@@ -173,6 +177,10 @@ $ bun add -D @rollup/plugin-swc @swc/core
 
 ```bash [Deno]
 $ deno add -D npm:@rollup/plugin-swc npm:@swc/core
+```
+
+```bash [vlt]
+$ vlt install -D @rollup/plugin-swc @swc/core
 ```
 
 :::
