@@ -7,6 +7,7 @@ import { type Logger, createLogger } from '../../logger'
 import type { Plugin } from '../../plugin'
 import { preview } from '../../preview'
 import { createServer } from '../../server'
+import { DevEnvironment } from '../../server/environment'
 
 const resolveConfigWithPlugin = (
   plugin: Plugin,
@@ -103,6 +104,11 @@ const buildAppWithPlugin = async (plugin: Plugin) => {
 const transformIndexHtmlWithPlugin = async (plugin: Plugin) => {
   const server = await createServerWithPlugin(plugin)
   await server.transformIndexHtml('/', '<html></html>')
+}
+
+const transformRequestWithPlugin = async (plugin: Plugin) => {
+  const server = await createServerWithPlugin(plugin)
+  await server.environments.client.transformRequest(ENTRY_ID)
 }
 
 describe('supports plugin context', () => {
@@ -659,6 +665,42 @@ describe('createServer startup failure', () => {
       expect(closeServer).toHaveBeenCalledOnce()
     })
   }
+
+  test('closes the environment whose init failed', async () => {
+    const error = new Error('options failed')
+    const closeTransport = vi.fn()
+
+    await expect(
+      createServerWithPlugin({
+        name: 'test',
+        config() {
+          return {
+            environments: {
+              custom: {
+                dev: {
+                  createEnvironment(name, config) {
+                    return new DevEnvironment(name, config, {
+                      hot: false,
+                      transport: {
+                        send: vi.fn(),
+                        on: vi.fn(),
+                        off: vi.fn(),
+                        close: closeTransport,
+                      },
+                    })
+                  },
+                },
+              },
+            },
+          }
+        },
+        options() {
+          throw error
+        },
+      }),
+    ).rejects.toBe(error)
+    expect(closeTransport).toHaveBeenCalledOnce()
+  })
 })
 
 describe('closePreviewServer hook', () => {
@@ -700,6 +742,9 @@ describe('plugin hook errors', () => {
     ['buildStart', createServerWithPlugin],
     ['buildApp', buildAppWithPlugin],
     ['transformIndexHtml', transformIndexHtmlWithPlugin],
+    ['resolveId', transformRequestWithPlugin],
+    ['load', transformRequestWithPlugin],
+    ['transform', transformRequestWithPlugin],
   ] as const) {
     test(`${hook} hook error has the plugin and hook`, async () => {
       const plugin = {
@@ -712,7 +757,7 @@ describe('plugin hook errors', () => {
       await expect(run(plugin)).rejects.toMatchObject({
         plugin: 'throws',
         hook,
-        message: expect.stringContaining('[throws] missing apiKey'),
+        message: 'missing apiKey',
       })
     })
   }
@@ -739,7 +784,7 @@ describe('plugin hook errors', () => {
         type: 'error',
         err: {
           plugin: 'throws',
-          message: expect.stringContaining('[throws] missing apiKey'),
+          message: 'missing apiKey',
         },
       })
     })
@@ -767,5 +812,38 @@ describe('plugin hook errors', () => {
         },
       }),
     ).rejects.toBe('oops')
+  })
+
+  test('error has the new plugin name after a rename', async () => {
+    let fail = false
+    const plugin: Plugin = {
+      name: 'before',
+      resolveId() {
+        if (fail) throw new Error('missing apiKey')
+      },
+    }
+    const server = await createServerWithPlugin(plugin)
+    const { pluginContainer } = server.environments.client
+    await pluginContainer.resolveId('id')
+
+    plugin.name = 'after'
+    fail = true
+
+    await expect(pluginContainer.resolveId('id')).rejects.toMatchObject({
+      plugin: 'after',
+    })
+  })
+})
+
+test('runs the new hook after a plugin replaces it', async () => {
+  const plugin: Plugin = { name: 'replaces', resolveId: () => '/first' }
+  const server = await createServerWithPlugin(plugin)
+  const { pluginContainer } = server.environments.client
+  await pluginContainer.resolveId('id')
+
+  plugin.resolveId = () => '/second'
+
+  expect(await pluginContainer.resolveId('id')).toMatchObject({
+    id: '/second',
   })
 })
