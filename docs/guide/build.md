@@ -50,6 +50,8 @@ If you don't know the base path in advance, you may set a relative base path wit
 
 :::
 
+In browser builds using formats such as IIFE or UMD, Vite can use `document.baseURI` as a fallback base when resolving relative asset URLs. An HTML `<base href>` can therefore affect where those URLs resolve. Make sure to keep the document base under your application's control.
+
 ## Customizing the Build
 
 The build can be customized via various [build config options](/config/build-options.md). Specifically, you can directly adjust the underlying [Rolldown options](https://rolldown.rs/reference/) via `build.rolldownOptions`:

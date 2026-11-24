@@ -22,6 +22,7 @@ patchedDependencies:
   "sirv@3.0.2": "patches/sirv@3.0.2.patch"
   "chokidar@3.6.0": "patches/chokidar@3.6.0.patch"
   "dotenv-expand@13.0.0": "patches/dotenv-expand@13.0.0.patch"
+  "devframe@1.4.0": "patches/devframe@1.4.0.patch"
 peerDependencyRules:
   allowedVersions:
     vite: "*"
@@ -76,5 +77,6 @@ trustPolicy: no-downgrade
 trustPolicyExcludePrune: true
 trustPolicyExclude:
   - semver@6.3.1
+  - tsrs@7.1.0-beta.tsrs4 # https://github.com/oxc-project/tsrs/issues/945
 
 dedupePeers: true
