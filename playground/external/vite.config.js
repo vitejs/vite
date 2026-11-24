@@ -3,7 +3,7 @@ import path from 'node:path'
 import { defineConfig } from 'vite'
 
 const npmDirectServeConfig = {
-  '/vue@3.4.38.js': 'vue34/dist/vue.runtime.esm-browser.js',
+  '/vue@3.5.42.js': 'vue35/dist/vue.runtime.esm-browser.js',
   '/slash@5.js': 'slash5/index.js',
 }
 /** @type {import('vite').Connect.NextHandleFunction} */
