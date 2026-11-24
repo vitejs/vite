@@ -226,12 +226,14 @@ export function getPluginHookHandler<K extends keyof Plugin>(
   plugin: Plugin,
   hookName: K,
 ): NonNullable<HookHandler<Plugin[K]>> {
-  const handler: ((this: unknown, ...args: unknown[]) => unknown) | undefined =
-    getHookHandler(plugin[hookName])
-  if (!handler) return handler as never
+  const handler = getHookHandler(plugin[hookName])
+  if (!handler) return handler
 
   let handlers = taggedHandlers.get(plugin)
-  if (!handlers) taggedHandlers.set(plugin, (handlers = new Map()))
+  if (!handlers) {
+    handlers = new Map()
+    taggedHandlers.set(plugin, handlers)
+  }
   let tagged = handlers.get(hookName)
   if (!tagged) {
     tagged = tagHandlerErrors(handler, plugin.name, hookName)
