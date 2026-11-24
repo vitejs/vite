@@ -65,6 +65,14 @@ allowBuilds:
   unrs-resolver: true
   workerd: true
 
+auditConfig:
+  ignoreGhsas:
+    # @vue/server-renderer <3.5.42 XSS (GHSA-g2v6-rqmx-r4w6). The only vulnerable
+    # instance is the `vue34` fixture in playground/external, intentionally pinned
+    # to vue ~3.4.38 to test CDN-style imports of older Vue versions. Only the
+    # browser runtime build is served in tests; @vue/server-renderer is never used.
+    - GHSA-g2v6-rqmx-r4w6
+
 minimumReleaseAgeStrict: true
 minimumReleaseAgeExcludePrune: true
 minimumReleaseAgeExclude:
