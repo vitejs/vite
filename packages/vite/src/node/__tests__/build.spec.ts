@@ -569,6 +569,73 @@ describe('build', () => {
     }
   })
 
+  describe('shared CSS and inline common chunks', () => {
+    async function buildProject(emitAssets: boolean) {
+      const root = await fsp.realpath(
+        await fsp.mkdtemp(join(tmpdir(), 'vite-css-chunk-size-')),
+      )
+      onTestFinished(() => fsp.rm(root, { recursive: true, force: true }))
+
+      const files = {
+        'a.js': "import './shared.css'; import './a.css'; console.log('a')",
+        'b.js': "import './shared.css'; import './b.css'; console.log('b')",
+        'a.css': '.local-a { color: red; }\n',
+        'b.css': '.local-b { color: blue; }\n',
+        // 133 UTF-16 code units and 333 UTF-8 bytes straddle the limit.
+        'shared.css': `.shared::before { content: "${'界'.repeat(100)}"; }\n`,
+      }
+      await Promise.all(
+        Object.entries(files).map(([name, source]) =>
+          fsp.writeFile(join(root, name), source),
+        ),
+      )
+
+      return (await build({
+        root,
+        configFile: false,
+        logLevel: 'silent',
+        build: {
+          cssCodeSplit: true,
+          emitAssets,
+          minify: false,
+          write: false,
+          rolldownOptions: {
+            input: { a: join(root, 'a.js'), b: join(root, 'b.js') },
+            output: {
+              codeSplitting: {
+                experimentalInlineCommonChunks: { maxSize: 256 },
+              },
+            },
+          },
+        },
+      })) as RolldownOutput
+    }
+
+    test('keeps a large shared stylesheet in a single asset', async () => {
+      const { output } = await buildProject(true)
+      const sharedAssets = output.filter(
+        (item): item is OutputAsset =>
+          item.type === 'asset' &&
+          item.fileName.endsWith('.css') &&
+          String(item.source).includes('.shared::before'),
+      )
+      expect(sharedAssets).toHaveLength(1)
+      expect(sharedAssets[0].source).not.toContain('.local-')
+    })
+
+    test('places the shared stylesheet module in both entry chunks when emitAssets is false', async () => {
+      const { output } = await buildProject(false)
+      expect(
+        output.filter(
+          (item) =>
+            item.type === 'chunk' &&
+            item.isEntry &&
+            item.moduleIds.some((id) => basename(id) === 'shared.css'),
+        ),
+      ).toHaveLength(2)
+    })
+  })
+
   test('file hash should change when pure css chunk changes', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({
