@@ -80,7 +80,6 @@ import type { Plugin } from '../plugin'
 import {
   createPluginHookUtils,
   getCachedFilterForPlugin,
-  getHookHandler,
   getPluginHookHandler,
 } from '../plugins'
 import {
@@ -436,7 +435,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       }
 
       const pluginResolveStart = debugPluginResolve ? performance.now() : 0
-      const handler = getHookHandler(plugin.resolveId)
+      const handler = getPluginHookHandler(plugin, 'resolveId')
       const result = await this.handleHookPromise(
         handler.call(ctx as any, rawId, importer, normalizedOptions),
       )
@@ -523,7 +522,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
         })
       }
 
-      const handler = getHookHandler(plugin.load)
+      const handler = getPluginHookHandler(plugin, 'load')
       const result = await this.handleHookPromise(
         handler.call(ctx as any, id, options),
       )
@@ -597,7 +596,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       ctx._updateActiveInfo(plugin, id, code)
       const start = debugPluginTransform ? performance.now() : 0
       let result: TransformResult | string | undefined
-      const handler = getHookHandler(plugin.transform)
+      const handler = getPluginHookHandler(plugin, 'transform')
       try {
         result = await this.handleHookPromise(
           handler.call(ctx as any, code, id, optionsWithSSR),
