@@ -921,11 +921,11 @@ function setupEslint(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=eslint-plugin-react-hooks
   const eslintPluginReactHooksVersion = '7.1.1'
   // renovate: datasource=npm depName=eslint-plugin-react-refresh
-  const eslintPluginReactRefreshVersion = '0.5.7'
+  const eslintPluginReactRefreshVersion = '0.5.8'
   // renovate: datasource=npm depName=globals
   const globalsVersion = '17.14.0'
   // renovate: datasource=npm depName=typescript-eslint
-  const typescriptEslintVersion = '8.72.2'
+  const typescriptEslintVersion = '8.73.0'
 
   const eslintConfigForTS = /* js */ `import js from '@eslint/js'
 import globals from 'globals'
@@ -1110,11 +1110,11 @@ function updateReactCompilerReadme(root: string, newBody: string) {
 
 function setupDevTools(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@vitejs/devtools
-  const devtoolsVersion = '0.8.2'
+  const devtoolsVersion = '0.8.3'
   // renovate: datasource=npm depName=@vitejs/devtools-vite
-  const devtoolsViteVersion = '0.8.2'
+  const devtoolsViteVersion = '0.8.3'
   // renovate: datasource=npm depName=@vitejs/devtools-rolldown
-  const devtoolsRolldownVersion = '0.8.2'
+  const devtoolsRolldownVersion = '0.8.3'
 
   const option = `{
     // Remove this \`apply\` property to enable devtools for build as well

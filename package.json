@@ -56,9 +56,9 @@
     "@vitejs/release-scripts": "^1.10.0",
     "eslint-plugin-n": "^18.5.0",
     "eslint-plugin-regexp": "^3.3.3",
-    "lint-staged": "^17.6.0",
-    "oxfmt": "^0.78.0",
-    "oxlint": "^1.93.0",
+    "lint-staged": "^17.6.2",
+    "oxfmt": "^0.79.0",
+    "oxlint": "^1.94.0",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.65.1",
     "rolldown": "~1.3.2",
@@ -68,7 +68,7 @@
     "tsx": "^4.23.15",
     "typescript": "~7.0.2",
     "vite": "workspace:*",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
@@ -87,7 +87,7 @@
       "oxlint --fix"
     ]
   },
-  "packageManager": "pnpm@12.21.0",
+  "packageManager": "pnpm@12.23.0",
   "stackblitz": {
     "startCommand": "pnpm --filter='./packages/vite' run dev"
   }
