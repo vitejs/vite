@@ -81,6 +81,10 @@ export class DevEnvironment extends BaseEnvironment {
    * @internal
    */
   _pluginContainer: EnvironmentPluginContainer<DevEnvironment> | undefined
+  /**
+   * @internal
+   */
+  _initPromise: Promise<void> | undefined
 
   /**
    * @internal
@@ -220,15 +224,24 @@ export class DevEnvironment extends BaseEnvironment {
      */
     previousInstance?: DevEnvironment
   }): Promise<void> {
-    if (this._initiated) {
+    if (this._initiated || this._closing) {
       return
     }
     this._initiated = true
-    this._pluginContainer = await createEnvironmentPluginContainer(
+    this._initPromise = createEnvironmentPluginContainer(
       this,
       this.config.plugins,
       options?.watcher,
+    ).then(
+      (pluginContainer) => {
+        this._pluginContainer = pluginContainer
+      },
+      (error) => {
+        this._initiated = false
+        throw error
+      },
     )
+    await this._initPromise
   }
 
   /** @internal */
@@ -390,6 +403,10 @@ export class DevEnvironment extends BaseEnvironment {
     this._closing = true
 
     this._crawlEndFinder.cancel()
+    // wait for an in-flight init to settle so the plugin container it creates
+    // is closed below instead of leaking. A rejected init already propagated
+    // to its caller.
+    await this._initPromise?.catch(() => {})
     await Promise.allSettled([
       this.bundledDev
         ? this.bundledDev.close()
