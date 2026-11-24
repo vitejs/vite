@@ -365,7 +365,7 @@ async function ssrTransformScript(
         if (!declaredConst.has(id.name)) {
           declaredConst.add(id.name)
           // locate the top-most node containing the class declaration
-          const topNode = parentStack[parentStack.length - 2]
+          const topNode = parentStack[1]
           s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
         }
       } else if (parent.type === 'CallExpression') {
@@ -545,12 +545,12 @@ function walk(
 
       // track parent stack
       if (parent && !isSkippedParent(node, parent)) {
-        parentStack.unshift(parent)
+        parentStack.push(parent)
       }
 
       // track variable declaration kind stack used by VariableDeclarator
       if (node.type === 'VariableDeclaration') {
-        varKindStack.unshift(node.kind)
+        varKindStack.push(node.kind)
       }
 
       if (node.type === 'MetaProperty' && node.meta.name === 'import') {
@@ -598,7 +598,7 @@ function walk(
       } else if (node.type === 'VariableDeclarator') {
         const parentFunction = findParentScope(
           parentStack,
-          varKindStack[0] === 'var',
+          varKindStack[varKindStack.length - 1] === 'var',
         )
         if (parentFunction) {
           handlePattern(node.id, parentFunction)
@@ -611,11 +611,11 @@ function walk(
     leave(node: ESTree.Node, parent: ESTree.Node | null) {
       // untrack parent stack from above
       if (parent && !isSkippedParent(node, parent)) {
-        parentStack.shift()
+        parentStack.pop()
       }
 
       if (node.type === 'VariableDeclaration') {
-        varKindStack.shift()
+        varKindStack.pop()
       }
     },
   })
@@ -623,7 +623,9 @@ function walk(
   // emit the identifier events in BFS so the hoisted declarations
   // can be captured correctly
   identifiers.forEach(([node, stack]) => {
-    if (!isInScope(node.name, stack)) onIdentifier(node, stack[0], stack)
+    if (!isInScope(node.name, stack)) {
+      onIdentifier(node, stack[stack.length - 1], stack)
+    }
   })
 }
 
@@ -776,7 +778,7 @@ function findParentScope(
   parentStack: ESTree.Node[],
   isVar = false,
 ): ESTree.Node | undefined {
-  return parentStack.find(isVar ? isFunction : isBlock)
+  return parentStack.findLast(isVar ? isFunction : isBlock)
 }
 
 function isInDestructuringAssignment(
