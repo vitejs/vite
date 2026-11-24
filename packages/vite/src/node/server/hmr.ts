@@ -715,6 +715,11 @@ export function updateModules(
       continue
     }
 
+    if (boundaries.length === 0 && isOnlyWithinCircularImports(mod)) {
+      needFullReload = 'circular imports without HMR boundary'
+      continue
+    }
+
     // If import.meta.hot.invalidate was called already on that module for the same update,
     // it means any importer of that module can't hot update. We should fallback to full reload.
     if (
@@ -893,6 +898,34 @@ function propagateUpdate(
     }
   }
   return false
+}
+
+/**
+ * Check if every importer chain of `node` ends in an import loop without
+ * reaching an HMR boundary. A module that is not imported from JS (e.g. one
+ * loaded by a `<script>` in HTML) has importers when it's part of an import
+ * loop, so `propagateUpdate` cannot see it as a dead end.
+ */
+function isOnlyWithinCircularImports(node: EnvironmentModuleNode): boolean {
+  const nodes = new Set([node])
+  for (const current of nodes) {
+    if (
+      // not loaded in the browser yet (#7561)
+      (current.id && current.isSelfAccepting === undefined) ||
+      current.isSelfAccepting ||
+      current.acceptedHmrExports ||
+      current.importers.size === 0
+    ) {
+      return false
+    }
+    for (const importer of current.importers) {
+      if (importer.acceptedHmrDeps.has(current)) {
+        return false
+      }
+      nodes.add(importer)
+    }
+  }
+  return true
 }
 
 /**
