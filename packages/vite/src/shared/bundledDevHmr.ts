@@ -332,7 +332,7 @@ export class BundledDevHMRClient extends HMRClient {
 
   /**
    * Pulls the missed updates and applies them, with the changes that a
-   * catch-up outside an update brought (a lazy chunk, for example). A push can
+   * catch-up outside an update brought (a lazy load, for example). A push can
    * come before the page ran its output, and the output then runs the code from
    * before the push, so the client also calls this after the output ran.
    * Resolves when the catch-up was applied or failed.

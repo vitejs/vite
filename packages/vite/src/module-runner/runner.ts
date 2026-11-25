@@ -67,12 +67,27 @@ export class ModuleRunner {
   // has its own compat runner, and a global would collide.
   private rolldownDevRuntime?: DevRuntime
   /**
-   * The runtime that asked for each patch or lazy chunk that is still loading.
+   * The runtime that asked for each payload that is still loading.
    * A full reload can replace the runtime while a request runs. Its payload
    * must run against the runtime that asked for it, or a Reload answer to an
    * old request would mark the new runtime.
    */
   private payloadRuntimes = new Map<string, DevRuntime>()
+  /**
+   * For each payload whose sourcemap is kept, the factories it installed. The
+   * map is kept while one of them is still installed, so stack traces of the
+   * code it brought stay mapped.
+   */
+  private payloadFactories = new Map<
+    string,
+    {
+      runtime: DevRuntime
+      moduleId: string
+      factories: [id: string, factory: unknown][]
+    }
+  >()
+  /** The module id of each payload URL whose sourcemap `cachedModule` kept */
+  private payloadModuleIds = new Map<string, string>()
 
   private closed = false
 
@@ -179,6 +194,8 @@ export class ModuleRunner {
    */
   public clearCache(): void {
     this.evaluatedModules.clear()
+    this.payloadFactories.clear()
+    this.payloadModuleIds.clear()
     this.hmrClient?.clear()
   }
 
@@ -188,11 +205,44 @@ export class ModuleRunner {
     url: string,
   ): Promise<unknown> {
     this.payloadRuntimes.set(url, runtime)
+    let installed: string[] = []
     try {
-      return await this.import(url)
+      const exports = await this.import(url)
+      installed = exports?.__rolldown_payload__?.ids ?? []
+      return exports
     } finally {
       if (this.payloadRuntimes.get(url) === runtime) {
         this.payloadRuntimes.delete(url)
+      }
+      const moduleId = this.payloadModuleIds.get(url)
+      if (moduleId !== undefined) {
+        this.payloadModuleIds.delete(url)
+        this.payloadFactories.set(url, {
+          runtime,
+          moduleId,
+          factories: installed.map((id) => [id, runtime.factories.get(id)]),
+        })
+      }
+      this.releasePayloadMaps()
+    }
+  }
+
+  /**
+   * Drops the kept sourcemap of each payload none of whose factories is
+   * installed any more: a newer payload replaced them, or an update dropped
+   * them.
+   */
+  private releasePayloadMaps(): void {
+    for (const [
+      url,
+      { runtime, moduleId, factories },
+    ] of this.payloadFactories) {
+      const inUse =
+        runtime === this.rolldownDevRuntime &&
+        factories.some(([id, factory]) => runtime.factories.get(id) === factory)
+      if (!inUse) {
+        this.payloadFactories.delete(url)
+        this.evaluatedModules.releaseSourceMap(moduleId)
       }
     }
   }
@@ -200,6 +250,8 @@ export class ModuleRunner {
   /** @internal */
   public async _resetBundledDevRuntime(): Promise<void> {
     this.evaluatedModules.clear()
+    this.payloadFactories.clear()
+    this.payloadModuleIds.clear()
     this.moduleHotContexts.clear()
 
     const oldClientId = this.rolldownDevRuntime!.clientId
@@ -444,13 +496,11 @@ export class ModuleRunner {
       )
     }
 
-    // Do not keep lazy chunks and HMR patches in memory. A lazy chunk keeps its
-    // sourcemap under its stable proxy id. Each patch has a unique id, so a kept
-    // patch map would never be replaced or dropped.
-    if (module.url.startsWith('/@vite/lazy?')) {
+    // Do not keep payloads in memory. Each payload has a unique id, so its
+    // sourcemap is kept only until `releasePayloadMaps` drops it.
+    if (module.url.startsWith(`/${BUNDLED_DEV_HMR_PATCH_FILENAME}?`)) {
       this.evaluatedModules.removeModule(module, { retainSourceMap: true })
-    } else if (module.url.startsWith(`/${BUNDLED_DEV_HMR_PATCH_FILENAME}?`)) {
-      this.evaluatedModules.removeModule(module)
+      this.payloadModuleIds.set(module.url, module.id)
     }
 
     return module
@@ -544,8 +594,6 @@ export class ModuleRunner {
         }),
       [ssrImportMetaKey]: meta,
       [ssrRolldownRuntimeKey]:
-        // `mod.url` is the first URL of the module, so a later lazy request
-        // for the same module has its own URL only in the fetch result
         this.payloadRuntimes.get(fetchResult.url) ?? this.rolldownDevRuntime,
     }
 
@@ -572,13 +620,6 @@ export class ModuleRunner {
       // Rolldown's runtime uses `import` that will not be rewritten by the module runner transform
       override importPatch(url: string): Promise<unknown> {
         return this.runner._importPayload(this, url)
-      }
-
-      override loadLazyChunk(proxyModuleId: string): Promise<unknown> {
-        return this.runner._importPayload(
-          this,
-          this.lazyUrl(proxyModuleId, this.encodeHave(new Set())),
-        )
       }
 
       override hooks: DevRuntime['hooks'] = {

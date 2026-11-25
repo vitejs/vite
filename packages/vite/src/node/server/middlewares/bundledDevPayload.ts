@@ -87,11 +87,11 @@ export class HaveQueryStore {
 }
 
 /**
- * The sourcemaps of the patches or of the lazy chunks served lately. A payload
+ * The sourcemaps of the update or lazy-load payloads served lately. A payload
  * links its map instead of inlining it, so the browser downloads a map only
  * when devtools asks for it. The least recently used maps are dropped first
- * when the store is full. Patches and lazy chunks have one store each, so many
- * patches do not drop the maps of route code that still runs.
+ * when the store is full. Updates and lazy loads have one store each, so many
+ * updates do not drop the maps of route code that still runs.
  *
  * Tabs in the same state get the same payload, so a map that is already stored
  * keeps its id, and N tabs cost one entry.
@@ -103,7 +103,7 @@ export class PayloadMapStore {
   private nextId = 0
 
   constructor(
-    /** `p` for patches and `l` for lazy chunks: the id starts with it */
+    /** `p` for updates and `l` for lazy loads: the id starts with it */
     private prefix: 'p' | 'l',
     private maxEntries: number = 256,
     private maxTotalLength: number = 64 * 1024 * 1024,
@@ -264,22 +264,31 @@ export function bundledDevPatchMiddleware(
     if (!req.url?.startsWith(patchUrlPrefix)) {
       return next()
     }
-    let payload: BundledDevPayload
+    let result: { payload: BundledDevPayload; lazy: boolean }
     try {
-      payload = await bundledDev.renderPatch(
+      result = await bundledDev.renderPatch(
         req.url.slice(patchUrlPrefix.length),
       )
     } catch (e) {
-      server.config.logger.error(`Failed to render the HMR patch: ${e}`, {
+      server.config.logger.error(`Failed to render the HMR payload: ${e}`, {
         error: e,
       })
-      return next(new Error(`Failed to render the HMR patch`))
+      // No error overlay: a lazy route that does not compile only rejects
+      // its `import()`, and a later `import()` asks again.
+      res.statusCode = 500
+      res.end()
+      return
     }
-    sendPayload(server, res, payload, bundledDev.patchMaps)
+    sendPayload(
+      server,
+      res,
+      result.payload,
+      result.lazy ? bundledDev.lazyMaps : bundledDev.patchMaps,
+    )
   }
 }
 
-export function sendPayload(
+function sendPayload(
   server: ViteDevServer,
   res: ServerResponse,
   payload: BundledDevPayload,

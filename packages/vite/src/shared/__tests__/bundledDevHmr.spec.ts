@@ -516,9 +516,23 @@ describe('BundledDevHMRClient', () => {
     ])
   })
 
-  test('applies the changes of a catch-up that came with a lazy chunk', async () => {
+  test('applies the changes of a catch-up that came with a lazy load', async () => {
     const t = setup()
-    t.runtime.loadLazyChunk = async () => {
+    // `main` has an `import()` of `route`, so `route` has a number
+    t.runtime.registerGraph({
+      ids: ['route'],
+      localCount: 0,
+      edges: [],
+      nums: [2],
+    })
+    t.setRespond((request) => {
+      if (!request.has('l')) {
+        expect(request.get('g')).toBe('1')
+        t.shipDep(1, 1)
+        return
+      }
+      // `l` is {2} (route)
+      expect(request.get('l')).toBe('bBA')
       // `dep` changed at gen 1, and its push did not reach this page yet
       const scope = t.payload(1)
       scope.catchUp([{ gen: 1, changedIds: ['dep'], staleIds: ['dep'] }])
@@ -531,16 +545,12 @@ describe('BundledDevHMRClient', () => {
       scope.registerFactory('route', (id) =>
         t.runtime.registerModule(id, { exports: {} }),
       )
-    }
-    t.setRespond((request) => {
-      expect(request.get('g')).toBe('1')
-      t.shipDep(1, 1)
     })
 
-    await t.runtime.requestLazy('route', 'route?lazy')
+    await t.runtime.requestLazy('route')
     await t.settle()
 
-    expect(t.requests).toHaveLength(1)
+    expect(t.requests).toHaveLength(2)
     expect(t.accepted).toStrictEqual([{ value: 1 }])
     expect(t.runtime.appliedGen).toBe(1)
     expect(t.reloadReasons()).toStrictEqual([])

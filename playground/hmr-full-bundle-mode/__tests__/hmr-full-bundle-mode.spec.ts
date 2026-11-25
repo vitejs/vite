@@ -381,7 +381,12 @@ if (isBuild) {
   })
 
   test('lazy bundling', async () => {
-    const responsePromise = page.waitForResponse(/\/@vite\/lazy\?/)
+    const responsePromise = page.waitForResponse((res) => {
+      const url = new URL(res.url())
+      return (
+        url.pathname === '/__rolldown_hmr_patch.js' && url.searchParams.has('l')
+      )
+    })
     await page.click('#load-dynamic')
     await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')
 
@@ -549,19 +554,33 @@ if (isBuild) {
       .toBe('worker-plain-updated')
   })
 
-  test('lazy bundling errors return 500', async () => {
-    const have = await page.evaluate(() =>
-      (globalThis as any).__rolldown_runtime__.encodeHave(new Set()),
-    )
-    const response = await page.request.get(
-      new URL(`/@vite/lazy?id=%2Ffoo%2Fbar&${have}`, page.url()).href,
-    )
-    expect(response.status()).toBe(500)
+  test('a lazy route that does not compile answers 500, and a later import works', async () => {
+    const original = readFile('lazy-error.js')
+    onTestFinished(() => addFile('lazy-error.js', original))
+    // the route is not compiled yet, so the edit sends no update
+    editFile('lazy-error.js', (code) => code.replace('=', '= ;'))
+
+    const failed = page.waitForResponse((res) => {
+      const url = new URL(res.url())
+      return (
+        url.pathname === '/__rolldown_hmr_patch.js' && url.searchParams.has('l')
+      )
+    })
+    await page.click('#load-lazy-error')
+    expect((await failed).status()).toBe(500)
+    await expect.poll(() => page.textContent('.lazy-error')).toBe('failed')
+    expect(await page.$('vite-error-overlay')).toBeNull()
+
+    addFile('lazy-error.js', original)
+    await page.click('#load-lazy-error')
+    await expect
+      .poll(() => page.textContent('.lazy-error'))
+      .toBe('lazy-error-loaded')
   })
 
   test('requests for the output of another dev server get a reload body', async () => {
     for (const url of [
-      '/@vite/lazy?id=%2Ffoo%2Fbar&s=0&g=0',
+      '/__rolldown_hmr_patch.js?s=0&g=0&l=bAQ',
       '/__rolldown_hmr_patch.js?s=0&g=0',
     ]) {
       const response = await page.request.get(new URL(url, page.url()).href)

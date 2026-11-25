@@ -13,9 +13,9 @@ import {
   bundledDevPatchMiddleware,
   bundledDevPayloadMapMiddleware,
 } from '../bundledDevPayload'
-import { triggerLazyBundlingMiddleware } from '../triggerLazyBundling'
 
 const query = 's=7&g=2&u=bAQ&e=dBeMHqEY&f=bDg&n=3'
+const lazyQuery = 's=7&g=2&l=bAg&e=bAQ&n=4'
 const tokenReloadBody =
   '__rolldown_runtime__.reloadNeeded("the have-set token is unknown or expired");\nexport {}'
 
@@ -135,24 +135,16 @@ describe('bundled dev payload routes', () => {
   async function setup(parent?: Connect.NextHandleFunction) {
     const bundledDev = new BundledDev({} as any)
     const devEngine = {
-      renderPatch: vi.fn(async (q: string) =>
-        q.includes('s=0')
-          ? { type: 'Reload', reason: 'another epoch' }
-          : {
-              type: 'Patch',
-              code: `patch(${JSON.stringify(q)})`,
-              sourcemap: q.includes('map=1') ? '{"version":3}' : undefined,
-            },
-      ),
-      compileEntry: vi.fn(async (id: string, q: string) =>
-        q.includes('s=0')
-          ? { type: 'Reload', reason: 'another epoch' }
-          : {
-              type: 'Chunk',
-              code: `lazy(${JSON.stringify(id)}, ${JSON.stringify(q)})`,
-              sourcemap: q.includes('map=1') ? '{"version":3}' : undefined,
-            },
-      ),
+      renderPatch: vi.fn(async (q: string) => {
+        if (q.includes('s=0'))
+          return { type: 'Reload', reason: 'another epoch' }
+        if (q.includes('fail=1')) throw new Error('lazy.js does not compile')
+        return {
+          type: 'Patch',
+          code: `patch(${JSON.stringify(q)})`,
+          sourcemap: q.includes('map=1') ? '{"version":3}' : undefined,
+        }
+      }),
     }
     ;(bundledDev as any)._devEngine = devEngine
     const server = {
@@ -166,9 +158,12 @@ describe('bundled dev payload routes', () => {
     const app = connect()
     if (parent) app.use(parent)
     app.use(bundledDevHaveMiddleware(server))
-    app.use(triggerLazyBundlingMiddleware(server))
     app.use(bundledDevPatchMiddleware(server))
     app.use(bundledDevPayloadMapMiddleware(server))
+    app.use(((err, _req, res, _next) => {
+      res.statusCode = 599
+      res.end(`error middleware: ${err}`)
+    }) as Connect.ErrorHandleFunction)
     app.use((_req, res) => {
       res.statusCode = 404
       res.end('next')
@@ -185,7 +180,7 @@ describe('bundled dev payload routes', () => {
         headers: { 'content-type': type },
         body,
       })
-    return { bundledDev, devEngine, url, post }
+    return { bundledDev, devEngine, server, url, post }
   }
 
   test('the POST route stores the body and answers a token', async () => {
@@ -291,24 +286,6 @@ describe('bundled dev payload routes', () => {
     expect(devEngine.renderPatch).toHaveBeenCalledTimes(1)
   })
 
-  test('the lazy route resolves a token to the stored query once', async () => {
-    const { devEngine, url, post } = await setup()
-    const token = await (await post(query)).text()
-    const tokenUrl = url(`/@vite/lazy?id=%2Fsrc%2Fa.js&t=${token}&n=3`)
-
-    const res = await fetch(tokenUrl)
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe(
-      `lazy(${JSON.stringify('/src/a.js')}, ${JSON.stringify(query)})\n; export {}`,
-    )
-    expect(devEngine.compileEntry).toHaveBeenCalledWith('/src/a.js', query)
-
-    const again = await fetch(tokenUrl)
-    expect(again.status).toBe(200)
-    expect(await again.text()).toBe(`${tokenReloadBody}\n; export {}`)
-    expect(devEngine.compileEntry).toHaveBeenCalledTimes(1)
-  })
-
   test('the patch route renders the query and keeps the payload ESM', async () => {
     const { devEngine, url } = await setup()
     const res = await fetch(url(`/__rolldown_hmr_patch.js?${query}`))
@@ -321,15 +298,15 @@ describe('bundled dev payload routes', () => {
     expect(devEngine.renderPatch).toHaveBeenCalledWith(query)
   })
 
-  test('the lazy route compiles the module with the query and keeps the payload ESM', async () => {
-    const { devEngine, url } = await setup()
-    const lazyQuery = `id=%2Fsrc%2Fa.js&${query}`
-    const res = await fetch(url(`/@vite/lazy?${lazyQuery}`))
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe(
-      `lazy(${JSON.stringify('/src/a.js')}, ${JSON.stringify(lazyQuery)})\n; export {}`,
+  test('a failed render answers 500 and leaves the error overlay alone', async () => {
+    const { server, url } = await setup()
+    const res = await fetch(url(`/__rolldown_hmr_patch.js?${lazyQuery}&fail=1`))
+    expect(res.status).toBe(500)
+    expect(await res.text()).toBe('')
+    expect(server.config.logger.error).toHaveBeenCalledWith(
+      'Failed to render the HMR payload: Error: lazy.js does not compile',
+      expect.anything(),
     )
-    expect(devEngine.compileEntry).toHaveBeenCalledWith('/src/a.js', lazyQuery)
   })
 
   test('a client the engine cannot serve gets a reload body', async () => {
@@ -339,9 +316,6 @@ describe('bundled dev payload routes', () => {
     const patch = await fetch(url('/__rolldown_hmr_patch.js?s=0&g=0&n=1'))
     expect(patch.status).toBe(200)
     expect(await patch.text()).toBe(`${reloadBody}\n; export {}`)
-    const lazy = await fetch(url('/@vite/lazy?id=%2Fsrc%2Fa.js&s=0&g=0&n=2'))
-    expect(lazy.status).toBe(200)
-    expect(await lazy.text()).toBe(`${reloadBody}\n; export {}`)
   })
 
   test('a payload links its sourcemap, and the map route serves it', async () => {
@@ -369,14 +343,23 @@ describe('bundled dev payload routes', () => {
     ).text()
     expect(again.endsWith('/__rolldown_payload_map_p0.map')).toBe(true)
 
-    // a lazy chunk keeps its map apart from the patches
+    // a lazy load keeps its map apart from the patches
     const lazy = await (
-      await fetch(url(`/@vite/lazy?id=%2Fsrc%2Fa.js&${query}&map=1`))
+      await fetch(url(`/__rolldown_hmr_patch.js?${lazyQuery}&map=1`))
     ).text()
     expect(lazy.endsWith('/__rolldown_payload_map_l0.map')).toBe(true)
     expect((await fetch(url('/__rolldown_payload_map_l0.map'))).status).toBe(
       200,
     )
+  })
+
+  test('a posted lazy query keeps its map apart from the patches', async () => {
+    const { url, post } = await setup()
+    const token = await (await post(`${lazyQuery}&map=1`)).text()
+    const code = await (
+      await fetch(url(`/__rolldown_hmr_patch.js?t=${token}&n=4`))
+    ).text()
+    expect(code.endsWith('/__rolldown_payload_map_l0.map')).toBe(true)
   })
 
   test('a query with no generation gets the generation of the output', async () => {
@@ -388,11 +371,6 @@ describe('bundled dev payload routes', () => {
     bundledDev.outputGeneration = 4
     await fetch(url('/__rolldown_hmr_patch.js?s=7&u=bAQ&n=2'))
     expect(devEngine.renderPatch).toHaveBeenLastCalledWith('s=7&u=bAQ&n=2&g=4')
-    await fetch(url('/@vite/lazy?id=%2Fsrc%2Fa.js&s=7&n=3'))
-    expect(devEngine.compileEntry).toHaveBeenLastCalledWith(
-      '/src/a.js',
-      'id=%2Fsrc%2Fa.js&s=7&n=3&g=4',
-    )
     // a known generation stays
     await fetch(url(`/__rolldown_hmr_patch.js?${query}`))
     expect(devEngine.renderPatch).toHaveBeenLastCalledWith(query)
@@ -404,11 +382,5 @@ describe('bundled dev payload routes', () => {
     const patchToken = await (await post('s=7&u=bAQ&n=2')).text()
     await fetch(url(`/__rolldown_hmr_patch.js?t=${patchToken}&n=2`))
     expect(devEngine.renderPatch).toHaveBeenLastCalledWith('s=7&u=bAQ&n=2&g=4')
-    const lazyToken = await (await post('s=7&n=3')).text()
-    await fetch(url(`/@vite/lazy?id=%2Fsrc%2Fa.js&t=${lazyToken}&n=3`))
-    expect(devEngine.compileEntry).toHaveBeenLastCalledWith(
-      '/src/a.js',
-      's=7&n=3&g=4',
-    )
   })
 })

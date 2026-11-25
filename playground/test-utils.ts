@@ -589,3 +589,51 @@ export function bundledDevUnsupported(
 ): TestOptions {
   return { tags: ['bundled-dev/unsupported'], meta: { reason, issues } }
 }
+
+/**
+ * The numbers of a module set in a bundled dev pull query: `b` is a base64url
+ * bitset (bit `n` for number `n`), `d` base64url LEB128 varints of the gaps.
+ */
+export function decodeModuleNumSet(value: string): number[] {
+  const bytes = Buffer.from(value.slice(1), 'base64url')
+  const nums: number[] = []
+  if (value[0] === 'b') {
+    bytes.forEach((byte, index) => {
+      for (let bit = 0; bit < 8; bit++) {
+        if ((byte >> bit) & 1) nums.push(index * 8 + bit)
+      }
+    })
+    return nums
+  }
+  let previous = 0
+  for (let at = 0; at < bytes.length;) {
+    let gap = 0
+    for (let shift = 0; ; shift += 7) {
+      const byte = bytes[at++]
+      gap += (byte & 0x7f) * 2 ** shift
+      if (byte < 0x80) break
+    }
+    previous += gap
+    nums.push(previous)
+  }
+  return nums
+}
+
+/**
+ * The stable ids of the lazy `import()` targets that a bundled dev pull names
+ * in its `l` set. `query` is the query string of the request or the body of
+ * its POST. Session numbers differ between runs, so they are read through the
+ * page's `__rolldown_runtime__`.
+ */
+export async function lazyTargetsOf(query: string): Promise<string[]> {
+  const lazy = new URLSearchParams(query.slice(query.indexOf('?') + 1)).get('l')
+  if (!lazy) return []
+  const nums = decodeModuleNumSet(lazy)
+  return page.evaluate((nums) => {
+    const ids: string[] = []
+    for (const [id, num] of (globalThis as any).__rolldown_runtime__.nums) {
+      if (nums.includes(num)) ids.push(id)
+    }
+    return ids
+  }, nums)
+}

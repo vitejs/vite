@@ -40,10 +40,6 @@ if (typeof DevRuntime !== 'undefined') {
       return `${base}${BUNDLED_DEV_HMR_PATCH_FILENAME}?${query}`
     }
 
-    override lazyUrl(proxyModuleId: string, query: string): string {
-      return `${base}@vite/lazy?id=${encodeURIComponent(proxyModuleId)}&${query}`
-    }
-
     // `fetch` resolves a path against the page, but `import()` against this
     // module. With `server.origin`, only this module is served by Vite.
     override haveUrl(): string {

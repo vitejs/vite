@@ -116,6 +116,14 @@ export class EvaluatedModules {
   }
 
   /**
+   * Drops the source map that `removeModule` kept for `id`.
+   * @internal
+   */
+  public releaseSourceMap(id: string): void {
+    this.retainedSourceMaps.delete(id)
+  }
+
+  /**
    * Extracts the inlined source map from the module code and returns the decoded
    * source map. If the source map is not inlined, it will return null.
    * @param id Resolved module ID

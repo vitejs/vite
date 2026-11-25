@@ -40,10 +40,16 @@ import { prepareError } from './middlewares/error'
 const debug = createDebugger('vite:full-bundle-mode')
 
 /**
- * The code of an HMR patch or a lazy chunk, and its sourcemap as JSON. The
- * code has no `sourceMappingURL` comment: the server that serves it adds one.
+ * The code of a pulled payload (an HMR update, a lazy `import()` or a
+ * `loadDynamic`), and its sourcemap as JSON. The code has no
+ * `sourceMappingURL` comment: the server that serves it adds one.
  */
-export type BundledDevPayload = { code: string; map: string | undefined }
+export type BundledDevPayload = {
+  code: string
+  map: string | undefined
+  /** set on the body that tells the client to reload, which is not a payload */
+  reload?: boolean
+}
 
 type MemoryFile = {
   source: string | Uint8Array
@@ -383,21 +389,30 @@ export class BundledDev {
   }
 
   /**
-   * Renders the HMR patch a client requests. `query` describes what the client
-   * holds; the runtime builds it (`DevRuntime.requestQuery`). A token `t` in
-   * it stands for a query the client sent before in a POST body.
+   * Renders the payload a client pulls: for an HMR update, a lazy `import()`
+   * or a dynamic `import()` in a pulled module. `query` describes what the
+   * client holds; the runtime builds it (`DevRuntime.requestQuery`). A token
+   * `t` in it stands for a query the client sent before in a POST body.
+   * `lazy` is true when the query names lazy routes (`l`): their sourcemap
+   * stays in use as long as the route does.
    */
-  async renderPatch(query: string): Promise<BundledDevPayload> {
-    debug?.(`PATCH: render the hmr patch for ${query}`)
+  async renderPatch(
+    query: string,
+  ): Promise<{ payload: BundledDevPayload; lazy: boolean }> {
+    debug?.(`PATCH: render the hmr payload for ${query}`)
     const have = this.resolveHaveQuery(query)
     if (have === undefined) {
-      return reloadNeededPayload(unknownHaveTokenReason)
+      return {
+        payload: reloadNeededPayload(unknownHaveTokenReason),
+        lazy: false,
+      }
     }
+    const lazy = new URLSearchParams(have).has('l')
     const result = await this.devEngine.renderPatch(have)
     if (result.type === 'Reload') {
-      return reloadNeededPayload(result.reason)
+      return { payload: reloadNeededPayload(result.reason), lazy }
     }
-    return { code: result.code, map: result.sourcemap }
+    return { payload: { code: result.code, map: result.sourcemap }, lazy }
   }
 
   /**
@@ -415,26 +430,6 @@ export class BundledDev {
       return have
     }
     return `${have}&g=${this.outputGeneration}`
-  }
-
-  /**
-   * Compiles the lazy entry `moduleId`. `query` describes what the client
-   * holds, like the query of `renderPatch`.
-   */
-  async triggerLazyBundling(
-    moduleId: string,
-    query: string,
-  ): Promise<BundledDevPayload> {
-    debug?.(`TRIGGER-LAZY: trigger lazy bundling for module ${moduleId}`)
-    const have = this.resolveHaveQuery(query)
-    if (have === undefined) {
-      return reloadNeededPayload(unknownHaveTokenReason)
-    }
-    const result = await this.devEngine.compileEntry(moduleId, have)
-    if (result.type === 'Reload') {
-      return reloadNeededPayload(result.reason)
-    }
-    return { code: result.code, map: result.sourcemap }
   }
 
   resetClient(oldClientId: string, newClientId: string): void {
@@ -685,6 +680,7 @@ function reloadNeededPayload(reason: string): BundledDevPayload {
   return {
     code: `__rolldown_runtime__.reloadNeeded(${JSON.stringify(reason)});\nexport {}`,
     map: undefined,
+    reload: true,
   }
 }
 

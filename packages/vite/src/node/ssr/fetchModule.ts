@@ -8,7 +8,7 @@ import {
   SOURCEMAPPING_URL,
 } from '../../shared/constants'
 import type { ViteFetchResult } from '../../shared/invokeMethods'
-import { cleanUrl, encodeSourceURL, unwrapId } from '../../shared/utils'
+import { encodeSourceURL, unwrapId } from '../../shared/utils'
 import { tryNodeResolve } from '../plugins/resolve'
 import type { BundledDev, BundledDevPayload } from '../server/bundledDev'
 import type { DevEnvironment } from '../server/environment'
@@ -150,33 +150,22 @@ async function fetchBundledModule(
     path.resolve(environment.config.root, environment.config.build.outDir),
   )
 
-  if (url.startsWith('/@vite/lazy?')) {
-    const query = url.slice('/@vite/lazy?'.length)
-    const moduleId = new URLSearchParams(query).get('id')
-    if (!moduleId) {
-      throw new Error(`unknown request: ${url}`)
-    }
-    const payload = await bundledDev.triggerLazyBundling(moduleId, query)
-    // This module is invalidated immediately, so url/id do not matter
-    return transformBundledPayload(
-      payload,
-      url,
-      moduleId,
-      cleanUrl(moduleId),
-      options,
-    )
-  }
-
   if (url.startsWith(`/${BUNDLED_DEV_HMR_PATCH_FILENAME}?`)) {
-    const payload = await bundledDev.renderPatch(
+    const { payload } = await bundledDev.renderPatch(
       url.slice(BUNDLED_DEV_HMR_PATCH_FILENAME.length + 2),
     )
+    // relative imports and the map's sources in the payload resolve like
+    // those in the output chunks
+    const file = normalizePath(
+      path.resolve(outDir, BUNDLED_DEV_HMR_PATCH_FILENAME),
+    )
     return transformBundledPayload(
       payload,
       url,
-      url,
-      // relative imports in the patch resolve like those in the output chunks
-      normalizePath(path.resolve(outDir, BUNDLED_DEV_HMR_PATCH_FILENAME)),
+      // unique per request; a stack trace names the payload by this id, so its
+      // map sources resolve against outDir
+      file + url.slice(BUNDLED_DEV_HMR_PATCH_FILENAME.length + 1),
+      file,
       options,
     )
   }
@@ -280,21 +269,26 @@ async function transformBundledPayload(
   file: string,
   options: FetchModuleOptions,
 ): Promise<ViteFetchResult> {
+  // The runner reads which factories a payload installed from its scope
+  // (`ModuleRunner#_importPayload`). A reload body has no scope.
+  const code = payload.reload
+    ? payload.code
+    : `${payload.code}\nexport { __rolldown_payload__ }`
   // See https://github.com/rolldown/rolldown/issues/8376
   const ssrResult = await ssrTransform(
-    payload.code,
+    code,
     payload.map ? JSON.parse(payload.map) : null,
     file,
-    payload.code,
+    code,
   )
   if (!ssrResult) {
     throw new Error(`[vite] cannot apply ssr transform to '${url}'.`)
   }
-  let code = ssrResult.code
+  let resultCode = ssrResult.code
   if (options.inlineSourceMap !== false) {
-    code = inlineSourceMap(id, ssrResult, options.startOffset).code
+    resultCode = inlineSourceMap(id, ssrResult, options.startOffset).code
   }
-  return { code, url, id, file, invalidate: false }
+  return { code: resultCode, url, id, file, invalidate: false }
 }
 
 const OTHER_SOURCE_MAP_REGEXP = new RegExp(

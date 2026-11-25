@@ -104,7 +104,6 @@ import {
   cachedTransformMiddleware,
   transformMiddleware,
 } from './middlewares/transform'
-import { triggerLazyBundlingMiddleware } from './middlewares/triggerLazyBundling'
 import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { openBrowser as _openBrowser } from './openBrowser'
@@ -1166,7 +1165,6 @@ async function applyMiddlewares(
 
   if (config.experimental.bundledDev) {
     middlewares.use(bundledDevHaveMiddleware(server))
-    middlewares.use(triggerLazyBundlingMiddleware(server))
     middlewares.use(bundledDevPatchMiddleware(server))
     middlewares.use(bundledDevPayloadMapMiddleware(server))
     middlewares.use(memoryFilesMiddleware(server))

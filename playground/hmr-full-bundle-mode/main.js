@@ -39,6 +39,13 @@ document.querySelector('#load-dynamic').addEventListener('click', () => {
   import('./dynamic.js')
 })
 
+document.querySelector('#load-lazy-error').addEventListener('click', () => {
+  import('./lazy-error.js').then(
+    (mod) => text('.lazy-error', mod.value),
+    () => text('.lazy-error', 'failed'),
+  )
+})
+
 import.meta.hot?.accept('./cycle-a.js', () => {})
 
 function text(el, text) {
