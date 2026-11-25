@@ -155,6 +155,21 @@ test.runIf(isWindows)(
   },
 )
 
+describe('normalizePath', () => {
+  test('preserves Windows device namespace prefixes', () => {
+    expect(normalizePath('//./nul/vfs/1/entry.js')).toBe(
+      '//./nul/vfs/1/entry.js',
+    )
+    expect(normalizePath('//?/nul/vfs/1/entry.js')).toBe(
+      '//?/nul/vfs/1/entry.js',
+    )
+  })
+
+  test('still normalizes ordinary paths', () => {
+    expect(normalizePath('/foo/../bar/baz.js')).toBe('/bar/baz.js')
+  })
+})
+
 describe('injectQuery', () => {
   if (isWindows) {
     // this test will work incorrectly on unix systems

@@ -233,8 +233,14 @@ export const isCaseInsensitiveFS: boolean = testCaseInsensitiveFS()
 
 const VOLUME_RE = /^[A-Z]:/i
 
+const WINDOWS_DEVICE_PREFIX_RE = /^\/\/[.?]\//
+
 export function normalizePath(id: string): string {
-  return path.posix.normalize(isWindows ? slash(id) : id)
+  const normalized = isWindows ? slash(id) : id
+  const prefix = WINDOWS_DEVICE_PREFIX_RE.exec(normalized)?.[0]
+  return prefix
+    ? prefix + path.posix.normalize(normalized.slice(prefix.length))
+    : path.posix.normalize(normalized)
 }
 
 export function fsPathFromId(id: string): string {
