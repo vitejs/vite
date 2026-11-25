@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest'
+import { expect, onTestFinished, test, vi } from 'vitest'
 import type { HotPayload } from '#types/hmrPayload'
 import type { ModuleRunnerTransportHandlers } from '../../shared/moduleRunnerTransport'
 import { ModuleRunner } from '../runner'
@@ -28,7 +28,7 @@ const files: Record<string, string> = {
   `,
 }
 
-test('the runner pulls an update that was pushed before it fetched its entry', async () => {
+function createRunner() {
   let handlers: ModuleRunnerTransportHandlers | undefined
   const patchQueries: URLSearchParams[] = []
   const runner = new ModuleRunner({
@@ -60,9 +60,14 @@ test('the runner pulls an update that was pushed before it fetched its entry', a
       },
     },
   })
+  return { runner, handlers: handlers!, patchQueries }
+}
+
+test('the runner pulls an update that was pushed before it fetched its entry', async () => {
+  const { runner, handlers, patchQueries } = createRunner()
 
   // The push of gen 2 comes while the server still serves the output of gen 1.
-  handlers!.onMessage({
+  handlers.onMessage({
     type: 'bundled-dev-update',
     changedIds: ['dep.js'],
     staleIds: ['dep.js'],
@@ -74,5 +79,31 @@ test('the runner pulls an update that was pushed before it fetched its entry', a
   const main = await runner.import('/main.js')
   expect(main.value).toBe('new')
   expect(patchQueries[0].get('g')).toBe('1')
+  await runner.close()
+})
+
+test('the runner sends a long query in the request and never posts it', async () => {
+  const fetch = vi.fn()
+  vi.stubGlobal('fetch', fetch)
+  onTestFinished(() => {
+    vi.unstubAllGlobals()
+  })
+  const { runner, patchQueries } = createRunner()
+  await runner.import('/main.js')
+
+  // 60000 executed modules: the set `e` alone is a bitset of 10000 characters.
+  const runtime = (runner as any).rolldownDevRuntime
+  const ids = Array.from({ length: 60000 }, (_, i) => `m${i}.js`)
+  runtime.registerGraph({
+    ids,
+    localCount: ids.length,
+    edges: ids.map(() => []),
+    nums: ids.map((_, i) => i + 2),
+  })
+  for (const id of ids) runtime.registerModule(id, { exports: {} })
+  await runtime.pullPatch(new Set(['dep.js']))
+
+  expect(fetch).not.toHaveBeenCalled()
+  expect(patchQueries.at(-1)!.get('e')!.length).toBeGreaterThan(6000)
   await runner.close()
 })

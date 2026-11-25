@@ -79,6 +79,7 @@ import type { HmrOptions, NormalizedHotChannel, WsOptions } from './hmr'
 import { handleHMRUpdate, updateModules } from './hmr'
 import { baseMiddleware } from './middlewares/base'
 import {
+  bundledDevHaveMiddleware,
   bundledDevPatchMiddleware,
   bundledDevPayloadMapMiddleware,
 } from './middlewares/bundledDevPayload'
@@ -1164,6 +1165,7 @@ async function applyMiddlewares(
   }
 
   if (config.experimental.bundledDev) {
+    middlewares.use(bundledDevHaveMiddleware(server))
     middlewares.use(triggerLazyBundlingMiddleware(server))
     middlewares.use(bundledDevPatchMiddleware(server))
     middlewares.use(bundledDevPayloadMapMiddleware(server))

@@ -31,7 +31,10 @@ import {
 import { convertToDevWatchOptions } from '../watch'
 import type { DevEnvironment } from './environment'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
-import { PayloadMapStore } from './middlewares/bundledDevPayload'
+import {
+  HaveQueryStore,
+  PayloadMapStore,
+} from './middlewares/bundledDevPayload'
 import { prepareError } from './middlewares/error'
 
 const debug = createDebugger('vite:full-bundle-mode')
@@ -115,6 +118,7 @@ export class BundledDev {
   memoryFiles: MemoryFiles = new MemoryFiles()
   patchMaps: PayloadMapStore = new PayloadMapStore('p')
   lazyMaps: PayloadMapStore = new PayloadMapStore('l')
+  haveQueries: HaveQueryStore = new HaveQueryStore()
   /**
    * The HMR generation of the stored output. A page that loads this output
    * starts at it (`DevRuntime.setOutputGeneration`).
@@ -380,13 +384,16 @@ export class BundledDev {
 
   /**
    * Renders the HMR patch a client requests. `query` describes what the client
-   * holds; the runtime builds it (`DevRuntime.encodeHave`).
+   * holds; the runtime builds it (`DevRuntime.requestQuery`). A token `t` in
+   * it stands for a query the client sent before in a POST body.
    */
   async renderPatch(query: string): Promise<BundledDevPayload> {
     debug?.(`PATCH: render the hmr patch for ${query}`)
-    const result = await this.devEngine.renderPatch(
-      this.resolveHaveQuery(query),
-    )
+    const have = this.resolveHaveQuery(query)
+    if (have === undefined) {
+      return reloadNeededPayload(unknownHaveTokenReason)
+    }
+    const result = await this.devEngine.renderPatch(have)
     if (result.type === 'Reload') {
       return reloadNeededPayload(result.reason)
     }
@@ -394,17 +401,20 @@ export class BundledDev {
   }
 
   /**
-   * A client that does not know the generation of its output leaves out `g`:
-   * it gets the generation of the stored output, the one it most likely loaded.
+   * The query a request stands for (see `HaveQueryStore.resolve`). A client
+   * that does not know the generation of its output leaves out `g`: it gets
+   * the generation of the stored output, the one it most likely loaded.
    */
-  private resolveHaveQuery(query: string): string {
+  private resolveHaveQuery(query: string): string | undefined {
+    const have = this.haveQueries.resolve(query)
     if (
+      have === undefined ||
       this.outputGeneration === undefined ||
-      new URLSearchParams(query).has('g')
+      new URLSearchParams(have).has('g')
     ) {
-      return query
+      return have
     }
-    return `${query}&g=${this.outputGeneration}`
+    return `${have}&g=${this.outputGeneration}`
   }
 
   /**
@@ -416,10 +426,11 @@ export class BundledDev {
     query: string,
   ): Promise<BundledDevPayload> {
     debug?.(`TRIGGER-LAZY: trigger lazy bundling for module ${moduleId}`)
-    const result = await this.devEngine.compileEntry(
-      moduleId,
-      this.resolveHaveQuery(query),
-    )
+    const have = this.resolveHaveQuery(query)
+    if (have === undefined) {
+      return reloadNeededPayload(unknownHaveTokenReason)
+    }
+    const result = await this.devEngine.compileEntry(moduleId, have)
     if (result.type === 'Reload') {
       return reloadNeededPayload(result.reason)
     }
@@ -661,6 +672,8 @@ function debounce(time: number, cb: () => void) {
     timer = globalThis.setTimeout(cb, time)
   }
 }
+
+const unknownHaveTokenReason = 'the have-set token is unknown or expired'
 
 /**
  * The answer to a client that the dev engine cannot serve. It is served with

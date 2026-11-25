@@ -31,6 +31,19 @@ export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
 export const BUNDLED_DEV_HMR_PATCH_FILENAME = '__rolldown_hmr_patch.js'
 
 /**
+ * Full bundle mode stores a patch or lazy query sent in a POST body to this
+ * path, and answers a token that the request URL carries instead.
+ */
+export const BUNDLED_DEV_HMR_HAVE_PATH = '__rolldown_hmr_have'
+
+/**
+ * The body type of that POST. Rolldown's dev runtime sends it
+ * (`DevRuntime.requestQuery`).
+ */
+export const BUNDLED_DEV_HMR_HAVE_CONTENT_TYPE =
+  'application/x-rolldown-hmr-have'
+
+/**
  * Full bundle mode serves the sourcemap of a patch or lazy chunk at this path
  * plus an id and `.map`. The path is next to the output files, because the
  * map names its sources relative to the output dir.
