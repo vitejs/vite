@@ -414,7 +414,7 @@ describe('the dev server', () => {
       environments: { ssr: { input: 'virtual:ssr-entry' } },
       optimizeDeps: { noDiscovery: true },
       server: {
-        fs: { allow: [root] },
+        fs: { allow: [root], strict: 'extended' },
         host: '127.0.0.1',
         port: 0,
         ws: false,
