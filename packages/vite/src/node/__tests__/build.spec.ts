@@ -662,8 +662,9 @@ describe('build', () => {
     )
     expect(sharedCarriers).toHaveLength(2)
     const css = result.output.find(
-      (o) => o.type === 'asset' && o.fileName.endsWith('.css'),
-    ) as OutputAsset
+      (output): output is OutputAsset =>
+        output.type === 'asset' && output.fileName.endsWith('.css'),
+    )!
     // shared.css comes once, before the a.css rule that overrides it
     expect(css.source.toString().match(/color: \w+/g)).toStrictEqual([
       'color: red',
