@@ -40,15 +40,18 @@ if (typeof DevRuntime !== 'undefined') {
       return `${base}${BUNDLED_DEV_HMR_PATCH_FILENAME}?${query}`
     }
 
-    // `fetch` resolves a path against the page, but `import()` against this
-    // module. With `server.origin`, only this module is served by Vite.
+    // `fetch` resolves a path against the page, and `import()` against this
+    // module. With `server.origin`, the page comes from another server, so the
+    // path is resolved against this module, which Vite serves.
     override haveUrl(): string {
       return new URL(`${base}${BUNDLED_DEV_HMR_HAVE_PATH}`, import.meta.url)
         .href
     }
   }
 
-  // only used by the server to send this page a full reload
+  // registers this page: the server sends HMR pushes (with a `seq` per
+  // connection), build errors and the reloads it asks for only to registered
+  // clients
   const clientId = nanoid()
 
   transport.send({
@@ -86,9 +89,10 @@ if (typeof DevRuntime !== 'undefined') {
     },
   )
   registerBundledDevClient(bundledDevHmrClient)
-  // This script runs before the chunk scripts, so a push can come before the
-  // output ran. Module scripts run before `DOMContentLoaded`.
-  if (typeof document !== 'undefined' && document.readyState === 'loading') {
+  // This module script runs after parsing ('interactive'), before the chunk
+  // scripts, so a push can come before the output ran. `DOMContentLoaded`
+  // fires after all module scripts ran.
+  if (typeof document !== 'undefined' && document.readyState !== 'complete') {
     document.addEventListener(
       'DOMContentLoaded',
       () => bundledDevHmrClient.catchUpMissedUpdates(),

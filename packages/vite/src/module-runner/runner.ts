@@ -143,7 +143,9 @@ export class ModuleRunner {
       this.transport.connect?.()
     }
     if (runtime) {
-      // lets the server send this runner a full reload
+      // registers this runner: the server sends HMR pushes (with a `seq` per
+      // connection), build errors and the reloads it asks for only to
+      // registered clients
       this.transport.send({
         type: 'custom',
         event: 'vite:client-connected',

@@ -9,6 +9,7 @@ import {
   page,
   readFile,
   serverLogs,
+  viteServer,
 } from '~utils'
 
 const assetUrl = /asset-[\w-]+\.png/
@@ -182,6 +183,65 @@ if (isBuild) {
       ),
     )
     await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+  })
+
+  test('applies an update that was pushed before the output ran', async () => {
+    const original = readFile('hmr.js')
+    await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+    // Earlier patches left the output stale. The reload below would then bring
+    // a rebuild and one more reload, so rebuild before it.
+    const bundledDev = viteServer.environments.client.bundledDev!
+    if (await bundledDev.triggerBundleRegenerationIfStale()) {
+      await page.waitForEvent('load')
+      await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+    }
+
+    let release!: () => void
+    const released = new Promise<void>((resolve) => (release = resolve))
+    let entryRequested!: () => void
+    const entryRequestedPromise = new Promise<void>(
+      (resolve) => (entryRequested = resolve),
+    )
+    const entryUrl = '**/assets/index.js'
+    await page.route(entryUrl, async (route) => {
+      // fetched before the edit, so it is the output from before the push
+      const response = await route.fetch()
+      entryRequested()
+      await released
+      await route.fulfill({ response })
+    })
+    onTestFinished(async () => {
+      release()
+      await page.unroute(entryUrl)
+      addFile('hmr.js', original)
+      await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+    })
+
+    let clientConnected!: () => void
+    const clientConnectedPromise = new Promise<void>(
+      (resolve) => (clientConnected = resolve),
+    )
+    let pushed!: () => void
+    const pushedPromise = new Promise<void>((resolve) => (pushed = resolve))
+    page.once('websocket', (ws) => {
+      ws.on('framesent', ({ payload }) => {
+        if (String(payload).includes('vite:client-connected')) clientConnected()
+      })
+      ws.on('framereceived', ({ payload }) => {
+        if (String(payload).includes('"bundled-dev-update"')) pushed()
+      })
+    })
+
+    const reload = page.reload()
+    await entryRequestedPromise
+    await clientConnectedPromise
+    editFile('hmr.js', (code) =>
+      code.replace("const foo = 'hello'", "const foo = 'hello-pushed'"),
+    )
+    await pushedPromise
+    release()
+    await reload
+    await expect.poll(() => page.textContent('.hmr')).toBe('hello-pushed')
   })
 
   // an asset added by an HMR patch is emitted without `onOutput`, so it must be

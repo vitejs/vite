@@ -31,6 +31,9 @@ const files: Record<string, string> = {
 function createRunner() {
   let handlers: ModuleRunnerTransportHandlers | undefined
   const patchQueries: URLSearchParams[] = []
+  const sent: HotPayload[] = []
+  // when set, a patch request waits for this body
+  const held: { patch?: Promise<string> } = {}
   const runner = new ModuleRunner({
     rolldownRuntime: true,
     hmr: { logger: false },
@@ -39,16 +42,20 @@ function createRunner() {
       connect: (h) => {
         handlers = h
       },
-      send: () => {},
+      send: (payload) => {
+        sent.push(payload)
+      },
       invoke: async (payload) => {
         const { name, data } = (payload as any).data
         if (name === 'getBuiltins') return { result: [] }
+        if (name === 'resetBundledDevClient') return { result: undefined }
         const url: string = data[0]
         const [path, query] = url.slice(1).split('?')
         if (query) patchQueries.push(new URLSearchParams(query))
+        const code = (query && held.patch && (await held.patch)) || files[path]
         return {
           result: {
-            code: files[path],
+            code,
             url,
             id: url,
             file: `/out/${path}`,
@@ -60,7 +67,7 @@ function createRunner() {
       },
     },
   })
-  return { runner, handlers: handlers!, patchQueries }
+  return { runner, handlers: handlers!, patchQueries, sent, held }
 }
 
 test('the runner pulls an update that was pushed before it fetched its entry', async () => {
@@ -105,5 +112,33 @@ test('the runner sends a long query in the request and never posts it', async ()
 
   expect(fetch).not.toHaveBeenCalled()
   expect(patchQueries.at(-1)!.get('e')!.length).toBeGreaterThan(6000)
+  await runner.close()
+})
+
+test('a payload requested before a full reload runs against the runtime that asked for it', async () => {
+  const { runner, sent, held } = createRunner()
+  await runner.import('/main.js')
+  const oldRuntime = (runner as any).rolldownDevRuntime
+
+  let answer!: (code: string) => void
+  held.patch = new Promise((resolve) => {
+    answer = resolve
+  })
+  const pull = oldRuntime.pullPatch(new Set(['dep.js']))
+  await runner._resetBundledDevRuntime()
+  const newRuntime = (runner as any).rolldownDevRuntime
+  expect(newRuntime).not.toBe(oldRuntime)
+
+  answer('__rolldown_runtime__.reloadNeeded("x")')
+  await pull
+
+  expect(oldRuntime.reloadReason).toBe('x')
+  expect(newRuntime.reloadReason).toBeUndefined()
+  expect(
+    sent.filter(
+      (p) =>
+        p.type === 'custom' && p.event === 'vite:bundled-dev:reload-needed',
+    ),
+  ).toStrictEqual([])
   await runner.close()
 })
