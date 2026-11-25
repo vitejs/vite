@@ -147,6 +147,22 @@
       testId: 'unsafe-vite-wasm-instance',
       path: '/unsafe.json?import&vite-wasm-instance',
     },
+    // outside of allowed dir, worker import query
+    {
+      testId: 'unsafe-worker-import',
+      path: '/root/unsafe.txt?worker&import',
+    },
+    // outside of allowed dir, sharedworker import query
+    {
+      testId: 'unsafe-sharedworker-import',
+      path: '/root/unsafe.txt?sharedworker&import',
+    },
+    // outside of allowed dir, fetched after the worker import queries above
+    {
+      testId: 'unsafe-after-worker-import',
+      path: '/root/unsafe.txt',
+      after: ['unsafe-worker-import', 'unsafe-sharedworker-import'],
+    },
     // outside of allowed dir, relative path after query
     {
       testId: 'unsafe-relative-path-after-query',
@@ -205,7 +221,8 @@
       path === false ? path : joinUrlSegments(base, fsBase + path),
   }
 
-  for (const { testId, path } of paths) {
+  const fetchPromises = {}
+  for (const { testId, path, after } of paths) {
     for (const [variantName, transformPath] of Object.entries(variants)) {
       const baseSelector = `.fetch${variantName}-${testId}`
       const resolvedPath = transformPath(path)
@@ -218,8 +235,20 @@
         continue
       }
 
+      if (after) {
+        // wait for the requests of the entries listed in `after` to finish
+        // first so that this request tests the state after them
+        await Promise.all(
+          after.flatMap((afterTestId) =>
+            ['', '-fs'].map(
+              (variant) => fetchPromises[`${variant}:${afterTestId}`],
+            ),
+          ),
+        )
+      }
+
       text(`${baseSelector}-path`, resolvedPath)
-      fetch(resolvedPath)
+      fetchPromises[`${variantName}:${testId}`] = fetch(resolvedPath)
         .then((r) => {
           text(`${baseSelector}-status`, r.status)
           return r.text()

@@ -33,7 +33,7 @@ This section describes what Vite treats as trusted and untrusted. A report is on
 ### Dev Server & Preview Server
 
 - Availability issues are not considered vulnerabilities.
-- Files within the configured `server.fs` boundary (dev server) or the `build.outDir` directory (preview server) are expected to be accessible to clients.
+- Files within the configured `server.fs` boundary (dev server) or the `build.outDir` directory (preview server) are expected to be accessible to clients. The dev server can serve content from files a client entry point references directly or indirectly, even if those files are outside `server.fs.allow`.
 - The existence of files is not hidden and cannot be hidden due to the development tool nature. Exposing file existence is not considered a vulnerability.
 
 ### Build Output

@@ -26,7 +26,7 @@ import {
 import { getWindows83ShortNameForDotEnv as getWindows83ShortNameForDotEnv } from '../root/windows83Filename'
 import testJSON from '../safe.json'
 
-export function tests() {
+export function tests(fsStrict: true | 'extended' = true) {
   // `viteTestUrl` is set lazily, so this must be a function.
   // `viteTestUrl` keeps its trailing slash when the playground sets a base, so
   // plain concatenation would produce `//`-prefixed paths, which the server
@@ -236,6 +236,28 @@ export function tests() {
         content: /403 Restricted/,
         status: '403',
         disableVariants: [''],
+      },
+      // Legacy strict mode serves the worker wrappers. Extended strict mode
+      // denies the requests before serving a wrapper.
+      {
+        name: 'unsafe fetch with worker import query',
+        testId: 'unsafe-worker-import',
+        content: fsStrict === 'extended' ? /403 Restricted/ : /WorkerWrapper/,
+        status: fsStrict === 'extended' ? '403' : '200',
+      },
+      {
+        name: 'unsafe fetch with sharedworker import query',
+        testId: 'unsafe-sharedworker-import',
+        content: fsStrict === 'extended' ? /403 Restricted/ : /WorkerWrapper/,
+        status: fsStrict === 'extended' ? '403' : '200',
+      },
+      // The page fetches the same file after both worker wrapper requests to
+      // check that the file is still restricted.
+      {
+        name: 'unsafe fetch after a worker import query',
+        testId: 'unsafe-after-worker-import',
+        content: /403 Restricted/,
+        status: '403',
       },
       // It is 404 in `fs-serve/base` test, 403 in `fs-serve` test
       {
