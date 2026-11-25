@@ -7,6 +7,7 @@ import type { DefaultTreeAdapterMap, Token } from 'parse5'
 import type { SourceMapInput } from 'rolldown'
 import type { Connect } from '#dep-types/connect'
 import type { PreviewServer, ResolvedConfig, ViteDevServer } from '../..'
+import { BUNDLED_DEV_GENERATION_META_NAME } from '../../../shared/constants'
 import { cleanUrl, moduleUrlToBrowserUrl } from '../../../shared/utils'
 import { getNodeAssetAttributes } from '../../assetSource'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
@@ -21,6 +22,7 @@ import {
   htmlEnvHook,
   htmlProxyResult,
   injectCspNonceMetaTagHook,
+  injectToHead,
   injectNonceAttributeTagHook,
   nodeIsElement,
   overwriteAttrValue,
@@ -459,6 +461,7 @@ export function indexHtmlMiddleware(
         const filePath = pathname.slice(1) // remove first /
 
         let file = fullBundle.memoryFiles.get(filePath)
+        let isOutputFile = file !== undefined
         if (!file && fullBundle.hasBuildOutput) {
           return next()
         }
@@ -477,6 +480,7 @@ export function indexHtmlMiddleware(
             file === undefined)
         ) {
           file = { source: await generateFallbackHtml(server as ViteDevServer) }
+          isOutputFile = false
         }
         if (!file) {
           return next()
@@ -485,9 +489,30 @@ export function indexHtmlMiddleware(
         const html =
           typeof file.source === 'string'
             ? file.source
-            : Buffer.from(file.source)
+            : Buffer.from(file.source).toString('utf-8')
         const headers = server.config.server.headers
-        return send(req, res, html, 'html', { headers, etag: file.etag })
+        const generation = fullBundle.outputGeneration
+        if (generation === undefined || !isOutputFile) {
+          return send(req, res, html, 'html', { headers, etag: file.etag })
+        }
+        // The page starts at the generation of the output it loads. It goes
+        // in the HTML, so that the output code stays the same when only the
+        // generation moved. The etag then comes from this HTML.
+        const htmlWithGeneration = injectToHead(
+          html,
+          [
+            {
+              tag: 'meta',
+              attrs: {
+                name: BUNDLED_DEV_GENERATION_META_NAME,
+                content: String(generation),
+              },
+              injectTo: 'head-prepend',
+            },
+          ],
+          true,
+        )
+        return send(req, res, htmlWithGeneration, 'html', { headers })
       }
 
       let filePath: string

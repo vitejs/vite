@@ -1,5 +1,7 @@
 import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '..'
+import type { BundledDevPayload } from '../bundledDev'
+import { sendPayload } from './bundledDevPayload'
 
 export function triggerLazyBundlingMiddleware(
   server: ViteDevServer,
@@ -16,32 +18,21 @@ export function triggerLazyBundlingMiddleware(
       return next()
     }
 
-    let params: URLSearchParams
-    try {
-      params = new URL(`http://localhost${req.url}`).searchParams
-    } catch {
-      // Malformed URL
+    const query = req.url.slice('/@vite/lazy?'.length)
+    const moduleId = new URLSearchParams(query).get('id')
+    if (!moduleId) {
       return next()
     }
-
-    const moduleId = params.get('id')
-    const clientId = params.get('clientId')
-    let result: { code: string; filename: string } | undefined
+    let payload: BundledDevPayload
     try {
-      result = await bundledDev.triggerLazyBundling(moduleId, clientId)
+      payload = await bundledDev.triggerLazyBundling(moduleId, query)
     } catch (e) {
       server.config.logger.error(
-        `Failed to trigger lazy bundling for ${moduleId} (clientId: ${clientId}):` +
-          e,
+        `Failed to trigger lazy bundling for ${moduleId}:` + e,
         { error: e },
       )
       return next(new Error(`Failed to trigger lazy bundling`))
     }
-    if (result == null) {
-      return next()
-    }
-
-    res!.setHeader('Content-Type', 'application/javascript')
-    return res!.end(result.code)
+    sendPayload(server, res, payload, bundledDev.lazyMaps)
   }
 }

@@ -8,8 +8,9 @@ import type {
   RolldownOutput,
 } from 'rolldown'
 import {
-  type BindingClientHmrUpdate,
+  type BindingHmrUpdate,
   type DevEngine,
+  type DevOutputInfo,
   dev,
 } from 'rolldown/experimental'
 import { ChunkMetadataMap, resolveRolldownOptions } from '../build'
@@ -30,11 +31,16 @@ import {
 import { convertToDevWatchOptions } from '../watch'
 import type { DevEnvironment } from './environment'
 import { type NormalizedHotChannelClient, debugHmr, getShortName } from './hmr'
+import { PayloadMapStore } from './middlewares/bundledDevPayload'
 import { prepareError } from './middlewares/error'
 
 const debug = createDebugger('vite:full-bundle-mode')
 
-type HmrOutput = BindingClientHmrUpdate['update']
+/**
+ * The code of an HMR patch or a lazy chunk, and its sourcemap as JSON. The
+ * code has no `sourceMappingURL` comment: the server that serves it adds one.
+ */
+export type BundledDevPayload = { code: string; map: string | undefined }
 
 type MemoryFile = {
   source: string | Uint8Array
@@ -107,6 +113,13 @@ export class BundledDev {
   private lastBuildError: Error | null = null
 
   memoryFiles: MemoryFiles = new MemoryFiles()
+  patchMaps: PayloadMapStore = new PayloadMapStore('p')
+  lazyMaps: PayloadMapStore = new PayloadMapStore('l')
+  /**
+   * The HMR generation of the stored output. A page that loads this output
+   * starts at it (`DevRuntime.setOutputGeneration`).
+   */
+  outputGeneration: number | undefined
   facadeToChunk: Map<string, string> = new Map()
   private entryResolver?: (id: string) => Promise<string | undefined>
 
@@ -118,8 +131,6 @@ export class BundledDev {
     }
     return this._devEngine
   }
-
-  private pendingPayloadFilenames = new Set<string>()
 
   get hasBuildOutput(): boolean {
     return this.memoryFiles.size > this.staticFiles.size
@@ -153,15 +164,8 @@ export class BundledDev {
         : rolldownOptions.output
     )!
 
-    this.environment.hot.on(
-      'vite:client-connected',
-      async (payload, client) => {
-        this.clients.setupIfNeeded(client, payload.clientId)
-        await this.devEngine.registerClient(payload.clientId)
-      },
-    )
-    this.environment.hot.on('vite:bundled-dev:payload-delivered', (payload) => {
-      this.markPayloadDelivered(payload.filename)
+    this.environment.hot.on('vite:client-connected', (payload, client) => {
+      this.clients.setupIfNeeded(client, payload.clientId)
     })
     this.environment.hot.on('vite:client:connect', (_payload, client) => {
       // Replay the cached build error to freshly connected clients.
@@ -177,7 +181,6 @@ export class BundledDev {
     this.environment.hot.on('vite:client:disconnect', (_payload, client) => {
       const clientId = this.clients.delete(client)
       if (clientId) {
-        this.devEngine.removeClient(clientId)
         this.reloadNeededClientIds.delete(clientId)
       }
     })
@@ -200,73 +203,8 @@ export class BundledDev {
     )
 
     this._devEngine = await dev(rolldownOptions, outputOptions, {
-      onHmrUpdates: (result) => {
-        if (result instanceof Error) {
-          this.environment.logger.error(
-            colors.red(`✘ Build error: ${result.message}`),
-            {
-              error: result,
-            },
-          )
-          // TODO: send to the specific client
-          for (const client of this.clients.getAll()) {
-            client.send({
-              type: 'error',
-              err: prepareError(result),
-            })
-          }
-          return
-        }
-        const { updates, changedFiles } = result
-        if (changedFiles.length === 0) {
-          return
-        }
-        if (updates.every((update) => update.update.type === 'Noop')) {
-          debug?.(`ignored file change for ${changedFiles.join(', ')}`)
-          return
-        }
-        for (const { clientId, update } of updates) {
-          const client = this.clients.get(clientId)
-          if (client) {
-            this.handleHmrOutput(client, changedFiles, update)
-          }
-        }
-        // an edit requested a reload but its rebuild failed, leaving the page
-        // waiting behind the error overlay. The fix produced this successful
-        // build — regenerate output now, or the page would never reload.
-        if (this.reloadNeededClientIds.size) {
-          this.ensureOutputAndFlushReloadNeeded()
-        }
-      },
-      onOutput: (result) => {
-        if (result instanceof Error) {
-          this.environment.logger.error(
-            colors.red(`✘ Build error: ${result.message}`),
-            {
-              error: result,
-            },
-          )
-          this.lastBuildError = result
-          this.fullReloadPending = false
-          this.environment.hot.send({
-            type: 'error',
-            err: prepareError(result),
-          })
-          return
-        }
-        this.lastBuildError = null
-
-        this.storeOutputFiles(result.output)
-
-        // Trigger a full reload if there's no error in the result and a reload is pending from HMR.
-        if (this.fullReloadPending) {
-          this.fullReloadPending = false
-          this.debouncedFullReload()
-        }
-        if (this.reloadNeededClientIds.size) {
-          this.debouncedReloadNeededFlush()
-        }
-      },
+      onHmrUpdates: (result) => this.handleHmrUpdates(result),
+      onOutput: (result, info) => this.handleOutput(result, info),
       onAdditionalAssets: (result) => {
         this.storeOutputFiles(result.output)
       },
@@ -296,6 +234,79 @@ export class BundledDev {
         })
       }
     })
+  }
+
+  /** @internal */
+  handleHmrUpdates(
+    result: Error | { update: BindingHmrUpdate; changedFiles: string[] },
+  ): void {
+    if (result instanceof Error) {
+      this.environment.logger.error(
+        colors.red(`✘ Build error: ${result.message}`),
+        {
+          error: result,
+        },
+      )
+      // TODO: send to the specific client
+      for (const client of this.clients.getAll()) {
+        client.send({
+          type: 'error',
+          err: prepareError(result),
+        })
+      }
+      return
+    }
+    const { update, changedFiles } = result
+    if (changedFiles.length === 0) {
+      return
+    }
+    if (update.type === 'Noop') {
+      debug?.(`ignored file change for ${changedFiles.join(', ')}`)
+      return
+    }
+    this.handleHmrUpdate(changedFiles, update)
+    // an edit requested a reload but its rebuild failed, leaving the page
+    // waiting behind the error overlay. The fix produced this successful
+    // build — regenerate output now, or the page would never reload.
+    if (this.reloadNeededClientIds.size) {
+      this.ensureOutputAndFlushReloadNeeded()
+    }
+  }
+
+  /** @internal */
+  handleOutput(
+    result: Error | RolldownOutput,
+    info: DevOutputInfo | undefined,
+  ): void {
+    if (result instanceof Error) {
+      this.environment.logger.error(
+        colors.red(`✘ Build error: ${result.message}`),
+        {
+          error: result,
+        },
+      )
+      this.lastBuildError = result
+      // keep a pending reload until a build succeeds: the pages still run
+      // the output from before the change that needed the reload
+      this.environment.hot.send({
+        type: 'error',
+        err: prepareError(result),
+      })
+      return
+    }
+    this.lastBuildError = null
+
+    this.storeOutputFiles(result.output)
+    this.outputGeneration = info?.hmrGeneration
+
+    // Trigger a full reload if there's no error in the result and a reload is pending from HMR.
+    if (this.fullReloadPending) {
+      this.fullReloadPending = false
+      this.debouncedFullReload()
+    }
+    if (this.reloadNeededClientIds.size) {
+      this.debouncedReloadNeededFlush()
+    }
   }
 
   /**
@@ -367,60 +378,61 @@ export class BundledDev {
     return shouldTrigger
   }
 
-  async triggerLazyBundling(
-    moduleId: string | null,
-    clientId: string | null,
-  ): Promise<
-    | { code: string; filename: string; sourcemap: string | undefined }
-    | undefined
-  > {
-    if (!moduleId || !clientId) {
-      return
-    }
-    debug?.(
-      `TRIGGER-LAZY: trigger lazy bundling for module ${moduleId} for client ${clientId}`,
+  /**
+   * Renders the HMR patch a client requests. `query` describes what the client
+   * holds; the runtime builds it (`DevRuntime.encodeHave`).
+   */
+  async renderPatch(query: string): Promise<BundledDevPayload> {
+    debug?.(`PATCH: render the hmr patch for ${query}`)
+    const result = await this.devEngine.renderPatch(
+      this.resolveHaveQuery(query),
     )
-    const result = await this.devEngine.compileEntry(moduleId, clientId)
-    this.pendingPayloadFilenames.add(result.filename)
-    // Serve the chunk's sourcemap, the same way an eager chunk's and an HMR
-    // patch's maps are served. The chunk's relative `sourceMappingURL` resolves
-    // against the URL it is imported from, `/@vite/lazy?...`, so register the map
-    // under that directory for the reference to reach it.
-    if (result.sourcemapFilename && result.sourcemap) {
-      this.memoryFiles.set(`@vite/${result.sourcemapFilename}`, {
-        source: result.sourcemap,
-      })
+    if (result.type === 'Reload') {
+      return reloadNeededPayload(result.reason)
     }
-    return {
-      filename: result.filename,
-      code: result.code + payloadDeliveredAck(result.filename),
-      sourcemap: result.sourcemap,
-    }
+    return { code: result.code, map: result.sourcemap }
   }
 
-  async resetClient(oldClientId: string, newClientId: string): Promise<void> {
+  /**
+   * A client that does not know the generation of its output leaves out `g`:
+   * it gets the generation of the stored output, the one it most likely loaded.
+   */
+  private resolveHaveQuery(query: string): string {
+    if (
+      this.outputGeneration === undefined ||
+      new URLSearchParams(query).has('g')
+    ) {
+      return query
+    }
+    return `${query}&g=${this.outputGeneration}`
+  }
+
+  /**
+   * Compiles the lazy entry `moduleId`. `query` describes what the client
+   * holds, like the query of `renderPatch`.
+   */
+  async triggerLazyBundling(
+    moduleId: string,
+    query: string,
+  ): Promise<BundledDevPayload> {
+    debug?.(`TRIGGER-LAZY: trigger lazy bundling for module ${moduleId}`)
+    const result = await this.devEngine.compileEntry(
+      moduleId,
+      this.resolveHaveQuery(query),
+    )
+    if (result.type === 'Reload') {
+      return reloadNeededPayload(result.reason)
+    }
+    return { code: result.code, map: result.sourcemap }
+  }
+
+  resetClient(oldClientId: string, newClientId: string): void {
     const client = this.clients.get(oldClientId)
     if (!client) {
       throw new Error(`bundled dev client ${oldClientId} is not registered`)
     }
     this.clients.replace(client, newClientId)
     this.reloadNeededClientIds.delete(oldClientId)
-    await this.devEngine.removeClient(oldClientId)
-    await this.devEngine.registerClient(newClientId)
-  }
-
-  /**
-   * Called when the client reports that it evaluated a payload (the line appended
-   * by `payloadDeliveredAck`). Only then is the payload recorded on the server's
-   * per-client ship map, so later chunks may omit a module only if the client
-   * already registered it.
-   *
-   * Note: the payload filename is unique across all clients.
-   */
-  markPayloadDelivered(filename: string): void {
-    if (this.pendingPayloadFilenames.delete(filename)) {
-      this.devEngine.notifyPayloadDelivered(filename)
-    }
   }
 
   async close(): Promise<void> {
@@ -543,20 +555,12 @@ export class BundledDev {
     }
   }
 
-  private handleHmrOutput(
-    client: NormalizedHotChannelClient,
-    files: string[],
-    hmrOutput: HmrOutput,
-  ) {
-    if (hmrOutput.type === 'Noop') return
-
+  private handleHmrUpdate(files: string[], update: BindingHmrUpdate) {
     const shortFile = files
       .map((file) => getShortName(file, this.environment.config.root))
       .join(', ')
-    if (hmrOutput.type === 'FullReload') {
-      const reason = hmrOutput.reason
-        ? colors.dim(` (${hmrOutput.reason})`)
-        : ''
+    if (update.type === 'FullReload') {
+      const reason = update.reason ? colors.dim(` (${update.reason})`) : ''
       this.environment.logger.info(
         colors.green(`trigger page reload `) + colors.dim(shortFile) + reason,
         { clear: true, timestamp: true },
@@ -567,44 +571,22 @@ export class BundledDev {
       this.fullReloadPending = true
       return
     }
+    if (update.type !== 'Changed') return
 
-    debug?.(`handle hmr output for ${shortFile}`, {
-      ...hmrOutput,
-      code: typeof hmrOutput.code === 'string' ? '[code]' : hmrOutput.code,
-    })
-
-    this.pendingPayloadFilenames.add(hmrOutput.filename)
-    this.memoryFiles.set(hmrOutput.filename, {
-      // ensure that the generated hmr patch contains ESM syntax
-      // this is to avoid attacks like GHSA-4v9v-hfq4-rm2v
-      // https://github.com/webpack/webpack-dev-server/security/advisories/GHSA-4v9v-hfq4-rm2v
-      // https://green.sapphi.red/blog/local-server-security-best-practices#_2-using-xssi-and-modifying-the-prototype
-      // https://green.sapphi.red/blog/local-server-security-best-practices#properly-check-the-request-origin
-      // we can also use `Cross-Origin Resource Policy` header instead of this
-      // but we cannot use `Sec-Fetch-*` headers as they are only sent to potentially-trustworthy origins
-      source:
-        hmrOutput.code +
-        payloadDeliveredAck(hmrOutput.filename) +
-        '\n; export {}',
-      sourcemapPath: hmrOutput.sourcemapFilename
-        ? normalizePath(hmrOutput.sourcemapFilename)
-        : undefined,
-    })
-    if (hmrOutput.sourcemapFilename && hmrOutput.sourcemap) {
-      this.memoryFiles.set(hmrOutput.sourcemapFilename, {
-        source: hmrOutput.sourcemap,
+    debug?.(`handle hmr update for ${shortFile}`, update)
+    for (const client of this.clients.getAll()) {
+      client.send({
+        type: 'bundled-dev-update',
+        changedIds: update.changedIds,
+        staleIds: update.staleIds,
+        gen: update.gen,
+        seq: this.clients.nextSeq(client),
       })
     }
-    client.send({
-      type: 'bundled-dev-update',
-      changedIds: hmrOutput.changedIds,
-      url: hmrOutput.filename,
-      seq: hmrOutput.seq,
-    })
     const { formatted, truncated } = formatAndTruncateFileList(
-      hmrOutput.changedIds,
+      update.changedIds,
     )
-    if (truncated) debugHmr?.(`hmr update ${hmrOutput.changedIds.join(', ')}`)
+    if (truncated) debugHmr?.(`hmr update ${update.changedIds.join(', ')}`)
     this.environment.logger.info(
       colors.green(`hmr update `) + colors.dim(formatted),
       {
@@ -618,6 +600,7 @@ export class BundledDev {
 class Clients {
   private clientToId = new Map<NormalizedHotChannelClient, string>()
   private idToClient = new Map<string, NormalizedHotChannelClient>()
+  private lastSeq = new Map<NormalizedHotChannelClient, number>()
 
   setupIfNeeded(client: NormalizedHotChannelClient, clientId: string) {
     const id = this.clientToId.get(client)
@@ -630,11 +613,19 @@ class Clients {
     this.idToClient.set(clientId, client)
   }
 
+  /** The new runtime behind `client` counts updates from the start again. */
   replace(client: NormalizedHotChannelClient, clientId: string): void {
     const previousClientId = this.clientToId.get(client)
     if (previousClientId) this.idToClient.delete(previousClientId)
     this.clientToId.set(client, clientId)
     this.idToClient.set(clientId, client)
+    this.lastSeq.delete(client)
+  }
+
+  nextSeq(client: NormalizedHotChannelClient): number {
+    const seq = (this.lastSeq.get(client) ?? 0) + 1
+    this.lastSeq.set(client, seq)
+    return seq
   }
 
   get(id: string): NormalizedHotChannelClient | undefined {
@@ -654,6 +645,7 @@ class Clients {
     if (id) {
       this.clientToId.delete(client)
       this.idToClient.delete(id)
+      this.lastSeq.delete(client)
       return id
     }
   }
@@ -671,13 +663,16 @@ function debounce(time: number, cb: () => void) {
 }
 
 /**
- * The line appended to a lazy chunk or HMR patch so the client reports the
- * payload as delivered once its factories are registered. Placed after the
- * chunk's tail: if the tail throws, no report is sent and the next payload
- * simply re-ships those factories, which is safe (registration overwrites).
+ * The answer to a client that the dev engine cannot serve. It is served with
+ * status 200: a failed import would only reject the `import()` that made the
+ * request, and the page would not reload.
  */
-function payloadDeliveredAck(filename: string): string {
-  return `\n;__rolldown_runtime__.payloadDelivered(${JSON.stringify(filename)});`
+function reloadNeededPayload(reason: string): BundledDevPayload {
+  debug?.(`RELOAD-NEEDED: ${reason}`)
+  return {
+    code: `__rolldown_runtime__.reloadNeeded(${JSON.stringify(reason)});\nexport {}`,
+    map: undefined,
+  }
 }
 
 function isEmptyInput(input: RolldownOptions['input']): boolean {

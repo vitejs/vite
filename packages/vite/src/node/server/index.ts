@@ -78,6 +78,10 @@ import type { DevEnvironment } from './environment'
 import type { HmrOptions, NormalizedHotChannel, WsOptions } from './hmr'
 import { handleHMRUpdate, updateModules } from './hmr'
 import { baseMiddleware } from './middlewares/base'
+import {
+  bundledDevPatchMiddleware,
+  bundledDevPayloadMapMiddleware,
+} from './middlewares/bundledDevPayload'
 import { errorMiddleware } from './middlewares/error'
 import { hostValidationMiddleware } from './middlewares/hostCheck'
 import { htmlFallbackMiddleware } from './middlewares/htmlFallback'
@@ -1161,6 +1165,8 @@ async function applyMiddlewares(
 
   if (config.experimental.bundledDev) {
     middlewares.use(triggerLazyBundlingMiddleware(server))
+    middlewares.use(bundledDevPatchMiddleware(server))
+    middlewares.use(bundledDevPayloadMapMiddleware(server))
     middlewares.use(memoryFilesMiddleware(server))
   } else {
     // main transform middleware

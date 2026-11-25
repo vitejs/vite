@@ -4,13 +4,11 @@ import { isBundledDev, page, promiseWithResolvers } from '~utils'
 
 // Regression test for rolldown/rolldown#10774.
 //
-// A lazy chunk omits every factory the server believes this client already
-// holds. The server must learn that from the client (the chunk reports back
-// after registering its factories), not from its own HTTP response finishing:
-// bytes that left the server may still be on the wire while a later chunk is
-// compiled, delivered and evaluated. If the server recorded delivery too
-// early, the later chunk would omit a shared factory and `initModule` would
-// throw `MissingFactoryError` in the browser.
+// A lazy chunk omits every factory the client already holds. The client lists
+// them in the request itself, so a response that left the server but did not
+// reach the page yet cannot make a later chunk omit a factory. If it did, the
+// later chunk would omit a shared factory and `initModule` would throw
+// `MissingFactoryError` in the browser.
 //
 // The spec makes that window deterministic with Playwright routing: A's
 // response is fetched from the server (so the server finished writing it) but
@@ -70,8 +68,8 @@ describe.runIf(isBundledDev)('lazy compilation', () => {
       await page.click('#route-a-btn')
       await aFetched.promise
 
-      // B is compiled while A's bytes are held back from the page, so the
-      // client has not reported A yet and B must still carry shared.js.
+      // B is requested while A's bytes are held back from the page, so the
+      // client does not hold shared.js yet and B must carry it.
       await page.click('#route-b-btn')
       await expect
         .poll(() => lazyBodies.some((e) => e.id.includes('page-b')))
@@ -97,11 +95,6 @@ describe.runIf(isBundledDev)('lazy compilation', () => {
   })
 
   test('a chunk requested after the earlier chunks were evaluated omits the shared factory', async () => {
-    // The client reports A and B over the websocket after evaluating them;
-    // the next lazy request is a separate HTTP request, so give the reports
-    // a moment to land before C is compiled.
-    await new Promise((resolve) => setTimeout(resolve, 300))
-
     await page.click('#route-c-btn')
     await expect
       .poll(() => page.textContent('#route-c-content'))

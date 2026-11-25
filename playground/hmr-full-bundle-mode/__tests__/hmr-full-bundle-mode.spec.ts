@@ -55,6 +55,20 @@ if (isBuild) {
     expect(loaded).toContain(runtimeUrl.href)
   })
 
+  // The output code does not carry the generation, so an undo gives the same bytes
+  test('the page starts at the generation of the output in its HTML', async () => {
+    const generation = await page.getAttribute(
+      'meta[name="vite-bundled-dev-generation"]',
+      'content',
+    )
+    expect(generation).toMatch(/^\d+$/)
+    expect(
+      await page.evaluate(
+        () => (globalThis as any).__rolldown_runtime__.knownGen,
+      ),
+    ).toBe(Number(generation))
+  })
+
   // BUNDLED -> GENERATE_HMR_PATCH -> BUNDLING -> BUNDLE_ERROR -> BUNDLING -> BUNDLED
   test('handle bundle error', async () => {
     editFile('main.js', (code) =>
@@ -127,7 +141,7 @@ if (isBuild) {
   // BUNDLED -> GENERATING_HMR_PATCH -> BUNDLED
   test('generate hmr patch', async () => {
     await expect.poll(() => page.textContent('.hmr')).toBe('hello')
-    const hmrPatchFileRes = page.waitForResponse(/\/hmr_patch_\d\.js$/)
+    const hmrPatchFileRes = page.waitForResponse(/\/__rolldown_hmr_patch\.js\?/)
     editFile('hmr.js', (code) =>
       code.replace("const foo = 'hello'", "const foo = 'hello1'"),
     )
@@ -371,27 +385,24 @@ if (isBuild) {
     await page.click('#load-dynamic')
     await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')
 
-    // the lazy chunk names a `.map` file that only exists in memory; the dev
-    // server has to register it, otherwise the reference 404s and the module
-    // cannot be mapped back to its source. The reference is relative and a lazy
-    // chunk is imported from `/@vite/lazy?...`, so it resolves under `/@vite/`.
+    // the chunk links its sourcemap, so the page downloads it only for devtools
     const response = await responsePromise
     const code = await response.text()
+    expect(code).not.toContain('sourceMappingURL=data:')
     const url = code.match(/\/\/# sourceMappingURL=(.+)$/m)?.[1]
-    expect(url).toMatch(/^lazy_compile_\d+\.js\.map$/)
+    expect(url).toMatch(/^\/__rolldown_payload_map_l\d+\.map$/)
 
-    const mapResponse = await fetch(new URL(url!, response.url()))
-    expect(mapResponse.status).toBe(200)
-    const map = await mapResponse.json()
+    const mapUrl = new URL(url!, response.url())
+    const map = await (await page.request.get(mapUrl.href)).json()
     expect(map.version).toBe(3)
-    expect(map.sources.some((s: string) => s.endsWith('dynamic.js'))).toBe(true)
     expect(map.mappings.length).toBeGreaterThan(0)
+    // the sources resolve against the map URL as they do for an output chunk
+    const dynamic = map.sources
+      .map((source: string) => new URL(source, mapUrl).pathname)
+      .find((source: string) => source.endsWith('dynamic.js'))
+    expect(dynamic).toBe('/dynamic.js')
   })
 
-  // placed before `invalidate` on purpose: that test's cleanup restores
-  // invalidation-child.js, whose `hot.invalidate()` propagates to a parent
-  // without a shipped factory and forces a full page reload — which would
-  // wipe the `hot.data` this test relies on.
   test('preserves import.meta.hot.data across updates', async () => {
     await expect.poll(() => page.textContent('.data-count')).toBe('1')
     await expect.poll(() => page.textContent('.data-disposed')).toBe('0')
@@ -423,15 +434,19 @@ if (isBuild) {
       .poll(() => page.textContent('.invalidation-parent'))
       .toBe('child')
     const logIndex = browserLogs.length
+    await page.evaluate(() => ((window as any).__beforeInvalidate = true))
     editFile('invalidation-child.js', (code) =>
       code.replace("'child'", "'child updated'"),
     )
-    // `hot.invalidate()` is handled fully client-side; the update propagates
-    // to the parent (re-run in place, or a full reload when the parent's
-    // factory was never shipped)
+    // `hot.invalidate()` is handled client-side; the update propagates to the
+    // parent, whose code the client requests from the server, and the parent
+    // runs again in place
     await expect
       .poll(() => page.textContent('.invalidation-parent'))
       .toBe('child updated')
+    expect(await page.evaluate(() => (window as any).__beforeInvalidate)).toBe(
+      true,
+    )
     expect(
       browserLogs
         .slice(logIndex)
@@ -535,10 +550,26 @@ if (isBuild) {
   })
 
   test('lazy bundling errors return 500', async () => {
+    const have = await page.evaluate(() =>
+      (globalThis as any).__rolldown_runtime__.encodeHave(new Set()),
+    )
     const response = await page.request.get(
-      new URL('/@vite/lazy?id=%2Ffoo%2Fbar&clientId=x', page.url()).href,
+      new URL(`/@vite/lazy?id=%2Ffoo%2Fbar&${have}`, page.url()).href,
     )
     expect(response.status()).toBe(500)
+  })
+
+  test('requests for the output of another dev server get a reload body', async () => {
+    for (const url of [
+      '/@vite/lazy?id=%2Ffoo%2Fbar&s=0&g=0',
+      '/__rolldown_hmr_patch.js?s=0&g=0',
+    ]) {
+      const response = await page.request.get(new URL(url, page.url()).href)
+      expect(response.status()).toBe(200)
+      expect(await response.text()).toMatch(
+        /^__rolldown_runtime__\.reloadNeeded\(".+"\);\nexport \{\}/,
+      )
+    }
   })
 
   // Blocked by https://github.com/rolldown/rolldown/issues/10340

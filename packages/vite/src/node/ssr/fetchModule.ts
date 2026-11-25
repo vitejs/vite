@@ -3,13 +3,14 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import type { FetchResult } from 'vite/module-runner'
 import type { TransformResult } from '..'
 import {
+  BUNDLED_DEV_HMR_PATCH_FILENAME,
   MODULE_RUNNER_SOURCEMAPPING_SOURCE,
   SOURCEMAPPING_URL,
 } from '../../shared/constants'
 import type { ViteFetchResult } from '../../shared/invokeMethods'
 import { cleanUrl, encodeSourceURL, unwrapId } from '../../shared/utils'
 import { tryNodeResolve } from '../plugins/resolve'
-import type { BundledDev } from '../server/bundledDev'
+import type { BundledDev, BundledDevPayload } from '../server/bundledDev'
 import type { DevEnvironment } from '../server/environment'
 import { genSourceMapUrl } from '../server/sourcemap'
 import {
@@ -145,47 +146,40 @@ async function fetchBundledModule(
 ) {
   await bundledDev._waitForInitialBuildSuccess()
 
-  if (url.startsWith('/@vite/lazy?')) {
-    const { searchParams } = new URL(url, 'http://localhost')
-    const moduleId = searchParams.get('id')!
-    const clientId = searchParams.get('clientId')!
-    const lazyResult = await bundledDev.triggerLazyBundling(moduleId, clientId)
-    if (lazyResult == null) {
-      throw new Error(`unknown request: ${url}`)
-    }
-    // This module is invalidated immediately, so url/id do not matter
-    const result: ViteFetchResult = {
-      code: lazyResult.code,
-      url,
-      id: moduleId!,
-      file: cleanUrl(moduleId!),
-      invalidate: false,
-    }
-
-    // See https://github.com/rolldown/rolldown/issues/8376
-    const ssrResult = await ssrTransform(
-      result.code,
-      lazyResult.sourcemap ? JSON.parse(lazyResult.sourcemap) : null,
-      url,
-      result.code,
-    )
-    if (!ssrResult) {
-      throw new Error(`[vite] cannot apply ssr transform to '${url}'.`)
-    }
-    result.code = ssrResult.code
-    if (options.inlineSourceMap !== false) {
-      result.code = inlineSourceMap(
-        result.id,
-        ssrResult,
-        options.startOffset,
-      ).code
-    }
-    return result
-  }
-
   const outDir = normalizePath(
     path.resolve(environment.config.root, environment.config.build.outDir),
   )
+
+  if (url.startsWith('/@vite/lazy?')) {
+    const query = url.slice('/@vite/lazy?'.length)
+    const moduleId = new URLSearchParams(query).get('id')
+    if (!moduleId) {
+      throw new Error(`unknown request: ${url}`)
+    }
+    const payload = await bundledDev.triggerLazyBundling(moduleId, query)
+    // This module is invalidated immediately, so url/id do not matter
+    return transformBundledPayload(
+      payload,
+      url,
+      moduleId,
+      cleanUrl(moduleId),
+      options,
+    )
+  }
+
+  if (url.startsWith(`/${BUNDLED_DEV_HMR_PATCH_FILENAME}?`)) {
+    const payload = await bundledDev.renderPatch(
+      url.slice(BUNDLED_DEV_HMR_PATCH_FILENAME.length + 2),
+    )
+    return transformBundledPayload(
+      payload,
+      url,
+      url,
+      // relative imports in the patch resolve like those in the output chunks
+      normalizePath(path.resolve(outDir, BUNDLED_DEV_HMR_PATCH_FILENAME)),
+      options,
+    )
+  }
 
   let fileName: string
   let facadeId: string | undefined
@@ -219,6 +213,8 @@ async function fetchBundledModule(
   }
 
   const memoryFile = bundledDev.memoryFiles.get(fileName)
+  // read with the file: both change only when a new output is stored
+  const generation = bundledDev.outputGeneration
   const code = memoryFile?.source
   if (code == null) {
     throw new Error(
@@ -247,6 +243,7 @@ async function fetchBundledModule(
     rolldownModuleId: facadeId
       ? normalizePath(path.relative(process.cwd(), facadeId))
       : undefined,
+    rolldownGeneration: generation,
   }
   // TODO: this should be done in rolldown, there is already a function for it
   // output.format = 'module-runner'
@@ -274,6 +271,30 @@ async function fetchBundledModule(
     result.code = result.code.replace(/^#!.*/, (s) => ' '.repeat(s.length))
 
   return result
+}
+
+async function transformBundledPayload(
+  payload: BundledDevPayload,
+  url: string,
+  id: string,
+  file: string,
+  options: FetchModuleOptions,
+): Promise<ViteFetchResult> {
+  // See https://github.com/rolldown/rolldown/issues/8376
+  const ssrResult = await ssrTransform(
+    payload.code,
+    payload.map ? JSON.parse(payload.map) : null,
+    file,
+    payload.code,
+  )
+  if (!ssrResult) {
+    throw new Error(`[vite] cannot apply ssr transform to '${url}'.`)
+  }
+  let code = ssrResult.code
+  if (options.inlineSourceMap !== false) {
+    code = inlineSourceMap(id, ssrResult, options.startOffset).code
+  }
+  return { code, url, id, file, invalidate: false }
 }
 
 const OTHER_SOURCE_MAP_REGEXP = new RegExp(

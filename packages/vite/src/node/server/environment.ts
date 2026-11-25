@@ -173,11 +173,11 @@ export class DevEnvironment extends BaseEnvironment {
             : { type: 'RegExp', source: builtin.source, flags: builtin.flags },
         )
       },
-      resetBundledDevClient: (oldClientId, newClientId) => {
+      resetBundledDevClient: async (oldClientId, newClientId) => {
         if (!this.bundledDev) {
           throw new Error('bundled dev is not enabled in this environment')
         }
-        return this.bundledDev.resetClient(oldClientId, newClientId)
+        this.bundledDev.resetClient(oldClientId, newClientId)
       },
     })
 

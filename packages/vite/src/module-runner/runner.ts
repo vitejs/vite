@@ -7,6 +7,7 @@ import {
   BundledDevHMRClient,
   BundledDevHMRContext,
 } from '../shared/bundledDevHmr'
+import { BUNDLED_DEV_HMR_PATCH_FILENAME } from '../shared/constants'
 import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
 import {
   type NormalizedModuleRunnerTransport,
@@ -65,6 +66,13 @@ export class ModuleRunner {
   // before the first one runs. It is per-runner on purpose — `ssrLoadModule`
   // has its own compat runner, and a global would collide.
   private rolldownDevRuntime?: DevRuntime
+  /**
+   * The runtime that asked for each patch or lazy chunk that is still loading.
+   * A full reload can replace the runtime while a request runs. Its payload
+   * must run against the runtime that asked for it, or a Reload answer to an
+   * old request would mark the new runtime.
+   */
+  private payloadRuntimes = new Map<string, DevRuntime>()
 
   private closed = false
 
@@ -99,14 +107,6 @@ export class ModuleRunner {
           {
             partialAccept:
               optionsHmr !== true && optionsHmr.partialAccept === true,
-            loadPatch: async (url) => {
-              await this.import(url)
-              // don't leave the HMR patch in memory
-              const patchModule = this.evaluatedModules.getModuleByUrl(url)
-              if (patchModule) {
-                this.evaluatedModules.removeModule(patchModule)
-              }
-            },
             beforeApply: () => 'continue',
             importUpdatedModule,
           },
@@ -128,7 +128,7 @@ export class ModuleRunner {
       this.transport.connect?.()
     }
     if (runtime) {
-      // registers this runner with the dev engine so it gets its own ship map
+      // lets the server send this runner a full reload
       this.transport.send({
         type: 'custom',
         event: 'vite:client-connected',
@@ -149,6 +149,15 @@ export class ModuleRunner {
       fetchedModule.url,
       fetchedModule,
     )
+    // A push can come before the entry is fetched, and the entry then runs the
+    // code from before the push. A payload import is part of a pull, and the
+    // pull catches up itself.
+    if (
+      this.rolldownDevRuntime?.missedUpdate() &&
+      !this.payloadRuntimes.has(url)
+    ) {
+      await this._bundledDevHmrClient?.catchUpMissedUpdates()
+    }
     if (
       this.rolldownDevRuntime &&
       fetchedModule.meta &&
@@ -171,6 +180,21 @@ export class ModuleRunner {
   public clearCache(): void {
     this.evaluatedModules.clear()
     this.hmrClient?.clear()
+  }
+
+  /** @internal */
+  public async _importPayload(
+    runtime: DevRuntime,
+    url: string,
+  ): Promise<unknown> {
+    this.payloadRuntimes.set(url, runtime)
+    try {
+      return await this.import(url)
+    } finally {
+      if (this.payloadRuntimes.get(url) === runtime) {
+        this.payloadRuntimes.delete(url)
+      }
+    }
   }
 
   /** @internal */
@@ -407,9 +431,26 @@ export class ModuleRunner {
     fetchedModule.id = moduleId
     module.meta = fetchedModule
 
-    // Do not keep lazy "patches" in memory, but keep the sourcemap
+    // The first chunk of the output is the entry. A later chunk can be from a
+    // newer output, but the runner heard of every update since the entry.
+    if (
+      this.rolldownDevRuntime &&
+      this.rolldownDevRuntime.knownGen < 0 &&
+      'rolldownGeneration' in fetchedModule &&
+      fetchedModule.rolldownGeneration !== undefined
+    ) {
+      this.rolldownDevRuntime.setOutputGeneration(
+        fetchedModule.rolldownGeneration,
+      )
+    }
+
+    // Do not keep lazy chunks and HMR patches in memory. A lazy chunk keeps its
+    // sourcemap under its stable proxy id. Each patch has a unique id, so a kept
+    // patch map would never be replaced or dropped.
     if (module.url.startsWith('/@vite/lazy?')) {
       this.evaluatedModules.removeModule(module, { retainSourceMap: true })
+    } else if (module.url.startsWith(`/${BUNDLED_DEV_HMR_PATCH_FILENAME}?`)) {
+      this.evaluatedModules.removeModule(module)
     }
 
     return module
@@ -502,7 +543,10 @@ export class ModuleRunner {
           get: getter,
         }),
       [ssrImportMetaKey]: meta,
-      [ssrRolldownRuntimeKey]: this.rolldownDevRuntime,
+      [ssrRolldownRuntimeKey]:
+        // `mod.url` is the first URL of the module, so a later lazy request
+        // for the same module has its own URL only in the fetch result
+        this.payloadRuntimes.get(fetchResult.url) ?? this.rolldownDevRuntime,
     }
 
     this.debug?.('[module runner] executing', meta.href)
@@ -520,18 +564,18 @@ export class ModuleRunner {
         super(nanoid())
       }
 
-      payloadDelivered(filename: string): void {
-        this.runner.transport.send({
-          type: 'custom',
-          event: 'vite:bundled-dev:payload-delivered',
-          data: { filename },
-        })
-      }
+      // unknown until the runner fetches the entry chunk
+      override knownGen = -1
 
       // Rolldown's runtime uses `import` that will not be rewritten by the module runner transform
+      override importPatch(url: string): Promise<unknown> {
+        return this.runner._importPayload(this, url)
+      }
+
       override loadLazyChunk(proxyModuleId: string): Promise<unknown> {
-        return this.runner.import(
-          `/@vite/lazy?id=${encodeURIComponent(proxyModuleId)}&clientId=${this.clientId}`,
+        return this.runner._importPayload(
+          this,
+          this.lazyUrl(proxyModuleId, this.encodeHave(new Set())),
         )
       }
 
@@ -539,6 +583,20 @@ export class ModuleRunner {
         createModuleHotContext: (id) => this.runner.ensureModuleHotContext(id),
         onModuleCacheRemoval: (id) =>
           this.runner._bundledDevHmrClient?.handleModuleCacheRemoval(id),
+        // A replaced runtime can still finish a request it started. The
+        // shared client serves the new runtime then, so it must not reload.
+        onMissingFactory: (id) => {
+          if (this.runner.rolldownDevRuntime !== this) return
+          this.runner._bundledDevHmrClient?.handleMissingFactory(id)
+        },
+        onReloadNeeded: (reason) => {
+          if (this.runner.rolldownDevRuntime !== this) return
+          this.runner._bundledDevHmrClient?.handleReloadNeeded(reason)
+        },
+        onCaughtUp: () => {
+          if (this.runner.rolldownDevRuntime !== this) return
+          this.runner._bundledDevHmrClient?.catchUpMissedUpdates()
+        },
       }
     }
     return new ViteDevRuntime(this)
