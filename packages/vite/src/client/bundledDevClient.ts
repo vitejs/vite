@@ -6,6 +6,7 @@ import {
 } from '../shared/bundledDevHmr'
 import {
   BUNDLED_DEV_GENERATION_META_NAME,
+  BUNDLED_DEV_HMR_HAVE_PATH,
   BUNDLED_DEV_HMR_PATCH_FILENAME,
 } from '../shared/constants'
 import {
@@ -41,6 +42,13 @@ if (typeof DevRuntime !== 'undefined') {
 
     override lazyUrl(proxyModuleId: string, query: string): string {
       return `${base}@vite/lazy?id=${encodeURIComponent(proxyModuleId)}&${query}`
+    }
+
+    // `fetch` resolves a path against the page, but `import()` against this
+    // module. With `server.origin`, only this module is served by Vite.
+    override haveUrl(): string {
+      return new URL(`${base}${BUNDLED_DEV_HMR_HAVE_PATH}`, import.meta.url)
+        .href
     }
   }
 

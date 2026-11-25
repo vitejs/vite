@@ -44,4 +44,46 @@ describe.runIf(isBundledDev)('lazy compilation with a non-root base', () => {
       expect(res.status()).toBe(200)
     }
   })
+
+  test('a query sent in a POST body is posted under base', async () => {
+    const posts: string[] = []
+    const lazyUrls: string[] = []
+    const onResponse = (res: Response) => {
+      const url = new URL(res.url())
+      if (res.request().method() === 'POST') {
+        posts.push(`${res.status()} ${url.pathname}`)
+      } else if (url.pathname === '/foo/@vite/lazy') {
+        lazyUrls.push(url.search)
+      }
+    }
+    page.on('response', onResponse)
+    // every query is longer than 0 characters, so every request posts first
+    const maxQueryLength = await page.evaluate(() => {
+      const runtime = (globalThis as any).__rolldown_runtime__
+      const old = runtime.maxQueryLength
+      runtime.maxQueryLength = 0
+      return old
+    })
+    onTestFinished(async () => {
+      page.off('response', onResponse)
+      await page.evaluate((old) => {
+        ;(globalThis as any).__rolldown_runtime__.maxQueryLength = old
+      }, maxQueryLength)
+    })
+
+    await page.click('#route-b-btn')
+    await expect
+      .poll(() => page.textContent('#route-b-content'))
+      .toBe('B:shared-value')
+    expect(posts).toStrictEqual(['200 /foo/__rolldown_hmr_have'])
+    // absolute, so a page on another origin (`server.origin`) still posts to Vite
+    expect(
+      await page.evaluate(() =>
+        (globalThis as any).__rolldown_runtime__.haveUrl(),
+      ),
+    ).toBe(new URL('/foo/__rolldown_hmr_have', page.url()).href)
+    expect(lazyUrls).toStrictEqual([
+      expect.stringMatching(/^\?id=[^&]*page-b\.js[^&]*&t=[\w-]+&n=\d+$/),
+    ])
+  })
 })

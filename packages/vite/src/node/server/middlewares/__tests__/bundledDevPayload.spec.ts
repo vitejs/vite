@@ -2,16 +2,85 @@ import http from 'node:http'
 import type { AddressInfo } from 'node:net'
 import connect from 'connect'
 import { afterEach, describe, expect, test, vi } from 'vitest'
+import type { Connect } from '#dep-types/connect'
 import type { ViteDevServer } from '../..'
+import { BUNDLED_DEV_HMR_HAVE_CONTENT_TYPE } from '../../../../shared/constants'
 import { BundledDev } from '../../bundledDev'
 import {
+  HaveQueryStore,
   PayloadMapStore,
+  bundledDevHaveMiddleware,
   bundledDevPatchMiddleware,
   bundledDevPayloadMapMiddleware,
 } from '../bundledDevPayload'
 import { triggerLazyBundlingMiddleware } from '../triggerLazyBundling'
 
-const query = 's=7&g=2&u=bAQ&e=bBg&f=bDg&n=3'
+const query = 's=7&g=2&u=bAQ&e=dBeMHqEY&f=bDg&n=3'
+const tokenReloadBody =
+  '__rolldown_runtime__.reloadNeeded("the have-set token is unknown or expired");\nexport {}'
+
+describe('HaveQueryStore', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  test('a token stands for its query once', () => {
+    const store = new HaveQueryStore()
+    const token = store.add(query)!
+    expect(token).toMatch(/^[\w-]{24}$/)
+    expect(store.add(query)).not.toBe(token)
+    expect(store.take(token)).toBe(query)
+    expect(store.take(token)).toBeUndefined()
+    expect(store.take('unknown')).toBeUndefined()
+  })
+
+  test('a token expires after the TTL', () => {
+    vi.useFakeTimers()
+    const store = new HaveQueryStore(64, Infinity, 60_000)
+    const kept = store.add('kept')!
+    const expired = store.add('expired')!
+    vi.advanceTimersByTime(59_999)
+    expect(store.take(kept)).toBe('kept')
+    vi.advanceTimersByTime(1)
+    expect(store.take(expired)).toBeUndefined()
+  })
+
+  test('a full store keeps its live tokens and refuses new ones', () => {
+    vi.useFakeTimers()
+    const store = new HaveQueryStore(3, Infinity, 1000)
+    store.add('a')
+    vi.advanceTimersByTime(1000)
+    const b = store.add('b')!
+    // `a` expired and is gone
+    expect(store.size).toBe(1)
+    const c = store.add('c')!
+    const d = store.add('d')!
+    expect(store.add('e')).toBeUndefined()
+    expect([store.take(b), store.take(c), store.take(d)]).toStrictEqual([
+      'b',
+      'c',
+      'd',
+    ])
+    expect(store.add('e')).toMatch(/^[\w-]{24}$/)
+  })
+
+  test('a store refuses a query over its total length', () => {
+    const store = new HaveQueryStore(64, 5)
+    const abc = store.add('abc')!
+    expect(store.add('def')).toBeUndefined()
+    expect(store.take(abc)).toBe('abc')
+    expect(store.add('defgh')).toMatch(/^[\w-]{24}$/)
+  })
+
+  test('resolve maps a token query to the stored query', () => {
+    const store = new HaveQueryStore()
+    expect(store.resolve(query)).toBe(query)
+    const token = store.add(query)
+    expect(store.resolve(`t=${token}&n=3`)).toBe(query)
+    expect(store.resolve(`t=${token}&n=3`)).toBeUndefined()
+    expect(store.resolve(`id=%2Fa.js&t=${store.add(query)}&n=4`)).toBe(query)
+  })
+})
 
 describe('PayloadMapStore', () => {
   test('drops the least recently used maps past its count', () => {
@@ -63,7 +132,7 @@ describe('bundled dev payload routes', () => {
     httpServer = undefined
   })
 
-  async function setup() {
+  async function setup(parent?: Connect.NextHandleFunction) {
     const bundledDev = new BundledDev({} as any)
     const devEngine = {
       renderPatch: vi.fn(async (q: string) =>
@@ -95,6 +164,8 @@ describe('bundled dev payload routes', () => {
       },
     } as unknown as ViteDevServer
     const app = connect()
+    if (parent) app.use(parent)
+    app.use(bundledDevHaveMiddleware(server))
     app.use(triggerLazyBundlingMiddleware(server))
     app.use(bundledDevPatchMiddleware(server))
     app.use(bundledDevPayloadMapMiddleware(server))
@@ -108,8 +179,135 @@ describe('bundled dev payload routes', () => {
     )
     const { port } = httpServer.address() as AddressInfo
     const url = (path: string) => `http://127.0.0.1:${port}${path}`
-    return { bundledDev, devEngine, url }
+    const post = (body: string, type = BUNDLED_DEV_HMR_HAVE_CONTENT_TYPE) =>
+      fetch(url('/__rolldown_hmr_have'), {
+        method: 'POST',
+        headers: { 'content-type': type },
+        body,
+      })
+    return { bundledDev, devEngine, url, post }
   }
+
+  test('the POST route stores the body and answers a token', async () => {
+    const { bundledDev, url, post } = await setup()
+    const res = await post(query)
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toBe('text/plain')
+    expect(res.headers.get('access-control-allow-origin')).toBeNull()
+    const token = await res.text()
+    expect(bundledDev.haveQueries.take(token)).toBe(query)
+
+    // only POST is handled
+    expect((await fetch(url('/__rolldown_hmr_have'))).status).toBe(404)
+  })
+
+  test('the POST route rejects a type that needs no CORS preflight', async () => {
+    const { bundledDev, post } = await setup()
+    const res = await post(query, 'text/plain')
+    expect(res.status).toBe(415)
+    expect(bundledDev.haveQueries.size).toBe(0)
+  })
+
+  test('the POST route compares the media type only', async () => {
+    const { bundledDev, post } = await setup()
+    const res = await post(
+      query,
+      `${BUNDLED_DEV_HMR_HAVE_CONTENT_TYPE.toUpperCase()}; charset=utf-8`,
+    )
+    expect(res.status).toBe(200)
+    expect(bundledDev.haveQueries.take(await res.text())).toBe(query)
+  })
+
+  test('the POST route answers 503 when the store is full', async () => {
+    const { bundledDev, post } = await setup()
+    bundledDev.haveQueries = new HaveQueryStore(1)
+    expect((await post(query)).status).toBe(200)
+    expect((await post(query)).status).toBe(503)
+  })
+
+  const parentBodyParser: Connect.NextHandleFunction = (req, _res, next) => {
+    let body = ''
+    req.setEncoding('utf8')
+    req.on('data', (chunk: string) => (body += chunk))
+    req.on('end', () => {
+      ;(req as any).body = body
+      next()
+    })
+  }
+
+  /** A body of 1.5 MiB with no content-length. */
+  function postChunked(url: (path: string) => string) {
+    const chunk = new Uint8Array(512 * 1024).fill(101)
+    let sent = 0
+    return fetch(url('/__rolldown_hmr_have'), {
+      method: 'POST',
+      headers: { 'content-type': BUNDLED_DEV_HMR_HAVE_CONTENT_TYPE },
+      body: new ReadableStream({
+        pull(controller) {
+          if (sent++ < 3) controller.enqueue(chunk)
+          else controller.close()
+        },
+      }),
+      duplex: 'half',
+    } as RequestInit)
+  }
+
+  test('the POST route uses a body that the parent app read already', async () => {
+    const { bundledDev, post } = await setup(parentBodyParser)
+    const res = await post(query)
+    expect(res.status).toBe(200)
+    expect(bundledDev.haveQueries.take(await res.text())).toBe(query)
+  })
+
+  test('the POST route rejects a body over 1 MiB', async () => {
+    const { bundledDev, url, post } = await setup()
+    const res = await post('e'.repeat(1024 * 1024 + 1))
+    expect(res.status).toBe(413)
+    expect((await postChunked(url)).status).toBe(413)
+    expect(bundledDev.haveQueries.size).toBe(0)
+  })
+
+  test('the POST route rejects a body over 1 MiB that the parent app read already', async () => {
+    const { bundledDev, url } = await setup(parentBodyParser)
+    expect((await postChunked(url)).status).toBe(413)
+    expect(bundledDev.haveQueries.size).toBe(0)
+  })
+
+  test('the patch route resolves a token to the stored query once', async () => {
+    const { devEngine, url, post } = await setup()
+    const token = await (await post(query)).text()
+    const tokenUrl = url(`/__rolldown_hmr_patch.js?t=${token}&n=3`)
+
+    const res = await fetch(tokenUrl)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe(
+      `patch(${JSON.stringify(query)})\n; export {}`,
+    )
+    expect(devEngine.renderPatch).toHaveBeenCalledWith(query)
+
+    const again = await fetch(tokenUrl)
+    expect(again.status).toBe(200)
+    expect(await again.text()).toBe(`${tokenReloadBody}\n; export {}`)
+    expect(devEngine.renderPatch).toHaveBeenCalledTimes(1)
+  })
+
+  test('the lazy route resolves a token to the stored query once', async () => {
+    const { devEngine, url, post } = await setup()
+    const token = await (await post(query)).text()
+    const tokenUrl = url(`/@vite/lazy?id=%2Fsrc%2Fa.js&t=${token}&n=3`)
+
+    const res = await fetch(tokenUrl)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe(
+      `lazy(${JSON.stringify('/src/a.js')}, ${JSON.stringify(query)})\n; export {}`,
+    )
+    expect(devEngine.compileEntry).toHaveBeenCalledWith('/src/a.js', query)
+
+    const again = await fetch(tokenUrl)
+    expect(again.status).toBe(200)
+    expect(await again.text()).toBe(`${tokenReloadBody}\n; export {}`)
+    expect(devEngine.compileEntry).toHaveBeenCalledTimes(1)
+  })
 
   test('the patch route renders the query and keeps the payload ESM', async () => {
     const { devEngine, url } = await setup()
@@ -198,5 +396,19 @@ describe('bundled dev payload routes', () => {
     // a known generation stays
     await fetch(url(`/__rolldown_hmr_patch.js?${query}`))
     expect(devEngine.renderPatch).toHaveBeenLastCalledWith(query)
+  })
+
+  test('a token query with no generation gets the generation of the output', async () => {
+    const { bundledDev, devEngine, url, post } = await setup()
+    bundledDev.outputGeneration = 4
+    const patchToken = await (await post('s=7&u=bAQ&n=2')).text()
+    await fetch(url(`/__rolldown_hmr_patch.js?t=${patchToken}&n=2`))
+    expect(devEngine.renderPatch).toHaveBeenLastCalledWith('s=7&u=bAQ&n=2&g=4')
+    const lazyToken = await (await post('s=7&n=3')).text()
+    await fetch(url(`/@vite/lazy?id=%2Fsrc%2Fa.js&t=${lazyToken}&n=3`))
+    expect(devEngine.compileEntry).toHaveBeenLastCalledWith(
+      '/src/a.js',
+      's=7&n=3&g=4',
+    )
   })
 })

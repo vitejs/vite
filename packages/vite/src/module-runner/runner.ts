@@ -564,6 +564,8 @@ export class ModuleRunner {
         super(nanoid())
       }
 
+      // the runner has no request header limit, so it never sends a query in a POST body
+      override maxQueryLength = Infinity
       // unknown until the runner fetches the entry chunk
       override knownGen = -1
 

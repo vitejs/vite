@@ -572,6 +572,27 @@ if (isBuild) {
     }
   })
 
+  test('a have-set token works for one request', async () => {
+    const token = await page.evaluate(async () => {
+      const runtime = (globalThis as any).__rolldown_runtime__
+      const response = await fetch('/__rolldown_hmr_have', {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-rolldown-hmr-have' },
+        body: runtime.encodeHave(new Set()),
+      })
+      return response.text()
+    })
+    const tokenReload =
+      '__rolldown_runtime__.reloadNeeded("the have-set token is unknown or expired")'
+    const url = new URL(`/__rolldown_hmr_patch.js?t=${token}&n=1`, page.url())
+    const first = await page.request.get(url.href)
+    expect(first.status()).toBe(200)
+    expect(await first.text()).not.toContain(tokenReload)
+    const again = await page.request.get(url.href)
+    expect(again.status()).toBe(200)
+    expect(await again.text()).toContain(tokenReload)
+  })
+
   // Blocked by https://github.com/rolldown/rolldown/issues/10340
   test.skip('chained invalidate in an import cycle settles', async () => {
     const original = readFile('cycle-a.js')
