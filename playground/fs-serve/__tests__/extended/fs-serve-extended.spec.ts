@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 import { bundledDevUnsupported, isServe, page, viteTestUrl } from '~utils'
 import { tests } from '../commonTests'
 
-tests()
+tests('extended')
 
 describe.runIf(isServe)(
   'extended filesystem checks',
