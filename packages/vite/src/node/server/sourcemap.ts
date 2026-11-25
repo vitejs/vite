@@ -19,6 +19,12 @@ const debug = createDebugger('vite:sourcemap', {
 })
 
 /**
+ * When it is `true`, `getCodeWithSourcemap` also adds the map to the code as
+ * a comment.
+ */
+export const isSourcemapDebugEnabled: boolean = !!debug
+
+/**
  * Given a file path inside node_modules, returns the package root directory.
  * For scoped packages like `node_modules/@scope/pkg/dist/foo.js`, returns `node_modules/@scope/pkg`.
  * Returns `undefined` if the file is not inside node_modules.

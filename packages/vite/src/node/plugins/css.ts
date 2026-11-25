@@ -20,6 +20,7 @@ import type {
   MinimalPluginContext,
   OutputAsset,
   OutputChunk,
+  PluginContext,
   RenderedChunk,
   RenderedModule,
   RollupError,
@@ -56,8 +57,8 @@ import {
   SPECIAL_QUERY_RE,
 } from '../constants'
 import { createBackCompatIdResolver } from '../idResolver'
-import type { ResolveIdFn } from '../idResolver'
-import type { Logger } from '../logger'
+import type { ResolveIdWithLogListenerFn } from '../idResolver'
+import type { LogErrorOptions, LogOptions, Logger } from '../logger'
 import { nodeResolveWithVite } from '../nodeResolve'
 import type { PackageCache } from '../packages'
 import { findNearestMainPackageData } from '../packages'
@@ -66,7 +67,11 @@ import { checkPublicFile } from '../publicDir'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import type { TransformPluginContext } from '../server/pluginContainer'
 import { searchForWorkspaceRoot } from '../server/searchRoot'
-import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
+import {
+  getCodeWithSourcemap,
+  injectSourcesContent,
+  isSourcemapDebugEnabled,
+} from '../server/sourcemap'
 import {
   _dirname,
   arraify,
@@ -99,9 +104,9 @@ import {
 import {
   assetUrlRE,
   cssEntriesMap,
+  decodePublicAssetUrl,
   fileToUrl,
   getAssetUrlPostfix,
-  publicAssetUrlCache,
   publicAssetUrlRE,
   publicFileToBuiltUrl,
   renderAssetUrlInJS,
@@ -345,6 +350,76 @@ function encodePublicUrlsInCSS(config: ResolvedConfig) {
 const cssUrlAssetRE = /__VITE_CSS_URL__([\da-f]+)__/g
 const cssLocalFragmentRE = /(['"]?)__VITE_CSS_LOCAL_FRAGMENT__([\da-f]+)__\1/g
 
+// A returned `meta` replaces a whole top-level key, and other plugins set
+// `meta.vite.cssScopeTo`. So the key is not `vite`.
+const cssPostMetaKey = 'vite:css-post'
+
+/**
+ * Tells the persistent cache to save no result for the module of the current
+ * hook call.
+ */
+type MarkNotCacheable = (reason: string) => void
+
+/** Returns `undefined` when the build cannot use the persistent cache. */
+function getMarkNotCacheable(
+  pluginContext: Pick<PluginContext, 'environment' | 'markNotCacheable'>,
+): MarkNotCacheable | undefined {
+  const { environment } = pluginContext
+  if (
+    environment.getTopLevelConfig().experimental.cache ||
+    environment.config.build.rolldownOptions.experimental?.cache
+  ) {
+    return (reason) => pluginContext.markNotCacheable(reason)
+  }
+}
+
+// Rolldown cannot send a message to Vite's logger again when it reuses a
+// saved result.
+function createMarkingLogger(
+  logger: Logger,
+  markNotCacheable: MarkNotCacheable,
+): Logger {
+  const mark = () => markNotCacheable("sent a message to Vite's logger")
+  return {
+    get hasWarned() {
+      return logger.hasWarned
+    },
+    info(msg: string, options?: LogOptions) {
+      mark()
+      logger.info(msg, options)
+    },
+    warn(msg: string, options?: LogOptions) {
+      mark()
+      logger.warn(msg, options)
+    },
+    warnOnce(msg: string, options?: LogOptions) {
+      mark()
+      logger.warnOnce(msg, options)
+    },
+    error(msg: string, options?: LogErrorOptions) {
+      mark()
+      logger.error(msg, options)
+    },
+    clearScreen(type) {
+      logger.clearScreen(type)
+    },
+    hasErrorLogged(error) {
+      return logger.hasErrorLogged(error)
+    },
+  }
+}
+
+// The resolvers of `vite:css` send their warnings to Vite's logger by
+// themselves, not through the logger that `createMarkingLogger` wraps.
+function getResolverLogListener(
+  markNotCacheable: MarkNotCacheable | undefined,
+): (() => void) | undefined {
+  return (
+    markNotCacheable &&
+    (() => markNotCacheable("a resolver sent a message to Vite's logger"))
+  )
+}
+
 /**
  * Plugin applied before user plugins
  */
@@ -391,6 +466,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     },
 
     load: {
+      cache: true,
       filter: {
         id: CSS_LANGS_RE,
       },
@@ -419,6 +495,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       },
     },
     transform: {
+      cache: true,
       filter: {
         id: {
           include: CSS_LANGS_RE,
@@ -427,20 +504,25 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       },
       async handler(raw, id) {
         const { environment } = this
+        const markNotCacheable = getMarkNotCacheable(this)
+        const onResolverLog = getResolverLogListener(markNotCacheable)
 
         const urlResolver: CssUrlResolver = async (url, importer) => {
           // a `%` that doesn't start an escape sequence (e.g. `url(100%.png)`)
           // is kept as is, like browsers do
           const decodedUrl = decodeURIIfPossible(url) ?? url
-          if (checkPublicFile(decodedUrl, config)) {
+          // When the file is removed, the URL resolves in another way. So the
+          // file is a dependency of the module.
+          const publicFile = checkPublicFile(decodedUrl, config)
+          if (publicFile) {
             if (encodePublicUrlsInCSS(config)) {
-              return [publicFileToBuiltUrl(decodedUrl, config), undefined]
+              return [publicFileToBuiltUrl(decodedUrl, config), publicFile]
             } else {
               const base = joinUrlSegments(
                 config.server.origin ?? '',
                 config.base,
               )
-              return [joinUrlSegments(base, decodedUrl), undefined]
+              return [joinUrlSegments(base, decodedUrl), publicFile]
             }
           }
           // Preserve the leading # when resolving package imports.
@@ -451,21 +533,30 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             environment,
             id,
             importer,
+            onResolverLog,
           )
           if (resolved) {
             if (environment.mode === 'dev') {
+              // A module that reuses its saved result skips this. Only
+              // bundled dev uses the cache, and it serves no source files.
               environment.safeModulePaths.addId(resolved)
             }
             if (fragment) resolved += '#' + fragment
             let url = await fileToUrl(this, resolved, 'string')
-            // Inherit HMR timestamp if this asset was invalidated
-            if (!url.startsWith('data:') && this.environment.mode === 'dev') {
-              const mod = [
-                ...(this.environment.moduleGraph.getModulesByFile(resolved) ??
-                  []),
-              ].find((mod) => mod.type === 'asset')
-              if (mod?.lastHMRTimestamp) {
-                url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+            if (!url.startsWith('data:')) {
+              // The first hook call that uses the file emits it. A later call
+              // takes the result from a map and emits nothing. A saved result
+              // of that later call could not emit the file again.
+              markNotCacheable?.('uses an output asset file')
+              // Inherit HMR timestamp if this asset was invalidated
+              if (this.environment.mode === 'dev') {
+                const mod = [
+                  ...(this.environment.moduleGraph.getModulesByFile(resolved) ??
+                    []),
+                ].find((mod) => mod.type === 'asset')
+                if (mod?.lastHMRTimestamp) {
+                  url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+                }
               }
             }
             return [url, cleanUrl(resolved)]
@@ -481,6 +572,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
               : false
 
             if (!isExternal) {
+              // Rolldown cannot print this warning again when it reuses a
+              // saved result.
+              markNotCacheable?.("sent a message to Vite's logger")
               // #9800 If we cannot resolve the css url, leave a warning.
               config.logger.warnOnce(
                 `\n${decodedUrl} referenced in ${id} didn't resolve at build time, it will remain unchanged to be resolved at runtime`,
@@ -501,6 +595,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           raw,
           preprocessorWorkerController!,
           urlResolver,
+          markNotCacheable,
         )
         if (modules) {
           moduleCache.set(id, modules)
@@ -525,8 +620,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
  * Plugin applied after user plugins
  */
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
-  // styles initialization in buildStart causes a styling loss in watch
-  const styles = new Map<string, string>()
   // queue to emit css serially to guarantee the files are emitted in a deterministic order
   let codeSplitEmitQueue = createSerialPromiseQueue<string>()
   const urlEmitQueue = createSerialPromiseQueue<unknown>()
@@ -595,6 +688,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     transform: {
+      cache: true,
       filter: {
         id: {
           include: CSS_LANGS_RE,
@@ -603,6 +697,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       },
       async handler(css, id) {
         css = stripBomTag(css)
+
+        const markNotCacheable = getMarkNotCacheable(this)
+        const logger = markNotCacheable
+          ? createMarkingLogger(config.logger, markNotCacheable)
+          : config.logger
 
         // cache css compile result to map
         // and then use the cache replace inline-style-flag
@@ -646,13 +745,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (config.command === 'serve') {
           const getContentWithSourcemap = async (content: string) => {
             if (this.environment.config.dev.sourcemap.css) {
+              if (isSourcemapDebugEnabled) {
+                markNotCacheable?.('`DEBUG=vite:sourcemap` changes the code')
+              }
               const sourcemap = this.getCombinedSourcemap()
               if (sourcemap.mappings) {
-                await injectSourcesContent(
-                  sourcemap,
-                  cleanUrl(id),
-                  config.logger,
-                )
+                await injectSourcesContent(sourcemap, cleanUrl(id), logger)
               }
               return getCodeWithSourcemap('css', content, sourcemap)
             }
@@ -686,11 +784,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         // build CSS handling ----------------------------------------------------
 
-        // record css
-        if (!inlined) {
-          styles.set(id, css)
-        }
-
         let code: string
         if (modulesCode) {
           code = modulesCode
@@ -712,6 +805,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // it in renderChunk()
           moduleSideEffects: modulesCode || inlined ? false : 'no-treeshake',
           moduleType: 'js',
+          // `renderChunk` reads the CSS from here. Rolldown saves the meta
+          // with the result of the module, and sets it again on reuse.
+          meta: inlined ? undefined : { [cssPostMetaKey]: css },
         }
       },
     },
@@ -723,9 +819,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
             const isJsChunkEmpty = code === '' && !chunk.isEntry
             let isPureCssChunk = chunk.exports.length === 0
+            // Only an id that `transform` handled can have the CSS in its meta.
+            const getCssModuleMeta = (id: string) =>
+              CSS_LANGS_RE.test(id) ? this.getModuleInfo(id)?.meta : undefined
             const ids = Object.keys(chunk.modules)
             for (const id of ids) {
-              if (styles.has(id)) {
+              const moduleMeta = getCssModuleMeta(id)
+              const moduleCss: string | undefined = moduleMeta?.[cssPostMetaKey]
+              if (moduleCss !== undefined) {
                 // ?transform-only is used for ?url and shouldn't be included in normal CSS chunks
                 if (transformOnlyRE.test(id)) {
                   continue
@@ -733,8 +834,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
                 // If this CSS is scoped to its importers exports, check if those importers exports
                 // are rendered in the chunks. If they are not, we can skip bundling this CSS.
-                const cssScopeTo =
-                  this.getModuleInfo(id)?.meta?.vite?.cssScopeTo
+                const cssScopeTo = moduleMeta?.vite?.cssScopeTo
                 if (
                   cssScopeTo &&
                   !isCssScopeToRendered(cssScopeTo, meta.chunks)
@@ -747,16 +847,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   isPureCssChunk = false
                 }
 
-                chunkCSS = (chunkCSS || '') + styles.get(id)
+                chunkCSS = (chunkCSS || '') + moduleCss
               } else if (!isJsChunkEmpty) {
                 // if the module does not have a style, then it's not a pure css chunk.
                 // this is true because in the `transform` hook above, only modules
-                // that are css gets added to the `styles` map.
+                // that are css get the CSS in their meta.
                 isPureCssChunk = false
               }
             }
-
-            const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
             // resolve asset URL placeholders to their built file URLs
             const resolveAssetUrlsInCss = (
@@ -799,8 +897,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               const relativePathToPublicFromCSS = normalizePath(
                 path.relative(cssAssetDirname, ''),
               )
-              chunkCSS = chunkCSS.replace(publicAssetUrlRE, (_, hash) => {
-                const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
+              chunkCSS = chunkCSS.replace(publicAssetUrlRE, (_, urlHex) => {
+                const publicUrl = decodePublicAssetUrl(urlHex).slice(1)
                 return encodeURIPath(
                   toOutputFilePathInCss(
                     publicUrl,
@@ -841,13 +939,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                   path.basename(originalFileName),
                   '.css',
                 )
-                if (!styles.has(id)) {
+                let cssContent: string | undefined =
+                  getCssModuleMeta(id)?.[cssPostMetaKey]
+                if (cssContent === undefined) {
                   throw new Error(
                     `css content for ${JSON.stringify(id)} was not found`,
                   )
                 }
-
-                let cssContent = styles.get(id)!
 
                 cssContent = resolveAssetUrlsInCss(
                   cssContent,
@@ -1405,17 +1503,17 @@ export function getEmptyChunkReplacer(
 const fileURLWithWindowsDriveRE = /^file:\/\/\/[a-zA-Z]:\//
 
 export interface CSSAtImportResolvers {
-  css: ResolveIdFn
-  sass: ResolveIdFn
-  less: ResolveIdFn
+  css: ResolveIdWithLogListenerFn
+  sass: ResolveIdWithLogListenerFn
+  less: ResolveIdWithLogListenerFn
 }
 
 export function createCSSResolvers(
   config: ResolvedConfig,
 ): CSSAtImportResolvers {
-  let cssResolve: ResolveIdFn | undefined
-  let sassResolve: ResolveIdFn | undefined
-  let lessResolve: ResolveIdFn | undefined
+  let cssResolve: ResolveIdWithLogListenerFn | undefined
+  let sassResolve: ResolveIdWithLogListenerFn | undefined
+  let lessResolve: ResolveIdWithLogListenerFn | undefined
   return {
     get css() {
       return (cssResolve ??= createBackCompatIdResolver(config, {
@@ -1485,6 +1583,7 @@ async function compileCSSPreprocessors(
   lang: PreprocessLang,
   code: string,
   workerController: PreprocessorWorkerController,
+  markNotCacheable?: MarkNotCacheable,
 ): Promise<{
   code: string
   map?: ExistingRawSourceMap | { mappings: '' }
@@ -1509,6 +1608,7 @@ async function compileCSSPreprocessors(
     config.root,
     opts,
     atImportResolvers,
+    markNotCacheable,
   )
   if (preprocessResult.error) {
     throw preprocessResult.error
@@ -1555,6 +1655,7 @@ async function compileCSS(
   code: string,
   workerController: PreprocessorWorkerController,
   urlResolver?: CssUrlResolver,
+  markNotCacheable?: MarkNotCacheable,
 ): Promise<{
   code: string
   map?: SourceMapInput
@@ -1564,6 +1665,9 @@ async function compileCSS(
   const { config } = environment
   const lang = CSS_LANGS_RE.exec(id)?.[1] as CssLang | undefined
   const deps = new Set<string>()
+  const logger = markNotCacheable
+    ? createMarkingLogger(environment.logger, markNotCacheable)
+    : environment.logger
 
   // pre-processors: sass etc.
   let preprocessorMap: ExistingRawSourceMap | { mappings: '' } | undefined
@@ -1574,12 +1678,13 @@ async function compileCSS(
       lang,
       code,
       workerController,
+      markNotCacheable,
     )
     code = preprocessorResult.code
     preprocessorMap = preprocessorResult.map
     preprocessorResult.deps?.forEach((dep) => deps.add(dep))
   } else if (lang === 'sss' && config.css.transformer === 'lightningcss') {
-    const sssResult = await transformSugarSS(environment, id, code)
+    const sssResult = await transformSugarSS(environment, id, code, logger)
     code = sssResult.code
     preprocessorMap = sssResult.map
   }
@@ -1591,7 +1696,9 @@ async function compileCSS(
         code,
         deps,
         workerController,
+        logger,
         urlResolver,
+        markNotCacheable,
       )
     : compilePostCSS(
         environment,
@@ -1600,7 +1707,9 @@ async function compileCSS(
         deps,
         lang,
         workerController,
+        logger,
         urlResolver,
+        markNotCacheable,
       ))
 
   const resolvedCode = (transformResult?.code ?? code).replace(
@@ -1644,7 +1753,9 @@ async function compilePostCSS(
   deps: Set<string>,
   lang: CssLang | undefined,
   workerController: PreprocessorWorkerController,
+  logger: Logger,
   urlResolver?: CssUrlResolver,
+  markNotCacheable?: MarkNotCacheable,
 ): Promise<
   | {
       code: string
@@ -1680,6 +1791,7 @@ async function compilePostCSS(
     environment.getTopLevelConfig(),
   )
   const postcssPlugins = postcssConfig?.plugins.slice() ?? []
+  const onResolverLog = getResolverLogListener(markNotCacheable)
 
   if (needInlineImport) {
     postcssPlugins.unshift(
@@ -1700,6 +1812,8 @@ async function compilePostCSS(
             // (a node with no source), in which case the resolver falls back to
             // the project root.
             atRule.source?.input.file,
+            undefined,
+            onResolverLog,
           )
 
           if (resolved) {
@@ -1710,7 +1824,7 @@ async function compilePostCSS(
           // but we've shimmed to remove the `resolve` dep to cut on bundle size.
           // warn here to provide a better error message.
           if (!path.isAbsolute(id)) {
-            environment.logger.error(
+            logger.error(
               colors.red(
                 `Unable to resolve \`@import "${id}"\` from ${basedir}`,
               ),
@@ -1729,6 +1843,7 @@ async function compilePostCSS(
               lang,
               code,
               workerController,
+              markNotCacheable,
             )
             result.deps?.forEach((dep) => deps.add(dep))
             // TODO: support source map
@@ -1755,7 +1870,7 @@ async function compilePostCSS(
       UrlRewritePostcssPlugin({
         resolver: urlResolver,
         deps,
-        logger: environment.logger,
+        logger,
       }),
     )
   }
@@ -1763,6 +1878,10 @@ async function compilePostCSS(
   let modules: Record<string, string> | undefined
 
   if (isModule) {
+    if (typeof modulesOptions?.getJSON === 'function') {
+      // The hook calls this function of the user for each such file.
+      markNotCacheable?.('`css.modules.getJSON` is set')
+    }
     postcssPlugins.unshift(
       (await importPostcssModules()).default({
         ...modulesOptions,
@@ -1783,8 +1902,12 @@ async function compilePostCSS(
               environment,
               id,
               importer,
+              undefined,
+              onResolverLog,
             )
             if (resolved) {
+              // postcss-modules reads the file of a `composes` by itself.
+              deps.add(resolved)
               return path.resolve(resolved)
             }
           }
@@ -1809,7 +1932,7 @@ async function compilePostCSS(
     postcssPlugins,
     { ...postcssOptions, parser: postcssParser },
     deps,
-    environment.logger,
+    logger,
     config.dev.sourcemap.css,
   )
   return { ...result, modules }
@@ -1819,6 +1942,7 @@ async function transformSugarSS(
   environment: PartialEnvironment,
   id: string,
   code: string,
+  logger: Logger,
 ) {
   const { config } = environment
 
@@ -1829,7 +1953,7 @@ async function transformSugarSS(
     [],
     { parser: sssParser },
     undefined,
-    environment.logger,
+    logger,
     config.dev.sourcemap.css,
   )
   return result
@@ -2073,6 +2197,34 @@ async function finalizeCss(css: string, config: ResolvedConfig) {
 interface PostCSSConfigResult {
   options: PostCSS.ProcessOptions
   plugins: PostCSS.AcceptedPlugin[]
+  /** The config file that was loaded. Not set for an inline config. */
+  file?: string
+}
+
+/**
+ * Loads the PostCSS config before the build starts, so that the persistent
+ * cache can use `getPostcssConfigFile`. `vite:css` uses the same result.
+ */
+export async function preloadPostcssConfig(
+  config: ResolvedConfig,
+): Promise<void> {
+  if (config.css.transformer === 'lightningcss') return
+  // The first CSS module that needs the config throws the error.
+  await resolvePostcssConfig(config).catch(() => {})
+}
+
+/**
+ * The PostCSS config file that Vite loaded. `null` means that there is no
+ * file, and `undefined` that the config is not loaded.
+ */
+export function getPostcssConfigFile(
+  config: ResolvedConfig,
+): string | null | undefined {
+  // lightningcss does not use the PostCSS config.
+  if (config.css.transformer === 'lightningcss') return null
+  const result = postcssConfigCache.get(config)
+  if (result === undefined || result instanceof Promise) return undefined
+  return result?.file || null
 }
 
 async function resolvePostcssConfig(
@@ -2282,13 +2434,14 @@ function skipUrlReplacer(unquotedUrl: string) {
 }
 
 async function resolveCssUrl(
-  resolver: ResolveIdFn,
+  resolver: ResolveIdWithLogListenerFn,
   environment: PartialEnvironment,
   url: string,
   importer?: string,
+  onResolverLog?: () => void,
 ): Promise<string | undefined> {
   try {
-    return await resolver(environment, url, importer)
+    return await resolver(environment, url, importer, undefined, onResolverLog)
   } catch (e) {
     // resolve.exports has no error code for an unmatched imports specifier.
     if (
@@ -2563,6 +2716,7 @@ type StylePreprocessor<Options extends StylePreprocessorInternalOptions> = {
     root: string,
     options: Options,
     resolvers: CSSAtImportResolvers,
+    markNotCacheable?: MarkNotCacheable,
   ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
   close: () => void | Promise<void>
 }
@@ -2680,13 +2834,14 @@ const makeScssWorker = (
         options: SassStylePreprocessorInternalOptions & {
           additionalData: undefined
         },
+        onResolverLog: (() => void) | undefined,
       ],
       ScssWorkerResult
     >
   >
 
   const worker: WorkerType = {
-    async run(data, options) {
+    async run(data, options, onResolverLog) {
       const sass = await importSass()
       compilerPromise ??= sass.initAsyncCompiler()
       const compiler = await compilerPromise
@@ -2714,6 +2869,8 @@ const makeScssWorker = (
             environment,
             url,
             cleanScssBugUrl(importer),
+            undefined,
+            onResolverLog,
           )
           if (
             resolved &&
@@ -2739,6 +2896,7 @@ const makeScssWorker = (
             options.filename,
             resolvers.sass,
             skipRebaseUrls,
+            onResolverLog,
           )
           const contents =
             result.contents ?? (await fsp.readFile(result.file, 'utf-8'))
@@ -2778,6 +2936,25 @@ type ScssWorkerResult = {
   stats: { includedFiles: string[] }
 }
 
+// Rolldown cannot print a message of Sass again when it reuses a saved result.
+// Sass reads `warn` and `debug` only when it has a message. When the value is
+// `undefined`, Sass prints the message itself. So the output stays the same.
+function createMarkingSassLogger(
+  logger: Sass.Logger | undefined,
+  markNotCacheable: MarkNotCacheable,
+): Sass.Logger {
+  return {
+    get warn() {
+      markNotCacheable('Sass printed a warning')
+      return logger?.warn?.bind(logger)
+    },
+    get debug() {
+      markNotCacheable('Sass printed a debug message')
+      return logger?.debug?.bind(logger)
+    },
+  }
+}
+
 const scssProcessor = (
   maxWorkers: number | undefined,
 ): StylePreprocessor<SassStylePreprocessorInternalOptions> => {
@@ -2789,7 +2966,14 @@ const scssProcessor = (
     async close() {
       await worker?.stop()
     },
-    async process(environment, source, root, options, resolvers) {
+    async process(
+      environment,
+      source,
+      root,
+      options,
+      resolvers,
+      markNotCacheable,
+    ) {
       let sassPackage = loadSassPackage(root, failedSassEmbedded ?? false)
       if (failedSassEmbedded === undefined) {
         failedSassEmbedded = false
@@ -2821,8 +3005,18 @@ const scssProcessor = (
         ...options,
         additionalData: undefined,
       }
+      if (markNotCacheable) {
+        optionsWithoutAdditionalData.logger = createMarkingSassLogger(
+          options.logger,
+          markNotCacheable,
+        )
+      }
       try {
-        const result = await worker.run(data, optionsWithoutAdditionalData)
+        const result = await worker.run(
+          data,
+          optionsWithoutAdditionalData,
+          getResolverLogListener(markNotCacheable),
+        )
         const deps = result.stats.includedFiles.map((f) => cleanScssBugUrl(f))
         const map: ExistingRawSourceMap | undefined = result.map
           ? JSON.parse(result.map.toString())
@@ -2878,8 +3072,9 @@ async function rebaseUrls(
   environment: PartialEnvironment,
   file: string,
   rootFile: string,
-  resolver: ResolveIdFn,
+  resolver: ResolveIdWithLogListenerFn,
   ignoreUrl?: (unquotedUrl: string, rawUrl: string) => boolean,
+  onResolverLog?: () => void,
 ): Promise<{ file: string; contents?: string }> {
   file = path.resolve(file) // ensure os-specific flashes
   // in the same dir, no need to rebase
@@ -2910,6 +3105,7 @@ async function rebaseUrls(
       environment,
       unquotedUrl,
       file,
+      onResolverLog,
     )
     if (!resolved && unquotedUrl[0] === '#') {
       // Keep the fragment's package scope through the final URL rewrite pass.
@@ -2945,6 +3141,7 @@ const makeLessWorker = (
   environment: PartialEnvironment,
   resolvers: CSSAtImportResolvers,
   maxWorkers: number | undefined,
+  resolverLogListeners: Map<string, Set<() => void>>,
 ) => {
   const skipRebaseUrls = (unquotedUrl: string, _rawUrl: string) => {
     // matches both
@@ -2959,6 +3156,9 @@ const makeLessWorker = (
     rootFile: string,
     mime: string | undefined,
   ) => {
+    const listeners = resolverLogListeners.get(rootFile)
+    const onResolverLog =
+      listeners && (() => listeners.forEach((listener) => listener()))
     const resolved = await resolvers.less(
       environment,
       filename,
@@ -2966,6 +3166,8 @@ const makeLessWorker = (
       // pass a real importer like CSS/Sass do. `resolve.tsconfigPaths` therefore
       // does not apply inside `.less` files. See the `resolve.tsconfigPaths` docs.
       path.join(dir, '*'),
+      undefined,
+      onResolverLog,
     )
     if (!resolved) return undefined
 
@@ -2981,6 +3183,7 @@ const makeLessWorker = (
       rootFile,
       resolvers.less,
       skipRebaseUrls,
+      onResolverLog,
     )
     return {
       resolved,
@@ -3095,14 +3298,29 @@ const lessProcessor = (
   maxWorkers: number | undefined,
 ): StylePreprocessor<LessStylePreprocessorInternalOptions> => {
   let worker: ReturnType<typeof makeLessWorker> | undefined
+  // A worker thread cannot call a function of one `process` call. So the
+  // resolver in the main thread finds the calls that run by their root file.
+  const resolverLogListeners = new Map<string, Set<() => void>>()
 
   return {
     close() {
       worker?.stop()
     },
-    async process(environment, source, root, options, resolvers) {
+    async process(
+      environment,
+      source,
+      root,
+      options,
+      resolvers,
+      markNotCacheable,
+    ) {
       const lessPath = loadPreprocessorPath(PreprocessLang.less, root)
-      worker ??= makeLessWorker(environment, resolvers, maxWorkers)
+      worker ??= makeLessWorker(
+        environment,
+        resolvers,
+        maxWorkers,
+        resolverLogListeners,
+      )
 
       const { content, map: additionalMap } = await getSource(
         source,
@@ -3115,6 +3333,16 @@ const lessProcessor = (
       const optionsWithoutAdditionalData = {
         ...options,
         additionalData: undefined,
+      }
+      const onResolverLog = getResolverLogListener(markNotCacheable)
+      let listeners: Set<() => void> | undefined
+      if (onResolverLog) {
+        listeners = resolverLogListeners.get(options.filename)
+        if (!listeners) {
+          listeners = new Set()
+          resolverLogListeners.set(options.filename, listeners)
+        }
+        listeners.add(onResolverLog)
       }
       try {
         result = await worker.run(
@@ -3134,6 +3362,13 @@ const lessProcessor = (
           column: error.column,
         }
         return { code: '', error: normalizedError, deps: [] }
+      } finally {
+        if (onResolverLog && listeners) {
+          listeners.delete(onResolverLog)
+          if (listeners.size === 0) {
+            resolverLogListeners.delete(options.filename)
+          }
+        }
       }
 
       const map: ExistingRawSourceMap | undefined =
@@ -3330,10 +3565,17 @@ const createPreprocessorWorkerController = (maxWorkers: number | undefined) => {
   const styl = stylProcessor(maxWorkers)
 
   const sassProcess: StylePreprocessor<SassStylePreprocessorInternalOptions>['process'] =
-    (environment, source, root, options, resolvers) => {
+    (environment, source, root, options, resolvers, markNotCacheable) => {
       const opts: SassStylePreprocessorInternalOptions = { ...options }
       opts.syntax = 'indented'
-      return scss.process(environment, source, root, opts, resolvers)
+      return scss.process(
+        environment,
+        source,
+        root,
+        opts,
+        resolvers,
+        markNotCacheable,
+      )
     }
 
   const close = async () => {
@@ -3383,7 +3625,9 @@ async function compileLightningCSS(
   src: string,
   deps: Set<string>,
   workerController: PreprocessorWorkerController,
+  logger: Logger,
   urlResolver?: CssUrlResolver,
+  markNotCacheable?: MarkNotCacheable,
 ): Promise<{
   code: string
   map?: string | undefined
@@ -3426,6 +3670,7 @@ async function compileLightningCSS(
                   lang,
                   code,
                   workerController,
+                  markNotCacheable,
                 )
                 result.deps?.forEach((dep) => deps.add(dep))
                 // TODO: support source map
@@ -3435,6 +3680,7 @@ async function compileLightningCSS(
                   environment,
                   filePath,
                   code,
+                  logger,
                 )
                 // TODO: support source map
                 return sssResult.code
@@ -3447,6 +3693,7 @@ async function compileLightningCSS(
                 environment.getTopLevelConfig(),
               )
               if (publicFile) {
+                deps.add(publicFile)
                 return publicFile
               }
 
@@ -3462,7 +3709,7 @@ async function compileLightningCSS(
                 environment.getTopLevelConfig(),
               )
               const lang = CSS_LANGS_RE.exec(from)?.[1] as CssLang | undefined
-              let resolver: ResolveIdFn
+              let resolver: ResolveIdWithLogListenerFn
               switch (lang) {
                 case 'css':
                 case 'sss':
@@ -3482,7 +3729,13 @@ async function compileLightningCSS(
                   throw new Error(`Unknown lang: ${lang satisfies never}`)
               }
 
-              const resolved = await resolver(environment, id, from)
+              const resolved = await resolver(
+                environment,
+                id,
+                from,
+                undefined,
+                getResolverLogListener(markNotCacheable),
+              )
               if (resolved) {
                 deps.add(resolved)
                 return resolved
@@ -3525,7 +3778,7 @@ async function compileLightningCSS(
       line: warning.loc.line,
       column: warning.loc.column - 1, // 1-based
     })}`
-    environment.logger.warn(colors.yellow(msg))
+    logger.warn(colors.yellow(msg))
   }
 
   // NodeJS res.code = Buffer

@@ -44,8 +44,8 @@ import {
 } from '../utils'
 import {
   assetUrlRE,
+  decodePublicAssetUrl,
   getAssetUrlPostfix,
-  getPublicAssetFilename,
   publicAssetUrlRE,
   urlToBuiltUrl,
 } from './asset'
@@ -112,6 +112,7 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:html-inline-proxy',
 
     resolveId: {
+      cache: true,
       filter: { id: isHtmlProxyRE },
       handler(id) {
         return id
@@ -1105,9 +1106,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           )
         })
 
-        result = result.replace(publicAssetUrlRE, (_, fileHash) => {
+        result = result.replace(publicAssetUrlRE, (_, urlHex) => {
           const publicAssetPath = toOutputPublicAssetFilePath(
-            getPublicAssetFilename(fileHash, config)!,
+            decodePublicAssetUrl(urlHex),
           )
 
           return encodeURIPath(

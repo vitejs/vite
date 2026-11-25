@@ -907,6 +907,10 @@ class PluginContext
     return [...this._container.watchFiles]
   }
 
+  markNotCacheable(): void {
+    // The plugin container has no persistent cache.
+  }
+
   emitFile(_assetOrFile: EmittedFile): string {
     this._warnIncompatibleMethod(`emitFile`)
     return ''

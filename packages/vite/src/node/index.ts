@@ -108,6 +108,7 @@ export { loadEnv, resolveEnvPrefix } from './env'
 // additional types
 export type {
   AppType,
+  CacheOptions,
   ConfigEnv,
   ExperimentalOptions,
   HTMLOptions,
