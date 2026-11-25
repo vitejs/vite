@@ -370,6 +370,26 @@ export function splitWorkerRequest(id: string): {
 }
 
 export const WORKER_FILE_ID = 'worker_file'
+
+export async function workerFileToDevUrl(
+  context: PluginContext,
+  file: string,
+  postfix: string,
+  workerType: WorkerType,
+): Promise<string> {
+  const assetUrl = await fileToUrl(context, file, 'string')
+  const query = `${WORKER_FILE_ID}&type=${workerType}`
+  if (
+    context.environment.mode === 'dev' &&
+    context.environment.config.server.fs.strict === 'extended'
+  ) {
+    const clientEnvironment =
+      context.environment.getTopLevelConfig().environments.client
+    clientEnvironment.safeModulePaths.addId(injectQuery(file + postfix, query))
+  }
+  return injectQuery(assetUrl + postfix, query)
+}
+
 const workerOutputCaches = new WeakMap<ResolvedConfig, WorkerOutputCache>()
 
 export function recordWorkerReference(
@@ -806,11 +826,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           }
         } else {
           const { file, postfix } = splitWorkerRequest(id)
-          let url = await fileToUrl(this, file, 'string')
-          url = injectQuery(
-            `${url}${postfix}`,
-            `${WORKER_FILE_ID}&type=${workerType}`,
-          )
+          const url = await workerFileToDevUrl(this, file, postfix, workerType)
           urlCode = JSON.stringify(url)
         }
 

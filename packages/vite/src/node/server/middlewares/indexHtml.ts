@@ -260,6 +260,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     const moduleUrl = `${proxyModuleUrl}?html-proxy&index=${inlineModuleIndex}.${ext}`
     inlineModuleUrls.push(moduleUrl)
     const browserUrl = moduleUrlToBrowserUrl(moduleUrl, decodedBase)
+    if (config.server.fs.strict === 'extended') {
+      safeModulePathRegistrations.push(
+        addHtmlRequestToSafeModulePaths(moduleUrl, server!, 'script'),
+      )
+    }
 
     s.update(
       node.sourceCodeLocation!.startOffset,
