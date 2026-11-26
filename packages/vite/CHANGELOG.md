@@ -1,3 +1,5 @@
+## [8.4.0](https://github.com/vitejs/vite/compare/v8.4.0-beta.2...v8.4.0) (2026-11-26)
+
 ## [8.4.0-beta.2](https://github.com/vitejs/vite/compare/v8.4.0-beta.1...v8.4.0-beta.2) (2026-11-25)
 ### Features
 
