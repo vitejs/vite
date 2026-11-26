@@ -2234,6 +2234,45 @@ describe('onRollupLog', () => {
   )
 })
 
+test('watch mode runs closeBundle when an output hook throws', async () => {
+  const root = resolve(dirname, 'fixtures/watch-rebuild-manifest')
+  let closeBundleCalls = 0
+  const watcher = await build({
+    root,
+    configFile: false,
+    logLevel: 'silent',
+    build: {
+      write: false,
+      watch: {},
+      rolldownOptions: { input: '/entry.js' },
+    },
+    plugins: [
+      {
+        name: 'throw-in-generate-bundle',
+        generateBundle() {
+          throw new Error('generateBundle failed')
+        },
+        closeBundle() {
+          closeBundleCalls++
+        },
+      },
+    ],
+  })
+  assert('on' in watcher)
+
+  await new Promise<void>((resolve) => {
+    watcher.on('event', (event) => {
+      if (event.code === 'ERROR') resolve()
+    })
+  })
+  // closeBundle must run for the failed build, not only at watcher.close()
+  await vi.waitFor(() => expect(closeBundleCalls).toBe(1))
+
+  // and closing the watcher must not run it a second time
+  await watcher.close()
+  expect(closeBundleCalls).toBe(1)
+})
+
 test('watch rebuild manifest', async (ctx) => {
   // this doesn't actually test watch rebuild
   // but it simulates something similar by running two builds for the same environment

@@ -909,6 +909,8 @@ async function buildEnvironment(
           event.result.close()
           logger.info(colors.cyan(`built in ${event.duration}ms.`))
         } else if (event.code === 'ERROR') {
+          // close the failed build too, so closeBundle runs (as rolldown -w does)
+          event.result.close()
           const e = event.error
           enhanceRollupError(e)
           clearLine()
