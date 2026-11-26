@@ -195,7 +195,7 @@ describe('watcher configuration', () => {
   })
 
   it('serves files and watches root when project root is within ancestor .git directory (fix #23626)', async () => {
-    const tempDir = fs.realpathSync(
+    const tempDir = fs.realpathSync.native(
       fs.mkdtempSync(join(os.tmpdir(), 'vite-git-ancestor-')),
     )
     const appRoot = join(tempDir, '.git', 'worktrees', 'app')
