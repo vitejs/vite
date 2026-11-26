@@ -401,6 +401,71 @@ describe('mergeConfig', () => {
     }
   })
 
+  test('handles environments.*.input', () => {
+    const baseConfig = {
+      environments: {
+        client: {
+          input: 'src/a.ts',
+        },
+        ssr: {
+          input: { entry: 'src/entry-server.ts' },
+        },
+      },
+    }
+
+    const newConfig = {
+      environments: {
+        client: {
+          input: 'src/b.ts',
+        },
+        ssr: {
+          input: { other: 'src/other.ts' },
+        },
+      },
+    }
+
+    const mergedConfig = {
+      environments: {
+        client: {
+          input: ['src/a.ts', 'src/b.ts'],
+        },
+        ssr: {
+          input: { entry: 'src/entry-server.ts', other: 'src/other.ts' },
+        },
+      },
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toStrictEqual(mergedConfig)
+  })
+
+  test('handles environments.*.assetsInclude', () => {
+    const baseConfig = {
+      environments: {
+        client: {
+          assetsInclude: 'some-string',
+        },
+      },
+    }
+
+    const newConfig = {
+      environments: {
+        client: {
+          assetsInclude: 'some-other-string',
+        },
+      },
+    }
+
+    const mergedConfig = {
+      environments: {
+        client: {
+          assetsInclude: ['some-string', 'some-other-string'],
+        },
+      },
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toStrictEqual(mergedConfig)
+  })
+
   test('not handles input not at top level', () => {
     const baseConfig = {
       build: {
