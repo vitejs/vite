@@ -198,6 +198,7 @@ declare module '*.txt' {
 
 // wasm?init
 declare module '*.wasm?init' {
+  /** @deprecated use source phase imports instead */
   const initWasm: (
     options?: WebAssembly.Imports,
   ) => Promise<WebAssembly.Instance>
