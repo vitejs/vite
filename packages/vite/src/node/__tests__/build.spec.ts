@@ -2290,6 +2290,79 @@ test('watch rebuild manifest', async (ctx) => {
   `)
 })
 
+test('watch mode runs closeBundle when an output hook fails', async (ctx) => {
+  const root = resolve(dirname, 'fixtures/watch-rebuild-manifest')
+  const entry = resolve(root, 'entry.js')
+  const original = await fsp.readFile(entry, 'utf-8')
+  let builds = 0
+  const closedBundles: number[] = []
+  const waitForBuilds = (count: number) =>
+    vi.waitFor(
+      () => {
+        expect(builds).toBe(count)
+      },
+      { timeout: 10_000, interval: 50 },
+      )
+  const waitForClosedBundles = (count: number) =>
+    vi.waitFor(
+      () => {
+        expect(closedBundles).toEqual(
+          Array.from({ length: count }, (_, i) => i + 1),
+          )
+      },
+      { timeout: 10_000, interval: 50 },
+      )
+
+  const result = await build({
+    root,
+    configFile: false,
+    logLevel: 'silent',
+    build: {
+      write: false,
+      watch: {},
+      rollupOptions: {
+        input: '/entry.js',
+      },
+    },
+    plugins: [
+      {
+        name: 'test-closeBundle-on-watch-error',
+        buildStart() {
+          builds++
+        },
+        generateBundle() {
+          if (builds === 2) throw new Error('generateBundle failed')
+        },
+        closeBundle() {
+          closedBundles.push(builds)
+        },
+      },
+      ],
+  })
+  if (!('on' in result)) throw new Error('Expected watcher result')
+  const watcher = result
+  ctx.onTestFinished(async () => {
+    await watcher.close()
+    await fsp.writeFile(entry, original)
+  })
+
+  // build 1 passes
+  await waitForBuilds(1)
+  await waitForClosedBundles(1)
+
+  // build 2 fails in `generateBundle` — `closeBundle` must still run
+  await fsp.writeFile(entry, original + '\n// rebuild 2\n')
+  await waitForBuilds(2)
+  await waitForClosedBundles(2)
+
+  // build 3 passes
+  await fsp.writeFile(entry, original + '\n// rebuild 3\n')
+  await waitForBuilds(3)
+  await waitForClosedBundles(3)
+
+  expect(closedBundles).toEqual([1, 2, 3])
+})
+
 test('environment.manifest is populated when build.manifest is disabled without emitting a file', async () => {
   const root = resolve(dirname, 'fixtures/watch-rebuild-manifest')
   const builder = await createBuilder({
