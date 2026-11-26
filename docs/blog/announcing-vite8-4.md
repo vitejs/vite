@@ -64,9 +64,11 @@ If a plugin generates a module that references an asset not by `import`, it can 
 
 ```js
 export const onClick = async () => {
-  // Before: this import threw an error if the fetch failed even for the second click
+  // Before: this import threw an error
+  //         if the fetch failed even for the second click
   //
-  // After: the import succeeds if the fetch on the second click succeeds even after the first fetch failed
+  // After: the import succeeds if the fetch on the second
+  //        click succeeds even after the first fetch failed
   //        (if the browser supports)
   const SuccessComponent = await import('./Success.ts')
   render(SuccessComponent)
@@ -104,7 +106,7 @@ const instance = await WebAssembly.instantiate(mod, {
 
 This is going to be supported by TypeScript 7.1, which is [currently beta](https://devblogs.microsoft.com/typescript/announcing-typescript-7-1-beta/). Once TypeScript 7.1 is stable, we will recommend using it over [the Vite-specific `.wasm?init` feature](/guide/features#manual-initialization).
 
-See [the guide](/guide/features#source-phase-imports) for more details.
+See [the guide](/guide/features#esm-integration) for more details.
 
 ### Highly Experimental Bundled Dev Mode for SSR
 
