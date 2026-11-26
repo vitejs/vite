@@ -914,7 +914,7 @@ async function buildEnvironment(
           const e = event.error
           enhanceRollupError(e)
           clearLine()
-          logger.error(e.message, { error: e })          
+          logger.error(e.message, { error: e })
         }
       })
 
