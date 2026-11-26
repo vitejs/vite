@@ -30,8 +30,6 @@ head:
 
 _November 26, 2026_
 
-<!-- TODO: update image -->
-
 ![Vite 8.4 Announcement Cover Image](/og-image-announcing-vite8-4.webp)
 
 Quick links:
