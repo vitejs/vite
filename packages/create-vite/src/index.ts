@@ -1137,20 +1137,6 @@ function setupDevTools(root: string, isTs: boolean) {
   })
 
   const configPath = path.resolve(root, `vite.config.${isTs ? 'ts' : 'js'}`)
-  if (!fs.existsSync(configPath)) {
-    // vanilla and lit templates don't ship a config file
-    fs.writeFileSync(
-      configPath,
-      /* js */ `import { defineConfig } from 'vite'
-
-// https://vite.dev/config/
-export default defineConfig({
-  devtools: ${option},
-})
-`,
-    )
-    return
-  }
   editFile(configPath, (content) => {
     if (!content.includes('defineConfig({')) {
       prompts.log.warn(
