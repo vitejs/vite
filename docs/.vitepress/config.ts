@@ -112,12 +112,6 @@ const config = defineConfig({
 
   themeConfig: {
     variant: 'vite',
-    banner: {
-      id: 'viteconf-2026',
-      text: 'ViteConf 2026 - October 15, Online',
-      url: 'https://viteconf.org/',
-    },
-
     editLink: {
       pattern: 'https://github.com/vitejs/vite/edit/main/docs/:path',
       text: 'Suggest changes to this page',
