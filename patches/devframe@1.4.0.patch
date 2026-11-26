@@ -1,0 +1,13 @@
+diff --git a/dist/index-JJbcyrny.d.mts b/dist/index-JJbcyrny.d.mts
+index 0ad7751..1d0acae 100644
+--- a/dist/index-JJbcyrny.d.mts
++++ b/dist/index-JJbcyrny.d.mts
+@@ -939,7 +939,7 @@ interface DevframeScopedNodeRpc<NS extends string = string> {
+    * namespace; pass a fully-qualified key (containing `:`) to opt out.
+    */
+   sharedState: {
+-    <T extends keyof ScopedSharedStates<NS> & string>(key: T, options?: RpcSharedStateGetOptions<ScopedSharedStates<NS>[T]>): Promise<SharedState<ScopedSharedStates<NS>[T]>>;
++    <T extends keyof ScopedSharedStates<NS>>(key: T, options?: RpcSharedStateGetOptions<ScopedSharedStates<NS>[T]>): Promise<SharedState<ScopedSharedStates<NS>[T]>>;
+     <T extends Record<string, any> = Record<string, any>>(key: string, options?: RpcSharedStateGetOptions<T>): Promise<SharedState<T>>;
+   };
+   /** Streaming host scoped to this namespace. */

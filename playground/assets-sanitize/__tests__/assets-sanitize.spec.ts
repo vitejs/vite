@@ -44,5 +44,7 @@ test.runIf(!isBuild)('denied .env', async () => {
   expect(await page.textContent('.unsafe-dotenv')).toBe(
     isBundledDev ? '200' : '403',
   )
-  expect(await page.textContent('.unsafe-dotenv-double-slash')).toBe('200') // SPA fallback
+  expect(await page.textContent('.unsafe-dotenv-double-slash')).toBe(
+    isBundledDev ? '200' : '403',
+  )
 })

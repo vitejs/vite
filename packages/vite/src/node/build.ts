@@ -55,7 +55,7 @@ import { findNearestMainPackageData, findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import { perEnvironmentPlugin } from './plugin'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
-import { getHookHandler } from './plugins'
+import { getHookHandler, getPluginHookHandler } from './plugins'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { type LicenseOptions, licensePlugin } from './plugins/license'
@@ -91,9 +91,9 @@ import {
 
 export interface BuildEnvironmentOptions {
   /**
-   * Compatibility transform target. The transform is performed with esbuild
-   * and the lowest supported target is es2015. Note this only handles
-   * syntax transformation and does not cover polyfills
+   * Compatibility transform target. The transform is performed with Oxc
+   * Transformer and the lowest supported target is es2015. Note this only
+   * handles syntax transformation and does not cover polyfills
    *
    * Default: 'baseline-widely-available' - transpile targeting browsers that
    * are included in the Baseline Widely Available on 2026-01-01.
@@ -102,8 +102,8 @@ export interface BuildEnvironmentOptions {
    * Another special value is 'esnext' - which only performs minimal transpiling
    * (for minification compat).
    *
-   * For custom targets, see https://esbuild.github.io/api/#target and
-   * https://esbuild.github.io/content-types/#javascript for more details.
+   * For custom targets, see the Oxc Transformer docs for more details:
+   * https://oxc.rs/docs/guide/usage/transformer/lowering#target
    * @default 'baseline-widely-available'
    */
   target?: 'baseline-widely-available' | EsbuildTarget | false
@@ -152,8 +152,8 @@ export interface BuildEnvironmentOptions {
   cssCodeSplit?: boolean
   /**
    * An optional separate target for CSS minification.
-   * As esbuild only supports configuring targets to mainstream
-   * browsers, users may need this option when they are targeting
+   * As targets can only be configured for mainstream browsers,
+   * users may need this option when they are targeting
    * a niche browser that comes with most modern JavaScript features
    * but has poor CSS support, e.g. Android WeChat WebView, which
    * doesn't support the #RGBA syntax.
@@ -1897,7 +1897,7 @@ export async function createBuilder(
           configBuilderBuildAppCalled = true
           await configBuilder.buildApp(builder)
         }
-        const handler = getHookHandler(hook)
+        const handler = getPluginHookHandler(p, 'buildApp')
         await handler.call(pluginContext, builder)
       }
       if (!configBuilderBuildAppCalled) {
