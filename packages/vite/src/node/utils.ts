@@ -107,8 +107,10 @@ export const normalizeId = (id: string): string =>
 const NODE_BUILTIN_NAMESPACE = 'node:'
 // Supported by Bun
 const BUN_BUILTIN_NAMESPACE = 'bun:'
-// Some runtimes like Bun injects namespaced modules here, which is not a node builtin
-const nodeBuiltins = builtinModules.filter((id) => !id.includes(':'))
+// Some runtimes like Bun inject their own modules here (`bun`, `bun:*`), which are not node builtins
+const nodeBuiltins = builtinModules.filter(
+  (id) => !id.includes(':') && id !== 'bun',
+)
 
 const isBuiltinCache = new WeakMap<
   (string | RegExp)[],
@@ -127,6 +129,7 @@ export function isBuiltin(builtins: (string | RegExp)[], id: string): boolean {
 export const nodeLikeBuiltins: (string | RegExp)[] = [
   ...nodeBuiltins,
   new RegExp(`^${NODE_BUILTIN_NAMESPACE}`),
+  'bun',
   new RegExp(`^${BUN_BUILTIN_NAMESPACE}`),
 ]
 

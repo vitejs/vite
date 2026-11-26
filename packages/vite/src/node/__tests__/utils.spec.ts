@@ -26,6 +26,8 @@ import {
   injectQuery,
   isFileReadable,
   isInNodeModules,
+  isNodeBuiltin,
+  isNodeLikeBuiltin,
   isParentDirectory,
   mergeWithDefaults,
   normalizePath,
@@ -110,6 +112,14 @@ describe('isInNodeModules', () => {
     expect(isInNodeModules('/project/my_node_modules/src/main.js')).toBe(false)
     expect(isInNodeModules('/project/src/node_modules.js')).toBe(false)
     expect(isInNodeModules('C:\\node_modules_bug\\src\\main.js')).toBe(false)
+  })
+})
+
+describe('isNodeLikeBuiltin', () => {
+  test('bun is a runtime builtin, not a node builtin', () => {
+    expect(isNodeLikeBuiltin('bun')).toBe(true)
+    expect(isNodeLikeBuiltin('bun:sqlite')).toBe(true)
+    expect(isNodeBuiltin('bun')).toBe(false)
   })
 })
 
