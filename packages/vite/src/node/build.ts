@@ -909,10 +909,13 @@ async function buildEnvironment(
           event.result.close()
           logger.info(colors.cyan(`built in ${event.duration}ms.`))
         } else if (event.code === 'ERROR') {
+          // Close the bundle so `closeBundle` runs for output errors too.
+          event.result?.close()
           const e = event.error
           enhanceRollupError(e)
           clearLine()
           logger.error(e.message, { error: e })
+          
         }
       })
 
