@@ -31,6 +31,14 @@ export default defineConfig(({ command }) => ({
             ...(isBundledDev ? [] : ['missing-file']),
             'missing-import',
           ].map((dir) => path.resolve(import.meta.dirname, dir, 'index.html')),
+          ...(isBundledDev
+            ? []
+            : [
+                path.resolve(
+                  import.meta.dirname,
+                  './missing-file/direct-script.html',
+                ),
+              ]),
           path.resolve(import.meta.dirname, './entry-cycle/index.html'),
           path.resolve(import.meta.dirname, './entry-cycle/entry-cycle.js'),
           path.resolve(
@@ -92,6 +100,7 @@ export default defineConfig(({ command }) => ({
     virtualInvalidationPlugin(),
     transformCountPlugin(),
     watchCssDepsPlugin(),
+    watchCssDepsLoadPlugin(),
     TestCssLinkPlugin(),
     TestCssStylePlugin(),
     hotEventsPlugin(),
@@ -178,6 +187,37 @@ function watchCssDepsPlugin(): Plugin {
         const dep = await fs.readFile(depPath, 'utf-8')
         const color = dep.match(/color = '(.+?)'/)[1]
         this.addWatchFile(depPath)
+        return code.replace('replaced', color)
+      }
+    },
+  }
+}
+
+function watchCssDepsLoadPlugin(): Plugin {
+  const virtualId = '\0virtual:css-deps-load.css'
+  const depPath = path.resolve(import.meta.dirname, './css-deps/dep-load.js')
+  return {
+    name: 'watch-css-deps-load',
+    resolveId(id) {
+      if (id.includes('css-deps/main-load.css')) {
+        const query = id.includes('?') ? id.slice(id.indexOf('?')) : ''
+        return virtualId + query
+      }
+    },
+    load(id) {
+      if (id.startsWith(virtualId)) {
+        this.addWatchFile(depPath)
+        return `\
+.css-deps-load {
+  color: replaced;
+}
+`
+      }
+    },
+    async transform(code, id) {
+      if (id.startsWith(virtualId)) {
+        const dep = await fs.readFile(depPath, 'utf-8')
+        const color = dep.match(/color = '(.+?)'/)[1]
         return code.replace('replaced', color)
       }
     },

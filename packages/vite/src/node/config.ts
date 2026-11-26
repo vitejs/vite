@@ -88,7 +88,7 @@ import type {
 } from './plugin'
 import {
   createPluginHookUtils,
-  getHookHandler,
+  getPluginHookHandler,
   getSortedPluginsByHook,
   resolvePlugins,
 } from './plugins'
@@ -2872,8 +2872,7 @@ async function runConfigHook(
   >(basePluginContextMeta, tempLogger)
 
   for (const p of getSortedPluginsByHook('config', plugins)) {
-    const hook = p.config
-    const handler = getHookHandler(hook)
+    const handler = getPluginHookHandler(p, 'config')
     const res = await handler.call(context, conf, configEnv)
     if (res && res !== conf) {
       if (hasBothRollupOptionsAndRolldownOptions(res)) {
@@ -2914,8 +2913,7 @@ async function runConfigEnvironmentHook(
 
   const environmentNames = Object.keys(environments)
   for (const p of getSortedPluginsByHook('configEnvironment', plugins)) {
-    const hook = p.configEnvironment
-    const handler = getHookHandler(hook)
+    const handler = getPluginHookHandler(p, 'configEnvironment')
     for (const name of environmentNames) {
       const res = await handler.call(context, name, environments[name], {
         ...configEnv,

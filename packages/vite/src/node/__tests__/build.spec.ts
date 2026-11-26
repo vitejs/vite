@@ -694,6 +694,46 @@ describe('build', () => {
     assertOutputHashContentChange(result[0], result[1])
   })
 
+  test('cssCodeSplit: false emits the CSS of an inlined common chunk once', async () => {
+    const root = resolve(
+      dirname,
+      'fixtures/css-single-bundle-inline-common-chunks',
+    )
+    const result = (await build({
+      root,
+      logLevel: 'silent',
+      build: {
+        write: false,
+        cssCodeSplit: false,
+        cssMinify: false,
+        rolldownOptions: {
+          input: [resolve(root, 'a.js'), resolve(root, 'b.js')],
+          output: {
+            codeSplitting: {
+              experimentalInlineCommonChunks: { maxSize: 10_000 },
+            },
+          },
+        },
+      },
+    })) as RolldownOutput
+
+    const sharedCarriers = result.output.filter(
+      (o) =>
+        o.type === 'chunk' &&
+        o.moduleIds.some((id) => id.endsWith('shared.css')),
+    )
+    expect(sharedCarriers).toHaveLength(2)
+    const css = result.output.find(
+      (output): output is OutputAsset =>
+        output.type === 'asset' && output.fileName.endsWith('.css'),
+    )!
+    // shared.css comes once, before the a.css rule that overrides it
+    expect(css.source.toString().match(/color: \w+/g)).toStrictEqual([
+      'color: red',
+      'color: blue',
+    ])
+  })
+
   test('css entries with the same basename should not cross-link manifest assets', async () => {
     const root = resolve(dirname, 'fixtures/css-entry-same-basename')
     const result = (await build({

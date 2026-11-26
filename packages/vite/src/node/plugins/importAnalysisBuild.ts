@@ -450,8 +450,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
     >(),
   }))
 
-  const plugin: Plugin = {
-    name: 'vite:build-import-analysis',
+  const preloadHashPlugin: Plugin = {
+    name: 'vite:build-import-analysis-chunk-hash',
+
+    applyToEnvironment(environment) {
+      return (
+        getInsertPreload(environment) &&
+        !!environment.config.build.chunkImportMap
+      )
+    },
 
     renderStart() {
       const graph = getPreloadHashGraph(this)
@@ -461,65 +468,43 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
     },
 
     renderChunk(code, chunk, { format }, { chunks }) {
-      let preloadFilesAdded = false
-      if (
-        format === 'es' &&
-        getInsertPreload(this.environment) &&
-        this.environment.config.build.chunkImportMap
-      ) {
-        const graph = getPreloadHashGraph(this)
-        graph.chunks = chunks
-        const importedCssCount = chunk.viteMetadata?.importedCss.size ?? 0
-        graph.chunkInfo.set(chunk.fileName, {
-          importedCssCount,
-          isPureCss: code === '' && importedCssCount > 0,
-        })
+      if (format !== 'es') return
 
-        // The preload list is written after hashing. Write the preliminary file
-        // names of its chunks into the code now, so that the hash covers them.
-        if (hasPartialImportMap(this.environment)) {
-          const files = new Set(
-            chunk.dynamicImports.flatMap((dynamicImport) =>
-              collectPreloadDependencies(
-                dynamicImport,
-                chunk.fileName,
-                (fileName) =>
-                  chunks[fileName] && {
-                    fileName,
-                    js: fileName,
-                    imports: chunks[fileName].imports,
-                  },
-              ),
+      const graph = getPreloadHashGraph(this)
+      graph.chunks = chunks
+      const importedCssCount = chunk.viteMetadata?.importedCss.size ?? 0
+      graph.chunkInfo.set(chunk.fileName, {
+        importedCssCount,
+        isPureCss: code === '' && importedCssCount > 0,
+      })
+
+      // The preload list is written after hashing. Write the preliminary file
+      // names of its chunks into the code now, so that the hash covers them.
+      if (hasPartialImportMap(this.environment)) {
+        const files = new Set(
+          chunk.dynamicImports.flatMap((dynamicImport) =>
+            collectPreloadDependencies(
+              dynamicImport,
+              chunk.fileName,
+              (fileName) =>
+                chunks[fileName] && {
+                  fileName,
+                  js: fileName,
+                  imports: chunks[fileName].imports,
+                },
             ),
-          )
-          if (files.size) {
-            code += `\n${preloadMarker}(${JSON.stringify([...files].join(','))})`
-            preloadFilesAdded = true
-          }
+          ),
+        )
+        if (files.size) {
+          code += `\n${preloadMarker}(${JSON.stringify([...files].join(','))})`
+          return { code, map: null }
         }
       }
-
-      // make sure we only perform the preload logic in modern builds.
-      if (code.includes(isModernFlag)) {
-        const re = new RegExp(isModernFlag, 'g')
-        const isModern = String(format === 'es')
-        const isModernWithPadding =
-          isModern + ' '.repeat(isModernFlag.length - isModern.length)
-        return {
-          code: code.replace(re, isModernWithPadding),
-          map: null,
-        }
-      }
-
-      return preloadFilesAdded ? { code, map: null } : null
     },
 
     augmentChunkHash(chunk) {
       const environment = this.environment
-      if (!getInsertPreload(environment)) return
-      const { chunkImportMap, modulePreload } = environment.config.build
-      if (!chunkImportMap) return
-
+      const { modulePreload } = environment.config.build
       const graph = getPreloadHashGraph(this)
       const owner = graph.chunks[chunk.fileName]
       if (!owner) return
@@ -569,6 +554,25 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
       ) {
         return JSON.stringify([pureCssImports, preloadSignatures])
       }
+    },
+  }
+
+  const plugin: Plugin = {
+    name: 'vite:build-import-analysis',
+
+    renderChunk: {
+      filter: { code: isModernFlag },
+      handler(code, _chunk, { format }) {
+        // make sure we only perform the preload logic in modern builds.
+        const re = new RegExp(isModernFlag, 'g')
+        const isModern = String(format === 'es')
+        const isModernWithPadding =
+          isModern + ' '.repeat(isModernFlag.length - isModern.length)
+        return {
+          code: code.replace(re, isModernWithPadding),
+          map: null,
+        }
+      },
     },
 
     async generateBundle(opts, bundle) {
@@ -942,6 +946,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
   }
 
   return [
+    preloadHashPlugin,
     plugin,
     perEnvironmentPlugin('native:import-analysis-build', (environment) => {
       const preloadCode = getPreloadCode(

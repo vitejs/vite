@@ -80,7 +80,7 @@ import type { Plugin } from '../plugin'
 import {
   createPluginHookUtils,
   getCachedFilterForPlugin,
-  getHookHandler,
+  getPluginHookHandler,
 } from '../plugins'
 import {
   combineSourcemaps,
@@ -164,6 +164,10 @@ export type SkipInformation = {
   called?: boolean
 }
 
+type LoadResultWithMetadata = Partial<SourceDescription> & {
+  addedImports: Set<string> | null
+}
+
 class EnvironmentPluginContainer<Env extends Environment = Environment> {
   private _pluginContextMap = new Map<Plugin, PluginContext>()
   private _resolvedRolldownOptions?: InputOptions
@@ -209,7 +213,8 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       environment.mode === 'dev' ? environment.moduleGraph : undefined
   }
 
-  private _updateModuleLoadAddedImports(
+  /** @internal */
+  _updateModuleLoadAddedImports(
     id: string,
     addedImports: Set<string> | null,
   ): void {
@@ -306,7 +311,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       if (condition && !condition(plugin)) continue
 
       const hook = plugin[hookName]
-      const handler: Function = getHookHandler(hook)
+      const handler: Function = getPluginHookHandler(plugin, hookName)
       if ((hook as { sequential?: boolean }).sequential) {
         await Promise.all(parallelPromises)
         parallelPromises.length = 0
@@ -430,7 +435,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       }
 
       const pluginResolveStart = debugPluginResolve ? performance.now() : 0
-      const handler = getHookHandler(plugin.resolveId)
+      const handler = getPluginHookHandler(plugin, 'resolveId')
       const result = await this.handleHookPromise(
         handler.call(ctx as any, rawId, importer, normalizedOptions),
       )
@@ -474,7 +479,15 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
     }
   }
 
-  async load(id: string): Promise<LoadResult | null> {
+  load(
+    id: string,
+    loadOptions: { withMetadata: true },
+  ): Promise<LoadResultWithMetadata>
+  load(id: string): Promise<LoadResult | null>
+  async load(
+    id: string,
+    loadOptions?: { withMetadata: true },
+  ): Promise<LoadResultWithMetadata | LoadResult | null> {
     let ssr = this.environment.config.consumer === 'server'
     const topLevelConfig = this.environment.getTopLevelConfig()
     const options = { ssr }
@@ -509,7 +522,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
         })
       }
 
-      const handler = getHookHandler(plugin.load)
+      const handler = getPluginHookHandler(plugin, 'load')
       const result = await this.handleHookPromise(
         handler.call(ctx as any, id, options),
       )
@@ -518,11 +531,16 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
           ctx._updateModuleInfo(id, result)
         }
         this._updateModuleLoadAddedImports(id, ctx._addedImports)
-        return result
+        if (!loadOptions?.withMetadata) return result
+        return {
+          ...(typeof result === 'string' ? { code: result } : result),
+          addedImports: ctx._addedImports,
+        }
       }
     }
     this._updateModuleLoadAddedImports(id, ctx._addedImports)
-    return null
+    if (!loadOptions?.withMetadata) return null
+    return { addedImports: ctx._addedImports }
   }
 
   async transform(
@@ -578,7 +596,7 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       ctx._updateActiveInfo(plugin, id, code)
       const start = debugPluginTransform ? performance.now() : 0
       let result: TransformResult | string | undefined
-      const handler = getHookHandler(plugin.transform)
+      const handler = getPluginHookHandler(plugin, 'transform')
       try {
         result = await this.handleHookPromise(
           handler.call(ctx as any, code, id, optionsWithSSR),
@@ -843,7 +861,7 @@ class PluginContext
     this._updateModuleInfo(options.id, options)
 
     const loadResult = await this._container.load(options.id)
-    const code = typeof loadResult === 'object' ? loadResult?.code : loadResult
+    const code = typeof loadResult === 'string' ? loadResult : loadResult?.code
     if (code != null) {
       await this._container.transform(code, options.id)
     }
@@ -1305,7 +1323,10 @@ class PluginContainer {
       ssr?: boolean
     },
   ): Promise<LoadResult | null> {
-    return this._getPluginContainer(options).load(id)
+    const result = await this._getPluginContainer(options).load(id, {
+      withMetadata: true,
+    })
+    return result.code == null ? null : { ...result, code: result.code }
   }
 
   async transform(

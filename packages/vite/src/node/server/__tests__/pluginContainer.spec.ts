@@ -196,6 +196,32 @@ describe('plugin container', () => {
   })
 
   describe('load', () => {
+    for (const { result, source } of [
+      { result: null, source: {} },
+      { result: '', source: { code: '' } },
+      { result: { code: 'export {}' }, source: { code: 'export {}' } },
+    ]) {
+      it(`includes addedImports only when requested (${JSON.stringify(result)})`, async () => {
+        const watchedFile = '/watched.js'
+        const { pluginContainer } = await getDevEnvironment({
+          plugins: [
+            {
+              name: 'watch-on-load',
+              load() {
+                this.addWatchFile(watchedFile)
+                return result
+              },
+            },
+          ],
+        })
+
+        expect(await pluginContainer.load('/x.js')).toStrictEqual(result)
+        expect(
+          await pluginContainer.load('/x.js', { withMetadata: true }),
+        ).toStrictEqual({ ...source, addedImports: new Set([watchedFile]) })
+      })
+    }
+
     it('can resolve a secondary module', async () => {
       const entryUrl = '/x.js'
 

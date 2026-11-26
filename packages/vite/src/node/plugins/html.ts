@@ -51,6 +51,7 @@ import {
 } from './asset'
 import { cssBundleNameCache } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
+import { getPluginHookHandler } from './index'
 
 interface ScriptAssetsUrl {
   start: number
@@ -603,7 +604,15 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                         return this.load({
                           ...resolved,
                           moduleSideEffects: true,
-                        }).then(() => {})
+                        }).then(() => {
+                          // `this.load` ignores `moduleSideEffects` when another
+                          // importer already started loading the module, so set it
+                          // on the module info as well
+                          const loadedInfo = this.getModuleInfo(resolved.id)
+                          if (loadedInfo) {
+                            loadedInfo.moduleSideEffects = true
+                          }
+                        })
                       }
                     }),
                   )
@@ -1017,8 +1026,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // prepend dev client runtime for bundled client build before other chunk scripts
         if (
           config.command === 'serve' &&
-          this.environment.config.consumer === 'client' &&
-          this.environment.config.isBundled
+          this.environment.config.consumer === 'client'
         ) {
           result = injectToHead(
             result,
@@ -1440,17 +1448,14 @@ export function resolveHtmlTransforms(
     const hook = plugin.transformIndexHtml
     if (!hook) continue
 
-    if (typeof hook === 'function') {
-      normalHooks.push(hook)
+    const handler = getPluginHookHandler(plugin, 'transformIndexHtml')
+    const order = typeof hook === 'function' ? undefined : hook.order
+    if (order === 'pre') {
+      preHooks.push(handler)
+    } else if (order === 'post') {
+      postHooks.push(handler)
     } else {
-      const handler = hook.handler
-      if (hook.order === 'pre') {
-        preHooks.push(handler)
-      } else if (hook.order === 'post') {
-        postHooks.push(handler)
-      } else {
-        normalHooks.push(handler)
-      }
+      normalHooks.push(handler)
     }
   }
 
