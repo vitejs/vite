@@ -2303,16 +2303,16 @@ test('watch mode runs closeBundle when an output hook fails', async (ctx) => {
         expect(builds).toBe(count)
       },
       { timeout: 10_000, interval: 50 },
-      )
+    )
   const waitForClosedBundles = (count: number) =>
     vi.waitFor(
       () => {
-        expect(closedBundles).toEqual(
+        expect(closedBundles).toStrictEqual(
           Array.from({ length: count }, (_, i) => i + 1),
-          )
+        )
       },
       { timeout: 10_000, interval: 50 },
-      )
+    )
 
   const result = await build({
     root,
@@ -2338,7 +2338,7 @@ test('watch mode runs closeBundle when an output hook fails', async (ctx) => {
           closedBundles.push(builds)
         },
       },
-      ],
+    ],
   })
   if (!('on' in result)) throw new Error('Expected watcher result')
   const watcher = result
@@ -2361,7 +2361,7 @@ test('watch mode runs closeBundle when an output hook fails', async (ctx) => {
   await waitForBuilds(3)
   await waitForClosedBundles(3)
 
-  expect(closedBundles).toEqual([1, 2, 3])
+  expect(closedBundles).toStrictEqual([1, 2, 3])
 })
 
 test('environment.manifest is populated when build.manifest is disabled without emitting a file', async () => {
