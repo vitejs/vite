@@ -2294,6 +2294,7 @@ test('watch mode runs closeBundle when an output hook fails', async (ctx) => {
   const root = resolve(dirname, 'fixtures/watch-rebuild-manifest')
   const entry = resolve(root, 'entry.js')
   const original = await fsp.readFile(entry, 'utf-8')
+
   let builds = 0
   const closedBundles: number[] = []
   const waitForBuilds = (count: number) =>
