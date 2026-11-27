@@ -97,6 +97,7 @@ function collectPreloadDependencies(
   fileName: string,
   ownerFileName: string,
   getDependency: (fileName: string) => PreloadDependency | undefined,
+  skipOwnerJs: boolean,
 ): string[] {
   const visited = new Set([ownerFileName])
   const dependencies: string[] = []
@@ -115,7 +116,20 @@ function collectPreloadDependencies(
     }
   }
   visit(fileName)
-  return dependencies
+  if (!skipOwnerJs) return dependencies
+
+  // The owner's static imports load first, so drop their JS; the preload helper skips loaded CSS.
+  const ownerJs = new Set<string>()
+  const ownerChunks = new Set<string>()
+  const stack = [ownerFileName]
+  while (stack.length) {
+    const dependency = getDependency(stack.pop()!)
+    if (!dependency || ownerChunks.has(dependency.fileName)) continue
+    ownerChunks.add(dependency.fileName)
+    if (dependency.js !== undefined) ownerJs.add(dependency.js)
+    stack.push(...(dependency.imports ?? []))
+  }
+  return dependencies.filter((dependency) => !ownerJs.has(dependency))
 }
 
 /**
@@ -508,6 +522,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                   : undefined,
             }
           },
+          !(modulePreload && modulePreload.resolveDependencies),
         ),
       )
 
@@ -754,6 +769,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
                         return { fileName, css }
                       }
                     },
+                    // Custom resolvers get the full list.
+                    !(modulePreload && modulePreload.resolveDependencies),
                   ),
                 )
                 if (shouldRewriteImport) {

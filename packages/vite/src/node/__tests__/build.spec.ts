@@ -767,6 +767,82 @@ describe('build', () => {
     })
   }
 
+  test('preload lists skip JS the importing chunk loads statically', async () => {
+    const modules: Record<string, string> = {
+      'entry.js': `window.load = () => import('route.js')`,
+      'other-entry.js': `window.load = () => import('lazy.js')`,
+      'route.js': `
+        import { shared } from 'shared.js'
+        export const route = shared
+        export const load = () => import('lazy.js')`,
+      'lazy.js': `
+        import { shared } from 'shared.js'
+        import 'lazy.css'
+        export const lazy = shared`,
+      'shared.js': `
+        import 'shared.css'
+        export const shared = 'shared'`,
+      'lazy.css': `.lazy { color: red }`,
+      'shared.css': `.shared { color: blue }`,
+    }
+    const result = (await build({
+      root: resolve(dirname, 'packages/build-project'),
+      logLevel: 'silent',
+      build: {
+        write: false,
+        minify: false,
+        rolldownOptions: {
+          input: ['entry.js', 'other-entry.js'],
+          output: {
+            entryFileNames: '[name].js',
+            chunkFileNames: '[name].js',
+            assetFileNames: '[name][extname]',
+          },
+        },
+      },
+      plugins: [
+        {
+          name: 'preload-loaded-deps',
+          resolveId(id) {
+            if (id in modules) return `\0${id}`
+          },
+          load(id) {
+            return modules[id.slice(1)]
+          },
+        },
+      ],
+    })) as RolldownOutput
+
+    const preloadLists = Object.fromEntries(
+      result.output.flatMap((chunk) => {
+        const list =
+          chunk.type === 'chunk' && chunk.code.match(/m\.f=(\[.*?\])/)
+        return list ? [[chunk.fileName, JSON.parse(list[1])]] : []
+      }),
+    )
+    // route.js already loads shared.js, so only its list drops it (CSS stays).
+    expect(preloadLists).toMatchInlineSnapshot(`
+      {
+        "_entry.js": [
+          "_route.js",
+          "_shared.js",
+          "_shared.css",
+        ],
+        "_other-entry.js": [
+          "_lazy.js",
+          "_shared.js",
+          "_shared.css",
+          "_lazy.css",
+        ],
+        "_route.js": [
+          "_lazy.js",
+          "_shared.css",
+          "_lazy.css",
+        ],
+      }
+    `)
+  })
+
   test.for([
     [true, true],
     [true, false],
