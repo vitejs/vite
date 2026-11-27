@@ -67,6 +67,10 @@ $ bun create vite
 $ deno init --npm vite
 ```
 
+```bash [vlt]
+$ vlt create vite
+```
+
 :::
 
 Then follow the prompts!
@@ -102,6 +106,10 @@ $ bun create vite my-vue-app --template vue
 
 ```bash [Deno]
 $ deno init --npm vite my-vue-app --template vue
+```
+
+```bash [vlt]
+$ vlt create vite my-vue-app -- --template vue
 ```
 
 :::
@@ -156,6 +164,10 @@ $ bun add -D vite
 $ deno add -D npm:vite
 ```
 
+```bash [vlt]
+$ vlt install -D vite
+```
+
 :::
 
 And create an `index.html` file like this:
@@ -186,6 +198,10 @@ $ bunx vite
 
 ```bash [Deno]
 $ deno run -A npm:vite
+```
+
+```bash [vlt]
+$ vlx vite
 ```
 
 :::
