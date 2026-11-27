@@ -338,8 +338,9 @@ export function isFileLoadingAllowed(
 
   const hasDriveLetter = isWindows && windowsDriveRE.test(filePath)
   const hasColon = (hasDriveLetter ? filePath.slice(2) : filePath).includes(':')
-  if (hasColon) {
-    // the `:` is included in the path which may be used for NTFS ADS
+  if (isWindows && hasColon) {
+    // `:` can't be part of a file name on Windows, so it's an NTFS alternate
+    // data stream (e.g. `.env::$DATA`)
     return false
   }
 
@@ -349,6 +350,19 @@ export function isFileLoadingAllowed(
     ? filePath.slice(0, -1)
     : filePath
   if (environmentConfig.fsDenyGlob(filePathWithoutTrailingSlash)) return false
+
+  // `:` is a valid file name character on other platforms, but an NTFS volume
+  // mounted there can still expose alternate data streams. Check the path with
+  // the stream part of each segment removed, so `.env::$DATA` is denied like
+  // `.env`.
+  if (
+    hasColon &&
+    environmentConfig.fsDenyGlob(
+      filePathWithoutTrailingSlash.replace(/:[^/]*/g, ''),
+    )
+  ) {
+    return false
+  }
 
   if (environmentConfig.safeModulePaths.has(filePath)) return true
 

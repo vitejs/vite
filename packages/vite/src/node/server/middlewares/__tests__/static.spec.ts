@@ -1,4 +1,6 @@
+import picomatch from 'picomatch'
 import { describe, expect, test } from 'vitest'
+import { isWindows } from '../../../../shared/utils'
 import type {
   ResolvedConfig,
   ResolvedEnvironmentOptions,
@@ -173,5 +175,42 @@ describe('isFileLoadingAllowed', () => {
     expect(isFileLoadingAllowed(environmentConfig, `${safeFilePath}?baz`)).toBe(
       false,
     )
+  })
+})
+
+describe('isFileLoadingAllowed with `:` in the path', () => {
+  const root = isWindows ? 'C:/project' : '/project'
+  // mirrors how `fsDenyGlob` is built from the default `server.fs.deny`
+  const environmentConfig = {
+    server: { fs: { strict: true, allow: [root] } },
+    fsDenyGlob: picomatch(
+      ['**/.env', '**/.env.*', '**/*.{crt,pem}', '**/.git/**'],
+      {
+        matchBase: false,
+        nocase: true,
+        dot: true,
+      },
+    ),
+    safeModulePaths: new Set<string>(),
+  } as unknown as ResolvedConfig & ResolvedEnvironmentOptions
+  const allowed = (filePath: string) =>
+    isFileLoadingAllowed(environmentConfig, `${root}${filePath}`)
+
+  test.skipIf(isWindows)('allows `:` in file and directory names', () => {
+    expect(allowed('/src/routes/user:show.js')).toBe(true)
+    expect(allowed('/src/routes/company:logo/index.ts')).toBe(true)
+  })
+
+  test.skipIf(isWindows)('denies streams of denied files', () => {
+    expect(allowed('/.env::$DATA')).toBe(false)
+    expect(allowed('/.env:stream')).toBe(false)
+    expect(allowed('/certs/server.pem::$DATA')).toBe(false)
+    expect(allowed('/.git::$INDEX_ALLOCATION/config')).toBe(false)
+  })
+
+  test.runIf(isWindows)('denies any `:` after the drive letter', () => {
+    expect(allowed('/src/routes/user:show.js')).toBe(false)
+    expect(allowed('/src/index.js:stream')).toBe(false)
+    expect(allowed('/.env::$DATA')).toBe(false)
   })
 })
