@@ -17,6 +17,7 @@ import type { ESTree } from 'rolldown/utils'
 import {
   cleanUrl,
   moduleUrlToBrowserUrl,
+  moduleUrlToModuleRunnerUrl,
   withTrailingSlash,
 } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
@@ -597,14 +598,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               resolved,
               start,
             )
-            const browserUrl = resolved
-              ? moduleUrlToBrowserUrl(moduleUrl, ssr ? '' : base)
+            const importUrl = resolved
+              ? ssr
+                ? moduleUrlToModuleRunnerUrl(moduleUrl)
+                : moduleUrlToBrowserUrl(moduleUrl, base)
               : specifier
             if (id != null) {
               environment.safeModulePaths.addId(id)
             }
 
-            if (browserUrl !== specifier) {
+            if (importUrl !== specifier) {
               let rewriteDone = false
               // optimizer-emitted imports resolve to the sibling file they
               // name; imports injected by plugins (e.g. @rollup/plugin-inject)
@@ -642,16 +645,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   if (depInfo?.isDynamicEntry) {
                     config.logger.error(
                       colors.red(
-                        `Vite Error, ${browserUrl} optimized info should be defined`,
+                        `Vite Error, ${importUrl} optimized info should be defined`,
                       ),
                     )
                   }
                 } else if (needsInterop) {
-                  debug?.(`${browserUrl} needs interop`)
+                  debug?.(`${importUrl} needs interop`)
                   interopNamedImports(
                     str(),
                     importSpecifier,
-                    browserUrl,
+                    importUrl,
                     index,
                     importer,
                     isDynamicImport
@@ -672,7 +675,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 interopNamedImports(
                   str(),
                   importSpecifier,
-                  browserUrl,
+                  importUrl,
                   index,
                   importer,
                   isNodeMode(),
@@ -681,7 +684,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 rewriteDone = true
               }
               if (!rewriteDone) {
-                const rewrittenUrl = JSON.stringify(browserUrl)
+                const rewrittenUrl = JSON.stringify(importUrl)
                 const s = isDynamicImport ? start : start - 1
                 const e = isDynamicImport ? end : end + 1
                 str().overwrite(s, e, rewrittenUrl, {

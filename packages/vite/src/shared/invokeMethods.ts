@@ -18,7 +18,7 @@ export interface CachedFetchResult {
 
 export interface ExternalFetchResult {
   /**
-   * The path to the externalized module starting with file://.
+   * External import specifier: a file URL, network/data URL, or builtin ID.
    * By default this will be imported via a dynamic "import"
    * instead of being transformed by Vite and loaded with the Vite runner.
    */
@@ -37,17 +37,17 @@ export interface ViteFetchResult {
    */
   code: string
   /**
-   * File path of the module on disk.
-   * This will be resolved as import.meta.url/filename.
-   * Will be `null` for virtual modules.
+   * File path or virtual ModuleID used for import.meta.url/filename.
+   * The server derives this from the resolved ModuleID without query/hash.
+   * If null, the runner falls back to id.
    */
   file: string | null
   /**
-   * Module ID in the server module graph.
+   * Resolved ModuleID in the server module graph.
    */
   id: string
   /**
-   * Module URL used in the import.
+   * Module URL of the module.
    */
   url: string
   /**
@@ -84,8 +84,8 @@ export type InvokeResponseData<
 
 export type InvokeMethods = {
   fetchModule: (
-    id: string,
-    importer?: string,
+    moduleRunnerUrl: string,
+    importerId?: string,
     options?: FetchFunctionOptions,
   ) => Promise<FetchResult>
 
