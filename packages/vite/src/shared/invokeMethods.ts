@@ -1,6 +1,12 @@
 export interface FetchFunctionOptions {
   cached?: boolean
   startOffset?: number
+  /**
+   * Return the source map in `sourceMap` instead of inlining it in `code`
+   * when the environment's `dev.sourcemapForDebugger` is disabled. Servers
+   * that don't support this option ignore it and inline the map.
+   */
+  separateSourceMap?: boolean
 }
 
 export type FetchResult =
@@ -60,6 +66,12 @@ export interface ViteFetchResult {
    * @experimental
    */
   rolldownModuleId?: string
+  /**
+   * Source map of `code` as a JSON string. Set when the runner asked for
+   * `separateSourceMap` and the environment's `dev.sourcemapForDebugger` is
+   * disabled, in which case `code` has no inline source map.
+   */
+  sourceMap?: string
 }
 
 export type InvokeSendData<

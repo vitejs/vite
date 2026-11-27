@@ -256,6 +256,18 @@ export interface DevEnvironmentOptions {
    * This option can also be used instead of the removed config.experimental.skipSsrTransform.
    */
   moduleRunnerTransform?: boolean
+
+  /**
+   * Keep the source map as an inline `sourceMappingURL` comment in the code
+   * that module runners evaluate. Debuggers, Node's own source map support
+   * (`sourcemapInterceptor: 'node'`) and `NODE_V8_COVERAGE` read it from there.
+   * When disabled, the server sends the map separately so the evaluated code
+   * is cheaper to compile, and `createServerModuleRunner` maps stack traces
+   * with the `'prepareStackTrace'` interceptor by default. Runners using the
+   * `'node'` interceptor still get the inline comment.
+   * @default true
+   */
+  sourcemapForDebugger?: boolean
 }
 
 function defaultCreateClientDevEnvironment(
@@ -990,6 +1002,7 @@ export function resolveDevEnvironmentOptions(
           : defaultCreateDevEnvironment,
       recoverable: consumer === 'client',
       moduleRunnerTransform: consumer === 'server',
+      sourcemapForDebugger: true,
     },
     dev ?? {},
   )

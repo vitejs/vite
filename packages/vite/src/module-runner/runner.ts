@@ -378,6 +378,8 @@ export class ModuleRunner {
               {
                 cached: isCached,
                 startOffset: this.evaluator.startOffset,
+                // Node's own source map support reads the inline comment
+                separateSourceMap: this.options.sourcemapInterceptor !== 'node',
               },
             ])
       ) as ResolvedResult
