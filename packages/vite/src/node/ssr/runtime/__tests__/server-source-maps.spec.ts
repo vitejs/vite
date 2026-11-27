@@ -152,7 +152,7 @@ describe('module runner initialization', () => {
       const mod = await entry.load()
 
       expect(fetchModule).toHaveBeenCalledWith(
-        expect.stringContaining('/@vite/lazy?'),
+        expect.stringMatching(/^\/__rolldown_hmr_patch\.js\?.*&l=/),
         undefined,
         expect.any(Object),
       )
@@ -162,6 +162,55 @@ describe('module runner initialization', () => {
         expect.stringContaining('<root>/fixtures/has-error-deep.ts:2:9'),
         expect.stringContaining('<root>/fixtures/has-error-deep.ts:6:3'),
       ])
+    })
+
+    it('keeps the map of a payload while a module it installed is installed', async ({
+      runner,
+      server,
+      environment,
+      onTestFinished,
+    }) => {
+      const fetchModule = vi.spyOn(environment, 'fetchModule')
+      onTestFinished(() => fetchModule.mockRestore())
+      const payloadUrls = () =>
+        fetchModule.mock.calls
+          .map(([url]) => url)
+          .filter((url) => url.startsWith('/__rolldown_hmr_patch.js?'))
+
+      const entry = await runner.import(
+        '/fixtures/dynamic-import-source-map.js',
+      )
+      const mod = await entry.load()
+      const [lazyPayloadUrl] = payloadUrls()
+      // the module id of a payload is its URL on the output file
+      const lazyPayload = resolve(
+        server.config.root,
+        server.config.build.outDir,
+        lazyPayloadUrl.slice(1),
+      ).replaceAll('\\', '/')
+      const runtime = (runner as any).rolldownDevRuntime
+      const id = [...runtime.factories.keys()].find((id: string) =>
+        id.endsWith('has-error-deep.ts'),
+      )
+
+      // a later payload that installs other modules keeps the map
+      await runtime.pullPatch(new Set())
+      expect(payloadUrls()).toHaveLength(2)
+      const error = await getError(() => mod.main())
+      expect(serializeStackDeep(server, error)[1]).toStrictEqual(
+        expect.stringContaining('<root>/fixtures/has-error-deep.ts:2:9'),
+      )
+      expect(
+        runner.evaluatedModules.getModuleSourceMapById(lazyPayload),
+      ).not.toBeNull()
+
+      // a newer copy of the module replaced the factory, so the next payload
+      // releases the map
+      runtime.beginPayload(runtime.knownGen).registerFactory(id, () => {})
+      await runtime.pullPatch(new Set())
+      expect(
+        runner.evaluatedModules.getModuleSourceMapById(lazyPayload),
+      ).toBeNull()
     })
   })
 

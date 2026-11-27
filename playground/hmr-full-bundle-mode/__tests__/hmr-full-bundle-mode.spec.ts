@@ -9,6 +9,7 @@ import {
   page,
   readFile,
   serverLogs,
+  viteServer,
 } from '~utils'
 
 const assetUrl = /asset-[\w-]+\.png/
@@ -53,6 +54,20 @@ if (isBuild) {
       performance.getEntriesByType('resource').map((entry) => entry.name),
     )
     expect(loaded).toContain(runtimeUrl.href)
+  })
+
+  // The output code does not carry the generation, so an undo gives the same bytes
+  test('the page starts at the generation of the output in its HTML', async () => {
+    const generation = await page.getAttribute(
+      'meta[name="vite-bundled-dev-generation"]',
+      'content',
+    )
+    expect(generation).toMatch(/^\d+$/)
+    expect(
+      await page.evaluate(
+        () => (globalThis as any).__rolldown_runtime__.knownGen,
+      ),
+    ).toBe(Number(generation))
   })
 
   // BUNDLED -> GENERATE_HMR_PATCH -> BUNDLING -> BUNDLE_ERROR -> BUNDLING -> BUNDLED
@@ -127,7 +142,7 @@ if (isBuild) {
   // BUNDLED -> GENERATING_HMR_PATCH -> BUNDLED
   test('generate hmr patch', async () => {
     await expect.poll(() => page.textContent('.hmr')).toBe('hello')
-    const hmrPatchFileRes = page.waitForResponse(/\/hmr_patch_\d\.js$/)
+    const hmrPatchFileRes = page.waitForResponse(/\/__rolldown_hmr_patch\.js\?/)
     editFile('hmr.js', (code) =>
       code.replace("const foo = 'hello'", "const foo = 'hello1'"),
     )
@@ -168,6 +183,65 @@ if (isBuild) {
       ),
     )
     await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+  })
+
+  test('applies an update that was pushed before the output ran', async () => {
+    const original = readFile('hmr.js')
+    await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+    // Earlier patches left the output stale. The reload below would then bring
+    // a rebuild and one more reload, so rebuild before it.
+    const bundledDev = viteServer.environments.client.bundledDev!
+    if (await bundledDev.triggerBundleRegenerationIfStale()) {
+      await page.waitForEvent('load')
+      await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+    }
+
+    let release!: () => void
+    const released = new Promise<void>((resolve) => (release = resolve))
+    let entryRequested!: () => void
+    const entryRequestedPromise = new Promise<void>(
+      (resolve) => (entryRequested = resolve),
+    )
+    const entryUrl = '**/assets/index.js'
+    await page.route(entryUrl, async (route) => {
+      // fetched before the edit, so it is the output from before the push
+      const response = await route.fetch()
+      entryRequested()
+      await released
+      await route.fulfill({ response })
+    })
+    onTestFinished(async () => {
+      release()
+      await page.unroute(entryUrl)
+      addFile('hmr.js', original)
+      await expect.poll(() => page.textContent('.hmr')).toBe('hello')
+    })
+
+    let clientConnected!: () => void
+    const clientConnectedPromise = new Promise<void>(
+      (resolve) => (clientConnected = resolve),
+    )
+    let pushed!: () => void
+    const pushedPromise = new Promise<void>((resolve) => (pushed = resolve))
+    page.once('websocket', (ws) => {
+      ws.on('framesent', ({ payload }) => {
+        if (String(payload).includes('vite:client-connected')) clientConnected()
+      })
+      ws.on('framereceived', ({ payload }) => {
+        if (String(payload).includes('"bundled-dev-update"')) pushed()
+      })
+    })
+
+    const reload = page.reload()
+    await entryRequestedPromise
+    await clientConnectedPromise
+    editFile('hmr.js', (code) =>
+      code.replace("const foo = 'hello'", "const foo = 'hello-pushed'"),
+    )
+    await pushedPromise
+    release()
+    await reload
+    await expect.poll(() => page.textContent('.hmr')).toBe('hello-pushed')
   })
 
   // an asset added by an HMR patch is emitted without `onOutput`, so it must be
@@ -367,31 +441,33 @@ if (isBuild) {
   })
 
   test('lazy bundling', async () => {
-    const responsePromise = page.waitForResponse(/\/@vite\/lazy\?/)
+    const responsePromise = page.waitForResponse((res) => {
+      const url = new URL(res.url())
+      return (
+        url.pathname === '/__rolldown_hmr_patch.js' && url.searchParams.has('l')
+      )
+    })
     await page.click('#load-dynamic')
     await expect.poll(() => page.textContent('.dynamic')).toBe('loaded')
 
-    // the lazy chunk names a `.map` file that only exists in memory; the dev
-    // server has to register it, otherwise the reference 404s and the module
-    // cannot be mapped back to its source. The reference is relative and a lazy
-    // chunk is imported from `/@vite/lazy?...`, so it resolves under `/@vite/`.
+    // the chunk links its sourcemap, so the page downloads it only for devtools
     const response = await responsePromise
     const code = await response.text()
+    expect(code).not.toContain('sourceMappingURL=data:')
     const url = code.match(/\/\/# sourceMappingURL=(.+)$/m)?.[1]
-    expect(url).toMatch(/^lazy_compile_\d+\.js\.map$/)
+    expect(url).toMatch(/^\/__rolldown_payload_map_l\d+\.map$/)
 
-    const mapResponse = await fetch(new URL(url!, response.url()))
-    expect(mapResponse.status).toBe(200)
-    const map = await mapResponse.json()
+    const mapUrl = new URL(url!, response.url())
+    const map = await (await page.request.get(mapUrl.href)).json()
     expect(map.version).toBe(3)
-    expect(map.sources.some((s: string) => s.endsWith('dynamic.js'))).toBe(true)
     expect(map.mappings.length).toBeGreaterThan(0)
+    // the sources resolve against the map URL as they do for an output chunk
+    const dynamic = map.sources
+      .map((source: string) => new URL(source, mapUrl).pathname)
+      .find((source: string) => source.endsWith('dynamic.js'))
+    expect(dynamic).toBe('/dynamic.js')
   })
 
-  // placed before `invalidate` on purpose: that test's cleanup restores
-  // invalidation-child.js, whose `hot.invalidate()` propagates to a parent
-  // without a shipped factory and forces a full page reload — which would
-  // wipe the `hot.data` this test relies on.
   test('preserves import.meta.hot.data across updates', async () => {
     await expect.poll(() => page.textContent('.data-count')).toBe('1')
     await expect.poll(() => page.textContent('.data-disposed')).toBe('0')
@@ -423,15 +499,19 @@ if (isBuild) {
       .poll(() => page.textContent('.invalidation-parent'))
       .toBe('child')
     const logIndex = browserLogs.length
+    await page.evaluate(() => ((window as any).__beforeInvalidate = true))
     editFile('invalidation-child.js', (code) =>
       code.replace("'child'", "'child updated'"),
     )
-    // `hot.invalidate()` is handled fully client-side; the update propagates
-    // to the parent (re-run in place, or a full reload when the parent's
-    // factory was never shipped)
+    // `hot.invalidate()` is handled client-side; the update propagates to the
+    // parent, whose code the client requests from the server, and the parent
+    // runs again in place
     await expect
       .poll(() => page.textContent('.invalidation-parent'))
       .toBe('child updated')
+    expect(await page.evaluate(() => (window as any).__beforeInvalidate)).toBe(
+      true,
+    )
     expect(
       browserLogs
         .slice(logIndex)
@@ -534,11 +614,62 @@ if (isBuild) {
       .toBe('worker-plain-updated')
   })
 
-  test('lazy bundling errors return 500', async () => {
-    const response = await page.request.get(
-      new URL('/@vite/lazy?id=%2Ffoo%2Fbar&clientId=x', page.url()).href,
-    )
-    expect(response.status()).toBe(500)
+  test('a lazy route that does not compile answers 500, and a later import works', async () => {
+    const original = readFile('lazy-error.js')
+    onTestFinished(() => addFile('lazy-error.js', original))
+    // the route is not compiled yet, so the edit sends no update
+    editFile('lazy-error.js', (code) => code.replace('=', '= ;'))
+
+    const failed = page.waitForResponse((res) => {
+      const url = new URL(res.url())
+      return (
+        url.pathname === '/__rolldown_hmr_patch.js' && url.searchParams.has('l')
+      )
+    })
+    await page.click('#load-lazy-error')
+    expect((await failed).status()).toBe(500)
+    await expect.poll(() => page.textContent('.lazy-error')).toBe('failed')
+    expect(await page.$('vite-error-overlay')).toBeNull()
+
+    addFile('lazy-error.js', original)
+    await page.click('#load-lazy-error')
+    await expect
+      .poll(() => page.textContent('.lazy-error'))
+      .toBe('lazy-error-loaded')
+  })
+
+  test('requests for the output of another dev server get a reload body', async () => {
+    for (const url of [
+      '/__rolldown_hmr_patch.js?s=0&g=0&l=bAQ',
+      '/__rolldown_hmr_patch.js?s=0&g=0',
+    ]) {
+      const response = await page.request.get(new URL(url, page.url()).href)
+      expect(response.status()).toBe(200)
+      expect(await response.text()).toMatch(
+        /^__rolldown_runtime__\.reloadNeeded\(".+"\);\nexport \{\}/,
+      )
+    }
+  })
+
+  test('a have-set token works for one request', async () => {
+    const token = await page.evaluate(async () => {
+      const runtime = (globalThis as any).__rolldown_runtime__
+      const response = await fetch('/__rolldown_hmr_have', {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-rolldown-hmr-have' },
+        body: runtime.encodeHave(new Set()),
+      })
+      return response.text()
+    })
+    const tokenReload =
+      '__rolldown_runtime__.reloadNeeded("the have-set token is unknown or expired")'
+    const url = new URL(`/__rolldown_hmr_patch.js?t=${token}&n=1`, page.url())
+    const first = await page.request.get(url.href)
+    expect(first.status()).toBe(200)
+    expect(await first.text()).not.toContain(tokenReload)
+    const again = await page.request.get(url.href)
+    expect(again.status()).toBe(200)
+    expect(await again.text()).toContain(tokenReload)
   })
 
   // Blocked by https://github.com/rolldown/rolldown/issues/10340

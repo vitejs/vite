@@ -7,6 +7,7 @@ import {
   BundledDevHMRClient,
   BundledDevHMRContext,
 } from '../shared/bundledDevHmr'
+import { BUNDLED_DEV_HMR_PATCH_FILENAME } from '../shared/constants'
 import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
 import {
   type NormalizedModuleRunnerTransport,
@@ -65,6 +66,28 @@ export class ModuleRunner {
   // before the first one runs. It is per-runner on purpose — `ssrLoadModule`
   // has its own compat runner, and a global would collide.
   private rolldownDevRuntime?: DevRuntime
+  /**
+   * The runtime that asked for each payload that is still loading.
+   * A full reload can replace the runtime while a request runs. Its payload
+   * must run against the runtime that asked for it, or a Reload answer to an
+   * old request would mark the new runtime.
+   */
+  private payloadRuntimes = new Map<string, DevRuntime>()
+  /**
+   * For each payload whose sourcemap is kept, the factories it installed. The
+   * map is kept while one of them is still installed, so stack traces of the
+   * code it brought stay mapped.
+   */
+  private payloadFactories = new Map<
+    string,
+    {
+      runtime: DevRuntime
+      moduleId: string
+      factories: [id: string, factory: unknown][]
+    }
+  >()
+  /** The module id of each payload URL whose sourcemap `cachedModule` kept */
+  private payloadModuleIds = new Map<string, string>()
 
   private closed = false
 
@@ -99,14 +122,6 @@ export class ModuleRunner {
           {
             partialAccept:
               optionsHmr !== true && optionsHmr.partialAccept === true,
-            loadPatch: async (url) => {
-              await this.import(url)
-              // don't leave the HMR patch in memory
-              const patchModule = this.evaluatedModules.getModuleByUrl(url)
-              if (patchModule) {
-                this.evaluatedModules.removeModule(patchModule)
-              }
-            },
             beforeApply: () => 'continue',
             importUpdatedModule,
           },
@@ -128,7 +143,9 @@ export class ModuleRunner {
       this.transport.connect?.()
     }
     if (runtime) {
-      // registers this runner with the dev engine so it gets its own ship map
+      // registers this runner: the server sends HMR pushes (with a `seq` per
+      // connection), build errors and the reloads it asks for only to
+      // registered clients
       this.transport.send({
         type: 'custom',
         event: 'vite:client-connected',
@@ -149,6 +166,15 @@ export class ModuleRunner {
       fetchedModule.url,
       fetchedModule,
     )
+    // A push can come before the entry is fetched, and the entry then runs the
+    // code from before the push. A payload import is part of a pull, and the
+    // pull catches up itself.
+    if (
+      this.rolldownDevRuntime?.missedUpdate() &&
+      !this.payloadRuntimes.has(url)
+    ) {
+      await this._bundledDevHmrClient?.catchUpMissedUpdates()
+    }
     if (
       this.rolldownDevRuntime &&
       fetchedModule.meta &&
@@ -170,12 +196,64 @@ export class ModuleRunner {
    */
   public clearCache(): void {
     this.evaluatedModules.clear()
+    this.payloadFactories.clear()
+    this.payloadModuleIds.clear()
     this.hmrClient?.clear()
+  }
+
+  /** @internal */
+  public async _importPayload(
+    runtime: DevRuntime,
+    url: string,
+  ): Promise<unknown> {
+    this.payloadRuntimes.set(url, runtime)
+    let installed: string[] = []
+    try {
+      const exports = await this.import(url)
+      installed = exports?.__rolldown_payload__?.ids ?? []
+      return exports
+    } finally {
+      if (this.payloadRuntimes.get(url) === runtime) {
+        this.payloadRuntimes.delete(url)
+      }
+      const moduleId = this.payloadModuleIds.get(url)
+      if (moduleId !== undefined) {
+        this.payloadModuleIds.delete(url)
+        this.payloadFactories.set(url, {
+          runtime,
+          moduleId,
+          factories: installed.map((id) => [id, runtime.factories.get(id)]),
+        })
+      }
+      this.releasePayloadMaps()
+    }
+  }
+
+  /**
+   * Drops the kept sourcemap of each payload none of whose factories is
+   * installed any more: a newer payload replaced them, or an update dropped
+   * them.
+   */
+  private releasePayloadMaps(): void {
+    for (const [
+      url,
+      { runtime, moduleId, factories },
+    ] of this.payloadFactories) {
+      const inUse =
+        runtime === this.rolldownDevRuntime &&
+        factories.some(([id, factory]) => runtime.factories.get(id) === factory)
+      if (!inUse) {
+        this.payloadFactories.delete(url)
+        this.evaluatedModules.releaseSourceMap(moduleId)
+      }
+    }
   }
 
   /** @internal */
   public async _resetBundledDevRuntime(): Promise<void> {
     this.evaluatedModules.clear()
+    this.payloadFactories.clear()
+    this.payloadModuleIds.clear()
     this.moduleHotContexts.clear()
 
     const oldClientId = this.rolldownDevRuntime!.clientId
@@ -407,9 +485,24 @@ export class ModuleRunner {
     fetchedModule.id = moduleId
     module.meta = fetchedModule
 
-    // Do not keep lazy "patches" in memory, but keep the sourcemap
-    if (module.url.startsWith('/@vite/lazy?')) {
+    // The first chunk of the output is the entry. A later chunk can be from a
+    // newer output, but the runner heard of every update since the entry.
+    if (
+      this.rolldownDevRuntime &&
+      this.rolldownDevRuntime.knownGen < 0 &&
+      'rolldownGeneration' in fetchedModule &&
+      fetchedModule.rolldownGeneration !== undefined
+    ) {
+      this.rolldownDevRuntime.setOutputGeneration(
+        fetchedModule.rolldownGeneration,
+      )
+    }
+
+    // Do not keep payloads in memory. Each payload has a unique id, so its
+    // sourcemap is kept only until `releasePayloadMaps` drops it.
+    if (module.url.startsWith(`/${BUNDLED_DEV_HMR_PATCH_FILENAME}?`)) {
       this.evaluatedModules.removeModule(module, { retainSourceMap: true })
+      this.payloadModuleIds.set(module.url, module.id)
     }
 
     return module
@@ -502,7 +595,8 @@ export class ModuleRunner {
           get: getter,
         }),
       [ssrImportMetaKey]: meta,
-      [ssrRolldownRuntimeKey]: this.rolldownDevRuntime,
+      [ssrRolldownRuntimeKey]:
+        this.payloadRuntimes.get(fetchResult.url) ?? this.rolldownDevRuntime,
     }
 
     this.debug?.('[module runner] executing', meta.href)
@@ -520,25 +614,34 @@ export class ModuleRunner {
         super(nanoid())
       }
 
-      payloadDelivered(filename: string): void {
-        this.runner.transport.send({
-          type: 'custom',
-          event: 'vite:bundled-dev:payload-delivered',
-          data: { filename },
-        })
-      }
+      // the runner has no request header limit, so it never sends a query in a POST body
+      override maxQueryLength = Infinity
+      // unknown until the runner fetches the entry chunk
+      override knownGen = -1
 
       // Rolldown's runtime uses `import` that will not be rewritten by the module runner transform
-      override loadLazyChunk(proxyModuleId: string): Promise<unknown> {
-        return this.runner.import(
-          `/@vite/lazy?id=${encodeURIComponent(proxyModuleId)}&clientId=${this.clientId}`,
-        )
+      override importPatch(url: string): Promise<unknown> {
+        return this.runner._importPayload(this, url)
       }
 
       override hooks: DevRuntime['hooks'] = {
         createModuleHotContext: (id) => this.runner.ensureModuleHotContext(id),
         onModuleCacheRemoval: (id) =>
           this.runner._bundledDevHmrClient?.handleModuleCacheRemoval(id),
+        // A replaced runtime can still finish a request it started. The
+        // shared client serves the new runtime then, so it must not reload.
+        onMissingFactory: (id) => {
+          if (this.runner.rolldownDevRuntime !== this) return
+          this.runner._bundledDevHmrClient?.handleMissingFactory(id)
+        },
+        onReloadNeeded: (reason) => {
+          if (this.runner.rolldownDevRuntime !== this) return
+          this.runner._bundledDevHmrClient?.handleReloadNeeded(reason)
+        },
+        onCaughtUp: () => {
+          if (this.runner.rolldownDevRuntime !== this) return
+          this.runner._bundledDevHmrClient?.catchUpMissedUpdates()
+        },
       }
     }
     return new ViteDevRuntime(this)

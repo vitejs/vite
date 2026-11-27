@@ -23,3 +23,35 @@ export const MODULE_RUNNER_SOURCEMAPPING_SOURCE =
   '//# sourceMappingSource=vite-generated'
 
 export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
+
+/**
+ * Full bundle mode serves HMR patches at this path next to the output files,
+ * so the relative imports in a patch resolve like those in the output chunks.
+ */
+export const BUNDLED_DEV_HMR_PATCH_FILENAME = '__rolldown_hmr_patch.js'
+
+/**
+ * Full bundle mode stores a patch or lazy query sent in a POST body to this
+ * path, and answers a token that the request URL carries instead.
+ */
+export const BUNDLED_DEV_HMR_HAVE_PATH = '__rolldown_hmr_have'
+
+/**
+ * The body type of that POST. Rolldown's dev runtime sends it
+ * (`DevRuntime.requestQuery`).
+ */
+export const BUNDLED_DEV_HMR_HAVE_CONTENT_TYPE =
+  'application/x-rolldown-hmr-have'
+
+/**
+ * Full bundle mode serves the sourcemap of a patch or lazy chunk at this path
+ * plus an id and `.map`. The path is next to the output files, because the
+ * map names its sources relative to the output dir.
+ */
+export const BUNDLED_DEV_PAYLOAD_MAP_PREFIX = '__rolldown_payload_map_'
+
+/**
+ * Full bundle mode puts the HMR generation of the output in the HTML it
+ * serves, in a meta tag of this name. The output code does not carry it.
+ */
+export const BUNDLED_DEV_GENERATION_META_NAME = 'vite-bundled-dev-generation'

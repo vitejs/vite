@@ -14,11 +14,24 @@ export interface RolldownRuntimeLike {
   getImportedBindings(importer: string, id: string): string[] | undefined
   isEntry(id: string): boolean
   isExecuted(id: string): boolean
-  hasFactory(id: string): boolean
+  canRun(updateIds: Set<string>): boolean
   removeModuleCache(id: string): void
   initModule(id: string): unknown
   loadExports(id: string): unknown
+  appliedGen: number
+  knownGen: number
+  registerCount: number
+  markStale(ids: string[], gen: number): void
+  missedUpdate(): boolean
+  hasCaughtUpChanges(): boolean
+  ensureRunnable(updateIds: Set<string>): Promise<EnsureRunnableResult>
+  refetchDropped(): Promise<void>
 }
+
+type EnsureRunnableResult =
+  | { type: 'ready' }
+  | { type: 'caught-up'; changedIds: string[] }
+  | { type: 'reload'; reason: string }
 
 interface PropagationBoundary {
   boundary: string
@@ -34,12 +47,16 @@ type HmrUpdate =
       updateSet: string[]
     }
 
+type RunnableUpdate = Extract<HmrUpdate, { type: 'update' }> & {
+  /** the changed modules from catch-ups that the walk added */
+  caughtUpIds: string[]
+  /** `runtime.knownGen` when the update became runnable */
+  gen: number
+  /** `runtime.registerCount` when the walk ran */
+  registerCount: number
+}
+
 export interface BundledDevHMRClientOptions {
-  /**
-   * Loads and executes the HMR patch chunk served at `url`. The browser imports
-   * it, the module runner fetches it through its own transport.
-   */
-  loadPatch: (url: string) => Promise<void>
   partialAccept: boolean
   /** returning `'reload'` aborts the apply — the hook reloads the page itself */
   beforeApply: () => 'reload' | 'continue'
@@ -126,26 +143,37 @@ export class BundledDevHMRClient extends HMRClient {
     )
   }
 
+  /**
+   * `caughtUpIds` are walked after `changedIds` and without
+   * `firstInvalidatedBy`: a new edit of the module that called `invalidate()`
+   * is a normal update.
+   */
   computeHmrUpdate(
     changedIds: string[],
-    opts?: { firstInvalidatedBy?: string },
+    opts?: { firstInvalidatedBy?: string; caughtUpIds?: string[] },
   ): HmrUpdate {
     const boundaries: PropagationBoundary[] = []
     const updateSet = new Set<string>()
     const traversedModules = new Set<string>()
-    for (const changed of changedIds) {
-      if (!this.runtime.isExecuted(changed)) {
-        continue
+    const walks: [string[], string | undefined][] = [
+      [changedIds, opts?.firstInvalidatedBy],
+      [opts?.caughtUpIds ?? [], undefined],
+    ]
+    for (const [ids, firstInvalidatedBy] of walks) {
+      for (const changed of ids) {
+        if (!this.runtime.isExecuted(changed)) {
+          continue
+        }
+        const fullReload = this.bubble(
+          changed,
+          [changed],
+          updateSet,
+          boundaries,
+          firstInvalidatedBy,
+          traversedModules,
+        )
+        if (fullReload) return fullReload
       }
-      const fullReload = this.bubble(
-        changed,
-        [changed],
-        updateSet,
-        boundaries,
-        opts?.firstInvalidatedBy,
-        traversedModules,
-      )
-      if (fullReload) return fullReload
     }
     return { type: 'update', boundaries, updateSet: [...updateSet] }
   }
@@ -302,6 +330,29 @@ export class BundledDevHMRClient extends HMRClient {
       })
   }
 
+  /**
+   * Pulls the missed updates and applies them, with the changes that a
+   * catch-up outside an update brought (a lazy load, for example). A push can
+   * come before the page ran its output, and the output then runs the code from
+   * before the push, so the client also calls this after the output ran.
+   * Resolves when the catch-up was applied or failed.
+   */
+  catchUpMissedUpdates(): Promise<void> {
+    return (this.applyQueue = this.applyQueue
+      .then(async () => {
+        if (
+          this.reloadPending ||
+          (!this.runtime.missedUpdate() && !this.runtime.hasCaughtUpChanges())
+        ) {
+          return
+        }
+        await this.runUpdate([])
+      })
+      .catch((err) => {
+        this.warnFailedUpdate(err, [])
+      }))
+  }
+
   invalidateLocally(id: string, message?: string): void {
     this.logger.debug(`invalidate ${id}${message ? `: ${message}` : ''}`)
     this.applyQueue = this.applyQueue
@@ -320,7 +371,8 @@ export class BundledDevHMRClient extends HMRClient {
 
   private async applyPush({
     changedIds,
-    url,
+    staleIds,
+    gen,
     seq,
   }: BundledDevUpdatePayload): Promise<void> {
     if (this.reloadPending) return
@@ -332,35 +384,14 @@ export class BundledDevHMRClient extends HMRClient {
     }
     this.lastSeq = seq
 
-    const update = this.computeHmrUpdate(changedIds)
-    if (update.type === 'full-reload') {
-      this.requestFullReload(update.reason)
-      return
+    const alreadyApplied = gen <= this.runtime.appliedGen
+    this.runtime.markStale(staleIds, gen)
+    // a catch-up in an earlier response already brought these changes
+    if (!alreadyApplied) {
+      await this.runUpdate(changedIds)
     }
-    // none of the changed modules has run in this page
-    if (!update.updateSet.length) return
-    // A reload found with the old import edges saves fetching the patch.
-    // `applyUpdate` checks again with the new import edges.
-    const entry = this.findEntryWithoutBoundary(update)
-    if (entry !== undefined) {
-      this.requestFullReload(`no hmr boundary found for module \`${entry}\``)
-      return
-    }
-
-    const notify = update.boundaries.length > 0
-    const listenerPayload = this.toUpdatePayload(update.boundaries, undefined)
-    if (notify) await this.notifyListeners('vite:beforeUpdate', listenerPayload)
-    if (this.options.beforeApply() === 'reload') return
-
-    try {
-      await this.options.loadPatch(url)
-    } catch {
-      this.requestFullReload(`failed to import hmr patch ${url}`)
-      return
-    }
-
-    await this.applyUpdate(update)
-    if (notify) await this.notifyListeners('vite:afterUpdate', listenerPayload)
+    // not awaited: the next update does not wait for code that may never run
+    if (!this.reloadPending) void this.runtime.refetchDropped()
   }
 
   private async applyInvalidate(id: string): Promise<void> {
@@ -376,22 +407,113 @@ export class BundledDevHMRClient extends HMRClient {
       return
     }
 
-    // no rebuild happened, so there is no patch to fetch
-    const update = this.computeHmrUpdate(importers, { firstInvalidatedBy })
-    if (update.type === 'full-reload') {
-      this.requestFullReload(update.reason)
-      return
-    }
+    await this.runUpdate(importers, firstInvalidatedBy)
+  }
 
-    const notify = update.boundaries.length > 0
-    const listenerPayload = this.toUpdatePayload(
-      update.boundaries,
-      firstInvalidatedBy,
-    )
-    if (notify) await this.notifyListeners('vite:beforeUpdate', listenerPayload)
-    if (this.options.beforeApply() === 'reload') return
-    await this.applyUpdate(update, firstInvalidatedBy)
-    if (notify) await this.notifyListeners('vite:afterUpdate', listenerPayload)
+  /**
+   * Lazy loads and `loadDynamic` are not queued behind updates. When one of
+   * them changes the client during an `await`, `applyUpdate` finds the update
+   * outdated, and it is prepared again.
+   */
+  private async runUpdate(
+    changedIds: string[],
+    firstInvalidatedBy?: string,
+  ): Promise<void> {
+    let caughtUpIds: string[] = []
+    for (let attempts = 1; ; attempts++) {
+      const update = await this.prepareUpdate(
+        changedIds,
+        caughtUpIds,
+        firstInvalidatedBy,
+      )
+      if (!update) return
+      // none of the changed modules has run in this page
+      if (!update.updateSet.length) {
+        this.markApplied(update)
+        return
+      }
+
+      const notify = update.boundaries.length > 0
+      const listenerPayload = this.toUpdatePayload(
+        update.boundaries,
+        firstInvalidatedBy,
+      )
+      if (notify) {
+        await this.notifyListeners('vite:beforeUpdate', listenerPayload)
+      }
+      if (this.options.beforeApply() === 'reload') return
+      if (await this.applyUpdate(update, firstInvalidatedBy)) {
+        if (notify) {
+          await this.notifyListeners('vite:afterUpdate', listenerPayload)
+        }
+        return
+      }
+      if (attempts === 3) {
+        this.requestFullReload('the page kept changing during the hmr update')
+        return
+      }
+      caughtUpIds = update.caughtUpIds
+    }
+  }
+
+  /**
+   * Walk from `changedIds` and make sure every module of the update can run,
+   * requesting the missing code from the server. Nothing is removed from the
+   * module cache yet. Returns `undefined` when a full reload was requested.
+   *
+   * A response can report updates this client did not handle yet (a catch-up).
+   * Their changed modules join the walk, which runs once more. A module that
+   * ran during the request may import a module of the update, so a changed
+   * `registerCount` also makes the walk run again.
+   */
+  private async prepareUpdate(
+    changedIds: string[],
+    caughtUpIds: string[],
+    firstInvalidatedBy?: string,
+  ): Promise<RunnableUpdate | undefined> {
+    for (let catchUps = 0; ;) {
+      const registerCount = this.runtime.registerCount
+      const update = this.computeHmrUpdate(changedIds, {
+        firstInvalidatedBy,
+        caughtUpIds,
+      })
+      if (update.type === 'full-reload') {
+        this.requestFullReload(update.reason)
+        return
+      }
+      // A reload found with the old import edges saves the request. `applyUpdate`
+      // checks again with the new import edges.
+      const entry = this.findEntryWithoutBoundary(update)
+      if (entry !== undefined) {
+        this.requestFullReload(`no hmr boundary found for module \`${entry}\``)
+        return
+      }
+      let result: EnsureRunnableResult
+      try {
+        result = await this.runtime.ensureRunnable(new Set(update.updateSet))
+      } catch (err) {
+        this.requestFullReload(`failed to request the hmr patch: ${err}`)
+        return
+      }
+      if (result.type === 'ready') {
+        if (this.runtime.registerCount !== registerCount) continue
+        return {
+          ...update,
+          caughtUpIds,
+          gen: this.runtime.knownGen,
+          registerCount,
+        }
+      }
+      if (result.type === 'reload') {
+        this.requestFullReload(result.reason)
+        return
+      }
+      if (++catchUps === 2) {
+        this.requestFullReload('the server kept reporting missed hmr updates')
+        return
+      }
+      caughtUpIds = [...new Set([...caughtUpIds, ...result.changedIds])]
+    }
   }
 
   /**
@@ -441,21 +563,26 @@ export class BundledDevHMRClient extends HMRClient {
     return entriesInUpdateSet.find((id) => !executedByBoundaries.has(id))
   }
 
+  /**
+   * Returns `false`, with nothing changed, when the update is outdated: a
+   * module ran or a catch-up dropped a factory after the walk. This check and
+   * the removal from the module cache below must stay in one synchronous step.
+   */
   private async applyUpdate(
-    update: Extract<HmrUpdate, { type: 'update' }>,
+    update: RunnableUpdate,
     firstInvalidatedBy?: string,
-  ): Promise<void> {
-    for (const id of update.updateSet) {
-      if (!this.runtime.hasFactory(id)) {
-        this.requestFullReload(`no factory for module \`${id}\``)
-        return
-      }
+  ): Promise<boolean> {
+    if (
+      this.runtime.registerCount !== update.registerCount ||
+      !this.runtime.canRun(new Set(update.updateSet))
+    ) {
+      return false
     }
     // the patch may have removed an import that ran an entry again
     const entry = this.findEntryWithoutBoundary(update)
     if (entry !== undefined) {
       this.requestFullReload(`no hmr boundary found for module \`${entry}\``)
-      return
+      return true
     }
 
     // collect callbacks before the caches are removed
@@ -474,6 +601,7 @@ export class BundledDevHMRClient extends HMRClient {
     for (const id of update.updateSet) {
       this.runtime.removeModuleCache(id)
     }
+    this.markApplied(update)
 
     for (const {
       boundary,
@@ -490,7 +618,7 @@ export class BundledDevHMRClient extends HMRClient {
           this.requestFullReload(
             `${acceptedVia} failed to apply HMR as it's within a circular import. Reloading page to reset the execution order.`,
           )
-          return
+          return true
         }
         throw err
       }
@@ -512,6 +640,7 @@ export class BundledDevHMRClient extends HMRClient {
         }`,
       )
     }
+    return true
   }
 
   private toUpdatePayload(
@@ -529,6 +658,18 @@ export class BundledDevHMRClient extends HMRClient {
       }),
     )
     return { type: 'update', updates }
+  }
+
+  private markApplied(update: RunnableUpdate): void {
+    this.runtime.appliedGen = Math.max(this.runtime.appliedGen, update.gen)
+  }
+
+  handleMissingFactory(id: string): void {
+    this.requestFullReload(`no factory for module \`${id}\``)
+  }
+
+  handleReloadNeeded(reason: string): void {
+    this.requestFullReload(reason)
   }
 
   private requestFullReload(reason: string): void {

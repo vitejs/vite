@@ -24,15 +24,18 @@ export interface UpdatePayload {
 }
 
 /**
- * Full-bundle-mode update notification. The client computes the HMR boundaries
- * itself from `changedIds`.
+ * Full-bundle-mode update notification, the same for every client. The client
+ * computes the HMR boundaries itself from `changedIds` and requests the code it
+ * needs.
  */
 export interface BundledDevUpdatePayload {
   type: 'bundled-dev-update'
   changedIds: string[]
-  /** URL of the per-client HMR patch chunk */
-  url: string
-  /** Per-client sequence number */
+  /** Every module whose code changed in this update. The client drops its old factories. */
+  staleIds: string[]
+  /** The bundler generation of this update */
+  gen: number
+  /** Per-connection sequence number */
   seq: number
 }
 

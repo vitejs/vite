@@ -60,6 +60,12 @@ export interface ViteFetchResult {
    * @experimental
    */
   rolldownModuleId?: string
+  /**
+   * The HMR generation of the output this chunk is from. The runner starts
+   * Rolldown's runtime at it.
+   * @experimental
+   */
+  rolldownGeneration?: number
 }
 
 export type InvokeSendData<

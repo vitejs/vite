@@ -1,38 +1,39 @@
 import type { Response, Route } from 'playwright-chromium'
 import { beforeAll, describe, expect, test } from 'vitest'
-import { isBundledDev, page, promiseWithResolvers } from '~utils'
+import { isBundledDev, lazyTargetsOf, page, promiseWithResolvers } from '~utils'
 
 // Regression test for rolldown/rolldown#10774.
 //
-// A lazy chunk omits every factory the server believes this client already
-// holds. The server must learn that from the client (the chunk reports back
-// after registering its factories), not from its own HTTP response finishing:
-// bytes that left the server may still be on the wire while a later chunk is
-// compiled, delivered and evaluated. If the server recorded delivery too
-// early, the later chunk would omit a shared factory and `initModule` would
-// throw `MissingFactoryError` in the browser.
+// A lazy chunk omits every factory the client already holds. The client lists
+// them in the request itself, so a response that left the server but did not
+// reach the page yet cannot make a later chunk omit a factory. If it did, the
+// later chunk would omit a shared factory and `initModule` would throw
+// `MissingFactoryError` in the browser.
 //
 // The spec makes that window deterministic with Playwright routing: A's
 // response is fetched from the server (so the server finished writing it) but
 // held back from the page until B has been requested and evaluated.
 //
-// Both tests share one page session on purpose. A lazy entry is served through
-// `/@vite/lazy` only until it is first fetched on this server; a later page
-// load gets it as an ordinary chunk. So the second test cannot reload — it
-// continues from the state the first test leaves behind.
+// Both tests share one page session on purpose: the second test continues from
+// the state the first test leaves behind, a page that ran A and B.
 
 const factoryFor = (file: string) =>
   new RegExp(`registerFactory\\("[^"]*/${file}"`)
 
-const lazyIdOf = (url: string) => new URL(url).searchParams.get('id') ?? ''
+const lazyBodies: { ids: string[]; body: Promise<string> }[] = []
+const findLazyBody = (route: string) =>
+  lazyBodies.find((e) => e.ids.some((id) => id.includes(route)))
+const lazyBody = async (route: string) => {
+  // the listener maps the numbers of a response after it arrived
+  await expect.poll(() => findLazyBody(route) !== undefined).toBe(true)
+  return findLazyBody(route)!.body
+}
 
-const lazyBodies: { id: string; body: Promise<string> }[] = []
-const lazyBody = (route: string) =>
-  lazyBodies.find((e) => e.id.includes(route))!.body
-
-const onResponse = (res: Response) => {
-  if (res.url().includes('/@vite/lazy?')) {
-    lazyBodies.push({ id: lazyIdOf(res.url()), body: res.text() })
+const onResponse = async (res: Response) => {
+  if (res.url().includes('/__rolldown_hmr_patch.js?')) {
+    const body = res.text()
+    const ids = await lazyTargetsOf(res.url())
+    if (ids.length > 0) lazyBodies.push({ ids, body })
   }
 }
 
@@ -55,7 +56,8 @@ describe.runIf(isBundledDev)('lazy compilation', () => {
     const aFulfilled = promiseWithResolvers<void>()
 
     const lazyRoute = async (route: Route) => {
-      if (!lazyIdOf(route.request().url()).includes('page-a')) {
+      const ids = await lazyTargetsOf(route.request().url())
+      if (!ids.some((id) => id.includes('page-a'))) {
         return route.continue()
       }
       const response = await route.fetch()
@@ -64,18 +66,15 @@ describe.runIf(isBundledDev)('lazy compilation', () => {
       await route.fulfill({ response })
       aFulfilled.resolve()
     }
-    const router = await page.route('**/@vite/lazy?*', lazyRoute)
+    const router = await page.route('**/__rolldown_hmr_patch.js?*', lazyRoute)
 
     try {
       await page.click('#route-a-btn')
       await aFetched.promise
 
-      // B is compiled while A's bytes are held back from the page, so the
-      // client has not reported A yet and B must still carry shared.js.
+      // B is requested while A's bytes are held back from the page, so the
+      // client does not hold shared.js yet and B must carry it.
       await page.click('#route-b-btn')
-      await expect
-        .poll(() => lazyBodies.some((e) => e.id.includes('page-b')))
-        .toBe(true)
       const bodyB = await lazyBody('page-b')
       expect(bodyB).toMatch(factoryFor('page-b.js'))
       expect(bodyB).toMatch(factoryFor('shared.js'))
@@ -97,11 +96,6 @@ describe.runIf(isBundledDev)('lazy compilation', () => {
   })
 
   test('a chunk requested after the earlier chunks were evaluated omits the shared factory', async () => {
-    // The client reports A and B over the websocket after evaluating them;
-    // the next lazy request is a separate HTTP request, so give the reports
-    // a moment to land before C is compiled.
-    await new Promise((resolve) => setTimeout(resolve, 300))
-
     await page.click('#route-c-btn')
     await expect
       .poll(() => page.textContent('#route-c-content'))

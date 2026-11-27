@@ -78,6 +78,11 @@ import type { DevEnvironment } from './environment'
 import type { HmrOptions, NormalizedHotChannel, WsOptions } from './hmr'
 import { handleHMRUpdate, updateModules } from './hmr'
 import { baseMiddleware } from './middlewares/base'
+import {
+  bundledDevHaveMiddleware,
+  bundledDevPatchMiddleware,
+  bundledDevPayloadMapMiddleware,
+} from './middlewares/bundledDevPayload'
 import { errorMiddleware } from './middlewares/error'
 import { hostValidationMiddleware } from './middlewares/hostCheck'
 import { htmlFallbackMiddleware } from './middlewares/htmlFallback'
@@ -99,7 +104,6 @@ import {
   cachedTransformMiddleware,
   transformMiddleware,
 } from './middlewares/transform'
-import { triggerLazyBundlingMiddleware } from './middlewares/triggerLazyBundling'
 import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { openBrowser as _openBrowser } from './openBrowser'
@@ -1160,7 +1164,9 @@ async function applyMiddlewares(
   }
 
   if (config.experimental.bundledDev) {
-    middlewares.use(triggerLazyBundlingMiddleware(server))
+    middlewares.use(bundledDevHaveMiddleware(server))
+    middlewares.use(bundledDevPatchMiddleware(server))
+    middlewares.use(bundledDevPayloadMapMiddleware(server))
     middlewares.use(memoryFilesMiddleware(server))
   } else {
     // main transform middleware
