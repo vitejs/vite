@@ -432,6 +432,7 @@ export async function loadCachedDepOptimizationMetadata(
         )
         // Nothing to commit or cancel as we are using the cache, we only
         // need to resolve the processing promise so requests can move on
+        tagCacheDir(environment.config.cacheDir)
         return cachedMetadata
       }
     }
@@ -528,6 +529,7 @@ export function runOptimizeDeps(
   // until they have been processed. This also avoids leaving the deps cache
   // directory in a corrupted state if there is an error
   fs.mkdirSync(processingCacheDir, { recursive: true })
+  tagCacheDir(environment.config.cacheDir)
 
   // a hint for Node.js
   // all files in the cache directory should be recognized as ES modules
@@ -979,6 +981,22 @@ function getTempSuffix() {
 
 function getDepsCacheDirPrefix(environment: Environment): string {
   return normalizePath(path.resolve(environment.config.cacheDir, 'deps'))
+}
+
+function tagCacheDir(cacheDir: string): void {
+  try {
+    fs.writeFileSync(
+      path.join(cacheDir, 'CACHEDIR.TAG'),
+      `Signature: 8a477f597d28d172789f06886806bc55
+# This file is a cache directory tag created by Vite.
+# For information about cache directory tags see https://bford.info/cachedir/
+`,
+      // The 'x' flag prevents overwriting an existing tag.
+      { flag: 'wx' },
+    )
+  } catch {
+    // The tag is optional and must not prevent dependency optimization.
+  }
 }
 
 export function createIsOptimizedDepFile(
