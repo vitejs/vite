@@ -20,3 +20,20 @@ flowchart TD
     B(dep2.js) -->|dep2| A
     A -->|dep1| C(index.js)
 ```
+
+---
+
+- `test10` - `test11`
+
+`export *` from a module that is still evaluating in a cycle (https://github.com/vitejs/vite/issues/24183).
+`b.js` must also get the `value` export that `a.js` gets later through `export * from './leaf.js'`.
+In `test11`, `b.js` re-exports `a.js` through `c.js`.
+
+```mermaid
+flowchart TD
+    A(a.js) -->|export *| B(b.js)
+    B -->|export *| A
+    L(leaf.js) -->|value| A
+    A -->|value| entry(index.js)
+    B -->|value| entry
+```

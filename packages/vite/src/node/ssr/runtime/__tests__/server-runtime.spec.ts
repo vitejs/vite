@@ -2,8 +2,10 @@ import { existsSync, readdirSync } from 'node:fs'
 import { posix, resolve, win32 } from 'node:path'
 import { setTimeout } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
+import { setFlagsFromString } from 'node:v8'
+import { runInNewContext } from 'node:vm'
 import { describe, expect, vi } from 'vitest'
-import type { HMRLogger } from '../../../../module-runner'
+import type { HMRLogger, ModuleRunner } from '../../../../module-runner'
 import type { ExternalFetchResult } from '../../../../shared/invokeMethods'
 import { isWindows, slash } from '../../../../shared/utils'
 import { createServer } from '../../../server'
@@ -24,6 +26,8 @@ describe.for([
       './fixtures/test.module.css',
       './fixtures/assets.js',
       './fixtures/top-level-object.js',
+      './fixtures/cyclic2/test11/index.js',
+      './fixtures/cyclic2/test10/index.js',
       './fixtures/cyclic2/test9/index.js',
       './fixtures/live-binding/test4/index.js',
       './fixtures/live-binding/test3/index.js',
@@ -276,6 +280,90 @@ describe.for([
       }
     `)
   })
+
+  it.for([
+    '/fixtures/cyclic2/test10/index.js',
+    '/fixtures/cyclic2/test11/index.js',
+  ] as const)(
+    `cyclic export * from a module still evaluating %s`,
+    async (entry, { runner }) => {
+      const mod = await runner.import(entry)
+      expect(mod.result).toStrictEqual({
+        fromA: 42,
+        fromB: 42,
+        bKeys: ['value'],
+      })
+    },
+  )
+
+  // an unrelated import that has not settled must not delay anything
+  async function startPendingImport(
+    runner: ModuleRunner,
+    onTestFinished: (fn: () => void | Promise<void>) => void,
+  ) {
+    let resolve!: () => void
+    let started!: () => void
+    const isStarted = new Promise<void>((r) => (started = r))
+    ;(globalThis as any).__viteTestPending__ = {
+      promise: new Promise<void>((r) => (resolve = r)),
+      started,
+    }
+    const pending = runner.import('/fixtures/cyclic2/test10/pending.js')
+    onTestFinished(async () => {
+      resolve()
+      await pending
+      delete (globalThis as any).__viteTestPending__
+    })
+    // wait until pending.js is evaluating
+    await isStarted
+  }
+
+  it.for([false, true])(
+    `cyclic export * namespaces are sealed once evaluated (pending import: %s)`,
+    async (withPending, { runner, fullBundle, skip, onTestFinished }) => {
+      skip(!!fullBundle.length, "rolldown's module is not sealed")
+      if (withPending) await startPendingImport(runner, onTestFinished)
+
+      await runner.import('/fixtures/cyclic2/test10/index.js')
+      const a = await runner.import('/fixtures/cyclic2/test10/a.js')
+      const b = await runner.import('/fixtures/cyclic2/test10/b.js')
+      // not part of the cycle, evaluated after it
+      const downstream = await runner.import(
+        '/fixtures/cyclic2/test10/downstream.js',
+      )
+      expect(downstream.value).toBe(42)
+      expect(Object.isSealed(a)).toBe(true)
+      expect(Object.isSealed(b)).toBe(true)
+      expect(Object.isSealed(downstream)).toBe(true)
+    },
+  )
+
+  it.for([false, true])(
+    `cyclic export * does not retain re-evaluated namespaces (pending import: %s)`,
+    async (withPending, { runner, fullBundle, skip, onTestFinished }) => {
+      skip(!!fullBundle.length)
+      if (withPending) await startPendingImport(runner, onTestFinished)
+      setFlagsFromString('--expose-gc')
+      const gc: () => void = runInNewContext('gc')
+
+      const files = ['a.js', 'b.js', 'leaf.js', 'index.js', 'downstream.js']
+      const url = '/fixtures/cyclic2/test10/downstream.js'
+      await runner.import('/fixtures/cyclic2/test10/index.js')
+      const first = new WeakRef(await runner.import(url))
+      for (const file of files) {
+        const mod = runner.evaluatedModules.getModuleByUrl(
+          `/fixtures/cyclic2/test10/${file}`,
+        )
+        if (mod) runner.evaluatedModules.invalidateModule(mod)
+      }
+      await runner.import('/fixtures/cyclic2/test10/index.js')
+      expect((await runner.import(url)).value).toBe(42)
+
+      await setTimeout(0)
+      gc()
+      expect(first.deref()).toBeUndefined()
+    },
+  )
 
   it(`execution order with mixed import and re-export`, async ({
     runner,

@@ -11,6 +11,7 @@ import {
   ssrModuleExportsKey,
   ssrRolldownRuntimeKey,
 } from './constants'
+import { sealExports } from './exportAll'
 import type { ModuleEvaluator, ModuleRunnerContext } from './types'
 
 export class ESModulesEvaluator implements ModuleEvaluator {
@@ -46,7 +47,7 @@ export class ESModulesEvaluator implements ModuleEvaluator {
       context[ssrRolldownRuntimeKey],
     )
 
-    Object.seal(context[ssrModuleExportsKey])
+    sealExports(context[ssrModuleExportsKey])
   }
 
   runExternalModule(filepath: string): Promise<any> {
