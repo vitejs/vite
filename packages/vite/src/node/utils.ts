@@ -1718,13 +1718,19 @@ function mergeConfigRecursively(
     }
 
     // fields that require special handling
-    if (key === 'input' && rootPath === '') {
+    if (
+      key === 'input' &&
+      (rootPath === '' || environmentPathRE.test(rootPath))
+    ) {
       merged[key] = mergeInput(existing, value)
       continue
     } else if (key === 'alias' && (rootPath === 'resolve' || rootPath === '')) {
       merged[key] = mergeAlias(existing, value)
       continue
-    } else if (key === 'assetsInclude' && rootPath === '') {
+    } else if (
+      key === 'assetsInclude' &&
+      (rootPath === '' || environmentPathRE.test(rootPath))
+    ) {
       merged[key] = [].concat(existing, value)
       continue
     } else if (
