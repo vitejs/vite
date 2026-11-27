@@ -12,6 +12,7 @@ import { assetImportMetaUrlRE } from '../plugins/assetImportMetaUrl'
 import { isModuleCSSRequest } from '../plugins/css'
 import { hasViteIgnoreRE } from '../plugins/importAnalysis'
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
+import { parseWasm } from '../plugins/wasm'
 import {
   escapeRegex,
   flattenId,
@@ -26,6 +27,7 @@ import {
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
 const convertedExternalPrefix = 'vite-dep-pre-bundle-external:'
+const wasmEntryPrefix = 'vite:wasm-entry:'
 
 const cjsExternalFacadeNamespace = 'vite:cjs-external-facade'
 const nonFacadePrefix = 'vite-cjs-external-facade:'
@@ -62,6 +64,11 @@ export function rolldownDepPlugin(
   environment: Environment,
   qualified: Record<string, string>,
   external: string[],
+  wasmImports?: {
+    files: Set<string>
+    external: Set<string>
+    entryExports: Record<string, readonly string[]>
+  },
 ): RolldownPlugin[] {
   const { isProduction } = environment.config
   const { extensions } = environment.config.optimizeDeps
@@ -75,6 +82,36 @@ export function rolldownDepPlugin(
   // and it's unlikely for the core Vite process to traverse into node_modules again
   const esmPackageCache: PackageCache = new Map()
   const cjsPackageCache: PackageCache = new Map()
+  const wasmImportsCache = new Map<string, Promise<void>>()
+  // Only set when rebuilding after wasm-imported JS was bundled.
+  const wasmExternal = wasmImports?.external.size
+    ? wasmImports.external
+    : undefined
+
+  // The serve-time wasm helper imports the original JS modules. Bundling a copy
+  // creates a second instance, breaking wasm-bindgen's __wbg_set_wasm state.
+  // Keep wasm-imported JS external: https://github.com/vitejs/vite/issues/24025
+  function discoverWasmImports(id: string): Promise<void> | undefined {
+    if (!wasmImports || wasmExternal || !id.endsWith('.wasm')) return
+    let imports = wasmImportsCache.get(id)
+    if (!imports) {
+      imports = parseWasm(id)
+        .then(async ({ imports }) => {
+          await Promise.all(
+            imports.map(async ({ from }) => {
+              const resolved = await resolve(from, id, 'import-statement')
+              if (resolved && JS_TYPES_RE.test(resolved)) {
+                wasmImports.files.add(normalizePath(resolved))
+              }
+            }),
+          )
+        })
+        // The wasm plugin reports parsing and resolution errors at serve time.
+        .catch(() => {})
+      wasmImportsCache.set(id, imports)
+    }
+    return imports
+  }
 
   const resolveAssets = (resolved: string, kind: ImportKind) => {
     if (kind === 'require-call') {
@@ -119,7 +156,14 @@ export function rolldownDepPlugin(
     return resolver(environment, id, _importer)
   }
 
-  const resolveResult = (id: string, resolved: string, kind: ImportKind) => {
+  const resolveResult = async (
+    id: string,
+    resolved: string,
+    kind: ImportKind,
+  ) => {
+    if (wasmExternal?.has(normalizePath(resolved))) {
+      return resolveAssets(resolved, kind)
+    }
     // An exact browser-external id is an explicit browser:false mapping.
     // Suffixed ids are unsupported Node builtins and still need the warning.
     if (resolved === browserExternalId) {
@@ -136,6 +180,7 @@ export function rolldownDepPlugin(
       }
     }
     if (allExternalTypesReg.test(resolved)) {
+      await discoverWasmImports(resolved)
       return resolveAssets(resolved, kind)
     }
     if (isBuiltin(environment.config.resolve.builtins, resolved)) {
@@ -165,9 +210,49 @@ export function rolldownDepPlugin(
     }
   }
 
+  // Relative and absolute imports skip `vite:dep-pre-bundle`, so they need a
+  // separate hook, which is only added when rebuilding.
+  function wasmExternalPlugin(wasmExternal: Set<string>): RolldownPlugin {
+    const entries = new Map(
+      Object.entries(qualified).map(([id, file]) => [normalizePath(file), id]),
+    )
+    return {
+      name: 'vite:dep-pre-bundle-wasm-external',
+      resolveId: {
+        filter: { id: /^[./\\]|^[A-Za-z]:[\\/]/ },
+        async handler(id, importer, options) {
+          if (!importer) {
+            // An optimized entry can't be external, re-export it instead.
+            const file = normalizePath(id)
+            const entry = wasmExternal.has(file) && entries.get(file)
+            return entry ? { id: wasmEntryPrefix + entry } : undefined
+          }
+          const resolved = await resolve(id, importer, options.kind)
+          if (resolved && wasmExternal.has(normalizePath(resolved))) {
+            return resolveAssets(resolved, options.kind)
+          }
+        },
+      },
+      load: {
+        filter: { id: prefixRegex(wasmEntryPrefix) },
+        handler(id) {
+          const entry = id.slice(wasmEntryPrefix.length)
+          const source = JSON.stringify(qualified[entry])
+          return (
+            `export * from ${source};` +
+            (wasmImports!.entryExports[entry].includes('default')
+              ? `export { default } from ${source};`
+              : '')
+          )
+        },
+      },
+    }
+  }
+
   const bundleOutputDir = path.join(environment.config.cacheDir, 'deps')
 
   return [
+    ...(wasmExternal ? [wasmExternalPlugin(wasmExternal)] : []),
     {
       name: 'vite:dep-pre-bundle-assets',
       // externalize assets and commonly known non-js file types
@@ -186,6 +271,7 @@ export function rolldownDepPlugin(
 
           const resolved = await resolve(id, importer, kind)
           if (resolved) {
+            await discoverWasmImports(resolved)
             // `resolved` can be javascript even when `id` matches `allExternalTypes`
             // due to cjs resolution (e.g. require("./test.pdf") for "./test.pdf.js")
             // or package name (e.g. import "some-package.pdf")
