@@ -210,7 +210,12 @@ export function getChunkOriginalFileName(
   isLegacy: boolean,
 ): string | undefined {
   if (chunk.facadeModuleId) {
-    let name = normalizePath(path.relative(root, chunk.facadeModuleId))
+    // Relativizing a virtual id would resolve it against the process cwd.
+    let name = normalizePath(
+      path.isAbsolute(chunk.facadeModuleId)
+        ? path.relative(root, chunk.facadeModuleId)
+        : chunk.facadeModuleId,
+    )
     if (isLegacy && !chunk.name.includes('-legacy')) {
       const ext = path.extname(name)
       const endPos = ext.length !== 0 ? -ext.length : undefined

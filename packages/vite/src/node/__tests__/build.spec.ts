@@ -699,6 +699,40 @@ describe('build', () => {
     })
   })
 
+  test('keys a virtual entry in the manifest by its id when the root is not the cwd', async () => {
+    const root = resolve(dirname, 'fixtures/css-entry-same-basename')
+    const result = (await build({
+      root,
+      logLevel: 'silent',
+      build: {
+        write: false,
+        manifest: true,
+        rolldownOptions: { input: 'virtual:entry' },
+      },
+      plugins: [
+        {
+          name: 'virtual-entry',
+          resolveId(id) {
+            if (id === 'virtual:entry') return '\0virtual:entry'
+          },
+          load(id) {
+            if (id === '\0virtual:entry') return 'import "./a/index.css"'
+          },
+        },
+      ],
+    })) as RolldownOutput
+
+    const manifest = JSON.parse(
+      (result.output.find((o) => o.fileName === '.vite/manifest.json') as any)
+        .source,
+    )
+    expect(Object.keys(manifest)).toStrictEqual(['virtual:entry'])
+    expect(manifest['virtual:entry']).toMatchObject({
+      isEntry: true,
+      css: [expect.stringMatching(/\.css$/)],
+    })
+  })
+
   for (const suffix of ['?dpl=test', '#fragment']) {
     describe(`dynamic imports with ${suffix}`, () => {
       async function buildProject(library = false) {
