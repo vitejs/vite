@@ -146,6 +146,7 @@ const server = await createServer({
       dev: {
         createEnvironment(name, config) {
           return createFetchableDevEnvironment(name, config, {
+            hot: false,
             handleRequest(request: Request): Promise<Response> | Response {
               // handle Request and return a Response
             },
