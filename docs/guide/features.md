@@ -181,7 +181,7 @@ For example, to make the default import of `*.svg` a React component:
 
 HTML files stand [front-and-center](/guide/#index-html-and-project-root) of a Vite project, serving as the entry points for your application, making it simple to build single-page and [multi-page applications](/guide/build.html#multi-page-app).
 
-Any HTML files in your project root can be directly accessed by its respective directory path:
+Any HTML files in your project root can be directly accessed by their respective directory path:
 
 - `<root>/index.html` -> `http://localhost:5173/`
 - `<root>/about.html` -> `http://localhost:5173/about.html`
@@ -269,7 +269,7 @@ export default defineConfig({
 
 ## CSS
 
-Importing `.css` files will inject its content to the page via a `<style>` tag with HMR support.
+Importing `.css` files will inject their content to the page via a `<style>` tag with HMR support.
 
 ### `@import` Inlining and Rebasing
 
