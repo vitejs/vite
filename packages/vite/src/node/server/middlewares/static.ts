@@ -78,6 +78,9 @@ const sirvOptions = ({
   }
 }
 
+const encodedHashRE = /%23/g
+const encodedQuestionMarkRE = /%3F/gi
+
 export function servePublicMiddleware(
   server: ViteDevServer,
   publicFiles?: Set<string>,
@@ -96,7 +99,13 @@ export function servePublicMiddleware(
     let filePath = cleanUrl(url)
     if (filePath.includes('%')) {
       try {
-        filePath = decodeURI(filePath)
+        // `decodeURI` keeps `%23`/`%3F` (`#`/`?` in file names). Decode them
+        // first so `%2523` stays `%23`. Keep in sync with the sirv patch.
+        filePath = decodeURI(
+          filePath
+            .replace(encodedHashRE, '#')
+            .replace(encodedQuestionMarkRE, '?'),
+        )
       } catch {
         /* malform uri */
       }
