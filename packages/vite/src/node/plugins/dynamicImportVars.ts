@@ -1,6 +1,6 @@
 import path, { posix } from 'node:path'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
-import { type Import, init, parse as parseImports } from 'es-module-lexer'
+import type { Import } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { viteDynamicImportVarsPlugin as nativeDynamicImportVarsPlugin } from 'rolldown/experimental'
 import { exactRegex } from 'rolldown/filter'
@@ -10,6 +10,7 @@ import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
 import type { Environment } from '../environment'
 import { perEnvironmentState } from '../environment'
+import { initEsModuleLexer, parseWithEsModuleLexer } from '../es-module-lexer'
 import { createBackCompatIdResolver } from '../idResolver'
 import type { Plugin } from '../plugin'
 import {
@@ -241,11 +242,11 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
           return
         }
 
-        await init()
+        await initEsModuleLexer()
 
         let imports: readonly Import[] = []
         try {
-          imports = parseImports(source)[0]
+          imports = parseWithEsModuleLexer(source)[0]
         } catch {
           // ignore as it might not be a JS file, the subsequent plugins will catch the error
           return null

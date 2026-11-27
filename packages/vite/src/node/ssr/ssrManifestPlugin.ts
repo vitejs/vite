@@ -1,5 +1,4 @@
 import { basename, dirname, join, relative } from 'node:path'
-import { parse as parseImports } from 'es-module-lexer'
 import type {
   DynamicImport,
   ParseError as EsModuleLexerParseError,
@@ -7,6 +6,7 @@ import type {
 import type { OutputChunk } from 'rolldown'
 import { joinUrlSegments } from '../../shared/utils'
 import { perEnvironmentState } from '../environment'
+import { initEsModuleLexer, parseWithEsModuleLexer } from '../es-module-lexer'
 import type { Plugin } from '../plugin'
 import { preloadMethod } from '../plugins/importAnalysisBuild'
 import {
@@ -29,7 +29,7 @@ export function ssrManifestPlugin(): Plugin {
       return !!environment.config.build.ssrManifest
     },
 
-    generateBundle(_options, bundle) {
+    async generateBundle(_options, bundle) {
       const config = this.environment.config
       const ssrManifest = getSsrManifest(this)
       const { base } = config
@@ -54,10 +54,11 @@ export function ssrManifestPlugin(): Plugin {
           }
           if (chunk.code.includes(preloadMethod)) {
             // generate css deps map
+            await initEsModuleLexer()
             const code = chunk.code
             let imports: DynamicImport[] = []
             try {
-              imports = parseImports(code)[0].filter(
+              imports = parseWithEsModuleLexer(code)[0].filter(
                 (i): i is DynamicImport =>
                   i.type === 'dynamic' && !i.glob && i.specifier !== undefined,
               )

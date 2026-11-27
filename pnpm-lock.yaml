@@ -583,6 +583,9 @@ importers:
       ufo:
         specifier: ^1.6.4
         version: 1.6.4
+      wasm-feature-detect:
+        specifier: ^1.10.1
+        version: 1.10.1
       ws:
         specifier: ^8.23.0
         version: 8.23.0
@@ -8090,6 +8093,9 @@ packages:
     resolution: {integrity: sha512-3hu+tD8YzSLGuFYtPRb48vdhKMi0KQV5sn+uWr8+7dMEq/2G/dtLrdDinkLjqq5TIbIBjYJ4Ax/n3YiaW7QM8A==}
     engines: {node: 20 || >=22}
 
+  wasm-feature-detect@1.10.1:
+    resolution: {integrity: sha512-+wz9+WpMKgQ7H1tm41nJbFwAvwX4DqY0jNY8Blw5Qe6hHg1yhCJ+AqU0R4lgX7p3pyo8irYIl1+mMNoBwSj2Zg==}
+
   which-typed-array@1.1.24:
     resolution: {integrity: sha512-wk4Mf4pR5mRP7eYuuTBCIQ9d0ud2Fv2jRLQpfgnRjbOxAFHmjKFValgTpitVKzJJS8ajnYQV2Du1SZ8j6b/EUQ==}
     engines: {node: '>= 0.4'}
@@ -13981,6 +13987,8 @@ snapshots:
       vue: 3.5.46(typescript@7.0.2)
 
   walk-up-path@4.0.0: {}
+
+  wasm-feature-detect@1.10.1: {}
 
   which-typed-array@1.1.24:
     dependencies:

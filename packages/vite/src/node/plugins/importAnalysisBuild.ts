@@ -2,7 +2,6 @@ import path from 'node:path'
 import type { RawSourceMap } from '@jridgewell/remapping'
 import convertSourceMap from 'convert-source-map'
 import type { DynamicImport } from 'es-module-lexer'
-import { init, parse as parseImports } from 'es-module-lexer'
 import type { RenderedChunk, SourceMap } from 'rolldown'
 import { viteBuildImportAnalysisPlugin as nativeBuildImportAnalysisPlugin } from 'rolldown/experimental'
 import { cleanUrl } from '../../shared/utils'
@@ -10,6 +9,7 @@ import type { PartialEnvironment } from '../baseEnvironment'
 import { toOutputFilePathInJS } from '../build'
 import type { ResolvedConfig } from '../config'
 import { perEnvironmentState } from '../environment'
+import { initEsModuleLexer, parseWithEsModuleLexer } from '../es-module-lexer'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import { genSourceMapUrl } from '../server/sourcemap'
 import {
@@ -544,7 +544,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         return
       }
 
-      await init()
+      await initEsModuleLexer()
 
       const importMap = getImportMap(bundle, this.environment.config)
       if (importMap) {
@@ -573,7 +573,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
               const code = chunk.code
               let imports!: DynamicImport[]
               try {
-                imports = parseImports(code)[0].filter(
+                imports = parseWithEsModuleLexer(code)[0].filter(
                   (i): i is DynamicImport => i.type === 'dynamic',
                 )
               } catch (e: any) {
@@ -657,7 +657,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
           const code = chunk.code
           let imports!: DynamicImport[]
           try {
-            imports = parseImports(code)[0].filter(
+            imports = parseWithEsModuleLexer(code)[0].filter(
               (i): i is DynamicImport => i.type === 'dynamic',
             )
           } catch (e: any) {

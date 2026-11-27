@@ -4,7 +4,6 @@ import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { promisify } from 'node:util'
 import { ignoreInput, ignoreOutput } from '@voidzero-dev/vite-task-client'
-import { init, parse } from 'es-module-lexer'
 import colors from 'picocolors'
 import {
   type RolldownOptions,
@@ -21,6 +20,7 @@ import {
   METADATA_FILENAME,
 } from '../constants'
 import type { Environment } from '../environment'
+import { initEsModuleLexer, parseWithEsModuleLexer } from '../es-module-lexer'
 import { transformWithOxc } from '../plugins/oxc'
 import { fileToModuleUrl } from '../server/moduleUrl'
 import {
@@ -1104,7 +1104,7 @@ export async function extractExportsData(
   environment: Environment,
   filePath: string,
 ): Promise<ExportsData> {
-  await init()
+  await initEsModuleLexer()
 
   const { optimizeDeps } = environment.config
 
@@ -1140,7 +1140,9 @@ export async function extractExportsData(
         format: 'esm',
         sourcemap: false,
       })
-      const [, exports, , hasModuleSyntax] = parse(result.output[0].code)
+      const [, exports, , hasModuleSyntax] = parseWithEsModuleLexer(
+        result.output[0].code,
+      )
       return {
         hasModuleSyntax,
         exports: exports.flatMap((e) =>
@@ -1152,12 +1154,12 @@ export async function extractExportsData(
     }
   }
 
-  let parseResult: ReturnType<typeof parse>
+  let parseResult: ReturnType<typeof parseWithEsModuleLexer>
   let usedJsxLoader = false
 
   const entryContent = fs.readFileSync(filePath, 'utf-8')
   try {
-    parseResult = parse(entryContent)
+    parseResult = parseWithEsModuleLexer(entryContent)
   } catch {
     const lang = rolldownOptions.moduleTypes?.[path.extname(filePath)] || 'jsx'
     debug?.(
@@ -1173,7 +1175,7 @@ export async function extractExportsData(
       undefined,
       environment.config,
     )
-    parseResult = parse(transformed.code)
+    parseResult = parseWithEsModuleLexer(transformed.code)
     usedJsxLoader = true
   }
 

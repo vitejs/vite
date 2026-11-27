@@ -6,7 +6,6 @@ import type {
   Import,
   ParseError as EsModuleLexerParseError,
 } from 'es-module-lexer'
-import { init, parse as parseImports } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import type { StaticImport } from 'mlly'
 import { ESM_STATIC_IMPORT_RE, parseStaticImport } from 'mlly'
@@ -26,6 +25,7 @@ import {
   DEP_VERSION_RE,
   SPECIAL_QUERY_RE,
 } from '../constants'
+import { initEsModuleLexer, parseWithEsModuleLexer } from '../es-module-lexer'
 import { shouldExternalize } from '../external'
 import {
   optimizedDepInfoFromFile,
@@ -232,12 +232,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const msAtStart = debug ? performance.now() : 0
-      await init()
+      await initEsModuleLexer()
       let imports!: readonly Import[]
       let exports!: readonly Export[]
       source = stripBomTag(source)
       try {
-        ;[imports, exports] = parseImports(source)
+        ;[imports, exports] = parseWithEsModuleLexer(source)
       } catch (_e: unknown) {
         const e = _e as EsModuleLexerParseError
         const { message, showCodeFrame } = createParseErrorInfo(
