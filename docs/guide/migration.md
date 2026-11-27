@@ -212,8 +212,6 @@ The Oxc Minifier is now used for JavaScript minification instead of esbuild. You
 
 If you were using the `esbuild.minify*` options to control minification behavior, you can now use `build.rolldownOptions.output.minify` instead. If you were using the `esbuild.drop` option, you can now use [`build.rolldownOptions.output.minify.compress.drop*` options](https://oxc.rs/docs/guide/usage/minifier/dead-code-elimination).
 
-Property mangling and its related options ([`mangleProps`, `reserveProps`, `mangleQuoted`, `mangleCache`](https://esbuild.github.io/api/#mangle-props)) are not supported by Oxc. If you need these options, please see [oxc-project/oxc#15375](https://github.com/oxc-project/oxc/issues/15375).
-
 esbuild and Oxc Minifier make slightly different assumptions about source code. In case you suspect the minifier is causing breakage in your code, you can compare these assumptions here:
 
 - [esbuild minify assumptions](https://esbuild.github.io/api/#minify-considerations)
@@ -370,7 +368,6 @@ These breaking changes are expected to only affect a minority of use cases:
   - `shouldTransformCachedModule` hook ([rolldown#4389](https://github.com/rolldown/rolldown/issues/4389))
   - `resolveImportMeta` hook ([rolldown#1010](https://github.com/rolldown/rolldown/issues/1010))
   - `renderDynamicImport` hook ([rolldown#4532](https://github.com/rolldown/rolldown/issues/4532))
-  - `resolveFileUrl` hook
 - `parseAst` / `parseAstAsync` functions are now deprecated in favor of `parseSync` / `parse` functions which have more features.
 - comments are removed before the `renderChunk` hook instead of after the `renderChunk` hook
 - comments other than the ones listed [here](https://rolldown.rs/reference/OutputOptions.comments) are moved, while Rollup only removes comments if the adjacent code is removed
