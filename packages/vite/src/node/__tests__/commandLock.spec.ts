@@ -45,6 +45,7 @@ function writeExistingLock(
   config: ResolvedConfig,
   startTime?: string,
   pid = process.ppid,
+  outDir?: string,
 ) {
   const lockDir = path.join(config.cacheDir, 'lock')
   fs.mkdirSync(lockDir, { recursive: true })
@@ -59,6 +60,7 @@ function writeExistingLock(
       pid,
       startTime,
       urls: null,
+      outDir,
     }),
   )
   return lockPath
@@ -185,6 +187,50 @@ describe('command lock', () => {
     )
     expect(record.pid).toBe(process.pid)
     expect(record.startTime).toBeUndefined()
+  })
+
+  test('records the resolved outDir for builds', async ({
+    config,
+    lockDir,
+  }) => {
+    const lock = await createCommandLock(config, 'build', null)
+    onTestFinished(() => lock.release())
+    const files = fs.readdirSync(lockDir)
+    const record = JSON.parse(
+      fs.readFileSync(path.join(lockDir, files[0]), 'utf8'),
+    )
+    expect(record.outDir).toBe(path.resolve(config.root, 'dist'))
+  })
+
+  test('allows a parallel build into a different outDir', async ({
+    tempDir,
+  }) => {
+    const clientConfig = await createConfig(tempDir, {
+      build: { outDir: 'dist/client' },
+    })
+    writeExistingLock(
+      clientConfig,
+      undefined,
+      undefined,
+      path.resolve(tempDir, 'dist/client'),
+    )
+    const serverConfig = await createConfig(tempDir, {
+      build: { outDir: 'dist/server' },
+    })
+    const lock = await createCommandLock(serverConfig, 'build', null)
+    onTestFinished(() => lock.release())
+  })
+
+  test('checks a parallel build into the same outDir', async ({ config }) => {
+    writeExistingLock(
+      config,
+      undefined,
+      undefined,
+      path.resolve(config.root, 'dist'),
+    )
+    await expect(createCommandLock(config, 'build', null)).rejects.toThrow(
+      'Found another Vite build process',
+    )
   })
 
   test('checks for duplicates when the current start time cannot be read', async ({
