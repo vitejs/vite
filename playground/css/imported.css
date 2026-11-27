@@ -1,5 +1,7 @@
 @import './imported-at-import.css';
 @import 'spacefolder/space.css';
+@import './same-content/a/dup.css';
+@import './same-content/b/dup.css';
 
 .imported {
   color: green;
