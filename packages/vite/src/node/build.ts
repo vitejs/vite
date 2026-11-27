@@ -55,11 +55,11 @@ import { findNearestMainPackageData, findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import { perEnvironmentPlugin } from './plugin'
 import type { MinimalPluginContextWithoutEnvironment, Plugin } from './plugin'
-import { getHookHandler } from './plugins'
+import { getHookHandler, getPluginHookHandler } from './plugins'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { type LicenseOptions, licensePlugin } from './plugins/license'
-import { manifestPlugin } from './plugins/manifest'
+import { type Manifest, manifestPlugin } from './plugins/manifest'
 import { prepareOutDirPlugin } from './plugins/prepareOutDir'
 import { buildReporterPlugin } from './plugins/reporter'
 import { type TerserOptions, terserPlugin } from './plugins/terser'
@@ -91,9 +91,9 @@ import {
 
 export interface BuildEnvironmentOptions {
   /**
-   * Compatibility transform target. The transform is performed with esbuild
-   * and the lowest supported target is es2015. Note this only handles
-   * syntax transformation and does not cover polyfills
+   * Compatibility transform target. The transform is performed with Oxc
+   * Transformer and the lowest supported target is es2015. Note this only
+   * handles syntax transformation and does not cover polyfills
    *
    * Default: 'baseline-widely-available' - transpile targeting browsers that
    * are included in the Baseline Widely Available on 2026-01-01.
@@ -102,8 +102,8 @@ export interface BuildEnvironmentOptions {
    * Another special value is 'esnext' - which only performs minimal transpiling
    * (for minification compat).
    *
-   * For custom targets, see https://esbuild.github.io/api/#target and
-   * https://esbuild.github.io/content-types/#javascript for more details.
+   * For custom targets, see the Oxc Transformer docs for more details:
+   * https://oxc.rs/docs/guide/usage/transformer/lowering#target
    * @default 'baseline-widely-available'
    */
   target?: 'baseline-widely-available' | EsbuildTarget | false
@@ -152,8 +152,8 @@ export interface BuildEnvironmentOptions {
   cssCodeSplit?: boolean
   /**
    * An optional separate target for CSS minification.
-   * As esbuild only supports configuring targets to mainstream
-   * browsers, users may need this option when they are targeting
+   * As targets can only be configured for mainstream browsers,
+   * users may need this option when they are targeting
    * a niche browser that comes with most modern JavaScript features
    * but has poor CSS support, e.g. Android WeChat WebView, which
    * doesn't support the #RGBA syntax.
@@ -1545,9 +1545,16 @@ function injectSsrFlag<T extends Record<string, any>>(
   pluginName: string,
 ): T & { ssr?: boolean } {
   let ssr = environment.config.consumer === 'server'
-  const newOptions = { ...options, ssr } as T & {
-    ssr?: boolean
-  }
+  // spreading the options would drop non-enumerable properties (e.g. the lazy
+  // `magicString` and `ast` getters rolldown attaches to the transform meta),
+  // so copy the property descriptors instead
+  const newOptions = Object.defineProperties(
+    {},
+    {
+      ...(options ? Object.getOwnPropertyDescriptors(options) : {}),
+      ssr: { value: ssr, writable: true, enumerable: true, configurable: true },
+    },
+  ) as T & { ssr?: boolean }
 
   if (
     isFutureDeprecationEnabled(
@@ -1755,6 +1762,18 @@ export class BuildEnvironment extends BaseEnvironment {
   mode = 'build' as const
 
   isBuilt = false
+
+  /**
+   * The build manifest for this environment. It is populated once the
+   * environment has been built and is available regardless of the
+   * `build.manifest` option, which only controls whether the manifest file is
+   * written to disk. This allows accessing the manifest in the `buildApp` hook
+   * without reading it from the file system.
+   *
+   * @experimental
+   */
+  manifest?: Manifest
+
   constructor(
     name: string,
     config: ResolvedConfig,
@@ -1878,7 +1897,7 @@ export async function createBuilder(
           configBuilderBuildAppCalled = true
           await configBuilder.buildApp(builder)
         }
-        const handler = getHookHandler(hook)
+        const handler = getPluginHookHandler(p, 'buildApp')
         await handler.call(pluginContext, builder)
       }
       if (!configBuilderBuildAppCalled) {

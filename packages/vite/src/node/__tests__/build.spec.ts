@@ -94,6 +94,52 @@ describe('build', () => {
     assertOutputHashContentChange(result[0], result[1])
   })
 
+  test('transform hook meta keeps rolldown magicString and ast', async () => {
+    const metaTypes: Array<
+      [string | undefined, string | undefined, boolean | undefined]
+    > = []
+    const result = (await build({
+      root: resolve(dirname, 'packages/build-project'),
+      logLevel: 'silent',
+      build: {
+        write: false,
+        minify: false,
+      },
+      plugins: [
+        {
+          name: 'test',
+          resolveId(id) {
+            if (id === 'entry.js') {
+              return '\0' + id
+            }
+          },
+          load(id) {
+            if (id === '\0entry.js') {
+              return `console.log('foo')`
+            }
+          },
+          transform(_code, id, options) {
+            if (id === '\0entry.js') {
+              metaTypes.push([
+                typeof options?.magicString,
+                typeof options?.ast,
+                options?.ssr,
+              ])
+              const magicString = options!.magicString!
+              magicString.replaceAll(`'foo'`, `'bar'`)
+              return { code: magicString }
+            }
+          },
+        },
+      ],
+    })) as RolldownOutput
+    expect(metaTypes).toStrictEqual([['object', 'object', false]])
+    const [chunk] = result.output.filter(
+      (chunk): chunk is OutputChunk => chunk.type === 'chunk',
+    )
+    expect(chunk?.code).toContain(`console.log("bar")`)
+  })
+
   test('file hash should change when renderBuiltUrl changes', async () => {
     const createRenderBuiltUrl = (base: string) => (filename: string) =>
       `${base}/${filename}`
@@ -584,6 +630,46 @@ describe('build', () => {
       }
     `)
     assertOutputHashContentChange(result[0], result[1])
+  })
+
+  test('cssCodeSplit: false emits the CSS of an inlined common chunk once', async () => {
+    const root = resolve(
+      dirname,
+      'fixtures/css-single-bundle-inline-common-chunks',
+    )
+    const result = (await build({
+      root,
+      logLevel: 'silent',
+      build: {
+        write: false,
+        cssCodeSplit: false,
+        cssMinify: false,
+        rolldownOptions: {
+          input: [resolve(root, 'a.js'), resolve(root, 'b.js')],
+          output: {
+            codeSplitting: {
+              experimentalInlineCommonChunks: { maxSize: 10_000 },
+            },
+          },
+        },
+      },
+    })) as RolldownOutput
+
+    const sharedCarriers = result.output.filter(
+      (o) =>
+        o.type === 'chunk' &&
+        o.moduleIds.some((id) => id.endsWith('shared.css')),
+    )
+    expect(sharedCarriers).toHaveLength(2)
+    const css = result.output.find(
+      (output): output is OutputAsset =>
+        output.type === 'asset' && output.fileName.endsWith('.css'),
+    )!
+    // shared.css comes once, before the a.css rule that overrides it
+    expect(css.source.toString().match(/color: \w+/g)).toStrictEqual([
+      'color: red',
+      'color: blue',
+    ])
   })
 
   test('css entries with the same basename should not cross-link manifest assets', async () => {
@@ -2202,6 +2288,105 @@ test('watch rebuild manifest', async (ctx) => {
       "entry.js",
     ]
   `)
+})
+
+test('environment.manifest is populated when build.manifest is disabled without emitting a file', async () => {
+  const root = resolve(dirname, 'fixtures/watch-rebuild-manifest')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'error',
+    environments: {
+      client: {
+        build: {
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    build: {
+      write: false,
+      manifest: false,
+    },
+  })
+
+  const environment = builder.environments.client
+  const result = (await builder.build(environment)) as RolldownOutput
+
+  // the manifest file should not be emitted
+  expect(
+    result.output.find((o) => o.fileName === '.vite/manifest.json'),
+  ).toBeUndefined()
+
+  // but the manifest should be available on the environment
+  expect(environment.manifest).toBeDefined()
+  expect(Object.keys(environment.manifest!)).toMatchInlineSnapshot(`
+    [
+      "dep.js",
+      "entry.js",
+    ]
+  `)
+})
+
+test('environment.manifest matches the emitted manifest file when build.manifest is enabled', async () => {
+  const root = resolve(dirname, 'fixtures/watch-rebuild-manifest')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'error',
+    environments: {
+      client: {
+        build: {
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    build: {
+      write: false,
+      manifest: true,
+    },
+  })
+
+  const environment = builder.environments.client
+  const result = (await builder.build(environment)) as RolldownOutput
+
+  const manifestFile = result.output.find(
+    (o) => o.fileName === '.vite/manifest.json',
+  )
+  expect(manifestFile).toBeDefined()
+  assert(manifestFile?.type === 'asset')
+  expect(environment.manifest).toStrictEqual(
+    JSON.parse(manifestFile.source.toString()),
+  )
+})
+
+test('environment.manifest is populated for the ssr environment', async () => {
+  const root = resolve(dirname, 'fixtures/watch-rebuild-manifest')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'error',
+    environments: {
+      ssr: {
+        build: {
+          ssr: true,
+          rolldownOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    build: {
+      write: false,
+      manifest: false,
+    },
+  })
+
+  const environment = builder.environments.ssr
+  await builder.build(environment)
+
+  expect(environment.manifest).toBeDefined()
+  expect(Object.keys(environment.manifest!)).toContain('entry.js')
 })
 
 test('copies public directory after building same environment with write false first', async (ctx) => {

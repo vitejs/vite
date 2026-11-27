@@ -610,29 +610,6 @@ export async function _createServer(
 
   const environments: Record<string, DevEnvironment> = {}
 
-  await Promise.all(
-    Object.entries(config.environments).map(
-      async ([name, environmentOptions]) => {
-        const environment = await environmentOptions.dev.createEnvironment(
-          name,
-          config,
-          {
-            ws,
-          },
-        )
-        environments[name] = environment
-
-        const previousInstance =
-          options.previousEnvironments?.[environment.name]
-        await environment.init({ watcher, previousInstance })
-      },
-    ),
-  )
-
-  // Release previous environments after initialization to prevent memory leaks
-  // from retaining old server graphs across restarts.
-  options.previousEnvironments = undefined
-
   // Backward compatibility
 
   let moduleGraph = new ModuleGraph({
@@ -913,9 +890,118 @@ export async function _createServer(
     }
   }
 
-  if (!middlewareMode) {
-    setupSIGTERMListener(closeServerAndExit)
+  if (!middlewareMode && httpServer) {
+    httpServer.once('listening', () => {
+      // update actual port since this may be different from initial value
+      serverConfig.port = (httpServer.address() as net.AddressInfo).port
+    })
   }
+
+  // httpServer.listen can be called multiple times
+  // when port when using next port number
+  // this code is to avoid calling buildStart multiple times
+  let initingServer: Promise<void> | undefined
+  let serverInited = false
+  const initServer = async (onListen: boolean) => {
+    if (serverInited) return
+    if (initingServer) return initingServer
+
+    initingServer = (async function () {
+      if (!config.experimental.bundledDev) {
+        // For backward compatibility, we call buildStart for the client
+        // environment when initing the server. For other environments
+        // buildStart will be called when the first request is transformed
+        await environments.client.pluginContainer.buildStart()
+      }
+
+      // ensure ws server started
+      if (onListen || options.listen) {
+        await Promise.all(
+          Object.values(environments).map((e) => e.listen(server)),
+        )
+      }
+
+      initingServer = undefined
+      serverInited = true
+    })()
+    return initingServer
+  }
+
+  try {
+    await initEnvironments(server, options.previousEnvironments)
+
+    // Release previous environments after initialization to prevent memory leaks
+    // from retaining old server graphs across restarts.
+    options.previousEnvironments = undefined
+
+    if (!middlewareMode) {
+      setupSIGTERMListener(closeServerAndExit)
+    }
+
+    // these handlers read the server through reflexServer since a restart swaps in a different server object after they're set up
+    setupWatcherListeners(reflexServer, publicFiles)
+
+    await applyMiddlewares(server, reflexServer, publicFiles)
+
+    if (!middlewareMode && httpServer) {
+      // overwrite listen to init optimizer before server start
+      const listen = httpServer.listen.bind(httpServer)
+      httpServer.listen = (async (port: number, ...args: any[]) => {
+        try {
+          await initServer(true)
+        } catch (e) {
+          httpServer.emit('error', e)
+          return
+        }
+        return listen(port, ...args)
+      }) as any
+    } else {
+      await initServer(false)
+    }
+  } catch (e) {
+    // close everything we started, because the caller never gets a server to call
+    // close() on when createServer rejects.
+    // this goes through server.close() because plugins wrap it. @cloudflare/vite-plugin
+    // stops workerd from its wrapper so _closeServer() would skip that
+    try {
+      await server.close()
+    } catch {}
+    throw e
+  }
+
+  return server
+}
+
+async function initEnvironments(
+  server: ViteDevServer,
+  previousEnvironments: Record<string, DevEnvironment> | undefined,
+): Promise<void> {
+  const { config, ws, watcher, environments } = server
+  await Promise.all(
+    Object.entries(config.environments).map(
+      async ([name, environmentOptions]) => {
+        const environment = await environmentOptions.dev.createEnvironment(
+          name,
+          config,
+          {
+            ws,
+          },
+        )
+        environments[name] = environment
+
+        const previousInstance = previousEnvironments?.[environment.name]
+        await environment.init({ watcher, previousInstance })
+      },
+    ),
+  )
+}
+
+function setupWatcherListeners(
+  server: ViteDevServer,
+  publicFiles: Set<string> | undefined,
+): void {
+  const { watcher } = server
+  const { publicDir, server: serverConfig } = server.config
 
   const onHMRUpdate = async (
     type: 'create' | 'delete' | 'update',
@@ -990,13 +1076,16 @@ export async function _createServer(
   watcher.on('unlink', (file) => {
     onFileAddUnlink(file, true).catch((e) => server.config.logger.error(e))
   })
+}
 
-  if (!middlewareMode && httpServer) {
-    httpServer.once('listening', () => {
-      // update actual port since this may be different from initial value
-      serverConfig.port = (httpServer.address() as net.AddressInfo).port
-    })
-  }
+async function applyMiddlewares(
+  server: ViteDevServer,
+  reflexServer: ViteDevServer,
+  publicFiles: Set<string> | undefined,
+): Promise<void> {
+  const { config, middlewares, httpServer } = server
+  const { root, publicDir, server: serverConfig } = config
+  const { middlewareMode } = serverConfig
 
   // Pre applied internal middlewares ------------------------------------------
 
@@ -1096,7 +1185,7 @@ export async function _createServer(
   // apply configureServer post hooks ------------------------------------------
 
   // This is applied before the html middleware so that user middleware can
-  // serve custom content instead of index.html.
+  // serve custom content in place of index.html.
   postHooks.forEach((fn) => fn && fn())
 
   if (config.appType === 'spa' || config.appType === 'mpa') {
@@ -1109,54 +1198,6 @@ export async function _createServer(
 
   // error handler
   middlewares.use(errorMiddleware(server, !!middlewareMode))
-
-  // httpServer.listen can be called multiple times
-  // when port when using next port number
-  // this code is to avoid calling buildStart multiple times
-  let initingServer: Promise<void> | undefined
-  let serverInited = false
-  const initServer = async (onListen: boolean) => {
-    if (serverInited) return
-    if (initingServer) return initingServer
-
-    initingServer = (async function () {
-      if (!config.experimental.bundledDev) {
-        // For backward compatibility, we call buildStart for the client
-        // environment when initing the server. For other environments
-        // buildStart will be called when the first request is transformed
-        await environments.client.pluginContainer.buildStart()
-      }
-
-      // ensure ws server started
-      if (onListen || options.listen) {
-        await Promise.all(
-          Object.values(environments).map((e) => e.listen(server)),
-        )
-      }
-
-      initingServer = undefined
-      serverInited = true
-    })()
-    return initingServer
-  }
-
-  if (!middlewareMode && httpServer) {
-    // overwrite listen to init optimizer before server start
-    const listen = httpServer.listen.bind(httpServer)
-    httpServer.listen = (async (port: number, ...args: any[]) => {
-      try {
-        await initServer(true)
-      } catch (e) {
-        httpServer.emit('error', e)
-        return
-      }
-      return listen(port, ...args)
-    }) as any
-  } else {
-    await initServer(false)
-  }
-
-  return server
 }
 
 async function startServer(

@@ -34,6 +34,7 @@ const CATEGORY_ORDER = [
   '### Miscellaneous Chores',
   '### Code Refactoring',
   '### Tests',
+  '### Build System',
 ]
 
 function escapeRegex(str: string): string {

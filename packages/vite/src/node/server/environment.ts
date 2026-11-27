@@ -173,6 +173,12 @@ export class DevEnvironment extends BaseEnvironment {
             : { type: 'RegExp', source: builtin.source, flags: builtin.flags },
         )
       },
+      resetBundledDevClient: (oldClientId, newClientId) => {
+        if (!this.bundledDev) {
+          throw new Error('bundled dev is not enabled in this environment')
+        }
+        return this.bundledDev.resetClient(oldClientId, newClientId)
+      },
     })
 
     this.hot.on(
@@ -385,7 +391,9 @@ export class DevEnvironment extends BaseEnvironment {
 
     this._crawlEndFinder.cancel()
     await Promise.allSettled([
-      this.bundledDev ? this.bundledDev.close() : this.pluginContainer.close(),
+      this.bundledDev
+        ? this.bundledDev.close()
+        : this._pluginContainer?.close(),
       this.depsOptimizer?.close(),
       // WebSocketServer is independent of HotChannel and should not be closed on environment close
       isWebSocketServer in this.hot ? Promise.resolve() : this.hot.close(),
