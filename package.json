@@ -61,7 +61,7 @@
     "oxlint": "^1.94.0",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.65.1",
-    "rolldown": "~1.3.2",
+    "rolldown": "~1.3.4",
     "rollup": "^4.59.0",
     "simple-git-hooks": "^2.14.0",
     "tsrs": "7.1.0-beta.tsrs4",

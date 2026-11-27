@@ -711,6 +711,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           code = ''
         }
 
+        const { cssCodeSplit, emitAssets } = this.environment.config.build
         return {
           code,
           map: { mappings: '' },
@@ -718,6 +719,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // it in renderChunk()
           moduleSideEffects: modulesCode || inlined ? false : 'no-treeshake',
           moduleType: 'js',
+          ...(cssCodeSplit &&
+            emitAssets &&
+            !inlined &&
+            !transformOnlyRE.test(id) && {
+              declaredModuleSize:
+                Buffer.byteLength(code) + Buffer.byteLength(css),
+            }),
         }
       },
     },
