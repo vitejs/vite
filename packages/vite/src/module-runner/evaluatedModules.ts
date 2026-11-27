@@ -141,10 +141,18 @@ export class EvaluatedModules {
 }
 
 // Plain string search rather than a regexp: it's about twice as fast, which
-// adds up on modules with large inline maps
+// adds up on modules with large inline maps. indexOf (not lastIndexOf) is used
+// because V8's forward search is much faster than its backward search, so the
+// search is repeated to find the last match.
 function extractInlineSourceMap(code: string): string | undefined {
-  const start = code.lastIndexOf(MODULE_RUNNER_SOURCEMAPPING_PREFIX)
+  let start = code.indexOf(MODULE_RUNNER_SOURCEMAPPING_PREFIX)
   if (start === -1) return
+  let next: number
+  while (
+    (next = code.indexOf(MODULE_RUNNER_SOURCEMAPPING_PREFIX, start + 1)) !== -1
+  ) {
+    start = next
+  }
   const dataStart = start + MODULE_RUNNER_SOURCEMAPPING_PREFIX.length
   let dataEnd = code.indexOf('\n', dataStart)
   if (dataEnd === -1) dataEnd = code.length
