@@ -11,7 +11,6 @@ import { disableCache, ignoreInput } from '@voidzero-dev/vite-task-client'
 import chokidar from 'chokidar'
 import connect from 'connect'
 import corsMiddleware from 'cors'
-import launchEditorMiddleware from 'launch-editor-middleware'
 import colors from 'picocolors'
 import type { SourceMap } from 'rolldown'
 import { detectAgent } from 'std-env'
@@ -87,6 +86,7 @@ import {
 } from './middlewares/indexHtml'
 import { memoryFilesMiddleware } from './middlewares/memoryFiles'
 import { notFoundMiddleware } from './middlewares/notFound'
+import { openInEditorMiddleware } from './middlewares/openInEditor'
 import { proxyMiddleware } from './middlewares/proxy'
 import { rejectInvalidRequestMiddleware } from './middlewares/rejectInvalidRequest'
 import {
@@ -1140,7 +1140,7 @@ async function applyMiddlewares(
   }
 
   // open in editor support
-  middlewares.use('/__open-in-editor', launchEditorMiddleware())
+  middlewares.use('/__open-in-editor', openInEditorMiddleware())
 
   // ping request handler
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
