@@ -1579,7 +1579,11 @@ function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
 }
 
 const headInjectRE = /([ \t]*)<\/head>/i
-const headPrependInjectRE = /([ \t]*)<head[^>]*>/i
+// when prepending into <head>, skip past any leading comments, <base>, and
+// charset <meta> elements so that relative URLs of the injected tags resolve
+// against the document's <base> and the charset declaration stays first
+const headPrependInjectRE =
+  /([ \t]*)(<head[^>]*>(?:\s*(?:<!--[\s\S]*?-->|<base[^>]*>|<meta\s[^>]*charset[^>]*>))*)/i
 
 const htmlInjectRE = /<\/html>/i
 const htmlPrependInjectRE = /([ \t]*)<html[^>]*>/i
@@ -1597,7 +1601,8 @@ function injectToHead(
   if (tags.length === 0) return html
 
   if (prepend) {
-    // inject as the first element of head
+    // inject after the <head> open tag and any leading comments, <base>, and
+    // charset <meta> elements
     if (headPrependInjectRE.test(html)) {
       return html.replace(
         headPrependInjectRE,

@@ -3,7 +3,11 @@ import type { OutputBundle, OutputChunk } from 'rolldown'
 import { describe, expect, test } from 'vitest'
 import { PartialEnvironment } from '../baseEnvironment'
 import { resolveConfig } from '../config'
-import { buildHtmlPlugin, getCssFilesForChunk } from '../plugins/html'
+import {
+  buildHtmlPlugin,
+  applyHtmlTransforms,
+  getCssFilesForChunk,
+} from '../plugins/html'
 import { normalizePath } from '../utils'
 
 test('buildHtmlPlugin escapes HTML proxy imports', async () => {
@@ -30,6 +34,77 @@ test('buildHtmlPlugin escapes HTML proxy imports', async () => {
     `${id}?html-proxy&inline-css&style-attr&index=1.css`,
     `${id}?html-proxy&inline-css&index=2.css`,
   ])
+})
+
+describe('applyHtmlTransforms head-prepend injection', () => {
+  const pluginContext = {} as unknown as Parameters<
+    typeof applyHtmlTransforms
+  >[2]
+
+  const injectHeadPrepend = (html: string) =>
+    applyHtmlTransforms(
+      html,
+      [
+        () => [
+          {
+            tag: 'script',
+            attrs: { type: 'module', src: './polyfills.js' },
+          },
+        ],
+      ],
+      pluginContext,
+      { path: '/index.html', filename: '/root/index.html' },
+    )
+
+  test('injects after leading <base> and charset <meta>', async () => {
+    const html = `<html>
+  <head>
+    <meta charset="utf-8" />
+    <base href="/sub/" />
+    <title>app</title>
+  </head>
+  <body></body>
+</html>`
+    const result = await injectHeadPrepend(html)
+    const charsetIndex = result.indexOf('<meta charset')
+    const baseIndex = result.indexOf('<base')
+    const scriptIndex = result.indexOf('./polyfills.js')
+    const titleIndex = result.indexOf('<title>')
+    expect(baseIndex).toBeGreaterThan(charsetIndex)
+    expect(scriptIndex).toBeGreaterThan(baseIndex)
+    expect(scriptIndex).toBeLessThan(titleIndex)
+  })
+
+  test('injects as the first head element without <base> or charset <meta>', async () => {
+    const html = `<html>
+  <head>
+    <title>app</title>
+  </head>
+</html>`
+    const result = await injectHeadPrepend(html)
+    expect(result.indexOf('./polyfills.js')).toBeLessThan(
+      result.indexOf('<title>'),
+    )
+  })
+
+  test('skips comments between <head> and <base>', async () => {
+    const html = `<html>
+  <head>
+    <!-- banner -->
+    <meta charset="utf-8" />
+    <!-- note -->
+    <base href="/sub/" />
+    <title>app</title>
+  </head>
+</html>`
+    const result = await injectHeadPrepend(html)
+    expect(result.indexOf('./polyfills.js')).toBeGreaterThan(
+      result.indexOf('<base'),
+    )
+    expect(result.indexOf('./polyfills.js')).toBeLessThan(
+      result.indexOf('<title>'),
+    )
+  })
 })
 
 function createChunk(
