@@ -463,9 +463,7 @@ export async function fileToDevUrl(
 
   // If has inline query, unconditionally inline the asset
   if (inlineRE.test(id)) {
-    const file = publicFile || cleanUrl(id)
-    const content = await fsp.readFile(file)
-    return assetToDataURL(environment, file, content)
+    return fileToDataURL(environment, publicFile || cleanUrl(id))
   }
 
   // If is svg and it's inlined in build, also inline it in dev to match
@@ -652,14 +650,11 @@ async function resolveBuiltAsset(
   if (!skipPublicCheck) {
     const publicFile = checkPublicFile(id, topLevelConfig)
     if (publicFile) {
-      if (inlineRE.test(id)) {
-        // If inline via query, re-assign the id so it can be read by the fs and inlined
-        id = publicFile
-      } else {
-        return {
-          type: 'string',
-          value: publicFileToBuiltUrl(id, topLevelConfig),
-        }
+      return {
+        type: 'string',
+        value: inlineRE.test(id)
+          ? await fileToDataURL(environment, publicFile)
+          : publicFileToBuiltUrl(id, topLevelConfig),
       }
     }
   }
@@ -795,6 +790,10 @@ function shouldInline(
     limit = Number(assetsInlineLimit)
   }
   return content.length < limit && !isGitLfsPlaceholder(content)
+}
+
+async function fileToDataURL(environment: Environment, file: string) {
+  return assetToDataURL(environment, file, await fsp.readFile(file))
 }
 
 function assetToDataURL(
