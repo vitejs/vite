@@ -289,10 +289,15 @@ export function oxcResolvePlugin(
           external: options.external,
           noExternal: noExternal,
           dedupe: options.dedupe,
+          // The native resolver caches realpath results and only clears them on
+          // create/delete. `build --watch` must re-resolve so a retargeted
+          // symlink does not keep bundling the previous target.
           disableCache:
-            partialEnv.config.command === 'serve' &&
-            // eslint-disable-next-line eqeqeq
-            partialEnv.config.server.watch === null,
+            (partialEnv.config.command === 'serve' &&
+              // eslint-disable-next-line eqeqeq
+              partialEnv.config.server.watch === null) ||
+            (partialEnv.config.command === 'build' &&
+              !!partialEnv.config.build.watch),
           legacyInconsistentCjsInterop: options.legacyInconsistentCjsInterop,
           finalizeBareSpecifier: !depsOptimizerEnabled
             ? undefined
