@@ -102,6 +102,7 @@ import type {
   EnvironmentModuleGraph,
   EnvironmentModuleNode,
 } from './moduleGraph'
+import { pluginTracingChannel, tracePluginHook } from './tracing'
 
 // same default value of "moduleInfo.meta" as in Rollup
 const EMPTY_OBJECT = Object.freeze({})
@@ -437,7 +438,16 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       const pluginResolveStart = debugPluginResolve ? performance.now() : 0
       const handler = getPluginHookHandler(plugin, 'resolveId')
       const result = await this.handleHookPromise(
-        handler.call(ctx as any, rawId, importer, normalizedOptions),
+        pluginTracingChannel.hasSubscribers === false
+          ? handler.call(ctx as any, rawId, importer, normalizedOptions)
+          : tracePluginHook(
+              plugin.name,
+              'resolveId',
+              rawId,
+              this.environment.name,
+              () =>
+                handler.call(ctx as any, rawId, importer, normalizedOptions),
+            ),
       )
       if (!result) continue
 
@@ -524,7 +534,15 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
 
       const handler = getPluginHookHandler(plugin, 'load')
       const result = await this.handleHookPromise(
-        handler.call(ctx as any, id, options),
+        pluginTracingChannel.hasSubscribers === false
+          ? handler.call(ctx as any, id, options)
+          : tracePluginHook(
+              plugin.name,
+              'load',
+              id,
+              this.environment.name,
+              () => handler.call(ctx as any, id, options),
+            ),
       )
       if (result != null) {
         if (isObject(result)) {
@@ -599,7 +617,15 @@ class EnvironmentPluginContainer<Env extends Environment = Environment> {
       const handler = getPluginHookHandler(plugin, 'transform')
       try {
         result = await this.handleHookPromise(
-          handler.call(ctx as any, code, id, optionsWithSSR),
+          pluginTracingChannel.hasSubscribers === false
+            ? handler.call(ctx as any, code, id, optionsWithSSR)
+            : tracePluginHook(
+                plugin.name,
+                'transform',
+                id,
+                this.environment.name,
+                () => handler.call(ctx as any, code, id, optionsWithSSR),
+              ),
         )
       } catch (e) {
         ctx.error(e)
