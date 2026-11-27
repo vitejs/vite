@@ -601,6 +601,112 @@ describe('plugin container', () => {
   })
 })
 
+describe('dev environment init and close lifecycle', () => {
+  function createTransport() {
+    return {
+      send: vi.fn(),
+      on: vi.fn(),
+      off: vi.fn(),
+      close: vi.fn(),
+    }
+  }
+
+  async function createUninitializedEnvironment(plugins: Plugin[] = []) {
+    const config = await resolveConfig(
+      {
+        configFile: false,
+        logLevel: 'error',
+        optimizeDeps: { noDiscovery: true },
+        plugins,
+      },
+      'serve',
+    )
+    // @ts-expect-error remove pre-alias plugins from the config
+    config.plugins = config.plugins.filter((p) => !p.name.includes('pre-alias'))
+
+    const transport = createTransport()
+    const environment = new DevEnvironment('client', config, {
+      hot: false,
+      transport,
+    })
+    return { environment, transport }
+  }
+
+  it('closes the transport when closed before being initialized', async () => {
+    const { environment, transport } = await createUninitializedEnvironment()
+
+    await environment.close()
+
+    expect(environment._pluginContainer).toBeUndefined()
+    expect(transport.close).toHaveBeenCalledOnce()
+  })
+
+  it('waits for an in-flight init and closes the plugin container it creates', async () => {
+    const deferred = promiseWithResolvers<void>()
+    let closeBundleCalled = false
+    const { environment, transport } = await createUninitializedEnvironment([
+      {
+        name: 'slow-options',
+        options() {
+          return deferred.promise
+        },
+      },
+      {
+        name: 'track-close',
+        closeBundle() {
+          closeBundleCalled = true
+        },
+      },
+    ])
+
+    const initPromise = environment.init()
+    const closePromise = environment.close()
+    deferred.resolve()
+    await initPromise
+
+    expect(environment._pluginContainer).toBeDefined()
+
+    await closePromise
+
+    expect(closeBundleCalled).toBe(true)
+    expect(transport.close).toHaveBeenCalledOnce()
+  })
+
+  it('does not create a plugin container when init is called after close', async () => {
+    const { environment } = await createUninitializedEnvironment()
+
+    await environment.close()
+    await environment.init()
+
+    expect(environment._pluginContainer).toBeUndefined()
+  })
+
+  it('allows retrying a failed init', async () => {
+    const error = new Error('init failed')
+    let shouldFail = true
+    const { environment, transport } = await createUninitializedEnvironment([
+      {
+        name: 'flaky-options',
+        options() {
+          if (shouldFail) {
+            throw error
+          }
+        },
+      },
+    ])
+
+    await expect(environment.init()).rejects.toBe(error)
+    expect(environment._pluginContainer).toBeUndefined()
+
+    shouldFail = false
+    await environment.init()
+    expect(environment._pluginContainer).toBeDefined()
+
+    await environment.close()
+    expect(transport.close).toHaveBeenCalledOnce()
+  })
+})
+
 async function getDevEnvironment(
   inlineConfig?: UserConfig,
 ): Promise<DevEnvironment> {
