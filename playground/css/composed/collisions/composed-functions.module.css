@@ -1,0 +1,3 @@
+.entry {
+  composes: functions from './values/composed-functions.module.css';
+}

@@ -1,0 +1,19 @@
+@value imagePath: './values/image.svg';
+@value imageUrl: url('./values/image.svg');
+@value combinedUrl: url(imagePath);
+
+.pathUrl {
+  background-image: url(imagePath);
+}
+
+.pathSet {
+  background-image: image-set(imagePath 1x);
+}
+
+.urlSet {
+  background-image: image-set(imageUrl 1x);
+}
+
+.combined {
+  background-image: combinedUrl;
+}
