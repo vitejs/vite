@@ -74,6 +74,22 @@ Note that these settings persist but a **restart is required**.
 Alternatively, if the server is running inside a VS Code devcontainer, the request may appear to be stalled. To fix this issue, see
 [Dev Containers / VS Code Port Forwarding](#dev-containers-vs-code-port-forwarding).
 
+### High CPU usage on Windows when a watched directory is recreated
+
+On Windows, deleting and immediately recreating a watched directory while the dev server is running (for example, running `vite build` alongside `vite dev`) can leave the dev server stuck at high CPU usage until restarted.
+
+To avoid this, exclude build output directories from file watching using [`server.watch.ignored`](/config/server-options.md#server-watch):
+
+```js [vite.config.js]
+export default defineConfig({
+  server: {
+    watch: {
+      ignored: ['**/build/**', '**/dist/**'],
+    },
+  },
+})
+```
+
 ### Vite crashes with ENOSPC error
 
 If you see an error like this on Linux:
