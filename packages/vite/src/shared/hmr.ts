@@ -1,7 +1,10 @@
 import type { InferCustomEventPayload } from '#types/customEvent'
 import type { HotPayload, Update } from '#types/hmrPayload'
 import type { ModuleNamespace, ViteHotContext } from '#types/hot'
-import type { NormalizedModuleRunnerTransport } from './moduleRunnerTransport'
+import {
+  type NormalizedModuleRunnerTransport,
+  SendBeforeConnectError,
+} from './moduleRunnerTransport'
 
 type CustomListenersMap = Map<string, ((data: any) => void)[]>
 
@@ -202,6 +205,7 @@ export class HMRClient {
 
   public send(payload: HotPayload): void {
     this.transport.send(payload).catch((err) => {
+      if (err instanceof SendBeforeConnectError) return
       this.logger.error(err)
     })
   }
