@@ -45,9 +45,12 @@ export function licensePlugin(): Plugin {
   return {
     name: 'vite:license',
 
+    applyToEnvironment(environment) {
+      return environment.config.build.license !== false
+    },
+
     generateBundle(_, bundle) {
       const licenseOption = this.environment.config.build.license
-      if (licenseOption === false) return
 
       const packageCache: PackageCache = new Map()
       // Track license via a key to its license entry.

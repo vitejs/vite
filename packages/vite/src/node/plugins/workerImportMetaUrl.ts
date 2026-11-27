@@ -9,17 +9,17 @@ import type { ResolvedConfig } from '../config'
 import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
 import type { Plugin } from '../plugin'
-import { evalValue, injectQuery, transformStableResult } from '../utils'
-import { fileToUrl, toOutputFilePathInJSForBundledDev } from './asset'
+import { evalValue, transformStableResult } from '../utils'
+import { toOutputFilePathInJSForBundledDev } from './asset'
 import { hasViteIgnoreRE } from './importAnalysis'
 import type { InternalResolveOptions } from './resolve'
 import { tryFsResolve } from './resolve'
 import type { WorkerType } from './worker'
 import {
-  WORKER_FILE_ID,
   emitWorkerAssetsForBundledDev,
   recordWorkerReference,
   generateWorkerEntryUrlExpr,
+  workerFileToDevUrl,
   workerFileToUrl,
 } from './worker'
 
@@ -241,6 +241,9 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           if (urlWithoutPostfix[0] === '.') {
             file = path.resolve(path.dirname(id), urlWithoutPostfix)
             file = slash(tryFsResolve(file, fsResolveOptions) ?? file)
+            if (this.environment.mode === 'dev') {
+              this.environment.safeModulePaths.add(file)
+            }
           } else {
             workerResolver ??= createBackCompatIdResolver(config, {
               extensions: [],
@@ -248,10 +251,19 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               preferRelative: true,
             })
             file = await workerResolver(this.environment, urlWithoutPostfix, id)
-            file ??=
-              urlWithoutPostfix[0] === '/'
-                ? slash(path.join(config.publicDir, urlWithoutPostfix))
-                : slash(path.resolve(path.dirname(id), urlWithoutPostfix))
+            if (file !== undefined) {
+              if (this.environment.mode === 'dev') {
+                this.environment.safeModulePaths.addId(file)
+              }
+            } else {
+              file =
+                urlWithoutPostfix[0] === '/'
+                  ? slash(path.join(config.publicDir, urlWithoutPostfix))
+                  : slash(path.resolve(path.dirname(id), urlWithoutPostfix))
+              if (this.environment.mode === 'dev') {
+                this.environment.safeModulePaths.add(file)
+              }
+            }
           }
 
           if (
@@ -285,12 +297,13 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 this.addWatchFile(file)
               }
             } else {
-              builtUrlExpr = await fileToUrl(this, cleanUrl(file), 'string')
-              builtUrlExpr = injectQuery(
-                `${builtUrlExpr}${queryPostfix}`,
-                `${WORKER_FILE_ID}&type=${workerType}`,
+              const url = await workerFileToDevUrl(
+                this,
+                cleanUrl(file),
+                queryPostfix,
+                workerType,
               )
-              builtUrlExpr = JSON.stringify(builtUrlExpr)
+              builtUrlExpr = JSON.stringify(url)
             }
             s.update(
               expStart,

@@ -19,7 +19,6 @@ import {
   createDebugger,
   ensureWatchedFile,
   injectQuery,
-  isObject,
   monotonicDateNow,
   prettifyUrl,
   removeImportQuery,
@@ -252,7 +251,7 @@ async function loadAndTransform(
   if (
     !options.skipFsCheck &&
     id[0] !== '\0' &&
-    isServerAccessDeniedForTransform(config, id)
+    isServerAccessDeniedForTransform(environment, id)
   ) {
     const err: any = new Error(`Denied ID ${id}`)
     err.code = ERR_DENIED_ID
@@ -266,9 +265,9 @@ async function loadAndTransform(
 
   // load
   const loadStart = debugLoad ? performance.now() : 0
-  const loadResult = await pluginContainer.load(id)
+  const loadResult = await pluginContainer.load(id, { withMetadata: true })
 
-  if (loadResult == null) {
+  if (loadResult.code == null) {
     const file = cleanUrl(id)
 
     // try fallback loading it from fs as string
@@ -276,10 +275,7 @@ async function loadAndTransform(
     // as string
     // only try the fallback if access is allowed, skip for out of root url
     // like /service-worker.js or /api/users
-    if (
-      options.skipFsCheck ||
-      isFileLoadingAllowed(environment.getTopLevelConfig(), slash(file))
-    ) {
+    if (options.skipFsCheck || isFileLoadingAllowed(config, slash(file))) {
       try {
         code = await fsp.readFile(file, 'utf-8')
         debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
@@ -311,13 +307,9 @@ async function loadAndTransform(
     }
   } else {
     debugLoad?.(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
-    if (isObject(loadResult)) {
-      code = loadResult.code
-      map = loadResult.map
-      moduleType = loadResult.moduleType
-    } else {
-      code = loadResult
-    }
+    code = loadResult.code
+    map = loadResult.map
+    moduleType = loadResult.moduleType
   }
   if (code == null) {
     const isPublicFile = checkPublicFile(url, environment.getTopLevelConfig())
@@ -352,6 +344,7 @@ async function loadAndTransform(
 
   // ensure module in graph after successful load
   mod ??= await moduleGraph._ensureEntryFromUrl(url, undefined, resolved)
+  pluginContainer._updateModuleLoadAddedImports(id, loadResult.addedImports)
 
   // transform
   const transformStart = debugTransform ? performance.now() : 0

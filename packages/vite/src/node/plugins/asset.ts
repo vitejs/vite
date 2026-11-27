@@ -34,11 +34,13 @@ import {
   encodeURIPath,
   getHash,
   injectQuery,
+  isCSSRequest,
   normalizePath,
   rawRE,
   removeUrlQuery,
   urlRE,
 } from '../utils'
+import { isDirectRequest } from './css'
 import { getImportMapFilename } from './html'
 
 // referenceId is a 22-character base64url string but replaces - with $
@@ -479,6 +481,23 @@ export async function fileToDevUrl(
 
   if (asFileUrl) {
     return pathToFileURL(cleanedId).href
+  }
+
+  if (
+    !publicFile &&
+    environment.mode === 'dev' &&
+    // `fileToUrl` may be called for modules that are not checked by the `server.fs` check for `server.fs.strict: true`
+    // for example, `/@fs/<absolute-path>?worker&import`
+    config.server.fs.strict === 'extended'
+  ) {
+    // Asset URLs are fetched by the browser even when emitted by SSR.
+    const { safeModulePaths } = config.environments.client
+    const requestId = id.split('#', 1)[0]
+    safeModulePaths.addId(requestId)
+    if (isCSSRequest(requestId) && !isDirectRequest(requestId)) {
+      // The transform middleware adds this query to stylesheet requests.
+      safeModulePaths.addId(injectQuery(requestId, 'direct'))
+    }
   }
 
   const moduleUrl = publicFile ? id : fileToModuleUrl(id, config.root)

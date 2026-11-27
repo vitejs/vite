@@ -1,5 +1,5 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
-import type { ObjectHook } from 'rolldown'
+import type { ObjectHook, RollupError } from 'rolldown'
 import {
   viteAliasPlugin as nativeAliasPlugin,
   viteJsonPlugin as nativeJsonPlugin,
@@ -109,6 +109,7 @@ export async function resolvePlugins(
             consumer: 'client',
             isBundled: true,
             optimizeDepsPluginNames: [],
+            safeModulePaths: config.environments.client.safeModulePaths,
           }
         : undefined,
     ),
@@ -174,7 +175,7 @@ export function createPluginHookUtils(
     hookName: K,
   ): NonNullable<HookHandler<Plugin[K]>>[] {
     const plugins = getSortedPlugins(hookName)
-    return plugins.map((p) => getHookHandler(p[hookName])).filter(Boolean)
+    return plugins.map((p) => getPluginHookHandler(p, hookName)).filter(Boolean)
   }
 
   return {
@@ -217,6 +218,65 @@ export function getHookHandler<T extends ObjectHook<Function>>(
   hook: T,
 ): HookHandler<T> {
   return (typeof hook === 'object' ? hook.handler : hook) as HookHandler<T>
+}
+
+interface TaggedHandler {
+  handler: Function
+  tagged: Function
+}
+
+const taggedHandlers = new WeakMap<Plugin, Map<keyof Plugin, TaggedHandler>>()
+
+export function getPluginHookHandler<K extends keyof Plugin>(
+  plugin: Plugin,
+  hookName: K,
+): NonNullable<HookHandler<Plugin[K]>> {
+  const handler = getHookHandler(plugin[hookName])
+  if (!handler) return handler
+
+  let handlers = taggedHandlers.get(plugin)
+  if (!handlers) {
+    handlers = new Map()
+    taggedHandlers.set(plugin, handlers)
+  }
+  let cached = handlers.get(hookName)
+  if (cached?.handler !== handler) {
+    cached = {
+      handler,
+      tagged: tagHandlerErrors(handler, plugin, hookName),
+    }
+    handlers.set(hookName, cached)
+  }
+  return cached.tagged as NonNullable<HookHandler<Plugin[K]>>
+}
+
+function tagHandlerErrors(
+  handler: (this: unknown, ...args: unknown[]) => unknown,
+  plugin: Plugin,
+  hook: string,
+) {
+  const rethrowTagged = (e: unknown): never => {
+    tagPluginError(e, plugin.name, hook)
+    throw e
+  }
+  return function (this: unknown, ...args: unknown[]) {
+    try {
+      const result = handler.apply(this, args)
+      return result instanceof Promise
+        ? result.then(undefined, rethrowTagged)
+        : result
+    } catch (e) {
+      rethrowTagged(e)
+    }
+  }
+}
+
+function tagPluginError(e: unknown, plugin: string, hook: string): void {
+  if (typeof e !== 'object' || e == null) return
+  const err = e as RollupError
+  if (err.plugin) return
+  err.plugin = plugin
+  err.hook = hook
 }
 
 type FilterForPluginValue = {

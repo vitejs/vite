@@ -10,11 +10,11 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
-    "serve": "^14.2.7",
+    "serve": "^14.2.8",
     "typescript": "~7.0.2",
-    "vite": "^8.3.6"
+    "vite": "^8.4.0"
   },
   "dependencies": {
-    "@builder.io/qwik": "^1.20.3"
+    "@builder.io/qwik": "^1.20.4"
   }
 }

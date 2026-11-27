@@ -1,12 +1,13 @@
 import path from 'node:path'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { promiseWithResolvers } from '../../../shared/utils'
-import { build } from '../../build'
+import { build, createBuilder } from '../../build'
 import { resolveConfig } from '../../config'
 import { type Logger, createLogger } from '../../logger'
 import type { Plugin } from '../../plugin'
 import { preview } from '../../preview'
 import { createServer } from '../../server'
+import { DevEnvironment } from '../../server/environment'
 
 const resolveConfigWithPlugin = (
   plugin: Plugin,
@@ -86,6 +87,28 @@ const buildWithPlugin = async (plugin: Plugin) => {
     },
     plugins: [plugin, resolveEntryPlugin],
   })
+}
+
+const buildAppWithPlugin = async (plugin: Plugin) => {
+  const builder = await createBuilder({
+    root: path.resolve(import.meta.dirname, '../packages/build-project'),
+    logLevel: 'error',
+    build: {
+      write: false,
+    },
+    plugins: [plugin, resolveEntryPlugin],
+  })
+  await builder.buildApp()
+}
+
+const transformIndexHtmlWithPlugin = async (plugin: Plugin) => {
+  const server = await createServerWithPlugin(plugin)
+  await server.transformIndexHtml('/', '<html></html>')
+}
+
+const transformRequestWithPlugin = async (plugin: Plugin) => {
+  const server = await createServerWithPlugin(plugin)
+  await server.environments.client.transformRequest(ENTRY_ID)
 }
 
 describe('supports plugin context', () => {
@@ -583,6 +606,103 @@ describe('closeServer hook', () => {
   })
 })
 
+describe('createServer startup failure', () => {
+  for (const hook of ['configureServer', 'buildStart']) {
+    test(`closes the server when ${hook} throws in middleware mode`, async () => {
+      const error = new Error(`${hook} failed`)
+      const closeWrapper = vi.fn()
+
+      await expect(
+        createServerWithPlugin({
+          name: 'test',
+          configureServer(server) {
+            const close = server.close.bind(server)
+            server.close = () => {
+              void close()
+              closeWrapper()
+              throw new Error('close failed')
+            }
+            if (hook === 'configureServer') throw error
+          },
+          buildStart() {
+            if (hook === 'buildStart') throw error
+          },
+        }),
+      ).rejects.toBe(error)
+      expect(closeWrapper).toHaveBeenCalledOnce()
+    })
+  }
+
+  for (const hook of ['options', 'createEnvironment']) {
+    test(`closes the server when ${hook} throws`, async () => {
+      const error = new Error(`${hook} failed`)
+      const closeServer = vi.fn()
+
+      await expect(
+        createServerWithPlugin({
+          name: 'test',
+          config() {
+            if (hook === 'createEnvironment') {
+              return {
+                environments: {
+                  custom: {
+                    dev: {
+                      createEnvironment() {
+                        throw error
+                      },
+                    },
+                  },
+                },
+              }
+            }
+          },
+          options() {
+            if (hook === 'options') throw error
+          },
+          closeServer,
+        }),
+      ).rejects.toBe(error)
+      expect(closeServer).toHaveBeenCalledOnce()
+    })
+  }
+
+  test('closes the environment whose init failed', async () => {
+    const error = new Error('options failed')
+    const closeTransport = vi.fn()
+
+    await expect(
+      createServerWithPlugin({
+        name: 'test',
+        config() {
+          return {
+            environments: {
+              custom: {
+                dev: {
+                  createEnvironment(name, config) {
+                    return new DevEnvironment(name, config, {
+                      hot: false,
+                      transport: {
+                        send: vi.fn(),
+                        on: vi.fn(),
+                        off: vi.fn(),
+                        close: closeTransport,
+                      },
+                    })
+                  },
+                },
+              },
+            },
+          }
+        },
+        options() {
+          throw error
+        },
+      }),
+    ).rejects.toBe(error)
+    expect(closeTransport).toHaveBeenCalledOnce()
+  })
+})
+
 describe('closePreviewServer hook', () => {
   test('is called on preview server.close()', async () => {
     const closePreviewServer = vi.fn()
@@ -610,5 +730,120 @@ describe('closePreviewServer hook', () => {
 
     // `server.close()` does not resolve until the async hook has completed.
     expect(hookDone).toBe(true)
+  })
+})
+
+describe('plugin hook errors', () => {
+  for (const [hook, run] of [
+    ['config', resolveConfigWithPlugin],
+    ['configEnvironment', resolveConfigWithPlugin],
+    ['configResolved', resolveConfigWithPlugin],
+    ['configureServer', createServerWithPlugin],
+    ['buildStart', createServerWithPlugin],
+    ['buildApp', buildAppWithPlugin],
+    ['transformIndexHtml', transformIndexHtmlWithPlugin],
+    ['resolveId', transformRequestWithPlugin],
+    ['load', transformRequestWithPlugin],
+    ['transform', transformRequestWithPlugin],
+  ] as const) {
+    test(`${hook} hook error has the plugin and hook`, async () => {
+      const plugin = {
+        name: 'throws',
+        [hook]() {
+          throw new Error('missing apiKey')
+        },
+      } as Plugin
+
+      await expect(run(plugin)).rejects.toMatchObject({
+        plugin: 'throws',
+        hook,
+        message: 'missing apiKey',
+      })
+    })
+  }
+
+  for (const hook of ['hotUpdate', 'handleHotUpdate'] as const) {
+    test(`${hook} hook error sent to the client has the plugin`, async () => {
+      const server = await createServerWithPlugin({
+        name: 'throws',
+        [hook]() {
+          throw new Error('missing apiKey')
+        },
+      } as Plugin)
+      const { promise, resolve } = promiseWithResolvers<unknown>()
+      vi.spyOn(server.environments.client.hot, 'send').mockImplementation(
+        resolve as never,
+      )
+
+      server.watcher.emit(
+        'change',
+        path.resolve(import.meta.dirname, 'index.html'),
+      )
+
+      expect(await promise).toMatchObject({
+        type: 'error',
+        err: {
+          plugin: 'throws',
+          message: 'missing apiKey',
+        },
+      })
+    })
+  }
+
+  test('keeps the plugin of an error that already has one', async () => {
+    const error = Object.assign(new Error('bad syntax'), { plugin: 'inner' })
+
+    await expect(
+      createServerWithPlugin({
+        name: 'outer',
+        configureServer() {
+          throw error
+        },
+      }),
+    ).rejects.toMatchObject({ plugin: 'inner', message: 'bad syntax' })
+  })
+
+  test('rethrows a non-error value as is', async () => {
+    await expect(
+      createServerWithPlugin({
+        name: 'throws',
+        configureServer() {
+          throw 'oops'
+        },
+      }),
+    ).rejects.toBe('oops')
+  })
+
+  test('error has the new plugin name after a rename', async () => {
+    let fail = false
+    const plugin: Plugin = {
+      name: 'before',
+      resolveId() {
+        if (fail) throw new Error('missing apiKey')
+      },
+    }
+    const server = await createServerWithPlugin(plugin)
+    const { pluginContainer } = server.environments.client
+    await pluginContainer.resolveId('id')
+
+    plugin.name = 'after'
+    fail = true
+
+    await expect(pluginContainer.resolveId('id')).rejects.toMatchObject({
+      plugin: 'after',
+    })
+  })
+})
+
+test('runs the new hook after a plugin replaces it', async () => {
+  const plugin: Plugin = { name: 'replaces', resolveId: () => '/first' }
+  const server = await createServerWithPlugin(plugin)
+  const { pluginContainer } = server.environments.client
+  await pluginContainer.resolveId('id')
+
+  plugin.resolveId = () => '/second'
+
+  expect(await pluginContainer.resolveId('id')).toMatchObject({
+    id: '/second',
   })
 })

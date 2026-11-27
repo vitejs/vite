@@ -77,15 +77,16 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:terser',
 
     applyToEnvironment(environment) {
+      const { minify } = environment.config.build
       // We also need the plugin when minify isn't 'terser' for plugin-legacy
       // configurations that still require Terser for legacy chunk minification.
-      return !!environment.config.build.minify
+      return (
+        minify === 'terser' ||
+        (!!minify && !!environment.config.isOutputOptionsForLegacyChunks)
+      )
     },
 
     async renderChunk(code, chunk, outputOptions) {
-      // This plugin is included for any non-false value of build.minify,
-      // so that normal chunks can use the preferred minifier, and legacy chunks
-      // can use terser when coordinated Oxc minification isn't available
       const minify = this.environment.config.build.minify
       const usesOxcMinifier =
         (minify === true || minify === 'oxc') && outputOptions.minify !== false

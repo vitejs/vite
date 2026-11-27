@@ -97,6 +97,9 @@ export const watchBuilds: {
   completed: Map<string, number>
 }[] = []
 
+/** When build watch became idle; Infinity while a rebuild is pending or running. */
+export let watchIdleSince = Infinity
+
 export function setViteUrl(url: string): void {
   viteTestUrl = url
 }
@@ -125,6 +128,7 @@ export async function setupTest(suite: RunnerTestSuite) {
   viteTestUrl = ''
   watcher = undefined
   watchBuilds.length = 0
+  watchIdleSince = Infinity
   serverLogs.length = 0
   browserLogs.length = 0
   browserErrors.length = 0
@@ -258,6 +262,7 @@ async function loadConfig(configEnv: ConfigEnv) {
     logLevel: 'silent',
     configFile: false,
     server: {
+      fs: { allow: [], strict: 'extended' },
       watch: {
         // During tests we edit the files too fast and sometimes chokidar
         // misses change events, so enforce polling for consistency
@@ -287,6 +292,7 @@ export async function startDefaultServe(): Promise<void> {
   await watcher?.close()
   watcher = undefined
   watchBuilds.length = 0
+  watchIdleSince = Infinity
   setupConsoleWarnCollector(serverLogs)
 
   if (!isBuild) {
@@ -401,6 +407,7 @@ export async function startDefaultServe(): Promise<void> {
 function buildWatchPlugin(): Plugin {
   let subscribedWatcher: RolldownWatcher | undefined
   const onEvent = (event: RolldownWatcherEvent): void => {
+    watchIdleSince = event.code === 'END' ? performance.now() : Infinity
     for (const state of watchBuilds) {
       if (event.code === 'END') state.completed = state.written
       if (event.code === 'ERROR') state.written = state.completed
@@ -437,6 +444,7 @@ function buildWatchPlugin(): Plugin {
         watch: {
           ...watch,
           onInvalidate(id) {
+            watchIdleSince = Infinity
             const filename = path.normalize(id)
             state.invalidated.set(
               filename,
