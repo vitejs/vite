@@ -75,11 +75,18 @@ type WorkerBundleId = string
 type BundleId = WorkerBundleId | undefined
 
 const workerManifests = new WeakMap<Environment, Manifest>()
+const workerModuleIdsMap = new WeakMap<Environment, Set<string>>()
 
 export function getWorkerManifest(
   environment: Environment,
 ): Manifest | undefined {
   return workerManifests.get(environment)
+}
+
+export function getWorkerModuleIds(
+  environment: Environment,
+): Set<string> | undefined {
+  return workerModuleIdsMap.get(environment)
 }
 
 class WorkerOutputCache {
@@ -263,6 +270,10 @@ class WorkerOutputCache {
 
   getWorkerBundle(file: string) {
     return this.bundles.get(file)
+  }
+
+  getBundles(): IterableIterator<WorkerBundle> {
+    return this.bundles.values()
   }
 
   getAssets() {
@@ -935,6 +946,16 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         this.environment,
         cache.getChunkManifest(liveFileNames),
       )
+
+      const liveWorkerModuleIds = new Set<string>()
+      for (const workerBundle of cache.getBundles()) {
+        if (!liveFileNames || liveFileNames.has(workerBundle.entryFilename)) {
+          for (const id of workerBundle.moduleIds) {
+            liveWorkerModuleIds.add(id)
+          }
+        }
+      }
+      workerModuleIdsMap.set(this.environment, liveWorkerModuleIds)
 
       for (const asset of cache.getAssets()) {
         if (liveFileNames && !liveFileNames.has(asset.fileName)) continue
