@@ -36,3 +36,19 @@ test('json', async () => {
   expect(licenseAsset).toBeDefined()
   expect(licenseAsset?.source).toMatchSnapshot()
 })
+
+test('empty options object', async () => {
+  const result = (await build({
+    root: fileURLToPath(new URL('./fixtures/license', import.meta.url)),
+    logLevel: 'silent',
+    build: {
+      write: false,
+      license: {},
+    },
+  })) as RollupOutput
+  const licenseAsset = result.output.find(
+    (asset) => asset.fileName === '.vite/license.md',
+  ) as OutputAsset | undefined
+  expect(licenseAsset).toBeDefined()
+  expect(licenseAsset?.source).toMatchSnapshot()
+})
