@@ -128,7 +128,10 @@ export const preloadMethod = `__vitePreload`
 export const preloadMarker = `__VITE_PRELOAD__`
 
 export const preloadHelperId = '\0vite/preload-helper.js'
-const preloadMarkerRE = /__VITE_PRELOAD__(?:[\da-f]{32})?/g
+// With `chunkImportMap.include`, `renderChunk` adds a marker with a string
+// argument, like `__VITE_PRELOAD__("a.js,b.js")`.
+const preloadMarkerRE =
+  /__VITE_PRELOAD__(?:[\da-f]{32})?(?:\((["'`])(?:\\.|(?!\1).)*\1\))?/g
 
 export function isCssPreloadUrl(url: URL): boolean {
   return url.pathname.endsWith('.css')
@@ -419,6 +422,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
     !config.isWorker &&
     !config.build.lib
 
+  // With `chunkImportMap.include`, only some chunks are in the import map.
+  const hasPartialImportMap = (environment: PartialEnvironment) => {
+    const options =
+      environment.config.build.rolldownOptions.experimental?.chunkImportMap
+    return (
+      typeof options === 'object' &&
+      'include' in options &&
+      options.include != null
+    )
+  }
+
   const renderBuiltUrl = config.experimental.renderBuiltUrl
   const isRelativeBase = config.base === './' || config.base === ''
 
@@ -463,6 +477,29 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin[] {
         importedCssCount,
         isPureCss: code === '' && importedCssCount > 0,
       })
+
+      // The preload list is written after hashing. Write the preliminary file
+      // names of its chunks into the code now, so that the hash covers them.
+      if (hasPartialImportMap(this.environment)) {
+        const files = new Set(
+          chunk.dynamicImports.flatMap((dynamicImport) =>
+            collectPreloadDependencies(
+              dynamicImport,
+              chunk.fileName,
+              (fileName) =>
+                chunks[fileName] && {
+                  fileName,
+                  js: fileName,
+                  imports: chunks[fileName].imports,
+                },
+            ),
+          ),
+        )
+        if (files.size) {
+          code += `\n${preloadMarker}(${JSON.stringify([...files].join(','))})`
+          return { code, map: null }
+        }
+      }
     },
 
     augmentChunkHash(chunk) {

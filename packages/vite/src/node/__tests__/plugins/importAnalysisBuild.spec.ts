@@ -2,6 +2,7 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import { beforeAll, describe, expect, test } from 'vitest'
 import { promiseWithResolvers } from '../../../shared/utils'
 import {
+  findPreloadMarker,
   getChunkImportMapKeySignatures,
   isCssPreloadUrl,
   matchImportsToPreloadMarkers,
@@ -176,6 +177,14 @@ function match(code: string) {
   const imports = parseImports(code)[0].filter((i) => i.type === 'dynamic')
   return matchImportsToPreloadMarkers(code, imports)
 }
+
+test.for(['"', '`'])(
+  'findPreloadMarker matches the string argument of a marker (quote: %s)',
+  (quote) => {
+    const marker = `${preloadMarker}(${quote}assets/it's.js,assets/b.js${quote})`
+    expect(findPreloadMarker(`a();\n${marker};`)?.[0]).toBe(marker)
+  },
+)
 
 describe('matchImportsToPreloadMarkers', () => {
   test('returns an empty array when there are no imports', () => {
