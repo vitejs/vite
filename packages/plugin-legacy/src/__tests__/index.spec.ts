@@ -10,6 +10,14 @@ describe('modulePreloadLinkRE', () => {
     ],
     ['rel only', '<link rel="modulepreload">'],
     ['self-closing', '<link rel="modulepreload"/>'],
+    [
+      'greater-than in an attribute before rel',
+      '<link title="a > b" rel="modulepreload" href="/assets/x.js">',
+    ],
+    [
+      'greater-than in an attribute after rel',
+      "<link rel='modulepreload' title='a > b' href='/assets/x.js'>",
+    ],
     ['self-closing with space', '<link rel="modulepreload" />'],
     ['single quotes', "<link rel='modulepreload' href='/assets/x.js'>"],
     [
@@ -35,6 +43,14 @@ describe('modulePreloadLinkRE', () => {
       '<link xrel="modulepreload" href="/assets/x.js">',
     ],
     ['mismatched quotes', `<link rel="modulepreload'>`],
+    [
+      'rel text inside a single-quoted attribute',
+      `<link rel="stylesheet" href="/style.css" title='Example: rel="modulepreload"'>`,
+    ],
+    [
+      'rel text inside a double-quoted attribute',
+      `<link title="Example: rel='modulepreload'" rel="stylesheet" href="/style.css">`,
+    ],
   ]
 
   for (const [name, html] of nonMatches) {
@@ -42,4 +58,12 @@ describe('modulePreloadLinkRE', () => {
       expect(html.replace(modulePreloadLinkRE, '')).toBe(html)
     })
   }
+
+  test('preserves surrounding HTML when removing multiple links', () => {
+    const stylesheet = `<link rel="stylesheet" title='Example: rel="modulepreload"' href="/style.css">`
+    const html = `${stylesheet}<link rel="modulepreload" title="a > b" href="/a.js"><link title='c > d' rel="modulepreload" href="/b.js"><main>content</main>`
+    expect(html.replace(modulePreloadLinkRE, '')).toBe(
+      `${stylesheet}<main>content</main>`,
+    )
+  })
 })
