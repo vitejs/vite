@@ -664,9 +664,15 @@ These rules are enforced to prevent accidentally importing files that are not in
 
 ## WebAssembly
 
-Vite supports importing pre-compiled `.wasm` files in two ways: directly as an [ES module](#esm-integration) when you only need the module's exports, or with [`?init`](#manual-initialization) when you need explicit control over instantiation.
+Vite supports importing pre-compiled `.wasm` files in two ways: directly as an [ES module](#as-es-module) when you only need the module's exports, or with [source phase imports](#with-source-phase-import) when you need explicit control over instantiation.
 
-### ESM Integration
+::: warning For SSR build, Node.js compatible runtimes are only supported
+
+Due to the lack of a universal way to load a file, the internal implementation for direct `.wasm` imports, source phase imports, and `.wasm?init` relies on the `node:fs` module. This means that these features will only work in Node.js compatible runtimes for SSR builds.
+
+:::
+
+### As ES Module
 
 A `.wasm` file can be imported directly. Vite reads the module's imports and exports from the binary, instantiates it, and re-exposes its exports as named ES module exports:
 
@@ -692,11 +698,9 @@ export function add(a: number, b: number): number
 
 :::
 
-::: details Source Phase Imports Support
+### With Source Phase Import
 
-#### Source Phase Imports
-
-The ESM Integration proposal also defines [source phase imports](https://github.com/tc39/proposal-source-phase-imports) for `.wasm` files, giving you the compiled [`WebAssembly.Module`](https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Module) without instantiating it, leaving instantiation entirely to you. This is the standard way to take control over instantiation and will be the recommended alternative to [`?init`](#manual-initialization) once [TypeScript 7.1](https://devblogs.microsoft.com/typescript/announcing-typescript-7-1-beta/#source-phase-imports) is released as stable:
+The ESM Integration proposal also defines [source phase imports](https://github.com/tc39/proposal-source-phase-imports) for `.wasm` files, giving you the compiled [`WebAssembly.Module`](https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Module) without instantiating it, leaving instantiation entirely to you. Note that this syntax requires TypeScript 7.1+.
 
 ```js
 import source mod from './example.wasm'
@@ -726,11 +730,27 @@ The dynamic form resolves to the `WebAssembly.Module` as well:
 const mod = await import.source('./example.wasm')
 ```
 
-:::
+### Getting the URL
+
+If you need access to the URL to the Wasm file, use an [explicit URL import](./assets#explicit-url-imports) to resolve the asset:
+
+```js twoslash
+import 'vite/client'
+// ---cut---
+import wasmUrl from 'foo.wasm?url'
+
+const main = () => {
+  // use `wasmUrl`
+}
+
+main()
+```
+
+::: details Deprecated `.wasm?init`
 
 ### Manual Initialization
 
-When you need control over when and how the module is instantiated, import it with `?init`. The default export will be an initialization function that returns a Promise of the [`WebAssembly.Instance`](https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Instance):
+Vite supports a non-standard `.wasm?init` import. The default export will be an initialization function that returns a Promise of the [`WebAssembly.Instance`](https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Instance):
 
 ```js twoslash
 import 'vite/client'
@@ -759,32 +779,7 @@ init({
 })
 ```
 
-In the production build, `.wasm` files smaller than `assetsInlineLimit` will be inlined as base64 strings. Otherwise, they will be treated as a [static asset](./assets) and fetched on-demand.
-
-::: warning For SSR build, Node.js compatible runtimes are only supported
-
-Due to the lack of a universal way to load a file, the internal implementation for direct `.wasm` imports, source phase imports, and `.wasm?init` relies on the `node:fs` module. This means that these features will only work in Node.js compatible runtimes for SSR builds.
-
 :::
-
-### Accessing the WebAssembly Module
-
-If you need access to the `Module` object, e.g. to instantiate it multiple times, use an [explicit URL import](./assets#explicit-url-imports) to resolve the asset, and then perform the instantiation:
-
-```js twoslash
-import 'vite/client'
-// ---cut---
-import wasmUrl from 'foo.wasm?url'
-
-const main = async () => {
-  const responsePromise = fetch(wasmUrl)
-  const { module, instance } =
-    await WebAssembly.instantiateStreaming(responsePromise)
-  /* ... */
-}
-
-main()
-```
 
 ## Web Workers
 
@@ -914,9 +909,6 @@ Vite automatically generates `<link rel="modulepreload">` directives for entry c
 
 In real world applications, Rollup often generates "common" chunks - code that is shared between two or more other chunks. Combined with dynamic imports, it is quite common to have the following scenario:
 
-<script setup>
-import graphSvg from '../images/graph.svg?raw'
-</script>
 <svg-image :svg="graphSvg" />
 
 In the non-optimized scenarios, when async chunk `A` is imported, the browser will have to request and parse `A` before it can figure out that it also needs the common chunk `C`. This results in an extra network roundtrip:
@@ -950,3 +942,24 @@ By utilizing the import maps feature, this issue can be avoided. When this optim
 Note that this optimization currently does not apply to CSS and assets. If you update an asset, the chunks that reference it will be invalidated. That said, the invalidation would not cascade and the chunk importing the invalidated chunk would not be invalidated.
 
 To enable this feature, set [`build.chunkImportMap`](/config/build-options.md#build-chunkimportmap) to `true`.
+
+<script setup>
+import { useRouter } from 'vitepress'
+import { watchPostEffect } from 'vue'
+import graphSvg from '../images/graph.svg?raw'
+
+const router = useRouter()
+const hashRedirects = new Map([
+  ['#esm-integration', '#as-es-module'],
+  ['#accessing-the-webassembly-module', '#getting-the-url'],
+])
+
+watchPostEffect(() => {
+  const hash = hashRedirects.get(router.route.hash)
+  if (typeof window !== 'undefined' && hash) {
+    void router.go(`${location.pathname}${location.search}${hash}`, {
+      replace: true,
+    })
+  }
+})
+</script>
