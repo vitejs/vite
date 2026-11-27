@@ -45,8 +45,10 @@ const ALLOWED_META_PROPERTY = [
   'og:image:url',
   'og:image:secure_url',
   'og:audio',
+  'og:audio:url',
   'og:audio:secure_url',
   'og:video',
+  'og:video:url',
   'og:video:secure_url',
 ]
 

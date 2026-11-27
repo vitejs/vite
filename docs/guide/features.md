@@ -203,7 +203,7 @@ Assets referenced by HTML elements such as `<script type="module" src>` and `<li
 - `<video src>` and `<video poster>`
 - `<meta content>`
   - Only if `name` attribute matches `msapplication-tileimage`, `msapplication-square70x70logo`, `msapplication-square150x150logo`, `msapplication-wide310x150logo`, `msapplication-square310x310logo`, `msapplication-config`, or `twitter:image`
-  - Or only if `property` attribute matches `og:image`, `og:image:url`, `og:image:secure_url`, `og:audio`, `og:audio:secure_url`, `og:video`, or `og:video:secure_url`
+  - Or only if `property` attribute matches `og:image`, `og:image:url`, `og:image:secure_url`, `og:audio`, `og:audio:url`, `og:audio:secure_url`, `og:video`, `og:video:url`, or `og:video:secure_url`
 
 ```html {4-5,8-9}
 <!doctype html>

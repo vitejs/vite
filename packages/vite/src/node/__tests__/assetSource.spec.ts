@@ -79,6 +79,22 @@ describe('getNodeAssetAttributes', () => {
     expect(attrs[0]).toHaveProperty('value', 'image.jpg')
   })
 
+  test.each([
+    'og:image:url',
+    'og:audio:url',
+    'og:video:url',
+    'og:image:secure_url',
+    'og:audio:secure_url',
+    'og:video:secure_url',
+  ])('handles meta property %s', (property) => {
+    const node = getNode(`<meta property="${property}" content="media.mp4">`)
+    const attrs = getNodeAssetAttributes(node)
+    expect(attrs).toHaveLength(1)
+    expect(attrs[0]).toHaveProperty('type', 'src')
+    expect(attrs[0]).toHaveProperty('key', 'content')
+    expect(attrs[0]).toHaveProperty('value', 'media.mp4')
+  })
+
   test('does not handle meta with unknown name', () => {
     const node = getNode('<meta name="unknown" content="image.jpg">')
     const attrs = getNodeAssetAttributes(node)
