@@ -255,12 +255,18 @@ export async function preview(
     app.use(proxyMiddleware(httpServer, proxy, config))
   }
 
-  app.use(
-    compression({
-      // Compress text and structured data, plus mime-db types such as WebAssembly.
-      mimes: /text|javascript|\/json|xml|application\/wasm/i,
-    }),
-  )
+  const compressionMiddleware = compression({
+    // Compress text and structured data, plus mime-db types such as WebAssembly.
+    mimes: /text|javascript|\/json|xml|application\/wasm/i,
+  })
+  app.use((req, res, next) => {
+    // Avoid wrapping HTTP/2 responses so a streaming response cannot stall
+    // other streams on the same session.
+    if (req.httpVersionMajor >= 2) {
+      return next()
+    }
+    return compressionMiddleware(req, res, next)
+  })
 
   // base
   if (config.base !== '/') {
