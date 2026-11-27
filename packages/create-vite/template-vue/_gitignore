@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+*.timestamp-*-*.mjs
 
 # Editor directories and files
 .vscode/*
