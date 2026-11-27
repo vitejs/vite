@@ -1106,7 +1106,9 @@ async function applyMiddlewares(
   const { allowedHosts } = serverConfig
   // no need to check for HTTPS as HTTPS is not vulnerable to DNS rebinding attacks
   if (allowedHosts !== true && !serverConfig.https) {
-    middlewares.use(hostValidationMiddleware(allowedHosts, false))
+    middlewares.use(
+      hostValidationMiddleware(allowedHosts, false, config.configHint),
+    )
   }
 
   // apply configureServer hooks ------------------------------------------------

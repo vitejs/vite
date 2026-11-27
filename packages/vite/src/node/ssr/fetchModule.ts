@@ -113,7 +113,7 @@ export async function fetchModule(
 
   if (!result) {
     throw new Error(
-      `[vite] transform failed for module '${url}'${
+      `[${environment.config.displayName}] transform failed for module '${url}'${
         importer ? ` imported from '${importer}'` : ''
       }.`,
     )

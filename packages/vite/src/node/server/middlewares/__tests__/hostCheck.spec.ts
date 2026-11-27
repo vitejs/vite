@@ -1,5 +1,9 @@
 import { expect, test } from 'vitest'
-import { getAdditionalAllowedHosts } from '../hostCheck'
+import type { ConfigHint } from '../../..'
+import {
+  getAdditionalAllowedHosts,
+  hostValidationMiddleware,
+} from '../hostCheck'
 
 test('getAdditionalAllowedHosts', async () => {
   const actual = getAdditionalAllowedHosts(
@@ -21,5 +25,32 @@ test('getAdditionalAllowedHosts', async () => {
       'vite.origin.example.com',
       'vite.preview-host.example.com',
     ].sort(),
+  )
+})
+
+async function blockedHostMessage(isPreview: boolean, configHint?: ConfigHint) {
+  let message = ''
+  await hostValidationMiddleware(['localhost'], isPreview, configHint)(
+    { headers: { host: 'evil.example.com' } } as any,
+    {
+      writeHead: () => undefined,
+      end: (body: string) => (message = body),
+    } as any,
+    () => {},
+  )
+  return message
+}
+
+test('the blocked-host error names vite.config.js by default', async () => {
+  expect(await blockedHostMessage(false)).toContain(
+    'add "evil.example.com" to `server.allowedHosts` in vite.config.js.',
+  )
+})
+
+test('the blocked-host error names the file and key in configHint', async () => {
+  expect(
+    await blockedHostMessage(true, { file: 'my-tool.config.js', key: 'vite' }),
+  ).toContain(
+    'add "evil.example.com" to `vite.preview.allowedHosts` in my-tool.config.js.',
   )
 })

@@ -109,6 +109,7 @@ export { loadEnv, resolveEnvPrefix } from './env'
 export type {
   AppType,
   ConfigEnv,
+  ConfigHint,
   ExperimentalOptions,
   HTMLOptions,
   InlineConfig,
