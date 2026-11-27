@@ -23,6 +23,8 @@ interface CommandLockRecord {
   pid: number
   startTime?: string
   urls: CommandLockUrls | null | undefined
+  /** The resolved output directory, only set for builds */
+  outDir?: string
 }
 
 export interface CommandLock {
@@ -52,6 +54,7 @@ function isCommandLockRecord(value: unknown): value is CommandLockRecord {
     record.pid > 0 &&
     (record.startTime === undefined ||
       (typeof record.startTime === 'string' && record.startTime.length > 0)) &&
+    (record.outDir === undefined || typeof record.outDir === 'string') &&
     (record.urls == null ||
       (typeof record.urls === 'object' &&
         Array.isArray(record.urls?.local) &&
@@ -69,7 +72,12 @@ function isSameCommand(
     first.command === second.command &&
     first.root === second.root &&
     first.configFile === second.configFile &&
-    first.mode === second.mode
+    first.mode === second.mode &&
+    // Builds into different directories (e.g. a client and an SSR build) can
+    // run in parallel. Records from older versions have no `outDir`.
+    (first.outDir === undefined ||
+      second.outDir === undefined ||
+      first.outDir === second.outDir)
   )
 }
 
@@ -231,6 +239,10 @@ function createCommandLockController(
       pid: process.pid,
       startTime,
       urls: getCommandLockUrls(urls),
+      outDir:
+        command === 'build'
+          ? path.resolve(config.root, config.build.outDir)
+          : undefined,
     }
     const serialized = `${JSON.stringify(record, null, 2)}\n`
     const lockDir = path.resolve(config.cacheDir, 'lock')
