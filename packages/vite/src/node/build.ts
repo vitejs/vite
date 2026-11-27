@@ -897,6 +897,10 @@ async function buildEnvironment(
         watch: {
           ...rolldownOptions.watch,
           ...options.watch,
+          // the watcher writes the bundle on its own, so `build.write: false`
+          // needs to be forwarded as `skipWrite`. It wins over `skipWrite: false`
+          // because `outDir` is not emptied when `build.write` is false
+          ...(options.write ? {} : { skipWrite: true }),
           watcher: convertToWatcherOptions(resolvedChokidarOptions),
         },
       })
