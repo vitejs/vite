@@ -398,6 +398,13 @@ export class ModuleRunner {
     const moduleUrl = 'url' in fetchedModule ? fetchedModule.url : url
     const module = this.evaluatedModules.ensureModule(moduleId, moduleUrl)
 
+    // Also cache the requested URL when fetchModule returns a canonical URL.
+    // Non-externalized imports are rewritten to importer-independent URLs during
+    // import analysis. Externalized responses have no `url`
+    if ('url' in fetchedModule && url !== moduleUrl) {
+      this.evaluatedModules.setModuleByUrl(url, module)
+    }
+
     if ('invalidate' in fetchedModule && fetchedModule.invalidate) {
       this.evaluatedModules.invalidateModule(module)
       this.moduleHotContexts.delete(module.url)
