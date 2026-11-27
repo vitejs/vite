@@ -35,6 +35,32 @@ test('prefers lockfiles in node_modules over yarn.lock', () => {
   expect(getLockfileHash(fixture)).toBe(getHash(content))
 })
 
+test('bun: mixes patch file mtimes recorded in patchedDependencies into the hash', () => {
+  // The patch lives in a custom `--patches-dir`, which the default `patches/`
+  // directory lookup would never find.
+  const fixture = path.join(root, 'bun-custom-patches-dir')
+  const lockfileContent = fs.readFileSync(path.join(fixture, 'bun.lock'))
+  const patchPath = path.join(fixture, 'my-patches/fake-dep@1.0.0.patch')
+  const patchContent = fs.readFileSync(patchPath, 'utf-8')
+
+  const before = getLockfileHash(fixture)
+  expect(before).not.toBe(getHash(lockfileContent))
+
+  try {
+    fs.writeFileSync(patchPath, patchContent + '+extra\n')
+    expect(getLockfileHash(fixture)).not.toBe(before)
+  } finally {
+    fs.writeFileSync(patchPath, patchContent)
+  }
+})
+
+test('bun: hash equals bun.lock content hash without patchedDependencies', () => {
+  const fixture = path.join(root, 'bun-no-patches')
+  const content = fs.readFileSync(path.join(fixture, 'bun.lock'))
+
+  expect(getLockfileHash(fixture)).toBe(getHash(content))
+})
+
 test('hash changes when a patch file is edited in place', () => {
   const fixture = path.join(root, 'yarn-patches')
   const patchPath = path.join(fixture, 'patches/foo+1.0.0.patch')
