@@ -1,6 +1,9 @@
-import { init, parse as parseImports } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
+import {
+  initEsModuleLexer,
+  parseWithEsModuleLexer,
+} from '../../es-module-lexer'
 import {
   interopNamedImports,
   transformCjsImport,
@@ -39,7 +42,7 @@ describe('runTransform', () => {
   })
 
   describe('escaped URLs', async () => {
-    await init()
+    await initEsModuleLexer()
     const url = '/node_modules/.vite/deps/dep\'"\\\n\r\t.js'
 
     for (const source of [
@@ -52,10 +55,10 @@ describe('runTransform', () => {
     ]) {
       test(`preserves the URL and line count in ${source}`, () => {
         const str = new MagicString(source)
-        const [imports] = parseImports(source)
+        const [imports] = parseWithEsModuleLexer(source)
         interopNamedImports(str, imports[0], url, 0, 'modA', false, config)
         const code = str.toString()
-        const [rewrittenImports] = parseImports(code)
+        const [rewrittenImports] = parseWithEsModuleLexer(code)
         expect(
           rewrittenImports.map((specifier) => specifier.specifier),
         ).toStrictEqual([url])

@@ -1,7 +1,6 @@
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
-import { init, parse as parseImports } from 'es-module-lexer'
 import getEtag from 'etag'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
@@ -12,6 +11,7 @@ import type {
   SourceMap,
 } from 'rolldown'
 import { cleanUrl, slash, unwrapId } from '../../shared/utils'
+import { initEsModuleLexer, parseWithEsModuleLexer } from '../es-module-lexer'
 import { checkPublicFile } from '../publicDir'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import { ssrTransform } from '../ssr/ssrTransform'
@@ -469,10 +469,10 @@ async function handleModuleSoftInvalidation(
   }
   // We need to transform each imports with new timestamps if available
   else {
-    await init()
+    await initEsModuleLexer()
     const source = transformResult.code
     const s = new MagicString(source)
-    const [imports] = parseImports(source, mod.id || undefined)
+    const [imports] = parseWithEsModuleLexer(source, mod.id || undefined)
 
     for (const imp of imports) {
       let rawUrl = source.slice(imp.start, imp.end)

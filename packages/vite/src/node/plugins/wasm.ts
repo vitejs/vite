@@ -1,11 +1,8 @@
 import fsp from 'node:fs/promises'
-import {
-  init as esModuleLexerInit,
-  parse as parseImports,
-} from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { exactRegex } from 'rolldown/filter'
 import { cleanUrl } from '../../shared/utils'
+import { initEsModuleLexer, parseWithEsModuleLexer } from '../es-module-lexer'
 import { type Plugin, perEnvironmentPlugin } from '../plugin'
 import { injectQuery } from '../utils'
 import { fileToUrl } from './asset'
@@ -124,10 +121,10 @@ export const wasmHelperPlugin = (): Plugin => {
       transform: {
         filter: { code: wasmSourcePhaseRE },
         async handler(code) {
-          await esModuleLexerInit()
-          let imports: ReturnType<typeof parseImports>[0]
+          await initEsModuleLexer()
+          let imports: ReturnType<typeof parseWithEsModuleLexer>[0]
           try {
-            ;[imports] = parseImports(code)
+            ;[imports] = parseWithEsModuleLexer(code)
           } catch {
             return
           }

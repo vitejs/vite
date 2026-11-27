@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { type Import, init, parse } from 'es-module-lexer'
+import type { Import } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
 import type {
@@ -20,6 +20,7 @@ import {
 import type { ResolvedConfig } from '../config'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import type { Environment } from '../environment'
+import { initEsModuleLexer, parseWithEsModuleLexer } from '../es-module-lexer'
 import type { Logger } from '../logger'
 import type { Plugin } from '../plugin'
 import {
@@ -652,11 +653,11 @@ export function webWorkerPostPlugin(_config: ResolvedConfig): Plugin {
       async handler(code, id) {
         // import.meta is unavailable in the IIFE worker, so we need to replace it
         if (this.environment.config.worker.format === 'iife') {
-          await init()
+          await initEsModuleLexer()
 
           let imports: readonly Import[]
           try {
-            imports = parse(code)[0]
+            imports = parseWithEsModuleLexer(code)[0]
           } catch {
             // ignore if parse fails
             return
