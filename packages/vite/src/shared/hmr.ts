@@ -235,7 +235,12 @@ export class HMRClient {
         }),
       )
     } finally {
-      paths.forEach((path) => this.dataMap.delete(path))
+      for (const path of paths) {
+        this.dataMap.delete(path)
+        this.hotModulesMap.delete(path)
+        this.disposeMap.delete(path)
+        this.pruneMap.delete(path)
+      }
     }
   }
 

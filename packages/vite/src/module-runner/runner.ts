@@ -174,6 +174,22 @@ export class ModuleRunner {
   }
 
   /** @internal */
+  public _prune(urls: string[]): void {
+    // Invalidate pruned modules so that they are evaluated again if they are
+    // imported again. The server keeps their transform result, so otherwise the
+    // evaluated module is reused and the HMR callbacks cleared by `prunePaths`
+    // are never registered again. Browsers re-evaluate them because the server
+    // changes their `?t=` query on prune.
+    for (const url of urls) {
+      const mod = this.evaluatedModules.getModuleByUrl(url)
+      if (mod) {
+        this.evaluatedModules.invalidateModule(mod)
+        this.moduleHotContexts.delete(mod.url)
+      }
+    }
+  }
+
+  /** @internal */
   public async _resetBundledDevRuntime(): Promise<void> {
     this.evaluatedModules.clear()
     this.moduleHotContexts.clear()
