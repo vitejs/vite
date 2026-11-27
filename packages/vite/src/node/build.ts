@@ -1547,14 +1547,34 @@ function injectSsrFlag<T extends Record<string, any>>(
   let ssr = environment.config.consumer === 'server'
   // spreading the options would drop non-enumerable properties (e.g. the lazy
   // `magicString` and `ast` getters rolldown attaches to the transform meta),
-  // so copy the property descriptors instead
-  const newOptions = Object.defineProperties(
-    {},
-    {
-      ...(options ? Object.getOwnPropertyDescriptors(options) : {}),
-      ssr: { value: ssr, writable: true, enumerable: true, configurable: true },
-    },
-  ) as T & { ssr?: boolean }
+  // so copy the property descriptors instead. Plain data properties are
+  // assigned directly because `Object.getOwnPropertyDescriptors` +
+  // `Object.defineProperties` is several times slower on this hot path.
+  const newOptions = {} as T & { ssr?: boolean }
+  let hasSsr = false
+  if (options) {
+    for (const key of Reflect.ownKeys(options)) {
+      if (key === 'ssr') {
+        newOptions.ssr = ssr
+        hasSsr = true
+        continue
+      }
+      const descriptor = Reflect.getOwnPropertyDescriptor(options, key)!
+      if (
+        descriptor.writable &&
+        descriptor.enumerable &&
+        descriptor.configurable &&
+        key !== '__proto__'
+      ) {
+        ;(newOptions as any)[key] = descriptor.value
+      } else {
+        Object.defineProperty(newOptions, key, descriptor)
+      }
+    }
+  }
+  if (!hasSsr) {
+    newOptions.ssr = ssr
+  }
 
   if (
     isFutureDeprecationEnabled(
