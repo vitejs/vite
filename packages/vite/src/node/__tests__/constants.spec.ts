@@ -1,5 +1,20 @@
 import { expect, test } from 'vitest'
+import { defaultServerFsDeny } from '..'
 import { defaultAllowedOrigins } from '../constants'
+
+test('defaultServerFsDeny', () => {
+  expect(defaultServerFsDeny).toStrictEqual([
+    '.env',
+    '.env.*',
+    '*.{crt,pem,key,p12,pfx,cer,der}',
+    '.npmrc',
+    '.yarnrc.yml',
+    '**/.git/**',
+  ])
+  expect(Object.isFrozen(defaultServerFsDeny)).toBe(true)
+  expect(Reflect.set(defaultServerFsDeny, 0, '**/custom/**')).toBe(false)
+  expect(defaultServerFsDeny[0]).toBe('.env')
+})
 
 test('defaultAllowedOrigins', () => {
   const allowed = [

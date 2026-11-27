@@ -213,6 +213,15 @@ export const DEFAULT_DEV_PORT = 5173
 
 export const DEFAULT_PREVIEW_PORT = 4173
 
+export const DEFAULT_SERVER_FS_DENY: readonly string[] = Object.freeze([
+  '.env',
+  '.env.*',
+  '*.{crt,pem,key,p12,pfx,cer,der}',
+  '.npmrc',
+  '.yarnrc.yml',
+  '**/.git/**',
+])
+
 export const DEFAULT_ASSETS_INLINE_LIMIT = 4096
 
 // the regex to allow loopback address origins:
