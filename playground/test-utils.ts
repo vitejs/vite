@@ -12,6 +12,7 @@ import colors from 'css-color-names'
 import type {
   ConsoleMessage,
   ElementHandle,
+  Frame,
   Locator,
 } from 'playwright-chromium'
 import { xSync, type Result as TinyExecResult } from 'tinyexec'
@@ -27,6 +28,7 @@ import {
   testDir,
   viteServer,
   watchBuilds,
+  watchIdleSince,
 } from './vitestSetupUtils'
 
 export * from './vitestSetupUtils'
@@ -299,6 +301,8 @@ export async function gotoLatestBuild(url: string): Promise<void> {
  * Workaround for Rolldown emitting END per output before all outputs finish:
  * https://github.com/rolldown/rolldown/issues/10613
  * Call immediately after a synchronous edit, before yielding to watcher callbacks.
+ *
+ * Wait for 100 ms of idle time to allow queued rebuilds to empty and refill outDir.
  */
 export async function waitForRebuild(filename: string): Promise<void> {
   const id = path.resolve(testDir, filename)
@@ -318,6 +322,7 @@ export async function waitForRebuild(filename: string): Promise<void> {
       ),
     )
     .toBe(true)
+  await expect.poll(() => performance.now() - watchIdleSince > 100).toBe(true)
 }
 
 export function hotUpdatedLog(file: string): string {
@@ -357,47 +362,76 @@ export async function untilBrowserLogAfter(
   return logs
 }
 
+/**
+ * Like `untilBrowserLogAfter`, for an `operation` that opens a page. Only logs
+ * from the page that ends up open count: the previous page can still log while
+ * it unloads, and in bundled dev a stale build is served as a fallback page
+ * that reloads into the real one. Either could otherwise end the wait before
+ * the real page's HMR client has connected.
+ */
+export async function untilBrowserLogAfterNavigation(
+  operation: () => any,
+  target: string | RegExp | Array<string | RegExp>,
+  callback?: UntilBrowserLogAfterCallback,
+): Promise<string[]> {
+  const promise = untilBrowserLog(target, false, true)
+  await operation()
+  const logs = await promise
+  if (callback) {
+    await callback(logs)
+  }
+  return logs
+}
+
 async function untilBrowserLog(
   target?: string | RegExp | Array<string | RegExp>,
   expectOrder = true,
+  restartOnNavigation = false,
 ): Promise<string[]> {
   const { promise, resolve, reject } = promiseWithResolvers<void>()
   let timeoutId: ReturnType<typeof setTimeout>
 
   const logs = []
 
-  try {
-    const isMatch = (matcher: string | RegExp) => (text: string) =>
-      typeof matcher === 'string' ? text === matcher : matcher.test(text)
+  const handleNavigation = (frame: Frame) => {
+    if (frame !== page.mainFrame()) return
+    logs.length = 0
+    processMsg = createProcessMsg()
+  }
 
-    let processMsg: (text: string) => boolean
+  const isMatch = (matcher: string | RegExp) => (text: string) =>
+    typeof matcher === 'string' ? text === matcher : matcher.test(text)
 
+  const createProcessMsg = (): ((text: string) => boolean) => {
     if (!target) {
-      processMsg = () => true
-    } else if (Array.isArray(target)) {
+      return () => true
+    }
+    if (Array.isArray(target)) {
       if (expectOrder) {
         const remainingTargets = [...target]
-        processMsg = (text: string) => {
+        return (text: string) => {
           const nextTarget = remainingTargets.shift()
           expect(text).toMatch(nextTarget)
           return remainingTargets.length === 0
         }
-      } else {
-        const remainingMatchers = target.map(isMatch)
-        processMsg = (text: string) => {
-          const nextIndex = remainingMatchers.findIndex((matcher) =>
-            matcher(text),
-          )
-          if (nextIndex >= 0) {
-            remainingMatchers.splice(nextIndex, 1)
-          }
-          return remainingMatchers.length === 0
-        }
       }
-    } else {
-      processMsg = isMatch(target)
+      const remainingMatchers = target.map(isMatch)
+      return (text: string) => {
+        const nextIndex = remainingMatchers.findIndex((matcher) =>
+          matcher(text),
+        )
+        if (nextIndex >= 0) {
+          remainingMatchers.splice(nextIndex, 1)
+        }
+        return remainingMatchers.length === 0
+      }
     }
+    return isMatch(target)
+  }
 
+  let processMsg = createProcessMsg()
+
+  try {
     const handleMsg = (msg: ConsoleMessage) => {
       try {
         const text = msg.text()
@@ -426,11 +460,18 @@ async function untilBrowserLog(
     }, 5000)
 
     page.on('console', handleMsg)
+    if (restartOnNavigation) {
+      page.on('framenavigated', handleNavigation)
+    }
   } catch (err) {
     reject(err)
   }
 
-  await promise
+  try {
+    await promise
+  } finally {
+    page.off('framenavigated', handleNavigation)
+  }
   clearTimeout(timeoutId)
 
   return logs
