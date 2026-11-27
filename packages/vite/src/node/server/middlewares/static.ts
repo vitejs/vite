@@ -23,6 +23,7 @@ import {
   isParentDirectory,
   isSameFilePath,
   normalizePath,
+  tryStatSync,
   urlRE,
 } from '../../utils'
 import type { DevEnvironment } from '../environment'
@@ -364,7 +365,7 @@ export function checkLoadingAccess(
   if (isFileLoadingAllowed(environment.config, slash(path))) {
     return 'allowed'
   }
-  if (isFileReadable(path)) {
+  if (!tryStatSync(path)?.isDirectory() && isFileReadable(path)) {
     return 'denied'
   }
   // if the file doesn't exist, we shouldn't restrict this path as it can
