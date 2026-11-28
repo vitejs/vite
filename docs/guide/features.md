@@ -277,6 +277,8 @@ Vite is pre-configured to support CSS `@import` inlining via `postcss-import`. V
 
 `@import` aliases and URL rebasing are also supported for Sass and Less files (see [CSS Pre-processors](#css-pre-processors)).
 
+`@import` specifiers that are absolute URLs (`https://`, `//`) or root-relative paths (`/`) that don't match a file in the `public` directory are treated as external: they are left as-is in the output and resolved by the browser at runtime.
+
 ### PostCSS
 
 If the project contains valid PostCSS config (any format supported by [postcss-load-config](https://github.com/postcss/postcss-load-config), e.g. `postcss.config.js`), it will be automatically applied to all imported CSS.

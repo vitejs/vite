@@ -2,7 +2,7 @@ import path from 'node:path'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
 import type { InternalModuleFormat } from 'rolldown'
-import { describe, expect, onTestFinished, test } from 'vitest'
+import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { PartialEnvironment } from '../../baseEnvironment'
 import { resolveConfig } from '../../config'
 import type { InlineConfig } from '../../config'
@@ -300,6 +300,108 @@ describe('url()', () => {
   })
 })
 
+describe('external @import', () => {
+  for (const transformer of ['postcss', 'lightningcss'] as const) {
+    describe(transformer, () => {
+      const root = path.join(dirname, 'fixtures/css-external-imports')
+
+      test('keeps absolute URL @import as-is', async () => {
+        const { transform } = await createCssPluginTransform({
+          configFile: false,
+          root,
+          css: { transformer },
+        })
+        const result = await transform(
+          `@import "https://cdn.example.com/external.css";`,
+          path.join(root, 'style.css'),
+        )
+        expect(result.code).toContain('https://cdn.example.com/external.css')
+      })
+
+      test('keeps protocol-relative URL @import as-is', async () => {
+        const { transform } = await createCssPluginTransform({
+          configFile: false,
+          root,
+          css: { transformer },
+        })
+        const result = await transform(
+          `@import "//cdn.example.com/external.css";`,
+          path.join(root, 'style.css'),
+        )
+        expect(result.code).toContain('//cdn.example.com/external.css')
+      })
+
+      test('keeps root-relative @import as-is', async () => {
+        const { transform } = await createCssPluginTransform({
+          configFile: false,
+          root,
+          css: { transformer },
+        })
+        const result = await transform(
+          `@import "/cdn/my-resource.css";`,
+          path.join(root, 'style.css'),
+        )
+        expect(result.code).toContain('/cdn/my-resource.css')
+      })
+
+      test('warns once for root-relative @import', async () => {
+        const { transform, logger } = await createCssPluginTransform({
+          configFile: false,
+          root,
+          css: { transformer },
+        })
+        const warnOnce = vi.spyOn(logger, 'warnOnce')
+        await transform(
+          `@import "/cdn/my-resource.css";`,
+          path.join(root, 'style.css'),
+        )
+        expect(warnOnce).toHaveBeenCalledWith(
+          expect.stringContaining('/cdn/my-resource.css'),
+        )
+      })
+
+      test('inlines @import of a public file', async () => {
+        const { transform } = await createCssPluginTransform({
+          configFile: false,
+          root,
+          css: { transformer },
+        })
+        const result = await transform(
+          `@import "/from-public.css";`,
+          path.join(root, 'style.css'),
+        )
+        expect(result.code).toContain('.from-public')
+        expect(result.code).not.toContain('@import')
+      })
+
+      test('inlines relative @import', async () => {
+        const { transform } = await createCssPluginTransform({
+          configFile: false,
+          root,
+          css: { transformer },
+        })
+        const result = await transform(
+          `@import "./local.css";`,
+          path.join(root, 'style.css'),
+        )
+        expect(result.code).toContain('.local')
+        expect(result.code).not.toContain('@import')
+      })
+
+      test('errors on unresolvable relative @import', async () => {
+        const { transform } = await createCssPluginTransform({
+          configFile: false,
+          root,
+          css: { transformer },
+        })
+        await expect(
+          transform(`@import "./missing.css";`, path.join(root, 'style.css')),
+        ).rejects.toThrow(/missing\.css/)
+      })
+    })
+  }
+})
+
 describe('hoist @ rules', () => {
   test('hoist @import', async () => {
     const css = `.foo{color:red;}@import "bla";`
@@ -404,6 +506,7 @@ async function createCssPluginTransform(inlineConfig: InlineConfig = {}) {
   })
 
   return {
+    logger: environment.logger,
     async transform(code: string, id: string) {
       // @ts-expect-error transform.handler is function
       return await transform.handler.call(

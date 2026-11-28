@@ -1705,6 +1705,22 @@ async function compilePostCSS(
   if (needInlineImport) {
     postcssPlugins.unshift(
       (await importPostcssImport()).default({
+        filter(id) {
+          // Root-relative specifiers (e.g. `/cdn/my-resource.css`) are treated
+          // as external URLs: the browser resolves them against the origin, so
+          // they are left as-is in the output. Files in the public directory
+          // take precedence and are resolved by the `resolve` hook below.
+          if (
+            id[0] !== '/' ||
+            checkPublicFile(id, environment.getTopLevelConfig())
+          ) {
+            return true
+          }
+          environment.logger.warnOnce(
+            `\`@import "${id}"\` is treated as an external URL and will remain unchanged to be resolved at runtime`,
+          )
+          return false
+        },
         async resolve(id, basedir, _importOptions, atRule) {
           const publicFile = checkPublicFile(
             id,
@@ -3473,6 +3489,16 @@ async function compileLightningCSS(
 
               // contrary to lightningcss, postcss-import does this internally
               if (absoluteOrProtocolRelativeUrlRE.test(id)) {
+                return { external: id }
+              }
+
+              // Root-relative URLs (e.g. `/cdn/my-resource.css`) are resolved
+              // by the browser against the origin, so keep them external like
+              // absolute URLs.
+              if (id[0] === '/') {
+                environment.logger.warnOnce(
+                  `\`@import "${id}"\` is treated as an external URL and will remain unchanged to be resolved at runtime`,
+                )
                 return { external: id }
               }
 
