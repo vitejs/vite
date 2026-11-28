@@ -1,4 +1,7 @@
+import fs from 'node:fs'
+import os from 'node:os'
 import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { build } from '../build'
 import type { EnvironmentOptions, InlineConfig } from '../config'
@@ -389,5 +392,165 @@ describe('alias replacement with $ patterns', () => {
     expect(resolved?.id).toBe(
       normalizePath(join(fixtureDir, 'regex-target/file.js')),
     )
+  })
+})
+
+describe('SSR build nested external dependencies', () => {
+  function createNestedExternalFixture(subpath = false) {
+    const tmpDir = fs.mkdtempSync(
+      join(os.tmpdir(), 'vite-ssr-nested-external-'),
+    )
+    onTestFinished(() => fs.rmSync(tmpDir, { recursive: true, force: true }))
+
+    fs.writeFileSync(
+      join(tmpDir, 'package.json'),
+      JSON.stringify({ name: 'app', private: true, type: 'module' }),
+    )
+    fs.mkdirSync(join(tmpDir, 'src'), { recursive: true })
+    fs.writeFileSync(
+      join(tmpDir, 'src/entry.js'),
+      subpath
+        ? `export { value as libValue } from 'lib'\nexport { sub as rootValue } from 'devalue/sub'\n`
+        : `export { value as libValue } from 'lib'\nexport { value as rootValue } from 'devalue'\n`,
+    )
+
+    // Root copy of devalue (externalized)
+    fs.mkdirSync(join(tmpDir, 'node_modules/devalue'), { recursive: true })
+    fs.writeFileSync(
+      join(tmpDir, 'node_modules/devalue/package.json'),
+      JSON.stringify({
+        name: 'devalue',
+        version: '1.0.0',
+        type: 'module',
+        exports: {
+          '.': './index.js',
+          './sub': './sub.js',
+        },
+      }),
+    )
+    fs.writeFileSync(
+      join(tmpDir, 'node_modules/devalue/index.js'),
+      `export const value = 'root'\n`,
+    )
+    fs.writeFileSync(
+      join(tmpDir, 'node_modules/devalue/sub.js'),
+      `export const sub = 'root-sub'\n`,
+    )
+
+    // Bundled lib package with its own nested incompatible copy of devalue
+    fs.mkdirSync(join(tmpDir, 'node_modules/lib/node_modules/devalue'), {
+      recursive: true,
+    })
+    fs.writeFileSync(
+      join(tmpDir, 'node_modules/lib/package.json'),
+      JSON.stringify({
+        name: 'lib',
+        version: '1.0.0',
+        type: 'module',
+        exports: { '.': './index.js' },
+      }),
+    )
+    fs.writeFileSync(
+      join(tmpDir, 'node_modules/lib/index.js'),
+      subpath
+        ? `export { sub as value } from 'devalue/sub'\n`
+        : `export { value } from 'devalue'\n`,
+    )
+    fs.writeFileSync(
+      join(tmpDir, 'node_modules/lib/node_modules/devalue/package.json'),
+      JSON.stringify({
+        name: 'devalue',
+        version: '2.0.0',
+        type: 'module',
+        exports: {
+          '.': './index.js',
+          './sub': './sub.js',
+        },
+      }),
+    )
+    fs.writeFileSync(
+      join(tmpDir, 'node_modules/lib/node_modules/devalue/index.js'),
+      `export const value = 'nested'\n`,
+    )
+    fs.writeFileSync(
+      join(tmpDir, 'node_modules/lib/node_modules/devalue/sub.js'),
+      `export const sub = 'nested-sub'\n`,
+    )
+
+    return tmpDir
+  }
+
+  test('bundles nested dependency differing from root while keeping root external', async () => {
+    const tmpDir = createNestedExternalFixture()
+    await build({
+      configFile: false,
+      root: tmpDir,
+      logLevel: 'silent',
+      ssr: { noExternal: ['lib'] },
+      build: {
+        ssr: join(tmpDir, 'src/entry.js'),
+        outDir: join(tmpDir, 'dist'),
+      },
+    })
+
+    const builtCode = fs.readFileSync(join(tmpDir, 'dist/entry.js'), 'utf-8')
+    expect(builtCode).toContain(`from "devalue"`)
+    expect(builtCode).toContain('nested')
+
+    const mod = await import(pathToFileURL(join(tmpDir, 'dist/entry.js')).href)
+    expect(mod.libValue).toBe('nested')
+    expect(mod.rootValue).toBe('root')
+  })
+
+  test('bundles nested subpath import differing from root', async () => {
+    const tmpDir = createNestedExternalFixture(true)
+    await build({
+      configFile: false,
+      root: tmpDir,
+      logLevel: 'silent',
+      ssr: { noExternal: ['lib'] },
+      build: {
+        ssr: join(tmpDir, 'src/entry.js'),
+        outDir: join(tmpDir, 'dist'),
+      },
+    })
+
+    const builtCode = fs.readFileSync(join(tmpDir, 'dist/entry.js'), 'utf-8')
+    expect(builtCode).toContain(`from "devalue/sub"`)
+    expect(builtCode).toContain('nested-sub')
+
+    const mod = await import(pathToFileURL(join(tmpDir, 'dist/entry.js')).href)
+    expect(mod.libValue).toBe('nested-sub')
+    expect(mod.rootValue).toBe('root-sub')
+  })
+
+  test.each([
+    {
+      name: 'ssr.external',
+      config: { ssr: { noExternal: ['lib'], external: ['devalue'] } },
+    },
+    {
+      name: 'resolve.dedupe',
+      config: {
+        ssr: { noExternal: ['lib'] },
+        resolve: { dedupe: ['devalue'] },
+      },
+    },
+  ])('respects $name over nested copy', async ({ config }) => {
+    const tmpDir = createNestedExternalFixture()
+    await build({
+      configFile: false,
+      root: tmpDir,
+      logLevel: 'silent',
+      ...config,
+      build: {
+        ssr: join(tmpDir, 'src/entry.js'),
+        outDir: join(tmpDir, 'dist'),
+      },
+    })
+
+    const mod = await import(pathToFileURL(join(tmpDir, 'dist/entry.js')).href)
+    expect(mod.libValue).toBe('root')
+    expect(mod.rootValue).toBe('root')
   })
 })

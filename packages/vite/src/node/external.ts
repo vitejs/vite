@@ -74,6 +74,18 @@ export function createIsConfiguredAsExternal(
       if (!resolved) {
         return false
       }
+      if (!configuredAsExternal && config.command === 'build' && importer) {
+        const resolvedFromImporter = tryNodeResolve(
+          id,
+          importer,
+          resolveOptions,
+          undefined,
+          false,
+        )
+        if (resolvedFromImporter && resolvedFromImporter.id !== resolved.id) {
+          return false
+        }
+      }
       // Only allow linked packages to be externalized
       // if they are explicitly configured as external
       if (!configuredAsExternal && !isInNodeModules(resolved.id)) {
@@ -132,8 +144,9 @@ function createIsExternal(
   const isConfiguredAsExternal = createIsConfiguredAsExternal(environment)
 
   return (id: string, importer?: string) => {
-    if (processedIds.has(id)) {
-      return processedIds.get(id)!
+    const cacheKey = importer ? `${path.dirname(importer)}\0${id}` : id
+    if (processedIds.has(cacheKey)) {
+      return processedIds.get(cacheKey)!
     }
     let isExternal = false
     if (id[0] !== '.' && !path.isAbsolute(id)) {
@@ -141,7 +154,7 @@ function createIsExternal(
         isBuiltin(environment.config.resolve.builtins, id) ||
         isConfiguredAsExternal(id, importer)
     }
-    processedIds.set(id, isExternal)
+    processedIds.set(cacheKey, isExternal)
     return isExternal
   }
 }

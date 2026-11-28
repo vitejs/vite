@@ -37,6 +37,7 @@ import { moduleUrlToFilePath } from '../server/moduleUrl'
 import {
   bareImportRE,
   createDebugger,
+  createFilter,
   deepImportRE,
   getNpmPackageName,
   injectQuery,
@@ -227,6 +228,11 @@ export function oxcResolvePlugin(
     ...(resolveOptions.optimizeDeps && !resolveOptions.isBuild
       ? [optimizerResolvePlugin(resolveOptions)]
       : []),
+    ...(resolveOptions.isBuild &&
+    resolveOptions.externalize &&
+    !overrideEnvConfig
+      ? [nestedExternalResolvePlugin(resolveOptions)]
+      : []),
     ...perEnvironmentOrWorkerPlugin(
       'vite:resolve-builtin',
       overrideEnvConfig,
@@ -387,6 +393,143 @@ export function oxcResolvePlugin(
       },
     ),
   ]
+}
+
+function nestedExternalResolvePlugin(
+  resolveOptions: ResolvePluginOptionsWithOverrides,
+): Plugin {
+  let cachedNoExternal: InternalResolveOptions['noExternal'] | undefined
+  let cachedNoExternalFilter: ((id: string) => boolean) | undefined
+  const getNoExternalFilter = (
+    noExternal: InternalResolveOptions['noExternal'],
+  ) => {
+    if (noExternal !== cachedNoExternal) {
+      cachedNoExternal = noExternal
+      cachedNoExternalFilter =
+        typeof noExternal !== 'boolean' &&
+        !(Array.isArray(noExternal) && noExternal.length === 0)
+          ? createFilter(undefined, noExternal, { resolve: false })
+          : undefined
+    }
+    return cachedNoExternalFilter
+  }
+
+  return {
+    name: 'vite:resolve-nested-external',
+    applyToEnvironment(environment) {
+      return (
+        environment.config.consumer === 'server' && environment.config.isBundled
+      )
+    },
+    resolveId: {
+      handler: async function (id, importer, resolveOpts) {
+        if (!importer || !bareImportRE.test(id) || id.includes('\0')) {
+          return
+        }
+        const envConfig = this.environment.config
+        const options: InternalResolveOptions = {
+          ...envConfig.resolve,
+          ...resolveOptions,
+          packageCache: resolveOptions.packageCache ?? envConfig.packageCache,
+          mainFields: resolveOptions.skipMainField
+            ? (resolveOptions.mainFields ?? envConfig.resolve.mainFields)
+            : [
+                ...(resolveOptions.mainFields ?? envConfig.resolve.mainFields),
+                'main',
+              ],
+          isRequire: resolveOpts.kind === 'require-call',
+        }
+        if (isBuiltin(options.builtins, id)) {
+          return
+        }
+        const pkgId = getImportPackageId(id)
+        if (options.dedupe.includes(pkgId)) {
+          return
+        }
+        if (
+          options.external !== true &&
+          (options.external.includes(id) || options.external.includes(pkgId))
+        ) {
+          return
+        }
+        if (options.external !== true) {
+          if (options.noExternal === true) {
+            return
+          }
+          const noExternalFilter = getNoExternalFilter(options.noExternal)
+          if (noExternalFilter && !noExternalFilter(pkgId)) {
+            return
+          }
+        }
+
+        const basedir = normalizePath(getResolveBaseDir(importer, options.root))
+        if (basedir === options.root) {
+          return
+        }
+        const pkgFromImporter = resolveNearestPackage(
+          pkgId,
+          basedir,
+          options.preserveSymlinks,
+          options.packageCache,
+        )
+        const pkgFromRoot = resolveNearestPackage(
+          pkgId,
+          options.root,
+          options.preserveSymlinks,
+          options.packageCache,
+        )
+        if (
+          !pkgFromImporter ||
+          !pkgFromRoot ||
+          pkgFromImporter.dir === pkgFromRoot.dir
+        ) {
+          return
+        }
+
+        const resolved = await this.resolve(id, importer, {
+          ...resolveOpts,
+          skipSelf: true,
+        })
+        if (!resolved?.external) {
+          return resolved
+        }
+
+        const checkOptions: InternalResolveOptions = {
+          ...options,
+          conditions: options.externalConditions,
+          idOnly: true,
+        }
+        const resolvedFromImporter = tryNodeResolve(
+          id,
+          importer,
+          checkOptions,
+          undefined,
+          false,
+        )
+        const resolvedFromRoot = tryNodeResolve(
+          id,
+          undefined,
+          checkOptions,
+          undefined,
+          false,
+        )
+        if (
+          resolvedFromImporter &&
+          resolvedFromRoot &&
+          resolvedFromImporter.id !== resolvedFromRoot.id
+        ) {
+          return tryNodeResolve(
+            id,
+            importer,
+            { ...options, idOnly: false },
+            undefined,
+            false,
+          )
+        }
+        return resolved
+      },
+    },
+  }
 }
 
 function optimizerResolvePlugin(
@@ -719,6 +862,47 @@ function tryCleanFsResolve(
   }
 }
 
+function getImportPackageId(id: string): string {
+  // check for deep import, e.g. "my-lib/foo"
+  const deepMatch = deepImportRE.exec(id)
+  // package name doesn't include postfixes
+  // trim them to support importing package with queries (e.g. `import css from 'normalize.css?inline'`)
+  return deepMatch ? deepMatch[1] || deepMatch[2] : cleanUrl(id)
+}
+
+function getResolveBaseDir(
+  importer: string | null | undefined,
+  root: string,
+): string {
+  if (
+    importer &&
+    path.isAbsolute(importer) &&
+    // css processing appends `*` for importer
+    (importer.endsWith('*') || fs.existsSync(cleanUrl(importer)))
+  ) {
+    return path.dirname(importer)
+  }
+  return root
+}
+
+function resolveNearestPackage(
+  pkgId: string,
+  basedir: string,
+  preserveSymlinks: boolean | undefined,
+  packageCache: PackageCache | undefined,
+): PackageData | null {
+  // check if it's a self reference dep.
+  const selfPackageData = findNearestPackageData(basedir, packageCache)
+  const selfPkg =
+    selfPackageData?.data.exports && selfPackageData.data.name === pkgId
+      ? selfPackageData
+      : null
+  return (
+    selfPkg ||
+    resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)
+  )
+}
+
 export function tryNodeResolve(
   id: string,
   importer: string | null | undefined,
@@ -730,39 +914,18 @@ export function tryNodeResolve(
 
   // check for deep import, e.g. "my-lib/foo"
   const deepMatch = deepImportRE.exec(id)
-  // package name doesn't include postfixes
-  // trim them to support importing package with queries (e.g. `import css from 'normalize.css?inline'`)
-  const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : cleanUrl(id)
+  const pkgId = getImportPackageId(id)
 
-  let basedir: string
-  if (dedupe.includes(pkgId)) {
-    basedir = root
-  } else if (
-    importer &&
-    path.isAbsolute(importer) &&
-    // css processing appends `*` for importer
-    (importer.endsWith('*') || fs.existsSync(cleanUrl(importer)))
-  ) {
-    basedir = path.dirname(importer)
-  } else {
-    basedir = root
-  }
+  const basedir = dedupe.includes(pkgId)
+    ? root
+    : getResolveBaseDir(importer, root)
 
   const isModuleBuiltin = (id: string) => isBuiltin(options.builtins, id)
 
-  let selfPkg = null
-  if (!isModuleBuiltin(id) && !id.includes('\0') && bareImportRE.test(id)) {
-    // check if it's a self reference dep.
-    const selfPackageData = findNearestPackageData(basedir, packageCache)
-    selfPkg =
-      selfPackageData?.data.exports && selfPackageData.data.name === pkgId
-        ? selfPackageData
-        : null
-  }
-
   const pkg =
-    selfPkg ||
-    resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)
+    !isModuleBuiltin(id) && !id.includes('\0') && bareImportRE.test(id)
+      ? resolveNearestPackage(pkgId, basedir, preserveSymlinks, packageCache)
+      : resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)
   if (!pkg) {
     // if import can't be found, check if it's an optional peer dep.
     // if so, we can resolve to a special id that errors only when imported.
