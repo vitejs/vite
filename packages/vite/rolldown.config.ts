@@ -91,8 +91,6 @@ const nodeConfig = defineConfig({
     /^tsx\//,
     /^@vitejs\/devtools\//,
     /^#/,
-    'sugarss', // postcss-import -> sugarss
-    'supports-color',
     'utf-8-validate', // ws
     'bufferutil', // ws
     ...Object.keys(pkg.dependencies),
@@ -148,12 +146,7 @@ const moduleRunnerConfig = defineConfig({
   input: {
     'module-runner': path.resolve(dirname, 'src/module-runner/index.ts'),
   },
-  external: [
-    'fsevents',
-    'lightningcss',
-    /^rolldown\//,
-    ...Object.keys(pkg.dependencies),
-  ],
+  external: [/^rolldown\//, ...Object.keys(pkg.dependencies)],
   plugins: [bundleSizeLimit(71), enableSourceMapsInWatchModePlugin()],
   output: {
     ...(sharedNodeOptions.output as OutputOptions),
