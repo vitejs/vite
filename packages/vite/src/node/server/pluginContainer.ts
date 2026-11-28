@@ -845,6 +845,7 @@ class PluginContext
       scan: this._scan,
     })
     if (typeof out === 'string') out = { id: out }
+    if (out) out.external ??= false
     return out as ResolvedId | null
   }
 
