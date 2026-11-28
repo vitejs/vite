@@ -401,6 +401,55 @@ describe('plugin container', () => {
   })
 
   describe('resolveId', () => {
+    it('defaults external to false for results from this.resolve()', async () => {
+      const environment = await getDevEnvironment({
+        plugins: [
+          {
+            name: 'resolve-probe',
+            async resolveId(id, importer) {
+              if (id === 'probe') {
+                const resolve = (target: string) =>
+                  this.resolve(target, importer)
+                expect(await resolve('virtual:string')).toMatchObject({
+                  id: '\0virtual:string',
+                  external: false,
+                })
+                expect(await resolve('virtual:object')).toMatchObject({
+                  id: '\0virtual:object',
+                  external: false,
+                  meta: { source: 'plugin' },
+                })
+                expect(await resolve('virtual:external')).toMatchObject({
+                  id: 'external-module',
+                  external: true,
+                })
+                expect(await resolve('virtual:unresolved')).toBeNull()
+              }
+            },
+          },
+          {
+            name: 'resolve-targets',
+            resolveId(id) {
+              if (id === 'virtual:string') return '\0virtual:string'
+              if (id === 'virtual:object') {
+                return { id: '\0virtual:object', meta: { source: 'plugin' } }
+              }
+              if (id === 'virtual:external') {
+                return { id: 'external-module', external: true }
+              }
+            },
+          },
+        ],
+      })
+
+      try {
+        await environment.pluginContainer.resolveId('probe')
+        expect.assertions(4)
+      } finally {
+        await environment.pluginContainer.close()
+      }
+    })
+
     describe('skipSelf', () => {
       it('should skip the plugin itself when skipSelf is true', async () => {
         let calledCount = 0
@@ -443,7 +492,7 @@ describe('plugin container', () => {
 
         const environment = await getDevEnvironment({ plugins: [p1, p2] })
         const result = await environment.pluginContainer.resolveId('foo')
-        expect(result).toStrictEqual({ id: 'success' })
+        expect(result).toStrictEqual({ id: 'success', external: false })
       })
 
       it('should skip the plugin if it has been called before with the same id and importer (1)', async () => {
@@ -467,7 +516,7 @@ describe('plugin container', () => {
         }
         const environment = await getDevEnvironment({ plugins: [p1, p2] })
         const result = await environment.pluginContainer.resolveId('foo')
-        expect(result).toStrictEqual({ id: 'success' })
+        expect(result).toStrictEqual({ id: 'success', external: false })
       })
 
       it('should skip the plugin if it has been called before with the same id and importer (2)', async () => {
@@ -500,7 +549,7 @@ describe('plugin container', () => {
         }
         const environment = await getDevEnvironment({ plugins: [p1, p2, p3] })
         const result = await environment.pluginContainer.resolveId('foo')
-        expect(result).toStrictEqual({ id: 'success' })
+        expect(result).toStrictEqual({ id: 'success', external: false })
       })
     })
   })
